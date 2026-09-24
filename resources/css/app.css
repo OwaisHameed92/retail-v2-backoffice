@@ -1,0 +1,200 @@
+@import 'tailwindcss';
+
+@plugin 'tailwindcss-animate';
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+
+@custom-variant dark (&:is(.dark *));
+
+@theme {
+    --font-sans:
+        'Inter', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+
+    --radius-lg: var(--radius);
+    --radius-md: calc(var(--radius) - 2px);
+    --radius-sm: calc(var(--radius) - 4px);
+
+    --color-background: var(--background);
+    --color-foreground: var(--foreground);
+
+    --color-card: var(--card);
+    --color-card-foreground: var(--card-foreground);
+
+    --color-popover: var(--popover);
+    --color-popover-foreground: var(--popover-foreground);
+
+    --color-primary: var(--primary);
+    --color-primary-foreground: var(--primary-foreground);
+
+    --color-secondary: var(--secondary);
+    --color-secondary-foreground: var(--secondary-foreground);
+
+    --color-muted: var(--muted);
+    --color-muted-foreground: var(--muted-foreground);
+
+    --color-accent: var(--accent);
+    --color-accent-foreground: var(--accent-foreground);
+
+    --color-destructive: var(--destructive);
+    --color-destructive-foreground: var(--destructive-foreground);
+
+    --color-success: var(--success);
+    --color-success-foreground: var(--success-foreground);
+    --color-success-soft: var(--success-soft);
+    --color-warning: var(--warning);
+    --color-warning-foreground: var(--warning-foreground);
+    --color-warning-soft: var(--warning-soft);
+    --color-danger-soft: var(--danger-soft);
+    --color-info-soft: var(--info-soft);
+    --color-brand-blue: var(--brand-blue);
+    --color-brand-green: var(--brand-green);
+
+    --color-border: var(--border);
+    --color-input: var(--input);
+    --color-ring: var(--ring);
+
+    --color-chart-1: var(--chart-1);
+    --color-chart-2: var(--chart-2);
+    --color-chart-3: var(--chart-3);
+    --color-chart-4: var(--chart-4);
+    --color-chart-5: var(--chart-5);
+
+    --color-sidebar: var(--sidebar-background);
+    --color-sidebar-foreground: var(--sidebar-foreground);
+    --color-sidebar-primary: var(--sidebar-primary);
+    --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+    --color-sidebar-accent: var(--sidebar-accent);
+    --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+    --color-sidebar-border: var(--sidebar-border);
+    --color-sidebar-ring: var(--sidebar-ring);
+}
+
+/*
+  The default border color has changed to `currentColor` in Tailwind CSS v4,
+  so we've added these compatibility styles to make sure everything still
+  looks the same as it did with Tailwind CSS v3.
+
+  If we ever want to remove these styles, we need to add an explicit border
+  color utility to any element that depends on these defaults.
+*/
+@layer base {
+    *,
+    ::after,
+    ::before,
+    ::backdrop,
+    ::file-selector-button {
+        border-color: var(--color-gray-200, currentColor);
+    }
+}
+
+/*
+  Switch & Save brand theme. Brand blue #015CFC (primary), brand green #01C301 (positive / accent).
+  Cool slate neutrals, white cards on a soft grey canvas. See docs/BRAND.md before changing.
+*/
+:root {
+    --background: hsl(220, 20%, 97.5%);
+    --foreground: hsl(222, 47%, 11%);
+    --card: hsl(0, 0%, 100%);
+    --card-foreground: hsl(222, 47%, 11%);
+    --popover: hsl(0, 0%, 100%);
+    --popover-foreground: hsl(222, 47%, 11%);
+    --primary: hsl(218, 99%, 50%);
+    --primary-foreground: hsl(0, 0%, 100%);
+    --secondary: hsl(220, 14%, 95%);
+    --secondary-foreground: hsl(222, 47%, 11%);
+    --muted: hsl(220, 14%, 95%);
+    --muted-foreground: hsl(220, 9%, 43%);
+    --accent: hsl(218, 100%, 96.5%);
+    --accent-foreground: hsl(218, 90%, 34%);
+    --destructive: hsl(0, 72%, 51%);
+    --destructive-foreground: hsl(0, 0%, 100%);
+    --success: hsl(121, 99%, 38%);
+    --success-foreground: hsl(122, 80%, 24%);
+    --success-soft: hsl(120, 60%, 95%);
+    --warning: hsl(38, 92%, 50%);
+    --warning-foreground: hsl(30, 90%, 28%);
+    --warning-soft: hsl(45, 100%, 94%);
+    --danger-soft: hsl(0, 86%, 96.5%);
+    --info-soft: hsl(218, 100%, 96.5%);
+    --border: hsl(220, 13%, 90%);
+    --input: hsl(220, 13%, 86%);
+    --ring: hsl(218, 99%, 50%);
+    --chart-1: hsl(218, 99%, 50%);
+    --chart-2: hsl(121, 80%, 40%);
+    --chart-3: hsl(199, 89%, 48%);
+    --chart-4: hsl(38, 92%, 50%);
+    --chart-5: hsl(262, 52%, 55%);
+    --radius: 0.625rem;
+    --sidebar-background: hsl(0, 0%, 100%);
+    --sidebar-foreground: hsl(220, 15%, 30%);
+    --sidebar-primary: hsl(218, 99%, 50%);
+    --sidebar-primary-foreground: hsl(0, 0%, 100%);
+    --sidebar-accent: hsl(218, 100%, 96.5%);
+    --sidebar-accent-foreground: hsl(218, 90%, 34%);
+    --sidebar-border: hsl(220, 13%, 91%);
+    --sidebar-ring: hsl(218, 99%, 50%);
+    --brand-blue: #015cfc;
+    --brand-green: #01c301;
+}
+
+.dark {
+    --background: hsl(222, 47%, 5.5%);
+    --foreground: hsl(210, 40%, 97%);
+    --card: hsl(222, 40%, 8.5%);
+    --card-foreground: hsl(210, 40%, 97%);
+    --popover: hsl(222, 40%, 8.5%);
+    --popover-foreground: hsl(210, 40%, 97%);
+    --primary: hsl(217, 100%, 62%);
+    --primary-foreground: hsl(222, 47%, 8%);
+    --secondary: hsl(217, 28%, 14%);
+    --secondary-foreground: hsl(210, 40%, 97%);
+    --muted: hsl(217, 28%, 12%);
+    --muted-foreground: hsl(215, 20%, 65%);
+    --accent: hsl(217, 60%, 16%);
+    --accent-foreground: hsl(213, 100%, 82%);
+    --destructive: hsl(0, 72%, 58%);
+    --destructive-foreground: hsl(0, 0%, 100%);
+    --success: hsl(121, 70%, 45%);
+    --success-foreground: hsl(120, 70%, 70%);
+    --success-soft: hsl(125, 45%, 12%);
+    --warning: hsl(38, 92%, 55%);
+    --warning-foreground: hsl(40, 95%, 70%);
+    --warning-soft: hsl(35, 60%, 12%);
+    --danger-soft: hsl(0, 55%, 14%);
+    --info-soft: hsl(217, 60%, 14%);
+    --border: hsl(217, 25%, 16%);
+    --input: hsl(217, 25%, 20%);
+    --ring: hsl(217, 100%, 62%);
+    --chart-1: hsl(217, 100%, 62%);
+    --chart-2: hsl(121, 60%, 48%);
+    --chart-3: hsl(199, 89%, 58%);
+    --chart-4: hsl(38, 92%, 58%);
+    --chart-5: hsl(262, 70%, 70%);
+    --sidebar-background: hsl(222, 45%, 7%);
+    --sidebar-foreground: hsl(215, 20%, 75%);
+    --sidebar-primary: hsl(217, 100%, 62%);
+    --sidebar-primary-foreground: hsl(222, 47%, 8%);
+    --sidebar-accent: hsl(217, 50%, 14%);
+    --sidebar-accent-foreground: hsl(213, 100%, 85%);
+    --sidebar-border: hsl(217, 25%, 14%);
+    --sidebar-ring: hsl(217, 100%, 62%);
+    --brand-blue: #4d8dff;
+    --brand-green: #2fd12f;
+}
+
+@layer base {
+    * {
+        @apply border-border;
+    }
+
+    body {
+        @apply bg-background text-foreground;
+        font-feature-settings: 'cv11', 'ss01';
+    }
+
+    /* Figures line up in tables, stat cards and money columns. */
+    table,
+    .tabular-nums {
+        font-variant-numeric: tabular-nums;
+    }
+}

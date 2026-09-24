@@ -1,0 +1,12 @@
+includes:
+    - vendor/larastan/larastan/extension.neon
+
+parameters:
+    level: 6
+    paths:
+        - app
+        - routes
+        - database
+        # Test-only tenant model: gives BelongsToCompany a user until real tenant models exist (module 0.4).
+        - tests/Fixtures
+    tmpDir: storage/framework/cache/phpstan

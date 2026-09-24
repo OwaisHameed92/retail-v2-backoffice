@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:sspos:web-portal-api:v1:push-reply",
+  "title": "push-reply",
+  "description": "POST /api/v1/sync/push reply.",
+  "type": "object",
+  "properties": {
+    "acknowledgedSeq": {
+      "type": [
+        "string",
+        "integer"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)$"
+    },
+    "accepted": {
+      "type": [
+        "string",
+        "integer"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)$"
+    }
+  },
+  "required": [
+    "acknowledgedSeq",
+    "accepted"
+  ]
+}

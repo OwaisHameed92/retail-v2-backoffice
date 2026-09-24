@@ -1,0 +1,170 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:sspos:web-portal-api:v1:PriceChangeLine",
+  "title": "PriceChangeLine",
+  "description": "Payload of a PriceChangeLine row.",
+  "type": "object",
+  "properties": {
+    "batchId": {
+      "type": "string"
+    },
+    "productId": {
+      "type": "string"
+    },
+    "branchId": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "level": {
+      "enum": [
+        "retail",
+        "trade"
+      ]
+    },
+    "productName": {
+      "type": "string"
+    },
+    "oldPrice": {
+      "type": [
+        "string",
+        "number"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$"
+    },
+    "newPrice": {
+      "type": [
+        "string",
+        "number"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$"
+    },
+    "costPrice": {
+      "type": [
+        "string",
+        "number"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$"
+    },
+    "status": {
+      "enum": [
+        "pending",
+        "applied",
+        "skipped"
+      ]
+    },
+    "note": {
+      "type": "string"
+    },
+    "labelPrinted": {
+      "type": "boolean"
+    },
+    "labelPrintedAt": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "changePercent": {
+      "type": [
+        "string",
+        "number",
+        "null"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$"
+    },
+    "awaitsLabel": {
+      "type": "boolean"
+    },
+    "id": {
+      "type": "string"
+    },
+    "companyId": {
+      "type": "string"
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "rowVersion": {
+      "type": [
+        "string",
+        "integer"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)$"
+    },
+    "deletedAt": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "isDeleted": {
+      "type": "boolean"
+    },
+    "domainEvents": {
+      "type": [
+        "array",
+        "null"
+      ],
+      "items": {
+        "type": "object",
+        "properties": {
+          "eventId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "occurredAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "version": {
+            "type": [
+              "string",
+              "integer"
+            ],
+            "pattern": "^-?(?:0|[1-9]\\d*)$"
+          }
+        },
+        "required": [
+          "eventId",
+          "occurredAt",
+          "version"
+        ]
+      }
+    }
+  },
+  "required": [
+    "batchId",
+    "productId",
+    "branchId",
+    "level",
+    "productName",
+    "oldPrice",
+    "newPrice",
+    "costPrice",
+    "status",
+    "note",
+    "labelPrinted",
+    "labelPrintedAt",
+    "changePercent",
+    "awaitsLabel",
+    "id",
+    "companyId",
+    "createdAt",
+    "updatedAt",
+    "rowVersion",
+    "deletedAt",
+    "isDeleted",
+    "domainEvents"
+  ]
+}

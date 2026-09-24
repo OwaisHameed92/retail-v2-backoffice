@@ -1,0 +1,176 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:sspos:web-portal-api:v1:PaymentAttempt",
+  "title": "PaymentAttempt",
+  "description": "Payload of a PaymentAttempt row.",
+  "type": "object",
+  "properties": {
+    "saleId": {
+      "type": "string"
+    },
+    "provider": {
+      "type": "string"
+    },
+    "amount": {
+      "type": [
+        "string",
+        "number"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$"
+    },
+    "cashback": {
+      "type": [
+        "string",
+        "number"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$"
+    },
+    "status": {
+      "enum": [
+        "requested",
+        "approved",
+        "declined",
+        "timeout",
+        "unknown",
+        "recovered",
+        "reversed"
+      ]
+    },
+    "terminalTxnId": {
+      "type": "string"
+    },
+    "providerRef": {
+      "type": "string"
+    },
+    "authCode": {
+      "type": "string"
+    },
+    "scheme": {
+      "type": "string"
+    },
+    "last4": {
+      "type": "string"
+    },
+    "entryMode": {
+      "type": "string"
+    },
+    "responseJson": {
+      "type": "string"
+    },
+    "idempotencyKey": {
+      "type": "string"
+    },
+    "userId": {
+      "type": "string"
+    },
+    "at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "needsRecovery": {
+      "type": "boolean"
+    },
+    "isApproved": {
+      "type": "boolean"
+    },
+    "registerId": {
+      "type": "string"
+    },
+    "branchId": {
+      "type": "string"
+    },
+    "id": {
+      "type": "string"
+    },
+    "companyId": {
+      "type": "string"
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "rowVersion": {
+      "type": [
+        "string",
+        "integer"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)$"
+    },
+    "deletedAt": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "isDeleted": {
+      "type": "boolean"
+    },
+    "domainEvents": {
+      "type": [
+        "array",
+        "null"
+      ],
+      "items": {
+        "type": "object",
+        "properties": {
+          "eventId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "occurredAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "version": {
+            "type": [
+              "string",
+              "integer"
+            ],
+            "pattern": "^-?(?:0|[1-9]\\d*)$"
+          }
+        },
+        "required": [
+          "eventId",
+          "occurredAt",
+          "version"
+        ]
+      }
+    }
+  },
+  "required": [
+    "saleId",
+    "provider",
+    "amount",
+    "cashback",
+    "status",
+    "terminalTxnId",
+    "providerRef",
+    "authCode",
+    "scheme",
+    "last4",
+    "entryMode",
+    "responseJson",
+    "idempotencyKey",
+    "userId",
+    "at",
+    "needsRecovery",
+    "isApproved",
+    "registerId",
+    "branchId",
+    "id",
+    "companyId",
+    "createdAt",
+    "updatedAt",
+    "rowVersion",
+    "deletedAt",
+    "isDeleted",
+    "domainEvents"
+  ]
+}

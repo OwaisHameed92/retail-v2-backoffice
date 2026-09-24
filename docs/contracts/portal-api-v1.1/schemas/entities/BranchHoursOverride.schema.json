@@ -1,0 +1,140 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:sspos:web-portal-api:v1:BranchHoursOverride",
+  "title": "BranchHoursOverride",
+  "description": "Payload of a BranchHoursOverride row.",
+  "type": "object",
+  "properties": {
+    "date": {
+      "type": "string",
+      "format": "date"
+    },
+    "seasonalEventId": {
+      "type": "string"
+    },
+    "seasonalEventName": {
+      "type": "string"
+    },
+    "isClosed": {
+      "type": "boolean"
+    },
+    "licensedOpensAt": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "time"
+    },
+    "licensedClosesAt": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "time"
+    },
+    "generalOpensAt": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "time"
+    },
+    "generalClosesAt": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "time"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "branchId": {
+      "type": "string"
+    },
+    "id": {
+      "type": "string"
+    },
+    "companyId": {
+      "type": "string"
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "rowVersion": {
+      "type": [
+        "string",
+        "integer"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)$"
+    },
+    "deletedAt": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "isDeleted": {
+      "type": "boolean"
+    },
+    "domainEvents": {
+      "type": [
+        "array",
+        "null"
+      ],
+      "items": {
+        "type": "object",
+        "properties": {
+          "eventId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "occurredAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "version": {
+            "type": [
+              "string",
+              "integer"
+            ],
+            "pattern": "^-?(?:0|[1-9]\\d*)$"
+          }
+        },
+        "required": [
+          "eventId",
+          "occurredAt",
+          "version"
+        ]
+      }
+    }
+  },
+  "required": [
+    "date",
+    "seasonalEventId",
+    "seasonalEventName",
+    "isClosed",
+    "licensedOpensAt",
+    "licensedClosesAt",
+    "generalOpensAt",
+    "generalClosesAt",
+    "notes",
+    "branchId",
+    "id",
+    "companyId",
+    "createdAt",
+    "updatedAt",
+    "rowVersion",
+    "deletedAt",
+    "isDeleted",
+    "domainEvents"
+  ]
+}

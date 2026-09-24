@@ -1,0 +1,281 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:sspos:web-portal-api:v1:SaleLine",
+  "title": "SaleLine",
+  "description": "Payload of a SaleLine row.",
+  "type": "object",
+  "properties": {
+    "saleId": {
+      "type": "string"
+    },
+    "productId": {
+      "type": "string"
+    },
+    "originalLineId": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "position": {
+      "type": [
+        "string",
+        "integer"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)$"
+    },
+    "name": {
+      "type": "string"
+    },
+    "barcode": {
+      "type": "string"
+    },
+    "unitId": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "qty": {
+      "type": [
+        "string",
+        "number"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$"
+    },
+    "unitPrice": {
+      "type": [
+        "string",
+        "number"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$"
+    },
+    "lineDiscount": {
+      "type": [
+        "string",
+        "number"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$"
+    },
+    "discountSource": {
+      "enum": [
+        "manual",
+        "promotion",
+        "customerGroup",
+        "staff",
+        "coupon"
+      ]
+    },
+    "promotionId": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "promotionDiscount": {
+      "type": [
+        "string",
+        "number"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$"
+    },
+    "promotionName": {
+      "type": "string"
+    },
+    "discountReason": {
+      "type": "string"
+    },
+    "couponDiscount": {
+      "type": [
+        "string",
+        "number"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$"
+    },
+    "vatRateId": {
+      "type": "string"
+    },
+    "vatPercentage": {
+      "type": [
+        "string",
+        "number"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$"
+    },
+    "vatAmount": {
+      "type": [
+        "string",
+        "number"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$"
+    },
+    "depositAmount": {
+      "type": [
+        "string",
+        "number"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$"
+    },
+    "costAtSale": {
+      "type": [
+        "string",
+        "number"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$"
+    },
+    "restockFlag": {
+      "type": "boolean"
+    },
+    "isDamaged": {
+      "type": "boolean"
+    },
+    "reasonId": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "ageVerifiedDob": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date"
+    },
+    "isPmpPriced": {
+      "type": "boolean"
+    },
+    "isAgeRestricted": {
+      "type": "boolean"
+    },
+    "isWeighed": {
+      "type": "boolean"
+    },
+    "isBagCharge": {
+      "type": "boolean"
+    },
+    "isCharityRoundUp": {
+      "type": "boolean"
+    },
+    "goodsTotal": {
+      "type": [
+        "string",
+        "number"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$"
+    },
+    "lineTotal": {
+      "type": [
+        "string",
+        "number"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$"
+    },
+    "id": {
+      "type": "string"
+    },
+    "companyId": {
+      "type": "string"
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "rowVersion": {
+      "type": [
+        "string",
+        "integer"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)$"
+    },
+    "deletedAt": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "isDeleted": {
+      "type": "boolean"
+    },
+    "domainEvents": {
+      "type": [
+        "array",
+        "null"
+      ],
+      "items": {
+        "type": "object",
+        "properties": {
+          "eventId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "occurredAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "version": {
+            "type": [
+              "string",
+              "integer"
+            ],
+            "pattern": "^-?(?:0|[1-9]\\d*)$"
+          }
+        },
+        "required": [
+          "eventId",
+          "occurredAt",
+          "version"
+        ]
+      }
+    }
+  },
+  "required": [
+    "saleId",
+    "productId",
+    "originalLineId",
+    "position",
+    "name",
+    "barcode",
+    "unitId",
+    "qty",
+    "unitPrice",
+    "lineDiscount",
+    "discountSource",
+    "promotionId",
+    "promotionDiscount",
+    "promotionName",
+    "discountReason",
+    "couponDiscount",
+    "vatRateId",
+    "vatPercentage",
+    "vatAmount",
+    "depositAmount",
+    "costAtSale",
+    "restockFlag",
+    "isDamaged",
+    "reasonId",
+    "ageVerifiedDob",
+    "isPmpPriced",
+    "isAgeRestricted",
+    "isWeighed",
+    "isBagCharge",
+    "isCharityRoundUp",
+    "goodsTotal",
+    "lineTotal",
+    "id",
+    "companyId",
+    "createdAt",
+    "updatedAt",
+    "rowVersion",
+    "deletedAt",
+    "isDeleted",
+    "domainEvents"
+  ]
+}

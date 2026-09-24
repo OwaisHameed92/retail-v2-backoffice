@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:sspos:web-portal-api:v1:hello-reply",
+  "title": "hello-reply",
+  "description": "GET /api/v1/sync/hello reply (proposal).",
+  "type": "object",
+  "properties": {
+    "contractVersion": {
+      "type": [
+        "string",
+        "integer"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)$"
+    },
+    "companyId": {
+      "type": "string"
+    },
+    "branchId": {
+      "type": "string"
+    },
+    "branchName": {
+      "type": "string"
+    },
+    "serverTimeUtc": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "maxBatchRows": {
+      "type": [
+        "string",
+        "integer"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)$"
+    }
+  },
+  "required": [
+    "contractVersion",
+    "companyId",
+    "branchId",
+    "branchName",
+    "serverTimeUtc",
+    "maxBatchRows"
+  ]
+}

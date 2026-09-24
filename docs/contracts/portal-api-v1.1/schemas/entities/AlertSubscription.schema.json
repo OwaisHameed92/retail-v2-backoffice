@@ -1,0 +1,147 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:sspos:web-portal-api:v1:AlertSubscription",
+  "title": "AlertSubscription",
+  "description": "Payload of a AlertSubscription row.",
+  "type": "object",
+  "properties": {
+    "userId": {
+      "type": "string"
+    },
+    "type": {
+      "enum": [
+        "lowStock",
+        "expiry",
+        "failedBackup",
+        "tillVariance",
+        "poReceived",
+        "supplierPaymentDue",
+        "customerOrderReady",
+        "refundVoidOverThreshold",
+        "failedPayment",
+        "endOfDayNotClosed",
+        "licenceExpiry",
+        "complianceCheckMissed",
+        "complianceLicenceExpiry"
+      ]
+    },
+    "isEnabled": {
+      "type": "boolean"
+    },
+    "channels": {
+      "type": "string"
+    },
+    "emailAddress": {
+      "type": "string"
+    },
+    "whatsAppNumber": {
+      "type": "string"
+    },
+    "quietHoursStartMinute": {
+      "type": [
+        "string",
+        "integer",
+        "null"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)$"
+    },
+    "quietHoursEndMinute": {
+      "type": [
+        "string",
+        "integer",
+        "null"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)$"
+    },
+    "isDigest": {
+      "type": "boolean"
+    },
+    "branchId": {
+      "type": "string"
+    },
+    "id": {
+      "type": "string"
+    },
+    "companyId": {
+      "type": "string"
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "rowVersion": {
+      "type": [
+        "string",
+        "integer"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)$"
+    },
+    "deletedAt": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "isDeleted": {
+      "type": "boolean"
+    },
+    "domainEvents": {
+      "type": [
+        "array",
+        "null"
+      ],
+      "items": {
+        "type": "object",
+        "properties": {
+          "eventId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "occurredAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "version": {
+            "type": [
+              "string",
+              "integer"
+            ],
+            "pattern": "^-?(?:0|[1-9]\\d*)$"
+          }
+        },
+        "required": [
+          "eventId",
+          "occurredAt",
+          "version"
+        ]
+      }
+    }
+  },
+  "required": [
+    "userId",
+    "type",
+    "isEnabled",
+    "channels",
+    "emailAddress",
+    "whatsAppNumber",
+    "quietHoursStartMinute",
+    "quietHoursEndMinute",
+    "isDigest",
+    "branchId",
+    "id",
+    "companyId",
+    "createdAt",
+    "updatedAt",
+    "rowVersion",
+    "deletedAt",
+    "isDeleted",
+    "domainEvents"
+  ]
+}
