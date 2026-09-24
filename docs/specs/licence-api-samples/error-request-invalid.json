@@ -1,0 +1,7 @@
+{
+    "code": "request.invalid",
+    "message": "The till sent a request we could not read. The device id field is required.",
+    "traceId": "01K5XTEST00000000000000033",
+    "retryAfterSeconds": null,
+    "rejectedKey": null
+}

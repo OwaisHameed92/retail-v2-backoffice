@@ -1,0 +1,7 @@
+{
+    "code": "contract.unsupported",
+    "message": "This version of the till is not supported. Please update SSPOS.",
+    "traceId": "01K5XTEST00000000000000040",
+    "retryAfterSeconds": null,
+    "rejectedKey": null
+}

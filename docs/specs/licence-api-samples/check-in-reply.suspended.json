@@ -1,0 +1,21 @@
+{
+    "licence": {
+        "id": "01K5XTEST00000000000000009",
+        "keyLast4": "P8T5",
+        "status": "suspended",
+        "plan": "standard",
+        "features": [
+            "stockControl",
+            "cashOffice"
+        ],
+        "activatedAt": "2026-09-24T09:00:00Z",
+        "trialEndsAt": "2026-10-01T09:00:00Z",
+        "expiresAt": null,
+        "graceDays": 3,
+        "deviceId": "PC-7F3A9C21-FRONT"
+    },
+    "token": "eyJhbGciOiJFZERTQSIsImtpZCI6ImxrLXRlc3QtMDEiLCJ0eXAiOiJzc3Bvcy1saWNlbmNlK2p3dCJ9.eyJpc3MiOiJzc3Bvcy1wb3J0YWwiLCJpYXQiOjE3OTAzMjY4MDAsImp0aSI6IjAxSzVYVEVTVDAwMDAwMDAwMDAwMDAwMDI3IiwibGljIjoiMDFLNVhURVNUMDAwMDAwMDAwMDAwMDAwMDkiLCJrZXlMYXN0NCI6IlA4VDUiLCJjb21wYW55SWQiOiIwMUs1WFRFU1QwMDAwMDAwMDAwMDAwMDAwMyIsImJyYW5jaElkIjoiMDFLNVhURVNUMDAwMDAwMDAwMDAwMDAwMDUiLCJyZWdpc3RlcklkIjoiMDFLNVhURVNUMDAwMDAwMDAwMDAwMDAwMDciLCJkZXZpY2VJZCI6IlBDLTdGM0E5QzIxLUZST05UIiwic3RhdHVzIjoic3VzcGVuZGVkIiwicGxhbiI6InN0YW5kYXJkIiwiZmVhdHVyZXMiOlsic3RvY2tDb250cm9sIiwiY2FzaE9mZmljZSJdLCJleHBpcmVzQXQiOiIyMDI2LTEwLTAxVDA5OjAwOjAwWiIsImdyYWNlRGF5cyI6MywidmFsaWRVbnRpbCI6IjIwMjYtMTAtMDRUMDk6MDA6MDBaIn0.L0OgxyYS9X-_HTqkqWX5CG-Y7B6WkLcPnpJGm-Ehyr7edXfNpaUTZHFpVMxnzqVuRmv-w5pv1eaKOuMyiTSrBQ",
+    "message": "This licence is suspended. Unpaid invoice. Please contact Switch & Save support.",
+    "checkInEverySeconds": 86400,
+    "serverTimeUtc": "2026-09-25T09:00:00Z"
+}

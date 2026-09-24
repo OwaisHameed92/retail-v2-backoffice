@@ -1,60 +1,42 @@
 import { type AdminRecord } from '@/components/admin/types';
-import { Button } from '@/components/ui/button';
-import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { useForm } from '@inertiajs/react';
-import { useState, type FormEventHandler } from 'react';
+import { ConfirmDialog } from '@/components/shared/confirm-dialog';
+import { router } from '@inertiajs/react';
 
-/** Deactivate (with confirmation) or reactivate an admin user. */
-export function AdminStatusDialog({ admin, disabled = false }: { admin: AdminRecord; disabled?: boolean }) {
-    const [open, setOpen] = useState(false);
-    const { post, processing } = useForm({});
+/** Runs a request and settles when Inertia finishes, so ConfirmDialog shows its spinner meanwhile. */
+function post(url: string): Promise<void> {
+    return new Promise((resolve) => router.post(url, {}, { preserveScroll: true, onFinish: () => resolve() }));
+}
 
-    const deactivate: FormEventHandler = (e) => {
-        e.preventDefault();
-        post(route('admin.admins.deactivate', admin.id), {
-            preserveScroll: true,
-            onFinish: () => setOpen(false),
-        });
-    };
+interface AdminStatusDialogProps {
+    admin: AdminRecord;
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+}
 
-    if (!admin.isActive) {
+/** Confirm deactivating (or reactivating) an admin user. Opened from the row's actions menu. */
+export function AdminStatusDialog({ admin, open, onOpenChange }: AdminStatusDialogProps) {
+    if (admin.isActive) {
         return (
-            <Button
-                variant="ghost"
-                size="sm"
-                disabled={processing}
-                onClick={() => post(route('admin.admins.reactivate', admin.id), { preserveScroll: true })}
-            >
-                Reactivate
-            </Button>
+            <ConfirmDialog
+                open={open}
+                onOpenChange={onOpenChange}
+                title={`Deactivate ${admin.name}?`}
+                description={`${admin.name} will be signed out and will not be able to log in to the admin area. You can reactivate them later.`}
+                confirmLabel="Deactivate"
+                destructive
+                onConfirm={() => post(route('admin.admins.deactivate', admin.id))}
+            />
         );
     }
 
     return (
-        <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-                <Button variant="ghost" size="sm" disabled={disabled} className="text-destructive hover:text-destructive/80">
-                    Deactivate
-                </Button>
-            </DialogTrigger>
-            <DialogContent>
-                <DialogTitle>Deactivate {admin.name}?</DialogTitle>
-                <DialogDescription>
-                    {admin.name} will be signed out and will not be able to log in to the admin area. You can reactivate them later.
-                </DialogDescription>
-                <form onSubmit={deactivate}>
-                    <DialogFooter className="gap-2">
-                        <DialogClose asChild>
-                            <Button type="button" variant="secondary">
-                                Cancel
-                            </Button>
-                        </DialogClose>
-                        <Button type="submit" variant="destructive" disabled={processing}>
-                            Deactivate
-                        </Button>
-                    </DialogFooter>
-                </form>
-            </DialogContent>
-        </Dialog>
+        <ConfirmDialog
+            open={open}
+            onOpenChange={onOpenChange}
+            title={`Reactivate ${admin.name}?`}
+            description={`${admin.name} will be able to log in to the admin area again with their existing password.`}
+            confirmLabel="Reactivate"
+            onConfirm={() => post(route('admin.admins.reactivate', admin.id))}
+        />
     );
 }

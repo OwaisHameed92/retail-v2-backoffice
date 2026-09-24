@@ -20,11 +20,7 @@ interface EmailTemplatesProps {
 }
 
 function AudienceBadge({ audience }: { audience: EmailTemplateItem['audience'] }) {
-    return (
-        <Badge variant="outline" className="font-normal">
-            {audience === 'staff' ? 'Staff' : 'Customer'}
-        </Badge>
-    );
+    return <Badge variant={audience === 'staff' ? 'neutral' : 'info'}>{audience === 'staff' ? 'Staff' : 'Customer'}</Badge>;
 }
 
 export default function EmailTemplates({ templates, selected }: EmailTemplatesProps) {
@@ -45,8 +41,11 @@ export default function EmailTemplates({ templates, selected }: EmailTemplatesPr
     return (
         <AdminLayout>
             <Head title="Email templates" />
-            <PageHeader title="Emails" description="Every email we send, shown with sample data. Nothing here is real customer data." />
-            <EmailTabs />
+            <PageHeader
+                title="Emails"
+                description="Every email we send, shown with sample data. Nothing here is real customer data."
+                tabs={<EmailTabs />}
+            />
 
             <div className="grid gap-6 lg:grid-cols-[18rem_1fr]">
                 {/* Phones: a select. Desktop: a list. */}
@@ -66,7 +65,8 @@ export default function EmailTemplates({ templates, selected }: EmailTemplatesPr
                 </div>
 
                 <nav aria-label="Templates" className="hidden lg:block">
-                    <ul className="flex flex-col gap-1">
+                    <p className="text-muted-foreground text-2xs mb-2 px-3 font-semibold tracking-[0.06em] uppercase">Templates</p>
+                    <ul className="flex flex-col gap-0.5">
                         {templates.map((template) => {
                             const active = template.key === current.key;
 
@@ -77,8 +77,8 @@ export default function EmailTemplates({ templates, selected }: EmailTemplatesPr
                                         onClick={() => select(template.key)}
                                         aria-current={active ? 'true' : undefined}
                                         className={cn(
-                                            'focus-visible:ring-ring w-full rounded-lg px-3 py-2.5 text-left transition-colors focus-visible:ring-2 focus-visible:outline-none',
-                                            active ? 'bg-card ring-border shadow-sm ring-1' : 'hover:bg-muted/60',
+                                            'focus-visible:ring-ring/40 relative w-full rounded-lg px-3 py-2.5 text-left transition-colors duration-150 outline-none focus-visible:ring-2',
+                                            active ? 'bg-card ring-border shadow-card ring-1' : 'hover:bg-muted/70',
                                         )}
                                     >
                                         <span className={cn('block text-sm font-medium', active && 'text-primary')}>{template.label}</span>
@@ -105,7 +105,7 @@ export default function EmailTemplates({ templates, selected }: EmailTemplatesPr
                         </Button>
                     </div>
 
-                    <dl className="bg-muted/30 grid gap-2 rounded-lg border p-3 text-sm sm:grid-cols-[5rem_1fr]">
+                    <dl className="bg-subtle grid gap-2 rounded-lg border p-3 text-sm sm:grid-cols-[5rem_1fr]">
                         <dt className="text-muted-foreground">Subject</dt>
                         <dd className="min-w-0 font-medium break-words">{current.subject}</dd>
                         <dt className="text-muted-foreground">Test to</dt>

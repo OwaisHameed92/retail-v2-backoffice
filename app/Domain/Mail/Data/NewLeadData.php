@@ -19,5 +19,9 @@ final readonly class NewLeadData
         public CarbonInterface $receivedAt,
         public ?string $message = null,
         public ?string $leadId = null,
+        /** "Same email as tenant Khan Mini Mart" (module 1.6 duplicate check). */
+        public ?string $possibleDuplicate = null,
+        /** Staff member who added the lead in the admin area; null for the public trial form. */
+        public ?string $addedBy = null,
     ) {}
 }

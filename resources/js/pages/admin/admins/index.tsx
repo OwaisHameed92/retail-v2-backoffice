@@ -1,13 +1,19 @@
 import { AdminRoleBadge, AdminStatusBadge } from '@/components/admin/admin-badges';
 import { AdminStatusDialog } from '@/components/admin/admin-status-dialog';
 import { formatDateTime } from '@/components/admin/format';
-import { PageHeader } from '@/components/shared/page-header';
 import { type AdminRecord, type AdminSharedData } from '@/components/admin/types';
+import { EntityCell } from '@/components/shared/entity-cell';
+import { MobileCardList } from '@/components/shared/mobile-card-list';
+import { PageHeader } from '@/components/shared/page-header';
+import { RowActions } from '@/components/shared/row-actions';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import AdminLayout from '@/layouts/admin-layout';
-import { Head, Link, usePage } from '@inertiajs/react';
-import { CircleAlert, CircleCheck, Plus } from 'lucide-react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
+import { CircleAlert, CircleCheck, Pencil, Plus, UserCheck, UserX } from 'lucide-react';
+import { useState } from 'react';
 
 interface AdminIndexProps {
     admins: AdminRecord[];
@@ -16,6 +22,29 @@ interface AdminIndexProps {
 
 export default function AdminIndex({ admins, status }: AdminIndexProps) {
     const { admin: me, errors } = usePage<AdminSharedData & { errors: Record<string, string> }>().props;
+    const [statusFor, setStatusFor] = useState<AdminRecord | null>(null);
+    const activeCount = admins.filter((row) => row.isActive).length;
+
+    const actionsFor = (row: AdminRecord) => (
+        <RowActions
+            label={`Actions for ${row.name}`}
+            actions={[
+                { label: 'Edit', icon: Pencil, href: route('admin.admins.edit', row.id) },
+                { label: 'Reactivate', icon: UserCheck, onSelect: () => setStatusFor(row), hidden: row.id === me.id || row.isActive },
+                { label: 'Deactivate', icon: UserX, onSelect: () => setStatusFor(row), destructive: true, hidden: row.id === me.id || !row.isActive },
+            ]}
+        />
+    );
+
+    const name = (row: AdminRecord) => (
+        <EntityCell
+            name={row.name}
+            subline={row.email}
+            suffix={row.id === me.id ? <span className="text-muted-foreground text-xs font-normal">(you)</span> : undefined}
+        />
+    );
+
+    const open = (row: AdminRecord) => router.visit(route('admin.admins.edit', row.id));
 
     return (
         <AdminLayout>
@@ -23,7 +52,11 @@ export default function AdminIndex({ admins, status }: AdminIndexProps) {
 
             <PageHeader
                 title="Admin users"
-                description="Switch & Save staff who can log in to the admin area."
+                description={
+                    <span className="tabular-nums">
+                        Switch &amp; Save staff who can log in to the admin area. {activeCount} active of {admins.length}.
+                    </span>
+                }
                 actions={
                     <Button asChild>
                         <Link href={route('admin.admins.create')}>
@@ -35,8 +68,8 @@ export default function AdminIndex({ admins, status }: AdminIndexProps) {
             />
 
             {status && (
-                <Alert>
-                    <CircleCheck className="size-4 text-green-600!" />
+                <Alert variant="success">
+                    <CircleCheck className="size-4" />
                     <AlertDescription>{status}</AlertDescription>
                 </Alert>
             )}
@@ -47,56 +80,63 @@ export default function AdminIndex({ admins, status }: AdminIndexProps) {
                 </Alert>
             )}
 
-            <div className="overflow-x-auto rounded-xl border">
-                <table className="w-full text-sm">
-                    <thead className="bg-muted/50 text-muted-foreground text-left">
-                        <tr>
-                            <th className="px-4 py-3 font-medium">Name</th>
-                            <th className="hidden px-4 py-3 font-medium md:table-cell">Email</th>
-                            <th className="px-4 py-3 font-medium">Role</th>
-                            <th className="hidden px-4 py-3 font-medium sm:table-cell">Status</th>
-                            <th className="hidden px-4 py-3 font-medium whitespace-nowrap lg:table-cell">Last login</th>
-                            <th className="px-4 py-3">
-                                <span className="sr-only">Actions</span>
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y">
-                        {admins.map((row) => (
-                            <tr key={row.id} className="hover:bg-muted/30">
-                                <td className="px-4 py-3">
-                                    <div className="font-medium">
-                                        {row.name}
-                                        {row.id === me.id && <span className="text-muted-foreground font-normal"> (you)</span>}
-                                    </div>
-                                    <div className="text-muted-foreground text-xs md:hidden">{row.email}</div>
-                                    <div className="mt-1 sm:hidden">
+            <Card className="overflow-clip p-0">
+                <div className="hidden md:block">
+                    <Table>
+                        <TableHeader>
+                            <TableRow className="hover:bg-transparent">
+                                <TableHead>Name</TableHead>
+                                <TableHead>Role</TableHead>
+                                <TableHead>Status</TableHead>
+                                <TableHead>Last login</TableHead>
+                                <TableHead className="w-12">
+                                    <span className="sr-only">Actions</span>
+                                </TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {admins.map((row) => (
+                                <TableRow
+                                    key={row.id}
+                                    tabIndex={0}
+                                    onClick={() => open(row)}
+                                    onKeyDown={(event) => event.key === 'Enter' && event.target === event.currentTarget && open(row)}
+                                    className="focus-visible:bg-muted/60 cursor-pointer outline-none"
+                                >
+                                    <TableCell>{name(row)}</TableCell>
+                                    <TableCell>
+                                        <AdminRoleBadge label={row.roleLabel} />
+                                    </TableCell>
+                                    <TableCell>
                                         <AdminStatusBadge isActive={row.isActive} />
-                                    </div>
-                                </td>
-                                <td className="text-muted-foreground hidden px-4 py-3 md:table-cell">{row.email}</td>
-                                <td className="px-4 py-3">
-                                    <AdminRoleBadge label={row.roleLabel} />
-                                </td>
-                                <td className="hidden px-4 py-3 sm:table-cell">
-                                    <AdminStatusBadge isActive={row.isActive} />
-                                </td>
-                                <td className="text-muted-foreground hidden px-4 py-3 whitespace-nowrap lg:table-cell">
-                                    {formatDateTime(row.lastLoginAt)}
-                                </td>
-                                <td className="px-4 py-3">
-                                    <div className="flex justify-end gap-1">
-                                        <Button variant="ghost" size="sm" asChild>
-                                            <Link href={route('admin.admins.edit', row.id)}>Edit</Link>
-                                        </Button>
-                                        {row.id !== me.id && <AdminStatusDialog admin={row} />}
-                                    </div>
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
+                                    </TableCell>
+                                    <TableCell className="text-muted-foreground whitespace-nowrap tabular-nums">
+                                        {formatDateTime(row.lastLoginAt)}
+                                    </TableCell>
+                                    <TableCell>{actionsFor(row)}</TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </div>
+                <MobileCardList
+                    className="md:hidden"
+                    items={admins}
+                    getKey={(row) => row.id}
+                    onItemClick={open}
+                    render={(row) => ({
+                        title: name(row),
+                        aside: <AdminStatusBadge isActive={row.isActive} />,
+                        fields: [
+                            { label: 'Role', value: row.roleLabel },
+                            { label: 'Last login', value: formatDateTime(row.lastLoginAt) },
+                        ],
+                        actions: actionsFor(row),
+                    })}
+                />
+            </Card>
+
+            {statusFor && <AdminStatusDialog admin={statusFor} open onOpenChange={(value) => !value && setStatusFor(null)} />}
         </AdminLayout>
     );
 }

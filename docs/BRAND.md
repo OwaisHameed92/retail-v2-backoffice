@@ -3,12 +3,18 @@
 The owner's bar: **top-notch, professional, classic. Full functionality, no compromise.** Every screen is judged
 against this file. If a screen would look at home in Stripe, Linear or Xero's dashboard, it passes.
 
+> **Redesign in progress (paused).** Tokens, shared components and layouts were upgraded; see
+> `docs/ui-redesign-status.md` and the "UI redesign additions" section of `docs/components.md`. Where this file
+> and those differ, follow them: page titles come from `PageHeader` (text-2xl), lists use `DataTable` column
+> `meta`, forms use `FormCard`/`FormSection`/`FormField`, detail pages use `SectionCard`/`DescriptionList`/`Timeline`.
+> The full design-system rewrite of this file is step 7 of the remaining work.
+
 ## Brand
 
 - Name: **Switch & Save** (the till product is SSPOS). Tagline: "Smart Solutions for Smart Businesses".
 - Logo files in `public/images/brand/`: `switch-save-logo.png` (light), `switch-save-logo-dark.png` (dark),
   `switch-save-icon.png` (round "S" mark). Components: `BrandLogo` (full wordmark), `AppLogoIcon` (mark),
-  `AppLogo` (mark + name + subtitle, used in sidebars). Never recolour or stretch the logo.
+  `SidebarBrand` (mark + name + subtitle, used in sidebars). Never recolour or stretch the logo.
 - Colours (tokens in `resources/css/app.css`, use the Tailwind names, never raw hex):
 
 | Role | Token / class | Use |

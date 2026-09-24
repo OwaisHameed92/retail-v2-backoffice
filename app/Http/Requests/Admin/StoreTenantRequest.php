@@ -30,6 +30,8 @@ class StoreTenantRequest extends FormRequest
             'tills' => ['required', 'integer', 'min:1', 'max:'.NewTenant::MAX_TILLS],
             'owner_name' => ['required', 'string', 'max:120'],
             'owner_email' => ['required', 'string', 'email', 'max:255'],
+            // Module 1.3: plan for the new tills; blank = the portal default plan.
+            'plan_id' => ['nullable', 'string', Rule::exists('plans', 'id')->where('is_active', true)->whereNull('deleted_at')],
         ];
     }
 
@@ -46,6 +48,7 @@ class StoreTenantRequest extends FormRequest
             'tills.max' => 'Add up to '.NewTenant::MAX_TILLS.' tills now; you can add more later.',
             'owner_name.required' => 'Enter the owner’s name.',
             'owner_email.required' => 'Enter the owner’s email. We send them a link to set their password.',
+            'plan_id.exists' => 'Choose an active plan.',
         ];
     }
 
@@ -71,6 +74,7 @@ class StoreTenantRequest extends FormRequest
             ownerName: (string) $this->input('owner_name'),
             ownerEmail: (string) $this->input('owner_email'),
             status: CompanyStatus::from((string) $this->input('status')),
+            planId: $this->filled('plan_id') ? (string) $this->input('plan_id') : null,
         );
     }
 }

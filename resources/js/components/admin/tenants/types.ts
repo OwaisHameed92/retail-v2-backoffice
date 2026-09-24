@@ -1,3 +1,5 @@
+import { type TenantBillingData } from '@/components/admin/billing/types';
+import { type PlanOption, type TenantLicensing } from '@/components/admin/licences/types';
 import { type Paginated } from '@/components/shared/data-table';
 import { type CompanyRole, type CompanyStatus } from '@/types';
 
@@ -104,5 +106,10 @@ export interface TenantShowProps {
     nations: Option<Nation>[];
     roles: Option<CompanyRole>[];
     maxTills: number;
-    can: { manage: boolean; impersonate: boolean };
+    /** Module 1.3: licences of this tenant and of each till. */
+    licensing: TenantLicensing;
+    plans: PlanOption[];
+    /** Module 1.8: billing settings, balance, invoices and payments. */
+    billing: TenantBillingData;
+    can: { manage: boolean; impersonate: boolean; manageLicences: boolean };
 }

@@ -4,6 +4,7 @@ import { PlanStatusBadge } from '@/components/admin/plans/plan-status-badge';
 import { type PlanRow } from '@/components/admin/plans/types';
 import { DataTable, useTableQuery, type Paginated } from '@/components/shared/data-table';
 import { EmptyState } from '@/components/shared/empty-state';
+import { EntityCell } from '@/components/shared/entity-cell';
 import { PageHeader } from '@/components/shared/page-header';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -34,34 +35,33 @@ const columns: ColumnDef<PlanRow>[] = [
         id: 'name',
         header: 'Plan',
         enableSorting: true,
-        cell: ({ row }) => (
-            <div className="min-w-0">
-                <div className="font-medium">{row.original.name}</div>
-                <div className="text-muted-foreground font-mono text-xs">{row.original.code}</div>
-            </div>
-        ),
+        cell: ({ row }) => <EntityCell name={row.original.name} subline={row.original.code} monoSubline shape="square" icon={Layers} />,
     },
     {
         id: 'price_per_till_monthly',
-        header: () => <span className="whitespace-nowrap">Monthly / till</span>,
+        header: 'Monthly / till',
         enableSorting: true,
-        cell: ({ row }) => <span className="tabular-nums">{formatMoney(row.original.pricePerTillMonthly)}</span>,
+        meta: { align: 'right' },
+        cell: ({ row }) => <span className="font-medium tabular-nums">{formatMoney(row.original.pricePerTillMonthly)}</span>,
     },
     {
         id: 'price_per_till_yearly',
-        header: () => <span className="whitespace-nowrap">Yearly / till</span>,
+        header: 'Yearly / till',
         enableSorting: true,
+        meta: { align: 'right' },
         cell: ({ row }) => <span className="tabular-nums">{formatMoney(row.original.pricePerTillYearly)}</span>,
     },
     {
         id: 'trial_days',
         header: 'Trial',
         enableSorting: true,
+        meta: { align: 'right' },
         cell: ({ row }) => <span className="whitespace-nowrap tabular-nums">{formatDays(row.original.trialDays, 'No trial')}</span>,
     },
     {
         id: 'features',
         header: 'Features',
+        meta: { align: 'right' },
         cell: ({ row }) => <span className="tabular-nums">{row.original.featureCount}</span>,
     },
     {
@@ -72,6 +72,7 @@ const columns: ColumnDef<PlanRow>[] = [
     {
         id: 'actions',
         header: () => <span className="sr-only">Actions</span>,
+        meta: { cellClassName: 'w-12' },
         cell: ({ row }) => <PlanRowMenu plan={row.original} />,
     },
 ];
@@ -81,7 +82,7 @@ function StatusFilter({ value, counts }: { value: string; counts: Counts }) {
 
     return (
         <Select value={value} onValueChange={(next) => update({ status: next === 'current' ? undefined : next, page: 1 })}>
-            <SelectTrigger className="h-9 w-full sm:w-56" aria-label="Filter by status">
+            <SelectTrigger className="h-9 w-full sm:w-52" aria-label="Filter by status">
                 <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -144,7 +145,7 @@ export default function PlansIndex({ plans, filters, counts }: PlansIndexProps) 
                             action={addButton}
                         />
                     ) : (
-                        <EmptyState icon={SearchX} title="No plans match" body="Try a different search or status filter." />
+                        <EmptyState icon={SearchX} title="No plans match" body="Try a different search or status filter." tone="neutral" />
                     )
                 }
             />

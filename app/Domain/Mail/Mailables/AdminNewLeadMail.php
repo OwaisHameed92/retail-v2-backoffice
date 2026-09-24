@@ -8,7 +8,8 @@ use Illuminate\Mail\Mailables\Address;
 use Illuminate\Mail\Mailables\Content;
 
 /**
- * Staff alert for a new trial request (public trial form, module 1.10). Goes to config('sspos.staff_email').
+ * Staff alert for a new trial request (CreateLead, module 1.6: admin "Add lead" and the public trial form 1.10).
+ * Goes to every address in config('sspos.lead_alert_emails'), or config('sspos.staff_email') when that is empty.
  *
  * Usage: Mail::queue(new AdminNewLeadMail($data));
  */
@@ -62,7 +63,13 @@ final class AdminNewLeadMail extends BrandedMailable
 
     protected function defaultRecipients(): array
     {
-        return [new Address((string) config('sspos.staff_email'), 'Switch & Save team')];
+        $list = array_values(array_filter(array_map('trim', (array) config('sspos.lead_alert_emails', []))));
+
+        if ($list === []) {
+            return [new Address((string) config('sspos.staff_email'), 'Switch & Save team')];
+        }
+
+        return array_map(fn (string $email) => new Address($email), $list);
     }
 
     public function content(): Content
@@ -77,9 +84,16 @@ final class AdminNewLeadMail extends BrandedMailable
             'Received' => MailFormat::dateTime($this->data->receivedAt),
         ];
 
+        if ($this->data->addedBy !== null) {
+            $facts['Added by'] = $this->data->addedBy;
+        }
+
+        $leadsUrl = rtrim((string) config('app.url'), '/').'/admin/leads';
+
         return new Content(markdown: 'mail.admin-new-lead', with: [
             'facts' => $facts,
-            'leadsUrl' => rtrim((string) config('app.url'), '/').'/admin/leads',
+            'leadsUrl' => $leadsUrl,
+            'leadUrl' => $this->data->leadId !== null ? $leadsUrl.'/'.$this->data->leadId : $leadsUrl,
         ]);
     }
 }

@@ -1,5 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { cn } from '@/lib/utils';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { PER_PAGE_OPTIONS, type TableMeta } from './types';
 
@@ -8,25 +9,36 @@ interface DataTablePaginationProps {
     onPageChange: (page: number) => void;
     onPerPageChange: (perPage: number) => void;
     disabled?: boolean;
+    className?: string;
 }
 
 const number = new Intl.NumberFormat('en-GB');
 
-export function DataTablePagination({ meta, onPageChange, onPerPageChange, disabled = false }: DataTablePaginationProps) {
+/** "1–25 of 132" on the left; rows per page, page x of y and previous/next on the right. */
+export function DataTablePagination({ meta, onPageChange, onPerPageChange, disabled = false, className }: DataTablePaginationProps) {
     const lastPage = meta.lastPage ?? Math.max(1, Math.ceil(meta.total / meta.perPage));
     const from = meta.total === 0 ? 0 : (meta.page - 1) * meta.perPage + 1;
     const to = Math.min(meta.page * meta.perPage, meta.total);
 
     return (
-        <div className="flex flex-col-reverse gap-3 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
+        <div className={cn('text-muted-foreground flex items-center justify-between gap-3 text-[13px]', className)}>
             <p className="tabular-nums">
-                {meta.total === 0 ? 'No results' : `Showing ${number.format(from)}–${number.format(to)} of ${number.format(meta.total)}`}
+                {meta.total === 0 ? (
+                    'No results'
+                ) : (
+                    <>
+                        <span className="text-foreground font-medium">
+                            {number.format(from)}–{number.format(to)}
+                        </span>{' '}
+                        of <span className="text-foreground font-medium">{number.format(meta.total)}</span>
+                    </>
+                )}
             </p>
-            <div className="flex items-center justify-between gap-4 sm:justify-end">
-                <div className="flex items-center gap-2">
-                    <span className="hidden sm:inline">Rows per page</span>
+            <div className="flex items-center gap-4">
+                <div className="hidden items-center gap-2 sm:flex">
+                    <span>Rows per page</span>
                     <Select value={String(meta.perPage)} onValueChange={(value) => onPerPageChange(Number(value))} disabled={disabled}>
-                        <SelectTrigger className="h-8 w-[4.5rem]" aria-label="Rows per page">
+                        <SelectTrigger className="h-8 w-[4.25rem] text-[13px]" aria-label="Rows per page">
                             <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -42,26 +54,28 @@ export function DataTablePagination({ meta, onPageChange, onPerPageChange, disab
                     <span className="tabular-nums">
                         Page {meta.page} of {lastPage}
                     </span>
-                    <Button
-                        variant="outline"
-                        size="icon"
-                        className="size-8"
-                        onClick={() => onPageChange(meta.page - 1)}
-                        disabled={disabled || meta.page <= 1}
-                        aria-label="Previous page"
-                    >
-                        <ChevronLeft />
-                    </Button>
-                    <Button
-                        variant="outline"
-                        size="icon"
-                        className="size-8"
-                        onClick={() => onPageChange(meta.page + 1)}
-                        disabled={disabled || meta.page >= lastPage}
-                        aria-label="Next page"
-                    >
-                        <ChevronRight />
-                    </Button>
+                    <div className="flex items-center gap-1">
+                        <Button
+                            variant="outline"
+                            size="icon"
+                            className="size-8"
+                            onClick={() => onPageChange(meta.page - 1)}
+                            disabled={disabled || meta.page <= 1}
+                            aria-label="Previous page"
+                        >
+                            <ChevronLeft />
+                        </Button>
+                        <Button
+                            variant="outline"
+                            size="icon"
+                            className="size-8"
+                            onClick={() => onPageChange(meta.page + 1)}
+                            disabled={disabled || meta.page >= lastPage}
+                            aria-label="Next page"
+                        >
+                            <ChevronRight />
+                        </Button>
+                    </div>
                 </div>
             </div>
         </div>

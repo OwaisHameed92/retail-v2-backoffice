@@ -20,6 +20,9 @@ return [
     // Where staff alerts (new trial requests) are sent. Defaults to the support address.
     'staff_email' => env('SSPOS_STAFF_EMAIL') ?: (env('SSPOS_SUPPORT_EMAIL') ?: 'support@switchandsave.co.uk'),
 
+    // New lead alerts (module 1.6): comma-separated list, e.g. "sales@…,owner@…". Empty = staff_email only.
+    'lead_alert_emails' => array_values(array_filter(array_map('trim', explode(',', (string) env('SSPOS_LEAD_ALERT_EMAILS', ''))))),
+
     // Download page for the SSPOS EPOS (till) installer.
     'epos_download_url' => env('SSPOS_EPOS_DOWNLOAD_URL') ?: 'https://switchandsave.co.uk/download',
 

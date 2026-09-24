@@ -94,7 +94,11 @@ export function Toaster({ errorKeys = DEFAULT_ERROR_KEYS }: { errorKeys?: string
     };
 
     return (
-        <div aria-live="polite" role="status" className="pointer-events-none fixed right-4 bottom-4 z-50 flex w-[calc(100%-2rem)] max-w-sm flex-col gap-2">
+        <div
+            aria-live="polite"
+            role="status"
+            className="pointer-events-none fixed right-4 bottom-4 z-50 flex w-[calc(100%-2rem)] max-w-sm flex-col gap-2"
+        >
             {toasts.map((item) => (
                 <div
                     key={item.id}

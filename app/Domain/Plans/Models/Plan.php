@@ -2,9 +2,11 @@
 
 namespace App\Domain\Plans\Models;
 
+use App\Domain\Licensing\Models\Licence;
 use App\Domain\Plans\Enums\Feature;
 use App\Domain\Plans\Enums\PlanStatus;
 use App\Domain\Shared\Casts\MoneyCast;
+use App\Domain\Tenancy\Scopes\CompanyScope;
 use Carbon\CarbonInterface;
 use Database\Factories\PlanFactory;
 use Illuminate\Database\Eloquent\Builder;
@@ -12,6 +14,7 @@ use Illuminate\Database\Eloquent\Casts\AsEnumCollection;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Collection;
 
@@ -128,14 +131,23 @@ class Plan extends Model
     }
 
     /**
-     * Whether any licence uses this plan. An in-use plan cannot be archived.
+     * Licences on this plan across every company (the documented admin escape hatch: a plan is global),
+     * including revoked and deleted ones.
      *
-     * Always false until module 1.3 (Licences) adds the `licences` table: 1.3 wires this to
-     * `$this->licences()->exists()` (all licences, including suspended and expired ones).
+     * @return HasMany<Licence, $this>
+     */
+    public function licences(): HasMany
+    {
+        return $this->hasMany(Licence::class)->withoutGlobalScope(CompanyScope::class)->withTrashed();
+    }
+
+    /**
+     * Whether any licence uses this plan (any status, revoked and deleted included). An in-use plan cannot be
+     * archived: make it inactive to stop new tills getting it.
      */
     public function isInUse(): bool
     {
-        return false;
+        return $this->licences()->exists();
     }
 
     /**

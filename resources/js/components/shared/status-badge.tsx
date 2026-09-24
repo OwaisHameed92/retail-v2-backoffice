@@ -4,19 +4,20 @@ export type StatusTone = 'success' | 'warning' | 'danger' | 'neutral' | 'info';
 
 export type StatusToneMap = Record<string, StatusTone>;
 
-const toneClasses: Record<StatusTone, string> = {
-    success: 'bg-success-soft text-success-foreground ring-success/25',
+/** Soft pill per tone. Also used by Badge's soft variants, so statuses and labels match everywhere. */
+export const statusToneClasses: Record<StatusTone, string> = {
+    success: 'bg-success-soft text-success-foreground ring-success/20',
     warning: 'bg-warning-soft text-warning-foreground ring-warning/30',
-    danger: 'bg-danger-soft text-destructive ring-destructive/20',
-    info: 'bg-info-soft text-accent-foreground ring-primary/20',
-    neutral: 'bg-muted text-muted-foreground ring-border',
+    danger: 'bg-danger-soft text-danger-foreground ring-destructive/20',
+    info: 'bg-info-soft text-info-foreground ring-primary/20',
+    neutral: 'bg-muted text-muted-foreground ring-border-strong/70',
 };
 
-const dotClasses: Record<StatusTone, string> = {
+export const statusDotClasses: Record<StatusTone, string> = {
     success: 'bg-success',
     warning: 'bg-warning',
     danger: 'bg-destructive',
-    info: 'bg-primary',
+    info: 'bg-info',
     neutral: 'bg-muted-foreground/60',
 };
 
@@ -28,10 +29,13 @@ export const defaultStatusTones: StatusToneMap = {
     completed: 'success',
     online: 'success',
     approved: 'success',
+    sent: 'success',
+    delivered: 'success',
     trial: 'info',
     new: 'info',
     issued: 'neutral',
     contacted: 'info',
+    queued: 'neutral',
     grace: 'warning',
     pending: 'warning',
     overdue: 'warning',
@@ -46,6 +50,7 @@ export const defaultStatusTones: StatusToneMap = {
     cancelled: 'neutral',
     draft: 'neutral',
     inactive: 'neutral',
+    archived: 'neutral',
 };
 
 /** "gracePeriod" / "grace_period" → "Grace period". */
@@ -59,27 +64,35 @@ export function statusLabel(status: string): string {
     return words.charAt(0).toUpperCase() + words.slice(1);
 }
 
+/** The tone a status maps to, after `tones` overrides. */
+export function statusTone(status: string, tones?: StatusToneMap): StatusTone {
+    return tones?.[status] ?? defaultStatusTones[status] ?? 'neutral';
+}
+
 interface StatusBadgeProps {
     status: string;
     /** Extra or overriding status → tone entries. */
     tones?: StatusToneMap;
     /** Text to show instead of the sentence-cased status. */
     label?: string;
+    /** Force a tone regardless of the status value. */
+    tone?: StatusTone;
     className?: string;
 }
 
-export function StatusBadge({ status, tones, label, className }: StatusBadgeProps) {
-    const tone: StatusTone = tones?.[status] ?? defaultStatusTones[status] ?? 'neutral';
+/** Status pill: coloured dot + sentence-case label on a soft tint. Every status in the product uses it. */
+export function StatusBadge({ status, tones, label, tone: forcedTone, className }: StatusBadgeProps) {
+    const tone: StatusTone = forcedTone ?? statusTone(status, tones);
 
     return (
         <span
             className={cn(
-                'inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-medium whitespace-nowrap ring-1 ring-inset',
-                toneClasses[tone],
+                'inline-flex h-[22px] items-center gap-1.5 rounded-full px-2 text-xs leading-none font-medium whitespace-nowrap ring-1 ring-inset',
+                statusToneClasses[tone],
                 className,
             )}
         >
-            <span className={cn('size-1.5 rounded-full', dotClasses[tone])} aria-hidden />
+            <span className={cn('size-1.5 shrink-0 rounded-full', statusDotClasses[tone])} aria-hidden />
             {label ?? statusLabel(status)}
         </span>
     );

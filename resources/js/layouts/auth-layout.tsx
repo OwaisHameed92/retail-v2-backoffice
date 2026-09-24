@@ -1,8 +1,20 @@
-import AuthLayoutTemplate from '@/layouts/auth/auth-simple-layout';
+import AuthLayoutTemplate, { type AuthVariant } from '@/layouts/auth/auth-split-layout';
+import { type ReactNode } from 'react';
 
-export default function AuthLayout({ children, title, description, ...props }: { children: React.ReactNode; title: string; description: string }) {
+/** Every signed-out page (log in, reset password, verify email, account on hold) uses this split layout. */
+export default function AuthLayout({
+    children,
+    title,
+    description,
+    variant,
+}: {
+    children: ReactNode;
+    title: string;
+    description: ReactNode;
+    variant?: AuthVariant;
+}) {
     return (
-        <AuthLayoutTemplate title={title} description={description} {...props}>
+        <AuthLayoutTemplate title={title} description={description} variant={variant}>
             {children}
         </AuthLayoutTemplate>
     );

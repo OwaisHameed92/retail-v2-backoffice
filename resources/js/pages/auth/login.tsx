@@ -2,8 +2,9 @@ import { Head, useForm } from '@inertiajs/react';
 import { LoaderCircle } from 'lucide-react';
 import { FormEventHandler } from 'react';
 
-import InputError from '@/components/input-error';
+import { FormField } from '@/components/shared/form-section';
 import TextLink from '@/components/text-link';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
@@ -36,62 +37,73 @@ export default function Login({ status, canResetPassword }: LoginProps) {
     };
 
     return (
-        <AuthLayout title="Log in to your account" description="Enter your email and password below to log in">
+        <AuthLayout title="Log in to your backoffice" description="Welcome back. Enter your email and password to continue.">
             <Head title="Log in" />
 
-            <form className="flex flex-col gap-6" onSubmit={submit}>
-                <div className="grid gap-6">
-                    <div className="grid gap-2">
-                        <Label htmlFor="email">Email address</Label>
-                        <Input
-                            id="email"
-                            type="email"
-                            required
-                            autoFocus
-                            tabIndex={1}
-                            autoComplete="email"
-                            value={data.email}
-                            onChange={(e) => setData('email', e.target.value)}
-                            placeholder="email@example.com"
-                        />
-                        <InputError message={errors.email} />
-                    </div>
+            {status && (
+                <Alert variant="success" className="mb-6">
+                    <AlertDescription>{status}</AlertDescription>
+                </Alert>
+            )}
 
-                    <div className="grid gap-2">
-                        <div className="flex items-center">
-                            <Label htmlFor="password">Password</Label>
-                            {canResetPassword && (
-                                <TextLink href={route('password.request')} className="ml-auto text-sm" tabIndex={5}>
-                                    Forgot password?
-                                </TextLink>
-                            )}
-                        </div>
-                        <Input
-                            id="password"
-                            type="password"
-                            required
-                            tabIndex={2}
-                            autoComplete="current-password"
-                            value={data.password}
-                            onChange={(e) => setData('password', e.target.value)}
-                            placeholder="Password"
-                        />
-                        <InputError message={errors.password} />
-                    </div>
+            <form className="grid gap-5" onSubmit={submit}>
+                <FormField id="email" label="Email address" error={errors.email}>
+                    <Input
+                        id="email"
+                        type="email"
+                        required
+                        autoFocus
+                        tabIndex={1}
+                        autoComplete="email"
+                        value={data.email}
+                        onChange={(e) => setData('email', e.target.value)}
+                        placeholder="you@yourshop.co.uk"
+                        aria-invalid={!!errors.email || undefined}
+                    />
+                </FormField>
 
-                    <div className="flex items-center space-x-3">
-                        <Checkbox id="remember" name="remember" tabIndex={3} />
-                        <Label htmlFor="remember">Remember me</Label>
-                    </div>
+                <FormField
+                    id="password"
+                    label="Password"
+                    error={errors.password}
+                    labelAside={
+                        canResetPassword && (
+                            <TextLink href={route('password.request')} className="text-[13px]" tabIndex={5}>
+                                Forgot password?
+                            </TextLink>
+                        )
+                    }
+                >
+                    <Input
+                        id="password"
+                        type="password"
+                        required
+                        tabIndex={2}
+                        autoComplete="current-password"
+                        value={data.password}
+                        onChange={(e) => setData('password', e.target.value)}
+                        aria-invalid={!!errors.password || undefined}
+                    />
+                </FormField>
 
-                    <Button type="submit" className="mt-4 w-full" tabIndex={4} disabled={processing}>
-                        {processing && <LoaderCircle className="h-4 w-4 animate-spin" />}
-                        Log in
-                    </Button>
+                <div className="flex items-center gap-2.5">
+                    <Checkbox
+                        id="remember"
+                        name="remember"
+                        tabIndex={3}
+                        checked={data.remember}
+                        onCheckedChange={(checked) => setData('remember', checked === true)}
+                    />
+                    <Label htmlFor="remember" className="font-normal">
+                        Remember me
+                    </Label>
                 </div>
-            </form>
 
-            {status && <div className="mb-4 text-center text-sm font-medium text-green-600">{status}</div>}
+                <Button type="submit" size="lg" className="mt-1 w-full" tabIndex={4} disabled={processing}>
+                    {processing && <LoaderCircle className="size-4 animate-spin" />}
+                    Log in
+                </Button>
+            </form>
         </AuthLayout>
     );
 }

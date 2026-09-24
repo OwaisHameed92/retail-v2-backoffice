@@ -102,7 +102,7 @@ export function TenantActions({ tenant, stats, members, canManage, canImpersonat
                 open={dialog === 'suspend'}
                 onOpenChange={(open) => setDialog(open ? 'suspend' : null)}
                 title={`Suspend ${tenant.name}?`}
-                description={`Their users see an “account on hold” page instead of the portal, and their ${tills(stats.tills)} lock at the next check-in once licences arrive. You can unsuspend at any time.`}
+                description={`Their users see an “account on hold” page instead of the portal, and their ${tills(stats.tills)} stop trading at their next check-in. You can unsuspend at any time.`}
                 confirmLabel="Suspend"
                 url={route('admin.tenants.suspend', tenant.id)}
                 placeholder="For example: invoice INV-0042 unpaid for 30 days"

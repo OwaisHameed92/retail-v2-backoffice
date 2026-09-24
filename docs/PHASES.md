@@ -33,12 +33,12 @@ Goal: we can create a customer and give each till a working licence key.
 |---|---|---|---|---|
 | 1.1 | Plans | Plan name, price per till per month/year, trial days, grace days, feature flags | 0.3 | done |
 | 1.2 | Tenants | Company, branches, registers (ULIDs, same fields as till's Company/Branch/Register), status (trial, active, overdue, suspended, cancelled), admin screens, login-as-customer | 0.3, 0.4 | done |
-| 1.3 | Licences | Key generation (format + check char, hash + last4), one per register, statuses, device binding, reset device, suspend/revoke/renew, audit log, admin screens | 1.1, 1.2 | todo |
+| 1.3 | Licences | Key generation (format + check char, hash + last4), one per register, statuses, device binding, reset device, suspend/revoke/renew, audit log, admin screens | 1.1, 1.2 | done |
 | 1.4 | Token signing | Ed25519 key pair management (`kid`), JWS issue + verify helper, key rotation command | 0.5 | done |
-| 1.5 | Licence API | `activate`, `check-in`, `deactivate`, `keys` per `docs/specs/licence-api-v1.md`, rate limits, error body, clone alert | 1.3, 1.4 | todo |
-| 1.6 | Leads and trial approval | Lead list (new, contacted, approved, rejected), notes, follow-up date, one-click "approve 7-day trial" → tenant + keys + portal owner login + email | 1.2, 1.3, 1.7 | todo |
+| 1.5 | Licence API | `activate`, `check-in`, `deactivate`, `keys` per `docs/specs/licence-api-v1.md`, rate limits, error body, clone alert | 1.3, 1.4 | done |
+| 1.6 | Leads and trial approval | Lead list (new, contacted, approved, rejected), notes, follow-up date, one-click "approve 7-day trial" → tenant + keys + portal owner login + email | 1.2, 1.3, 1.7 | done |
 | 1.7 | Emails | Mail templates: welcome + keys, trial reminder (day 5), trial ended, renewal, suspended; email log | 0.5 | done |
-| 1.8 | Cash billing | Invoices per tenant, record cash payment → renew licences, overdue list, auto-suspend job after grace | 1.3 | todo |
+| 1.8 | Cash billing | Invoices per tenant, record cash payment → renew licences, overdue list, auto-suspend job after grace | 1.3 | done |
 | 1.9 | Admin dashboard | Numbers (tenants, trials, licences, cash due), new leads, trials ending, till health placeholder | 1.2, 1.3, 1.6, 1.8 | todo |
 | 1.10 | Public trial form | Simple page: name, business, email, phone, shops, tills, captcha → creates a lead | 1.6 | todo |
 
@@ -56,8 +56,8 @@ Goal: tills push their data to us and pull our master data.
 |---|---|---|---|---|
 | 2.1 | Sync keys | Per-branch sync API key (hash + last4), issue/revoke, returned on main-till activation | 1.5 | todo |
 | 2.2 | Push endpoint | `POST /api/v1/sync/push`: gzip, ≤5,000 rows, store raw change log, idempotent on `(entity, entityId, version)` and `(branchId, seq)`, `acknowledgedSeq`, error codes | 2.1 | todo |
-| 2.3 | Entity store: master data | Tables + upsert mappers for the 28 hub-owned entities (products, barcodes, categories, customers, users, promotions…) | 2.2 | todo |
-| 2.4 | Entity store: transactions | Tables + mappers for sales, payments, VAT, stock, shifts, Z reports, cash, purchasing, accounts, HR (till-owned, read-only) | 2.2 | todo |
+| 2.3 | Entity store: master data | Tables + upsert mappers for the 28 hub-owned entities (products, barcodes, categories, customers, users, promotions…) | 2.2 | done |
+| 2.4 | Entity store: transactions | Tables + mappers for sales, payments, VAT, stock, shifts, Z reports, cash, purchasing, accounts, HR (till-owned, read-only) | 2.2 | done |
 | 2.5 | Pull endpoint | Change feed with our own version counter per company, company-wide + branch rows, paging, `hello` | 2.3 | todo |
 | 2.6 | Contract tests | Replay every sample, validate every reply against the JSON schemas | 2.2, 2.5 | todo |
 | 2.7 | Sync monitoring | Per branch: last push/pull, errors, pending, conflicts; till online/version; admin "till health" page | 2.2, 1.5 | todo |
@@ -108,7 +108,7 @@ Waves: 3.1, 3.7, 3.8 · 3.3, 3.4, 3.5, 3.6 in parallel · 3.2, 3.9.
 
 | # | Module | What | Status |
 |---|---|---|---|
-| 5.1 | AI foundation | Claude API client, tool registry over Actions (tenant-scoped), usage metering, preview-then-confirm for writes | todo |
+| 5.1 | AI foundation | Claude API client, tool registry over Actions (tenant-scoped), usage metering, preview-then-confirm for writes | done |
 | 5.2 | Portal assistant | Ask questions about sales/stock; do changes with confirmation | todo |
 | 5.3 | Morning summary | Daily email/WhatsApp digest per company | todo |
 | 5.4 | Reorder suggestions | PO drafts from sales and stock | todo |

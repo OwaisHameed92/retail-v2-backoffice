@@ -37,9 +37,9 @@ final class WelcomeTenantMail extends BrandedMailable
             ownerEmail: 'aisha@khanminimart.co.uk',
             loginUrl: config('sspos.portal_url').'/login',
             tills: [
-                new TillKeyData('High Street', 'Till 1', 'SSP-7K2Q-9DMF-3XRA-P8TN'),
-                new TillKeyData('High Street', 'Till 2', 'SSP-4HWC-J6ZB-81LE-QV5M'),
-                new TillKeyData('Station Road', 'Till 1', 'SSP-2NRX-T7KP-5GUA-0DYF'),
+                new TillKeyData('High Street', 'Till 1', 'SSP-7K2Q-9DMF-3XRA-P8T5'),
+                new TillKeyData('High Street', 'Till 2', 'SSP-4HWC-J6ZB-81ME-QV5H'),
+                new TillKeyData('Station Road', 'Till 1', 'SSP-2NRX-T7KP-5G0A-DYF6'),
             ],
             trialDays: 7,
         ));

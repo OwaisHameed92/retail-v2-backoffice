@@ -4,6 +4,7 @@ namespace App\Domain\Tenancy\Actions;
 
 use App\Domain\Shared\Actions\RecordAudit;
 use App\Domain\Tenancy\CurrentCompany;
+use App\Domain\Tenancy\Events\RegisterAdded;
 use App\Domain\Tenancy\Models\Branch;
 use App\Domain\Tenancy\Models\Register;
 use Illuminate\Support\Facades\DB;
@@ -12,6 +13,9 @@ use Illuminate\Validation\ValidationException;
 /**
  * Adds a till to a branch. Without a code it takes the lowest free one; without a name it is "Till <n>".
  * The first active till of a branch becomes its main till automatically.
+ *
+ * Dispatches RegisterAdded in the same transaction: module 1.3 issues the till's licence there (its plain key
+ * waits in IssuedKeys for the caller: the welcome email or the admin's "Licence key created" dialog).
  */
 class AddRegister
 {
@@ -59,6 +63,8 @@ class AddRegister
                 'name' => $register->name,
                 'is_main_till' => $register->is_main_till,
             ]);
+
+            RegisterAdded::dispatch($register);
 
             return $register;
         }));

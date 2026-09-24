@@ -1,0 +1,7 @@
+{
+    "code": "licence.not_found",
+    "message": "We could not find this licence key. Check it and try again.",
+    "traceId": "01K5XTEST00000000000000034",
+    "retryAfterSeconds": null,
+    "rejectedKey": null
+}

@@ -1,20 +1,24 @@
+import { TenantBillingPanel } from '@/components/admin/billing/tenant-billing-panel';
+import { TenantLicencesPanel } from '@/components/admin/licences/tenant-licences-panel';
 import { ActivityPanel } from '@/components/admin/tenants/activity-panel';
 import { BranchCard } from '@/components/admin/tenants/branch-card';
 import { BranchDialog } from '@/components/admin/tenants/branch-dialog';
 import { formatDate, plural } from '@/components/admin/tenants/format';
-import { Tabs, type TabItem } from '@/components/admin/tenants/tabs';
 import { TenantActions } from '@/components/admin/tenants/tenant-actions';
 import { TenantDetails } from '@/components/admin/tenants/tenant-details';
 import { type TenantBranch, type TenantShowProps } from '@/components/admin/tenants/types';
 import { UsersPanel } from '@/components/admin/tenants/users-panel';
 import { EmptyState } from '@/components/shared/empty-state';
-import { StatCard } from '@/components/shared/stat-card';
+import { InitialsAvatar } from '@/components/shared/entity-cell';
+import { PageHeader } from '@/components/shared/page-header';
+import { PageTabs, type PageTab } from '@/components/shared/page-tabs';
+import { StatCard, StatGrid } from '@/components/shared/stat-card';
 import { StatusBadge } from '@/components/shared/status-badge';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
 import AdminLayout from '@/layouts/admin-layout';
-import { Head, Link } from '@inertiajs/react';
-import { ArrowLeft, CalendarDays, KeyRound, MonitorSmartphone, Plus, Receipt, Store, Users } from 'lucide-react';
+import { Head } from '@inertiajs/react';
+import { CalendarDays, MonitorSmartphone, Plus, Store, Users } from 'lucide-react';
 import { useState } from 'react';
 
 type TabValue = 'branches' | 'users' | 'activity' | 'licences' | 'billing';
@@ -30,28 +34,7 @@ function initialTab(): TabValue {
     return tab && TAB_VALUES.includes(tab) ? tab : 'branches';
 }
 
-function Soon({ icon, title, module }: { icon: typeof KeyRound; title: string; module: string }) {
-    return (
-        <Card>
-            <EmptyState
-                icon={icon}
-                title={title}
-                body={
-                    <>
-                        Arrives in module {module}. <span className="sr-only">Not available yet.</span>
-                    </>
-                }
-                action={
-                    <span className="text-muted-foreground rounded-full border px-2 py-0.5 text-xs" aria-hidden>
-                        Soon
-                    </span>
-                }
-            />
-        </Card>
-    );
-}
-
-export default function TenantShow({ tenant, stats, branches, members, activity, nations, roles, maxTills, can }: TenantShowProps) {
+export default function TenantShow({ tenant, stats, branches, members, activity, nations, roles, maxTills, licensing, plans, billing, can }: TenantShowProps) {
     const [tab, setTab] = useState<TabValue>(initialTab);
     const [branchDialog, setBranchDialog] = useState<{ open: boolean; branch: TenantBranch | null }>({ open: false, branch: null });
 
@@ -62,56 +45,61 @@ export default function TenantShow({ tenant, stats, branches, members, activity,
         window.history.replaceState(window.history.state, '', url.toString());
     };
 
-    const tabs: TabItem<TabValue>[] = [
+    const tabs: PageTab[] = [
         { value: 'branches', label: 'Branches and tills', count: branches.length },
         { value: 'users', label: 'Users', count: members.length },
         { value: 'activity', label: 'Activity' },
-        { value: 'licences', label: 'Licences' },
+        {
+            value: 'licences',
+            label: 'Licences',
+            count: licensing.summary.live,
+            badge:
+                licensing.summary.missing > 0 ? (
+                    <Badge variant="warning" title="Active tills without a licence">
+                        {licensing.summary.missing} missing
+                    </Badge>
+                ) : undefined,
+        },
         { value: 'billing', label: 'Billing' },
     ];
 
     return (
-        <AdminLayout>
+        <AdminLayout breadcrumbs={[{ title: 'Customers' }, { title: 'Tenants', href: route('admin.tenants.index') }, { title: tenant.name }]}>
             <Head title={tenant.name} />
 
-            <div>
-                <Link
-                    href={route('admin.tenants.index')}
-                    className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1 text-sm"
-                >
-                    <ArrowLeft className="size-4" />
-                    Tenants
-                </Link>
-            </div>
+            <PageHeader
+                title={tenant.name}
+                status={<StatusBadge status={tenant.status} />}
+                back={{ href: route('admin.tenants.index'), label: 'Tenants' }}
+                media={<InitialsAvatar name={tenant.name} shape="square" size="lg" />}
+                description={`${tenant.legalName ?? 'No legal name'} · Customer since ${formatDate(tenant.createdAt)}`}
+                actions={<TenantActions tenant={tenant} stats={stats} members={members} canManage={can.manage} canImpersonate={can.impersonate} />}
+            />
 
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                <div className="min-w-0 space-y-1">
-                    <div className="flex flex-wrap items-center gap-3">
-                        <h1 className="truncate text-xl font-semibold tracking-tight">{tenant.name}</h1>
-                        <StatusBadge status={tenant.status} />
-                    </div>
-                    <p className="text-muted-foreground text-sm">
-                        {tenant.legalName ?? 'No legal name'} · Customer since {formatDate(tenant.createdAt)}
-                    </p>
-                </div>
-                <div className="flex flex-wrap items-center gap-2">
-                    <TenantActions tenant={tenant} stats={stats} members={members} canManage={can.manage} canImpersonate={can.impersonate} />
-                </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+            <StatGrid>
                 <StatCard
                     label="Branches"
                     value={stats.branches}
                     icon={Store}
                     hint={stats.branchesInactive > 0 ? `${stats.branchesInactive} inactive` : undefined}
                 />
-                <StatCard label="Active tills" value={stats.tills} icon={MonitorSmartphone} hint="One licence each" />
-                <StatCard label="Users" value={stats.users} icon={Users} />
+                <StatCard
+                    label="Active tills"
+                    value={stats.tills}
+                    icon={MonitorSmartphone}
+                    tone={licensing.summary.missing > 0 ? 'warning' : 'primary'}
+                    hint={
+                        licensing.summary.missing > 0
+                            ? `${licensing.summary.missing} without a licence`
+                            : `${licensing.summary.counts.trial + licensing.summary.counts.active + licensing.summary.counts.grace} trading`
+                    }
+                />
+                <StatCard label="Users" value={stats.users} icon={Users} tone="success" />
                 <StatCard
                     label="Created"
-                    value={<span className="text-xl">{formatDate(tenant.createdAt)}</span>}
+                    value={<span className="text-xl sm:text-2xl">{formatDate(tenant.createdAt)}</span>}
                     icon={CalendarDays}
+                    tone="neutral"
                     hint={
                         tenant.status === 'trial'
                             ? tenant.trialEndsAt
@@ -120,12 +108,12 @@ export default function TenantShow({ tenant, stats, branches, members, activity,
                             : undefined
                     }
                 />
-            </div>
+            </StatGrid>
 
             <TenantDetails tenant={tenant} />
 
-            <div className="flex flex-col gap-4">
-                <Tabs tabs={tabs} value={tab} onChange={changeTab} label="Tenant sections" />
+            <div className="flex flex-col gap-5">
+                <PageTabs tabs={tabs} value={tab} onChange={(value) => changeTab(value as TabValue)} label="Tenant sections" />
 
                 <div id={`tab-panel-${tab}`} role="tabpanel" aria-labelledby={`tab-${tab}`} className="flex flex-col gap-4">
                     {tab === 'branches' && (
@@ -143,9 +131,7 @@ export default function TenantShow({ tenant, stats, branches, members, activity,
                                 )}
                             </div>
                             {branches.length === 0 ? (
-                                <Card>
-                                    <EmptyState icon={Store} title="No branches yet" body="Add the customer’s first shop and its tills." />
-                                </Card>
+                                <EmptyState icon={Store} title="No branches yet" body="Add the customer’s first shop and its tills." bordered />
                             ) : (
                                 branches.map((branch) => (
                                     <BranchCard
@@ -153,6 +139,8 @@ export default function TenantShow({ tenant, stats, branches, members, activity,
                                         tenantId={tenant.id}
                                         branch={branch}
                                         canManage={can.manage}
+                                        tillLicences={licensing.tillLicences}
+                                        canManageLicences={can.manageLicences}
                                         onEdit={(selected) => setBranchDialog({ open: true, branch: selected })}
                                     />
                                 ))
@@ -163,8 +151,8 @@ export default function TenantShow({ tenant, stats, branches, members, activity,
                         <UsersPanel tenant={tenant} members={members} roles={roles} canManage={can.manage} canImpersonate={can.impersonate} />
                     )}
                     {tab === 'activity' && <ActivityPanel activity={activity} />}
-                    {tab === 'licences' && <Soon icon={KeyRound} title="Licences" module="1.3" />}
-                    {tab === 'billing' && <Soon icon={Receipt} title="Billing" module="1.8" />}
+                    {tab === 'licences' && <TenantLicencesPanel tenant={tenant} licensing={licensing} plans={plans} canManage={can.manageLicences} />}
+                    {tab === 'billing' && <TenantBillingPanel tenant={tenant} billing={billing} />}
                 </div>
             </div>
 

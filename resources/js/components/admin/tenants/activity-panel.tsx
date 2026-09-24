@@ -1,57 +1,80 @@
 import { formatDateTimeShort } from '@/components/admin/tenants/format';
 import { type TenantActivityRow } from '@/components/admin/tenants/types';
-import { DataTable, type Paginated } from '@/components/shared/data-table';
-import { EmptyState } from '@/components/shared/empty-state';
-import { Card } from '@/components/ui/card';
-import { type ColumnDef } from '@tanstack/react-table';
-import { History } from 'lucide-react';
+import { DataTablePagination, useTableQuery, type Paginated } from '@/components/shared/data-table';
+import { SectionCard } from '@/components/shared/section-card';
+import { Timeline, type TimelineTone } from '@/components/shared/timeline';
+import {
+    Ban,
+    Building2,
+    CirclePause,
+    CirclePlay,
+    History,
+    KeyRound,
+    LogIn,
+    MonitorSmartphone,
+    Pencil,
+    Plus,
+    Store,
+    UserRound,
+    type LucideIcon,
+} from 'lucide-react';
 
-const columns: ColumnDef<TenantActivityRow>[] = [
-    {
-        id: 'description',
-        header: 'What happened',
-        cell: ({ row }) => (
-            <div className="min-w-0">
-                <p className="text-sm break-words">{row.original.description}</p>
-                <p className="text-muted-foreground text-xs sm:hidden">
-                    {row.original.actorName} · {formatDateTimeShort(row.original.createdAt)}
-                </p>
-            </div>
-        ),
-    },
-    {
-        id: 'actor',
-        header: () => <span className="hidden sm:inline">By</span>,
-        cell: ({ row }) => <span className="text-muted-foreground hidden sm:inline">{row.original.actorName}</span>,
-    },
-    {
-        id: 'created_at',
-        header: () => <span className="hidden sm:inline">When</span>,
-        cell: ({ row }) => (
-            <span className="text-muted-foreground hidden whitespace-nowrap tabular-nums sm:inline">
-                {formatDateTimeShort(row.original.createdAt)}
-            </span>
-        ),
-    },
-];
+/** Icon and tone for an audit action such as "licence.suspended" or "tenant.created". */
+function look(action: string): { icon: LucideIcon; tone: TimelineTone } {
+    const [subject, verb = ''] = action.split('.');
+    if (/suspend|deactivat|revok/.test(verb)) return { icon: CirclePause, tone: 'danger' };
+    if (/cancel/.test(verb)) return { icon: Ban, tone: 'danger' };
+    if (/reactivat|unsuspend|activat|restor|renew/.test(verb)) return { icon: CirclePlay, tone: 'success' };
+    if (/impersonat/.test(action)) return { icon: LogIn, tone: 'warning' };
+    if (/created|issued|added/.test(verb)) return { icon: Plus, tone: 'primary' };
+    const bySubject: Record<string, LucideIcon> = {
+        tenant: Building2,
+        company: Building2,
+        branch: Store,
+        register: MonitorSmartphone,
+        licence: KeyRound,
+        user: UserRound,
+        member: UserRound,
+    };
 
-/** Audit log entries for this company, newest first. */
+    return { icon: bySubject[subject] ?? (verb.includes('update') ? Pencil : History), tone: 'neutral' };
+}
+
+/** Audit log entries for this company, newest first, as a timeline with pagination. */
 export function ActivityPanel({ activity }: { activity: Paginated<TenantActivityRow> }) {
+    const { update, loading } = useTableQuery({ only: ['activity'] });
+
     return (
-        <Card className="p-4 sm:p-5">
-            <div className="mb-4">
-                <h2 className="text-base font-semibold">Activity</h2>
-                <p className="text-muted-foreground text-sm">Everything done to this account, by our staff and by the customer.</p>
+        <SectionCard
+            title="Activity"
+            description="Everything done to this account, by our staff and by the customer."
+            footer={
+                activity.meta.total > activity.meta.perPage ? (
+                    <DataTablePagination
+                        className="w-full"
+                        meta={activity.meta}
+                        disabled={loading}
+                        onPageChange={(page) => update({ page })}
+                        onPerPageChange={(perPage) => update({ perPage, page: 1 })}
+                    />
+                ) : undefined
+            }
+        >
+            <div aria-busy={loading} className={loading ? 'opacity-60 transition-opacity' : undefined}>
+                <Timeline
+                    emptyBody="Changes to this account are recorded here."
+                    items={activity.data.map((row) => ({
+                        id: row.id,
+                        ...look(row.action),
+                        title: (
+                            <>
+                                {row.description} <span className="text-muted-foreground">· {row.actorName}</span>
+                            </>
+                        ),
+                        time: formatDateTimeShort(row.createdAt),
+                    }))}
+                />
             </div>
-            <DataTable
-                columns={columns}
-                data={activity.data}
-                meta={activity.meta}
-                only={['activity']}
-                searchable={false}
-                getRowId={(row) => row.id}
-                empty={<EmptyState icon={History} title="No activity yet" body="Changes to this account are recorded here." />}
-            />
-        </Card>
+        </SectionCard>
     );
 }

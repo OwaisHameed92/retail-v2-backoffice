@@ -130,3 +130,124 @@ New shadcn primitives added for these: `ui/table.tsx`, `ui/alert-dialog.tsx`.
 Mounted once in `AdminLayout` and `AppLayout` — never mount it in a page. From a controller:
 `return back()->with('success', 'Plan saved.')` (or `'error'`). From the client: `showToast('Copied', 'success')`.
 Action validation errors on keys `status, branch, branch_id, register, user, user_id, plan` also show as toasts.
+
+## Added by module 1.3 (licences)
+
+### `@/lib/http` — `sendJson()`
+
+JSON requests outside Inertia, for replies that must not become a page prop or a session flash (new licence keys,
+the top-bar search). Sends the `XSRF-TOKEN` cookie as `X-XSRF-TOKEN`; returns `{ok, status, data, errors, message}`
+with the first validation message per field and a readable message for 401/403/404/419/422/429/5xx.
+
+```tsx
+const result = await sendJson<IssuedKeysReply>('POST', route('admin.licences.reissue', licence.id));
+if (!result.ok) showToast(result.message ?? 'Something went wrong.', 'error');
+```
+
+### `@/hooks/use-min-width` — `useMinWidth(px)`, `useBreakpoint()`
+
+Media-query hooks (Tailwind breakpoints). Use them to build a smaller `DataTable` column set on narrow screens:
+hiding a sortable column's header with `hidden md:inline` still renders its sort icon.
+
+### Licence key dialog (`components/admin/licences/licence-keys-dialog.tsx`, `reveal-keys.ts`)
+
+The one-time "Licence key created" dialog, mounted once in `AdminLayout` (like the toaster). Show keys from a JSON
+reply with `revealLicenceKeys({ keys, title? })`; it offers Copy, Copy all, "Email this key to the owner" (for
+admins with `licences.manage` or `tenants.manage`) and asks before closing when a key was neither copied nor
+emailed. `requestKeys(url, { only })` in `issue-keys.ts` does POST → reveal → `router.reload`.
+
+### `LicenceStatusBadge` (`components/admin/licences/licence-status-badge.tsx`)
+
+`StatusBadge` with licence tones and labels, plus a tooltip (and screen-reader text) with what the status means or
+why the till is locked: `<LicenceStatusBadge status={row.status} reason={row.statusReason} />`.
+
+### Admin search palette (`components/admin/admin-search.tsx`)
+
+The top bar's "Search tenant, licence key, device ID" opens a ⌘K / Ctrl K / "/" palette backed by
+`GET /admin/search?q=` (`AdminSearchController`). Later modules can add result groups to that endpoint.
+
+## UI redesign additions (see `docs/ui-redesign-status.md`)
+
+All props of the components above stayed compatible; these are additions. Colours only through tokens.
+
+### Layout props
+- `AdminLayout` takes optional `breadcrumbs` (top-bar trail; default is the sidebar group + section) and
+  `width="default" | "narrow" | "wide"`. Content is centred at `max-w-7xl`; never add page padding yourself.
+- Admin nav items carry a `group` (`Customers`, `Billing`, `Operations`, `Settings`) in `admin-nav.ts`; a new
+  module sets `route` and keeps its group. Tenant nav groups live in `components/app-sidebar.tsx`.
+
+### `page-header.tsx` (extended)
+```tsx
+<PageHeader title={tenant.name} status={<StatusBadge status={tenant.status} />} back={{ href: route('admin.tenants.index'), label: 'Tenants' }}
+    media={<InitialsAvatar name={tenant.name} shape="square" size="lg" />} description="Legal name · Customer since 24 Sept 2026"
+    actions={<Button>Edit</Button>} tabs={<PageTabs … />} />
+```
+
+### `stat-card.tsx` (extended) — `StatGrid`, `KpiCard`
+`tone` (primary, success, warning, danger, neutral) colours the icon circle; `chart={<Sparkline values={[…]} />}`; `href` makes the card a link.
+```tsx
+<StatGrid><StatCard label="Failed" value={3} hint="Last 30 days" icon={CircleAlert} tone="danger" /></StatGrid>
+```
+
+### `data-table/` (extended)
+Column `meta`: `align: 'right'` for numbers/money; `mobile: 'title' | 'aside' | 'field' | 'actions' | 'hidden'`
+(defaults: first column title, `status` aside, `actions` actions, others the first four fields). Phones get a card
+list automatically; pass `renderMobileCard` for a custom card or `mobile="table"` to opt out.
+
+### `entity-cell.tsx` — `EntityCell`, `InitialsAvatar`
+First column of lists: `<EntityCell name={row.name} subline={row.email} shape="square" />` (square for businesses,
+circle for people, `icon` for things like licences, `href` to link the name).
+
+### `page-tabs.tsx`
+Underline tabs. Link tabs `{ label, href, active, count }` for URLs; button tabs `{ label, value, count, badge }`
+with `value`/`onChange` for in-page panels (panel id `tab-panel-<value>`).
+
+### `section-card.tsx`
+`<SectionCard title description actions footer flush>` — the standard card with header; `flush` for tables.
+
+### `form-section.tsx` — `FormCard`, `FormSection`, `FormGrid`, `FormField`
+```tsx
+<FormCard>
+    <FormSection title="Business details" description="Sent to the till.">
+        <FormGrid><FormField id="name" label="Business name" error={errors.name}><Input id="name" aria-invalid={!!errors.name} /></FormField></FormGrid>
+    </FormSection>
+</FormCard>
+```
+`FormField` props: `optional`, `help`, `error`, `labelAside`.
+
+### `sticky-form-bar.tsx`
+`<StickyFormBar message="You have unsaved changes."><Button variant="outline">Cancel</Button><Button type="submit">Save changes</Button></StickyFormBar>` under long forms.
+
+### `timeline.tsx` — `Timeline`, `TimelineChanges`
+Audit/activity lists: items `{ id, icon, tone, title, time, body }`; `<TimelineChanges changes={[{ label, from, to }]} />` for diffs.
+
+### `description-list.tsx`
+`<DescriptionList items={[{ label, value, mono, wide }]} layout="grid" | "rows" />`; empty values show "Not set".
+
+### `row-actions.tsx`
+`<RowActions label="Actions for Khan Mini Mart" actions={[{ label: 'Edit', icon: Pencil, href }, { label: 'Suspend', destructive: true, onSelect }]} />`
+Stops row clicks; destructive items go last behind a separator and should open a `ConfirmDialog`.
+
+### `mobile-card-list.tsx`, `sparkline.tsx`
+`MobileCardList` renders `{ title, aside, fields, actions }` cards (DataTable uses it). `Sparkline` is a tiny SVG trend line.
+
+### UI primitives added or changed
+`ui/textarea.tsx` (new), `Badge` variants `success | warning | danger | info | neutral`, `Alert` variants
+`success | warning | info` (destructive is now a soft red panel). Shell pieces for layouts live in
+`components/shell/` (`SidebarNav`, `SidebarBrand`, `Topbar`, `SearchTrigger`, `HelpMenu`, `NotificationsMenu`, `ThemeSubmenu`).
+
+## Added by module 1.6 (leads)
+
+- `LeadStatusBadge` (`components/admin/leads/lead-status-badge.tsx`): `StatusBadge` with lead tones and labels; `withHelp` adds a tooltip on what the status means.
+- `FollowUp` (`components/admin/leads/follow-up.tsx`): a follow-up time as "Today 14:30" / "Tomorrow 09:00" / "3 Oct 09:00", red with an alarm icon when overdue, amber when due today (Europe/London).
+- `LeadStats` type (`components/admin/leads/types.ts`) matches `App\Domain\Leads\Queries\LeadStats::compute()->toArray()`, for the admin dashboard (1.9).
+
+## Added by module 1.8 (billing)
+
+- `BusinessPicker` (`components/admin/licences/licence-filters.tsx`) is exported: `<BusinessPicker open onOpenChange title description onPick={(id, name) => …} />` searches tenants through the admin search endpoint. Used by the billing filters and "New invoice" / "Record payment".
+- `InvoiceStatusBadge` (`components/admin/billing/invoice-status-badge.tsx`): `StatusBadge` with invoice tones and labels ("Partly paid"); `withHelp` adds a tooltip.
+- `RecordPaymentDialog`, `CreateInvoiceDialog` (`components/admin/billing/`): self-contained dialogs taking a `{ id, name }` company; they fetch open invoices / a live invoice preview when not given. `TenantBillingPanel` is the tenant page's Billing tab.
+- `components/admin/billing/money.ts`: `toPence`, `fromPence`, `formatPence` for exact client-side sums in pence (dialogs only; the server does the real maths).
+- `InvoiceDocument` (`components/admin/billing/invoice-document.tsx`): the print-style invoice preview, fed by the same data as the PDF.
+- Backend: `App\Domain\Billing\Support\BillingFormat::money('1234.5')` → "£1,234.50" without floats; `BillingDates` for London calendar dates and ranges ("1 Oct – 31 Oct 2026"); `App\Domain\Mail\Contracts\RendersAttachment` for mail attachments built at send time.
+

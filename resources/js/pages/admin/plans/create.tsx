@@ -1,10 +1,8 @@
 import { PlanForm, planFormDefaults, type PlanFormData } from '@/components/admin/plans/plan-form';
 import { type FeatureOption } from '@/components/admin/plans/types';
 import { PageHeader } from '@/components/shared/page-header';
-import { Button } from '@/components/ui/button';
 import AdminLayout from '@/layouts/admin-layout';
-import { Head, Link, useForm } from '@inertiajs/react';
-import { ArrowLeft } from 'lucide-react';
+import { Head, useForm } from '@inertiajs/react';
 import { type FormEventHandler } from 'react';
 
 interface CreatePlanProps {
@@ -13,7 +11,7 @@ interface CreatePlanProps {
 }
 
 export default function CreatePlan({ features, defaults }: CreatePlanProps) {
-    const { data, setData, post, processing, errors } = useForm<PlanFormData>(planFormDefaults(undefined, defaults));
+    const { data, setData, post, processing, errors, isDirty } = useForm<PlanFormData>(planFormDefaults(undefined, defaults));
 
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
@@ -27,14 +25,7 @@ export default function CreatePlan({ features, defaults }: CreatePlanProps) {
                 <PageHeader
                     title="Add plan"
                     description="Set the price per till, trial and the features this plan switches on."
-                    actions={
-                        <Button variant="ghost" asChild>
-                            <Link href={route('admin.plans.index')}>
-                                <ArrowLeft />
-                                All plans
-                            </Link>
-                        </Button>
-                    }
+                    back={{ href: route('admin.plans.index'), label: 'Plans' }}
                 />
                 <PlanForm
                     data={data}
@@ -46,6 +37,7 @@ export default function CreatePlan({ features, defaults }: CreatePlanProps) {
                     submitLabel="Create plan"
                     cancelHref={route('admin.plans.index')}
                     autoCode
+                    isDirty={isDirty}
                 />
             </div>
         </AdminLayout>

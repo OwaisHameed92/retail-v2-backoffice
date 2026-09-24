@@ -4,6 +4,7 @@ import { type Option, type Tenant, type TenantMember } from '@/components/admin/
 import { UserDialog } from '@/components/admin/tenants/user-dialog';
 import { ConfirmDialog } from '@/components/shared/confirm-dialog';
 import { EmptyState } from '@/components/shared/empty-state';
+import { EntityCell } from '@/components/shared/entity-cell';
 import { StatusBadge } from '@/components/shared/status-badge';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -42,10 +43,10 @@ export function UsersPanel({ tenant, members, roles, canManage, canImpersonate }
         });
 
     return (
-        <Card className="overflow-hidden">
-            <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
+        <Card className="overflow-clip">
+            <div className="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between sm:px-6">
                 <div>
-                    <h2 className="text-base font-semibold">Portal users</h2>
+                    <h2 className="text-[15px] leading-6 font-semibold tracking-tight">Portal users</h2>
                     <p className="text-muted-foreground text-sm">People who can log in to the {tenant.name} portal.</p>
                 </div>
                 {canManage && (
@@ -80,14 +81,11 @@ export function UsersPanel({ tenant, members, roles, canManage, canImpersonate }
                                 return (
                                     <TableRow key={member.id}>
                                         <TableCell className="pl-4 sm:pl-5">
-                                            <div className="font-medium">{member.name}</div>
-                                            <div className="text-muted-foreground text-sm">{member.email}</div>
+                                            <EntityCell name={member.name} subline={member.email} />
                                         </TableCell>
                                         <TableCell>
                                             <div className="flex flex-wrap items-center gap-2">
-                                                <Badge variant="outline" className="font-normal">
-                                                    {member.roleLabel}
-                                                </Badge>
+                                                <Badge variant={member.isOwner ? 'info' : 'neutral'}>{member.roleLabel}</Badge>
                                                 {!member.isActive && <StatusBadge status="inactive" />}
                                             </div>
                                         </TableCell>

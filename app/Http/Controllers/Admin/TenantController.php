@@ -2,6 +2,11 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Domain\Admin\Enums\AdminRole;
+use App\Domain\Billing\Data\TenantBilling;
+use App\Domain\Licensing\Data\LicenceData;
+use App\Domain\Licensing\Data\TenantLicences;
+use App\Domain\Licensing\Support\DefaultPlan;
 use App\Domain\Shared\Models\AuditLog;
 use App\Domain\Shared\Support\TableQuery;
 use App\Domain\Tenancy\Actions\CreateTenant;
@@ -20,6 +25,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreTenantRequest;
 use App\Http\Requests\Admin\UpdateTenantRequest;
 use App\Models\User;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\RedirectResponse;
@@ -80,6 +86,8 @@ class TenantController extends Controller
         return Inertia::render('admin/tenants/create', [
             'nations' => Nation::options(),
             'maxTills' => NewTenant::MAX_TILLS,
+            'plans' => LicenceData::planOptions(),
+            'defaultPlanId' => DefaultPlan::portal()?->id,
         ]);
     }
 
@@ -87,8 +95,12 @@ class TenantController extends Controller
     {
         $company = $createTenant->handle($request->toNewTenant());
 
+        $keys = $company->licences()->withoutGlobalScopes()->count();
+
         return redirect()->route('admin.tenants.show', $company)
-            ->with('success', "{$company->name} is set up. A new owner gets an email to set their password.");
+            ->with('success', $keys > 0
+                ? "{$company->name} is set up. The owner gets a welcome email with the licence keys (and a set-password email if they are new)."
+                : "{$company->name} is set up. No plan exists yet, so the tills have no licences: create a plan, then issue them.");
     }
 
     public function show(Request $request, Company $company, CurrentCompany $tenancy): Response
@@ -102,8 +114,13 @@ class TenantController extends Controller
         $activity = $activityTable->paginator(AuditLog::query()->where('company_id', $company->id));
         $presenter = new TenantActivity(collect($activity->items()));
 
+        $admin = $request->user('admin');
+
         return Inertia::render('admin/tenants/show', [
             'tenant' => TenantData::company($company),
+            'licensing' => TenantLicences::for($company, CarbonImmutable::now()),
+            'billing' => TenantBilling::for($company, $admin?->hasAbility(AdminRole::BILLING_MANAGE) ?? false),
+            'plans' => LicenceData::planOptions(),
             'stats' => [
                 'branches' => $branches->where('is_active', true)->count(),
                 'branchesInactive' => $branches->where('is_active', false)->count(),
@@ -130,6 +147,7 @@ class TenantController extends Controller
             'can' => [
                 'manage' => $request->user('admin')?->can('update', $company) ?? false,
                 'impersonate' => $request->user('admin')?->can('impersonate', $company) ?? false,
+                'manageLicences' => $admin?->hasAbility(AdminRole::LICENCES_MANAGE) ?? false,
             ],
         ]);
     }

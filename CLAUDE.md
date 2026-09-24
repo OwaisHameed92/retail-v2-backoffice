@@ -20,7 +20,7 @@ A tenant = one Company. Company → Branch (shop) → Register (till). One licen
 
 ## Stack
 
-- Laravel 12, PHP 8.2+ (dev machine runs 8.5), Pest 3 for tests (write new tests as Pest functions; existing PHPUnit classes are fine), Pint for PHP style.
+- Laravel 12, PHP 8.4.1+ required by the lock file (dev machine runs 8.5; CI uses 8.4), Pest 3 for tests (write new tests as Pest functions; existing PHPUnit classes are fine), Pint for PHP style.
 - Inertia 2 + React 19 + TypeScript + Tailwind 4 + shadcn/ui (`resources/js/components/ui`). Charts: Recharts.
 - Dev DB: SQLite (`database/database.sqlite`). Target: MySQL 8 (MAMP). Write migrations that run on both.
 

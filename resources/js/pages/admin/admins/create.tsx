@@ -1,6 +1,6 @@
 import { AdminForm, type AdminFormData } from '@/components/admin/admin-form';
-import { PageHeader } from '@/components/shared/page-header';
 import { type RoleOption } from '@/components/admin/types';
+import { PageHeader } from '@/components/shared/page-header';
 import AdminLayout from '@/layouts/admin-layout';
 import { Head, useForm } from '@inertiajs/react';
 import { type FormEventHandler } from 'react';
@@ -24,7 +24,11 @@ export default function CreateAdmin({ roles }: { roles: RoleOption[] }) {
     return (
         <AdminLayout>
             <Head title="Add admin user" />
-            <PageHeader title="Add admin user" description="Give a member of Switch & Save staff access to the admin area." />
+            <PageHeader
+                title="Add admin user"
+                description="Give a member of Switch & Save staff access to the admin area."
+                back={{ href: route('admin.admins.index'), label: 'Admin users' }}
+            />
             <AdminForm
                 data={data}
                 setData={setData}

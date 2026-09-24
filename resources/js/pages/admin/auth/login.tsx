@@ -2,7 +2,8 @@ import { Head, useForm } from '@inertiajs/react';
 import { LoaderCircle } from 'lucide-react';
 import { FormEventHandler } from 'react';
 
-import InputError from '@/components/input-error';
+import { FormField } from '@/components/shared/form-section';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
@@ -30,52 +31,60 @@ export default function AdminLogin({ status }: { status?: string }) {
     };
 
     return (
-        <AuthLayout title="Admin sign in" description="For Switch & Save staff only">
+        <AuthLayout variant="staff" title="Sign in to the admin console" description="Use your Switch & Save staff account.">
             <Head title="Admin log in" />
 
-            {status && <div className="text-center text-sm font-medium text-green-600">{status}</div>}
+            {status && (
+                <Alert variant="success" className="mb-6">
+                    <AlertDescription>{status}</AlertDescription>
+                </Alert>
+            )}
 
-            <form className="flex flex-col gap-6" onSubmit={submit}>
-                <div className="grid gap-6">
-                    <div className="grid gap-2">
-                        <Label htmlFor="email">Email address</Label>
-                        <Input
-                            id="email"
-                            type="email"
-                            required
-                            autoFocus
-                            autoComplete="username"
-                            value={data.email}
-                            onChange={(e) => setData('email', e.target.value)}
-                            placeholder="name@example.com"
-                        />
-                        <InputError message={errors.email} />
-                    </div>
+            <form className="grid gap-5" onSubmit={submit}>
+                <FormField id="email" label="Work email" error={errors.email}>
+                    <Input
+                        id="email"
+                        type="email"
+                        required
+                        autoFocus
+                        autoComplete="username"
+                        value={data.email}
+                        onChange={(e) => setData('email', e.target.value)}
+                        aria-invalid={!!errors.email || undefined}
+                    />
+                </FormField>
 
-                    <div className="grid gap-2">
-                        <Label htmlFor="password">Password</Label>
-                        <Input
-                            id="password"
-                            type="password"
-                            required
-                            autoComplete="current-password"
-                            value={data.password}
-                            onChange={(e) => setData('password', e.target.value)}
-                        />
-                        <InputError message={errors.password} />
-                    </div>
+                <FormField id="password" label="Password" error={errors.password}>
+                    <Input
+                        id="password"
+                        type="password"
+                        required
+                        autoComplete="current-password"
+                        value={data.password}
+                        onChange={(e) => setData('password', e.target.value)}
+                        aria-invalid={!!errors.password || undefined}
+                    />
+                </FormField>
 
-                    <div className="flex items-center space-x-3">
-                        <Checkbox id="remember" checked={data.remember} onCheckedChange={(checked) => setData('remember', checked === true)} />
-                        <Label htmlFor="remember">Remember me</Label>
-                    </div>
-
-                    <Button type="submit" className="w-full" disabled={processing}>
-                        {processing && <LoaderCircle className="h-4 w-4 animate-spin" />}
-                        Log in
-                    </Button>
+                <div className="flex items-center gap-2.5">
+                    <Checkbox id="remember" checked={data.remember} onCheckedChange={(checked) => setData('remember', checked === true)} />
+                    <Label htmlFor="remember" className="font-normal">
+                        Keep me signed in on this computer
+                    </Label>
                 </div>
+
+                <Button type="submit" size="lg" className="mt-1 w-full" disabled={processing}>
+                    {processing && <LoaderCircle className="size-4 animate-spin" />}
+                    Sign in
+                </Button>
             </form>
+
+            <p className="text-muted-foreground mt-8 border-t pt-6 text-center text-[13px]">
+                Not Switch &amp; Save staff?{' '}
+                <a href={route('login')} className="text-primary font-medium hover:underline">
+                    Log in to your backoffice
+                </a>
+            </p>
         </AuthLayout>
     );
 }

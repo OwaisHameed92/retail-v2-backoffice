@@ -27,17 +27,18 @@ export function AppImpersonationBanner() {
     return (
         <div
             role="status"
-            className="bg-primary text-primary-foreground sticky top-0 z-40 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 px-4 py-2 text-sm"
+            className="bg-primary text-primary-foreground flex min-h-10 flex-wrap items-center justify-center gap-x-3 gap-y-1 px-4 py-1.5 text-[13px]"
         >
             <Eye className="size-4 shrink-0" aria-hidden />
             <p className="text-center">
-                Viewing as <strong className="font-semibold">{impersonation.companyName}</strong> ({impersonation.userEmail})
+                Viewing as <strong className="font-semibold">{impersonation.companyName}</strong>
+                <span className="hidden opacity-80 sm:inline"> ({impersonation.userEmail})</span>
             </p>
             <button
                 type="button"
                 onClick={stop}
                 disabled={busy}
-                className="bg-primary-foreground/15 hover:bg-primary-foreground/25 focus-visible:ring-primary-foreground inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 font-medium focus-visible:ring-2 focus-visible:outline-none disabled:opacity-70"
+                className="bg-primary-foreground/15 hover:bg-primary-foreground/25 focus-visible:ring-primary-foreground inline-flex h-7 items-center gap-1.5 rounded-md px-2.5 font-medium focus-visible:ring-2 focus-visible:outline-none disabled:opacity-70"
             >
                 {busy ? <LoaderCircle className="size-3.5 animate-spin" aria-hidden /> : <Undo2 className="size-3.5" aria-hidden />}
                 Return to admin

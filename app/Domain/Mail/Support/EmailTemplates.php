@@ -6,6 +6,9 @@ use App\Domain\Mail\Mailables\AccountReactivatedMail;
 use App\Domain\Mail\Mailables\AccountSuspendedMail;
 use App\Domain\Mail\Mailables\AdminNewLeadMail;
 use App\Domain\Mail\Mailables\BrandedMailable;
+use App\Domain\Mail\Mailables\InvoiceMail;
+use App\Domain\Mail\Mailables\LeadRejectedMail;
+use App\Domain\Mail\Mailables\LicenceKeyMail;
 use App\Domain\Mail\Mailables\LicenceRenewedMail;
 use App\Domain\Mail\Mailables\SetPasswordMail;
 use App\Domain\Mail\Mailables\TrialEndedMail;
@@ -21,12 +24,15 @@ final class EmailTemplates
     public const MAILABLES = [
         WelcomeTenantMail::class,
         SetPasswordMail::class,
+        LicenceKeyMail::class,
         TrialReminderMail::class,
         TrialEndedMail::class,
+        InvoiceMail::class,
         LicenceRenewedMail::class,
         AccountSuspendedMail::class,
         AccountReactivatedMail::class,
         AdminNewLeadMail::class,
+        LeadRejectedMail::class,
     ];
 
     /**

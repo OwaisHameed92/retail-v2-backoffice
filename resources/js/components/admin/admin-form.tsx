@@ -1,8 +1,7 @@
 import { type AdminRoleValue, type RoleOption } from '@/components/admin/types';
-import InputError from '@/components/input-error';
+import { FormCard, FormField, FormGrid, FormSection } from '@/components/shared/form-section';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Link } from '@inertiajs/react';
 import { LoaderCircle } from 'lucide-react';
@@ -29,84 +28,101 @@ interface AdminFormProps {
 }
 
 export function AdminForm({ data, setData, errors, processing, roles, onSubmit, submitLabel, passwordOptional = false }: AdminFormProps) {
+    const invalid = (key: keyof AdminFormData) => (errors[key] ? { 'aria-invalid': true, 'aria-describedby': `${String(key)}-error` } : {});
+
     return (
-        <form onSubmit={onSubmit} className="grid max-w-xl gap-6">
-            <div className="grid gap-2">
-                <Label htmlFor="name">Name</Label>
-                <Input id="name" required autoComplete="off" value={data.name} onChange={(e) => setData('name', e.target.value)} />
-                <InputError message={errors.name} />
-            </div>
+        <form onSubmit={onSubmit} className="grid max-w-4xl gap-6">
+            <FormCard>
+                <FormSection title="Profile" description="Their name as colleagues know it and the email they log in with.">
+                    <FormGrid>
+                        <FormField id="name" label="Name" error={errors.name}>
+                            <Input
+                                id="name"
+                                required
+                                autoComplete="off"
+                                value={data.name}
+                                onChange={(e) => setData('name', e.target.value)}
+                                {...invalid('name')}
+                            />
+                        </FormField>
+                        <FormField id="email" label="Email address" error={errors.email}>
+                            <Input
+                                id="email"
+                                type="email"
+                                required
+                                autoComplete="off"
+                                value={data.email}
+                                onChange={(e) => setData('email', e.target.value.toLowerCase())}
+                                {...invalid('email')}
+                            />
+                        </FormField>
+                    </FormGrid>
+                </FormSection>
 
-            <div className="grid gap-2">
-                <Label htmlFor="email">Email address</Label>
-                <Input
-                    id="email"
-                    type="email"
-                    required
-                    autoComplete="off"
-                    value={data.email}
-                    onChange={(e) => setData('email', e.target.value.toLowerCase())}
-                />
-                <InputError message={errors.email} />
-            </div>
+                <FormSection title="Access" description="What they can see and change in the admin area.">
+                    <FormField id="role" label="Role" error={errors.role} help="Only owners can manage admin users." className="sm:max-w-xs">
+                        <Select value={data.role} onValueChange={(value) => setData('role', value as AdminRoleValue)}>
+                            <SelectTrigger id="role" {...invalid('role')}>
+                                <SelectValue placeholder="Choose a role" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {roles.map((role) => (
+                                    <SelectItem key={role.value} value={role.value}>
+                                        {role.label}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </FormField>
+                </FormSection>
 
-            <div className="grid gap-2">
-                <Label htmlFor="role">Role</Label>
-                <Select value={data.role} onValueChange={(value) => setData('role', value as AdminRoleValue)}>
-                    <SelectTrigger id="role">
-                        <SelectValue placeholder="Choose a role" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        {roles.map((role) => (
-                            <SelectItem key={role.value} value={role.value}>
-                                {role.label}
-                            </SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
-                <p className="text-muted-foreground text-xs">Only owners can manage admin users.</p>
-                <InputError message={errors.role} />
-            </div>
+                <FormSection
+                    title={passwordOptional ? 'Change password' : 'Password'}
+                    description={
+                        passwordOptional ? 'Leave blank to keep the current password.' : 'At least 12 characters. Share it with them in person.'
+                    }
+                >
+                    <FormGrid>
+                        <FormField
+                            id="password"
+                            label={passwordOptional ? 'New password' : 'Password'}
+                            error={errors.password}
+                            help="At least 12 characters."
+                        >
+                            <Input
+                                id="password"
+                                type="password"
+                                required={!passwordOptional}
+                                autoComplete="new-password"
+                                value={data.password}
+                                onChange={(e) => setData('password', e.target.value)}
+                                {...invalid('password')}
+                            />
+                        </FormField>
+                        <FormField id="password_confirmation" label="Confirm password" error={errors.password_confirmation}>
+                            <Input
+                                id="password_confirmation"
+                                type="password"
+                                required={!passwordOptional}
+                                autoComplete="new-password"
+                                value={data.password_confirmation}
+                                onChange={(e) => setData('password_confirmation', e.target.value)}
+                                {...invalid('password_confirmation')}
+                            />
+                        </FormField>
+                    </FormGrid>
+                </FormSection>
 
-            <div className="grid gap-4 sm:grid-cols-2">
-                <div className="grid gap-2">
-                    <Label htmlFor="password">{passwordOptional ? 'New password' : 'Password'}</Label>
-                    <Input
-                        id="password"
-                        type="password"
-                        required={!passwordOptional}
-                        autoComplete="new-password"
-                        value={data.password}
-                        onChange={(e) => setData('password', e.target.value)}
-                    />
-                    <InputError message={errors.password} />
+                <div className="bg-subtle flex flex-col-reverse gap-2 px-5 py-4 sm:flex-row sm:justify-end sm:px-6">
+                    <Button variant="outline" asChild>
+                        <Link href={route('admin.admins.index')}>Cancel</Link>
+                    </Button>
+                    <Button type="submit" disabled={processing}>
+                        {processing && <LoaderCircle className="size-4 animate-spin" />}
+                        {submitLabel}
+                    </Button>
                 </div>
-                <div className="grid gap-2">
-                    <Label htmlFor="password_confirmation">Confirm password</Label>
-                    <Input
-                        id="password_confirmation"
-                        type="password"
-                        required={!passwordOptional}
-                        autoComplete="new-password"
-                        value={data.password_confirmation}
-                        onChange={(e) => setData('password_confirmation', e.target.value)}
-                    />
-                    <InputError message={errors.password_confirmation} />
-                </div>
-                <p className="text-muted-foreground text-xs sm:col-span-2">
-                    {passwordOptional ? 'Leave blank to keep the current password. ' : ''}At least 12 characters.
-                </p>
-            </div>
-
-            <div className="flex gap-2">
-                <Button type="submit" disabled={processing}>
-                    {processing && <LoaderCircle className="h-4 w-4 animate-spin" />}
-                    {submitLabel}
-                </Button>
-                <Button variant="ghost" asChild>
-                    <Link href={route('admin.admins.index')}>Cancel</Link>
-                </Button>
-            </div>
+            </FormCard>
         </form>
     );
 }

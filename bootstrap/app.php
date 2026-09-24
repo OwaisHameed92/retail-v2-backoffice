@@ -49,4 +49,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withExceptions(function (Exceptions $exceptions) {
         // api/* errors → {code, message, traceId, retryAfterSeconds, rejectedKey} (module 0.5).
         ApiExceptionRenderer::register($exceptions);
+
+        // Licence keys sent back by the "Email this key" dialog must never be flashed to the session (module 1.3).
+        $exceptions->dontFlash(['licences', 'licence_key', 'licenceKey']);
     })->create();

@@ -1,6 +1,8 @@
+import { AdminStatusBadge } from '@/components/admin/admin-badges';
 import { AdminForm, type AdminFormData } from '@/components/admin/admin-form';
-import { PageHeader } from '@/components/shared/page-header';
 import { type AdminRecord, type RoleOption } from '@/components/admin/types';
+import { InitialsAvatar } from '@/components/shared/entity-cell';
+import { PageHeader } from '@/components/shared/page-header';
 import AdminLayout from '@/layouts/admin-layout';
 import { Head, useForm } from '@inertiajs/react';
 import { type FormEventHandler } from 'react';
@@ -32,7 +34,12 @@ export default function EditAdmin({ editAdmin, roles, isSelf }: EditAdminProps) 
             <Head title={`Edit ${editAdmin.name}`} />
             <PageHeader
                 title={`Edit ${editAdmin.name}`}
-                description={isSelf ? 'This is your own account.' : editAdmin.isActive ? undefined : 'This admin user is inactive and cannot log in.'}
+                status={<AdminStatusBadge isActive={editAdmin.isActive} />}
+                description={
+                    isSelf ? 'This is your own account.' : editAdmin.isActive ? editAdmin.email : 'This admin user is inactive and cannot log in.'
+                }
+                back={{ href: route('admin.admins.index'), label: 'Admin users' }}
+                media={<InitialsAvatar name={editAdmin.name} size="lg" />}
             />
             <AdminForm
                 data={data}

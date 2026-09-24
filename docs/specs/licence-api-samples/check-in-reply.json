@@ -1,0 +1,21 @@
+{
+    "licence": {
+        "id": "01K5XTEST00000000000000009",
+        "keyLast4": "P8T5",
+        "status": "trial",
+        "plan": "standard",
+        "features": [
+            "stockControl",
+            "cashOffice"
+        ],
+        "activatedAt": "2026-09-24T09:00:00Z",
+        "trialEndsAt": "2026-10-01T09:00:00Z",
+        "expiresAt": null,
+        "graceDays": 3,
+        "deviceId": "PC-7F3A9C21-FRONT"
+    },
+    "token": "eyJhbGciOiJFZERTQSIsImtpZCI6ImxrLXRlc3QtMDEiLCJ0eXAiOiJzc3Bvcy1saWNlbmNlK2p3dCJ9.eyJpc3MiOiJzc3Bvcy1wb3J0YWwiLCJpYXQiOjE3OTAzMjY4MDAsImp0aSI6IjAxSzVYVEVTVDAwMDAwMDAwMDAwMDAwMDIzIiwibGljIjoiMDFLNVhURVNUMDAwMDAwMDAwMDAwMDAwMDkiLCJrZXlMYXN0NCI6IlA4VDUiLCJjb21wYW55SWQiOiIwMUs1WFRFU1QwMDAwMDAwMDAwMDAwMDAwMyIsImJyYW5jaElkIjoiMDFLNVhURVNUMDAwMDAwMDAwMDAwMDAwMDUiLCJyZWdpc3RlcklkIjoiMDFLNVhURVNUMDAwMDAwMDAwMDAwMDAwMDciLCJkZXZpY2VJZCI6IlBDLTdGM0E5QzIxLUZST05UIiwic3RhdHVzIjoidHJpYWwiLCJwbGFuIjoic3RhbmRhcmQiLCJmZWF0dXJlcyI6WyJzdG9ja0NvbnRyb2wiLCJjYXNoT2ZmaWNlIl0sImV4cGlyZXNBdCI6IjIwMjYtMTAtMDFUMDk6MDA6MDBaIiwiZ3JhY2VEYXlzIjozLCJ2YWxpZFVudGlsIjoiMjAyNi0xMC0wNFQwOTowMDowMFoifQ.XbK-cRXgk6zRecDvUT6e_esFhFmQPCwd_L4_eeFYpavrYgu-2mKWZPODTDsvd3aOaJIRXui9VeBJzfuKWnjaCg",
+    "message": "Free trial until 1 October 2026.",
+    "checkInEverySeconds": 86400,
+    "serverTimeUtc": "2026-09-25T09:00:00Z"
+}

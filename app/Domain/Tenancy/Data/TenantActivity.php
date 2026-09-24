@@ -3,6 +3,9 @@
 namespace App\Domain\Tenancy\Data;
 
 use App\Domain\Admin\Models\Admin;
+use App\Domain\Leads\Data\LeadActivity;
+use App\Domain\Licensing\Data\LicenceActivity;
+use App\Domain\Licensing\Models\Licence;
 use App\Domain\Shared\Models\AuditLog;
 use App\Domain\Tenancy\Enums\CompanyRole;
 use App\Domain\Tenancy\Models\Branch;
@@ -24,6 +27,9 @@ final class TenantActivity
     /** @var array<string, string> */
     private array $actorNames = [];
 
+    /** @var array<string, string> licence id => "Till 2 (02) at Leeds" */
+    private array $licenceTills = [];
+
     /**
      * @param  Collection<int, AuditLog>  $entries
      */
@@ -31,7 +37,9 @@ final class TenantActivity
     {
         $ids = fn (string $type) => $entries->where('subject_type', $type)->pluck('subject_id')->filter()->unique()->values()->all();
 
-        $registers = Register::withoutCompanyScope()->withTrashed()->whereIn('id', $ids((new Register)->getMorphClass()))->get();
+        $licences = Licence::withoutCompanyScope()->withTrashed()->whereIn('id', $ids((new Licence)->getMorphClass()))->get(['id', 'register_id']);
+        $registerIds = array_merge($ids((new Register)->getMorphClass()), $licences->pluck('register_id')->all());
+        $registers = Register::withoutCompanyScope()->withTrashed()->whereIn('id', array_unique($registerIds))->get();
         $branchIds = array_merge($ids((new Branch)->getMorphClass()), $registers->pluck('branch_id')->all());
         $branches = Branch::withoutCompanyScope()->withTrashed()->whereIn('id', array_unique($branchIds))->pluck('name', 'id');
 
@@ -40,6 +48,10 @@ final class TenantActivity
         foreach ($registers as $register) {
             $branch = $this->branchNames[$register->branch_id] ?? 'a branch';
             $this->registerNames[$register->id] = "{$register->name} ({$register->code}) at {$branch}";
+        }
+
+        foreach ($licences as $licence) {
+            $this->licenceTills[$licence->id] = $this->registerNames[$licence->register_id] ?? 'a till';
         }
 
         $adminIds = $entries->where('actor_type', (new Admin)->getMorphClass())->pluck('actor_id')->filter()->unique()->all();
@@ -89,8 +101,17 @@ final class TenantActivity
         $email = (string) ($meta['email'] ?? $meta['user_email'] ?? 'a user');
         $role = fn (mixed $value) => CompanyRole::tryFrom((string) $value)?->label() ?? (string) $value;
 
+        if (str_starts_with($entry->action, 'licence.')) {
+            return LicenceActivity::describe($entry, $this->licenceTills[(string) $entry->subject_id] ?? 'a till');
+        }
+
+        if (str_starts_with($entry->action, 'lead.')) {
+            return LeadActivity::describe($entry);
+        }
+
         return match ($entry->action) {
             'company.created' => 'Created the business',
+            'company.plan_changed' => 'Changed the plan for new tills to '.($meta['to_plan_name'] ?? $after['plan'] ?? 'another plan'),
             'company.updated' => 'Updated business details: '.$this->fields($after),
             'company.activated' => 'Marked the business as active',
             'company.suspended' => 'Suspended the business: '.($meta['reason'] ?? ''),

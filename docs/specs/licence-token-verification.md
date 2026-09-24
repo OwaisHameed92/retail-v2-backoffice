@@ -31,7 +31,7 @@ Header (always exactly these three fields today):
 | `kid` | Which portal key signed it. Format `lk<year>-<nn>`, e.g. `lk2026-01`. |
 | `crit` | Must not be present. Reject if it is. |
 
-Payload claims (per the licence spec; exact value formats are fixed by module 1.5):
+Payload claims (per the licence spec; value formats as built in module 1.5):
 
 | Claim | Meaning |
 |---|---|
@@ -168,4 +168,6 @@ Proposed for the till (please confirm):
 - How the till learns a new `kid` it does not have built in: accept the JWKS from `GET /api/v1/licence/keys`
   over HTTPS (simple; trust = TLS), or only trust keys shipped in signed app updates (stronger; needs an update
   before each rotation). We suggest built-in keys + JWKS over HTTPS with certificate pinning.
-- Final value formats of `expiresAt` / `validUntil` (ISO-8601 strings above) are fixed with module 1.5.
+- ~~Final value formats of `expiresAt` / `validUntil`~~ Fixed by module 1.5: ISO-8601 UTC strings with `Z`, whole
+  seconds (`2026-10-08T09:00:00Z`); `iat` stays Unix seconds. Real replies and tokens:
+  `docs/specs/licence-api-samples/` (signed with the test key of section 4).

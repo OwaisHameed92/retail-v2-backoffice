@@ -1,0 +1,7 @@
+{
+    "code": "rate_limited",
+    "message": "Too many requests from this till. It will try again shortly.",
+    "traceId": "01K5XTEST00000000000000058",
+    "retryAfterSeconds": 60,
+    "rejectedKey": null
+}

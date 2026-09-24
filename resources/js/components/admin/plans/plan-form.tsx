@@ -2,11 +2,11 @@ import { PlanFeaturePicker } from '@/components/admin/plans/plan-feature-picker'
 import { CheckboxRow, Field, FormSection, MoneyInput, NumberInput } from '@/components/admin/plans/plan-form-fields';
 import { formatMoney, slugify, yearlySaving } from '@/components/admin/plans/plan-format';
 import { type FeatureOption, type PlanRecord } from '@/components/admin/plans/types';
+import { FormCard } from '@/components/shared/form-section';
+import { StickyFormBar } from '@/components/shared/sticky-form-bar';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Separator } from '@/components/ui/separator';
-import { cn } from '@/lib/utils';
+import { Textarea } from '@/components/ui/textarea';
 import { Link } from '@inertiajs/react';
 import { LoaderCircle } from 'lucide-react';
 import { useState, type FormEventHandler } from 'react';
@@ -58,12 +58,22 @@ interface PlanFormProps {
     cancelHref: string;
     /** On create, the code follows the name until someone edits it. */
     autoCode?: boolean;
+    /** From useForm: shows "unsaved changes" in the action bar. */
+    isDirty?: boolean;
 }
 
-const textareaClass =
-    'flex min-h-20 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm';
-
-export function PlanForm({ data, setData, errors, processing, features, onSubmit, submitLabel, cancelHref, autoCode = false }: PlanFormProps) {
+export function PlanForm({
+    data,
+    setData,
+    errors,
+    processing,
+    features,
+    onSubmit,
+    submitLabel,
+    cancelHref,
+    autoCode = false,
+    isDirty = false,
+}: PlanFormProps) {
     const [codeTouched, setCodeTouched] = useState(!autoCode);
     const saving = yearlySaving(data.price_per_till_monthly, data.price_per_till_yearly);
 
@@ -76,7 +86,7 @@ export function PlanForm({ data, setData, errors, processing, features, onSubmit
 
     return (
         <form onSubmit={onSubmit} className="grid gap-6">
-            <Card className="divide-y p-0">
+            <FormCard>
                 <FormSection title="Plan details" description="How the plan appears to our team and, if public, on the pricing page.">
                     <div className="grid gap-5 sm:grid-cols-2">
                         <Field id="name" label="Name" error={errors.name} help="For example Standard or Pro.">
@@ -113,11 +123,11 @@ export function PlanForm({ data, setData, errors, processing, features, onSubmit
                         error={errors.description}
                         help="One or two sentences. Optional, up to 500 characters."
                     >
-                        <textarea
+                        <Textarea
                             id="description"
                             rows={3}
                             maxLength={500}
-                            className={cn(textareaClass, errors.description && 'border-destructive')}
+                            aria-invalid={!!errors.description || undefined}
                             value={data.description}
                             onChange={(e) => setData('description', e.target.value)}
                         />
@@ -271,10 +281,9 @@ export function PlanForm({ data, setData, errors, processing, features, onSubmit
                         />
                     </Field>
                 </FormSection>
-            </Card>
+            </FormCard>
 
-            <Separator className="sm:hidden" />
-            <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <StickyFormBar message={isDirty ? 'You have unsaved changes.' : 'Prices are in pounds, per till.'}>
                 <Button variant="outline" asChild>
                     <Link href={cancelHref}>Cancel</Link>
                 </Button>
@@ -282,7 +291,7 @@ export function PlanForm({ data, setData, errors, processing, features, onSubmit
                     {processing && <LoaderCircle className="size-4 animate-spin" aria-hidden />}
                     {submitLabel}
                 </Button>
-            </div>
+            </StickyFormBar>
         </form>
     );
 }

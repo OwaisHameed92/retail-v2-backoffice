@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Domain\Licensing\Data\LicenceData;
+use App\Domain\Licensing\Support\IssuedKeys;
 use App\Domain\Tenancy\Actions\AddBranch;
 use App\Domain\Tenancy\Actions\DeactivateBranch;
 use App\Domain\Tenancy\Actions\ReactivateBranch;
@@ -11,6 +13,7 @@ use App\Domain\Tenancy\Models\Company;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreBranchRequest;
 use App\Http\Requests\Admin\UpdateBranchRequest;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 
 /**
@@ -19,9 +22,22 @@ use Illuminate\Http\RedirectResponse;
  */
 class TenantBranchController extends Controller
 {
-    public function store(StoreBranchRequest $request, Company $company, AddBranch $addBranch): RedirectResponse
+    /**
+     * Adds a branch with its first tills; their licences are issued with them (module 1.3). Asked for JSON (the
+     * admin dialog), the reply carries the new plain keys for the one-time "Licence key created" dialog.
+     */
+    public function store(StoreBranchRequest $request, Company $company, AddBranch $addBranch, IssuedKeys $issuedKeys): RedirectResponse|JsonResponse
     {
         $branch = $addBranch->handle($company, $request->details(), $request->integer('tills'));
+        $keys = LicenceData::issuedKeys($issuedKeys->pullForCompany($company->id));
+
+        if ($request->expectsJson() && ! $request->header('X-Inertia')) {
+            $message = $keys === [] && $request->integer('tills') > 0
+                ? "Branch {$branch->name} added. Its tills have no licences yet: create an active plan, then issue them."
+                : "Branch {$branch->name} added.";
+
+            return response()->json(['message' => $message, 'keys' => $keys])->withHeaders(['Cache-Control' => 'no-store']);
+        }
 
         return back()->with('success', "Branch {$branch->name} added.");
     }

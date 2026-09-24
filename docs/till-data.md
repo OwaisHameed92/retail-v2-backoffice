@@ -1,0 +1,170 @@
+# Till data store (modules 2.3 + 2.4)
+
+How the portal stores every row the tills send, and the one way rows get in: `ApplySyncChanges`.
+Contract: `docs/contracts/portal-api-v1.1/README-web-portal-api.md` (the samples win where text and samples differ).
+
+## Shape
+
+| Piece | Where | Written by |
+|---|---|---|
+| Overrides | `app/Domain/TillData/definitions.php` | hand |
+| Generator | `app/Domain/TillData/Generator/*`, `php artisan till:entities:generate` | hand |
+| Migrations, one per group | `database/migrations/2026_09_27_1100NN_create_till_<group>_tables.php` | generated |
+| Models (120) | `app/Domain/TillData/Models/*.php` | generated |
+| Enums (76) | `app/Domain/TillData/Enums/*.php` | generated |
+| Registry | `app/Domain/TillData/EntityRegistry.php` | generated |
+| Behaviour traits, casts, queries | `app/Domain/TillData/{Concerns,Casts,Queries}` | hand |
+| Applier | `app/Domain/TillData/Actions/ApplySyncChanges.php` + `app/Domain/TillData/Sync/*` | hand |
+| Sync bookkeeping | `2026_09_27_100000_create_till_sync_tables.php`, `…100001_add_till_columns_to_tenancy_tables.php` | hand |
+
+All 123 schema entities have a registry entry. 120 have their own table and model. `Company`, `Branch` and
+`Register` land on module 1.2's `companies`, `branches` and `registers` tables. `Setting` and `RolePermission` are
+in `ownership.json` but have no schema: the till cannot sync them yet (README section 16), so they have no table.
+
+Groups: catalogue, promotions, customers, sales, stock, purchasing, cash, accounts, staff, system.
+
+## Column rules
+
+- `id` = the till's ULID, `string(26)` primary key, stored exactly as sent. Never re-keyed.
+- `company_id` on every table. `branch_id` / `register_id` where the entity has them.
+- **Scopes** (registry `scope`):
+  - `company`: company-wide master data (products, customers, VAT…). No branch.
+  - `branch` / `register`: the row's own `branchId` / `registerId`. Must be the sending branch and one of its tills.
+  - `child`: rows with a parent and no branch of their own (`SaleLine`, `SalePayment`, `SaleVat`,
+    `CustomerOrderPayment`, `JournalLine`, `*Line`, `SupplierPaymentAllocation`). `branch_id` (and `register_id`
+    when the parent is register-scoped) is copied from the parent (in the same batch or stored), else the sending
+    branch. A child stored before its parent gets the parent's `register_id` when the parent lands (backfill).
+  - `sender`: branch-owned rows without a `branchId` (FinancialYear, VatReturn, Licence, StandingOrder…): stored
+    with the sending branch in `branch_id`, so reports can tell which shop made them.
+- Money `decimal(12,2)`; costs and quantities `decimal(14,4)`; percentages `decimal(9,4)`; exchange rates
+  `decimal(16,6)`. Models cast them to fixed-scale strings (`MoneyCast`, `QuantityCast`, `RateCast`). Never floats.
+- Date-times are UTC `dateTime` (not `timestamp`: dates past 2038 exist). Dates are `date`, times `time`.
+- Embedded JSON strings (`receiptJson`, `linesJson`, `*Json`, `PrintJob.payload`) are `longText`, stored verbatim
+  (a MySQL `json` column would re-format them, and `""` is not valid JSON).
+- Enums are `string(40)`, cast with `TillEnumCast` to the generated backed enum. A value the contract does not list
+  yet is stored as sent, read back as `null`, and logged once per batch (never lose a row for an additive change).
+- Derived members (`isDeleted`, `domainEvents`, `key`, `balanceDue`, `isCompleted`, Money objects like
+  `priceIncVat`, navigation collections like `Product.barcodes`) are not stored.
+- Unknown members (a newer till adds a column) go into `extra` (json). Secret-looking ones are redacted there.
+- Secrets: `Licence.licenceKey` is stored as `licence_key_hash` (HMAC-SHA256 under APP_KEY, as module 1.3 hashes
+  keys) and `licence_key_last4`. `User.pinHash` and `rfid` are `$hidden`.
+- Every till column is nullable in the database; the applier enforces the schema's nullability. The database
+  stays tolerant of schema relaxations and tombstones.
+- Sync columns: `row_version` (the till's rowVersion), `created_at` / `updated_at` / `deleted_at` (the till's),
+  `synced_at` (when we stored it), `sync_seq` (the push seq that last wrote it). Hub-owned tables also have
+  `hub_version` (module 2.5's pull counter) and `hub_edited_at` (set by a portal edit).
+- No foreign keys (rows arrive out of order). Indexes: `(company_id, updated_at)` and `(company_id, branch_id)`
+  everywhere, the parent key on children, plus report indexes from `definitions.php` (sales by
+  `(company_id, branch_id, completed_at)`, sale lines by `(company_id, product_id)`, stock movements by
+  `(company_id, branch_id, product_id, at)`, barcodes by `(company_id, barcode)`…).
+- Tables whose names clash with portal tables get `till_`: `till_users`, `till_roles`, `till_audit_logs`,
+  `till_licences`, `till_licence_add_on_trials`, `till_sync_conflicts`, `till_sync_states`; `Account` is
+  `ledger_accounts`.
+
+## Applying changes
+
+```php
+$result = app(ApplySyncChanges::class)->handle($company, $sendingBranch, $changes); // decoded envelopes
+$result->toPushReply();   // ['acknowledgedSeq' => 18239, 'accepted' => 9]
+$result->rejected;        // list<Rejection>: key, seq, code, message (in seq order)
+$result->outcomes;        // ['applied' => 7, 'stale' => 1, 'duplicate' => 0, 'conflict' => 1]
+```
+
+Per change, in seq order, 500 per transaction:
+
+1. **Envelope** (`EnvelopeReader`): the sync-change schema; `companyId` = the company; a non-empty `branchId` =
+   the sending branch; a non-empty `registerId` = one of its tills; entity known.
+2. **Payload** (`PayloadMapper`): every schema member present with its type (the generated rule set in the
+   registry), `id` = `entityId`, `companyId` = the company, branch/register rules above. Values are normalised.
+3. **Dedupe**: a `(company, sending branch, seq)` already in `sync_applied_changes` is a duplicate (accepted,
+   nothing changes). A version not above the stored `row_version` is stale (accepted, nothing changes): this is
+   the `(entity, entityId, version)` idempotency, and it also covers pull replays (seq 0).
+4. **Write** (`EntityWriter`): bulk upsert of whole rows (`BulkWriter`). An id another company holds is rejected.
+   `D` = soft delete with the payload stored (or `deleted_at` only, if no payload).
+5. **Historic rows** (`immutable` in definitions.php): completed/voided sales and their lines, payments and VAT,
+   journal entries and lines, audit logs, customer order payments. Once frozen, only the listed columns (e.g. a
+   sale's `status`, `void_reason_id`, `voided_by`; a payment's `status`), `deleted_at` and the sync columns change;
+   any other difference is kept out and recorded in `sync_conflicts` (`immutableChange`). Sale children are frozen
+   when their sale was completed at the child's seq.
+6. **Hub-owned rows** pushed by a till are stored like any row, unless the portal edited the row after the till's
+   change (`hub_edited_at` > the change's `at`): then the portal's row is kept and a `hubEditNewer` conflict holds
+   the till's payload. Module 2.5 decides who wins.
+7. **Company/Branch/Register** (`TenancyRowApplier`): a till may send only its own company, its own branch and that
+   branch's tills. Only `tillFields` are written (names, address, phone, VAT number, nation, licensed hours, DRS
+   point, area, the till's counters); ids, codes, status, `is_active`, `is_main_till` stay the portal's. A delete is
+   never applied (`tenancyDelete` conflict).
+8. **Ack**: `acknowledgedSeq` = the highest seq with every lower seq of the batch accepted; the first rejection
+   stops it (first change rejected → its seq − 1). Gaps in seq numbering do not. Rows after a rejection are still
+   applied; the till resends them and they come back as duplicates.
+
+If the database refuses a chunk, it is rolled back and replayed one change at a time: only the change that fails is
+rejected (`store.failed`, logged without the payload).
+
+Rejection codes: `change.invalid`, `entity.unknown`, `sync.wrong_company`, `sync.wrong_branch`,
+`sync.unknown_register`, `sync.duplicate_seq`, `sync.parent_rejected`, `payload.missing`, `payload.id_mismatch`,
+`payload.invalid`, `entity.id_taken`, `entity.not_found`, `store.failed`.
+
+### What the caller (module 2.2) must do
+
+- Authenticate the branch's sync key and pass that branch as `$sender`; take a per-branch lock around `handle()`.
+- Decode JSON with `json_decode(..., true)`. Numbers arrive as PHP floats; their shortest round-trip string is the
+  number the till wrote (up to 15 significant digits), which is what the applier stores.
+- Reply 200 with `toPushReply()`. When `rejected` is not empty, put `rejected[0]->key` in logs / the error body's
+  `rejectedKey` as the contract suggests.
+
+## Reading (phase 3)
+
+All models are tenant-scoped (`BelongsToCompany`): run inside a request with a current company, or
+`CurrentCompany::runAs()`. Branch-owned models are read-only (`TillOwnedRow` throws on save/delete).
+
+```php
+Sale::query()->trading()->forBranch($branchOrNull)->completedBetween($from, $to)->get();
+Sale::totals($query);               // count, total, vat_total, net_total… as exact strings
+SaleLine::totals(SaleLine::query()->forProduct($id));
+StockMovement::netQty(StockMovement::query()->forBranch($b)->forProduct($id)->between($from, $to));
+TillSum::many($anyQuery, ['total' => 2, 'qty' => 4]);   // exact sums in the database, never PHP floats
+$sale->saleLines; $line->sale; $row->branch; $row->register;
+```
+
+## Regenerating
+
+```bash
+php artisan till:entities:generate          # writes changed files, deletes stale generated ones
+php artisan till:entities:generate --check  # CI: exit 1 if anything would change
+```
+
+Output is deterministic: running it twice changes nothing (a test checks this). After a contract update: copy the
+new contract folder, point `contract` in definitions.php at it if the folder name changed, regenerate, run the
+tests, read the diff.
+
+Generated code passes Pint and Larastan level 6 as written. One Larastan false positive is ignored in
+`phpstan.neon`, scoped to these models: in a `final` class it reads `BelongsToCompany::withoutCompanyScope()`'s
+`Builder<static>` as `Builder<static(Sale)>` and calls it a mismatch with `Builder<Sale>`.
+
+**Before production** the generated create-table migrations can simply be regenerated. **After the first deploy**
+never change a migration that has run: regenerate for models/registry, then write a normal `add column` migration
+for the new columns (the generator does not write alter migrations yet).
+
+## Adding an override
+
+Everything goes in `definitions.php` (the file documents each key):
+
+- Table or class name: `'Entity' => ['table' => '…', 'class' => '…']`.
+- Parent for a child row: `'parent' => ['Sale', 'saleId']` (adds relations and branch/register inheritance).
+- Index: `'indexes' => [['company_id', 'branch_id', 'date']]`.
+- Decimal kind: add the field (or `Entity.field`) to `decimals.cost|quantity|percent|rate` (default is money).
+- A derived member: `'derived' => ['isSomething']`. A stored object/array member: `'json' => ['permissions']`.
+- A secret: `'secret' => ['fieldName']`. Hidden from JSON: `'hidden' => ['fieldName']`.
+- Historic rows: `'immutable' => ['when' => [...], 'whenParent' => [...], 'always' => true, 'mutable' => [...]]`.
+- Behaviour (scopes, helpers): write a trait in `Concerns/` and list it under `traits`. Never edit generated files.
+
+Then regenerate and run `php artisan test tests/Feature/TillData`.
+
+## Performance
+
+5,000 mixed rows (700 sales with lines, payments, VAT and stock movements, plus 100 products) in one push:
+see the `perf` group test (`php artisan test --group=perf`), which prints wall and CPU time. The budget is
+5 s of CPU time. Measured (2019 i9, in-memory SQLite, machine shared with other jobs at load 18–30): ~1.45 s CPU,
+2.6–3.4 s wall; the same batch retried: ~0.2 s CPU / 0.5 s wall. Where the time goes: validation and mapping
+~0.5 s, SQLite upserts ~0.3 s, reads, ledger and bookkeeping the rest. The whole TillData suite also passes on
+MySQL 8.0.35.

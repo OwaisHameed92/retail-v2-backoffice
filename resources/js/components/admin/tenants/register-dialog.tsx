@@ -1,13 +1,17 @@
+import { revealLicenceKeys } from '@/components/admin/licences/reveal-keys';
+import { type IssuedKeysReply } from '@/components/admin/licences/types';
 import { Field } from '@/components/admin/tenants/field';
 import { type TenantBranch, type TenantRegister } from '@/components/admin/tenants/types';
+import { showToast } from '@/components/shared/toaster';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useForm } from '@inertiajs/react';
+import { sendJson } from '@/lib/http';
+import { router, useForm } from '@inertiajs/react';
 import { LoaderCircle } from 'lucide-react';
-import { type FormEventHandler } from 'react';
+import { type FormEventHandler, useState } from 'react';
 
 interface RegisterDialogProps {
     open: boolean;
@@ -42,20 +46,52 @@ function nextCode(branch: TenantBranch): string {
 function RegisterDialogBody({ onOpenChange, tenantId, branch, register }: RegisterDialogProps) {
     const editing = Boolean(register);
     const suggested = nextCode(branch);
-    const { data, setData, post, put, processing, errors } = useForm<{ name: string; code: string; is_main_till: boolean }>({
+    const {
+        data,
+        setData,
+        put,
+        processing: saving,
+        errors,
+        setError,
+        clearErrors,
+    } = useForm<{ name: string; code: string; is_main_till: boolean }>({
         name: register?.name ?? '',
         code: register?.code ?? '',
         is_main_till: false,
     });
+    const [adding, setAdding] = useState(false);
+    const processing = saving || adding;
+
+    // Adding a till issues its licence: the reply carries the new key, shown once in the "Licence key created" dialog.
+    const add = async () => {
+        setAdding(true);
+        clearErrors();
+        const result = await sendJson<IssuedKeysReply>('POST', route('admin.tenants.registers.store', [tenantId, branch.id]), data);
+        setAdding(false);
+
+        if (!result.ok || !result.data) {
+            const { name, code, is_main_till, ...other } = result.errors;
+            setError({ name, code, is_main_till });
+            if (!name && !code && !is_main_till) {
+                showToast(Object.values(other)[0] ?? result.message ?? 'The till could not be added.', 'error');
+            }
+
+            return;
+        }
+
+        onOpenChange(false);
+        showToast(result.data.message, result.data.keys.length > 0 ? 'success' : 'error');
+        revealLicenceKeys({ keys: result.data.keys, title: `${result.data.keys[0]?.tillName ?? 'Till'} added: licence key created` });
+        router.reload({ only: ['branches', 'stats', 'licensing', 'activity'] });
+    };
 
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
-        const options = { preserveScroll: true, onSuccess: () => onOpenChange(false) };
 
         if (register) {
-            put(route('admin.tenants.registers.update', [tenantId, register.id]), options);
+            put(route('admin.tenants.registers.update', [tenantId, register.id]), { preserveScroll: true, onSuccess: () => onOpenChange(false) });
         } else {
-            post(route('admin.tenants.registers.store', [tenantId, branch.id]), options);
+            void add();
         }
     };
 
@@ -69,7 +105,7 @@ function RegisterDialogBody({ onOpenChange, tenantId, branch, register }: Regist
                     <DialogDescription>
                         {editing
                             ? 'The till code appears in receipt numbers. Change it only before the till starts trading.'
-                            : 'Each till needs its own licence. Licences arrive in module 1.3.'}
+                            : 'Each till has its own licence. It is issued straight away and you see its key once.'}
                     </DialogDescription>
                 </DialogHeader>
 

@@ -1,51 +1,63 @@
-import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
-import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
-import { type NavItem, type SharedData } from '@/types';
-import { Link, usePage } from '@inertiajs/react';
+import { SidebarBrand } from '@/components/shell/sidebar-brand';
+import { SidebarNav, type ShellNavGroup } from '@/components/shell/sidebar-nav';
+import { Sidebar, SidebarContent, SidebarFooter, SidebarRail } from '@/components/ui/sidebar';
+import { type SharedData } from '@/types';
+import { usePage } from '@inertiajs/react';
 import { Banknote, BarChart3, BookOpen, Boxes, LayoutGrid, Package, Receipt, Settings, Tag, Truck, UserCog, Users } from 'lucide-react';
-import AppLogo from './app-logo';
 
-// Only Dashboard exists so far; the rest are placeholders for later modules.
-const mainNavItems: NavItem[] = [
-    { title: 'Dashboard', url: '/app', icon: LayoutGrid },
-    { title: 'Sales', url: '#', icon: Receipt, soon: true },
-    { title: 'Products', url: '#', icon: Package, soon: true },
-    { title: 'Promotions', url: '#', icon: Tag, soon: true },
-    { title: 'Stock', url: '#', icon: Boxes, soon: true },
-    { title: 'Purchasing', url: '#', icon: Truck, soon: true },
-    { title: 'Customers', url: '#', icon: Users, soon: true },
-    { title: 'Cash and Z', url: '#', icon: Banknote, soon: true },
-    { title: 'Accounts', url: '#', icon: BookOpen, soon: true },
-    { title: 'Staff', url: '#', icon: UserCog, soon: true },
-    { title: 'Reports', url: '#', icon: BarChart3, soon: true },
-    { title: 'Settings', url: '#', icon: Settings, soon: true },
-];
+/**
+ * Tenant portal navigation, grouped by job. Items without an `href` are modules not built yet ("Soon").
+ * When a module ships, give its item an `href` and an `active` test.
+ */
+function tenantNav(path: string): ShellNavGroup[] {
+    return [
+        { items: [{ title: 'Dashboard', icon: LayoutGrid, href: '/app', active: path === '/app' }] },
+        {
+            label: 'Selling',
+            items: [
+                { title: 'Sales', icon: Receipt, soon: true },
+                { title: 'Customers', icon: Users, soon: true },
+                { title: 'Promotions', icon: Tag, soon: true },
+            ],
+        },
+        {
+            label: 'Catalogue',
+            items: [
+                { title: 'Products', icon: Package, soon: true },
+                { title: 'Stock', icon: Boxes, soon: true },
+                { title: 'Purchasing', icon: Truck, soon: true },
+            ],
+        },
+        {
+            label: 'Money',
+            items: [
+                { title: 'Cash and Z', icon: Banknote, soon: true },
+                { title: 'Accounts', icon: BookOpen, soon: true },
+                { title: 'Reports', icon: BarChart3, soon: true },
+            ],
+        },
+        { label: 'Team', items: [{ title: 'Staff', icon: UserCog, soon: true }] },
+        { label: 'Settings', items: [{ title: 'Business settings', icon: Settings, soon: true }] },
+    ];
+}
 
 export function AppSidebar() {
     const { company } = usePage<SharedData>().props;
+    const path = usePage().url.split('?')[0];
 
     return (
-        <Sidebar collapsible="icon" variant="inset">
-            <SidebarHeader>
-                <SidebarMenu>
-                    <SidebarMenuItem>
-                        <SidebarMenuButton size="lg" asChild>
-                            <Link href="/app" prefetch>
-                                <AppLogo subtitle={company?.name} />
-                            </Link>
-                        </SidebarMenuButton>
-                    </SidebarMenuItem>
-                </SidebarMenu>
-            </SidebarHeader>
+        <Sidebar collapsible="icon">
+            <SidebarBrand href="/app" subtitle={company?.name} />
 
-            <SidebarContent>
-                <NavMain items={mainNavItems} />
+            <SidebarContent className="gap-0 pb-2">
+                <SidebarNav groups={tenantNav(path)} />
             </SidebarContent>
 
-            <SidebarFooter>
+            <SidebarFooter className="border-sidebar-border border-t p-2">
                 <NavUser />
             </SidebarFooter>
+            <SidebarRail />
         </Sidebar>
     );
 }

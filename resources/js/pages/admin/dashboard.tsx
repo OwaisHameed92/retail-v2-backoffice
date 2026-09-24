@@ -1,50 +1,92 @@
-import { PageHeader } from '@/components/shared/page-header';
 import { type AdminSharedData } from '@/components/admin/types';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { EmptyState } from '@/components/shared/empty-state';
+import { PageHeader } from '@/components/shared/page-header';
+import { SectionCard } from '@/components/shared/section-card';
+import { StatCard, StatGrid, type StatTone } from '@/components/shared/stat-card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import AdminLayout from '@/layouts/admin-layout';
-import { Head, usePage } from '@inertiajs/react';
-import { Building2, Clock, KeyRound, LayoutDashboard, PoundSterling, type LucideIcon } from 'lucide-react';
+import { Head, Link, usePage } from '@inertiajs/react';
+import { Activity, Building2, Clock, Inbox, KeyRound, PoundSterling, Timer, type LucideIcon } from 'lucide-react';
 
-const stats: { title: string; icon: LucideIcon }[] = [
-    { title: 'Tenants', icon: Building2 },
-    { title: 'Trials', icon: Clock },
-    { title: 'Licences', icon: KeyRound },
-    { title: 'Cash due', icon: PoundSterling },
+const stats: { title: string; icon: LucideIcon; tone: StatTone }[] = [
+    { title: 'Tenants', icon: Building2, tone: 'primary' },
+    { title: 'Trials', icon: Clock, tone: 'warning' },
+    { title: 'Licences', icon: KeyRound, tone: 'success' },
+    { title: 'Cash due', icon: PoundSterling, tone: 'danger' },
 ];
+
+function greeting(): string {
+    const hour = Number(new Intl.DateTimeFormat('en-GB', { hour: 'numeric', hour12: false, timeZone: 'Europe/London' }).format(new Date()));
+
+    return hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
+}
+
+function SoonCard({ title, description, icon, body }: { title: string; description: string; icon: LucideIcon; body: string }) {
+    return (
+        <SectionCard title={title} description={description} actions={<Badge variant="neutral">Soon</Badge>}>
+            <EmptyState icon={icon} title="Nothing here yet" body={body} size="sm" />
+        </SectionCard>
+    );
+}
 
 export default function AdminDashboard() {
     const { admin } = usePage<AdminSharedData>().props;
+    const canSeeTenants = admin.abilities.includes('tenants.view');
 
     return (
         <AdminLayout>
             <Head title="Admin dashboard" />
 
-            <PageHeader title="Dashboard" description={`Welcome back, ${admin.name}.`} />
+            <PageHeader
+                title={`${greeting()}, ${admin.name.split(' ')[0]}`}
+                description="Here is how Switch & Save customers are doing today."
+                actions={
+                    canSeeTenants && (
+                        <Button variant="outline" asChild>
+                            <Link href={route('admin.tenants.index')}>
+                                <Building2 />
+                                View tenants
+                            </Link>
+                        </Button>
+                    )
+                }
+            />
 
-            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <StatGrid>
                 {stats.map((stat) => (
-                    <Card key={stat.title} className="gap-0">
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-muted-foreground text-sm font-medium">{stat.title}</CardTitle>
-                            <stat.icon className="text-muted-foreground size-4" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-muted-foreground text-2xl font-semibold">—</div>
-                            <p className="text-muted-foreground text-xs">No data yet</p>
-                        </CardContent>
-                    </Card>
+                    <StatCard
+                        key={stat.title}
+                        label={stat.title}
+                        value={<span className="text-muted-foreground">—</span>}
+                        hint="Live figures coming soon"
+                        icon={stat.icon}
+                        tone={stat.tone}
+                    />
                 ))}
+            </StatGrid>
+
+            <div className="grid gap-6 lg:grid-cols-2">
+                <SoonCard
+                    title="New leads"
+                    description="Trial requests from the website, newest first."
+                    icon={Inbox}
+                    body="New trial requests will be listed here with one-click approval."
+                />
+                <SoonCard
+                    title="Trials ending soon"
+                    description="Customers whose free trial ends in the next 7 days."
+                    icon={Timer}
+                    body="Trials that need a follow-up call will appear here."
+                />
             </div>
 
-            <div className="flex flex-1 flex-col items-center justify-center rounded-xl border border-dashed px-6 py-16 text-center">
-                <div className="bg-muted mb-4 flex size-12 items-center justify-center rounded-full">
-                    <LayoutDashboard className="text-muted-foreground size-6" />
-                </div>
-                <h2 className="text-base font-medium">Your dashboard is on its way</h2>
-                <p className="text-muted-foreground mt-1 max-w-md text-sm">
-                    Tenant, trial, licence and cash numbers, new leads and trials ending soon arrive in module 1.9.
-                </p>
-            </div>
+            <SoonCard
+                title="Till health"
+                description="Tills that have not checked in, or are running an old EPOS version."
+                icon={Activity}
+                body="Offline tills and version warnings will show here once tills report in."
+            />
         </AdminLayout>
     );
 }

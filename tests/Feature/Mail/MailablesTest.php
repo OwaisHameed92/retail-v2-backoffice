@@ -33,8 +33,10 @@ beforeEach(function () {
 });
 
 it('registers every branded template once, queued and encrypted', function () {
-    expect(EmailTemplates::MAILABLES)->toHaveCount(8)
-        ->and(array_unique(EmailTemplates::keys()))->toHaveCount(8);
+    // Modules add templates (1.6 leads, 1.8 invoice): every one is listed once with a unique key.
+    expect(count(EmailTemplates::MAILABLES))->toBeGreaterThanOrEqual(10)
+        ->and(array_unique(EmailTemplates::MAILABLES))->toHaveCount(count(EmailTemplates::MAILABLES))
+        ->and(array_unique(EmailTemplates::keys()))->toHaveCount(count(EmailTemplates::MAILABLES));
 
     foreach (EmailTemplates::MAILABLES as $class) {
         expect(is_subclass_of($class, BrandedMailable::class))->toBeTrue()

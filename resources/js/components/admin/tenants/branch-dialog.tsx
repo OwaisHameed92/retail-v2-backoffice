@@ -1,11 +1,15 @@
+import { revealLicenceKeys } from '@/components/admin/licences/reveal-keys';
+import { type IssuedKeysReply } from '@/components/admin/licences/types';
 import { BranchFields, type BranchFieldsData } from '@/components/admin/tenants/branch-fields';
 import { TillCountPicker } from '@/components/admin/tenants/till-count-picker';
 import { type Nation, type Option, type TenantBranch } from '@/components/admin/tenants/types';
+import { showToast } from '@/components/shared/toaster';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { useForm } from '@inertiajs/react';
+import { sendJson } from '@/lib/http';
+import { router, useForm } from '@inertiajs/react';
 import { LoaderCircle } from 'lucide-react';
-import { type FormEventHandler } from 'react';
+import { type FormEventHandler, useState } from 'react';
 
 interface BranchDialogProps {
     open: boolean;
@@ -44,17 +48,45 @@ export function BranchDialog(props: BranchDialogProps) {
 }
 
 function BranchDialogBody({ onOpenChange, tenantId, branch, nations, maxTills }: BranchDialogProps) {
-    const { data, setData, post, put, processing, errors } = useForm<BranchForm>(initial(branch));
+    const { data, setData, put, processing: saving, errors, setError, clearErrors } = useForm<BranchForm>(initial(branch));
+    const [adding, setAdding] = useState(false);
+    const processing = saving || adding;
     const editing = Boolean(branch);
+
+    // New tills get their licences straight away: the reply carries the keys, shown once in the key dialog.
+    const add = async () => {
+        setAdding(true);
+        clearErrors();
+        const result = await sendJson<IssuedKeysReply>('POST', route('admin.tenants.branches.store', tenantId), data);
+        setAdding(false);
+
+        if (!result.ok || !result.data) {
+            const fields = Object.keys(initial(null));
+            const formErrors = Object.fromEntries(Object.entries(result.errors).filter(([key]) => fields.includes(key)));
+            setError(formErrors as Record<keyof BranchForm, string>);
+            if (Object.keys(formErrors).length === 0) {
+                showToast(Object.values(result.errors)[0] ?? result.message ?? 'The branch could not be added.', 'error');
+            }
+
+            return;
+        }
+
+        onOpenChange(false);
+        showToast(result.data.message, data.tills > 0 && result.data.keys.length === 0 ? 'error' : 'success');
+        revealLicenceKeys({
+            keys: result.data.keys,
+            title: `${data.name || 'Branch'} added: ${result.data.keys.length === 1 ? 'licence key' : 'licence keys'} created`,
+        });
+        router.reload({ only: ['branches', 'stats', 'licensing', 'activity'] });
+    };
 
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
-        const options = { preserveScroll: true, onSuccess: () => onOpenChange(false) };
 
         if (branch) {
-            put(route('admin.tenants.branches.update', [tenantId, branch.id]), options);
+            put(route('admin.tenants.branches.update', [tenantId, branch.id]), { preserveScroll: true, onSuccess: () => onOpenChange(false) });
         } else {
-            post(route('admin.tenants.branches.store', tenantId), options);
+            void add();
         }
     };
 

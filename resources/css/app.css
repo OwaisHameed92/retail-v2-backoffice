@@ -6,13 +6,30 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/*
+  Switch & Save design tokens. Every colour in the product comes from here; pages use the Tailwind names
+  (bg-card, text-muted-foreground, border-border, bg-success-soft...), never raw hex or palette classes.
+  See docs/BRAND.md (the design system) before adding or changing a token.
+*/
 @theme {
-    --font-sans:
-        'Inter', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+    --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+    --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 
+    /* Radius: controls 8px (rounded-lg), small bits 6px (rounded-md), cards 12px (rounded-xl). */
     --radius-lg: var(--radius);
     --radius-md: calc(var(--radius) - 2px);
     --radius-sm: calc(var(--radius) - 4px);
+
+    /* Elevation: cards sit on the canvas with a hairline border and a whisper of shadow. */
+    --shadow-card: var(--elevation-card);
+    --shadow-raised: var(--elevation-raised);
+    --shadow-overlay: var(--elevation-overlay);
+
+    /* Extra type sizes used by the system (tables headers, badges, big numbers). */
+    --text-2xs: 0.6875rem;
+    --text-2xs--line-height: 1rem;
+    --text-stat: 1.75rem;
+    --text-stat--line-height: 2.125rem;
 
     --color-background: var(--background);
     --color-foreground: var(--foreground);
@@ -25,12 +42,15 @@
 
     --color-primary: var(--primary);
     --color-primary-foreground: var(--primary-foreground);
+    --color-primary-hover: var(--primary-hover);
+    --color-primary-soft: var(--primary-soft);
 
     --color-secondary: var(--secondary);
     --color-secondary-foreground: var(--secondary-foreground);
 
     --color-muted: var(--muted);
     --color-muted-foreground: var(--muted-foreground);
+    --color-subtle: var(--subtle);
 
     --color-accent: var(--accent);
     --color-accent-foreground: var(--accent-foreground);
@@ -44,12 +64,18 @@
     --color-warning: var(--warning);
     --color-warning-foreground: var(--warning-foreground);
     --color-warning-soft: var(--warning-soft);
+    --color-danger-foreground: var(--danger-foreground);
     --color-danger-soft: var(--danger-soft);
+    --color-info: var(--info);
+    --color-info-foreground: var(--info-foreground);
     --color-info-soft: var(--info-soft);
     --color-brand-blue: var(--brand-blue);
     --color-brand-green: var(--brand-green);
+    --color-brand-panel: var(--brand-panel);
 
+    --color-overlay: var(--overlay);
     --color-border: var(--border);
+    --color-border-strong: var(--border-strong);
     --color-input: var(--input);
     --color-ring: var(--ring);
 
@@ -67,15 +93,11 @@
     --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
     --color-sidebar-border: var(--sidebar-border);
     --color-sidebar-ring: var(--sidebar-ring);
+    --color-sidebar-muted: var(--sidebar-muted);
 }
 
 /*
-  The default border color has changed to `currentColor` in Tailwind CSS v4,
-  so we've added these compatibility styles to make sure everything still
-  looks the same as it did with Tailwind CSS v3.
-
-  If we ever want to remove these styles, we need to add an explicit border
-  color utility to any element that depends on these defaults.
+  Tailwind v4 changed the default border colour to currentColor; keep borders on the token.
 */
 @layer base {
     *,
@@ -83,103 +105,157 @@
     ::before,
     ::backdrop,
     ::file-selector-button {
-        border-color: var(--color-gray-200, currentColor);
+        border-color: var(--border, currentColor);
     }
 }
 
 /*
-  Switch & Save brand theme. Brand blue #015CFC (primary), brand green #01C301 (positive / accent).
-  Cool slate neutrals, white cards on a soft grey canvas. See docs/BRAND.md before changing.
+  Light theme. Brand blue #015CFC (primary), brand green #01C301 (positive). Cool slate neutrals:
+  white cards on a soft grey canvas, hairline borders, very soft shadows.
 */
 :root {
-    --background: hsl(220, 20%, 97.5%);
+    --background: hsl(216, 28%, 97%);
     --foreground: hsl(222, 47%, 11%);
     --card: hsl(0, 0%, 100%);
     --card-foreground: hsl(222, 47%, 11%);
     --popover: hsl(0, 0%, 100%);
     --popover-foreground: hsl(222, 47%, 11%);
+
     --primary: hsl(218, 99%, 50%);
+    --primary-hover: hsl(218, 99%, 45%);
     --primary-foreground: hsl(0, 0%, 100%);
-    --secondary: hsl(220, 14%, 95%);
+    --primary-soft: hsl(218, 100%, 96.5%);
+
+    --secondary: hsl(220, 16%, 95%);
     --secondary-foreground: hsl(222, 47%, 11%);
-    --muted: hsl(220, 14%, 95%);
+    --muted: hsl(220, 16%, 95.5%);
     --muted-foreground: hsl(220, 9%, 43%);
+    /* Very light fill for table headers, code blocks and inset panels. */
+    --subtle: hsl(220, 20%, 98.2%);
+
     --accent: hsl(218, 100%, 96.5%);
-    --accent-foreground: hsl(218, 90%, 34%);
+    --accent-foreground: hsl(218, 90%, 36%);
+
     --destructive: hsl(0, 72%, 51%);
     --destructive-foreground: hsl(0, 0%, 100%);
+    --danger-foreground: hsl(0, 70%, 40%);
+    --danger-soft: hsl(0, 86%, 97%);
+
     --success: hsl(121, 99%, 38%);
     --success-foreground: hsl(122, 80%, 24%);
-    --success-soft: hsl(120, 60%, 95%);
+    --success-soft: hsl(120, 60%, 95.5%);
     --warning: hsl(38, 92%, 50%);
-    --warning-foreground: hsl(30, 90%, 28%);
-    --warning-soft: hsl(45, 100%, 94%);
-    --danger-soft: hsl(0, 86%, 96.5%);
+    --warning-foreground: hsl(28, 85%, 30%);
+    --warning-soft: hsl(45, 100%, 95%);
+    --info: hsl(218, 99%, 50%);
+    --info-foreground: hsl(218, 90%, 38%);
     --info-soft: hsl(218, 100%, 96.5%);
-    --border: hsl(220, 13%, 90%);
-    --input: hsl(220, 13%, 86%);
+
+    --overlay: hsl(222 47% 11% / 0.4);
+    --border: hsl(220, 14%, 90%);
+    --border-strong: hsl(220, 13%, 84%);
+    --input: hsl(220, 13%, 85%);
     --ring: hsl(218, 99%, 50%);
+
     --chart-1: hsl(218, 99%, 50%);
     --chart-2: hsl(121, 80%, 40%);
     --chart-3: hsl(199, 89%, 48%);
     --chart-4: hsl(38, 92%, 50%);
     --chart-5: hsl(262, 52%, 55%);
-    --radius: 0.625rem;
+
+    --radius: 0.5rem;
+
+    --elevation-card: 0 1px 2px 0 hsl(220 40% 20% / 0.04), 0 1px 3px 0 hsl(220 40% 20% / 0.03);
+    --elevation-raised: 0 1px 2px 0 hsl(220 40% 20% / 0.05), 0 4px 12px -2px hsl(220 40% 20% / 0.08);
+    --elevation-overlay: 0 12px 32px -8px hsl(220 40% 15% / 0.18), 0 4px 8px -4px hsl(220 40% 15% / 0.08);
+
     --sidebar-background: hsl(0, 0%, 100%);
-    --sidebar-foreground: hsl(220, 15%, 30%);
+    --sidebar-foreground: hsl(220, 14%, 28%);
+    --sidebar-muted: hsl(220, 9%, 52%);
     --sidebar-primary: hsl(218, 99%, 50%);
     --sidebar-primary-foreground: hsl(0, 0%, 100%);
-    --sidebar-accent: hsl(218, 100%, 96.5%);
-    --sidebar-accent-foreground: hsl(218, 90%, 34%);
-    --sidebar-border: hsl(220, 13%, 91%);
+    --sidebar-accent: hsl(220, 16%, 95.5%);
+    --sidebar-accent-foreground: hsl(222, 47%, 11%);
+    --sidebar-border: hsl(220, 14%, 91%);
     --sidebar-ring: hsl(218, 99%, 50%);
+
     --brand-blue: #015cfc;
     --brand-green: #01c301;
+    /* Flat brand blue for the auth brand panel. */
+    --brand-panel: hsl(218, 99%, 50%);
 }
 
+/*
+  Dark theme. Near-black blue-grey canvas, slightly lifted cards, the same brand blue for filled buttons
+  (white text keeps AA contrast) and a lighter blue for links and text (see .text-primary below).
+*/
 .dark {
-    --background: hsl(222, 47%, 5.5%);
-    --foreground: hsl(210, 40%, 97%);
-    --card: hsl(222, 40%, 8.5%);
-    --card-foreground: hsl(210, 40%, 97%);
-    --popover: hsl(222, 40%, 8.5%);
-    --popover-foreground: hsl(210, 40%, 97%);
-    --primary: hsl(217, 100%, 62%);
-    --primary-foreground: hsl(222, 47%, 8%);
-    --secondary: hsl(217, 28%, 14%);
-    --secondary-foreground: hsl(210, 40%, 97%);
-    --muted: hsl(217, 28%, 12%);
-    --muted-foreground: hsl(215, 20%, 65%);
-    --accent: hsl(217, 60%, 16%);
-    --accent-foreground: hsl(213, 100%, 82%);
-    --destructive: hsl(0, 72%, 58%);
+    --background: hsl(222, 22%, 6.5%);
+    --foreground: hsl(216, 30%, 96%);
+    --card: hsl(222, 20%, 9.5%);
+    --card-foreground: hsl(216, 30%, 96%);
+    --popover: hsl(222, 20%, 11%);
+    --popover-foreground: hsl(216, 30%, 96%);
+
+    --primary: hsl(218, 96%, 52%);
+    --primary-hover: hsl(218, 96%, 58%);
+    --primary-foreground: hsl(0, 0%, 100%);
+    --primary-soft: hsl(218, 70%, 15%);
+    --primary-text: hsl(217, 100%, 72%);
+
+    --secondary: hsl(222, 16%, 15%);
+    --secondary-foreground: hsl(216, 30%, 96%);
+    --muted: hsl(222, 16%, 14%);
+    --muted-foreground: hsl(218, 12%, 65%);
+    --subtle: hsl(222, 18%, 11%);
+
+    --accent: hsl(218, 60%, 16%);
+    --accent-foreground: hsl(215, 100%, 80%);
+
+    --destructive: hsl(0, 72%, 55%);
     --destructive-foreground: hsl(0, 0%, 100%);
-    --success: hsl(121, 70%, 45%);
-    --success-foreground: hsl(120, 70%, 70%);
-    --success-soft: hsl(125, 45%, 12%);
+    --danger-foreground: hsl(0, 90%, 76%);
+    --danger-soft: hsl(0, 50%, 14%);
+
+    --success: hsl(121, 65%, 45%);
+    --success-foreground: hsl(120, 60%, 68%);
+    --success-soft: hsl(125, 40%, 12%);
     --warning: hsl(38, 92%, 55%);
     --warning-foreground: hsl(40, 95%, 70%);
-    --warning-soft: hsl(35, 60%, 12%);
-    --danger-soft: hsl(0, 55%, 14%);
-    --info-soft: hsl(217, 60%, 14%);
-    --border: hsl(217, 25%, 16%);
-    --input: hsl(217, 25%, 20%);
+    --warning-soft: hsl(35, 55%, 12%);
+    --info: hsl(217, 100%, 64%);
+    --info-foreground: hsl(215, 100%, 80%);
+    --info-soft: hsl(218, 60%, 15%);
+
+    --overlay: hsl(0 0% 0% / 0.62);
+    --border: hsl(222, 14%, 17%);
+    --border-strong: hsl(222, 13%, 24%);
+    --input: hsl(222, 13%, 23%);
     --ring: hsl(217, 100%, 62%);
+
     --chart-1: hsl(217, 100%, 62%);
     --chart-2: hsl(121, 60%, 48%);
     --chart-3: hsl(199, 89%, 58%);
     --chart-4: hsl(38, 92%, 58%);
     --chart-5: hsl(262, 70%, 70%);
-    --sidebar-background: hsl(222, 45%, 7%);
-    --sidebar-foreground: hsl(215, 20%, 75%);
-    --sidebar-primary: hsl(217, 100%, 62%);
-    --sidebar-primary-foreground: hsl(222, 47%, 8%);
-    --sidebar-accent: hsl(217, 50%, 14%);
-    --sidebar-accent-foreground: hsl(213, 100%, 85%);
-    --sidebar-border: hsl(217, 25%, 14%);
+
+    --elevation-card: 0 1px 2px 0 hsl(0 0% 0% / 0.3);
+    --elevation-raised: 0 1px 2px 0 hsl(0 0% 0% / 0.35), 0 6px 16px -4px hsl(0 0% 0% / 0.45);
+    --elevation-overlay: 0 16px 40px -8px hsl(0 0% 0% / 0.6), 0 0 0 1px hsl(222 14% 20%);
+
+    --sidebar-background: hsl(222, 22%, 8%);
+    --sidebar-foreground: hsl(216, 16%, 78%);
+    --sidebar-muted: hsl(218, 10%, 55%);
+    --sidebar-primary: hsl(218, 96%, 52%);
+    --sidebar-primary-foreground: hsl(0, 0%, 100%);
+    --sidebar-accent: hsl(222, 16%, 14%);
+    --sidebar-accent-foreground: hsl(216, 30%, 96%);
+    --sidebar-border: hsl(222, 14%, 15%);
     --sidebar-ring: hsl(217, 100%, 62%);
+
     --brand-blue: #4d8dff;
     --brand-green: #2fd12f;
+    --brand-panel: hsl(218, 80%, 34%);
 }
 
 @layer base {
@@ -187,14 +263,60 @@
         @apply border-border;
     }
 
+    html {
+        -webkit-text-size-adjust: 100%;
+        text-rendering: optimizeLegibility;
+    }
+
     body {
         @apply bg-background text-foreground;
-        font-feature-settings: 'cv11', 'ss01';
+        /* Inter: single-storey a off, open digits (ss01), disambiguated l/I (cv05), straight-sided commas. */
+        font-feature-settings: 'cv11', 'ss01', 'cv05';
+        letter-spacing: -0.003em;
+    }
+
+    h1,
+    h2,
+    h3 {
+        letter-spacing: -0.012em;
+    }
+
+    ::selection {
+        background: color-mix(in oklab, var(--primary) 22%, transparent);
     }
 
     /* Figures line up in tables, stat cards and money columns. */
     table,
     .tabular-nums {
         font-variant-numeric: tabular-nums;
+    }
+
+    /* Calm, consistent keyboard focus everywhere that does not style its own. */
+    :focus-visible {
+        outline-color: var(--ring);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        *,
+        ::before,
+        ::after {
+            animation-duration: 0.01ms !important;
+            transition-duration: 0.01ms !important;
+        }
+    }
+}
+
+@layer utilities {
+    /* Dark mode: the filled brand blue is too dark for text on dark surfaces, so text uses a lighter blue. */
+    .dark .text-primary {
+        color: var(--primary-text);
+    }
+
+    /* Hide scrollbars on horizontal tab strips while keeping them scrollable. */
+    .scrollbar-none {
+        scrollbar-width: none;
+    }
+    .scrollbar-none::-webkit-scrollbar {
+        display: none;
     }
 }

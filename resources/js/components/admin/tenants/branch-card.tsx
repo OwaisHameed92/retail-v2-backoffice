@@ -1,7 +1,11 @@
+import { requestKeys } from '@/components/admin/licences/issue-keys';
+import { LicenceStatusBadge } from '@/components/admin/licences/licence-status-badge';
+import { type TillLicence } from '@/components/admin/licences/types';
 import { RegisterDialog } from '@/components/admin/tenants/register-dialog';
 import { type TenantBranch, type TenantRegister } from '@/components/admin/tenants/types';
 import { ConfirmDialog } from '@/components/shared/confirm-dialog';
 import { EmptyState } from '@/components/shared/empty-state';
+import { InitialsAvatar } from '@/components/shared/entity-cell';
 import { StatusBadge } from '@/components/shared/status-badge';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -9,58 +13,100 @@ import { Card } from '@/components/ui/card';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { cn } from '@/lib/utils';
-import { router } from '@inertiajs/react';
-import { CirclePause, CirclePlay, MapPin, MonitorSmartphone, MoreHorizontal, Pencil, Phone, Plus, Recycle, Star } from 'lucide-react';
+import { Link, router } from '@inertiajs/react';
+import {
+    CirclePause,
+    CirclePlay,
+    KeyRound,
+    MapPin,
+    MonitorSmartphone,
+    MoreHorizontal,
+    Pencil,
+    Phone,
+    Plus,
+    Recycle,
+    Star,
+    Store,
+} from 'lucide-react';
 import { useState } from 'react';
 
 interface BranchCardProps {
     tenantId: string;
     branch: TenantBranch;
     canManage: boolean;
+    /** Live licence of each till, by register id (module 1.3). */
+    tillLicences: Record<string, TillLicence>;
+    canManageLicences: boolean;
     onEdit: (branch: TenantBranch) => void;
 }
 
-type Confirm = { kind: 'branch-deactivate' } | { kind: 'register-deactivate' | 'register-main'; register: TenantRegister } | null;
+function TillLicenceCell({ licence }: { licence: TillLicence | undefined }) {
+    if (!licence) {
+        return <span className="text-muted-foreground text-sm">No licence</span>;
+    }
+
+    return (
+        <div className="flex flex-wrap items-center gap-2">
+            <LicenceStatusBadge status={licence.status} />
+            <Link
+                href={route('admin.licences.show', licence.id)}
+                className="text-muted-foreground hover:text-foreground font-mono text-xs"
+                aria-label={`Licence ending ${licence.keyLast4}`}
+                onClick={(event) => event.stopPropagation()}
+            >
+                …{licence.keyLast4}
+            </Link>
+        </div>
+    );
+}
+
+type Confirm =
+    | { kind: 'branch-deactivate' }
+    | { kind: 'register-deactivate' | 'register-main' | 'register-licence'; register: TenantRegister }
+    | null;
 
 function postTo(url: string) {
     return new Promise<void>((resolve) => router.post(url, {}, { preserveScroll: true, onFinish: () => resolve() }));
 }
 
 /** One branch with its tills: details, till table, and the branch/till actions. */
-export function BranchCard({ tenantId, branch, canManage, onEdit }: BranchCardProps) {
+export function BranchCard({ tenantId, branch, canManage, tillLicences, canManageLicences, onEdit }: BranchCardProps) {
     const [tillDialog, setTillDialog] = useState<{ open: boolean; register: TenantRegister | null }>({ open: false, register: null });
     const [confirm, setConfirm] = useState<Confirm>(null);
     const activeTills = branch.registers.filter((register) => register.isActive).length;
 
     return (
-        <Card className={cn('overflow-hidden', !branch.isActive && 'bg-muted/30')}>
+        <Card className={cn('overflow-clip', !branch.isActive && 'bg-subtle')}>
             <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-start sm:justify-between sm:p-5">
-                <div className="min-w-0 space-y-1.5">
-                    <div className="flex flex-wrap items-center gap-2">
-                        <h3 className="text-base font-semibold">{branch.name}</h3>
-                        <Badge variant="outline" className="font-mono font-medium">
-                            {branch.code}
-                        </Badge>
-                        {!branch.isActive && <StatusBadge status="inactive" />}
-                    </div>
-                    <div className="text-muted-foreground flex flex-wrap gap-x-4 gap-y-1 text-sm">
-                        <span className="inline-flex items-center gap-1.5">
-                            <MapPin className="size-3.5" aria-hidden />
-                            {branch.address ? branch.address.split('\n').join(', ') : 'No address'} · {branch.nationLabel}
-                        </span>
-                        {branch.phone && (
+                <div className="flex min-w-0 items-start gap-3">
+                    <InitialsAvatar name={branch.name} shape="square" icon={Store} className="mt-0.5" />
+                    <div className="min-w-0 space-y-1.5">
+                        <div className="flex flex-wrap items-center gap-2">
+                            <h3 className="text-[15px] leading-6 font-semibold tracking-tight">{branch.name}</h3>
+                            <Badge variant="neutral" className="font-mono">
+                                {branch.code}
+                            </Badge>
+                            {!branch.isActive && <StatusBadge status="inactive" />}
+                        </div>
+                        <div className="text-muted-foreground flex flex-wrap gap-x-4 gap-y-1 text-[13px]">
                             <span className="inline-flex items-center gap-1.5">
-                                <Phone className="size-3.5" aria-hidden />
-                                {branch.phone}
+                                <MapPin className="size-3.5" aria-hidden />
+                                {branch.address ? branch.address.split('\n').join(', ') : 'No address'} · {branch.nationLabel}
                             </span>
-                        )}
-                        {branch.isDrsReturnPoint && (
-                            <span className="inline-flex items-center gap-1.5">
-                                <Recycle className="size-3.5" aria-hidden />
-                                Deposit return point
-                            </span>
-                        )}
-                        {branch.areaM2 && <span className="tabular-nums">{branch.areaM2} m²</span>}
+                            {branch.phone && (
+                                <span className="inline-flex items-center gap-1.5">
+                                    <Phone className="size-3.5" aria-hidden />
+                                    {branch.phone}
+                                </span>
+                            )}
+                            {branch.isDrsReturnPoint && (
+                                <span className="inline-flex items-center gap-1.5">
+                                    <Recycle className="size-3.5" aria-hidden />
+                                    Deposit return point
+                                </span>
+                            )}
+                            {branch.areaM2 && <span className="tabular-nums">{branch.areaM2} m²</span>}
+                        </div>
                     </div>
                 </div>
 
@@ -107,6 +153,7 @@ export function BranchCard({ tenantId, branch, canManage, onEdit }: BranchCardPr
             {branch.registers.length === 0 ? (
                 <div className="border-t">
                     <EmptyState
+                        size="sm"
                         icon={MonitorSmartphone}
                         title="No tills yet"
                         body="Add a till to issue its licence."
@@ -129,6 +176,7 @@ export function BranchCard({ tenantId, branch, canManage, onEdit }: BranchCardPr
                                 <TableHead className="w-16 pl-4 sm:pl-5">Code</TableHead>
                                 <TableHead>Till</TableHead>
                                 <TableHead className="hidden sm:table-cell">Status</TableHead>
+                                <TableHead className="hidden md:table-cell">Licence</TableHead>
                                 <TableHead className="w-12 pr-4 sm:pr-5">
                                     <span className="sr-only">Actions</span>
                                 </TableHead>
@@ -142,18 +190,24 @@ export function BranchCard({ tenantId, branch, canManage, onEdit }: BranchCardPr
                                         <div className="flex flex-wrap items-center gap-2">
                                             <span className={cn('font-medium', !register.isActive && 'text-muted-foreground')}>{register.name}</span>
                                             {register.isMainTill && (
-                                                <span className="bg-info-soft text-accent-foreground inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium">
-                                                    <Star className="size-3" aria-hidden />
+                                                <Badge variant="info">
+                                                    <Star aria-hidden />
                                                     Main till
-                                                </span>
+                                                </Badge>
                                             )}
                                             <span className="sm:hidden">
                                                 <StatusBadge status={register.isActive ? 'active' : 'inactive'} />
                                             </span>
                                         </div>
+                                        <div className="mt-1 md:hidden">
+                                            <TillLicenceCell licence={tillLicences[register.id]} />
+                                        </div>
                                     </TableCell>
                                     <TableCell className="hidden sm:table-cell">
                                         <StatusBadge status={register.isActive ? 'active' : 'inactive'} />
+                                    </TableCell>
+                                    <TableCell className="hidden md:table-cell">
+                                        <TillLicenceCell licence={tillLicences[register.id]} />
                                     </TableCell>
                                     <TableCell className="pr-4 text-right sm:pr-5">
                                         {canManage && (
@@ -178,6 +232,23 @@ export function BranchCard({ tenantId, branch, canManage, onEdit }: BranchCardPr
                                                             <Star />
                                                             Make main till
                                                         </DropdownMenuItem>
+                                                    )}
+                                                    {tillLicences[register.id] ? (
+                                                        <DropdownMenuItem asChild>
+                                                            <Link href={route('admin.licences.show', tillLicences[register.id].id)}>
+                                                                <KeyRound />
+                                                                View licence
+                                                            </Link>
+                                                        </DropdownMenuItem>
+                                                    ) : (
+                                                        canManageLicences &&
+                                                        register.isActive &&
+                                                        branch.isActive && (
+                                                            <DropdownMenuItem onSelect={() => setConfirm({ kind: 'register-licence', register })}>
+                                                                <KeyRound />
+                                                                Issue licence
+                                                            </DropdownMenuItem>
+                                                        )
                                                     )}
                                                     <DropdownMenuSeparator />
                                                     {register.isActive ? (
@@ -227,7 +298,21 @@ export function BranchCard({ tenantId, branch, canManage, onEdit }: BranchCardPr
                 destructive
                 onConfirm={() => postTo(route('admin.tenants.branches.deactivate', [tenantId, branch.id]))}
             />
-            {confirm && confirm.kind !== 'branch-deactivate' && (
+            {confirm?.kind === 'register-licence' && (
+                <ConfirmDialog
+                    open
+                    onOpenChange={(open) => !open && setConfirm(null)}
+                    title={`Issue a licence for ${confirm.register.name}?`}
+                    description="The till gets a new key on this business’s plan. You will see the key once, to copy or email to the owner."
+                    confirmLabel="Issue licence"
+                    onConfirm={() =>
+                        requestKeys(route('admin.tenants.registers.licence', [tenantId, confirm.register.id]), {
+                            only: ['branches', 'licensing', 'activity'],
+                        })
+                    }
+                />
+            )}
+            {confirm && confirm.kind !== 'branch-deactivate' && confirm.kind !== 'register-licence' && (
                 <ConfirmDialog
                     open
                     onOpenChange={(open) => !open && setConfirm(null)}
@@ -236,8 +321,8 @@ export function BranchCard({ tenantId, branch, canManage, onEdit }: BranchCardPr
                         confirm.kind === 'register-main'
                             ? `The main till syncs ${branch.name} with the portal. The current main till becomes a secondary till.`
                             : confirm.register.isMainTill
-                              ? `It can no longer trade. It is the main till, so the next active till in ${branch.name} takes over syncing.`
-                              : 'It can no longer trade. You can reactivate it later.'
+                              ? `Its licence is suspended, so it stops trading at its next check-in. It is the main till, so the next active till in ${branch.name} takes over syncing.`
+                              : 'Its licence is suspended, so it stops trading at its next check-in. Reactivating the till lifts the suspension.'
                     }
                     confirmLabel={confirm.kind === 'register-main' ? 'Make main till' : 'Deactivate till'}
                     destructive={confirm.kind === 'register-deactivate'}

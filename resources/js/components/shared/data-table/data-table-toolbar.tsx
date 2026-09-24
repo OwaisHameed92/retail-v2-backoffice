@@ -1,6 +1,6 @@
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
-import { Search } from 'lucide-react';
+import { Search, X } from 'lucide-react';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 
 interface DataTableToolbarProps {
@@ -9,13 +9,14 @@ interface DataTableToolbarProps {
     searchPlaceholder?: string;
     /** Milliseconds to wait after typing stops. */
     debounceMs?: number;
-    /** Filter controls (selects, toggles) shown after the search box. */
+    /** Filter controls (selects, toggles) shown after the search box. Use h-9 controls. */
     filters?: ReactNode;
     /** Buttons on the right, e.g. "Export". */
     actions?: ReactNode;
     className?: string;
 }
 
+/** Search box (debounced), filter controls and right-hand actions above a table. Wraps on phones. */
 export function DataTableToolbar({
     search,
     onSearch,
@@ -51,19 +52,31 @@ export function DataTableToolbar({
     }
 
     return (
-        <div className={cn('flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between', className)}>
+        <div className={cn('flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between', className)}>
             <div className="flex flex-1 flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
                 {onSearch && (
-                    <div className="relative w-full sm:max-w-xs">
-                        <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
+                    <div className="relative w-full sm:w-72">
+                        <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2" aria-hidden />
                         <Input
-                            type="search"
+                            type="text"
+                            inputMode="search"
+                            enterKeyHint="search"
                             value={value}
                             onChange={(event) => setValue(event.target.value)}
                             placeholder={searchPlaceholder}
                             aria-label={searchPlaceholder}
-                            className="h-9 pl-8"
+                            className="h-9 pr-8 pl-9"
                         />
+                        {value && (
+                            <button
+                                type="button"
+                                onClick={() => setValue('')}
+                                className="text-muted-foreground hover:bg-muted hover:text-foreground absolute top-1/2 right-1.5 flex size-6 -translate-y-1/2 items-center justify-center rounded-md transition-colors"
+                                aria-label="Clear search"
+                            >
+                                <X className="size-3.5" />
+                            </button>
+                        )}
                     </div>
                 )}
                 {filters}

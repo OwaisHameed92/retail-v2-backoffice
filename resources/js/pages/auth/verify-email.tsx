@@ -17,18 +17,18 @@ export default function VerifyEmail({ status }: { status?: string }) {
     };
 
     return (
-        <AuthLayout title="Verify email" description="Please verify your email address by clicking on the link we just emailed to you.">
+        <AuthLayout title="Verify email" description="Check your inbox and click the link we just sent to confirm your email address.">
             <Head title="Email verification" />
 
             {status === 'verification-link-sent' && (
-                <div className="mb-4 text-center text-sm font-medium text-green-600">
+                <div className="bg-success-soft text-success-foreground border-success/25 mb-6 rounded-xl border p-3 text-sm">
                     A new verification link has been sent to the email address you provided during registration.
                 </div>
             )}
 
             <form onSubmit={submit} className="space-y-6 text-center">
                 <Button disabled={processing} variant="secondary">
-                    {processing && <LoaderCircle className="h-4 w-4 animate-spin" />}
+                    {processing && <LoaderCircle className="size-4 animate-spin" />}
                     Resend verification email
                 </Button>
 

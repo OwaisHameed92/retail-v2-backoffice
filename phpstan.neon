@@ -10,3 +10,10 @@ parameters:
         # Test-only tenant model: gives BelongsToCompany a user until real tenant models exist (module 0.4).
         - tests/Fixtures
     tmpDir: storage/framework/cache/phpstan
+    ignoreErrors:
+        # Generated till models are final; Larastan then reads BelongsToCompany's Builder<static> as
+        # Builder<static(Model)> vs Builder<Model> and reports a mismatch that cannot happen (module 2.3/2.4).
+        -
+            message: '#^Method App\\Domain\\TillData\\Models\\\w+::withoutCompanyScope\(\) should return Illuminate\\Database\\Eloquent\\Builder<App\\Domain\\TillData\\Models\\\w+> but returns Illuminate\\Database\\Eloquent\\Builder<static\(App\\Domain\\TillData\\Models\\\w+\)>\.$#'
+            identifier: return.type
+            path: app/Domain/Tenancy/Concerns/BelongsToCompany.php

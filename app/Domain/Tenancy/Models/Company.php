@@ -2,6 +2,8 @@
 
 namespace App\Domain\Tenancy\Models;
 
+use App\Domain\Licensing\Models\Licence;
+use App\Domain\Plans\Models\Plan;
 use App\Domain\Tenancy\Concerns\HasPortalUlid;
 use App\Domain\Tenancy\Enums\CompanyRole;
 use App\Domain\Tenancy\Enums\CompanyStatus;
@@ -9,6 +11,7 @@ use App\Models\User;
 use Database\Factories\CompanyFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -30,6 +33,7 @@ use Illuminate\Support\Carbon;
  * @property string|null $email
  * @property string|null $contact_name
  * @property CompanyStatus $status
+ * @property string|null $plan_id Plan for new tills (module 1.3); null = portal default. Set via ChangeCompanyPlan.
  * @property string|null $notes
  * @property Carbon|null $trial_ends_at
  * @property Carbon|null $activated_at
@@ -42,6 +46,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $updated_at
  * @property Carbon|null $deleted_at
  * @property-read CompanyMembership|null $membership
+ * @property-read Plan|null $plan
  */
 class Company extends Model
 {
@@ -130,6 +135,26 @@ class Company extends Model
     public function registers(): HasMany
     {
         return $this->hasMany(Register::class);
+    }
+
+    /**
+     * The plan new tills are licensed on (module 1.3). Null means the portal default: see DefaultPlan.
+     *
+     * @return BelongsTo<Plan, $this>
+     */
+    public function plan(): BelongsTo
+    {
+        return $this->belongsTo(Plan::class)->withTrashed();
+    }
+
+    /**
+     * Licences of this company's tills (module 1.3). Licence is tenant-scoped like branches().
+     *
+     * @return HasMany<Licence, $this>
+     */
+    public function licences(): HasMany
+    {
+        return $this->hasMany(Licence::class);
     }
 
     public function isSuspended(): bool

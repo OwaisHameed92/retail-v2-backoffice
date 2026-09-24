@@ -1,0 +1,21 @@
+{
+    "licence": {
+        "id": "01K5XTEST00000000000000009",
+        "keyLast4": "P8T5",
+        "status": "grace",
+        "plan": "standard",
+        "features": [
+            "stockControl",
+            "cashOffice"
+        ],
+        "activatedAt": "2026-09-24T09:00:00Z",
+        "trialEndsAt": "2026-10-01T09:00:00Z",
+        "expiresAt": null,
+        "graceDays": 3,
+        "deviceId": "PC-7F3A9C21-FRONT"
+    },
+    "token": "eyJhbGciOiJFZERTQSIsImtpZCI6ImxrLXRlc3QtMDEiLCJ0eXAiOiJzc3Bvcy1saWNlbmNlK2p3dCJ9.eyJpc3MiOiJzc3Bvcy1wb3J0YWwiLCJpYXQiOjE3OTA5MzE2MDAsImp0aSI6IjAxSzVYVEVTVDAwMDAwMDAwMDAwMDAwMDMxIiwibGljIjoiMDFLNVhURVNUMDAwMDAwMDAwMDAwMDAwMDkiLCJrZXlMYXN0NCI6IlA4VDUiLCJjb21wYW55SWQiOiIwMUs1WFRFU1QwMDAwMDAwMDAwMDAwMDAwMyIsImJyYW5jaElkIjoiMDFLNVhURVNUMDAwMDAwMDAwMDAwMDAwMDUiLCJyZWdpc3RlcklkIjoiMDFLNVhURVNUMDAwMDAwMDAwMDAwMDAwMDciLCJkZXZpY2VJZCI6IlBDLTdGM0E5QzIxLUZST05UIiwic3RhdHVzIjoiZ3JhY2UiLCJwbGFuIjoic3RhbmRhcmQiLCJmZWF0dXJlcyI6WyJzdG9ja0NvbnRyb2wiLCJjYXNoT2ZmaWNlIl0sImV4cGlyZXNBdCI6IjIwMjYtMTAtMDFUMDk6MDA6MDBaIiwiZ3JhY2VEYXlzIjozLCJ2YWxpZFVudGlsIjoiMjAyNi0xMC0wNFQwOTowMDowMFoifQ.bsquQCGVz9Tf8Mov8snZm8-SHPlB3RqPGJKA-uLirfdeJio8xRA9l59dVNMoL7KIhL_vVH3Sbx1RKynAZQHiCQ",
+    "message": "Your free trial ended on 1 October 2026. The till will stop taking sales on 4 October 2026 unless it is renewed. Please contact Switch & Save support.",
+    "checkInEverySeconds": 86400,
+    "serverTimeUtc": "2026-10-02T09:00:00Z"
+}

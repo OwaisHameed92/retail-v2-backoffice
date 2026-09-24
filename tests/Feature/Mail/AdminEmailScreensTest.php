@@ -79,7 +79,7 @@ it('lets owner and support staff open the log', function (AdminRole $role) {
             ->where('logs.data.0.status', 'sent')
             ->where('logs.data.0.meta.business', 'Khan Mini Mart')
             ->where('summary.sent', 1)
-            ->has('templateOptions', 8)
+            ->has('templateOptions', count(EmailTemplates::MAILABLES))
             ->has('statusOptions', 3));
 })->with([AdminRole::Owner, AdminRole::Support]);
 
@@ -108,10 +108,10 @@ it('lists every template with a sample subject', function () {
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('admin/emails/templates')
-            ->has('templates', 8)
+            ->has('templates', count(EmailTemplates::MAILABLES))
             ->where('selected', 'trial-reminder')
             ->where('templates.0.key', 'welcome-tenant')
-            ->where('templates.7.audience', 'staff'));
+            ->where('templates.'.array_search('admin-new-lead', EmailTemplates::keys(), true).'.audience', 'staff'));
 });
 
 it('falls back to the first template for an unknown key', function () {

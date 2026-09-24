@@ -1,62 +1,56 @@
-import Heading from '@/components/heading';
-import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
+import { PageHeader } from '@/components/shared/page-header';
 import { cn } from '@/lib/utils';
-import { type NavItem } from '@/types';
-import { Link } from '@inertiajs/react';
+import { Link, usePage } from '@inertiajs/react';
+import { Palette, ShieldCheck, UserRound, type LucideIcon } from 'lucide-react';
 
-const sidebarNavItems: NavItem[] = [
-    {
-        title: 'Profile',
-        url: '/settings/profile',
-        icon: null,
-    },
-    {
-        title: 'Password',
-        url: '/settings/password',
-        icon: null,
-    },
-    {
-        title: 'Appearance',
-        url: '/settings/appearance',
-        icon: null,
-    },
+const sidebarNavItems: { title: string; url: string; icon: LucideIcon }[] = [
+    { title: 'Profile', url: '/settings/profile', icon: UserRound },
+    { title: 'Password', url: '/settings/password', icon: ShieldCheck },
+    { title: 'Appearance', url: '/settings/appearance', icon: Palette },
 ];
 
+/**
+ * Settings template: page header, a vertical section nav on the left (a horizontal strip on phones) and the
+ * section's cards on the right.
+ */
 export default function SettingsLayout({ children }: { children: React.ReactNode }) {
-    const currentPath = window.location.pathname;
+    const currentPath = usePage().url.split('?')[0];
 
     return (
-        <div className="px-4 py-6">
-            <Heading title="Settings" description="Manage your profile and account settings" />
+        <>
+            <PageHeader title="Your account" description="Your profile, password and how the backoffice looks for you." />
 
-            <div className="flex flex-col space-y-8 lg:flex-row lg:space-y-0 lg:space-x-12">
-                <aside className="w-full max-w-xl lg:w-48">
-                    <nav className="flex flex-col space-y-1 space-x-0">
-                        {sidebarNavItems.map((item) => (
-                            <Button
-                                key={item.url}
-                                size="sm"
-                                variant="ghost"
-                                asChild
-                                className={cn('w-full justify-start', {
-                                    'bg-muted': currentPath === item.url,
-                                })}
-                            >
-                                <Link href={item.url} prefetch>
+            <div className="flex flex-col gap-6 lg:flex-row lg:gap-10">
+                <aside className="lg:w-52 lg:shrink-0">
+                    <nav aria-label="Settings sections" className="scrollbar-none -mx-4 flex gap-1 overflow-x-auto px-4 lg:mx-0 lg:flex-col lg:px-0">
+                        {sidebarNavItems.map((item) => {
+                            const active = currentPath === item.url;
+
+                            return (
+                                <Link
+                                    key={item.url}
+                                    href={item.url}
+                                    prefetch
+                                    aria-current={active ? 'page' : undefined}
+                                    className={cn(
+                                        'flex h-9 shrink-0 items-center gap-2.5 rounded-lg px-3 text-sm font-medium transition-colors duration-150',
+                                        active
+                                            ? 'bg-card text-foreground shadow-card ring-border ring-1'
+                                            : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+                                    )}
+                                >
+                                    <item.icon className={cn('size-4', active ? 'text-primary' : 'text-muted-foreground')} aria-hidden />
                                     {item.title}
                                 </Link>
-                            </Button>
-                        ))}
+                            );
+                        })}
                     </nav>
                 </aside>
 
-                <Separator className="my-6 md:hidden" />
-
-                <div className="flex-1 md:max-w-2xl">
-                    <section className="max-w-xl space-y-12">{children}</section>
+                <div className="min-w-0 flex-1 lg:max-w-3xl">
+                    <section className="bg-card shadow-card space-y-10 rounded-xl border p-5 sm:p-6">{children}</section>
                 </div>
             </div>
-        </div>
+        </>
     );
 }

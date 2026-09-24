@@ -4,12 +4,14 @@ namespace App\Domain\Tenancy\Actions;
 
 use App\Domain\Shared\Actions\RecordAudit;
 use App\Domain\Tenancy\CurrentCompany;
+use App\Domain\Tenancy\Events\RegisterDeactivated;
 use App\Domain\Tenancy\Models\Branch;
 use App\Domain\Tenancy\Models\Register;
 use Illuminate\Support\Facades\DB;
 
 /**
  * Takes a till out of use. If it was the main till, the active till with the lowest code takes over.
+ * Dispatches RegisterDeactivated: module 1.3 suspends the till's licence ("Till deactivated").
  */
 class DeactivateRegister
 {
@@ -38,6 +40,8 @@ class DeactivateRegister
             $this->audit->handle('register.deactivated', $register, ['is_active' => true, 'is_main_till' => $wasMain], ['is_active' => false, 'is_main_till' => false], array_filter([
                 'new_main_register_id' => $wasMain ? $newMain?->id : null,
             ]));
+
+            RegisterDeactivated::dispatch($register);
 
             return $register;
         }));

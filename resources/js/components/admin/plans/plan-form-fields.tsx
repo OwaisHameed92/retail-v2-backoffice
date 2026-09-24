@@ -1,36 +1,12 @@
+import { FormField, FormSection as SharedFormSection } from '@/components/shared/form-section';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import { type ComponentProps, type ReactNode } from 'react';
 
-interface FieldProps {
-    id: string;
-    label: string;
-    help?: ReactNode;
-    error?: string;
-    className?: string;
-    children: ReactNode;
-}
-
-/** Label above, helper text and inline error below. */
-export function Field({ id, label, help, error, className, children }: FieldProps) {
-    return (
-        <div className={cn('grid content-start gap-2', className)}>
-            <Label htmlFor={id}>{label}</Label>
-            {children}
-            {help && !error && (
-                <p id={`${id}-help`} className="text-muted-foreground text-sm">
-                    {help}
-                </p>
-            )}
-            {error && (
-                <p id={`${id}-error`} className="text-destructive text-sm">
-                    {error}
-                </p>
-            )}
-        </div>
-    );
+/** Label above, helper text and inline error below. Same as the shared FormField. */
+export function Field(props: { id: string; label: string; help?: ReactNode; error?: string; className?: string; children: ReactNode }) {
+    return <FormField {...props} />;
 }
 
 /** Text input with a £ prefix. Keeps the value as a string; the server validates 2 dp. */
@@ -48,7 +24,7 @@ export function MoneyInput({ id, invalid, className, ...props }: ComponentProps<
                 pattern="^\d{1,5}(\.\d{1,2})?$"
                 aria-invalid={invalid || undefined}
                 aria-describedby={invalid ? `${id}-error` : `${id}-help`}
-                className={cn('pl-7 tabular-nums', invalid && 'border-destructive', className)}
+                className={cn('pl-7 tabular-nums', className)}
                 {...props}
             />
         </div>
@@ -66,7 +42,7 @@ export function NumberInput({ id, suffix, invalid, className, ...props }: Compon
                 step={1}
                 aria-invalid={invalid || undefined}
                 aria-describedby={invalid ? `${id}-error` : `${id}-help`}
-                className={cn('tabular-nums', suffix && 'pr-14', invalid && 'border-destructive', className)}
+                className={cn('tabular-nums', suffix && 'pr-14', className)}
                 {...props}
             />
             {suffix && (
@@ -78,16 +54,12 @@ export function NumberInput({ id, suffix, invalid, className, ...props }: Compon
     );
 }
 
-/** A section of the form: title and one-line description on the left, fields on the right (stacked on phones). */
+/** A section of the form: title and description on the left, fields on the right. Same as the shared FormSection. */
 export function FormSection({ title, description, children }: { title: string; description: ReactNode; children: ReactNode }) {
     return (
-        <section className="grid gap-4 p-6 md:grid-cols-[minmax(0,14rem)_minmax(0,1fr)] md:gap-8">
-            <div className="space-y-1">
-                <h2 className="text-base font-semibold">{title}</h2>
-                <p className="text-muted-foreground text-sm">{description}</p>
-            </div>
-            <div className="grid min-w-0 gap-5">{children}</div>
-        </section>
+        <SharedFormSection title={title} description={description}>
+            {children}
+        </SharedFormSection>
     );
 }
 
@@ -108,7 +80,7 @@ export function CheckboxRow({
     error?: string;
 }) {
     return (
-        <div className="flex items-start gap-3">
+        <div className="hover:bg-subtle flex items-start gap-3 rounded-lg border p-3.5 transition-colors">
             <Checkbox
                 id={id}
                 checked={checked}
@@ -123,7 +95,7 @@ export function CheckboxRow({
                 <p id={`${id}-help`} className="text-muted-foreground text-sm">
                     {help}
                 </p>
-                {error && <p className="text-destructive text-sm">{error}</p>}
+                {error && <p className="text-danger-foreground text-[13px]">{error}</p>}
             </div>
         </div>
     );

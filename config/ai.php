@@ -1,0 +1,117 @@
+<?php
+
+use App\Domain\Ai\Tools\GetCompanyOverview;
+use App\Domain\Ai\Tools\RenameBranch;
+
+/*
+|--------------------------------------------------------------------------
+| AI (module 5.1)
+|--------------------------------------------------------------------------
+|
+| Claude via the official Anthropic PHP SDK. With no ANTHROPIC_API_KEY every AI feature reports
+| "not set up yet" instead of failing. See docs/ai.md.
+|
+*/
+
+return [
+
+    // Kill switch: false turns every AI feature off at once (they report "switched off").
+    'enabled' => (bool) env('AI_ENABLED', true),
+
+    'provider' => 'anthropic',
+
+    'anthropic' => [
+        'api_key' => (string) env('ANTHROPIC_API_KEY', ''),
+        // Null = the SDK default (https://api.anthropic.com).
+        'base_url' => env('ANTHROPIC_BASE_URL'),
+        // Seconds. Enforced by the Guzzle transport (the SDK leaves timeouts to the transport).
+        'timeout' => (float) env('AI_TIMEOUT', 120),
+        'connect_timeout' => (float) env('AI_CONNECT_TIMEOUT', 10),
+        // The SDK retries 408/409/429/5xx and connection errors with exponential backoff and honours retry-after.
+        'max_retries' => (int) env('AI_MAX_RETRIES', 3),
+        'initial_retry_delay' => 0.5,
+        'max_retry_delay' => 8.0,
+    ],
+
+    /*
+    | Model tiers. "default" for reasoning over tool data, "fast" for cheap, high-volume jobs.
+    | Chosen per the claude-api skill: Claude Opus 5 by default, Claude Haiku 4.5 for "fast/cheap".
+    */
+    'models' => [
+        'default' => env('AI_MODEL', 'claude-opus-5'),
+        'fast' => env('AI_FAST_MODEL', 'claude-haiku-4-5'),
+    ],
+
+    /*
+    | Request options per model id:
+    | - thinking: 'adaptive' or null (Haiku 4.5 has no adaptive thinking).
+    | - effort: whether output_config.effort is accepted (it errors on Haiku 4.5).
+    | - fallbacks: server-side refusal fallback (`fallbacks: "default"`, beta server-side-fallback-2026-07-01).
+    */
+    'model_options' => [
+        'claude-opus-5' => ['thinking' => 'adaptive', 'effort' => true, 'fallbacks' => true],
+        'claude-haiku-4-5' => ['thinking' => null, 'effort' => false, 'fallbacks' => false],
+    ],
+
+    /*
+    | Per-feature settings. `model` is a tier from `models`; `effort` applies only where the model accepts it.
+    */
+    'features' => [
+        'assistant' => ['model' => 'default', 'effort' => 'medium', 'max_tokens' => 16000],
+        'morningSummary' => ['model' => 'fast', 'effort' => null, 'max_tokens' => 4000],
+        'reorderSuggestions' => ['model' => 'default', 'effort' => 'medium', 'max_tokens' => 16000],
+        'invoiceImport' => ['model' => 'default', 'effort' => 'medium', 'max_tokens' => 16000],
+        'anomalyAlerts' => ['model' => 'fast', 'effort' => null, 'max_tokens' => 4000],
+        'adminAssistant' => ['model' => 'default', 'effort' => 'medium', 'max_tokens' => 16000],
+    ],
+
+    // Agent loop: most model calls in one user turn before we stop and say so.
+    'max_steps' => (int) env('AI_MAX_STEPS', 8),
+
+    // Tool results longer than this (characters of JSON) are cut before they are sent.
+    'max_tool_result_chars' => 20000,
+
+    // How many earlier messages of a conversation are sent back with a new question.
+    'history_messages' => 40,
+
+    // Proposed changes must be confirmed within this many minutes.
+    'pending_action_ttl_minutes' => 15,
+
+    // Retention (model:prune, daily): conversations, their messages and old proposals; usage rows (billing).
+    'retention_days' => (int) env('AI_RETENTION_DAYS', 90),
+    'usage_retention_months' => 24,
+
+    /*
+    | Cost. Anthropic list prices in USD per million tokens (5-minute cache writes = 1.25x input,
+    | cache reads = 0.1x input). claude-opus-4-8 is listed because refusal fallbacks may be served by it.
+    | Stored cost is pounds: tokens x price x usd_to_gbp. Check the rate now and then.
+    */
+    'usd_to_gbp' => (string) env('AI_USD_TO_GBP', '0.79'),
+    'pricing' => [
+        'claude-opus-5' => ['input' => '5.00', 'output' => '25.00', 'cache_write' => '6.25', 'cache_read' => '0.50'],
+        'claude-opus-4-8' => ['input' => '5.00', 'output' => '25.00', 'cache_write' => '6.25', 'cache_read' => '0.50'],
+        'claude-haiku-4-5' => ['input' => '1.00', 'output' => '5.00', 'cache_write' => '1.25', 'cache_read' => '0.10'],
+    ],
+
+    /*
+    | Monthly token budgets (input + cache writes + cache reads + output), per calendar month in Europe/London.
+    | `plans` overrides the default by plan code, e.g. 'pro' => 5_000_000. 0 = no AI for that plan.
+    | The plan must also include the aiAssistant / aiInsights feature.
+    */
+    'budgets' => [
+        'default_monthly_tokens' => (int) env('AI_MONTHLY_TOKENS', 2_000_000),
+        'plans' => [],
+        'admin_monthly_tokens' => (int) env('AI_ADMIN_MONTHLY_TOKENS', 5_000_000),
+    ],
+
+    // Tool classes offered to the model (filtered per user by audience and ability). Order does not matter:
+    // the registry sorts by name so the prompt prefix stays byte-identical for caching.
+    'tools' => [
+        GetCompanyOverview::class,
+        RenameBranch::class,
+    ],
+
+    // Keys dropped from tool results before they are sent (personal data the model does not need).
+    // Secrets are removed separately by App\Domain\Shared\Support\Redactor.
+    'redact_keys' => ['email', 'phone', 'address', 'contact_name', 'device_id', 'ip', 'last_ip', 'user_agent'],
+];

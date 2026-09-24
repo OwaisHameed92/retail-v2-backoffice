@@ -6,7 +6,7 @@ import { formatDateTime } from '@/components/admin/format';
 import { DataTable, type Paginated } from '@/components/shared/data-table';
 import { EmptyState } from '@/components/shared/empty-state';
 import { PageHeader } from '@/components/shared/page-header';
-import { StatCard } from '@/components/shared/stat-card';
+import { StatCard, StatGrid } from '@/components/shared/stat-card';
 import { StatusBadge } from '@/components/shared/status-badge';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -30,8 +30,8 @@ const columns: ColumnDef<EmailLogRow>[] = [
         header: 'To',
         enableSorting: true,
         cell: ({ row }) => (
-            <div className="max-w-56 min-w-0">
-                <div className="truncate font-medium">{row.original.to}</div>
+            <div className="max-w-64 min-w-0">
+                <div className="text-foreground truncate font-medium">{row.original.to}</div>
                 <div className="text-muted-foreground truncate text-xs md:hidden">{row.original.templateLabel}</div>
             </div>
         ),
@@ -54,7 +54,8 @@ const columns: ColumnDef<EmailLogRow>[] = [
     {
         id: 'subject',
         header: 'Subject',
-        cell: ({ row }) => <span className="text-muted-foreground line-clamp-1 max-w-80">{row.original.subject ?? '—'}</span>,
+        meta: { mobile: 'hidden' },
+        cell: ({ row }) => <span className="text-muted-foreground line-clamp-1 max-w-72">{row.original.subject ?? '—'}</span>,
     },
     {
         id: 'company',
@@ -109,19 +110,20 @@ export default function EmailLogIndex({ logs, filters, templateOptions, statusOp
                         </Link>
                     </Button>
                 }
+                tabs={<EmailTabs />}
             />
-            <EmailTabs />
 
-            <div className="grid gap-4 sm:grid-cols-3">
-                <StatCard label="Sent" value={<span className="tabular-nums">{summary.sent}</span>} hint="Last 30 days" icon={MailCheck} />
-                <StatCard label="Failed" value={<span className="tabular-nums">{summary.failed}</span>} hint="Last 30 days" icon={CircleAlert} />
+            <StatGrid columns={3}>
+                <StatCard label="Sent" value={summary.sent} hint="Last 30 days" icon={MailCheck} tone="success" />
                 <StatCard
-                    label="Waiting to send"
-                    value={<span className="tabular-nums">{summary.queued}</span>}
-                    hint="In the queue now"
-                    icon={Clock}
+                    label="Failed"
+                    value={summary.failed}
+                    hint="Last 30 days"
+                    icon={CircleAlert}
+                    tone={summary.failed > 0 ? 'danger' : 'neutral'}
                 />
-            </div>
+                <StatCard label="Waiting to send" value={summary.queued} hint="In the queue now" icon={Clock} tone="neutral" />
+            </StatGrid>
 
             <DataTable
                 columns={columns}
@@ -145,7 +147,12 @@ export default function EmailLogIndex({ logs, filters, templateOptions, statusOp
                             }
                         />
                     ) : (
-                        <EmptyState icon={SearchX} title="No emails match" body="Try a different search, template, status or date range." />
+                        <EmptyState
+                            icon={SearchX}
+                            title="No emails match"
+                            body="Try a different search, template, status or date range."
+                            tone="neutral"
+                        />
                     )
                 }
             />

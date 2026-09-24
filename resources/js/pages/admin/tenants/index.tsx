@@ -2,6 +2,7 @@ import { formatDate } from '@/components/admin/tenants/format';
 import { type Option, type TenantListRow } from '@/components/admin/tenants/types';
 import { DataTable, useTableQuery, type Paginated } from '@/components/shared/data-table';
 import { EmptyState } from '@/components/shared/empty-state';
+import { EntityCell } from '@/components/shared/entity-cell';
 import { PageHeader } from '@/components/shared/page-header';
 import { StatusBadge } from '@/components/shared/status-badge';
 import { Button } from '@/components/ui/button';
@@ -29,33 +30,26 @@ const columns: ColumnDef<TenantListRow>[] = [
         header: 'Business',
         enableSorting: true,
         cell: ({ row }) => (
-            <div className="min-w-0">
-                <div className="truncate font-medium">{row.original.name}</div>
-                {row.original.legalName && row.original.legalName !== row.original.name && (
-                    <div className="text-muted-foreground truncate text-xs">{row.original.legalName}</div>
-                )}
-                <div className="mt-1 sm:hidden">
-                    <StatusBadge status={row.original.status} />
-                </div>
-            </div>
+            <EntityCell
+                name={row.original.name}
+                shape="square"
+                subline={row.original.legalName && row.original.legalName !== row.original.name ? row.original.legalName : undefined}
+            />
         ),
     },
     {
         id: 'status',
         accessorKey: 'status',
-        header: () => <span className="hidden sm:inline">Status</span>,
+        header: 'Status',
         enableSorting: true,
-        cell: ({ row }) => (
-            <span className="hidden sm:inline">
-                <StatusBadge status={row.original.status} />
-            </span>
-        ),
+        cell: ({ row }) => <StatusBadge status={row.original.status} />,
     },
     {
         id: 'active_branches_count',
         accessorKey: 'branchesCount',
         header: 'Branches',
         enableSorting: true,
+        meta: { align: 'right' },
         cell: ({ row }) => <span className="tabular-nums">{number.format(row.original.branchesCount)}</span>,
     },
     {
@@ -63,22 +57,26 @@ const columns: ColumnDef<TenantListRow>[] = [
         accessorKey: 'registersCount',
         header: 'Tills',
         enableSorting: true,
+        meta: { align: 'right' },
         cell: ({ row }) => <span className="tabular-nums">{number.format(row.original.registersCount)}</span>,
     },
     {
         id: 'owner',
         accessorKey: 'ownerEmail',
-        header: () => <span className="hidden md:inline">Owner</span>,
-        cell: ({ row }) => (
-            <span className="text-muted-foreground hidden max-w-56 truncate md:inline-block">{row.original.ownerEmail ?? 'No owner'}</span>
-        ),
+        header: 'Owner',
+        cell: ({ row }) =>
+            row.original.ownerEmail ? (
+                <span className="text-muted-foreground inline-block max-w-56 truncate align-middle">{row.original.ownerEmail}</span>
+            ) : (
+                <span className="text-muted-foreground/70">No owner</span>
+            ),
     },
     {
         id: 'created_at',
         accessorKey: 'createdAt',
-        header: () => <span className="hidden lg:inline">Created</span>,
+        header: 'Created',
         enableSorting: true,
-        cell: ({ row }) => <span className="text-muted-foreground hidden whitespace-nowrap lg:inline">{formatDate(row.original.createdAt)}</span>,
+        cell: ({ row }) => <span className="text-muted-foreground whitespace-nowrap tabular-nums">{formatDate(row.original.createdAt)}</span>,
     },
 ];
 
@@ -95,7 +93,7 @@ function StatusFilter({
 
     return (
         <Select value={value ?? 'all'} onValueChange={(next) => update({ status: next === 'all' ? undefined : next, page: 1 })}>
-            <SelectTrigger className="h-9 w-full sm:w-44" aria-label="Filter by status">
+            <SelectTrigger className="h-9 w-full sm:w-48" aria-label="Filter by status">
                 <SelectValue />
             </SelectTrigger>
             <SelectContent>

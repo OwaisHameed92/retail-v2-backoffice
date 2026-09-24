@@ -4,6 +4,15 @@ namespace App\Providers;
 
 use App\Domain\Admin\Enums\AdminRole;
 use App\Domain\Admin\Models\Admin;
+use App\Domain\Licensing\Listeners\IssueLicenceForNewTill;
+use App\Domain\Licensing\Listeners\SendWelcomeEmailWithKeys;
+use App\Domain\Licensing\Listeners\SuspendLicenceOfDeactivatedTill;
+use App\Domain\Licensing\Listeners\UnsuspendLicenceOfReactivatedTill;
+use App\Domain\Tenancy\Events\RegisterAdded;
+use App\Domain\Tenancy\Events\RegisterDeactivated;
+use App\Domain\Tenancy\Events\RegisterReactivated;
+use App\Domain\Tenancy\Events\TenantCreated;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 
@@ -30,5 +39,11 @@ class AppServiceProvider extends ServiceProvider
 
             return null;
         });
+
+        // Licences follow the tills (module 1.3). Synchronous: they run inside the tenancy actions' transactions.
+        Event::listen(RegisterAdded::class, IssueLicenceForNewTill::class);
+        Event::listen(RegisterDeactivated::class, SuspendLicenceOfDeactivatedTill::class);
+        Event::listen(RegisterReactivated::class, UnsuspendLicenceOfReactivatedTill::class);
+        Event::listen(TenantCreated::class, SendWelcomeEmailWithKeys::class);
     }
 }
