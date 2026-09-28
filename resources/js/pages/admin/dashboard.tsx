@@ -1,7 +1,8 @@
+import { RecentTenantsCard } from '@/components/admin/dashboard/recent-tenants-card';
+import { dashboardRangeLabel, dashboardRanges, RevenueCard } from '@/components/admin/dashboard/revenue-card';
+import { type AdminDashboardProps, type DashboardFigure, type DashboardRange, type RevenueChartData } from '@/components/admin/dashboard/types';
 import { type AdminSharedData } from '@/components/admin/types';
 import { AttentionList } from '@/components/shared/attention-list';
-import { ChartCard, SegmentedControl, type SegmentOption } from '@/components/shared/chart-card';
-import { EmptyState } from '@/components/shared/empty-state';
 import { HealthList, type HealthItem } from '@/components/shared/health-list';
 import { KpiCard, KpiGrid } from '@/components/shared/kpi-card';
 import { OverviewTile } from '@/components/shared/overview-tile';
@@ -13,61 +14,45 @@ import { Card } from '@/components/ui/card';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import AdminLayout from '@/layouts/admin-layout';
-import { Head, Link, usePage } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import {
-    ArrowRight,
-    BarChart3,
     Building2,
     CalendarDays,
     Coins,
+    Database,
     FileText,
     FileWarning,
     KeyRound,
+    Lock,
     Mail,
     Monitor,
     MoreHorizontal,
     Plus,
-    PoundSterling,
     RefreshCw,
     Server,
+    Timer,
     UsersRound,
     type LucideIcon,
 } from 'lucide-react';
 import { useState } from 'react';
 
-type Range = '12w' | '6m' | '1y';
-
-const ranges: SegmentOption<Range>[] = [
-    { value: '12w', label: '12W' },
-    { value: '6m', label: '6M' },
-    { value: '1y', label: '1Y' },
-];
-
-const rangeLabel: Record<Range, string> = { '12w': 'Last 12 weeks', '6m': 'Last 6 months', '1y': 'Last 12 months' };
+type KpiKey = keyof AdminDashboardProps['kpis'];
 
 interface Kpi {
+    key: KpiKey;
     label: string;
     icon: LucideIcon;
     tone: ChartTone;
+    goodWhen?: 'up' | 'down';
     link?: { label: string; route: string; ability: string };
 }
 
-// Live figures arrive with module 1.9 (admin dashboard); until then every KPI shows "—" and "No data yet".
 const kpis: Kpi[] = [
+    { key: 'revenue', label: 'Monthly revenue', icon: Coins, tone: 'primary', link: { label: 'Open billing', route: 'admin.billing.index', ability: 'tenants.view' } },
+    { key: 'activeTills', label: 'Active tills', icon: Monitor, tone: 'info', link: { label: 'View licences', route: 'admin.licences.index', ability: 'tenants.view' } },
+    { key: 'trials', label: 'Trials running', icon: UsersRound, tone: 'violet', link: { label: 'View tenants', route: 'admin.tenants.index', ability: 'tenants.view' } },
     {
-        label: 'Monthly revenue',
-        icon: Coins,
-        tone: 'primary',
-        link: { label: 'Open billing', route: 'admin.billing.index', ability: 'tenants.view' },
-    },
-    { label: 'Active tills', icon: Monitor, tone: 'info', link: { label: 'View licences', route: 'admin.licences.index', ability: 'tenants.view' } },
-    {
-        label: 'Trials running',
-        icon: UsersRound,
-        tone: 'violet',
-        link: { label: 'View tenants', route: 'admin.tenants.index', ability: 'tenants.view' },
-    },
-    {
+        key: 'overdue',
         label: 'Overdue',
         icon: FileWarning,
         tone: 'danger',
@@ -75,12 +60,23 @@ const kpis: Kpi[] = [
     },
 ];
 
-const health: HealthItem[] = [
-    { name: 'Licence API', icon: KeyRound, state: 'unknown' },
-    { name: 'Till sync', icon: RefreshCw, state: 'unknown' },
-    { name: 'Email delivery', icon: Mail, state: 'unknown' },
-    { name: 'Background jobs', icon: Server, state: 'unknown' },
-];
+const healthIcons: Record<string, LucideIcon> = {
+    database: Database,
+    queue: Server,
+    scheduler: Timer,
+    signing: KeyRound,
+    email: Mail,
+    tills: RefreshCw,
+};
+
+function LockedHint() {
+    return (
+        <span className="inline-flex items-center gap-1">
+            <Lock className="size-3" aria-hidden />
+            Needs billing access
+        </span>
+    );
+}
 
 function KpiMenu({ label, href, linkLabel }: { label: string; href: string; linkLabel: string }) {
     return (
@@ -99,10 +95,33 @@ function KpiMenu({ label, href, linkLabel }: { label: string; href: string; link
     );
 }
 
-export default function AdminDashboard() {
+/** The figure's delta without nulls, as the shared cards expect. */
+const deltaOf = (figure: DashboardFigure) => figure.delta ?? undefined;
+
+export default function AdminDashboard({
+    dashboard,
+    revenue,
+    range,
+}: {
+    dashboard: AdminDashboardProps;
+    revenue: RevenueChartData | null;
+    range: DashboardRange;
+}) {
     const { admin } = usePage<AdminSharedData>().props;
     const can = (ability: string) => admin.abilities.includes(ability);
-    const [range, setRange] = useState<Range>('12w');
+    const [loadingRange, setLoadingRange] = useState(false);
+
+    const changeRange = (next: DashboardRange) => {
+        if (next === range) {
+            return;
+        }
+        router.reload({
+            data: { range: next },
+            only: ['revenue', 'range'],
+            onStart: () => setLoadingRange(true),
+            onFinish: () => setLoadingRange(false),
+        });
+    };
 
     const actions: QuickAction[] = [
         ...(can('tenants.manage') ? [{ label: 'New tenant', icon: Plus, href: route('admin.tenants.create'), primary: true }] : []),
@@ -110,6 +129,13 @@ export default function AdminDashboard() {
         ...(can('billing.manage') ? [{ label: 'Create invoice', icon: FileText, href: route('admin.billing.invoices.index') }] : []),
         ...(can('licences.manage') ? [{ label: 'Send test email', icon: Mail, href: route('admin.emails.templates') }] : []),
     ];
+
+    const health: HealthItem[] = dashboard.health.map((item) => ({
+        name: item.name,
+        icon: healthIcons[item.key] ?? Server,
+        state: item.state,
+        detail: item.detail,
+    }));
 
     return (
         <AdminLayout>
@@ -120,19 +146,21 @@ export default function AdminDashboard() {
                 subtitle="Here's what's happening with Switch & Save customers today."
                 actions={
                     <>
-                        <Select value={range} onValueChange={(value) => setRange(value as Range)}>
-                            <SelectTrigger className="bg-card h-10 w-44" aria-label="Period">
-                                <CalendarDays className="text-muted-foreground size-4" aria-hidden />
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent align="end">
-                                {ranges.map((option) => (
-                                    <SelectItem key={option.value} value={option.value}>
-                                        {rangeLabel[option.value]}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
+                        {dashboard.access.billing && (
+                            <Select value={range} onValueChange={(value) => changeRange(value as DashboardRange)}>
+                                <SelectTrigger className="bg-card h-10 w-44" aria-label="Revenue period">
+                                    <CalendarDays className="text-muted-foreground size-4" aria-hidden />
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent align="end">
+                                    {dashboardRanges.map((option) => (
+                                        <SelectItem key={option.value} value={option.value}>
+                                            {dashboardRangeLabel[option.value]}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        )}
                         {can('tenants.manage') && (
                             <Button size="lg" asChild>
                                 <Link href={route('admin.tenants.create')}>
@@ -146,64 +174,40 @@ export default function AdminDashboard() {
             />
 
             <KpiGrid>
-                {kpis.map((kpi) => (
-                    <KpiCard
-                        key={kpi.label}
-                        label={kpi.label}
-                        icon={kpi.icon}
-                        tone={kpi.tone}
-                        value={null}
-                        menu={
-                            kpi.link && can(kpi.link.ability) && <KpiMenu label={kpi.label} href={route(kpi.link.route)} linkLabel={kpi.link.label} />
-                        }
-                    />
-                ))}
+                {kpis.map((kpi) => {
+                    const figure = dashboard.kpis[kpi.key];
+
+                    return (
+                        <KpiCard
+                            key={kpi.key}
+                            label={kpi.label}
+                            icon={kpi.icon}
+                            tone={kpi.tone}
+                            value={figure.value}
+                            delta={deltaOf(figure)}
+                            series={figure.series}
+                            footer={figure.footer}
+                            emptyText={figure.locked ? <LockedHint /> : undefined}
+                            menu={
+                                kpi.link && can(kpi.link.ability) && <KpiMenu label={kpi.label} href={route(kpi.link.route)} linkLabel={kpi.link.label} />
+                            }
+                        />
+                    );
+                })}
             </KpiGrid>
 
             <div className="grid gap-4 xl:grid-cols-12">
                 <div className="flex min-w-0 flex-col gap-4 xl:col-span-7">
-                    <ChartCard
-                        title="Revenue"
-                        subtitle={rangeLabel[range]}
-                        icon={BarChart3}
-                        controls={<SegmentedControl label="Revenue range" options={ranges} value={range} onChange={setRange} />}
-                    >
-                        <EmptyState
-                            icon={PoundSterling}
-                            title="No revenue data yet"
-                            body="Paid invoices will chart here week by week once live dashboard figures are switched on."
-                            size="sm"
-                            bordered
-                        />
-                    </ChartCard>
-
-                    <Card className="flex flex-col overflow-clip">
-                        <div className="flex items-center gap-3 px-5 pt-5 pb-3">
-                            <Building2 className="text-primary size-5" aria-hidden />
-                            <h2 className="text-foreground flex-1 text-base font-semibold tracking-tight">Recent tenants</h2>
-                            {can('tenants.view') && (
-                                <Link
-                                    href={route('admin.tenants.index')}
-                                    className="text-primary inline-flex items-center gap-1 text-sm font-medium hover:underline"
-                                >
-                                    View all
-                                    <ArrowRight className="size-4" aria-hidden />
-                                </Link>
-                            )}
-                        </div>
-                        <div className="border-t">
-                            <EmptyState
-                                icon={Building2}
-                                title="No recent activity yet"
-                                body="The latest tenants, their plan, tills and MRR will list here. Until then, open Tenants for every business."
-                                size="sm"
-                            />
-                        </div>
-                    </Card>
+                    <RevenueCard chart={revenue} range={range} loading={loadingRange} onRangeChange={changeRange} />
+                    <RecentTenantsCard tenants={dashboard.recentTenants} viewAllHref={can('tenants.view') ? route('admin.tenants.index') : undefined} />
                 </div>
 
                 <div className="flex min-w-0 flex-col gap-4 xl:col-span-5">
-                    <AttentionList items={[]} />
+                    <AttentionList
+                        items={dashboard.attention.items}
+                        total={dashboard.attention.total}
+                        emptyBody="Trials ending in the next 2 days, licence alerts, overdue invoices and late lead follow-ups show here."
+                    />
 
                     <Card className="flex flex-col gap-3 p-5">
                         <div className="flex items-center gap-3">
@@ -211,12 +215,20 @@ export default function AdminDashboard() {
                             <h2 className="text-foreground flex-1 text-base font-semibold tracking-tight">Business overview</h2>
                         </div>
                         <div className="grid gap-3 sm:grid-cols-2">
-                            <OverviewTile label="Total tenants" icon={Building2} tone="primary" value={null} />
                             <OverviewTile
-                                label={`Total revenue (${ranges.find((r) => r.value === range)?.label})`}
+                                label="Total tenants"
+                                icon={Building2}
+                                tone="primary"
+                                value={dashboard.overview.tenants.value}
+                                delta={deltaOf(dashboard.overview.tenants)}
+                            />
+                            <OverviewTile
+                                label="Total revenue (12W)"
                                 icon={Coins}
                                 tone="info"
-                                value={null}
+                                value={dashboard.overview.revenue.value}
+                                delta={deltaOf(dashboard.overview.revenue)}
+                                emptyText={dashboard.overview.revenue.locked ? <LockedHint /> : undefined}
                             />
                         </div>
                     </Card>

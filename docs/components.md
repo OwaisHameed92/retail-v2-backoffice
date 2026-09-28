@@ -293,3 +293,9 @@ Tokens live only in `resources/css/app.css` (v2 palette, light + dark): `chrome`
 - `LicenceFormFields` (`components/admin/licences/licence-form-fields.tsx`): tills allowed, trial/full cards, length + unit, start, feature checkboxes with the till name ("Portal only" without one). Helpers `licenceValues()`, `licencePayload()`, `describeLicence()`. Used by `BranchLicenceDialog`, the tenant wizard and `ApproveLicenceSection` (lead approval).
 - `BranchLicenceStrip` (under each branch card: "2 of 3 till keys in use", kind, length, features, "Licence settings"), `BranchLimitsDialog` (multi-branch and branches allowed), `ActivateByDialog` (licence page).
 - Backend: `Licensing\Data\LicenceFormData` (branch settings with in use / allowed, company limits, options, plan defaults), `Tenancy\Support\TenantLimits`.
+
+## Added by module 1.9 (admin dashboard)
+
+- `components/admin/dashboard/`: `RevenueCard` (chart card with 12W/6M/1Y, total and "% vs previous" pill, lock state without billing access), `RecentTenantsCard` (table on desktop, card list on phones), `types.ts` matching `AdminDashboardData::forViewer()` and `RevenueChart::for()`.
+- `KpiCard.emptyText` and the new `OverviewTile.emptyText` take a ReactNode (used for the "Needs billing access" lock hint). `OverviewTile` shows a flat delta in muted grey. `HealthList` no longer counts "unknown" rows as a problem: with some rows unmonitored the pill reads "Monitored systems healthy".
+- Backend: `Admin\Queries\AdminDashboard` (`forAdmin`, `revenueFor`, `forget`), `Leads\Queries\LeadNavCount` (shared as `admin.navCounts.leads`), `Shared\Support\SchedulerHeartbeat`.

@@ -22,8 +22,8 @@ interface KpiCardProps {
     footer?: ReactNode;
     /** "…" menu slot (a DropdownMenu). */
     menu?: ReactNode;
-    /** Shown under "—" when there is no value yet. Default "No data yet". */
-    emptyText?: string;
+    /** Shown under "—" when there is no value yet (or a lock hint when hidden). Default "No data yet". */
+    emptyText?: ReactNode;
     /** Makes the card a link (the menu stays clickable). */
     href?: string;
     loading?: boolean;
@@ -90,7 +90,7 @@ export function KpiCard({
                     {loading ? (
                         <Skeleton className="h-4 w-32" />
                     ) : empty ? (
-                        <p className="text-muted-foreground text-[13px]">{emptyText}</p>
+                        <div className="text-muted-foreground text-[13px]">{emptyText}</div>
                     ) : (
                         delta && <Delta delta={delta} />
                     )}

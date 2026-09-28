@@ -4,6 +4,7 @@ use App\Domain\Ai\Models\AiConversation;
 use App\Domain\Ai\Models\AiPendingAction;
 use App\Domain\Ai\Models\AiUsage;
 use App\Domain\Mail\Models\EmailLog;
+use App\Domain\Shared\Support\SchedulerHeartbeat;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
@@ -26,3 +27,6 @@ Schedule::command('model:prune', ['--model' => [EmailLog::class]])->daily()->onO
 
 // AI (module 5.1): conversations and proposals after `ai.retention_days`, usage rows after `ai.usage_retention_months`.
 Schedule::command('model:prune', ['--model' => [AiConversation::class, AiPendingAction::class, AiUsage::class]])->dailyAt('02:30')->onOneServer();
+
+// Admin dashboard (module 1.9): a heartbeat so System health can show the scheduler is running.
+Schedule::call(fn () => SchedulerHeartbeat::beat())->everyMinute()->name('scheduler:heartbeat')->onOneServer();

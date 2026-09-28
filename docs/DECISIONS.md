@@ -336,3 +336,15 @@ How it works: `docs/till-data.md`.
 | Activate-by | `licences.activate_by` = issue (or reissue of an unused key) + `licence.activate_by_days` (30). After it an unused key's `licence/activate` is 410 `key.expired` (counts as a wrong key). `ExtendActivateBy` moves it to 23:59:59 London of a chosen day. Existing unused keys got now + 30 days. |
 | Resend key e-mail | `ResendLicenceKey` = `ReissueKey` + `LicenceKeyMail` to active owners (plain keys are never stored); refused without an owner. A bound PC is released, as with Reissue. |
 | New token | No new mechanism: the claims fingerprint already covers `maxRegisters`, features, limits, dates and the company block, so any change gives each till a new token at its next validate. |
+
+## Admin dashboard (module 1.9, 2026-09-28)
+
+| Topic | Decision |
+|---|---|
+| Query | `Admin\Queries\AdminDashboard` reads every tenant once (companies, licences, plans, paid and overdue invoices; ~17 queries whatever the number of tenants) and works figures out in PHP. Cached 60 s for everybody (`admin-dashboard:v1`, revenue chart per range); what an admin may not see is removed **after** the cache, so no role's view is ever cached. |
+| Who sees what | Money (monthly revenue, overdue, revenue chart, 12-week revenue tile, MRR, overdue-invoice items) needs `billing.manage` (owner, accounts); others see "—" with a lock hint. Late lead follow-ups and the Leads nav pill need `leads.manage` (owner, sales). The billing pages themselves stay readable with `tenants.view`. |
+| Figures | Revenue = totals of invoices in status paid by `paid_at` (London month / week). Active till = live licence bound to a PC, not suspended or past its grace, business not suspended/cancelled. Trial = business with an activated, unpaid till whose trial has not ended; its end is the earliest such till's. Overdue = balance of invoices in status overdue. MRR = monthly plan price of each live licence in status active or grace (trials add nothing). Tenants = businesses not cancelled or deleted. |
+| History | No snapshots are kept: past points of the series come from row timestamps (bound/revoked/suspended/cancelled/overdue/paid). A till paid during its trial counts as trial until the trial end in past weeks; a till released and bound again counts from its latest binding. |
+| Needs attention | Trials ending within 2 days (dated 2 days before the end), open licence alerts (last seen), overdue invoices (overdue since), late lead follow-ups; newest 5 shown, the badge counts all the admin may see. |
+| Recent tenants | 5 most recently active: latest of a till validating, an invoice changing, an audit entry, or being created. |
+| Health | Database (select 1), background jobs (database queue: waiting + failed; sync: fine; others "Not monitored yet"), scheduler (new every-minute heartbeat in the cache; down after 5 min), licence signing key (active + signer certificate). Email "Not monitored yet"; till sync "Arrives with module 2.7". |

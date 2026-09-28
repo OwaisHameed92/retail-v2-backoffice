@@ -29,8 +29,11 @@ function summary(items: HealthItem[]): { text: string; className: string } {
     if (items.some((item) => item.state === 'down')) {
         return { text: 'Outage', className: 'bg-danger-soft text-danger-foreground' };
     }
-    if (items.some((item) => item.state === 'degraded' || item.state === 'unknown')) {
+    if (items.some((item) => item.state === 'degraded')) {
         return { text: 'Some systems need a look', className: 'bg-warning-soft text-warning-foreground' };
+    }
+    if (items.some((item) => item.state === 'unknown')) {
+        return { text: 'Monitored systems healthy', className: 'bg-success-soft text-success-foreground' };
     }
 
     return { text: 'All systems operational', className: 'bg-success-soft text-success-foreground' };

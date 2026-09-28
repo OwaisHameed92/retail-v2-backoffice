@@ -1,7 +1,7 @@
 import { type StatDelta } from '@/components/shared/stat-card';
 import { toneCircle, type ChartTone } from '@/components/shared/trend-chart';
 import { cn } from '@/lib/utils';
-import { ArrowDown, ArrowUp, type LucideIcon } from 'lucide-react';
+import { ArrowDown, ArrowUp, Minus, type LucideIcon } from 'lucide-react';
 import { type ReactNode } from 'react';
 
 const tileTint: Record<ChartTone, string> = {
@@ -20,14 +20,17 @@ interface OverviewTileProps {
     /** Formatted number; `null` shows "—" and "No data yet". */
     value: ReactNode | null;
     delta?: StatDelta;
+    /** Shown under "—" when there is no value (or a lock hint when hidden). Default "No data yet". */
+    emptyText?: ReactNode;
     className?: string;
 }
 
 /** Soft tinted tile (Business overview): icon circle, label, number and a small delta. */
-export function OverviewTile({ label, icon: Icon, tone = 'primary', value, delta, className }: OverviewTileProps) {
+export function OverviewTile({ label, icon: Icon, tone = 'primary', value, delta, emptyText = 'No data yet', className }: OverviewTileProps) {
     const empty = value === null || value === undefined;
     const good = delta && delta.direction !== 'flat' && delta.direction === (delta.goodWhen ?? 'up');
-    const DeltaIcon = delta?.direction === 'down' ? ArrowDown : ArrowUp;
+    const DeltaIcon = delta?.direction === 'down' ? ArrowDown : delta?.direction === 'flat' ? Minus : ArrowUp;
+    const deltaColour = delta?.direction === 'flat' ? 'text-muted-foreground' : good ? 'text-success' : 'text-danger';
 
     return (
         <div className={cn('flex min-w-0 items-center gap-3 rounded-lg p-4', tileTint[tone], className)}>
@@ -40,11 +43,11 @@ export function OverviewTile({ label, icon: Icon, tone = 'primary', value, delta
                     {empty ? <span className="text-muted-foreground/60">—</span> : value}
                 </p>
                 {empty ? (
-                    <p className="text-muted-foreground text-[11px]">No data yet</p>
+                    <div className="text-muted-foreground text-[11px]">{emptyText}</div>
                 ) : (
                     delta && (
                         <p className="flex items-center gap-1 text-[11px]">
-                            <span className={cn('inline-flex items-center gap-0.5 font-semibold', good ? 'text-success' : 'text-danger')}>
+                            <span className={cn('inline-flex items-center gap-0.5 font-semibold', deltaColour)}>
                                 <DeltaIcon className="size-3" strokeWidth={2.5} aria-hidden />
                                 {delta.value}
                             </span>
