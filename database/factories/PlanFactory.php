@@ -31,7 +31,7 @@ class PlanFactory extends Factory
             'trial_days' => Plan::DEFAULT_TRIAL_DAYS,
             'trial_grace_days' => Plan::DEFAULT_TRIAL_GRACE_DAYS,
             'grace_days' => Plan::DEFAULT_GRACE_DAYS,
-            'features' => [Feature::StockControl, Feature::CashOffice],
+            'features' => [Feature::Loyalty, Feature::Promotions],
             'is_active' => true,
             'is_public' => true,
             'sort_order' => 0,

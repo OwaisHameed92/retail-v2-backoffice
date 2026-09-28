@@ -16,12 +16,16 @@ enum LicenceAlertType: string
     /** The PC that was bound before a "Reissue key" still uses the old key. */
     case ReissuedKeyUsed = 'reissuedKeyUsed';
 
+    /** Module 2.1: the till's own ids are already mapped to another business or branch (id_map). */
+    case TillIdsConflict = 'tillIdsConflict';
+
     public function label(): string
     {
         return match ($this) {
             self::SameKeyTwoDevices => 'Same key on two PCs',
             self::DeviceMismatch => 'Check-in from another PC',
             self::ReissuedKeyUsed => 'Old key still in use',
+            self::TillIdsConflict => 'Till data belongs elsewhere',
         };
     }
 
@@ -32,6 +36,7 @@ enum LicenceAlertType: string
             self::SameKeyTwoDevices => 'Another PC tried to activate this key. If the customer moved to a new PC, use "Release"; if not, the key may have been shared: reissue it.',
             self::DeviceMismatch => 'A PC that is not the bound one is still checking in with this licence. It gets no new token and locks when it cannot validate for 14 days.',
             self::ReissuedKeyUsed => 'The till that had this licence still uses the key that was replaced. Give the owner the new key.',
+            self::TillIdsConflict => 'The PC holds data of another business or branch, so the key was refused. Check the key was given to the right shop; a PC restored from another shop\'s backup needs that shop\'s key.',
         };
     }
 }

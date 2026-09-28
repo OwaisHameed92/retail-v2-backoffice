@@ -29,7 +29,7 @@ function planPayload(array $overrides = []): array
         'trial_days' => 7,
         'trial_grace_days' => 3,
         'grace_days' => 7,
-        'features' => ['stockControl', 'cashOffice'],
+        'features' => ['loyalty', 'promotions'],
         'is_active' => true,
         'is_public' => true,
         'sort_order' => 10,
@@ -44,7 +44,7 @@ function planInput(
     string $code = 'standard',
     string $monthly = '30.00',
     string $yearly = '300.00',
-    array $features = [Feature::StockControl],
+    array $features = [Feature::Loyalty],
     bool $isActive = true,
     bool $isPublic = true,
 ): PlanInput {

@@ -31,14 +31,14 @@ test('support saves a branch\'s licence settings and the company\'s branch limit
     $this->actingAs($this->admin(AdminRole::Support), 'admin');
 
     $this->put("/admin/tenants/{$company->id}/branches/{$branch->id}/licence", [
-        'max_registers' => 4, 'kind' => 'full', 'length' => 12, 'length_unit' => 'months', 'valid_from' => '2026-10-01', 'features' => ['staff', 'cashOffice'],
+        'max_registers' => 4, 'kind' => 'full', 'length' => 12, 'length_unit' => 'months', 'valid_from' => '2026-10-01', 'features' => ['second_screen', 'promotions'],
     ])->assertSessionHasNoErrors()->assertSessionHas('success');
 
     $branch->refresh();
     expect($branch->max_registers)->toBe(4)
         ->and($branch->licence_kind)->toBe(TokenKind::Full)
         ->and($branch->licence_valid_from?->toIso8601String())->toBe('2026-09-30T23:00:00+00:00')
-        ->and($branch->licence_features)->toBe(['cashOffice', 'staff']);
+        ->and($branch->licence_features)->toBe(['promotions', 'second_screen']);
 
     $this->put("/admin/tenants/{$company->id}/branches/{$branch->id}/licence", ['max_registers' => 4, 'kind' => 'trial', 'features' => ['multiBranch']])
         ->assertSessionHasErrors('features.0');
@@ -60,7 +60,7 @@ test('the tenant page shows the licence form with in use / allowed', function ()
             ->where('branchLimits.branchesInUse', 1)
             ->where('branchLimits.branchesAllowed', 10)
             ->has('licenceOptions.features', count(Feature::cases()) - 1)
-            ->where('licenceOptions.features.0.tillName', 'stock_control')
+            ->where('licenceOptions.features.0.tillName', 'loyalty')
             ->has('licenceOptions.businessTypes', count(BusinessType::cases())));
 });
 
@@ -83,7 +83,7 @@ test('the wizard creates the tenant with its licence form', function () {
         'name' => 'Corner Shop', 'business_type' => 'Newsagent', 'town' => 'York', 'postcode' => 'yo1 7hh', 'receipt_footer' => 'Ta!',
         'status' => 'trial', 'branch_code' => 'YRK', 'branch_name' => 'York', 'branch_nation' => 'england', 'tills' => 2,
         'plan_id' => $plan->id, 'owner_name' => 'Sam Patel', 'owner_email' => 'sam@corner.test',
-        'max_registers' => 3, 'kind' => 'trial', 'length' => 14, 'length_unit' => 'days', 'features' => ['staff'],
+        'max_registers' => 3, 'kind' => 'trial', 'length' => 14, 'length_unit' => 'days', 'features' => ['second_screen'],
         'multi_branch' => true, 'max_branches' => 2,
     ])->assertSessionHasNoErrors()->assertRedirect();
 
@@ -94,8 +94,8 @@ test('the wizard creates the tenant with its licence form', function () {
         ->and($company->postcode)->toBe('YO1 7HH')
         ->and($company->owner_name)->toBe('Sam Patel')
         ->and([$company->multi_branch, $company->max_branches])->toBe([true, 2])
-        ->and([$branch->max_registers, $branch->licence_length, $branch->licence_features])->toBe([3, 14, ['staff']])
-        ->and(Licence::withoutCompanyScope()->where('company_id', $company->id)->get()->every(fn (Licence $l) => $l->features->all() === [Feature::Staff]))->toBeTrue();
+        ->and([$branch->max_registers, $branch->licence_length, $branch->licence_features])->toBe([3, 14, ['second_screen']])
+        ->and(Licence::withoutCompanyScope()->where('company_id', $company->id)->get()->every(fn (Licence $l) => $l->features->all() === [Feature::SecondScreen]))->toBeTrue();
 
     $this->post('/admin/tenants', ['name' => 'X', 'status' => 'trial', 'branch_code' => 'XX', 'branch_name' => 'X', 'branch_nation' => 'england', 'tills' => 3, 'owner_name' => 'X', 'owner_email' => 'x@x.test', 'max_registers' => 2, 'kind' => 'trial'])
         ->assertSessionHasErrors('max_registers');
@@ -107,7 +107,7 @@ test('lead approval passes tills allowed, kind, length and features', function (
 
     $this->actingAs($this->admin(AdminRole::Owner), 'admin')->post("/admin/leads/{$lead->id}/approve", [
         'shops' => [['name' => 'Leeds', 'code' => 'LDS', 'nation' => 'england', 'tills' => 1, 'tills_allowed' => 3], ['name' => 'York', 'code' => 'YRK', 'nation' => 'england', 'tills' => 2]],
-        'kind' => 'full', 'length' => 1, 'length_unit' => 'years', 'features' => ['cashOffice'],
+        'kind' => 'full', 'length' => 1, 'length_unit' => 'years', 'features' => ['promotions'],
     ])->assertSessionHasNoErrors();
 
     $company = $lead->fresh()->company;

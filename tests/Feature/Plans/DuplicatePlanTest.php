@@ -13,7 +13,7 @@ it('copies a plan as an inactive, hidden plan with a free code', function () {
         'price_monthly' => '45.00',
         'price_yearly' => '450.00',
         'trial_days' => 14,
-        'features' => [Feature::AiAssistant, Feature::AiInsights],
+        'features' => [Feature::AssistQuestions, Feature::Assist],
     ]);
 
     $copy = app(DuplicatePlan::class)->handle($source)->refresh();
@@ -24,7 +24,7 @@ it('copies a plan as an inactive, hidden plan with a free code', function () {
         ->and($copy->price_monthly)->toBe('45.00')
         ->and($copy->price_yearly)->toBe('450.00')
         ->and($copy->trial_days)->toBe(14)
-        ->and($copy->featureValues())->toBe(['aiAssistant', 'aiInsights'])
+        ->and($copy->featureValues())->toBe(['assist_questions', 'assist'])
         ->and($copy->status())->toBe(PlanStatus::Inactive)
         ->and($copy->is_public)->toBeFalse()
         ->and($source->fresh()->status())->toBe(PlanStatus::Active);

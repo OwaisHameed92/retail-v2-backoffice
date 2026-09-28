@@ -83,14 +83,13 @@ test('the token verifies like the till and carries the shop, install code and ma
         ->and($token->payload['features'] ?? [])->each->toMatch('/^[a-z0-9]+(_[a-z0-9]+)*$/');
 });
 
-test('features map to the till names from config, the company\'s multi-branch adds multi_branch and limits.branches', function () {
+test('features are the till\'s names, the company\'s multi-branch adds multi_branch and limits.branches', function () {
     [$company, $licence] = $this->keyedTenant();
-    $licence->forceFill(['features' => ['stockControl', 'cashOffice']])->save();
+    $licence->forceFill(['features' => ['loyalty', 'second_screen', 'promotions']])->save();
     $company->forceFill(['multi_branch' => true, 'max_branches' => 3])->save();
-    config(['licence.till_features.stockControl' => null]);
 
     $this->activateTill()->assertOk()
-        ->assertJsonPath('licence.features', ['cash_office', 'multi_branch'])
+        ->assertJsonPath('licence.features', ['loyalty', 'promotions', 'multi_branch', 'second_screen'])
         ->assertJsonPath('licence.limits', ['branches' => 3]);
 });
 

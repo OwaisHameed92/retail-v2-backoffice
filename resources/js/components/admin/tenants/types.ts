@@ -80,6 +80,23 @@ export interface TenantBranch {
     registers: TenantRegister[];
     /** Module 1.11: licence settings with in use / allowed. */
     licence: BranchLicence;
+    /** Module 2.1: the branch's sync key (never the key itself). */
+    syncKey: BranchSyncKey;
+}
+
+/** SyncKeyData: a branch's sync key panel. */
+export interface BranchSyncKey {
+    status: 'none' | 'active' | 'revoked';
+    /** The branch's licence includes the online dashboard (`cloud_sync`). */
+    cloudSync: boolean;
+    maskedKey: string | null;
+    source: 'till' | 'admin' | null;
+    createdAt: string | null;
+    deliveredAt: string | null;
+    lastUsedAt: string | null;
+    rotationPending: boolean;
+    revokedAt: string | null;
+    oldKeysInGrace: number;
 }
 
 export interface TenantMember {

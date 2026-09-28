@@ -226,7 +226,7 @@ export function LicenceFormFields({
                     <p className="text-danger-foreground text-[13px]">{featureError}</p>
                 ) : (
                     <p className="text-muted-foreground text-[13px]">
-                        The till gets the features with a till name. Multi-branch is set for the whole business.
+                        The till gets each feature under the name shown. Multi-branch is set for the whole business.
                     </p>
                 )}
             </fieldset>

@@ -10,7 +10,7 @@ Each module is one agent task. Modules in the same wave can run in parallel. Sta
 included) pass, the UI follows `docs/BRAND.md`, and `composer check`, `npm run lint`, `npx tsc --noEmit` and
 `npm run build` are green.
 
-Totals: **66 modules · 18 done · 2 rework · 3 blocked · 43 todo.**
+Totals: **68 modules · 22 done · 46 todo** (2026-10-02).
 
 ---
 
@@ -47,13 +47,13 @@ Contract: v1.3.1 `docs/web-portal-api.md` §17 (read 17.15–17.17 first), `spec
 
 Waves: **1.4 → 1.5 + 1.11** · then 1.9, 1.10, 1.12.
 
-## Phase 2: Sync and cloud link — 2/9
+## Phase 2: Sync and cloud link — 3/9
 
 Contract: v1.3.1 §1–16, §19 (duplicate/echo/conflict rules + test list 19.4), §20, `docs/web-portal-api/openapi.yaml`.
 
 | # | Module | What | Status |
 |---|---|---|---|
-| 2.1 | IDs and sync keys (v1.3.3 answers 1–2) | `id_map` adopt/alias: tills keep their own ids — adopt the first branch main till's `existingIds`, alias later branches' companyIds, translate at the edge; per-branch sync key (hashed, shown once) returned as `apiKey` in `licence/activate`/`validate` when the licence has `cloud_sync`, plus "Connect" sync key for shops that add the dashboard later (SIMPLE-SETUP.md); revoke/rotate; **no `devices/activate`**; feature names = the till's 11 (`loyalty, promotions, purchasing, accounts, multi_branch, second_screen, label_printing, assist, cloud_sync, assist_invoice_scan, assist_questions`); approver/trusted kid `k290bee23` config | todo |
+| 2.1 | IDs and sync keys (v1.3.3 answers 1–2) | `id_map` (adopt the first till company id, alias later ones, branch = the key's branch, register = the key's register; conflicts → 409 `licence.ids_conflict` + alert) and `IdTranslator` at the edge (ApplySyncChanges; `toTill()` for 2.5 pull); per-branch sync key (`SSK-…`, 160 bits, HMAC + last 4) sent as `apiKey` (+ `hubUrl`) to the main till of a `cloud_sync` licence; admin Sync key panel (generate shown once, send new key to till, revoke; old key 7 days' grace); `AuthenticateSyncKey` for `/api/v1/sync/*`; feature names = the till's 11; `k290bee23` in `.env.example`. **`devices/activate` is not built** (the till never calls it) | done |
 | 2.2 | Hello and push | `sync/hello`, `sync/push` (gzip, 5,000 rows, idempotent, ordered, acknowledged, initial mode), branch key auth. v1.3.1 changed the `hello-reply` and `error-reply` schemas: build to those | todo |
 | 2.3 | Entity store: master data | 140 entities from v1.3.1 (17 new tables, new columns) via additive migrations (`database/till-schema.json`); v1.1 folder dropped | done |
 | 2.4 | Entity store: transactions | Applier to §19: never twice (ledger + version), never backwards (version, tie by `updatedAt`), never echoed (`hub_hash`, `origin_branch_id`), `baseVersion` ready, `portal_received_at`; §19.4 store tests | done |
@@ -119,7 +119,7 @@ Contract: v1.3.1 §18.4. Roles: business owner, **shop manager** (one branch onl
 | 6.6 | Anomaly alerts | todo |
 | 6.7 | Admin AI | todo |
 
-## Phase 7: Finish and go-live — 0/5
+## Phase 7: Finish and go-live — 0/6
 
 | # | Module | Status |
 |---|---|---|
@@ -128,6 +128,7 @@ Contract: v1.3.1 §18.4. Roles: business owner, **shop manager** (one branch onl
 | 7.3 | Security review | todo |
 | 7.4 | Deploy (MySQL server, HTTPS, queues, scheduler, backups, signing key generated on the server) | todo |
 | 7.5 | End-to-end testing with the EPOS team, go-live checklist | todo |
+| 7.6 | Scale: partitioning, archiving, sharding, load test with 1,000 synthetic shops (`docs/scaling.md`; groundwork `companies.data_connection` done in 2.1) | todo |
 
 ## Phase 8: Later — 0/5
 
@@ -141,7 +142,7 @@ channel.
 1. Now: EPOS message and questions (sent by the owner).
 1b. **UI v2 (owner priority):** design system v2 (`docs/design/DESIGN-SYSTEM-v2.md`) on the admin shell and every existing admin screen — can run in parallel with 1.4.
 2. **1.4 → 1.5 + 1.11**: licensing to the v1.3.1 contract → first real test with the EPOS team.
-3. 1.9, 1.10, then **Phase 2** (2.3/2.4 done; 2.2 next).
+3. 1.9, 1.10, then **Phase 2** (2.1/2.3/2.4 done; 2.2 next).
 4. Phase 3 → Phase 4 → Phase 5 → Phase 6.
 5. Phase 7, then Phase 8.
 

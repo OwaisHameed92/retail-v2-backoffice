@@ -55,7 +55,7 @@ test('a new licence is issued, not activated, with the plan copied onto it', fun
         ->and($licence->branch_id)->toBe($register->branch_id)
         ->and($licence->register_id)->toBe($register->id)
         ->and($licence->plan_id)->toBe($plan->id)
-        ->and($licence->features->map->value->all())->toBe(['stockControl', 'cashOffice'])
+        ->and($licence->features->map->value->all())->toBe(['loyalty', 'promotions'])
         ->and($licence->grace_days)->toBe(3)
         ->and($licence->activated_at)->toBeNull()
         ->and($licence->expires_at)->toBeNull()
@@ -68,9 +68,9 @@ test('the features are a snapshot: editing the plan later does not change the li
     $plan = $this->standardPlan();
     $licence = $this->issue(bareTill(), $plan)->licence;
 
-    $plan->update(['features' => [Feature::AiAssistant]]);
+    $plan->update(['features' => [Feature::AssistQuestions]]);
 
-    expect($licence->fresh()->features->map->value->all())->toBe(['stockControl', 'cashOffice']);
+    expect($licence->fresh()->features->map->value->all())->toBe(['loyalty', 'promotions']);
 });
 
 test('without a plan it uses the company plan, then the portal default, then the first active plan', function () {

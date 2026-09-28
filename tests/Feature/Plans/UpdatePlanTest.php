@@ -18,7 +18,7 @@ beforeEach(function () {
         'description' => 'A plan.',
         'price_monthly' => '30.00',
         'price_yearly' => '300.00',
-        'features' => [Feature::StockControl],
+        'features' => [Feature::Loyalty],
         'sort_order' => 10,
     ]);
 });
@@ -26,14 +26,14 @@ beforeEach(function () {
 it('updates a plan and records only the changed values', function () {
     $this->actingAs(planAdmin(), 'admin');
 
-    app(UpdatePlan::class)->handle($this->plan, planInput(monthly: '32.50', features: [Feature::StockControl, Feature::AiAssistant]));
+    app(UpdatePlan::class)->handle($this->plan, planInput(monthly: '32.50', features: [Feature::Loyalty, Feature::AssistQuestions]));
 
     expect($this->plan->fresh()->price_monthly)->toBe('32.50');
 
     $log = AuditLog::query()->where('action', 'plan.updated')->sole();
 
-    expect($log->before)->toBe(['price_monthly' => '30.00', 'features' => ['stockControl']])
-        ->and($log->after)->toBe(['price_monthly' => '32.50', 'features' => ['stockControl', 'aiAssistant']]);
+    expect($log->before)->toBe(['price_monthly' => '30.00', 'features' => ['loyalty']])
+        ->and($log->after)->toBe(['price_monthly' => '32.50', 'features' => ['loyalty', 'assist_questions']]);
 });
 
 it('writes nothing when no value changed', function () {

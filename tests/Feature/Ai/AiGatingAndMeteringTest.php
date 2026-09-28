@@ -67,7 +67,7 @@ test('the kill switch turns every AI feature off', function () {
 });
 
 test('a plan without the AI assistant feature is refused', function () {
-    $plan = $this->aiPlan([Feature::StockControl, Feature::AiInsights], code: 'no-assistant');
+    $plan = $this->aiPlan([Feature::Loyalty, Feature::Assist], code: 'no-assistant');
     $context = $this->userContext($this->aiCompany($plan));
 
     expectUnavailable(fn () => app(RunAssistant::class)->handle($context, 'Hi'), AiUnavailableReason::NotInPlan, 'does not include the AI assistant');

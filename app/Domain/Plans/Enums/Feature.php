@@ -3,57 +3,63 @@
 namespace App\Domain\Plans\Enums;
 
 /**
- * Product features a plan can switch on. Values are camelCase (contract style) and are stored in
- * `plans.features` as a JSON list. The till and the portal read these to show or hide whole areas.
+ * Product features a plan or a branch licence can switch on. The values are **exactly the till's 11 feature
+ * names** (`Feature.cs`, contract v1.3.3 ANSWERS §6): they go into the licence token as they are, so they are
+ * snake_case, not our usual camelCase (DECISIONS "Module 2.1"). Stored in `plans.features`, `licences.features`
+ * and `branches.licence_features` as JSON lists. `multi_branch` in a token follows the company's multi-branch
+ * setting, not the plan.
  */
 enum Feature: string
 {
-    case StockControl = 'stockControl';
+    case Loyalty = 'loyalty';
+    case Promotions = 'promotions';
     case Purchasing = 'purchasing';
-    case CashOffice = 'cashOffice';
     case Accounts = 'accounts';
-    case Staff = 'staff';
-    case CustomerOrders = 'customerOrders';
-    case NewsDeliveries = 'newsDeliveries';
-    case MultiBranch = 'multiBranch';
-    case AiAssistant = 'aiAssistant';
-    case AiInsights = 'aiInsights';
+    case MultiBranch = 'multi_branch';
+    case SecondScreen = 'second_screen';
+    case LabelPrinting = 'label_printing';
+    case CloudSync = 'cloud_sync';
+    case Assist = 'assist';
+    case AssistInvoiceScan = 'assist_invoice_scan';
+    case AssistQuestions = 'assist_questions';
 
     public function label(): string
     {
         return match ($this) {
-            self::StockControl => 'Stock control',
+            self::Loyalty => 'Loyalty',
+            self::Promotions => 'Promotions',
             self::Purchasing => 'Purchasing',
-            self::CashOffice => 'Cash office',
             self::Accounts => 'Accounts and VAT',
-            self::Staff => 'Staff',
-            self::CustomerOrders => 'Customer orders',
-            self::NewsDeliveries => 'News deliveries',
             self::MultiBranch => 'Multi-branch',
-            self::AiAssistant => 'AI assistant',
-            self::AiInsights => 'AI insights',
+            self::SecondScreen => 'Second screen',
+            self::LabelPrinting => 'Label printing',
+            self::CloudSync => 'Online dashboard (cloud sync)',
+            self::Assist => 'Assist',
+            self::AssistInvoiceScan => 'Assist: invoice scan',
+            self::AssistQuestions => 'Assist: questions',
         };
     }
 
     public function description(): string
     {
         return match ($this) {
-            self::StockControl => 'Stock levels per branch, stock takes, movements and expiry checks.',
+            self::Loyalty => 'Customer points, balances and rewards at the till.',
+            self::Promotions => 'Multi-buys, meal deals, coupons and price promotions.',
             self::Purchasing => 'Suppliers, purchase orders, deliveries and supplier invoices.',
-            self::CashOffice => 'Shifts, Z reports, cash-up variances and card settlement.',
             self::Accounts => 'Expenses, VAT returns, profit and loss, and journals.',
-            self::Staff => 'Till users, clock in and out, rotas and timesheets.',
-            self::CustomerOrders => 'Take and track customer orders and deposits.',
-            self::NewsDeliveries => 'Newspaper and magazine rounds, deliveries and returns.',
             self::MultiBranch => 'Run several shops from one account, with transfers and branch reports.',
-            self::AiAssistant => 'Ask about sales and stock in plain English and make changes with confirmation.',
-            self::AiInsights => 'Morning summaries, reorder suggestions and alerts on unusual voids and refunds.',
+            self::SecondScreen => 'A customer-facing display showing the basket and offers.',
+            self::LabelPrinting => 'Shelf-edge labels and barcode labels from the till.',
+            self::CloudSync => 'The till syncs with the online dashboard; the branch gets a sync key.',
+            self::Assist => 'AI help: morning summaries, reorder suggestions and alerts on unusual activity.',
+            self::AssistInvoiceScan => 'AI reads supplier invoices and turns them into deliveries.',
+            self::AssistQuestions => 'Ask about sales and stock in plain English.',
         };
     }
 
     public function isAi(): bool
     {
-        return $this === self::AiAssistant || $this === self::AiInsights;
+        return $this === self::Assist || $this === self::AssistInvoiceScan || $this === self::AssistQuestions;
     }
 
     /**

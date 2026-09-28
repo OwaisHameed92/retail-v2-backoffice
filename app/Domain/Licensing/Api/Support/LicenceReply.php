@@ -11,7 +11,8 @@ use Carbon\CarbonImmutable;
 /**
  * The 200 replies of `licence/activate` (licence-activate-reply.schema.json) and `licence/validate`
  * (validate-reply.schema.json), contract v1.3.1 §17.15. The `licence` summary lists the token's fields; the
- * signed token always wins.
+ * signed token always wins. Module 2.1: `apiKey` (+ `hubUrl`) is added by SyncKeyDelivery; top-level
+ * `companyId`/`branchId` are never sent next to it (§17.3: they would have to be the till's own ids).
  */
 final class LicenceReply
 {
@@ -33,15 +34,17 @@ final class LicenceReply
     }
 
     /**
+     * @param  array{apiKey?: string, hubUrl?: string}  $link  module 2.1: the branch's sync key for the main till
      * @return array<string, mixed>
      */
-    public function validation(Licence $licence, LicenceState $state, LicenceClaims $claims, string $status, ?string $token, CarbonImmutable $now): array
+    public function validation(Licence $licence, LicenceState $state, LicenceClaims $claims, string $status, ?string $token, CarbonImmutable $now, array $link = []): array
     {
         return [
             'status' => $status,
             'licenceToken' => $token,
             'licence' => self::summary($claims),
-            'apiKey' => null,
+            'apiKey' => $link['apiKey'] ?? null,
+            ...(isset($link['hubUrl']) ? ['hubUrl' => $link['hubUrl']] : []),
             'minimumAppVersion' => self::minimumAppVersion(),
             'portalTimeUtc' => ApiDate::format($now),
             'nextCheckAfterSeconds' => TillStatus::nextCheckAfterSeconds($status),

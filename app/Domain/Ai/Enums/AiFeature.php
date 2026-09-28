@@ -35,8 +35,9 @@ enum AiFeature: string
     public function planFeature(): ?Feature
     {
         return match ($this) {
-            self::Assistant => Feature::AiAssistant,
-            self::MorningSummary, self::ReorderSuggestions, self::InvoiceImport, self::AnomalyAlerts => Feature::AiInsights,
+            self::Assistant => Feature::AssistQuestions,
+            self::InvoiceImport => Feature::AssistInvoiceScan,
+            self::MorningSummary, self::ReorderSuggestions, self::AnomalyAlerts => Feature::Assist,
             self::AdminAssistant => null,
         };
     }

@@ -19,6 +19,8 @@ use App\Domain\Licensing\Models\Licence;
 use App\Domain\Licensing\Support\BranchLicenceTerm;
 use App\Domain\Licensing\Support\LicenceTerms;
 use App\Domain\Shared\Exceptions\ApiException;
+use App\Domain\Sync\Actions\RecordTillIds;
+use App\Domain\Sync\Support\SyncKeyDelivery;
 use App\Domain\Tenancy\Enums\CompanyStatus;
 use App\Domain\Tenancy\Models\Company;
 use Carbon\CarbonImmutable;
@@ -38,6 +40,9 @@ use SensitiveParameter;
  * 3. Bound to this installId → 200 again (retry or reinstall).
  * 4. Bound to another installId → 409 key.already_used + a `sameKeyTwoDevices` alert.
  * 4a. Not bound and the branch already has maxRegisters keys bound → 403 licence.seat_limit.
+ * 5. Module 2.1: the till's `existingIds` are recorded in `id_map` (adopt / alias; 409 licence.ids_conflict when
+ *    they belong to another business or branch), and the branch's main till with `cloud_sync` gets the sync key
+ *    as `apiKey` (SyncKeyDelivery).
  */
 class ActivateLicence
 {
@@ -49,6 +54,8 @@ class ActivateLicence
         private readonly LicenceToken $tokens,
         private readonly LicenceReply $reply,
         private readonly WrongKeyLimiter $wrongKeys,
+        private readonly RecordTillIds $tillIds,
+        private readonly SyncKeyDelivery $syncKeys,
     ) {}
 
     /**
@@ -63,6 +70,7 @@ class ActivateLicence
 
         // Checked before the transaction so the alert and history are kept when the reply is an error.
         $this->refuse($licence, $till, $now, raiseAlert: true);
+        $this->tillIds->check($licence, $till);
 
         return DB::transaction(function () use ($licence, $till, $now) {
             $licence = Licence::withoutCompanyScope()->lockForUpdate()->findOrFail($licence->id);
@@ -74,14 +82,17 @@ class ActivateLicence
                 $this->bind($licence, $till, $now);
             }
 
+            $this->tillIds->handle($licence, $till);
+
             $state = LicenceState::for($licence, $now);
             $claims = $this->tokens->claims($licence, $state, $now);
             $token = $this->tokens->issue($licence, $claims);
             $licence->save();
 
             $status = TillStatus::of($state, $claims->expiresAt, $now);
+            $link = $this->syncKeys->forActivation($licence, $till, $claims, $status);
 
-            return $this->reply->activation($licence, $state, $claims, $status, $token, $now);
+            return $this->reply->activation($licence, $state, $claims, $status, $token, $now) + $link;
         });
     }
 

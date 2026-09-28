@@ -38,6 +38,13 @@ trait LicenceApiHelpers
 
     public const TILL_REGISTER = '01K5T0Q8C4000000000000R001';
 
+    /** Module 2.1: another PC holds its own ids (never the same as INSTALL's, or id_map would see a conflict). */
+    public const OTHER_TILL_COMPANY = '01K5T0Q8C4000000000000C002';
+
+    public const OTHER_TILL_BRANCH = '01K5T0Q8C4000000000000B002';
+
+    public const OTHER_TILL_REGISTER = '01K5T0Q8C4000000000000R002';
+
     /** Our signing key = the documentation portal key, certified by the documentation approver, both trusted. */
     public function withSigningKey(): void
     {
@@ -97,7 +104,9 @@ trait LicenceApiHelpers
             'tillClockUtc' => now()->addSeconds(90)->utc()->format('Y-m-d\TH:i:s\Z'),
             'approverKids' => [SsposDocs::APPROVER_KID],
             'trustedKids' => [SsposDocs::PORTAL_KID, SsposDocs::APPROVER_KID],
-            'existingIds' => ['companyId' => self::TILL_COMPANY, 'branchId' => self::TILL_BRANCH, 'registerId' => self::TILL_REGISTER],
+            'existingIds' => $install === self::INSTALL
+                ? ['companyId' => self::TILL_COMPANY, 'branchId' => self::TILL_BRANCH, 'registerId' => self::TILL_REGISTER]
+                : ['companyId' => self::OTHER_TILL_COMPANY, 'branchId' => self::OTHER_TILL_BRANCH, 'registerId' => self::OTHER_TILL_REGISTER],
         ];
     }
 

@@ -7,7 +7,8 @@
 |
 | Contract v1.3.1 (docs/contracts/portal-api-v1.3.3/docs/web-portal-api.md §17.2, §17.15, §17.17): SSPOS1 tokens
 | signed by SsposTokenSigner with `token`, `approvers`, `trusted_keys` and `allow_uncertified` below; the per-till
-| licence API (`licence/activate`, `licence/validate`, `devices/deactivate`) reads `api` and `till_features`.
+| licence API (`licence/activate`, `licence/validate`, `devices/deactivate`) reads `api`. Feature names are the
+| till's own (App\Domain\Plans\Enums\Feature values, module 2.1).
 |
 */
 
@@ -89,23 +90,6 @@ return [
             'wrong_keys_per_install' => 5,
             'wrong_keys_window_seconds' => 900,
         ],
-    ],
-
-    // Our plan features (App\Domain\Plans\Enums\Feature) → the till's feature names in the token (§17.2,
-    // `^[a-z0-9]+([._-][a-z0-9]+)*$`, compared exactly). Only `multi_branch` is confirmed by the EPOS team
-    // (src/SSPOS.Application/Ports/Feature.cs); the rest are our snake_case names until they confirm theirs.
-    // A feature missing here is left out of the token.
-    'till_features' => [
-        'stockControl' => 'stock_control',
-        'purchasing' => 'purchasing',
-        'cashOffice' => 'cash_office',
-        'accounts' => 'accounts',
-        'staff' => 'staff',
-        'customerOrders' => 'customer_orders',
-        'newsDeliveries' => 'news_deliveries',
-        'multiBranch' => 'multi_branch',
-        'aiAssistant' => 'ai_assistant',
-        'aiInsights' => 'ai_insights',
     ],
 
     // Module 1.11: an unused key must be activated within this many days of being issued (or reissued), else

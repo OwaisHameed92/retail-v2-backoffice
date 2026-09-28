@@ -5,8 +5,10 @@ namespace App\Http\Middleware;
 use App\Domain\Licensing\Api\Support\LicenceApiErrors;
 use Closure;
 use Illuminate\Contracts\Cache\Repository as Cache;
+use Illuminate\Contracts\Encryption\DecryptException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Crypt;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
@@ -18,7 +20,8 @@ use Symfony\Component\HttpFoundation\Response;
  * - the first request still running → 409 request.in_progress + Retry-After.
  *
  * Only final answers are kept (2xx and 4xx except 409 in_progress and 429). The body is fingerprinted with an
- * HMAC (it holds the licence key on activate); replies never contain a key. No header → no replay.
+ * HMAC (it holds the licence key on activate). Stored replies are encrypted (APP_KEY): since module 2.1 an activate or
+ * validate reply may carry the branch's sync key (`apiKey`). No header → no replay.
  */
 class IdempotentTillRequest
 {
@@ -46,8 +49,8 @@ class IdempotentTillRequest
 
         $stored = $this->cache->get($slot);
 
-        if (is_array($stored)) {
-            return $this->replay($stored, $fingerprint);
+        if (is_array($stored) && ($replay = $this->replay($stored, $fingerprint)) !== null) {
+            return $replay;
         }
 
         if (! $this->cache->add($slot.':running', true, 60)) {
@@ -65,7 +68,7 @@ class IdempotentTillRequest
                 $this->cache->put($slot, [
                     'fingerprint' => $fingerprint,
                     'status' => $status,
-                    'body' => (string) $response->getContent(),
+                    'body' => Crypt::encryptString((string) $response->getContent()),
                 ], now()->addHours(max(24, (int) config('licence.api.idempotency_hours', 24))));
             }
 
@@ -78,14 +81,20 @@ class IdempotentTillRequest
     /**
      * @param  array<mixed>  $stored
      */
-    private function replay(array $stored, string $fingerprint): Response
+    private function replay(array $stored, string $fingerprint): ?Response
     {
         if (! hash_equals((string) ($stored['fingerprint'] ?? ''), $fingerprint)) {
             throw LicenceApiErrors::idempotencyMismatch();
         }
 
+        try {
+            $body = Crypt::decryptString((string) ($stored['body'] ?? ''));
+        } catch (DecryptException) {
+            return null; // stored under another APP_KEY: answer afresh
+        }
+
         $response = new JsonResponse(null, (int) $stored['status']);
-        $response->setJson((string) $stored['body']);
+        $response->setJson($body);
         $response->headers->set('Idempotency-Replayed', 'true');
 
         return $response;

@@ -12,6 +12,7 @@ use App\Domain\Licensing\Data\TenantLicences;
 use App\Domain\Licensing\Support\DefaultPlan;
 use App\Domain\Shared\Models\AuditLog;
 use App\Domain\Shared\Support\TableQuery;
+use App\Domain\Sync\Data\SyncKeyData;
 use App\Domain\Tenancy\Actions\UpdateCompany;
 use App\Domain\Tenancy\CurrentCompany;
 use App\Domain\Tenancy\Data\NewTenant;
@@ -126,6 +127,8 @@ class TenantController extends Controller
         // Billing is for owner and accounts only (billing.manage), reading included: no tab data for others.
         $billingAccess = $admin?->hasAbility(AdminRole::BILLING_MANAGE) ?? false;
 
+        $syncKeys = SyncKeyData::forBranches($company, $branches);
+
         return Inertia::render('admin/tenants/show', [
             'tenant' => TenantData::company($company),
             'licensing' => TenantLicences::for($company, CarbonImmutable::now()),
@@ -137,7 +140,7 @@ class TenantController extends Controller
                 'tills' => $branches->where('is_active', true)->sum(fn (Branch $b) => $b->registers->where('is_active', true)->count()),
                 'users' => $members->filter(fn (User $u) => (bool) $u->getRelation('membership')->is_active)->count(),
             ],
-            'branches' => $branches->map(fn (Branch $branch) => TenantData::branch($branch) + ['licence' => LicenceFormData::branch($branch)])->values(),
+            'branches' => $branches->map(fn (Branch $branch) => TenantData::branch($branch) + ['licence' => LicenceFormData::branch($branch), 'syncKey' => $syncKeys[$branch->id]])->values(),
             // Module 1.11: the licence form (company branch limits and the options).
             'branchLimits' => LicenceFormData::limits($company),
             'licenceOptions' => LicenceFormData::options(),

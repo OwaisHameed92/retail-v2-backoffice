@@ -74,30 +74,19 @@ final class LicenceFormData
     }
 
     /**
-     * Our features with the till's name from config('licence.till_features'); a feature without one never
-     * reaches the till ("portal only"). Multi-branch is left out: it is the company's setting.
+     * The till's features (module 2.1: our values are the till's names, so `tillName` is the value). Multi-branch
+     * is left out: it is the company's setting.
      *
      * @return list<array{value: string, label: string, description: string, tillName: string|null}>
      */
     public static function featureOptions(): array
     {
-        /** @var array<string, mixed> $map */
-        $map = (array) config('licence.till_features', []);
         $options = [];
 
         foreach (Feature::cases() as $feature) {
-            if ($feature === Feature::MultiBranch) {
-                continue;
+            if ($feature !== Feature::MultiBranch) {
+                $options[] = ['value' => $feature->value, 'label' => $feature->label(), 'description' => $feature->description(), 'tillName' => $feature->value];
             }
-
-            $name = $map[$feature->value] ?? null;
-
-            $options[] = [
-                'value' => $feature->value,
-                'label' => $feature->label(),
-                'description' => $feature->description(),
-                'tillName' => is_string($name) && $name !== '' ? $name : null,
-            ];
         }
 
         return $options;

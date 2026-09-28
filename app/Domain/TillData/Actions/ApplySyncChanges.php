@@ -2,6 +2,7 @@
 
 namespace App\Domain\TillData\Actions;
 
+use App\Domain\Sync\Support\IdTranslator;
 use App\Domain\Tenancy\Models\Branch;
 use App\Domain\Tenancy\Models\Company;
 use App\Domain\TillData\EntityRegistry;
@@ -34,6 +35,10 @@ use InvalidArgumentException;
  *
  * The caller must already have authenticated the branch (its sync key) and should hold a per-branch lock so two
  * pushes of one branch never run at once.
+ *
+ * Module 2.1: the till keeps its own company/branch/register ids. Every envelope first goes through the company's
+ * IdTranslator (id_map), so rows carrying the till's ids are checked and stored under ours; ids with no mapping
+ * are checked as sent.
  */
 final class ApplySyncChanges
 {
@@ -64,10 +69,11 @@ final class ApplySyncChanges
             now('UTC')->format('Y-m-d H:i:s'),
         );
 
+        $ids = IdTranslator::forCompany($company->getKey());
         $read = [];
 
         foreach ($changes as $raw) {
-            $read[] = $this->reader->read($raw, count($read), $context);
+            $read[] = $this->reader->read($ids->change($raw), count($read), $context);
         }
 
         // A retry: changes the ledger already holds are duplicates, no need to validate them again.

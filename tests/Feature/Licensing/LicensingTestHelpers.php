@@ -27,7 +27,7 @@ trait LicensingTestHelpers
             'trial_days' => 7,
             'trial_grace_days' => 3,
             'grace_days' => 7,
-            'features' => [Feature::StockControl, Feature::CashOffice],
+            'features' => [Feature::Loyalty, Feature::Promotions],
             'sort_order' => 10,
         ]);
     }

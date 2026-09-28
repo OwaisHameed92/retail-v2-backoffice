@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\LicenceApiController;
 use App\Http\Controllers\Api\TrialRequestController;
+use App\Http\Middleware\AuthenticateSyncKey;
 use App\Http\Middleware\EnsureTillContract;
 use App\Http\Middleware\GuardPublicTrialRequests;
 use App\Http\Middleware\IdempotentTillRequest;
@@ -10,7 +11,11 @@ use App\Http\Middleware\ThrottleLicenceApi;
 use Illuminate\Support\Facades\Route;
 
 // Till APIs, loaded under the /api prefix with the "api" middleware group.
-// Sync API (Phase 2): /api/v1/sync/*
+// Sync API (Phase 2, contract §3-4): Bearer branch sync key checked against X-SSPOS-Branch-Id via id_map
+// (module 2.1). Module 2.2 adds hello/push; 2.5 pull.
+Route::prefix('v1/sync')->name('api.sync.')->middleware(AuthenticateSyncKey::class)->group(function () {
+    //
+});
 
 // Per-till licensing, EPOS contract v1.3.1 (docs/contracts/portal-api-v1.3.3/docs/web-portal-api.md §17.15, §17.7):
 // `X-SSPOS-Contract: 1` required, rate limited (§17.12), `Idempotency-Key` replayed (§17.11), no branch key.

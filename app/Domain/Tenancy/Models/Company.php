@@ -40,6 +40,7 @@ use Illuminate\Support\Carbon;
  * @property string|null $receipt_footer
  * @property bool $multi_branch May run more than one branch (key feature `multi_branch`). Set via UpdateBranchLimits.
  * @property int $max_branches Branches allowed (key `limits.branches`). Set via UpdateBranchLimits.
+ * @property string|null $data_connection Database connection holding its data (sharding groundwork, CompanyConnection).
  * @property CompanyStatus $status
  * @property string|null $plan_id Plan for new tills (module 1.3); null = portal default. Set via ChangeCompanyPlan.
  * @property string|null $notes

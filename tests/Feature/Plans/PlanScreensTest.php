@@ -34,7 +34,7 @@ it('lists current plans in sort order with counts', function () {
             ->where('plans.data.0.name', 'Standard')
             ->where('plans.data.0.priceMonthly', '30.00')
             ->where('plans.data.0.status', 'active')
-            ->where('plans.data.1.featureCount', 10)
+            ->where('plans.data.1.featureCount', 11)
             ->where('plans.data.2.status', 'hidden')
             ->where('plans.data.3.status', 'inactive')
             ->where('filters.status', null)
@@ -91,26 +91,26 @@ it('shows the create form with features and defaults', function () {
     $this->get('/admin/plans/create')
         ->assertInertia(fn (Assert $page) => $page
             ->component('admin/plans/create')
-            ->has('features', 10)
-            ->where('features.0', ['value' => 'stockControl', 'label' => 'Stock control', 'description' => Feature::StockControl->description()])
+            ->has('features', 11)
+            ->where('features.0', ['value' => 'loyalty', 'label' => 'Loyalty', 'description' => Feature::Loyalty->description()])
             ->where('defaults', ['trialDays' => 7, 'trialGraceDays' => 3, 'graceDays' => 7, 'sortOrder' => 30]));
 });
 
 it('creates a plan and opens it with a toast', function () {
-    $response = $this->post('/admin/plans', planPayload(['features' => ['aiInsights', 'stockControl']]));
+    $response = $this->post('/admin/plans', planPayload(['features' => ['assist', 'loyalty']]));
 
     $plan = Plan::query()->where('code', 'standard')->sole();
     $response->assertRedirect("/admin/plans/{$plan->id}")
         ->assertSessionHas('toast', fn (array $toast) => $toast['type'] === 'success' && $toast['message'] === 'Standard plan created.');
 
-    expect($plan->featureValues())->toBe(['stockControl', 'aiInsights'])
+    expect($plan->featureValues())->toBe(['loyalty', 'assist'])
         ->and($plan->is_public)->toBeTrue()
         ->and(AuditLog::query()->where('action', 'plan.created')->count())->toBe(1);
 });
 
 it('shows a plan with its activity', function () {
     $plan = Plan::factory()->create(['name' => 'Standard', 'price_monthly' => '30.00', 'price_yearly' => '300.00']);
-    app(UpdatePlan::class)->handle($plan, planInput(code: $plan->code, monthly: '32.00', features: [Feature::StockControl, Feature::Staff]));
+    app(UpdatePlan::class)->handle($plan, planInput(code: $plan->code, monthly: '32.00', features: [Feature::Loyalty, Feature::SecondScreen]));
 
     $this->get("/admin/plans/{$plan->id}")
         ->assertInertia(fn (Assert $page) => $page
@@ -120,7 +120,7 @@ it('shows a plan with its activity', function () {
             ->where('plan.yearlySaving', '84.00')
             ->where('plan.yearlySavingPercent', 22)
             ->where('plan.isInUse', false)
-            ->has('features', 10)
+            ->has('features', 11)
             ->has('activity', 1)
             ->where('activity.0.action', 'plan.updated')
             ->where('activity.0.actorName', $this->admin->name)
@@ -139,7 +139,7 @@ it('shows the edit form and saves changes', function () {
     $plan = Plan::factory()->create(['code' => 'standard']);
 
     $this->get("/admin/plans/{$plan->id}/edit")
-        ->assertInertia(fn (Assert $page) => $page->component('admin/plans/edit')->where('plan.code', 'standard')->has('features', 10));
+        ->assertInertia(fn (Assert $page) => $page->component('admin/plans/edit')->where('plan.code', 'standard')->has('features', 11));
 
     $this->put("/admin/plans/{$plan->id}", planPayload(['name' => 'Standard 2026', 'grace_days' => 14]))
         ->assertRedirect("/admin/plans/{$plan->id}")

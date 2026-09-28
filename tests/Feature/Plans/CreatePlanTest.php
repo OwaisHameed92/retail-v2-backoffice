@@ -19,7 +19,7 @@ it('creates a plan with normalised values', function () {
         code: ' STANDARD ',
         monthly: '30',
         yearly: '300.5',
-        features: ['aiInsights', Feature::StockControl, 'stockControl', 'notAFeature'],
+        features: ['assist', Feature::Loyalty, 'loyalty', 'notAFeature'],
     ));
 
     $plan->refresh();
@@ -32,7 +32,7 @@ it('creates a plan with normalised values', function () {
         ->and($plan->trial_days)->toBe(7)
         ->and($plan->trial_grace_days)->toBe(3)
         ->and($plan->grace_days)->toBe(7)
-        ->and($plan->featureValues())->toBe(['stockControl', 'aiInsights'])
+        ->and($plan->featureValues())->toBe(['loyalty', 'assist'])
         ->and($plan->status())->toBe(PlanStatus::Active)
         ->and(strlen($plan->id))->toBe(26);
 });
@@ -52,7 +52,7 @@ it('records plan.created with the admin as actor', function () {
         ->and($log->company_id)->toBeNull()
         ->and($log->before)->toBeNull()
         ->and($log->after['price_monthly'])->toBe('30.00')
-        ->and($log->after['features'])->toBe(['stockControl']);
+        ->and($log->after['features'])->toBe(['loyalty']);
 });
 
 it('rejects a code already used by another plan, archived ones included', function () {

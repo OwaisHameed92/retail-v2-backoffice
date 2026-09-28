@@ -51,7 +51,7 @@ test('the token carries the full company block and the branch settings', functio
 
     app(UpdateBranchLicence::class)->handle($branch, settings([
         'maxRegisters' => 5, 'kind' => TokenKind::Full, 'length' => 1, 'lengthUnit' => LicenceLengthUnit::Years,
-        'validFrom' => CarbonImmutable::parse('2026-10-01 00:00:00', 'UTC'), 'features' => [Feature::CashOffice, Feature::Staff],
+        'validFrom' => CarbonImmutable::parse('2026-10-01 00:00:00', 'UTC'), 'features' => [Feature::Promotions, Feature::SecondScreen],
     ]));
 
     $token = $this->verifyToken($this->activateTill()->assertOk());
@@ -59,7 +59,7 @@ test('the token carries the full company block and the branch settings', functio
     expect($token->payload)->toMatchArray([
         'kind' => 'full',
         'maxRegisters' => 5,
-        'features' => ['cash_office', 'staff', 'multi_branch'],
+        'features' => ['promotions', 'multi_branch', 'second_screen'],
         'limits' => ['branches' => 10],
         'validFrom' => '2026-10-01T00:00:00Z',
         'expiresAt' => '2027-10-08T00:00:00Z', // 1 year + the plan's 7 paid grace days
@@ -127,11 +127,11 @@ test('features and a new term are copied onto every live key of the branch', fun
     $this->activate($licence);
 
     app(UpdateBranchLicence::class)->handle($this->branchOf($company), settings([
-        'kind' => TokenKind::Full, 'length' => 6, 'lengthUnit' => LicenceLengthUnit::Months, 'features' => [Feature::Staff],
+        'kind' => TokenKind::Full, 'length' => 6, 'lengthUnit' => LicenceLengthUnit::Months, 'features' => [Feature::SecondScreen],
     ]));
 
     $licence->refresh();
-    expect($licence->features->all())->toBe([Feature::Staff])
+    expect($licence->features->all())->toBe([Feature::SecondScreen])
         ->and($licence->expires_at?->toIso8601String())->toBe('2027-04-05T09:00:00+00:00')
         ->and($licence->status)->toBe(LicenceStatus::Active)
         ->and(AuditLog::query()->where('action', 'branch.licence_updated')->sole()->meta)->toMatchArray(['licences' => 2]);
@@ -188,13 +188,13 @@ test('a branch is refused without multi-branch or past the branches allowed', fu
 
 test('a new branch copies the first branch\'s settings with tills allowed = its tills', function () {
     $company = $this->licensedTenant();
-    app(UpdateBranchLicence::class)->handle($this->branchOf($company), settings(['features' => [Feature::Staff]]));
+    app(UpdateBranchLicence::class)->handle($this->branchOf($company), settings(['features' => [Feature::SecondScreen]]));
 
     $branch = app(AddBranch::class)->handle($company, new BranchDetails(code: 'BFD', name: 'Bradford'), 3);
 
     expect($branch->max_registers)->toBe(3)
-        ->and($branch->licence_features)->toBe(['staff'])
-        ->and($this->licenceOf($this->registerOf($branch, '01'))->features->all())->toBe([Feature::Staff]);
+        ->and($branch->licence_features)->toBe(['second_screen'])
+        ->and($this->licenceOf($this->registerOf($branch, '01'))->features->all())->toBe([Feature::SecondScreen]);
 });
 
 test('an unused key past its activate-by date is 410 key.expired until staff extend it', function () {

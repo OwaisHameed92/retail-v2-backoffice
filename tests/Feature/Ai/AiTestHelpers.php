@@ -28,7 +28,7 @@ trait AiTestHelpers
     /**
      * @param  list<Feature>  $features
      */
-    public function aiPlan(array $features = [Feature::AiAssistant, Feature::AiInsights], string $code = 'ai-plan'): Plan
+    public function aiPlan(array $features = [Feature::AssistQuestions, Feature::Assist], string $code = 'ai-plan'): Plan
     {
         return Plan::factory()->features($features)->create(['code' => $code]);
     }

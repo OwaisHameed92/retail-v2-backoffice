@@ -1,4 +1,5 @@
 import { BranchLicenceStrip } from '@/components/admin/licences/branch-licence-strip';
+import { BranchSyncKeyStrip } from '@/components/admin/licences/branch-sync-key-strip';
 import { requestKeys } from '@/components/admin/licences/issue-keys';
 import { LicenceStatusBadge } from '@/components/admin/licences/licence-status-badge';
 import { type LicenceOptions, type TillLicence } from '@/components/admin/licences/types';
@@ -163,6 +164,7 @@ export function BranchCard({ tenantId, branch, canManage, tillLicences, canManag
             </div>
 
             <BranchLicenceStrip tenantId={tenantId} branch={branch} options={licenceOptions} canManage={canManageLicences} />
+            <BranchSyncKeyStrip tenantId={tenantId} branch={branch} canManage={canManageLicences} />
 
             {branch.registers.length === 0 ? (
                 <div className="border-t">

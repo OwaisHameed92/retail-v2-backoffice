@@ -13,6 +13,7 @@ use App\Domain\Licensing\Enums\LicenceAlertType;
 use App\Domain\Licensing\LicenceState;
 use App\Domain\Licensing\Models\Licence;
 use App\Domain\Shared\Exceptions\ApiException;
+use App\Domain\Sync\Support\SyncKeyDelivery;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 
@@ -24,6 +25,8 @@ use Illuminate\Support\Facades\DB;
  *   name, install code, till clock skew, clock watermark, lock state) and answers active / expiring / expired /
  *   suspended / revoked. A new token only when the till holds another one, its kid is not trusted, or anything
  *   in it changed; else `licenceToken: null`.
+ * - Module 2.1: the branch's main till with `cloud_sync` gets a (new) sync key as `apiKey` when it has none or
+ *   an admin asked for a rotation (SyncKeyDelivery); else `apiKey: null`.
  * - An install that was released from the key (admin Release, devices/deactivate, reissued key) → `released`.
  * - Anything else → 404 key.not_found (plus a `deviceMismatch` alert when the key is bound to another install).
  */
@@ -35,6 +38,7 @@ class ValidateLicence
         private readonly TillAudit $audit,
         private readonly LicenceToken $tokens,
         private readonly LicenceReply $reply,
+        private readonly SyncKeyDelivery $syncKeys,
     ) {}
 
     /**
@@ -67,8 +71,9 @@ class ValidateLicence
                 ? $this->tokens->issue($licence, $claims)
                 : null;
             $licence->save();
+            $link = $this->syncKeys->forValidation($licence, $till, $claims, $status);
 
-            return $this->reply->validation($licence, $state, $claims, $status, $token, $now);
+            return $this->reply->validation($licence, $state, $claims, $status, $token, $now, $link);
         });
     }
 

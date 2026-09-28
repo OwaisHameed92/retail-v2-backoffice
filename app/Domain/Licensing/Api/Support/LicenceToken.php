@@ -24,7 +24,7 @@ use Illuminate\Support\Collection;
  * - `companyId`/`branchId`/names/`company` block: the portal's company and branch of the licence (the same in
  *   every till key of the branch), never the till's `existingIds`.
  * - `installCode`: the one the till sent. `maxRegisters`: the branch's tills allowed (module 1.11 licence
- *   settings). `features`: the licence's features mapped by config('licence.till_features'), with `multi_branch`
+ *   settings). `features`: the licence's features (already the till's names), with `multi_branch`
  *   exactly when the company has multi-branch on; then `limits.branches` = its branches allowed.
  * - `validFrom` = the branch's start date, else first activation; `expiresAt` = the last day the till may trade,
  *   i.e. the end date plus our grace days (DECISIONS "Licence API v1.3.1"); `kind` trial until paid (full).
@@ -115,17 +115,14 @@ final class LicenceToken
     }
 
     /**
-     * Our plan features as the till's names (config('licence.till_features')), in enum order; unmapped ones
-     * are left out. `$multiBranch` true/false forces `multiBranch` on/off (the company's setting).
+     * The licence's features as the till's names (our Feature values are exactly the till's 11 names, module 2.1),
+     * in enum order. `$multiBranch` true/false forces `multi_branch` on/off (the company's setting).
      *
      * @param  Collection<int, Feature>|iterable<Feature>  $features
      * @return list<string>
      */
     public static function features(iterable $features, ?bool $multiBranch = null): array
     {
-        /** @var array<string, string> $map */
-        $map = (array) config('licence.till_features', []);
-        $names = [];
         $features = Feature::normalise($features);
 
         if ($multiBranch !== null) {
@@ -133,15 +130,10 @@ final class LicenceToken
             $features = Feature::normalise($multiBranch ? [...$features, Feature::MultiBranch] : $features);
         }
 
-        foreach ($features as $feature) {
-            $name = $map[$feature->value] ?? null;
-
-            if (is_string($name) && preg_match(LicenceClaims::FEATURE, $name) === 1) {
-                $names[$name] = true;
-            }
-        }
-
-        return array_keys($names);
+        return array_values(array_filter(
+            array_map(fn (Feature $feature) => $feature->value, $features),
+            fn (string $name) => preg_match(LicenceClaims::FEATURE, $name) === 1,
+        ));
     }
 
     /** Tills allowed in the branch: its licence setting (module 1.11), 1 to 999. */

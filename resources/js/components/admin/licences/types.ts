@@ -82,7 +82,7 @@ export interface TimelineEvent {
     tone: 'neutral' | 'success' | 'info' | 'warning' | 'danger';
 }
 
-export type LicenceAlertType = 'sameKeyTwoDevices' | 'deviceMismatch' | 'reissuedKeyUsed';
+export type LicenceAlertType = 'sameKeyTwoDevices' | 'deviceMismatch' | 'reissuedKeyUsed' | 'tillIdsConflict';
 
 /** LicenceAlertData::forLicence: alerts raised by the till API (module 1.5). No keys, only device id endings. */
 export interface LicenceAlert {

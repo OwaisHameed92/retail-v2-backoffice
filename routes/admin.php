@@ -26,6 +26,7 @@ use App\Http\Controllers\Admin\Leads\LeadActionController;
 use App\Http\Controllers\Admin\Leads\LeadApprovalController;
 use App\Http\Controllers\Admin\Leads\LeadController;
 use App\Http\Controllers\Admin\Licences\BranchLicenceController;
+use App\Http\Controllers\Admin\Licences\BranchSyncKeyController;
 use App\Http\Controllers\Admin\Licences\LicenceActionController;
 use App\Http\Controllers\Admin\Licences\LicenceAlertController;
 use App\Http\Controllers\Admin\Licences\LicenceController;
@@ -137,6 +138,10 @@ Route::middleware(['auth:admin', AdminIsActive::class, BlockAdminWhileImpersonat
             // Licence form (module 1.11): a branch's licence settings and the company's branch limits.
             Route::put('{company}/branches/{branch}/licence', [BranchLicenceController::class, 'update'])->name('branches.licence');
             Route::put('{company}/branch-limits', [BranchLicenceController::class, 'limits'])->name('branch-limits');
+            // Module 2.1: a branch's sync key. Generate answers JSON (the key is shown once).
+            Route::post('{company}/branches/{branch}/sync-key', [BranchSyncKeyController::class, 'generate'])->name('branches.sync-key.generate');
+            Route::post('{company}/branches/{branch}/sync-key/rotate', [BranchSyncKeyController::class, 'rotate'])->name('branches.sync-key.rotate');
+            Route::delete('{company}/branches/{branch}/sync-key', [BranchSyncKeyController::class, 'revoke'])->name('branches.sync-key.revoke');
         });
     });
 

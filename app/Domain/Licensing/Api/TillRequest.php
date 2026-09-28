@@ -31,6 +31,8 @@ final readonly class TillRequest
         public ?CarbonImmutable $clockWatermarkUtc = null,
         public ?bool $locked = null,
         public ?string $lockReason = null,
+        /** validate: the till's last successful sync, null = never (module 2.1: "the till reports no sync key"). */
+        public ?CarbonImmutable $lastSyncAt = null,
     ) {}
 
     /** "Windows 11 Pro 10.0.26200 x64", or null. */

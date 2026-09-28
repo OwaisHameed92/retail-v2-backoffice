@@ -7,8 +7,9 @@ use App\Domain\Shared\Exceptions\ApiException;
 use App\Domain\Shared\Support\ApiDate;
 
 /**
- * `POST /api/v1/licence/validate` per till (validate-request.schema.json, §17.15.2). `registers`, `lastSyncAt`
- * and `diagnostics` (branch model) are accepted and ignored.
+ * `POST /api/v1/licence/validate` per till (validate-request.schema.json, §17.15.2). `registers` and
+ * `diagnostics` (branch model) are accepted and ignored; `lastSyncAt` decides whether the main till gets a sync key
+ * (module 2.1).
  */
 class ValidateLicenceRequest extends TillApiRequest
 {
@@ -29,6 +30,7 @@ class ValidateLicenceRequest extends TillApiRequest
             'lock' => ['required', 'array'],
             'lock.locked' => ['required', 'boolean'],
             'lock.reason' => ['present', 'nullable', 'string', 'max:100'],
+            'lastSyncAt' => ['nullable', 'date'],
         ];
     }
 
@@ -41,6 +43,7 @@ class ValidateLicenceRequest extends TillApiRequest
             'clockWatermarkUtc' => ApiDate::parse($this->validated('clockWatermarkUtc')),
             'locked' => (bool) $this->validated('lock.locked'),
             'lockReason' => self::text($this->validated('lock.reason')),
+            'lastSyncAt' => ApiDate::parse($this->validated('lastSyncAt')),
         ]);
     }
 }
