@@ -3,6 +3,8 @@
 namespace App\Http\Middleware;
 
 use App\Domain\Admin\Models\Admin;
+use App\Domain\Billing\Support\BillingAccounts;
+use App\Domain\Billing\Support\MandateDeadline;
 use App\Domain\Tenancy\Actions\ResolveCurrentBranch;
 use App\Domain\Tenancy\Actions\ResolveCurrentCompany;
 use App\Domain\Tenancy\Actions\SwitchCurrentCompany;
@@ -71,6 +73,8 @@ class HandleInertiaRequests extends Middleware
             'branches' => fn () => $this->branches(),
             'currentBranchId' => fn () => $this->currentBranchId($request),
             'impersonation' => fn () => $this->impersonation($request),
+            // Module 1.13: "Set up your Direct Debit — N days left" across the portal until a mandate exists.
+            'billingNotice' => fn () => $this->billingNotice(),
             'flash' => fn () => $request->hasSession() ? [
                 'success' => $request->session()->get('success'),
                 'error' => $request->session()->get('error'),
@@ -94,6 +98,23 @@ class HandleInertiaRequests extends Middleware
             ->map(fn (Branch $branch) => ['id' => $branch->id, 'code' => $branch->code, 'name' => $branch->name])
             ->values()
             ->all();
+    }
+
+    /**
+     * @return array{deadline: string, daysLeft: int, passed: bool, canSetUp: bool, url: string}|null
+     */
+    private function billingNotice(): ?array
+    {
+        $tenancy = app(CurrentCompany::class);
+        $company = $tenancy->get();
+
+        if ($company === null) {
+            return null;
+        }
+
+        $state = MandateDeadline::state($company, app(BillingAccounts::class)->for($company));
+
+        return $state === null ? null : $state + ['canSetUp' => $tenancy->can(Ability::BillingView), 'url' => route('app.billing')];
     }
 
     private function currentBranchId(Request $request): ?string

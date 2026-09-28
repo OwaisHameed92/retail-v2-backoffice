@@ -2,6 +2,7 @@
 
 namespace App\Domain\Leads\Data;
 
+use App\Domain\Billing\Data\UpfrontPayment;
 use App\Domain\Licensing\Data\BranchLicenceSettings;
 
 /**
@@ -18,6 +19,8 @@ final readonly class TrialSetup
         public ?string $planId = null,
         /** Module 1.11: kind, length and features for every shop (tills allowed come from each shop). */
         public ?BranchLicenceSettings $licence = null,
+        /** Module 1.13: what the business paid upfront (billing admins record it), else null. */
+        public ?UpfrontPayment $upfront = null,
     ) {}
 
     public function totalTills(): int

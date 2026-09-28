@@ -2,12 +2,12 @@
 
 namespace App\Domain\Billing\Actions;
 
-use App\Domain\Billing\Enums\BillingCycle;
 use App\Domain\Billing\GoCardless\Support\SetupLink;
 use App\Domain\Billing\Support\BillingAccounts;
 use App\Domain\Billing\Support\BillingDates;
 use App\Domain\Billing\Support\BillingFormat;
 use App\Domain\Billing\Support\BillingMailer;
+use App\Domain\Billing\Support\CompanyPricing;
 use App\Domain\Licensing\Actions\RenewCompanyLicences;
 use App\Domain\Licensing\Models\Licence;
 use App\Domain\Licensing\Support\DefaultPlan;
@@ -99,7 +99,7 @@ class SendTrialEmails
         return $sent;
     }
 
-    /** "£25.00 per till per month" (or per year), from the tills' plan at the company's billing cycle. */
+    /** "£25.00 per till per month" (or per branch, per year): the company's pricing at its billing cycle. */
     private function priceSummary(Company $company, ?Plan $plan): ?string
     {
         $plan ??= DefaultPlan::for($company);
@@ -108,9 +108,10 @@ class SendTrialEmails
             return null;
         }
 
-        $cycle = $this->accounts->for($company)->cycle;
-        $price = $cycle === BillingCycle::Yearly ? $plan->price_per_till_yearly : $plan->price_per_till_monthly;
+        $account = $this->accounts->for($company);
+        $pricing = CompanyPricing::for($company, $account);
+        $cycle = $account->cycle;
 
-        return BillingFormat::money($price).' per till '.$cycle->per();
+        return BillingFormat::money($pricing->unitPrice($cycle, $plan)).' per '.$pricing->mode->unit().' '.$cycle->per();
     }
 }

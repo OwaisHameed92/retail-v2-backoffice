@@ -13,7 +13,7 @@ final class PlanData
     /**
      * Row for the plans DataTable.
      *
-     * @return array{id: string, name: string, code: string, pricePerTillMonthly: string, pricePerTillYearly: string, currency: string, trialDays: int, featureCount: int, status: string, statusLabel: string, sortOrder: int}
+     * @return array{id: string, name: string, code: string, pricingMode: string, priceMonthly: string, priceYearly: string, currency: string, trialDays: int, featureCount: int, status: string, statusLabel: string, sortOrder: int}
      */
     public static function row(Plan $plan): array
     {
@@ -23,8 +23,9 @@ final class PlanData
             'id' => $plan->id,
             'name' => $plan->name,
             'code' => $plan->code,
-            'pricePerTillMonthly' => $plan->price_per_till_monthly,
-            'pricePerTillYearly' => $plan->price_per_till_yearly,
+            'pricingMode' => $plan->pricing_mode->value,
+            'priceMonthly' => $plan->price_monthly,
+            'priceYearly' => $plan->price_yearly,
             'currency' => $plan->currency,
             'trialDays' => $plan->trial_days,
             'featureCount' => $plan->features->count(),
@@ -48,8 +49,9 @@ final class PlanData
             'name' => $plan->name,
             'code' => $plan->code,
             'description' => $plan->description,
-            'pricePerTillMonthly' => $plan->price_per_till_monthly,
-            'pricePerTillYearly' => $plan->price_per_till_yearly,
+            'pricingMode' => $plan->pricing_mode->value,
+            'priceMonthly' => $plan->price_monthly,
+            'priceYearly' => $plan->price_yearly,
             'setupFee' => $plan->setup_fee,
             'currency' => $plan->currency,
             'trialDays' => $plan->trial_days,
@@ -81,8 +83,9 @@ final class PlanData
             'name' => $plan->name,
             'code' => $plan->code,
             'description' => $plan->description,
-            'price_per_till_monthly' => $plan->price_per_till_monthly,
-            'price_per_till_yearly' => $plan->price_per_till_yearly,
+            'pricing_mode' => $plan->pricing_mode->value,
+            'price_monthly' => $plan->price_monthly,
+            'price_yearly' => $plan->price_yearly,
             'setup_fee' => $plan->setup_fee,
             'currency' => $plan->currency,
             'trial_days' => $plan->trial_days,
@@ -117,16 +120,16 @@ final class PlanData
         return [$changedBefore, $changedAfter];
     }
 
-    /** What a till saves per year on yearly billing compared with 12 monthly payments ("60.00"). */
+    /** What one unit (till or branch) saves per year on yearly billing compared with 12 monthly payments ("60.00"). */
     public static function yearlySaving(Plan $plan): string
     {
-        return Money::sub(Money::mul($plan->price_per_till_monthly, 12), $plan->price_per_till_yearly);
+        return Money::sub(Money::mul($plan->price_monthly, 12), $plan->price_yearly);
     }
 
     /** The yearly saving as a whole percentage of 12 monthly payments, or null when monthly is free. */
     public static function yearlySavingPercent(Plan $plan): ?int
     {
-        $twelveMonths = Money::mul($plan->price_per_till_monthly, 12);
+        $twelveMonths = Money::mul($plan->price_monthly, 12);
 
         if (Money::isZero($twelveMonths)) {
             return null;

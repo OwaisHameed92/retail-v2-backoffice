@@ -2,6 +2,7 @@
 
 namespace App\Domain\Leads\Actions;
 
+use App\Domain\Billing\Actions\OnboardTenantBilling;
 use App\Domain\Leads\Data\TrialSetup;
 use App\Domain\Leads\Data\TrialShop;
 use App\Domain\Leads\Enums\LeadNoteKind;
@@ -28,7 +29,8 @@ use Illuminate\Validation\ValidationException;
 /**
  * "Approve 7-day trial": turns an open lead into a tenant through CreateTenant, so the usual hooks run: every
  * till gets a licence on the plan, the owner (the lead's contact) gets the welcome email with the keys and, when
- * new, the 7-day "set your password" email. The company starts as a trial with no end date: the trial starts on
+ * new, the 7-day "set your password" email. Billing (module 1.13): Direct Debit set up by the owner in the portal
+ * within the deadline, and the upfront payment when staff recorded one. The company starts as a trial with no end date: the trial starts on
  * the first till activation. The lead becomes converted and links to the company.
  *
  * Idempotent: the lead row is locked and re-checked inside the transaction, and `leads.company_id` is unique, so a
@@ -38,6 +40,7 @@ class ApproveTrial
 {
     public function __construct(
         private readonly CreateTenant $createTenant,
+        private readonly OnboardTenantBilling $onboardBilling,
         private readonly LeadTimeline $timeline,
         private readonly RecordAudit $audit,
     ) {}
@@ -87,6 +90,9 @@ class ApproveTrial
                 multiBranch: count($setup->shops) > 1,
                 maxBranches: count($setup->shops),
             ));
+
+            // Module 1.13: Direct Debit set up by the owner in the portal, and the upfront payment if staff took one.
+            $this->onboardBilling->handle($company, $setup->upfront);
 
             $from = $locked->status;
             $admin = $this->timeline->currentAdmin();

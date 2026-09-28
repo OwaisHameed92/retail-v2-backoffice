@@ -20,7 +20,7 @@ beforeEach(function () {
 
 it('lists current plans in sort order with counts', function () {
     Plan::factory()->create(['name' => 'Pro', 'code' => 'pro', 'sort_order' => 20, 'features' => Feature::cases()]);
-    Plan::factory()->create(['name' => 'Standard', 'code' => 'standard', 'sort_order' => 10, 'price_per_till_monthly' => '30.00']);
+    Plan::factory()->create(['name' => 'Standard', 'code' => 'standard', 'sort_order' => 10, 'price_monthly' => '30.00']);
     Plan::factory()->hidden()->create(['sort_order' => 30]);
     Plan::factory()->inactive()->create(['sort_order' => 40]);
     Plan::factory()->archived()->create(['sort_order' => 5]);
@@ -32,7 +32,7 @@ it('lists current plans in sort order with counts', function () {
             ->has('plans.data', 4)
             ->where('plans.meta.total', 4)
             ->where('plans.data.0.name', 'Standard')
-            ->where('plans.data.0.pricePerTillMonthly', '30.00')
+            ->where('plans.data.0.priceMonthly', '30.00')
             ->where('plans.data.0.status', 'active')
             ->where('plans.data.1.featureCount', 10)
             ->where('plans.data.2.status', 'hidden')
@@ -67,11 +67,11 @@ it('searches name, code and description', function () {
 });
 
 it('sorts by whitelisted columns only', function () {
-    Plan::factory()->create(['name' => 'Cheap', 'price_per_till_monthly' => '9.99', 'sort_order' => 1]);
-    Plan::factory()->create(['name' => 'Dear', 'price_per_till_monthly' => '100.00', 'sort_order' => 2]);
-    Plan::factory()->create(['name' => 'Mid', 'price_per_till_monthly' => '30.00', 'sort_order' => 3]);
+    Plan::factory()->create(['name' => 'Cheap', 'price_monthly' => '9.99', 'sort_order' => 1]);
+    Plan::factory()->create(['name' => 'Dear', 'price_monthly' => '100.00', 'sort_order' => 2]);
+    Plan::factory()->create(['name' => 'Mid', 'price_monthly' => '30.00', 'sort_order' => 3]);
 
-    $this->get('/admin/plans?sort=price_per_till_monthly&direction=desc')
+    $this->get('/admin/plans?sort=price_monthly&direction=desc')
         ->assertInertia(fn (Assert $page) => $page->where('plans.data.0.name', 'Dear')->where('plans.data.2.name', 'Cheap'));
 
     $this->get('/admin/plans?sort=description')
@@ -109,14 +109,14 @@ it('creates a plan and opens it with a toast', function () {
 });
 
 it('shows a plan with its activity', function () {
-    $plan = Plan::factory()->create(['name' => 'Standard', 'price_per_till_monthly' => '30.00', 'price_per_till_yearly' => '300.00']);
+    $plan = Plan::factory()->create(['name' => 'Standard', 'price_monthly' => '30.00', 'price_yearly' => '300.00']);
     app(UpdatePlan::class)->handle($plan, planInput(code: $plan->code, monthly: '32.00', features: [Feature::StockControl, Feature::Staff]));
 
     $this->get("/admin/plans/{$plan->id}")
         ->assertInertia(fn (Assert $page) => $page
             ->component('admin/plans/show')
             ->where('plan.id', $plan->id)
-            ->where('plan.pricePerTillMonthly', '32.00')
+            ->where('plan.priceMonthly', '32.00')
             ->where('plan.yearlySaving', '84.00')
             ->where('plan.yearlySavingPercent', 22)
             ->where('plan.isInUse', false)
@@ -124,7 +124,7 @@ it('shows a plan with its activity', function () {
             ->has('activity', 1)
             ->where('activity.0.action', 'plan.updated')
             ->where('activity.0.actorName', $this->admin->name)
-            ->where('activity.0.changes', fn ($changes) => collect($changes)->contains(fn ($c) => $c['label'] === 'Monthly price per till' && $c['from'] === '£30.00' && $c['to'] === '£32.00')));
+            ->where('activity.0.changes', fn ($changes) => collect($changes)->contains(fn ($c) => $c['label'] === 'Monthly price' && $c['from'] === '£30.00' && $c['to'] === '£32.00')));
 });
 
 it('shows archived plans read-only and 404s their edit form', function () {

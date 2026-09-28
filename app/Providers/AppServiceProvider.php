@@ -11,6 +11,9 @@ use App\Domain\Licensing\Listeners\IssueLicenceForNewTill;
 use App\Domain\Licensing\Listeners\SendWelcomeEmailWithKeys;
 use App\Domain\Licensing\Listeners\SuspendLicenceOfDeactivatedTill;
 use App\Domain\Licensing\Listeners\UnsuspendLicenceOfReactivatedTill;
+use App\Domain\Tenancy\Events\BranchAdded;
+use App\Domain\Tenancy\Events\BranchDeactivated;
+use App\Domain\Tenancy\Events\BranchReactivated;
 use App\Domain\Tenancy\Events\RegisterAdded;
 use App\Domain\Tenancy\Events\RegisterDeactivated;
 use App\Domain\Tenancy\Events\RegisterReactivated;
@@ -51,6 +54,6 @@ class AppServiceProvider extends ServiceProvider
         Event::listen(TenantCreated::class, SendWelcomeEmailWithKeys::class);
 
         // Direct Debit follows the live tills (module 1.12). Queued, after the till's transaction commits.
-        Event::listen([RegisterAdded::class, RegisterDeactivated::class, RegisterReactivated::class], SyncDirectDebitOnTillChange::class);
+        Event::listen([RegisterAdded::class, RegisterDeactivated::class, RegisterReactivated::class, BranchAdded::class, BranchDeactivated::class, BranchReactivated::class], SyncDirectDebitOnTillChange::class);
     }
 }

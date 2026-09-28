@@ -1,3 +1,9 @@
+import {
+    emptyUpfront,
+    OnboardingBillingNote,
+    UpfrontPaymentFields,
+    type UpfrontPaymentValue,
+} from '@/components/admin/billing/upfront-payment-fields';
 import { licencePayload, type LicenceFormValues } from '@/components/admin/licences/licence-form-fields';
 import { type Nation } from '@/components/admin/tenants/types';
 import { FormField } from '@/components/shared/form-section';
@@ -21,7 +27,7 @@ interface ApproveTrialDialogProps {
     onOpenChange: (open: boolean) => void;
 }
 
-type ApproveForm = { shops: TrialShopInput[]; plan_id: string } & LicenceFormValues;
+type ApproveForm = { shops: TrialShopInput[]; plan_id: string } & LicenceFormValues & UpfrontPaymentValue;
 
 /** Recomputes the codes nobody typed by hand, so they follow the names and stay unique. */
 function withSuggestedCodes(shops: TrialShopInput[], edited: boolean[]): TrialShopInput[] {
@@ -65,6 +71,7 @@ export function ApproveTrialDialog({ lead, approval, open, onOpenChange }: Appro
         length_unit: '',
         valid_from: '',
         features: approval.planDefaults[initialPlan]?.features ?? [],
+        ...emptyUpfront,
     };
     const form = useForm<ApproveForm>(initial);
     form.transform((values) => ({ ...values, ...licencePayload(values) }));
@@ -342,6 +349,23 @@ export function ApproveTrialDialog({ lead, approval, open, onOpenChange }: Appro
                 options={approval.licenceOptions}
                 trialDays={trialDays}
             />
+
+            <section aria-labelledby="approve-billing" className="grid gap-3">
+                <h3 id="approve-billing" className="text-sm font-semibold">
+                    Billing
+                </h3>
+                <OnboardingBillingNote options={approval.billing} />
+                {approval.billing.canRecord && (
+                    <UpfrontPaymentFields
+                        value={form.data}
+                        onChange={(key, value) => form.setData(key, value as never)}
+                        errors={errors}
+                        options={approval.billing}
+                        planFee={approval.billing.setupFees[form.data.plan_id] ?? '0.00'}
+                        idPrefix="approve-upfront"
+                    />
+                )}
+            </section>
 
             <section aria-labelledby="approve-outcome" className="bg-subtle grid gap-3 rounded-xl border p-4">
                 <h3 id="approve-outcome" className="text-sm font-semibold">

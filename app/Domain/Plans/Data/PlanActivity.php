@@ -4,6 +4,7 @@ namespace App\Domain\Plans\Data;
 
 use App\Domain\Admin\Models\Admin;
 use App\Domain\Plans\Enums\Feature;
+use App\Domain\Plans\Enums\PricingMode;
 use App\Domain\Plans\Models\Plan;
 use App\Domain\Shared\Models\AuditLog;
 use App\Domain\Shared\Support\Money;
@@ -20,8 +21,9 @@ final class PlanActivity
         'name' => 'Name',
         'code' => 'Code',
         'description' => 'Description',
-        'price_per_till_monthly' => 'Monthly price per till',
-        'price_per_till_yearly' => 'Yearly price per till',
+        'pricing_mode' => 'Pricing',
+        'price_monthly' => 'Monthly price',
+        'price_yearly' => 'Yearly price',
         'setup_fee' => 'Setup fee',
         'currency' => 'Currency',
         'trial_days' => 'Trial length',
@@ -110,6 +112,7 @@ final class PlanActivity
             str_ends_with($key, '_days') => $value.' '.Str::plural('day', (int) $value),
             is_bool($value) => $value ? 'Yes' : 'No',
             $key === 'description' => Str::limit((string) $value, 80),
+            $key === 'pricing_mode' => PricingMode::tryFrom((string) $value)?->label() ?? (string) $value,
             default => is_scalar($value) ? (string) $value : (string) json_encode($value),
         };
     }

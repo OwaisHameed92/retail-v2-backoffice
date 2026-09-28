@@ -4,6 +4,7 @@
 // (see bootstrap/app.php). Every route here must sit behind `auth`, `verified` and `company`; add
 // `company.can:<ability>` for anything role-restricted.
 
+use App\Http\Controllers\App\BillingController;
 use App\Http\Controllers\App\DashboardController;
 use App\Http\Controllers\App\SwitchBranchController;
 use App\Http\Controllers\App\SwitchCompanyController;
@@ -14,4 +15,12 @@ Route::middleware(['auth:web', 'verified', 'company'])->group(function () {
 
     Route::post('company/switch', SwitchCompanyController::class)->name('company.switch');
     Route::post('branch/switch', SwitchBranchController::class)->name('branch.switch');
+
+    // Module 1.13: plan, pricing, Direct Debit (set up by the owner) and invoices. Open while suspended.
+    Route::prefix('billing')->name('billing')->middleware('company.can:billing.view')->group(function () {
+        Route::get('/', [BillingController::class, 'index']);
+        Route::post('direct-debit', [BillingController::class, 'startDirectDebit'])->name('.direct-debit')->middleware('throttle:10,1');
+        Route::get('direct-debit/return', [BillingController::class, 'directDebitReturn'])->name('.direct-debit.return');
+        Route::get('invoices/{invoice}/pdf', [BillingController::class, 'invoicePdf'])->name('.invoices.pdf')->whereUlid('invoice')->middleware('throttle:60,1');
+    });
 });

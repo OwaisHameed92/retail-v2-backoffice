@@ -11,6 +11,7 @@ use App\Domain\Tenancy\Data\NewTenant;
 use App\Domain\Tenancy\Enums\Nation;
 use App\Domain\Tenancy\Models\Branch;
 use App\Http\Requests\Admin\LicenceFormRules;
+use App\Http\Requests\Admin\UpfrontPaymentRules;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -26,6 +27,7 @@ class ApproveTrialRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
+        $this->merge(UpfrontPaymentRules::clean($this));
         $shops = $this->input('shops');
 
         if (is_array($shops)) {
@@ -55,7 +57,7 @@ class ApproveTrialRequest extends FormRequest
             'shops.*.tills_allowed' => ['nullable', 'integer', 'min:1', 'max:'.BranchLicenceSettings::MAX_REGISTERS],
         ] + array_merge(array_diff_key(LicenceFormRules::branch(false), ['max_registers' => true, 'valid_from' => true]), [
             'kind' => ['nullable', Rule::enum(TokenKind::class)],
-        ]);
+        ]) + UpfrontPaymentRules::rules();
     }
 
     /**
@@ -74,7 +76,7 @@ class ApproveTrialRequest extends FormRequest
             'shops.*.tills.max' => 'Up to '.NewTenant::MAX_TILLS.' tills per shop.',
             'plan_id.exists' => 'Choose an active plan.',
             'shops.*.tills_allowed.min' => 'Allow at least 1 till.',
-        ] + LicenceFormRules::messages();
+        ] + LicenceFormRules::messages() + UpfrontPaymentRules::messages();
     }
 
     public function setup(): TrialSetup
@@ -92,6 +94,7 @@ class ApproveTrialRequest extends FormRequest
             ), $shops),
             planId: $this->filled('plan_id') ? (string) $this->input('plan_id') : null,
             licence: $this->filled('kind') ? LicenceFormRules::settings($this) : null,
+            upfront: UpfrontPaymentRules::payment($this),
         );
     }
 }

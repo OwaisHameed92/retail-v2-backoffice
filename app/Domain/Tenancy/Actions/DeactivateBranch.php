@@ -4,6 +4,7 @@ namespace App\Domain\Tenancy\Actions;
 
 use App\Domain\Shared\Actions\RecordAudit;
 use App\Domain\Tenancy\CurrentCompany;
+use App\Domain\Tenancy\Events\BranchDeactivated;
 use App\Domain\Tenancy\Models\Branch;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -43,6 +44,7 @@ class DeactivateBranch
             $branch->save();
 
             $this->audit->handle('branch.deactivated', $branch, ['is_active' => true], ['is_active' => false]);
+            BranchDeactivated::dispatch($branch);
 
             return $branch;
         }));

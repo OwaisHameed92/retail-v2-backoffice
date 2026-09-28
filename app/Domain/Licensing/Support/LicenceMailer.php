@@ -12,6 +12,7 @@ use App\Domain\Mail\Data\WelcomeTenantData;
 use App\Domain\Mail\Mailables\LicenceKeyMail;
 use App\Domain\Mail\Mailables\LicenceRenewedMail;
 use App\Domain\Mail\Mailables\WelcomeTenantMail;
+use App\Domain\Shared\Support\Money;
 use App\Domain\Tenancy\Enums\CompanyStatus;
 use App\Domain\Tenancy\Models\Company;
 use App\Models\User;
@@ -33,6 +34,9 @@ final class LicenceMailer
     public function welcome(Company $company, User $owner, array $issued): void
     {
         $trialDays = $issued === [] ? null : ($issued[0]->licence->plan->trial_days ?? null);
+        // Module 1.13: a new business with something to pay each cycle sets up its Direct Debit in the portal.
+        $plan = $issued[0]->licence->plan ?? DefaultPlan::for($company);
+        $recurs = $plan !== null && (! Money::isZero($plan->price_monthly) || ! Money::isZero($plan->price_yearly));
 
         Mail::to($owner->email)->queue(new WelcomeTenantMail(new WelcomeTenantData(
             businessName: $company->name,
@@ -42,6 +46,8 @@ final class LicenceMailer
             tills: $this->tillKeys($issued),
             trialDays: $company->status === CompanyStatus::Trial && $trialDays > 0 ? $trialDays : null,
             companyId: $company->id,
+            billingUrl: $recurs ? config('sspos.portal_url').'/app/billing' : null,
+            directDebitDays: $recurs ? max(0, (int) config('billing.direct_debit.mandate_deadline_days', 3)) : null,
         )));
     }
 

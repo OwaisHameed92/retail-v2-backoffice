@@ -1,3 +1,10 @@
+import {
+    emptyUpfront,
+    OnboardingBillingNote,
+    UpfrontPaymentFields,
+    type OnboardingBillingOptions,
+    type UpfrontPaymentValue,
+} from '@/components/admin/billing/upfront-payment-fields';
 import { LicenceFormFields, licencePayload, type LicenceFormValues } from '@/components/admin/licences/licence-form-fields';
 import { type LicenceOptions, type PlanDefaults, type PlanOption } from '@/components/admin/licences/types';
 import { BranchFields, type BranchFieldsData } from '@/components/admin/tenants/branch-fields';
@@ -29,10 +36,13 @@ interface CreateTenantProps {
     /** Module 1.11: the licence form and each plan's defaults. */
     licenceOptions: LicenceOptions;
     planDefaults: PlanDefaults;
+    /** Module 1.13: the upfront payment and the Direct Debit deadline. */
+    billing: OnboardingBillingOptions;
 }
 
 type CreateTenantForm = CompanyFieldsData &
-    LicenceFormValues & {
+    LicenceFormValues &
+    UpfrontPaymentValue & {
         multi_branch: boolean;
         max_branches: number;
         status: 'trial' | 'active';
@@ -61,7 +71,7 @@ const statusOptions = [
     { value: 'active', title: 'Active customer', body: 'Already agreed a plan and paying.' },
 ] as const;
 
-export default function CreateTenant({ nations, maxTills, plans, defaultPlanId, licenceOptions, planDefaults }: CreateTenantProps) {
+export default function CreateTenant({ nations, maxTills, plans, defaultPlanId, licenceOptions, planDefaults, billing }: CreateTenantProps) {
     const initialPlanId = defaultPlanId ?? plans[0]?.value ?? '';
     const { data, setData, post, processing, errors, transform } = useForm<CreateTenantForm>({
         name: '',
@@ -95,6 +105,7 @@ export default function CreateTenant({ nations, maxTills, plans, defaultPlanId, 
         plan_id: initialPlanId,
         owner_name: '',
         owner_email: '',
+        ...emptyUpfront,
         max_registers: 1,
         kind: 'trial',
         length: '',
@@ -340,6 +351,21 @@ export default function CreateTenant({ nations, maxTills, plans, defaultPlanId, 
                         <p className="text-muted-foreground text-sm sm:col-span-2">
                             If this email already has a portal login (for another business), they are added as an owner and keep their password.
                         </p>
+                    </FormSection>
+
+                    <FormSection title="Billing" description="Direct Debit, and what the business paid today.">
+                        <div className="grid gap-4 sm:col-span-2">
+                            <OnboardingBillingNote options={billing} />
+                            {billing.canRecord && (
+                                <UpfrontPaymentFields
+                                    value={data}
+                                    onChange={(key, value) => setData(key, value as never)}
+                                    errors={errors}
+                                    options={billing}
+                                    planFee={billing.setupFees[data.plan_id] ?? '0.00'}
+                                />
+                            )}
+                        </div>
                     </FormSection>
                 </FormCard>
 

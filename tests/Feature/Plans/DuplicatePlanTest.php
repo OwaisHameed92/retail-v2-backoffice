@@ -10,8 +10,8 @@ it('copies a plan as an inactive, hidden plan with a free code', function () {
     $source = Plan::factory()->create([
         'name' => 'Pro',
         'code' => 'pro',
-        'price_per_till_monthly' => '45.00',
-        'price_per_till_yearly' => '450.00',
+        'price_monthly' => '45.00',
+        'price_yearly' => '450.00',
         'trial_days' => 14,
         'features' => [Feature::AiAssistant, Feature::AiInsights],
     ]);
@@ -21,8 +21,8 @@ it('copies a plan as an inactive, hidden plan with a free code', function () {
     expect($copy->id)->not->toBe($source->id)
         ->and($copy->name)->toBe('Pro (copy)')
         ->and($copy->code)->toBe('pro-copy')
-        ->and($copy->price_per_till_monthly)->toBe('45.00')
-        ->and($copy->price_per_till_yearly)->toBe('450.00')
+        ->and($copy->price_monthly)->toBe('45.00')
+        ->and($copy->price_yearly)->toBe('450.00')
         ->and($copy->trial_days)->toBe(14)
         ->and($copy->featureValues())->toBe(['aiAssistant', 'aiInsights'])
         ->and($copy->status())->toBe(PlanStatus::Inactive)

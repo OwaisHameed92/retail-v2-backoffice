@@ -5,6 +5,7 @@ namespace App\Domain\Plans\Models;
 use App\Domain\Licensing\Models\Licence;
 use App\Domain\Plans\Enums\Feature;
 use App\Domain\Plans\Enums\PlanStatus;
+use App\Domain\Plans\Enums\PricingMode;
 use App\Domain\Shared\Casts\MoneyCast;
 use App\Domain\Tenancy\Scopes\CompanyScope;
 use Carbon\CarbonInterface;
@@ -20,7 +21,8 @@ use Illuminate\Support\Collection;
 
 /**
  * A subscription plan. Licences (module 1.3) and invoices (module 1.8) reference it. One licence = one till,
- * so prices are per till, in pounds (MoneyCast strings, never floats).
+ * Module 1.13: `pricing_mode` says whether the monthly/yearly price is per live till or per active branch. Prices
+ * are in pounds (MoneyCast strings, never floats).
  *
  * Not tenant-owned: plans are global and managed by SSPOS staff with the `billing.manage` ability.
  *
@@ -28,8 +30,9 @@ use Illuminate\Support\Collection;
  * @property string $name
  * @property string $code
  * @property string|null $description
- * @property string $price_per_till_monthly
- * @property string $price_per_till_yearly
+ * @property PricingMode $pricing_mode
+ * @property string $price_monthly
+ * @property string $price_yearly
  * @property string $setup_fee
  * @property string $currency
  * @property int $trial_days
@@ -61,8 +64,9 @@ class Plan extends Model
         'name',
         'code',
         'description',
-        'price_per_till_monthly',
-        'price_per_till_yearly',
+        'pricing_mode',
+        'price_monthly',
+        'price_yearly',
         'setup_fee',
         'currency',
         'trial_days',
@@ -77,6 +81,7 @@ class Plan extends Model
     /** @var array<string, mixed> */
     protected $attributes = [
         'currency' => self::CURRENCY,
+        'pricing_mode' => 'perTill',
         'setup_fee' => '0.00',
         'trial_days' => self::DEFAULT_TRIAL_DAYS,
         'trial_grace_days' => self::DEFAULT_TRIAL_GRACE_DAYS,
@@ -93,8 +98,9 @@ class Plan extends Model
     protected function casts(): array
     {
         return [
-            'price_per_till_monthly' => MoneyCast::class,
-            'price_per_till_yearly' => MoneyCast::class,
+            'pricing_mode' => PricingMode::class,
+            'price_monthly' => MoneyCast::class,
+            'price_yearly' => MoneyCast::class,
             'setup_fee' => MoneyCast::class,
             'trial_days' => 'integer',
             'trial_grace_days' => 'integer',

@@ -3,10 +3,12 @@
 namespace App\Http\Middleware;
 
 use App\Domain\Admin\Models\Admin;
+use App\Domain\Billing\Support\BillingAccounts;
 use App\Domain\Tenancy\Actions\ResolveCurrentCompany;
 use App\Domain\Tenancy\Actions\StopImpersonating;
 use App\Domain\Tenancy\Actions\SwitchCurrentCompany;
 use App\Domain\Tenancy\CurrentCompany;
+use App\Domain\Tenancy\Enums\Ability;
 use App\Domain\Tenancy\Models\Company;
 use App\Domain\Tenancy\Support\Impersonation;
 use App\Models\User;
@@ -23,7 +25,8 @@ use Symfony\Component\HttpFoundation\Response;
  *    Account screens (profile/password) cannot be changed while impersonating.
  * 2. Resolves the current company (session choice, else first active membership; cancelled companies are
  *    skipped) and sets CurrentCompany. No usable membership → signed out with a message.
- * 3. Enforces company status: suspended → the "on hold" page (no tenant data); cancelled companies never
+ * 3. Enforces company status: suspended → the "on hold" page (no tenant data; Billing stays open and the page
+ *    links to it for users who can see billing, module 1.13); cancelled companies never
  *    resolve, so their users are signed out. Admins viewing as a customer skip the on-hold page.
  */
 class EnsureCompanyMember
@@ -32,8 +35,8 @@ class EnsureCompanyMember
 
     public const CANCELLED_MESSAGE = 'This Switch & Save account has been closed. Contact Switch & Save support if you think this is a mistake.';
 
-    /** Routes a user of a suspended company may still use. */
-    private const ALLOWED_WHILE_SUSPENDED = ['app.company.switch'];
+    /** Routes a user of a suspended company may still use (billing: so the owner can set up Direct Debit). */
+    private const ALLOWED_WHILE_SUSPENDED = ['app.company.switch', 'app.billing', 'app.billing.*'];
 
     public function __construct(
         private readonly ResolveCurrentCompany $resolver,
@@ -108,9 +111,15 @@ class EnsureCompanyMember
             ->values()
             ->all();
 
+        $canBilling = $company->membership?->role->can(Ability::BillingView) ?? false;
+        $account = $canBilling ? app(BillingAccounts::class)->for($company) : null;
+
         return Inertia::render('app/account-on-hold', [
             'companyName' => $company->name,
             'otherCompanies' => $others,
+            // Module 1.13: suspended for want of a Direct Debit → straight to the Billing page to set it up.
+            'directDebitUrl' => $account !== null && $account->isDirectDebit() && ! $account->hasUsableMandate() ? route('app.billing') : null,
+            'billingUrl' => $canBilling ? route('app.billing') : null,
         ])->toResponse($request);
     }
 }

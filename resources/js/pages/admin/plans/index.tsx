@@ -38,18 +38,23 @@ const columns: ColumnDef<PlanRow>[] = [
         cell: ({ row }) => <EntityCell name={row.original.name} subline={row.original.code} monoSubline shape="square" icon={Layers} />,
     },
     {
-        id: 'price_per_till_monthly',
-        header: 'Monthly / till',
+        id: 'price_monthly',
+        header: 'Monthly / unit',
         enableSorting: true,
         meta: { align: 'right' },
-        cell: ({ row }) => <span className="font-medium tabular-nums">{formatMoney(row.original.pricePerTillMonthly)}</span>,
+        cell: ({ row }) => (
+            <span className="font-medium tabular-nums">
+                {formatMoney(row.original.priceMonthly)}
+                <span className="text-muted-foreground font-normal"> / {row.original.pricingMode === 'perBranch' ? 'branch' : 'till'}</span>
+            </span>
+        ),
     },
     {
-        id: 'price_per_till_yearly',
-        header: 'Yearly / till',
+        id: 'price_yearly',
+        header: 'Yearly / unit',
         enableSorting: true,
         meta: { align: 'right' },
-        cell: ({ row }) => <span className="tabular-nums">{formatMoney(row.original.pricePerTillYearly)}</span>,
+        cell: ({ row }) => <span className="tabular-nums">{formatMoney(row.original.priceYearly)}</span>,
     },
     {
         id: 'trial_days',
@@ -120,7 +125,7 @@ export default function PlansIndex({ plans, filters, counts }: PlansIndexProps) 
                 title="Plans"
                 description={
                     <span className="tabular-nums">
-                        Subscription plans licences are sold on. Prices are per till. {total} {total === 1 ? 'plan' : 'plans'}
+                        Subscription plans licences are sold on. Prices are per till or per branch. {total} {total === 1 ? 'plan' : 'plans'}
                         {filtered ? ' match' : ''}.
                     </span>
                 }
@@ -141,7 +146,7 @@ export default function PlansIndex({ plans, filters, counts }: PlansIndexProps) 
                         <EmptyState
                             icon={Layers}
                             title="No plans yet"
-                            body="Create the first plan so licences can be issued on it. You set the price per till, the free trial and the features."
+                            body="Create the first plan so licences can be issued on it. You set the price per till or per branch, the free trial and the features."
                             action={addButton}
                         />
                     ) : (

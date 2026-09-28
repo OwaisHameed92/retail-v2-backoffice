@@ -1,3 +1,4 @@
+import { AppBillingBanner } from '@/components/app-billing-banner';
 import { AppImpersonationBanner } from '@/components/app-impersonation-banner';
 import { AppSidebar } from '@/components/app-sidebar';
 import { AppFilterBar, AppSidebarHeader } from '@/components/app-sidebar-header';
@@ -30,6 +31,7 @@ export default function AppSidebarLayout({ children, breadcrumbs = [] }: { child
                         <AppFilterBar />
                     </div>
                 </div>
+                <AppBillingBanner />
                 {children}
             </div>
             <Toaster />

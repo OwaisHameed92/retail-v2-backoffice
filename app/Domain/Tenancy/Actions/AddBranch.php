@@ -7,6 +7,7 @@ use App\Domain\Shared\Actions\RecordAudit;
 use App\Domain\Tenancy\CurrentCompany;
 use App\Domain\Tenancy\Data\BranchDetails;
 use App\Domain\Tenancy\Data\NewTenant;
+use App\Domain\Tenancy\Events\BranchAdded;
 use App\Domain\Tenancy\Models\Branch;
 use App\Domain\Tenancy\Models\Company;
 use App\Domain\Tenancy\Support\TenantLimits;
@@ -65,6 +66,8 @@ class AddBranch
             for ($i = 0; $i < $tills; $i++) {
                 $this->addRegister->handle($branch);
             }
+
+            BranchAdded::dispatch($branch);
 
             return $branch;
         }));

@@ -55,7 +55,7 @@ final class RecentTenants
                 'name' => $company->name,
                 'plan' => ($company->plan_id !== null ? $rows->plans->get($company->plan_id)?->name : $defaultPlan) ?: null,
                 'tills' => $live->count(),
-                'mrr' => BillingFormat::money(Money::sum($paying->map(fn (Licence $licence) => $rows->plans->get($licence->plan_id)->price_per_till_monthly ?? '0'))),
+                'mrr' => BillingFormat::money(Money::sum($paying->map(fn (Licence $licence) => $rows->plans->get($licence->plan_id)->price_monthly ?? '0'))),
                 'lastActivityAt' => $activity[$company->id]?->toIso8601String(),
                 'status' => $company->status->value,
                 'statusLabel' => $company->status->label(),

@@ -5,9 +5,11 @@ namespace App\Domain\Billing\Models;
 use App\Domain\Billing\Casts\CalendarDateCast;
 use App\Domain\Billing\Enums\BillingCycle;
 use App\Domain\Billing\Enums\BillingMode;
+use App\Domain\Billing\Enums\PaymentMethod;
 use App\Domain\Billing\Enums\SetupFeeMethod;
 use App\Domain\Billing\GoCardless\Enums\MandateStatus;
 use App\Domain\Billing\GoCardless\Enums\SubscriptionStatus;
+use App\Domain\Plans\Enums\PricingMode;
 use App\Domain\Shared\Casts\MoneyCast;
 use App\Domain\Tenancy\Concerns\BelongsToCompany;
 use App\Domain\Tenancy\Concerns\HasPortalUlid;
@@ -56,6 +58,13 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property BillingCycle|null $gc_subscription_cycle
  * @property CarbonImmutable|null $gc_next_charge_date
  * @property CarbonImmutable|null $gc_reconciled_at
+ * @property PricingMode|null $pricing_mode_override Module 1.13; null = the plan's.
+ * @property string|null $price_monthly_override Net per unit; null = the plan's.
+ * @property string|null $price_yearly_override Net per unit; null = the plan's.
+ * @property string|null $upfront_amount Gross paid upfront at onboarding ("0.00" = nothing to pay).
+ * @property PaymentMethod|null $upfront_method
+ * @property CarbonImmutable|null $upfront_recorded_at
+ * @property CarbonImmutable|null $mandate_deadline_at Direct Debit must be set up by then (billing:run suspends).
  * @property CarbonImmutable|null $created_at
  * @property CarbonImmutable|null $updated_at
  * @property-read Company|null $company
@@ -110,6 +119,13 @@ class BillingAccount extends Model
             'gc_subscription_cycle' => BillingCycle::class,
             'gc_next_charge_date' => CalendarDateCast::class,
             'gc_reconciled_at' => 'immutable_datetime',
+            'pricing_mode_override' => PricingMode::class,
+            'price_monthly_override' => MoneyCast::class,
+            'price_yearly_override' => MoneyCast::class,
+            'upfront_amount' => MoneyCast::class,
+            'upfront_method' => PaymentMethod::class,
+            'upfront_recorded_at' => 'immutable_datetime',
+            'mandate_deadline_at' => 'immutable_datetime',
             'created_at' => 'immutable_datetime',
             'updated_at' => 'immutable_datetime',
         ];

@@ -3,13 +3,17 @@ import { ShellSidebar } from '@/components/shell/sidebar-brand';
 import { type ShellNavGroup } from '@/components/shell/sidebar-nav';
 import { type SharedData } from '@/types';
 import { usePage } from '@inertiajs/react';
-import { Banknote, BarChart3, BookOpen, Boxes, LayoutGrid, Package, Receipt, Settings, Tag, Truck, UserCog, Users } from 'lucide-react';
+import { Banknote, BarChart3, BookOpen, Boxes, CreditCard, LayoutGrid, Package, Receipt, Settings, Tag, Truck, UserCog, Users } from 'lucide-react';
 
 /**
  * Tenant portal navigation, grouped by job. Items without an `href` are modules not built yet ("Soon").
  * When a module ships, give its item an `href` and an `active` test.
  */
-function tenantNav(path: string): ShellNavGroup[] {
+function tenantNav(path: string, abilities: string[]): ShellNavGroup[] {
+    const billing = abilities.includes('billing.view')
+        ? [{ title: 'Billing', icon: CreditCard, href: '/app/billing', active: path.startsWith('/app/billing') }]
+        : [];
+
     return [
         { items: [{ title: 'Dashboard', icon: LayoutGrid, href: '/app', active: path === '/app' }] },
         {
@@ -37,7 +41,7 @@ function tenantNav(path: string): ShellNavGroup[] {
             ],
         },
         { label: 'Team', items: [{ title: 'Staff', icon: UserCog, soon: true }] },
-        { label: 'Settings', items: [{ title: 'Business settings', icon: Settings, soon: true }] },
+        { label: 'Settings', items: [...billing, { title: 'Business settings', icon: Settings, soon: true }] },
     ];
 }
 
@@ -58,9 +62,9 @@ function WorkspaceHeader({ name }: { name: string }) {
 
 /** Business (tenant) portal sidebar: same dark frame as admin, its own navigation. */
 export function AppSidebar() {
-    const { company } = usePage<SharedData>().props;
+    const { company, abilities } = usePage<SharedData>().props;
     const path = usePage().url.split('?')[0];
-    const groups = tenantNav(path);
+    const groups = tenantNav(path, abilities ?? []);
 
     return (
         <ShellSidebar

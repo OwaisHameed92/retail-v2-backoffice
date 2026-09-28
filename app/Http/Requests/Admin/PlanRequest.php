@@ -5,6 +5,7 @@ namespace App\Http\Requests\Admin;
 use App\Domain\Admin\Enums\AdminRole;
 use App\Domain\Plans\Data\PlanInput;
 use App\Domain\Plans\Enums\Feature;
+use App\Domain\Plans\Enums\PricingMode;
 use App\Domain\Plans\Models\Plan;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
@@ -34,10 +35,11 @@ abstract class PlanRequest extends FormRequest
 
         $this->merge([
             'code' => is_string($this->input('code')) ? strtolower(trim($this->input('code'))) : $this->input('code'),
-            'price_per_till_monthly' => $clean($this->input('price_per_till_monthly')),
-            'price_per_till_yearly' => $clean($this->input('price_per_till_yearly')),
+            'price_monthly' => $clean($this->input('price_monthly')),
+            'price_yearly' => $clean($this->input('price_yearly')),
             'setup_fee' => $clean($this->input('setup_fee', '0')),
             'features' => $this->input('features', []),
+            'pricing_mode' => $this->input('pricing_mode', PricingMode::PerTill->value),
         ]);
     }
 
@@ -53,8 +55,9 @@ abstract class PlanRequest extends FormRequest
                 Rule::unique('plans', 'code')->ignore($this->ignoredPlan()?->getKey()),
             ],
             'description' => ['nullable', 'string', 'max:500'],
-            'price_per_till_monthly' => ['required', 'string', 'regex:'.self::MONEY_PATTERN],
-            'price_per_till_yearly' => ['required', 'string', 'regex:'.self::MONEY_PATTERN],
+            'pricing_mode' => ['required', Rule::enum(PricingMode::class)],
+            'price_monthly' => ['required', 'string', 'regex:'.self::MONEY_PATTERN],
+            'price_yearly' => ['required', 'string', 'regex:'.self::MONEY_PATTERN],
             'setup_fee' => ['required', 'string', 'regex:'.self::MONEY_PATTERN],
             'trial_days' => ['required', 'integer', 'min:0', 'max:90'],
             'trial_grace_days' => ['required', 'integer', 'min:0', 'max:30'],
@@ -77,8 +80,8 @@ abstract class PlanRequest extends FormRequest
         return [
             'code.regex' => 'Use lower-case letters, numbers and single hyphens only, for example "standard" or "pro-2026".',
             'code.unique' => 'Another plan already uses this code.',
-            'price_per_till_monthly.regex' => $money,
-            'price_per_till_yearly.regex' => $money,
+            'price_monthly.regex' => $money,
+            'price_yearly.regex' => $money,
             'setup_fee.regex' => $money,
             'features.*.in' => 'Choose features from the list.',
         ];
@@ -90,8 +93,8 @@ abstract class PlanRequest extends FormRequest
     public function attributes(): array
     {
         return [
-            'price_per_till_monthly' => 'monthly price',
-            'price_per_till_yearly' => 'yearly price',
+            'price_monthly' => 'monthly price',
+            'price_yearly' => 'yearly price',
             'setup_fee' => 'setup fee',
             'trial_days' => 'trial length',
             'trial_grace_days' => 'trial grace',
@@ -109,8 +112,8 @@ abstract class PlanRequest extends FormRequest
             name: $this->string('name')->value(),
             code: $this->string('code')->value(),
             description: $this->filled('description') ? $this->string('description')->value() : null,
-            pricePerTillMonthly: $this->string('price_per_till_monthly')->value(),
-            pricePerTillYearly: $this->string('price_per_till_yearly')->value(),
+            priceMonthly: $this->string('price_monthly')->value(),
+            priceYearly: $this->string('price_yearly')->value(),
             features: $features,
             trialDays: $this->integer('trial_days'),
             trialGraceDays: $this->integer('trial_grace_days'),
@@ -119,6 +122,7 @@ abstract class PlanRequest extends FormRequest
             isPublic: $this->boolean('is_public'),
             sortOrder: $this->integer('sort_order'),
             setupFee: $this->string('setup_fee')->value(),
+            pricingMode: PricingMode::from($this->string('pricing_mode')->value()),
         );
     }
 

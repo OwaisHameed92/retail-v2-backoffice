@@ -4,6 +4,7 @@ import { DirectDebitPanel } from '@/components/admin/billing/direct-debit-panel'
 import { formatDate, formatDay } from '@/components/admin/billing/format';
 import { DueDate, InvoiceNumber, Money } from '@/components/admin/billing/invoice-columns';
 import { InvoiceStatusBadge } from '@/components/admin/billing/invoice-status-badge';
+import { PricingPanel } from '@/components/admin/billing/pricing-panel';
 import { RecordPaymentDialog } from '@/components/admin/billing/record-payment-dialog';
 import { type TenantBillingData } from '@/components/admin/billing/types';
 import { ConfirmDialog } from '@/components/shared/confirm-dialog';
@@ -56,8 +57,9 @@ export function TenantBillingPanel({ tenant, billing }: TenantBillingPanelProps)
 
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <p className="text-muted-foreground text-sm">
-                    Billed {settings.cycle === 'yearly' ? 'yearly' : 'monthly'}, payment due {settings.paymentTermsDays === 0 ? 'on receipt' : `within ${settings.paymentTermsDays} days`}. Next
-                    period {summary.nextPeriod.label}.
+                    Billed {settings.cycle === 'yearly' ? 'yearly' : 'monthly'}, payment due{' '}
+                    {settings.paymentTermsDays === 0 ? 'on receipt' : `within ${settings.paymentTermsDays} days`}. Next period{' '}
+                    {summary.nextPeriod.label}.
                 </p>
                 {canManage && (
                     <div className="flex flex-wrap items-center gap-2">
@@ -90,7 +92,11 @@ export function TenantBillingPanel({ tenant, billing }: TenantBillingPanelProps)
                 <StatCard
                     label="Overdue"
                     value={summary.overdue}
-                    hint={summary.overdueCount === 0 ? 'Nothing overdue' : `${summary.overdueCount === 1 ? '1 invoice' : `${summary.overdueCount} invoices`} past due`}
+                    hint={
+                        summary.overdueCount === 0
+                            ? 'Nothing overdue'
+                            : `${summary.overdueCount === 1 ? '1 invoice' : `${summary.overdueCount} invoices`} past due`
+                    }
                     icon={AlarmClock}
                     tone={summary.overdueCount > 0 ? 'danger' : 'neutral'}
                 />
@@ -120,17 +126,24 @@ export function TenantBillingPanel({ tenant, billing }: TenantBillingPanelProps)
                 />
             </StatGrid>
 
+            <PricingPanel company={company} directDebit={billing.directDebit} canManage={canManage} />
+
             <DirectDebitPanel company={company} directDebit={billing.directDebit} canManage={canManage} />
 
             <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_22rem]">
                 <div className="grid gap-6">
                     <SectionCard
                         title="Invoices"
-                        description={invoices.total > 0 ? `${invoices.total} ${invoices.total === 1 ? 'invoice' : 'invoices'}, newest first.` : undefined}
+                        description={
+                            invoices.total > 0 ? `${invoices.total} ${invoices.total === 1 ? 'invoice' : 'invoices'}, newest first.` : undefined
+                        }
                         flush={invoices.data.length > 0}
                         footer={
                             invoices.total > invoices.data.length ? (
-                                <Link href={route('admin.billing.invoices.index', { company: tenant.id })} className="text-primary inline-flex items-center gap-1 font-medium hover:underline">
+                                <Link
+                                    href={route('admin.billing.invoices.index', { company: tenant.id })}
+                                    className="text-primary inline-flex items-center gap-1 font-medium hover:underline"
+                                >
                                     View all {invoices.total} invoices
                                     <ArrowRight className="size-3.5" aria-hidden />
                                 </Link>
@@ -204,7 +217,10 @@ export function TenantBillingPanel({ tenant, billing }: TenantBillingPanelProps)
                         flush={payments.data.length > 0}
                         footer={
                             payments.total > payments.data.length ? (
-                                <Link href={route('admin.billing.payments.index', { company: tenant.id })} className="text-primary inline-flex items-center gap-1 font-medium hover:underline">
+                                <Link
+                                    href={route('admin.billing.payments.index', { company: tenant.id })}
+                                    className="text-primary inline-flex items-center gap-1 font-medium hover:underline"
+                                >
                                     View all {payments.total} payments
                                     <ArrowRight className="size-3.5" aria-hidden />
                                 </Link>
@@ -241,7 +257,8 @@ export function TenantBillingPanel({ tenant, billing }: TenantBillingPanelProps)
                                                 </span>
                                                 <span className="text-muted-foreground block truncate text-xs">
                                                     {formatDate(payment.receivedAt)}
-                                                    {payment.invoices.length > 0 && ` · ${payment.invoices.map((invoice) => invoice.number).join(', ')}`}
+                                                    {payment.invoices.length > 0 &&
+                                                        ` · ${payment.invoices.map((invoice) => invoice.number).join(', ')}`}
                                                     {payment.hasCredit && ` · ${payment.unallocated} credit`}
                                                 </span>
                                             </span>
@@ -287,7 +304,14 @@ export function TenantBillingPanel({ tenant, billing }: TenantBillingPanelProps)
                             },
                             { label: 'Billing', value: settings.cycle === 'yearly' ? 'Yearly' : 'Monthly' },
                             { label: 'Payment terms', value: settings.paymentTermsDays === 0 ? 'On receipt' : `${settings.paymentTermsDays} days` },
-                            { label: 'VAT', value: !billing.vatEnabled ? 'Not charged (not VAT registered)' : settings.vatApplies ? `Charged at ${billing.vatRate}` : 'Not charged' },
+                            {
+                                label: 'VAT',
+                                value: !billing.vatEnabled
+                                    ? 'Not charged (not VAT registered)'
+                                    : settings.vatApplies
+                                      ? `Charged at ${billing.vatRate}`
+                                      : 'Not charged',
+                            },
                             {
                                 label: 'Next period',
                                 value: (
@@ -312,7 +336,13 @@ export function TenantBillingPanel({ tenant, billing }: TenantBillingPanelProps)
                         cycle={settings.cycle}
                         cycles={billing.options.cycles}
                     />
-                    <RecordPaymentDialog open={dialog === 'payment'} onOpenChange={close} company={company} methods={billing.options.methods} invoices={billing.openInvoices} />
+                    <RecordPaymentDialog
+                        open={dialog === 'payment'}
+                        onOpenChange={close}
+                        company={company}
+                        methods={billing.options.methods}
+                        invoices={billing.openInvoices}
+                    />
                     <BillingSettingsDialog
                         open={dialog === 'settings'}
                         onOpenChange={close}
@@ -327,7 +357,11 @@ export function TenantBillingPanel({ tenant, billing }: TenantBillingPanelProps)
                         confirmLabel="Apply credit"
                         onConfirm={() =>
                             new Promise<void>((resolve) =>
-                                router.post(route('admin.billing.tenants.apply-credit', tenant.id), {}, { preserveScroll: true, onFinish: () => resolve() }),
+                                router.post(
+                                    route('admin.billing.tenants.apply-credit', tenant.id),
+                                    {},
+                                    { preserveScroll: true, onFinish: () => resolve() },
+                                ),
                             )
                         }
                     />

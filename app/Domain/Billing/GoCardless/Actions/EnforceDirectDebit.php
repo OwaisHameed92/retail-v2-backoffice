@@ -8,8 +8,7 @@ use App\Domain\Billing\GoCardless\Models\GoCardlessPayment;
 use App\Domain\Billing\GoCardless\Support\DirectDebitMailer;
 use App\Domain\Billing\Models\BillingAccount;
 use App\Domain\Billing\Support\BillingAccounts;
-use App\Domain\Licensing\Actions\RenewCompanyLicences;
-use App\Domain\Licensing\Models\Licence;
+use App\Domain\Billing\Support\MandateDeadline;
 use App\Domain\Shared\Actions\RecordAudit;
 use App\Domain\Tenancy\Actions\MarkCompanyOverdue;
 use App\Domain\Tenancy\Actions\SuspendCompany;
@@ -21,8 +20,9 @@ use Illuminate\Support\Facades\DB;
 /**
  * billing:run step for Direct Debit companies (module 1.12), after the trial emails (which carry the setup link):
  *
- * - trial over, never paid, still no working mandate `mandate_grace_days` (3) after the trial end: suspended
- *   ("No Direct Debit set up after the free trial") as a billing suspension, so setting it up lifts it;
+ * - no mandate yet by the deadline (`mandate_deadline_days`, 3, after onboarding; module 1.13) and something to
+ *   collect: suspended ("No Direct Debit set up") as a billing suspension, once per deadline, so the tills lock at
+ *   their next check-in and setting the mandate up lifts it (ApplyMandate → ReleaseBillingHolds);
  * - mandate lost more than `mandate_grace_days` ago and not replaced: company marked overdue (once); billing:run
  *   invoices it by hand from then on, and unpaid invoices suspend it as usual;
  * - a failed payment still unpaid `dunning_reminder_days` (5) after the failure email: one reminder.
@@ -60,7 +60,7 @@ class EnforceDirectDebit
             if ($account->gc_mandate_lost_at !== null) {
                 $result['overdue'] += (int) $this->lostMandate($company, $account, $now, $grace);
             } else {
-                $result['suspended'] += (int) $this->noMandateAfterTrial($company, $now, $grace);
+                $result['suspended'] += (int) $this->noMandateByDeadline($company, $account, $now);
             }
         }
 
@@ -81,36 +81,29 @@ class EnforceDirectDebit
         return $this->markCompanyOverdue->handle($company, 'Direct Debit '.mb_strtolower($account->gc_mandate_status?->label() ?? 'cancelled').' and not replaced');
     }
 
-    private function noMandateAfterTrial(Company $company, CarbonImmutable $now, int $grace): bool
+    private function noMandateByDeadline(Company $company, BillingAccount $account, CarbonImmutable $now): bool
     {
-        $licences = RenewCompanyLicences::renewable($company)->get();
+        $deadline = $account->mandate_deadline_at;
 
-        if ($licences->contains(fn (Licence $licence) => $licence->expires_at !== null)) {
-            return false; // paid time: invoices and the usual overdue rules apply
-        }
-
-        $trialEnds = $licences->filter(fn (Licence $licence) => $licence->activated_at !== null && $licence->trial_ends_at !== null)
-            ->map(fn (Licence $licence) => $licence->trial_ends_at)->min();
-
-        if ($trialEnds === null || $trialEnds->addDays($grace)->greaterThan($now)) {
+        if ($deadline === null || $deadline->greaterThan($now) || ! MandateDeadline::applies($company, $account)) {
             return false;
         }
 
-        $reason = 'No Direct Debit set up after the free trial';
+        $reason = 'No Direct Debit set up';
 
-        $suspended = DB::transaction(function () use ($company, $trialEnds, $reason) {
+        $suspended = DB::transaction(function () use ($company, $deadline, $reason) {
             $account = $this->accounts->lock($company);
 
-            if ($account->mandate_grace_suspended_for?->getTimestamp() === $trialEnds->getTimestamp() || $account->hasUsableMandate()) {
+            if ($account->mandate_grace_suspended_for?->getTimestamp() === $deadline->getTimestamp() || $account->hasUsableMandate()) {
                 return null;
             }
 
             $company = $this->suspendCompany->handle($company, $reason);
             $account->billing_suspended_at = CarbonImmutable::instance($company->suspended_at ?? now());
-            $account->mandate_grace_suspended_for = $trialEnds;
+            $account->mandate_grace_suspended_for = $deadline;
             $account->save();
 
-            $this->audit->handle('billing.dd_no_mandate_suspended', $account, null, null, ['trial_ends_at' => $trialEnds->toIso8601String()], companyId: $company->id);
+            $this->audit->handle('billing.dd_no_mandate_suspended', $account, null, null, ['deadline' => $deadline->toIso8601String()], companyId: $company->id);
 
             return $company;
         });

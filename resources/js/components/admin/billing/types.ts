@@ -107,7 +107,15 @@ export interface InvoiceDetail extends InvoiceRow {
     sentCount: number;
     recipients: string[];
     lines: { id: string; description: string; quantity: string; unitPrice: string; hasLicence: boolean; licenceId: string | null }[];
-    payments: { id: string; paymentId: string; number: string | null; method: string | null; receivedAt: string | null; amount: string; released: boolean }[];
+    payments: {
+        id: string;
+        paymentId: string;
+        number: string | null;
+        method: string | null;
+        receivedAt: string | null;
+        amount: string;
+        released: boolean;
+    }[];
     replaces: { id: string; number: string | null } | null;
     replacedBy: { id: string; number: string } | null;
     can: { manage: boolean; edit: boolean; issue: boolean; delete: boolean; send: boolean; recordPayment: boolean; credit: boolean; void: boolean };
@@ -229,6 +237,8 @@ export interface DirectDebitData {
         method: SetupFeeMethod;
         instalments: number;
         invoicedAt: string | null;
+        /** VAT rate on this business's invoices ("20.00"), null without VAT. */
+        vatRate: string | null;
     };
     mandate: {
         id: string | null;
@@ -249,12 +259,40 @@ export interface DirectDebitData {
         nextChargeDate: string | null;
         expected: string;
         expectedTills: number;
+        /** "2 tills" / "1 branch" (module 1.13). */
+        expectedUnits: string;
         inStep: boolean;
         reconciledAt: string | null;
     };
     payments: { data: DirectDebitPaymentRow[]; total: number };
     options: { modes: Option<BillingMode>[]; setupFeeMethods: Option<SetupFeeMethod>[]; maxInstalments: number };
     graceDays: number;
+    /** Module 1.13: pricing mode and prices (plan and this company's override). */
+    pricing: {
+        mode: PricingMode;
+        modeLabel: string;
+        unit: string;
+        unitPrice: string | null;
+        unitsLabel: string;
+        plan: { name: string; mode: PricingMode; modeLabel: string; monthly: string; yearly: string } | null;
+        override: { mode: PricingMode | null; monthly: string | null; yearly: string | null };
+        overridden: boolean;
+        recurring: string;
+        recurringIsZero: boolean;
+        per: string;
+        options: Option<PricingMode>[];
+    };
+    upfront: { recorded: boolean; amount: string | null; method: string | null; recordedAt: string | null; canRecord: boolean };
+    /** Waiting for the customer's first mandate: the deadline (null when none is needed). */
+    deadline: MandateDeadline | null;
+}
+
+export type PricingMode = 'perTill' | 'perBranch';
+
+export interface MandateDeadline {
+    deadline: string;
+    daysLeft: number;
+    passed: boolean;
 }
 
 /** InvoicePlan::toArray (the "Create invoice" preview). */
@@ -314,7 +352,16 @@ export interface BillingOverviewProps {
         withoutMandate: number;
         upcoming: { count: number; amount: string };
         failed: { count: number; amount: string };
-        next: { id: string; companyId: string; companyName: string; amount: string; chargeDate: string | null; invoiceId: string | null; invoiceNumber: string | null; statusLabel: string }[];
+        next: {
+            id: string;
+            companyId: string;
+            companyName: string;
+            amount: string;
+            chargeDate: string | null;
+            invoiceId: string | null;
+            invoiceNumber: string | null;
+            statusLabel: string;
+        }[];
     };
     canManage: boolean;
 }

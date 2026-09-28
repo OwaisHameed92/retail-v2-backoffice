@@ -36,7 +36,7 @@ trait BillingTestHelpers
     public function payingTenant(string $name = 'Khan Mini Mart', int $tills = 2, string $code = 'LDS', string $paidUntil = '2026-10-31'): Company
     {
         $plan = $this->standardPlan();
-        $plan->forceFill(['price_per_till_monthly' => '25.00', 'price_per_till_yearly' => '250.00'])->save();
+        $plan->forceFill(['price_monthly' => '25.00', 'price_yearly' => '250.00'])->save();
 
         $company = $this->licensedTenant($name, $tills, $code);
 
@@ -223,7 +223,7 @@ trait BillingTestHelpers
     public function trialTenant(string $name = 'Trial Stores', int $tills = 1, string $trialEndsAt = '2026-10-26 10:00', string $code = 'TRL'): Company
     {
         $plan = $this->standardPlan();
-        $plan->forceFill(['price_per_till_monthly' => '25.00', 'price_per_till_yearly' => '250.00'])->save();
+        $plan->forceFill(['price_monthly' => '25.00', 'price_yearly' => '250.00'])->save();
         $company = $this->licensedTenant($name, $tills, $code);
         $ends = CarbonImmutable::parse($trialEndsAt, 'Europe/London')->utc();
 
@@ -289,7 +289,7 @@ if ($mode === 'setup') {
 
     Plan::factory()->create([
         'name' => 'Standard', 'code' => 'standard',
-        'price_per_till_monthly' => '25.00', 'price_per_till_yearly' => '250.00',
+        'price_monthly' => '25.00', 'price_yearly' => '250.00',
     ]);
 
     $count = (int) $rest[0];

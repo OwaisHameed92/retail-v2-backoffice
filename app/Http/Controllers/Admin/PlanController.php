@@ -44,7 +44,7 @@ class PlanController extends Controller
 
         $plans = TableQuery::from($request)
             ->searchable(['name', 'code', 'description'])
-            ->sortable(['name', 'price_per_till_monthly', 'price_per_till_yearly', 'trial_days', 'sort_order', 'created_at'])
+            ->sortable(['name', 'price_monthly', 'price_yearly', 'trial_days', 'sort_order', 'created_at'])
             ->defaultSort('sort_order')
             ->paginate($query, fn (Plan $plan) => PlanData::row($plan));
 

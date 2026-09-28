@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Domain\Admin\Enums\AdminRole;
+use App\Domain\Billing\Actions\OnboardTenant;
+use App\Domain\Billing\Data\OnboardingBilling;
 use App\Domain\Billing\Data\TenantBilling;
 use App\Domain\Licensing\Data\LicenceData;
 use App\Domain\Licensing\Data\LicenceFormData;
@@ -10,7 +12,6 @@ use App\Domain\Licensing\Data\TenantLicences;
 use App\Domain\Licensing\Support\DefaultPlan;
 use App\Domain\Shared\Models\AuditLog;
 use App\Domain\Shared\Support\TableQuery;
-use App\Domain\Tenancy\Actions\CreateTenant;
 use App\Domain\Tenancy\Actions\UpdateCompany;
 use App\Domain\Tenancy\CurrentCompany;
 use App\Domain\Tenancy\Data\NewTenant;
@@ -83,7 +84,7 @@ class TenantController extends Controller
         ]);
     }
 
-    public function create(): Response
+    public function create(Request $request): Response
     {
         return Inertia::render('admin/tenants/create', [
             'nations' => Nation::options(),
@@ -93,12 +94,14 @@ class TenantController extends Controller
             // Module 1.11: the licence form, with each plan's defaults.
             'licenceOptions' => LicenceFormData::options(),
             'planDefaults' => LicenceFormData::planDefaults(),
+            // Module 1.13: the upfront payment (billing admins) and the Direct Debit deadline.
+            'billing' => OnboardingBilling::options($request->user('admin')),
         ]);
     }
 
-    public function store(StoreTenantRequest $request, CreateTenant $createTenant): RedirectResponse
+    public function store(StoreTenantRequest $request, OnboardTenant $onboardTenant): RedirectResponse
     {
-        $company = $createTenant->handle($request->toNewTenant());
+        $company = $onboardTenant->handle($request->toNewTenant(), $request->upfront());
 
         $keys = $company->licences()->withoutGlobalScopes()->count();
 

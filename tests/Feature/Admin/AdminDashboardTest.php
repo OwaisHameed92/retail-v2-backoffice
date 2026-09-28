@@ -27,7 +27,7 @@ const DASHBOARD_NOW = '2026-10-24 10:00';
 beforeEach(function () {
     Mail::fake();
     $this->setVat(false);
-    $this->standardPlan()->forceFill(['price_per_till_monthly' => '25.00', 'price_per_till_yearly' => '250.00'])->save();
+    $this->standardPlan()->forceFill(['price_monthly' => '25.00', 'price_yearly' => '250.00'])->save();
     $this->atLondon(DASHBOARD_NOW);
 });
 

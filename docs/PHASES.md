@@ -24,7 +24,7 @@ Totals: **66 modules · 18 done · 2 rework · 3 blocked · 43 todo.**
 | 0.4 | Tenant area (companies, memberships, fail-closed company scope) | done |
 | 0.5 | Shared building blocks (audit log, money, API errors, data table, toaster) | done |
 
-## Phase 1: Onboarding and licensing — 12/12
+## Phase 1: Onboarding and licensing — 13/13
 
 Contract: v1.3.1 `docs/web-portal-api.md` §17 (read 17.15–17.17 first), `specs/licensing.md`, `licensing/schemas`,
 `licensing/samples`.
@@ -43,6 +43,7 @@ Contract: v1.3.1 `docs/web-portal-api.md` §17 (read 17.15–17.17 first), `spec
 | 1.9 | Admin dashboard | Customers, trials, licences, leads, cash due (sales tiles come in 3.2) | done |
 | 1.10 | Public trial form | Public API `POST /api/v1/public/trial-requests` + hosted `/trial` page → lead (docs/specs/public-trial-api.md) | done |
 | 1.12 | GoCardless billing | Upfront cash or setup fee + Direct Debit (monthly/yearly): plan setup fee + per-customer override, instalments; mandate by emailed signed link → GoCardless hosted flow; subscription = live tills × plan price + VAT, kept in step; every GoCardless payment ↔ one invoice, confirmed → RecordPayment (`directDebit`) → licences renewed, failed/charged back → reversal + dunning → overdue/suspension via billing:run; `POST /webhooks/gocardless` (HMAC, idempotent, queued, replayable); daily `billing:reconcile-gocardless`; trial without mandate → grace → suspension; admin Billing tab/overview/plan form (docs/specs/gocardless-billing.md) | done |
+| 1.13 | Pricing modes + self-serve Direct Debit | Plan `pricing_mode` perTill/perBranch (per-till columns renamed `price_monthly`/`price_yearly`) + per-company override (billing.manage, audited); invoice lines per till or per branch (branch line renews its tills); DD amount follows tills, branches and pricing; upfront payment recorded in the wizard, lead approval and Billing tab (cash/bank, £0); tenant portal `/app/billing` (billing.view: plan, pricing, upfront, mandate, next collection, invoices + PDF) with "Set up Direct Debit" → GoCardless → return; portal banner with days left; `BILLING_MANDATE_DEADLINE_DAYS` (3) suspension lifted by the mandate, never for £0 recurring; welcome email links to Billing | done |
 
 Waves: **1.4 → 1.5 + 1.11** · then 1.9, 1.10, 1.12.
 

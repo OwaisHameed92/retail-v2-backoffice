@@ -22,6 +22,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string $company_id
  * @property string|null $licence_id
  * @property string|null $register_id
+ * @property string|null $branch_id Per-branch pricing (module 1.13): the branch this line pays for.
  * @property string|null $plan_id
  * @property int $position
  * @property string $description

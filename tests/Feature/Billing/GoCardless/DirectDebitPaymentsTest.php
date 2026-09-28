@@ -1,6 +1,5 @@
 <?php
 
-use App\Domain\Billing\Enums\BillingMode;
 use App\Domain\Billing\Enums\InvoiceStatus;
 use App\Domain\Billing\Enums\PaymentMethod;
 use App\Domain\Billing\GoCardless\Data\GcPayment;
@@ -9,11 +8,9 @@ use App\Domain\Billing\GoCardless\Enums\PaymentStatus;
 use App\Domain\Billing\GoCardless\Models\GoCardlessPayment;
 use App\Domain\Billing\Models\Invoice;
 use App\Domain\Billing\Models\Payment;
-use App\Domain\Mail\Mailables\AccountSuspendedMail;
 use App\Domain\Mail\Mailables\DirectDebitCancelledMail;
 use App\Domain\Mail\Mailables\DirectDebitFailedMail;
 use App\Domain\Mail\Mailables\InvoiceMail;
-use App\Domain\Mail\Mailables\TrialEndedMail;
 use App\Domain\Tenancy\Enums\CompanyStatus;
 use Illuminate\Support\Facades\Mail;
 use Tests\Feature\Billing\BillingTestHelpers;
@@ -154,25 +151,4 @@ test('a cancelled mandate emails the owners and staff, then the business is over
     $this->setUpMandate($this->company);
     expect($this->billingAccountOf($this->company)->hasUsableMandate())->toBeTrue()
         ->and($this->companyFresh($this->company)->status)->toBe(CompanyStatus::Active);
-});
-
-test('a trial ending without a mandate gets the setup link, then suspension after the grace, lifted by the mandate', function () {
-    $trial = $this->trialTenant('Trial Stores', 1, '2026-10-26 10:00', 'TRL');
-    $account = $this->billingAccountOf($trial);
-    $account->billing_mode = BillingMode::DirectDebit;
-    $account->save();
-
-    $this->runBillingOn('2026-10-27');
-    Mail::assertQueued(TrialEndedMail::class, fn (TrialEndedMail $mail) => str_contains((string) $mail->data->directDebitUrl, '/direct-debit/'.$trial->id.'/setup'));
-
-    expect($this->runBillingOn('2026-10-29')['noMandateSuspended'])->toBe(0);
-    expect($this->runBillingOn('2026-10-30')['noMandateSuspended'])->toBe(1)
-        ->and($this->companyFresh($trial)->status)->toBe(CompanyStatus::Suspended)
-        ->and($this->companyFresh($trial)->suspension_reason)->toBe('No Direct Debit set up after the free trial');
-    Mail::assertQueued(AccountSuspendedMail::class, fn (AccountSuspendedMail $mail) => str_contains((string) $mail->data->howToFix, '/direct-debit/'));
-
-    expect($this->runBillingOn('2026-10-31')['noMandateSuspended'])->toBe(0);
-
-    $this->setUpMandate($trial);
-    expect($this->companyFresh($trial)->status)->toBe(CompanyStatus::Trial);
 });

@@ -48,7 +48,7 @@ class ChargeSetupFee
      *
      * @throws ValidationException
      */
-    public function handle(Company $company): array
+    public function handle(Company $company, bool $send = true): array
     {
         $account = $this->accounts->for($company);
         $byDirectDebit = $account->isDirectDebit() && $account->setup_fee_method === SetupFeeMethod::DirectDebit;
@@ -79,7 +79,7 @@ class ChargeSetupFee
             $due = $first->addMonthsNoOverflow($i);
 
             if (! $byDirectDebit) {
-                $invoices[] = $this->issueInvoice->handle($draft, send: true, dueDate: $i === 0 ? null : $due);
+                $invoices[] = $this->issueInvoice->handle($draft, send: $send, dueDate: $i === 0 ? null : $due);
 
                 continue;
             }

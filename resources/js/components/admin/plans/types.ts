@@ -5,8 +5,9 @@ export interface PlanRow {
     id: string;
     name: string;
     code: string;
-    pricePerTillMonthly: string;
-    pricePerTillYearly: string;
+    pricingMode: 'perTill' | 'perBranch';
+    priceMonthly: string;
+    priceYearly: string;
     currency: string;
     trialDays: number;
     featureCount: number;
@@ -21,8 +22,9 @@ export interface PlanRecord {
     name: string;
     code: string;
     description: string | null;
-    pricePerTillMonthly: string;
-    pricePerTillYearly: string;
+    pricingMode: 'perTill' | 'perBranch';
+    priceMonthly: string;
+    priceYearly: string;
     setupFee: string;
     currency: string;
     trialDays: number;

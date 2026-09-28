@@ -19,6 +19,9 @@ final readonly class WelcomeTenantData
         public array $tills,
         public ?int $trialDays = null,
         public ?string $companyId = null,
+        /** Module 1.13: the portal Billing page where the owner sets up Direct Debit, and the days they have. */
+        public ?string $billingUrl = null,
+        public ?int $directDebitDays = null,
     ) {}
 
     public function branchCount(): int

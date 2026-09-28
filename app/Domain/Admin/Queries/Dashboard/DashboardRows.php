@@ -57,7 +57,7 @@ final class DashboardRows
                     'id', 'company_id', 'plan_id', 'status', 'live_register_id', 'device_id', 'bound_at', 'activated_at',
                     'trial_ends_at', 'expires_at', 'grace_ends_at', 'suspended_at', 'revoked_at', 'deleted_at', 'last_validated_at',
                 ]),
-            plans: Plan::withTrashed()->get(['id', 'name', 'price_per_till_monthly'])->keyBy('id'),
+            plans: Plan::withTrashed()->get(['id', 'name', 'price_monthly'])->keyBy('id'),
             paid: self::paidSince($since),
             overdue: Invoice::withoutCompanyScope()
                 ->whereNotNull('overdue_at')

@@ -30,12 +30,12 @@ it('rejects invalid input', function (array $overrides, string $field) {
     'code too long' => [['code' => str_repeat('a', 51)], 'code'],
     'code used by an archived plan' => [['code' => 'taken'], 'code'],
     'long description' => [['description' => str_repeat('a', 501)], 'description'],
-    'missing monthly price' => [['price_per_till_monthly' => ''], 'price_per_till_monthly'],
-    'negative monthly price' => [['price_per_till_monthly' => '-1.00'], 'price_per_till_monthly'],
-    'three decimal places' => [['price_per_till_monthly' => '30.005'], 'price_per_till_monthly'],
-    'exponent' => [['price_per_till_monthly' => '1e3'], 'price_per_till_monthly'],
-    'words' => [['price_per_till_yearly' => 'thirty'], 'price_per_till_yearly'],
-    'price too large' => [['price_per_till_yearly' => '100000.00'], 'price_per_till_yearly'],
+    'missing monthly price' => [['price_monthly' => ''], 'price_monthly'],
+    'negative monthly price' => [['price_monthly' => '-1.00'], 'price_monthly'],
+    'three decimal places' => [['price_monthly' => '30.005'], 'price_monthly'],
+    'exponent' => [['price_monthly' => '1e3'], 'price_monthly'],
+    'words' => [['price_yearly' => 'thirty'], 'price_yearly'],
+    'price too large' => [['price_yearly' => '100000.00'], 'price_yearly'],
     'trial too long' => [['trial_days' => 91], 'trial_days'],
     'negative trial' => [['trial_days' => -1], 'trial_days'],
     'fractional trial' => [['trial_days' => 1.5], 'trial_days'],
@@ -50,8 +50,8 @@ it('rejects invalid input', function (array $overrides, string $field) {
 ]);
 
 it('explains the money format in plain words', function () {
-    $this->post('/admin/plans', planPayload(['price_per_till_monthly' => '30.005']))
-        ->assertSessionHasErrors(['price_per_till_monthly' => 'Enter an amount in pounds with up to 2 decimal places, for example 30 or 29.99.']);
+    $this->post('/admin/plans', planPayload(['price_monthly' => '30.005']))
+        ->assertSessionHasErrors(['price_monthly' => 'Enter an amount in pounds with up to 2 decimal places, for example 30 or 29.99.']);
 });
 
 it('accepts an empty feature list and a missing description', function () {

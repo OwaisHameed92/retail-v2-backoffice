@@ -22,7 +22,7 @@ interface ShowPlanProps {
 
 function yearlyHint(plan: PlanRecord): string {
     if (plan.yearlySavingPercent === null) {
-        return 'Per till, billed yearly';
+        return `Per ${plan.pricingMode === 'perBranch' ? 'branch' : 'till'}, billed yearly`;
     }
     const saving = Number(plan.yearlySaving);
     if (saving > 0) {
@@ -74,17 +74,15 @@ export default function ShowPlan({ plan, features, activity }: ShowPlanProps) {
             <StatGrid>
                 <StatCard
                     label="Monthly price"
-                    value={formatMoney(plan.pricePerTillMonthly)}
-                    hint={Number(plan.setupFee) > 0 ? `Per till · setup fee ${formatMoney(plan.setupFee)} + VAT` : 'Per till, billed monthly · no setup fee'}
+                    value={formatMoney(plan.priceMonthly)}
+                    hint={
+                        Number(plan.setupFee) > 0
+                            ? `Per ${plan.pricingMode === 'perBranch' ? 'branch' : 'till'} · setup fee ${formatMoney(plan.setupFee)} + VAT`
+                            : `Per ${plan.pricingMode === 'perBranch' ? 'branch' : 'till'}, billed monthly · no setup fee`
+                    }
                     icon={PoundSterling}
                 />
-                <StatCard
-                    label="Yearly price"
-                    value={formatMoney(plan.pricePerTillYearly)}
-                    hint={yearlyHint(plan)}
-                    icon={CalendarRange}
-                    tone="success"
-                />
+                <StatCard label="Yearly price" value={formatMoney(plan.priceYearly)} hint={yearlyHint(plan)} icon={CalendarRange} tone="success" />
                 <StatCard
                     label="Free trial"
                     value={formatDays(plan.trialDays, 'No trial')}

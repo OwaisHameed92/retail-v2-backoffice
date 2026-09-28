@@ -58,12 +58,12 @@ it('blocks archiving a plan that licences use', function () {
 });
 
 it('restores an archived plan with its settings and records it', function () {
-    $plan = Plan::factory()->archived()->create(['price_per_till_monthly' => '45.00', 'is_public' => false]);
+    $plan = Plan::factory()->archived()->create(['price_monthly' => '45.00', 'is_public' => false]);
 
     app(RestorePlan::class)->handle($plan);
 
     $plan = Plan::query()->findOrFail($plan->id);
-    expect($plan->price_per_till_monthly)->toBe('45.00')
+    expect($plan->price_monthly)->toBe('45.00')
         ->and($plan->status())->toBe(PlanStatus::Hidden)
         ->and(AuditLog::query()->sole()->action)->toBe('plan.restored');
 });

@@ -27,7 +27,7 @@ beforeEach(function () {
 
 test('£19.99 × 3 tills: VAT is rounded per line and the totals are the sums of the lines', function () {
     $company = $this->payingTenant(tills: 3);
-    $this->standardPlan()->forceFill(['price_per_till_monthly' => '19.99'])->save();
+    $this->standardPlan()->forceFill(['price_monthly' => '19.99'])->save();
 
     $invoice = $this->draftFor($company);
 
@@ -48,7 +48,7 @@ test('£19.99 × 3 tills: VAT is rounded per line and the totals are the sums of
 
 test('money is stored as exact decimals, never floats', function () {
     $company = $this->payingTenant(tills: 3);
-    $this->standardPlan()->forceFill(['price_per_till_monthly' => '0.10'])->save();
+    $this->standardPlan()->forceFill(['price_monthly' => '0.10'])->save();
 
     $invoice = $this->draftFor($company);
     $row = DB::table('invoices')->where('id', $invoice->id)->first();
@@ -65,7 +65,7 @@ test('money is stored as exact decimals, never floats', function () {
 test('a 17.5% VAT rate is applied exactly and shown as 17.5%', function () {
     config(['billing.vat.rate' => '17.5']);
     $company = $this->payingTenant(tills: 1);
-    $this->standardPlan()->forceFill(['price_per_till_monthly' => '19.99'])->save();
+    $this->standardPlan()->forceFill(['price_monthly' => '19.99'])->save();
 
     $invoice = $this->draftFor($company);
 

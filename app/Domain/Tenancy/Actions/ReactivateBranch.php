@@ -4,6 +4,7 @@ namespace App\Domain\Tenancy\Actions;
 
 use App\Domain\Shared\Actions\RecordAudit;
 use App\Domain\Tenancy\CurrentCompany;
+use App\Domain\Tenancy\Events\BranchReactivated;
 use App\Domain\Tenancy\Models\Branch;
 use App\Domain\Tenancy\Support\TenantLimits;
 use Illuminate\Support\Facades\DB;
@@ -36,6 +37,7 @@ class ReactivateBranch
             $branch->save();
 
             $this->audit->handle('branch.reactivated', $branch, ['is_active' => false], ['is_active' => true]);
+            BranchReactivated::dispatch($branch);
 
             return $branch;
         }));

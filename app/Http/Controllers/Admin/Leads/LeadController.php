@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin\Leads;
 
 use App\Domain\Admin\Enums\AdminRole;
+use App\Domain\Billing\Data\OnboardingBilling;
 use App\Domain\Leads\Actions\CreateLead;
 use App\Domain\Leads\Actions\UpdateLead;
 use App\Domain\Leads\Data\DuplicateMatch;
@@ -189,6 +190,8 @@ class LeadController extends Controller
             // Module 1.11: the licence form (kind, length, features, tills allowed) with each plan's defaults.
             'licenceOptions' => LicenceFormData::options(),
             'planDefaults' => LicenceFormData::planDefaults(),
+            // Module 1.13: the upfront payment (billing admins) and the Direct Debit deadline.
+            'billing' => OnboardingBilling::options(request()->user('admin')),
         ];
     }
 }

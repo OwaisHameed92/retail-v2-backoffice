@@ -68,6 +68,9 @@ return [
         // Days a Direct Debit customer keeps trading after the trial ends (or after the mandate is cancelled)
         // without a working mandate: then suspended (trial) or marked overdue (lost mandate).
         'mandate_grace_days' => (int) env('BILLING_MANDATE_GRACE_DAYS', 3),
+        // Module 1.13: a new Direct Debit customer sets it up in the portal within this many days of onboarding,
+        // else billing:run suspends the business (tills lock) until the mandate exists. Not when nothing recurs.
+        'mandate_deadline_days' => (int) env('BILLING_MANDATE_DEADLINE_DAYS', 3),
         // A second "your Direct Debit failed" email this many days after a failed payment still unpaid.
         'dunning_reminder_days' => (int) env('BILLING_DD_REMINDER_DAYS', 5),
         // How long the Direct Debit setup link in the email works.

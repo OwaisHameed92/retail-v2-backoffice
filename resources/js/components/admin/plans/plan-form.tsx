@@ -6,6 +6,7 @@ import { FormCard } from '@/components/shared/form-section';
 import { StickyFormBar } from '@/components/shared/sticky-form-bar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Link } from '@inertiajs/react';
 import { LoaderCircle } from 'lucide-react';
@@ -15,8 +16,9 @@ export interface PlanFormData {
     name: string;
     code: string;
     description: string;
-    price_per_till_monthly: string;
-    price_per_till_yearly: string;
+    pricing_mode: string;
+    price_monthly: string;
+    price_yearly: string;
     setup_fee: string;
     trial_days: string;
     trial_grace_days: string;
@@ -36,8 +38,9 @@ export function planFormDefaults(
         name: plan?.name ?? '',
         code: plan?.code ?? '',
         description: plan?.description ?? '',
-        price_per_till_monthly: plan?.pricePerTillMonthly ?? '',
-        price_per_till_yearly: plan?.pricePerTillYearly ?? '',
+        pricing_mode: plan?.pricingMode ?? 'perTill',
+        price_monthly: plan?.priceMonthly ?? '',
+        price_yearly: plan?.priceYearly ?? '',
         setup_fee: plan?.setupFee ?? '0.00',
         trial_days: String(plan?.trialDays ?? defaults?.trialDays ?? 7),
         trial_grace_days: String(plan?.trialGraceDays ?? defaults?.trialGraceDays ?? 3),
@@ -77,7 +80,8 @@ export function PlanForm({
     isDirty = false,
 }: PlanFormProps) {
     const [codeTouched, setCodeTouched] = useState(!autoCode);
-    const saving = yearlySaving(data.price_per_till_monthly, data.price_per_till_yearly);
+    const saving = yearlySaving(data.price_monthly, data.price_yearly);
+    const unit = data.pricing_mode === 'perBranch' ? 'branch' : 'till';
 
     const changeName = (name: string) => {
         setData('name', name);
@@ -136,27 +140,51 @@ export function PlanForm({
                     </Field>
                 </FormSection>
 
-                <FormSection title="Pricing" description="Price per till and the one-off setup fee, in pounds (GBP). One licence covers one till.">
+                <FormSection
+                    title="Pricing"
+                    description="Price per till or per branch and the one-off setup fee, in pounds (GBP). A business can have its own pricing on its Billing tab."
+                >
                     <div className="grid gap-5 sm:grid-cols-2">
                         <Field
-                            id="price_per_till_monthly"
-                            label="Monthly price per till"
-                            error={errors.price_per_till_monthly}
-                            help="Charged each month for each till."
+                            id="pricing_mode"
+                            label="Charge"
+                            error={errors.pricing_mode}
+                            help={
+                                unit === 'branch'
+                                    ? 'Each active branch pays one price, whatever its number of tills.'
+                                    : 'Each live till pays one price.'
+                            }
+                        >
+                            <Select value={data.pricing_mode} onValueChange={(value) => setData('pricing_mode', value)}>
+                                <SelectTrigger id="pricing_mode">
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="perTill">Per till</SelectItem>
+                                    <SelectItem value="perBranch">Per branch</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </Field>
+                        <div className="hidden sm:block" aria-hidden />
+                        <Field
+                            id="price_monthly"
+                            label={`Monthly price per ${unit}`}
+                            error={errors.price_monthly}
+                            help={`Charged each month for each ${unit}.`}
                         >
                             <MoneyInput
-                                id="price_per_till_monthly"
+                                id="price_monthly"
                                 required
                                 placeholder="30.00"
-                                value={data.price_per_till_monthly}
-                                invalid={!!errors.price_per_till_monthly}
-                                onChange={(e) => setData('price_per_till_monthly', e.target.value)}
+                                value={data.price_monthly}
+                                invalid={!!errors.price_monthly}
+                                onChange={(e) => setData('price_monthly', e.target.value)}
                             />
                         </Field>
                         <Field
-                            id="price_per_till_yearly"
-                            label="Yearly price per till"
-                            error={errors.price_per_till_yearly}
+                            id="price_yearly"
+                            label={`Yearly price per ${unit}`}
+                            error={errors.price_yearly}
                             help={
                                 saving && saving.percent !== null ? (
                                     Number(saving.saving) > 0 ? (
@@ -171,17 +199,17 @@ export function PlanForm({
                                         'Same as 12 monthly payments.'
                                     )
                                 ) : (
-                                    'Charged once a year for each till.'
+                                    `Charged once a year for each ${unit}.`
                                 )
                             }
                         >
                             <MoneyInput
-                                id="price_per_till_yearly"
+                                id="price_yearly"
                                 required
                                 placeholder="300.00"
-                                value={data.price_per_till_yearly}
-                                invalid={!!errors.price_per_till_yearly}
-                                onChange={(e) => setData('price_per_till_yearly', e.target.value)}
+                                value={data.price_yearly}
+                                invalid={!!errors.price_yearly}
+                                onChange={(e) => setData('price_yearly', e.target.value)}
                             />
                         </Field>
                         <Field

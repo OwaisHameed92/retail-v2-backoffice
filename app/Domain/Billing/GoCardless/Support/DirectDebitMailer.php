@@ -93,7 +93,7 @@ final class DirectDebitMailer
     public function suspendedWithoutMandate(Company $company, string $reason, CarbonImmutable $at): int
     {
         $owners = $this->licenceMailer->owners($company);
-        $fix = 'Set up your Direct Debit at '.SetupLink::for($company).' and your tills unlock straight away. Or reply to this email to pay another way.';
+        $fix = 'Set up your Direct Debit from Billing in your portal ('.config('sspos.portal_url').'/app/billing) or at '.SetupLink::for($company).' and your tills unlock straight away. Or reply to this email to pay another way.';
 
         foreach ($owners as $owner) {
             Mail::to($owner->email)->queue(new AccountSuspendedMail(new AccountSuspendedData(

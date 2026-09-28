@@ -1,4 +1,4 @@
-# GoCardless billing (module 1.12)
+# GoCardless billing (modules 1.12, 1.13)
 
 Two ways to sell: **upfront cash** (module 1.8: invoices paid by hand) or **setup fee + Direct Debit**
 (GoCardless, monthly or yearly). Decisions: `docs/DECISIONS.md` → "GoCardless billing". Code:
@@ -6,20 +6,40 @@ Two ways to sell: **upfront cash** (module 1.8: invoices paid by hand) or **setu
 
 ## Flows
 
+**Owner's flow (module 1.13)**
+
+1. **Onboard**: staff create the business (admin wizard or lead approval). It is put on Direct Debit with a deadline
+   of `BILLING_MANDATE_DEADLINE_DAYS` (3) days, and staff with `billing.manage` record the upfront payment there
+   (setup fee = plan fee or an agreed amount; cash or bank transfer; £0 allowed) — or later from the Billing tab
+   (*Record upfront payment*). It becomes a paid setup fee invoice emailed as the receipt.
+2. **Tenant sets up Direct Debit**: the welcome email links to `/app/billing`. Owners and accountants
+   (`billing.view`) see plan, pricing, upfront payment, mandate, next collection and invoices, and press *Set up
+   Direct Debit* → GoCardless hosted page → back to `/app/billing/direct-debit/return` ("set up" or "confirming";
+   the `billing_requests.fulfilled` webhook finishes it anyway). Every portal page shows "Set up your Direct Debit —
+   N days left before your tills lock" until the mandate exists. Staff can still send the setup email (2. below).
+3. **Deadline**: no mandate by the deadline → billing:run suspends the business (tills lock at the next validate);
+   `/app/billing` stays open and the mandate lifts the suspension. Not needed while nothing recurs (£0).
+4. **Every cycle**: as 4–5 below; the amount = units × unit price + VAT, units = live tills (per till) or active
+   branches with live tills (per branch), from the plan or the business's own pricing (*Change pricing* on the
+   Billing tab). Invoices have one line per till or per branch.
+
+**Details (module 1.12)**
+
 1. **Switch a business to Direct Debit**: admin → tenant → Billing → Direct Debit → *Payment settings* (mode,
    setup fee override, cash/bank or Direct Debit, instalments). The plan's default fee is on the plan form.
 2. **Mandate**: *Send setup email* → owners get a signed link (14 days) → our `/direct-debit/{company}/setup`
    opens the GoCardless hosted page → customer authorises → GoCardless sends them to `/direct-debit/{company}/done`
    and sends `billing_requests.fulfilled` + `mandates.*` webhooks.
-3. **On the mandate**: setup fee invoice(s) + one-off GoCardless payment each (instalments a month apart), and a
-   subscription = live tills × plan price for the cycle + VAT, first charge on the next period start.
+3. **On the mandate**: setup fee invoice(s) + one-off GoCardless payment each (instalments a month apart) unless it
+   was paid upfront, and a subscription = units × unit price for the cycle + VAT, first charge on the next period
+   start (none when that is £0).
 4. **Each collection**: GoCardless creates the payment → `payments.created` → we issue the invoice for the next
    unpaid period (due on the charge date, emailed). `confirmed`/`paid_out` → payment recorded (method Direct
    Debit) → invoice paid → tills renewed to the period end.
 5. **Problems**: `failed`/`charged_back` → recorded payment reversed, invoice owed again, "Direct Debit failed"
    email (+ reminder after 5 days); billing:run marks it overdue and suspends after 14 days. Mandate lost →
-   owners + staff emailed, overdue after 3 days. Trial over without a mandate → suspended after 3 days.
-6. **Changes**: tills added/removed, cycle or VAT change → subscription amount updated from the next payment
+   owners + staff emailed, overdue after 3 days. No mandate by the deadline → suspended (1.13 flow, step 3).
+6. **Changes**: tills or branches added/removed, pricing, cycle or VAT change → subscription amount updated from the next payment
    (cycle change = new subscription on the same billing day). Daily reconcile fixes anything missed.
 
 ## Environment
@@ -29,7 +49,8 @@ Two ways to sell: **upfront cash** (module 1.8: invoices paid by hand) or **setu
 | `GOCARDLESS_ACCESS_TOKEN` | Read-write access token. Empty = Direct Debit off. |
 | `GOCARDLESS_ENVIRONMENT` | `sandbox` (default) or `live`. |
 | `GOCARDLESS_WEBHOOK_SECRET` | Secret of the webhook endpoint (signature check; empty = all webhooks refused). |
-| `BILLING_MANDATE_GRACE_DAYS` | Days without a mandate after the trial / after it is lost (default 3). |
+| `BILLING_MANDATE_GRACE_DAYS` | Days after a mandate is lost before the business is overdue (default 3). |
+| `BILLING_MANDATE_DEADLINE_DAYS` | Days from onboarding to set up the first mandate before suspension (default 3). |
 | `BILLING_DD_REMINDER_DAYS` | Days after a failure before the reminder email (default 5). |
 
 Webhook URL: `{APP_URL}/webhooks/gocardless` (POST, public, HMAC-signed). Needs the queue worker and the

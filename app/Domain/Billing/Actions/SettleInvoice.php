@@ -2,11 +2,13 @@
 
 namespace App\Domain\Billing\Actions;
 
+use App\Domain\Billing\Enums\InvoiceKind;
 use App\Domain\Billing\Enums\InvoiceStatus;
 use App\Domain\Billing\Models\Invoice;
 use App\Domain\Billing\Models\InvoiceLine;
 use App\Domain\Billing\Support\BillingDates;
 use App\Domain\Billing\Support\BillingMailer;
+use App\Domain\Licensing\Actions\RenewCompanyLicences;
 use App\Domain\Licensing\Actions\RenewLicence;
 use App\Domain\Licensing\Data\RenewalTerm;
 use App\Domain\Licensing\Models\Licence;
@@ -18,8 +20,8 @@ use Carbon\CarbonImmutable;
 use Illuminate\Validation\ValidationException;
 
 /**
- * An invoice has nothing left to pay: mark it paid and renew exactly the licences on its lines to the end of the
- * period (23:59:59 London on the last day) through RenewLicence, then email the owners "licences renewed" with
+ * An invoice has nothing left to pay: mark it paid and renew exactly the licences on its lines (a branch line:
+ * that branch's live tills) to the end of the period (23:59:59 London on the last day) through RenewLicence, then email the owners "licences renewed" with
  * the amount and invoice number. A trial company becomes active. Runs inside the caller's transaction, with the
  * company's billing lock held. Idempotent: an invoice renews its licences once.
  *
@@ -54,7 +56,8 @@ class SettleInvoice
         $renewed = $this->renewLicences($invoice, $now);
 
         $company = $invoice->company;
-        if ($company !== null && $company->status === CompanyStatus::Trial) {
+        // A paid setup fee (the upfront payment, module 1.13) does not end the trial; a paid period does.
+        if ($company !== null && $company->status === CompanyStatus::Trial && $invoice->kind !== InvoiceKind::SetupFee) {
             try {
                 $this->activateCompany->handle($company);
             } catch (ValidationException) {
@@ -63,6 +66,35 @@ class SettleInvoice
         }
 
         return $renewed;
+    }
+
+    /**
+     * The licences an invoice pays for: each till line's licence, and every live till of each branch line
+     * (per-branch pricing, module 1.13) as it is now. Keyed by licence id; null = the licence is gone.
+     *
+     * @return array<string, Licence|null>
+     */
+    private function lineLicences(Invoice $invoice): array
+    {
+        $licences = [];
+        $company = $invoice->company;
+
+        foreach ($invoice->lines()->where(fn ($q) => $q->whereNotNull('licence_id')->orWhereNotNull('branch_id'))->get() as $line) {
+            /** @var InvoiceLine $line */
+            if ($line->licence_id !== null) {
+                $licences[$line->licence_id] = Licence::withoutCompanyScope()->find($line->licence_id);
+
+                continue;
+            }
+
+            if ($company !== null) {
+                foreach (RenewCompanyLicences::renewable($company)->where('branch_id', $line->branch_id)->get() as $licence) {
+                    $licences[$licence->id] = $licence;
+                }
+            }
+        }
+
+        return $licences;
     }
 
     /**
@@ -81,12 +113,9 @@ class SettleInvoice
         if ($expiresAt->greaterThan($now)) {
             $term = RenewalTerm::until($expiresAt);
 
-            foreach ($invoice->lines()->whereNotNull('licence_id')->get() as $line) {
-                /** @var InvoiceLine $line */
-                $licence = Licence::withoutCompanyScope()->find($line->licence_id);
-
+            foreach ($this->lineLicences($invoice) as $id => $licence) {
                 if ($licence === null || $licence->isRevoked() || $licence->company_id !== $invoice->company_id) {
-                    $skipped[] = $line->licence_id;
+                    $skipped[] = $id;
 
                     continue;
                 }

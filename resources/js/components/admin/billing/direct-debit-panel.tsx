@@ -84,6 +84,20 @@ export function DirectDebitPanel({ company, directDebit, canManage }: { company:
                         </AlertDescription>
                     </Alert>
                 )}
+                {isDirectDebit && directDebit.deadline && (
+                    <Alert variant={directDebit.deadline.passed ? 'destructive' : 'default'}>
+                        <TriangleAlert className="size-4" />
+                        <AlertTitle>
+                            {directDebit.deadline.passed
+                                ? 'No Direct Debit yet: suspended by the daily billing run'
+                                : `Waiting for the owner to set up Direct Debit (${directDebit.deadline.daysLeft} ${directDebit.deadline.daysLeft === 1 ? 'day' : 'days'} left)`}
+                        </AlertTitle>
+                        <AlertDescription>
+                            The owner sets it up from Billing in their portal, or from the setup email. Deadline{' '}
+                            {formatDate(directDebit.deadline.deadline)}.
+                        </AlertDescription>
+                    </Alert>
+                )}
                 {isDirectDebit && mandate.lostAt && !mandate.usable && (
                     <Alert variant="destructive">
                         <XCircle className="size-4" />
@@ -138,8 +152,7 @@ export function DirectDebitPanel({ company, directDebit, canManage }: { company:
                             </span>
                             {isDirectDebit && mandate.usable && !subscription.inStep && (
                                 <span className="text-warning-foreground text-xs font-medium">
-                                    Should be {subscription.expected} for {subscription.expectedTills}{' '}
-                                    {subscription.expectedTills === 1 ? 'till' : 'tills'}
+                                    Should be {subscription.expected} for {subscription.expectedUnits}
                                 </span>
                             )}
                         </Tile>
@@ -203,7 +216,7 @@ export function DirectDebitPanel({ company, directDebit, canManage }: { company:
                         open={action === 'sync'}
                         onOpenChange={close}
                         title="Update the subscription?"
-                        description={`It will collect ${subscription.expected} ${directDebit.subscription.cycle === 'yearly' ? 'a year' : 'a month'} for ${subscription.expectedTills} live ${subscription.expectedTills === 1 ? 'till' : 'tills'}, from the next payment.`}
+                        description={`It will collect ${subscription.expected} ${directDebit.subscription.cycle === 'yearly' ? 'a year' : 'a month'} for ${subscription.expectedUnits}, from the next payment.`}
                         confirmLabel="Update"
                         onConfirm={() => post(url('sync'))}
                     />

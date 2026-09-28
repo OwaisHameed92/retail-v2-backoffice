@@ -8,6 +8,7 @@ use App\Domain\Billing\GoCardless\Data\DirectDebitSettingsInput;
 use App\Domain\Billing\GoCardless\GoCardlessException;
 use App\Domain\Billing\Models\BillingAccount;
 use App\Domain\Billing\Support\BillingAccounts;
+use App\Domain\Billing\Support\MandateDeadline;
 use App\Domain\Shared\Actions\RecordAudit;
 use App\Domain\Shared\Support\Money;
 use App\Domain\Tenancy\Models\Company;
@@ -48,6 +49,11 @@ class UpdateDirectDebitSettings
                 'setup_fee_method' => $input->setupFeeMethod,
                 'setup_fee_instalments' => max(1, min((int) config('billing.direct_debit.max_instalments', 12), $input->instalments)),
             ]);
+
+            // Module 1.13: switching to Direct Debit starts the setup deadline (unless it already runs or is met).
+            if ($input->mode === BillingMode::DirectDebit && $account->mandate_deadline_at === null && ! $account->hasUsableMandate()) {
+                $account->mandate_deadline_at = MandateDeadline::fromNow();
+            }
 
             [$before, $after] = AuditChanges::of($account);
 

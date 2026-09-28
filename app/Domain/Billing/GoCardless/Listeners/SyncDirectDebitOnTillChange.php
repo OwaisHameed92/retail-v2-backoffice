@@ -4,6 +4,9 @@ namespace App\Domain\Billing\GoCardless\Listeners;
 
 use App\Domain\Billing\GoCardless\Actions\SyncSubscription;
 use App\Domain\Billing\GoCardless\GoCardlessException;
+use App\Domain\Tenancy\Events\BranchAdded;
+use App\Domain\Tenancy\Events\BranchDeactivated;
+use App\Domain\Tenancy\Events\BranchReactivated;
 use App\Domain\Tenancy\Events\RegisterAdded;
 use App\Domain\Tenancy\Events\RegisterDeactivated;
 use App\Domain\Tenancy\Events\RegisterReactivated;
@@ -12,8 +15,8 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Support\Facades\Log;
 
 /**
- * A till was added, deactivated or reactivated: the Direct Debit subscription follows the live tills from its
- * next payment (SyncSubscription, audited). Queued after the till's transaction commits, so GoCardless is never
+ * A till or a branch was added, deactivated or reactivated: the Direct Debit subscription follows the live tills
+ * (per till) or active branches (per branch, module 1.13) from its next payment (SyncSubscription, audited). Queued after the till's transaction commits, so GoCardless is never
  * called inside it. Other changes (plan price, a revoked licence) are caught by the daily reconcile.
  */
 final class SyncDirectDebitOnTillChange implements ShouldQueue
@@ -22,16 +25,19 @@ final class SyncDirectDebitOnTillChange implements ShouldQueue
 
     public function __construct(private readonly SyncSubscription $syncSubscription) {}
 
-    public function handle(RegisterAdded|RegisterDeactivated|RegisterReactivated $event): void
+    public function handle(RegisterAdded|RegisterDeactivated|RegisterReactivated|BranchAdded|BranchDeactivated|BranchReactivated $event): void
     {
-        $company = Company::query()->find($event->register->company_id);
+        $companyId = $event instanceof BranchAdded || $event instanceof BranchDeactivated || $event instanceof BranchReactivated
+            ? $event->branch->company_id
+            : $event->register->company_id;
+        $company = Company::query()->find($companyId);
 
         if ($company === null) {
             return;
         }
 
         try {
-            $this->syncSubscription->handle($company, 'tills');
+            $this->syncSubscription->handle($company, str_starts_with(class_basename($event), 'Branch') ? 'branches' : 'tills');
         } catch (GoCardlessException $exception) {
             Log::warning('Direct Debit amount not updated after a till change', ['company_id' => $company->id, 'error' => $exception->getMessage()]);
         }

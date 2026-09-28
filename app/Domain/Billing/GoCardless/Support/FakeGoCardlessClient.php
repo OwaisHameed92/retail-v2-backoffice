@@ -24,6 +24,9 @@ final class FakeGoCardlessClient implements GoCardlessClient
     /** @var array<string, GcBillingRequest> */
     public array $billingRequests = [];
 
+    /** @var array<string, string> Where each billing request sends the customer back (module 1.13 tests). */
+    public array $redirects = [];
+
     /** @var array<string, GcMandate> */
     public array $mandates = [];
 
@@ -69,6 +72,7 @@ final class FakeGoCardlessClient implements GoCardlessClient
         $this->called(__FUNCTION__);
         $id = $this->id('BRQ');
         $this->billingRequests[$id] = new GcBillingRequest($id, 'pending', metadata: $metadata);
+        $this->redirects[$id] = $redirectUri;
 
         return new GcSetupFlow($id, 'https://pay-sandbox.gocardless.test/flow/'.$id, CarbonImmutable::now()->addDays(7));
     }

@@ -15,7 +15,7 @@ use Carbon\CarbonImmutable;
 final readonly class InvoicePlan
 {
     /**
-     * @param  list<array{licence_id: string, register_id: string, plan_id: string, description: string, quantity: string, unit_price: string, net: string, vat: string, gross: string, period_start: string, period_end: string, position: int}>  $lines
+     * @param  list<array{licence_id: string|null, register_id: string|null, branch_id: string|null, plan_id: string|null, description: string, quantity: string, unit_price: string, net: string, vat: string, gross: string, period_start: string, period_end: string, position: int}>  $lines
      * @param  array{subtotal: string, vat_total: string, total: string}  $totals
      */
     public function __construct(

@@ -17,6 +17,7 @@ use App\Http\Controllers\Admin\Billing\InvoiceActionController;
 use App\Http\Controllers\Admin\Billing\InvoiceController;
 use App\Http\Controllers\Admin\Billing\PaymentController;
 use App\Http\Controllers\Admin\Billing\TenantBillingController;
+use App\Http\Controllers\Admin\Billing\TenantPricingController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\EmailLogController;
 use App\Http\Controllers\Admin\EmailTemplateController;
@@ -199,6 +200,9 @@ Route::middleware(['auth:admin', AdminIsActive::class, BlockAdminWhileImpersonat
         Route::post('tenants/{company}/payments', [TenantBillingController::class, 'recordPayment'])->name('tenants.payments.store');
         Route::put('tenants/{company}/settings', [TenantBillingController::class, 'settings'])->name('tenants.settings');
         Route::post('tenants/{company}/apply-credit', [TenantBillingController::class, 'applyCredit'])->name('tenants.apply-credit');
+        // Module 1.13: the company's own pricing, and the upfront payment when it was not taken at onboarding.
+        Route::put('tenants/{company}/pricing', [TenantPricingController::class, 'pricing'])->name('tenants.pricing');
+        Route::post('tenants/{company}/upfront-payment', [TenantPricingController::class, 'upfront'])->name('tenants.upfront');
 
         // GoCardless Direct Debit (module 1.12).
         Route::prefix('tenants/{company}/direct-debit')->name('tenants.direct-debit.')->group(function () {

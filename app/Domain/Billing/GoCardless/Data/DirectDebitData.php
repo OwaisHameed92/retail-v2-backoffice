@@ -10,6 +10,10 @@ use App\Domain\Billing\GoCardless\Support\SetupFee;
 use App\Domain\Billing\GoCardless\Support\SubscriptionAmount;
 use App\Domain\Billing\Support\BillingAccounts;
 use App\Domain\Billing\Support\BillingFormat;
+use App\Domain\Billing\Support\CompanyPricing;
+use App\Domain\Billing\Support\MandateDeadline;
+use App\Domain\Billing\Support\Vat;
+use App\Domain\Plans\Enums\PricingMode;
 use App\Domain\Shared\Support\Money;
 use App\Domain\Tenancy\Models\Company;
 
@@ -31,11 +35,45 @@ final class DirectDebitData
         $setup = SetupFee::totals($company, $account);
         $expected = SubscriptionAmount::for($company, $account);
         $query = GoCardlessPayment::withoutCompanyScope()->with('invoice')->where('company_id', $company->id);
+        $pricing = CompanyPricing::for($company, $account);
 
         return [
             'enabled' => $client->enabled(),
             'environment' => $client->environment(),
             'mode' => $account->billing_mode->value,
+            // Module 1.13: pricing (plan and override), what was paid upfront, and the setup deadline.
+            'pricing' => [
+                'mode' => $expected['mode']->value,
+                'modeLabel' => $expected['mode']->label(),
+                'unit' => $expected['mode']->unit(),
+                'unitPrice' => $expected['unitPrice'] !== null ? BillingFormat::money($expected['unitPrice']) : null,
+                'unitsLabel' => $expected['mode']->units($expected['units']),
+                'plan' => $pricing->plan ? [
+                    'name' => $pricing->plan->name,
+                    'mode' => $pricing->plan->pricing_mode->value,
+                    'modeLabel' => $pricing->plan->pricing_mode->label(),
+                    'monthly' => $pricing->plan->price_monthly,
+                    'yearly' => $pricing->plan->price_yearly,
+                ] : null,
+                'override' => [
+                    'mode' => $account->pricing_mode_override?->value,
+                    'monthly' => $account->price_monthly_override,
+                    'yearly' => $account->price_yearly_override,
+                ],
+                'overridden' => $pricing->overridden,
+                'recurring' => BillingFormat::money($expected['gross']),
+                'recurringIsZero' => Money::isZero($expected['gross']),
+                'per' => $expected['cycle']->per(),
+                'options' => PricingMode::options(),
+            ],
+            'upfront' => [
+                'recorded' => $account->upfront_recorded_at !== null,
+                'amount' => $account->upfront_amount !== null ? BillingFormat::money($account->upfront_amount) : null,
+                'method' => $account->upfront_method?->label(),
+                'recordedAt' => $account->upfront_recorded_at?->toIso8601String(),
+                'canRecord' => $account->upfront_recorded_at === null && $account->setup_fee_invoiced_at === null,
+            ],
+            'deadline' => MandateDeadline::state($company, $account),
             'setupFee' => [
                 'plan' => SetupFee::planFee($company),
                 'override' => $account->setup_fee_override,
@@ -45,6 +83,7 @@ final class DirectDebitData
                 'method' => $account->setup_fee_method->value,
                 'instalments' => $account->setup_fee_instalments,
                 'invoicedAt' => $account->setup_fee_invoiced_at?->toIso8601String(),
+                'vatRate' => Money::isZero(Vat::rateFor($account)) ? null : Vat::rateFor($account),
             ],
             'mandate' => [
                 'id' => $account->gc_mandate_id,
@@ -65,6 +104,7 @@ final class DirectDebitData
                 'nextChargeDate' => $account->gc_next_charge_date?->format('Y-m-d'),
                 'expected' => BillingFormat::money($expected['gross']),
                 'expectedTills' => $expected['tills'],
+                'expectedUnits' => $expected['mode']->units($expected['units']),
                 'inStep' => $account->gc_subscription_amount !== null && Money::equals($account->gc_subscription_amount, $expected['gross']) && $account->gc_subscription_cycle === $account->cycle,
                 'reconciledAt' => $account->gc_reconciled_at?->toIso8601String(),
             ],

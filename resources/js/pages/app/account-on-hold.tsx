@@ -1,15 +1,18 @@
 import { Button } from '@/components/ui/button';
 import AuthLayout from '@/layouts/auth-layout';
 import { Head, Link, router } from '@inertiajs/react';
-import { LogOut, PauseCircle } from 'lucide-react';
+import { Landmark, LogOut, PauseCircle } from 'lucide-react';
 
 interface AccountOnHoldProps {
     companyName: string;
     otherCompanies: { id: string; name: string }[];
+    /** Module 1.13: set when the hold is lifted by setting up Direct Debit (users with billing.view). */
+    directDebitUrl?: string | null;
+    billingUrl?: string | null;
 }
 
 /** Shown instead of the portal while the user's business is suspended. No business data on this page. */
-export default function AccountOnHold({ companyName, otherCompanies }: AccountOnHoldProps) {
+export default function AccountOnHold({ companyName, otherCompanies, directDebitUrl = null, billingUrl = null }: AccountOnHoldProps) {
     return (
         <AuthLayout
             title="Your account is on hold"
@@ -25,6 +28,24 @@ export default function AccountOnHold({ companyName, otherCompanies }: AccountOn
                 <p className="text-muted-foreground text-center text-sm">
                     Support can help with billing or anything else. Your data is safe and your access returns as soon as the hold is lifted.
                 </p>
+
+                {directDebitUrl ? (
+                    <div className="grid w-full gap-2 text-center">
+                        <p className="text-sm">Set up your Direct Debit and your tills unlock straight away.</p>
+                        <Button asChild>
+                            <Link href={directDebitUrl}>
+                                <Landmark />
+                                Set up Direct Debit
+                            </Link>
+                        </Button>
+                    </div>
+                ) : (
+                    billingUrl && (
+                        <Button variant="outline" asChild className="w-full">
+                            <Link href={billingUrl}>View billing</Link>
+                        </Button>
+                    )
+                )}
 
                 {otherCompanies.length > 0 && (
                     <div className="grid w-full gap-2">

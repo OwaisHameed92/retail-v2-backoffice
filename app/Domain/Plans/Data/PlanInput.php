@@ -3,6 +3,7 @@
 namespace App\Domain\Plans\Data;
 
 use App\Domain\Plans\Enums\Feature;
+use App\Domain\Plans\Enums\PricingMode;
 use App\Domain\Plans\Models\Plan;
 use App\Domain\Shared\Support\Money;
 
@@ -14,9 +15,9 @@ final readonly class PlanInput
     /** @var list<Feature> */
     public array $features;
 
-    public string $pricePerTillMonthly;
+    public string $priceMonthly;
 
-    public string $pricePerTillYearly;
+    public string $priceYearly;
 
     public string $setupFee;
 
@@ -27,8 +28,8 @@ final readonly class PlanInput
         public string $name,
         public string $code,
         public ?string $description,
-        string|int $pricePerTillMonthly,
-        string|int $pricePerTillYearly,
+        string|int $priceMonthly,
+        string|int $priceYearly,
         iterable $features = [],
         public int $trialDays = Plan::DEFAULT_TRIAL_DAYS,
         public int $trialGraceDays = Plan::DEFAULT_TRIAL_GRACE_DAYS,
@@ -37,9 +38,11 @@ final readonly class PlanInput
         public bool $isPublic = false,
         public int $sortOrder = 0,
         string|int $setupFee = '0.00',
+        /** Module 1.13: the prices are per till or per branch. */
+        public PricingMode $pricingMode = PricingMode::PerTill,
     ) {
-        $this->pricePerTillMonthly = Money::normalise($pricePerTillMonthly);
-        $this->pricePerTillYearly = Money::normalise($pricePerTillYearly);
+        $this->priceMonthly = Money::normalise($priceMonthly);
+        $this->priceYearly = Money::normalise($priceYearly);
         $this->setupFee = Money::normalise($setupFee);
         $this->features = Feature::normalise($features);
     }
@@ -55,8 +58,9 @@ final readonly class PlanInput
             'name' => trim($this->name),
             'code' => strtolower(trim($this->code)),
             'description' => $description === '' ? null : $description,
-            'price_per_till_monthly' => $this->pricePerTillMonthly,
-            'price_per_till_yearly' => $this->pricePerTillYearly,
+            'pricing_mode' => $this->pricingMode,
+            'price_monthly' => $this->priceMonthly,
+            'price_yearly' => $this->priceYearly,
             'setup_fee' => $this->setupFee,
             'currency' => Plan::CURRENCY,
             'trial_days' => $this->trialDays,

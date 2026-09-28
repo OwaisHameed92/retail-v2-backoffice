@@ -42,6 +42,8 @@ final class WelcomeTenantMail extends BrandedMailable
                 new TillKeyData('Station Road', 'Till 1', 'SSP-2NRX-T7KP-5G0A-DYF6'),
             ],
             trialDays: 7,
+            billingUrl: config('sspos.portal_url').'/app/billing',
+            directDebitDays: 3,
         ));
     }
 

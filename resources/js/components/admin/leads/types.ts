@@ -1,3 +1,4 @@
+import { type OnboardingBillingOptions } from '@/components/admin/billing/upfront-payment-fields';
 import { type LicenceOptions, type PlanDefaults, type PlanOption } from '@/components/admin/licences/types';
 import { type Nation, type Option } from '@/components/admin/tenants/types';
 import { type Paginated } from '@/components/shared/data-table';
@@ -149,6 +150,8 @@ export interface ApprovalData {
     /** Module 1.11: the licence form and each plan's defaults. */
     licenceOptions: LicenceOptions;
     planDefaults: PlanDefaults;
+    /** Module 1.13: the upfront payment and the Direct Debit deadline. */
+    billing: OnboardingBillingOptions;
 }
 
 export interface LeadShowProps {

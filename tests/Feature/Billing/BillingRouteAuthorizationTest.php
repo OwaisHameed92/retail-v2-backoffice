@@ -58,6 +58,9 @@ $billingRoutes = [
     ['admin.billing.tenants.direct-debit.setup-fee', 'post', ['company' => 'company'], 'manage', []],
     ['admin.billing.tenants.direct-debit.sync', 'post', ['company' => 'company'], 'manage', []],
     ['admin.billing.tenants.direct-debit.subscription', 'post', ['company' => 'company', 'action' => 'pause'], 'manage', []],
+    // Module 1.13: pricing override, and the upfront payment (£0, on a second business with nothing invoiced).
+    ['admin.billing.tenants.pricing', 'put', ['company' => 'company'], 'manage', ['pricing_mode' => 'perBranch', 'price_monthly' => '40.00', 'price_yearly' => '']],
+    ['admin.billing.tenants.upfront', 'post', ['company' => 'fresh'], 'manage', ['upfront_amount' => '0', 'upfront_method' => 'cash']],
 ];
 
 /**
@@ -92,6 +95,7 @@ $billingFixture = function (object $test): array {
         'issued1' => $issued[1], 'issued2' => $issued[2], 'issued3' => $issued[3],
         'payment' => $payment->id,
         'pause' => 'pause',
+        'fresh' => $test->payingTenant('Fresh '.uniqid(), 1, 'FRS')->id,
     ];
 };
 
@@ -111,7 +115,7 @@ test('the table covers every billing route', function () use ($billingRoutes) {
         ->map(fn (RoutingRoute $route) => $route->getName())
         ->sort()->values()->all();
 
-    expect($registered)->toHaveCount(23)
+    expect($registered)->toHaveCount(25)
         ->and(collect($billingRoutes)->pluck(0)->sort()->values()->all())->toBe($registered);
 });
 
@@ -190,7 +194,9 @@ test('accounts and owner admins can use every billing route', function (AdminRol
         ->and($this->billingAccountOf($company)->billing_mode->value)->toBe('directDebit')
         ->and($this->billingAccountOf($company)->gc_setup_sent_at)->not->toBeNull()
         ->and($this->billingAccountOf($company)->gc_subscription_status?->value)->toBe('paused')
-        ->and(Invoice::withoutCompanyScope()->where('kind', 'setupFee')->sole()->total)->toBe('120.00');
+        ->and(Invoice::withoutCompanyScope()->where('kind', 'setupFee')->sole()->total)->toBe('120.00')
+        ->and($this->billingAccountOf($company)->pricing_mode_override?->value)->toBe('perBranch')
+        ->and($this->billingAccountOf(Company::query()->findOrFail($fixture['fresh']))->upfront_amount)->toBe('0.00');
 })->with([AdminRole::Accounts, AdminRole::Owner]);
 
 test('the JSON helpers answer with the preview and the open invoices', function () {

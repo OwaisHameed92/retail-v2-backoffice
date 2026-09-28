@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Admin;
 
+use App\Domain\Billing\Data\UpfrontPayment;
 use App\Domain\Licensing\Data\BranchLicenceSettings;
 use App\Domain\Licensing\Signing\Sspos\TokenKind;
 use App\Domain\Tenancy\Data\NewTenant;
@@ -19,7 +20,7 @@ class StoreTenantRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
-        $this->merge(TenantRules::clean($this, ['', 'branch_']));
+        $this->merge(TenantRules::clean($this, ['', 'branch_']) + UpfrontPaymentRules::clean($this));
     }
 
     /**
@@ -41,7 +42,7 @@ class StoreTenantRequest extends FormRequest
             // Module 1.11: the licence form is optional here (blank = plan trial and features, one branch).
             'kind' => ['nullable', Rule::enum(TokenKind::class)],
             'max_registers' => ['nullable', 'integer', 'min:1', 'max:'.BranchLicenceSettings::MAX_REGISTERS, 'gte:tills'],
-        ]) + LicenceFormRules::limits();
+        ]) + LicenceFormRules::limits() + UpfrontPaymentRules::rules();
     }
 
     /**
@@ -59,7 +60,7 @@ class StoreTenantRequest extends FormRequest
             'owner_email.required' => 'Enter the owner’s email. We send them a link to set their password.',
             'plan_id.exists' => 'Choose an active plan.',
             'max_registers.gte' => 'Allow at least as many tills as you add now.',
-        ] + LicenceFormRules::messages();
+        ] + LicenceFormRules::messages() + UpfrontPaymentRules::messages();
     }
 
     /**
@@ -73,6 +74,12 @@ class StoreTenantRequest extends FormRequest
             'branch_nation' => 'nation',
             'owner_email' => 'owner email',
         ];
+    }
+
+    /** Module 1.13: the upfront payment staff took (billing admins only), or null. */
+    public function upfront(): ?UpfrontPayment
+    {
+        return UpfrontPaymentRules::payment($this);
     }
 
     public function toNewTenant(): NewTenant

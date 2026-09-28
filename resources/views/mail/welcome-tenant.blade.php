@@ -32,6 +32,20 @@ Sign in to your portal
 </x-mail::button>
 
 If you have not set your password yet, look for our "Set your password" email, or use "Forgot password" on the sign-in page.
+@if ($data->billingUrl)
+
+## Set up your Direct Debit
+
+Your subscription is collected by Direct Debit through GoCardless. Once you have signed in, open **Billing** and choose **Set up Direct Debit**. It takes about two minutes.
+@if ($data->directDebitDays)
+
+Please do this within {{ $data->directDebitDays }} {{ $data->directDebitDays === 1 ? 'day' : 'days' }}, or your tills lock until it is set up.
+@endif
+
+<x-mail::button :url="$data->billingUrl">
+Set up Direct Debit
+</x-mail::button>
+@endif
 
 Thanks for choosing Switch & Save. We are here if you need a hand getting set up.
 

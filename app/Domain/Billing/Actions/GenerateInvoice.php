@@ -11,6 +11,7 @@ use App\Domain\Billing\Support\Actor;
 use App\Domain\Billing\Support\BillingAccounts;
 use App\Domain\Billing\Support\BillingDates;
 use App\Domain\Billing\Support\BillingPeriod;
+use App\Domain\Billing\Support\CompanyPricing;
 use App\Domain\Billing\Support\InvoiceLineBuilder;
 use App\Domain\Billing\Support\InvoiceMaths;
 use App\Domain\Billing\Support\Vat;
@@ -22,8 +23,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 /**
- * Creates a company's invoice for one period: one line per live licence of an active till at its plan's price
- * for the billing cycle (see InvoiceLineBuilder), VAT per the settings. Leaves a draft, or issues it straight
+ * Creates a company's invoice for one period: one line per live till or per active branch (the company's pricing
+ * mode) at the unit price for the billing cycle (see InvoiceLineBuilder, CompanyPricing), VAT per the settings. Leaves a draft, or issues it straight
  * away. Refuses a period another invoice already covers unless asked to allow it.
  */
 class GenerateInvoice
@@ -109,7 +110,7 @@ class GenerateInvoice
         $end = $cycle->periodEnd($start);
         $vatRate = Vat::rateFor($account);
 
-        $lines = InvoiceLineBuilder::build($licences, $start, $end, $cycle, $vatRate, $prorate);
+        $lines = InvoiceLineBuilder::build($licences, $start, $end, $cycle, $vatRate, $prorate, CompanyPricing::for($company, $account, $licences));
 
         $overlap = Invoice::withoutCompanyScope()->where('company_id', $company->id)->notVoid()->forPeriods()
             ->where('period_start', '<=', $end->format('Y-m-d'))

@@ -26,8 +26,8 @@ it('creates a plan with normalised values', function () {
 
     expect($plan->name)->toBe('Standard')
         ->and($plan->code)->toBe('standard')
-        ->and($plan->price_per_till_monthly)->toBe('30.00')
-        ->and($plan->price_per_till_yearly)->toBe('300.50')
+        ->and($plan->price_monthly)->toBe('30.00')
+        ->and($plan->price_yearly)->toBe('300.50')
         ->and($plan->currency)->toBe('GBP')
         ->and($plan->trial_days)->toBe(7)
         ->and($plan->trial_grace_days)->toBe(3)
@@ -51,7 +51,7 @@ it('records plan.created with the admin as actor', function () {
         ->and($log->actor_id)->toBe($admin->id)
         ->and($log->company_id)->toBeNull()
         ->and($log->before)->toBeNull()
-        ->and($log->after['price_per_till_monthly'])->toBe('30.00')
+        ->and($log->after['price_monthly'])->toBe('30.00')
         ->and($log->after['features'])->toBe(['stockControl']);
 });
 
