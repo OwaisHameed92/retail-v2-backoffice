@@ -78,18 +78,20 @@ test('the token verifies like the till and carries the shop, install code and ma
             'expiresAt' => '2026-10-15T09:00:00Z',
             'onlineCheck' => ['required' => true, 'intervalHours' => 24, 'graceDays' => 14],
         ])
-        ->and($token->payload['company'])->toMatchArray(['address' => $branch->address ?? '14 Kirkgate', 'email' => 'shop@khan.test', 'ownerName' => 'Imran Khan'])
+        // Module 1.11: the owner's name defaults from the owner login given when the tenant was created.
+        ->and($token->payload['company'])->toMatchArray(['address' => $branch->address ?? '14 Kirkgate', 'email' => 'shop@khan.test', 'ownerName' => 'Aisha Khan'])
         ->and($token->payload['features'] ?? [])->each->toMatch('/^[a-z0-9]+(_[a-z0-9]+)*$/');
 });
 
-test('features map to the till names from config, multi_branch adds limits.branches', function () {
-    [, $licence] = $this->keyedTenant();
-    $licence->forceFill(['features' => ['stockControl', 'multiBranch']])->save();
+test('features map to the till names from config, the company\'s multi-branch adds multi_branch and limits.branches', function () {
+    [$company, $licence] = $this->keyedTenant();
+    $licence->forceFill(['features' => ['stockControl', 'cashOffice']])->save();
+    $company->forceFill(['multi_branch' => true, 'max_branches' => 3])->save();
     config(['licence.till_features.stockControl' => null]);
 
     $this->activateTill()->assertOk()
-        ->assertJsonPath('licence.features', ['multi_branch'])
-        ->assertJsonPath('licence.limits', ['branches' => 1]);
+        ->assertJsonPath('licence.features', ['cash_office', 'multi_branch'])
+        ->assertJsonPath('licence.limits', ['branches' => 3]);
 });
 
 test('the same install activating again gets 200 and stays bound (retry or reinstall)', function () {
@@ -116,12 +118,12 @@ test('another install gets 409 key.already_used with the bound PC and a sameKeyT
         ->and(LicenceAlert::withoutCompanyScope()->sole()->type)->toBe(LicenceAlertType::SameKeyTwoDevices);
 });
 
-test('a key past the branch till count gets 403 licence.seat_limit', function () {
+test('a key past the branch\'s tills allowed gets 403 licence.seat_limit', function () {
     [$company, $licence] = $this->keyedTenant();
     $branch = $this->branchOf($company);
     $second = $this->licenceOf($this->registerOf($branch, '02'));
     $second->forceFill(['device_id' => self::OTHER_INSTALL, 'bound_at' => now(), 'activated_at' => now(), 'status' => LicenceStatus::Trial, 'trial_ends_at' => now()->addDays(7)])->save();
-    $this->registerOf($branch, '02')->forceFill(['is_active' => false])->saveQuietly();
+    $this->allowTills($branch, 1);
 
     $this->activateTill()->assertForbidden()
         ->assertJsonPath('code', 'licence.seat_limit')

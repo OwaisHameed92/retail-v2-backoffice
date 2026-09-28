@@ -1,6 +1,7 @@
+import { BranchLicenceStrip } from '@/components/admin/licences/branch-licence-strip';
 import { requestKeys } from '@/components/admin/licences/issue-keys';
 import { LicenceStatusBadge } from '@/components/admin/licences/licence-status-badge';
-import { type TillLicence } from '@/components/admin/licences/types';
+import { type LicenceOptions, type TillLicence } from '@/components/admin/licences/types';
 import { RegisterDialog } from '@/components/admin/tenants/register-dialog';
 import { type TenantBranch, type TenantRegister } from '@/components/admin/tenants/types';
 import { ConfirmDialog } from '@/components/shared/confirm-dialog';
@@ -37,6 +38,8 @@ interface BranchCardProps {
     /** Live licence of each till, by register id (module 1.3). */
     tillLicences: Record<string, TillLicence>;
     canManageLicences: boolean;
+    /** Module 1.11: the licence form's options. */
+    licenceOptions: LicenceOptions;
     onEdit: (branch: TenantBranch) => void;
 }
 
@@ -70,10 +73,13 @@ function postTo(url: string) {
 }
 
 /** One branch with its tills: details, till table, and the branch/till actions. */
-export function BranchCard({ tenantId, branch, canManage, tillLicences, canManageLicences, onEdit }: BranchCardProps) {
+export function BranchCard({ tenantId, branch, canManage, tillLicences, canManageLicences, licenceOptions, onEdit }: BranchCardProps) {
     const [tillDialog, setTillDialog] = useState<{ open: boolean; register: TenantRegister | null }>({ open: false, register: null });
     const [confirm, setConfirm] = useState<Confirm>(null);
     const activeTills = branch.registers.filter((register) => register.isActive).length;
+    // Module 1.11: no till past the tills allowed ("3 of 3 in use").
+    const tillsFull = branch.licence.tillsInUse >= branch.licence.maxRegisters;
+    const fullHint = `${branch.licence.tillsInUse} of ${branch.licence.maxRegisters} tills allowed in use. Raise the tills allowed in the licence settings first.`;
 
     return (
         <Card className={cn('overflow-clip', !branch.isActive && 'bg-subtle')}>
@@ -113,7 +119,13 @@ export function BranchCard({ tenantId, branch, canManage, tillLicences, canManag
                 {canManage && (
                     <div className="flex shrink-0 items-center gap-2">
                         {branch.isActive && (
-                            <Button variant="outline" size="sm" onClick={() => setTillDialog({ open: true, register: null })}>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                disabled={tillsFull}
+                                title={tillsFull ? fullHint : undefined}
+                                onClick={() => setTillDialog({ open: true, register: null })}
+                            >
                                 <Plus />
                                 Add till
                             </Button>
@@ -149,6 +161,8 @@ export function BranchCard({ tenantId, branch, canManage, tillLicences, canManag
                     </div>
                 )}
             </div>
+
+            <BranchLicenceStrip tenantId={tenantId} branch={branch} options={licenceOptions} canManage={canManageLicences} />
 
             {branch.registers.length === 0 ? (
                 <div className="border-t">
@@ -244,7 +258,10 @@ export function BranchCard({ tenantId, branch, canManage, tillLicences, canManag
                                                         canManageLicences &&
                                                         register.isActive &&
                                                         branch.isActive && (
-                                                            <DropdownMenuItem onSelect={() => setConfirm({ kind: 'register-licence', register })}>
+                                                            <DropdownMenuItem
+                                                                disabled={branch.licence.keysInUse >= branch.licence.maxRegisters}
+                                                                onSelect={() => setConfirm({ kind: 'register-licence', register })}
+                                                            >
                                                                 <KeyRound />
                                                                 Issue licence
                                                             </DropdownMenuItem>
@@ -261,7 +278,7 @@ export function BranchCard({ tenantId, branch, canManage, tillLicences, canManag
                                                         </DropdownMenuItem>
                                                     ) : (
                                                         <DropdownMenuItem
-                                                            disabled={!branch.isActive}
+                                                            disabled={!branch.isActive || tillsFull}
                                                             onSelect={() =>
                                                                 postTo(route('admin.tenants.registers.reactivate', [tenantId, register.id]))
                                                             }

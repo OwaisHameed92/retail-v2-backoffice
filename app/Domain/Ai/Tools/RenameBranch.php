@@ -97,6 +97,9 @@ final class RenameBranch implements AiWriteTool
             licensedHoursJson: $branch->licensed_hours_json,
             isDrsReturnPoint: $branch->is_drs_return_point,
             areaM2: $branch->area_m2,
+            town: $branch->town,
+            postcode: $branch->postcode,
+            receiptFooter: $branch->receipt_footer,
         ));
 
         return ['branchId' => $branch->id, 'code' => $branch->code, 'name' => $branch->name];

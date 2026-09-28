@@ -108,6 +108,10 @@ return [
         'aiInsights' => 'ai_insights',
     ],
 
+    // Module 1.11: an unused key must be activated within this many days of being issued (or reissued), else
+    // licence/activate answers 410 key.expired. Staff can extend it or reissue the key.
+    'activate_by_days' => (int) env('LICENCE_ACTIVATE_BY_DAYS', 30),
+
     // Module 1.3: plan code used for new tills when their company has no plan of its own. If that plan is
     // missing, archived or inactive, the first active plan (by sort order) is used.
     'default_plan' => env('LICENCE_DEFAULT_PLAN', 'standard'),

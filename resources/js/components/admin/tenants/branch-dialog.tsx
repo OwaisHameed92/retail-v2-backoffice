@@ -34,6 +34,9 @@ function initial(branch?: TenantBranch | null): BranchForm {
         area_m2: branch?.areaM2 ?? '',
         is_drs_return_point: branch?.isDrsReturnPoint ?? false,
         licensed_hours_json: branch?.licensedHoursJson ?? '',
+        town: branch?.town ?? '',
+        postcode: branch?.postcode ?? '',
+        receipt_footer: branch?.receiptFooter ?? '',
         tills: 1,
     };
 }
@@ -96,7 +99,9 @@ function BranchDialogBody({ onOpenChange, tenantId, branch, nations, maxTills }:
                 <DialogHeader>
                     <DialogTitle>{editing ? `Edit ${branch?.name}` : 'Add branch'}</DialogTitle>
                     <DialogDescription>
-                        {editing ? 'Changes reach the till on its next sync.' : 'A new shop for this business. Its details are sent to the tills.'}
+                        {editing
+                            ? 'Changes reach the till on its next sync.'
+                            : 'A new shop for this business. Its details are sent to the tills; its licence settings copy the first branch’s, with tills allowed = the tills you add.'}
                     </DialogDescription>
                 </DialogHeader>
 

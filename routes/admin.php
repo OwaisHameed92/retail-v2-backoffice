@@ -23,9 +23,11 @@ use App\Http\Controllers\Admin\ImpersonationController;
 use App\Http\Controllers\Admin\Leads\LeadActionController;
 use App\Http\Controllers\Admin\Leads\LeadApprovalController;
 use App\Http\Controllers\Admin\Leads\LeadController;
+use App\Http\Controllers\Admin\Licences\BranchLicenceController;
 use App\Http\Controllers\Admin\Licences\LicenceActionController;
 use App\Http\Controllers\Admin\Licences\LicenceAlertController;
 use App\Http\Controllers\Admin\Licences\LicenceController;
+use App\Http\Controllers\Admin\Licences\LicenceKeyController;
 use App\Http\Controllers\Admin\Licences\LicenceKeyEmailController;
 use App\Http\Controllers\Admin\Licences\TenantLicenceController;
 use App\Http\Controllers\Admin\PlanController;
@@ -130,6 +132,9 @@ Route::middleware(['auth:admin', AdminIsActive::class, BlockAdminWhileImpersonat
             Route::post('{company}/licences/renew', [TenantLicenceController::class, 'renewAll'])->name('licences.renew');
             Route::put('{company}/plan', [TenantLicenceController::class, 'changePlan'])->name('plan.update');
             Route::post('{company}/registers/{register}/licence', [TenantLicenceController::class, 'issueForRegister'])->name('registers.licence');
+            // Licence form (module 1.11): a branch's licence settings and the company's branch limits.
+            Route::put('{company}/branches/{branch}/licence', [BranchLicenceController::class, 'update'])->name('branches.licence');
+            Route::put('{company}/branch-limits', [BranchLicenceController::class, 'limits'])->name('branch-limits');
         });
     });
 
@@ -147,6 +152,9 @@ Route::middleware(['auth:admin', AdminIsActive::class, BlockAdminWhileImpersonat
             Route::post('{licence}/plan', [LicenceActionController::class, 'changePlan'])->name('plan');
             Route::post('{licence}/release', [LicenceActionController::class, 'release'])->name('release');
             Route::post('{licence}/reissue', [LicenceActionController::class, 'reissue'])->name('reissue')->middleware('throttle:30,1');
+            // Module 1.11: resend = reissue + email (plain keys are not stored); activate-by date of an unused key.
+            Route::post('{licence}/resend', [LicenceKeyController::class, 'resend'])->name('resend')->middleware('throttle:30,1');
+            Route::put('{licence}/activate-by', [LicenceKeyController::class, 'activateBy'])->name('activate-by');
             Route::post('{licence}/suspend', [LicenceActionController::class, 'suspend'])->name('suspend');
             Route::post('{licence}/unsuspend', [LicenceActionController::class, 'unsuspend'])->name('unsuspend');
             Route::post('{licence}/revoke', [LicenceActionController::class, 'revoke'])->name('revoke');

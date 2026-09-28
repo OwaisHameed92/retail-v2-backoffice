@@ -199,6 +199,7 @@ test('branches and tills are managed over http', function () {
     $this->put("{$base}/branches/{$bradford->id}", ['code' => 'BRD', 'name' => 'Bradford Centre', 'nation' => 'england'])->assertSessionHas('success');
     expect($bradford->fresh()->code)->toBe('BRD');
 
+    $this->allowTills($bradford, 3);
     $this->post("{$base}/branches/{$bradford->id}/registers", ['name' => 'Kiosk', 'is_main_till' => true])->assertSessionHas('success');
     expect($this->mainTillCode($bradford))->toBe('03');
 

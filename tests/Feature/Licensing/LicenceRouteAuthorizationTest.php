@@ -38,6 +38,11 @@ function licenceRoutes(): array
         ['post', '/admin/tenants/{company}/licences/renew', 'manage'],
         ['put', '/admin/tenants/{company}/plan', 'manage'],
         ['post', '/admin/tenants/{company}/registers/{register}/licence', 'manage'],
+        // Module 1.11: the licence form.
+        ['put', '/admin/tenants/{company}/branches/{branch}/licence', 'manage'],
+        ['put', '/admin/tenants/{company}/branch-limits', 'manage'],
+        ['post', '/admin/licences/{licence}/resend', 'manage'],
+        ['put', '/admin/licences/{licence}/activate-by', 'manage'],
     ];
 }
 
@@ -46,7 +51,7 @@ function fillLicenceRoute(string $uri, object $test): string
     $company = $test->licensedTenant('Khan '.uniqid(), 1, 'KHN');
     $register = $test->registerOf($test->branchOf($company, 'KHN'), '01');
 
-    return strtr($uri, ['{company}' => $company->id, '{register}' => $register->id, '{licence}' => $test->licenceOf($register)->id]);
+    return strtr($uri, ['{company}' => $company->id, '{branch}' => $register->branch_id, '{register}' => $register->id, '{licence}' => $test->licenceOf($register)->id]);
 }
 
 test('guests are sent to the admin login, or get 401 as JSON', function () {

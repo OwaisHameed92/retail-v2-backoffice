@@ -43,6 +43,8 @@ export interface LicenceRow {
     boundAt: string | null;
     lastCheckInAt: string | null;
     lastAppVersion: string | null;
+    /** Module 1.11: an unused key must be activated by this date (null once activated or revoked). */
+    activateBy: string | null;
     createdAt: string | null;
 }
 
@@ -64,7 +66,11 @@ export interface LicenceDetail extends LicenceRow {
     isRevoked: boolean;
     isSuspended: boolean;
     isBound: boolean;
+    /** The till's own ids reported at activation. */
+    existingIds: { companyId?: string; branchId?: string; registerId?: string } | null;
     updatedAt: string | null;
+    /** "Till n of N" (module 1.11). */
+    seat: { position: number | null; allowed: number; keysInUse: number; activated: number };
 }
 
 export interface TimelineEvent {
@@ -170,4 +176,50 @@ export interface LicenceShowProps {
     alerts: LicenceAlert[];
     plans: PlanOption[];
     can: { manage: boolean };
+}
+
+export type LicenceKind = 'trial' | 'full';
+
+export type LengthUnit = 'days' | 'months' | 'years';
+
+/** LicenceFormData::featureOptions: our feature with the till's name (null = portal only). */
+export interface LicenceFeatureOption extends Option {
+    description: string;
+    tillName: string | null;
+}
+
+/** LicenceFormData::options (module 1.11). */
+export interface LicenceOptions {
+    features: LicenceFeatureOption[];
+    kinds: (Option<LicenceKind> & { description: string })[];
+    units: Option<LengthUnit>[];
+    businessTypes: Option[];
+    maxRegisters: number;
+    maxBranches: number;
+}
+
+/** LicenceFormData::planDefaults, by plan id. */
+export type PlanDefaults = Record<string, { features: string[]; trialDays: number; multiBranch: boolean }>;
+
+/** LicenceFormData::branch: a branch's licence settings with in use / allowed. */
+export interface BranchLicence {
+    maxRegisters: number;
+    kind: LicenceKind;
+    length: number | null;
+    lengthUnit: LengthUnit | null;
+    lengthLabel: string | null;
+    validFrom: string | null;
+    /** Feature values; null = the plan's. */
+    features: string[] | null;
+    tillsInUse: number;
+    keysInUse: number;
+    keysActivated: number;
+}
+
+/** LicenceFormData::limits: the company's branch limits. */
+export interface BranchLimits {
+    multiBranch: boolean;
+    maxBranches: number;
+    branchesAllowed: number;
+    branchesInUse: number;
 }

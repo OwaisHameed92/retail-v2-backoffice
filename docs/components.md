@@ -287,3 +287,9 @@ Tokens live only in `resources/css/app.css` (v2 palette, light + dark): `chrome`
 - `status-badge.tsx` — new `violet` tone, `StatusPill` (label pill without dot), `pillToneClasses`.
 - `entity-cell.tsx` — `EntityCell` defaults to the soft grey avatar (`tone="neutral"`); `InitialsAvatar` has `tone`.
 - `@/lib/relative-time` — `relativeTime(iso)` → "2h ago".
+
+## Added by module 1.11 (licence form)
+
+- `LicenceFormFields` (`components/admin/licences/licence-form-fields.tsx`): tills allowed, trial/full cards, length + unit, start, feature checkboxes with the till name ("Portal only" without one). Helpers `licenceValues()`, `licencePayload()`, `describeLicence()`. Used by `BranchLicenceDialog`, the tenant wizard and `ApproveLicenceSection` (lead approval).
+- `BranchLicenceStrip` (under each branch card: "2 of 3 till keys in use", kind, length, features, "Licence settings"), `BranchLimitsDialog` (multi-branch and branches allowed), `ActivateByDialog` (licence page).
+- Backend: `Licensing\Data\LicenceFormData` (branch settings with in use / allowed, company limits, options, plan defaults), `Tenancy\Support\TenantLimits`.

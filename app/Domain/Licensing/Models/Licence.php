@@ -45,6 +45,7 @@ use Illuminate\Support\Collection;
  * @property LicenceStatus $status
  * @property Collection<int, Feature> $features
  * @property CarbonImmutable|null $activated_at
+ * @property CarbonImmutable|null $activate_by Module 1.11: an unused key answers 410 key.expired after this.
  * @property CarbonImmutable|null $trial_ends_at
  * @property CarbonImmutable|null $expires_at
  * @property int $grace_days
@@ -96,6 +97,7 @@ class Licence extends Model
         'status',
         'features',
         'activated_at',
+        'activate_by',
         'trial_ends_at',
         'expires_at',
         'grace_days',
@@ -146,6 +148,7 @@ class Licence extends Model
             'features' => AsEnumCollection::of(Feature::class),
             'grace_days' => 'integer',
             'activated_at' => 'immutable_datetime',
+            'activate_by' => 'immutable_datetime',
             'trial_ends_at' => 'immutable_datetime',
             'expires_at' => 'immutable_datetime',
             'ends_at' => 'immutable_datetime',

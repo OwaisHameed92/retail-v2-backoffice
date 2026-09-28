@@ -2,11 +2,14 @@
 
 namespace App\Domain\Licensing\Data;
 
+use App\Domain\Licensing\Actions\IssueLicence;
+use App\Domain\Licensing\Api\Support\LicenceToken;
 use App\Domain\Licensing\Enums\LicenceStatus;
 use App\Domain\Licensing\LicenceState;
 use App\Domain\Licensing\Models\Licence;
 use App\Domain\Plans\Enums\Feature;
 use App\Domain\Plans\Models\Plan;
+use App\Domain\Tenancy\Models\Register;
 use Carbon\CarbonImmutable;
 
 /**
@@ -52,6 +55,8 @@ final class LicenceData
             'boundAt' => self::date($licence->bound_at),
             'lastCheckInAt' => self::date($licence->last_check_in_at),
             'lastAppVersion' => $licence->last_app_version,
+            // Module 1.11: an unused key must be activated by this date.
+            'activateBy' => $licence->activated_at === null && ! $licence->isRevoked() ? self::date($licence->activate_by) : null,
             'createdAt' => self::date($licence->created_at),
         ];
     }
@@ -81,7 +86,28 @@ final class LicenceData
             'isRevoked' => $licence->isRevoked(),
             'isSuspended' => $licence->status === LicenceStatus::Suspended,
             'isBound' => $licence->isBound(),
+            'existingIds' => $licence->existing_ids,
             'updatedAt' => self::date($licence->updated_at),
+            'seat' => self::seat($licence),
+        ];
+    }
+
+    /**
+     * "Till n of N" (module 1.11): this till's place among the branch's active tills, the tills allowed and the
+     * keys in use.
+     *
+     * @return array{position: int|null, allowed: int, keysInUse: int, activated: int}
+     */
+    public static function seat(Licence $licence): array
+    {
+        $codes = Register::withoutCompanyScope()->where('branch_id', $licence->branch_id)->where('is_active', true)->orderBy('code')->pluck('id')->all();
+        $position = array_search($licence->register_id, $codes, true);
+
+        return [
+            'position' => $position === false ? null : $position + 1,
+            'allowed' => LicenceToken::maxRegisters($licence->branch),
+            'keysInUse' => IssueLicence::keysInUse($licence->branch_id),
+            'activated' => LicenceToken::registersInUse($licence->branch_id),
         ];
     }
 

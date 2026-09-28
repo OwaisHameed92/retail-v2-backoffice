@@ -7,12 +7,14 @@ use App\Domain\Tenancy\CurrentCompany;
 use App\Domain\Tenancy\Events\RegisterAdded;
 use App\Domain\Tenancy\Models\Branch;
 use App\Domain\Tenancy\Models\Register;
+use App\Domain\Tenancy\Support\TenantLimits;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 /**
  * Adds a till to a branch. Without a code it takes the lowest free one; without a name it is "Till <n>".
- * The first active till of a branch becomes its main till automatically.
+ * The first active till of a branch becomes its main till automatically. Refused past the branch's tills
+ * allowed (module 1.11 licence settings).
  *
  * Dispatches RegisterAdded in the same transaction: module 1.3 issues the till's licence there (its plain key
  * waits in IssuedKeys for the caller: the welcome email or the admin's "Licence key created" dialog).
@@ -35,6 +37,8 @@ class AddRegister
             if (! $branch->is_active) {
                 throw ValidationException::withMessages(['code' => "{$branch->name} is inactive. Reactivate the branch before adding tills."]);
             }
+
+            TenantLimits::ensureCanAddTill($branch);
 
             if ($code === null || $code === '') {
                 $code = RegisterCodes::next($branch);

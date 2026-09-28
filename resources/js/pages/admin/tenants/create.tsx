@@ -1,4 +1,5 @@
-import { type PlanOption } from '@/components/admin/licences/types';
+import { LicenceFormFields, licencePayload, type LicenceFormValues } from '@/components/admin/licences/licence-form-fields';
+import { type LicenceOptions, type PlanDefaults, type PlanOption } from '@/components/admin/licences/types';
 import { BranchFields, type BranchFieldsData } from '@/components/admin/tenants/branch-fields';
 import { CompanyFields, type CompanyFieldsData } from '@/components/admin/tenants/company-fields';
 import { Field, FormSection, Textarea } from '@/components/admin/tenants/field';
@@ -9,7 +10,9 @@ import { PageHeader } from '@/components/shared/page-header';
 import { StickyFormBar } from '@/components/shared/sticky-form-bar';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import AdminLayout from '@/layouts/admin-layout';
 import { cn } from '@/lib/utils';
@@ -23,34 +26,44 @@ interface CreateTenantProps {
     /** Active plans for the new tills' licences (module 1.3). */
     plans: PlanOption[];
     defaultPlanId: string | null;
+    /** Module 1.11: the licence form and each plan's defaults. */
+    licenceOptions: LicenceOptions;
+    planDefaults: PlanDefaults;
 }
 
-type CreateTenantForm = CompanyFieldsData & {
-    status: 'trial' | 'active';
-    trial_ends_at: string;
-    notes: string;
-    branch_code: string;
-    branch_name: string;
-    branch_nation: Nation;
-    branch_address: string;
-    branch_phone: string;
-    branch_vat_number: string;
-    branch_area_m2: string;
-    branch_is_drs_return_point: boolean;
-    branch_licensed_hours_json: string;
-    tills: number;
-    plan_id: string;
-    owner_name: string;
-    owner_email: string;
-};
+type CreateTenantForm = CompanyFieldsData &
+    LicenceFormValues & {
+        multi_branch: boolean;
+        max_branches: number;
+        status: 'trial' | 'active';
+        trial_ends_at: string;
+        notes: string;
+        branch_code: string;
+        branch_name: string;
+        branch_nation: Nation;
+        branch_address: string;
+        branch_phone: string;
+        branch_vat_number: string;
+        branch_area_m2: string;
+        branch_is_drs_return_point: boolean;
+        branch_licensed_hours_json: string;
+        branch_town: string;
+        branch_postcode: string;
+        branch_receipt_footer: string;
+        tills: number;
+        plan_id: string;
+        owner_name: string;
+        owner_email: string;
+    };
 
 const statusOptions = [
     { value: 'trial', title: 'Free trial', body: '7 days from the first till activation.' },
     { value: 'active', title: 'Active customer', body: 'Already agreed a plan and paying.' },
 ] as const;
 
-export default function CreateTenant({ nations, maxTills, plans, defaultPlanId }: CreateTenantProps) {
-    const { data, setData, post, processing, errors } = useForm<CreateTenantForm>({
+export default function CreateTenant({ nations, maxTills, plans, defaultPlanId, licenceOptions, planDefaults }: CreateTenantProps) {
+    const initialPlanId = defaultPlanId ?? plans[0]?.value ?? '';
+    const { data, setData, post, processing, errors, transform } = useForm<CreateTenantForm>({
         name: '',
         legal_name: '',
         vat_number: '',
@@ -59,6 +72,10 @@ export default function CreateTenant({ nations, maxTills, plans, defaultPlanId }
         phone: '',
         contact_name: '',
         address: '',
+        business_type: '',
+        town: '',
+        postcode: '',
+        receipt_footer: '',
         status: 'trial',
         trial_ends_at: '',
         notes: '',
@@ -71,11 +88,35 @@ export default function CreateTenant({ nations, maxTills, plans, defaultPlanId }
         branch_area_m2: '',
         branch_is_drs_return_point: false,
         branch_licensed_hours_json: '',
+        branch_town: '',
+        branch_postcode: '',
+        branch_receipt_footer: '',
         tills: 1,
-        plan_id: defaultPlanId ?? plans[0]?.value ?? '',
+        plan_id: initialPlanId,
         owner_name: '',
         owner_email: '',
+        max_registers: 1,
+        kind: 'trial',
+        length: '',
+        length_unit: '',
+        valid_from: '',
+        features: planDefaults[initialPlanId]?.features ?? [],
+        multi_branch: planDefaults[initialPlanId]?.multiBranch ?? false,
+        max_branches: planDefaults[initialPlanId]?.multiBranch ? 2 : 1,
     });
+
+    transform((values) => ({ ...values, ...licencePayload(values), max_branches: values.multi_branch ? values.max_branches : 1 }));
+
+    // A plan brings its features and multi-branch default; tills allowed never below the tills added.
+    const changePlan = (planId: string) => {
+        setData((current) => ({
+            ...current,
+            plan_id: planId,
+            features: planDefaults[planId]?.features ?? current.features,
+            multi_branch: planDefaults[planId]?.multiBranch ?? current.multi_branch,
+        }));
+    };
+    const changeTills = (tills: number) => setData((current) => ({ ...current, tills, max_registers: Math.max(tills, current.max_registers) }));
 
     const branch: BranchFieldsData = {
         code: data.branch_code,
@@ -87,6 +128,9 @@ export default function CreateTenant({ nations, maxTills, plans, defaultPlanId }
         area_m2: data.branch_area_m2,
         is_drs_return_point: data.branch_is_drs_return_point,
         licensed_hours_json: data.branch_licensed_hours_json,
+        town: data.branch_town,
+        postcode: data.branch_postcode,
+        receipt_footer: data.branch_receipt_footer,
     };
 
     const setBranchField = <K extends keyof BranchFieldsData>(key: K, value: BranchFieldsData[K]) =>
@@ -121,7 +165,12 @@ export default function CreateTenant({ nations, maxTills, plans, defaultPlanId }
             <form onSubmit={submit} noValidate>
                 <FormCard>
                     <FormSection title="Business details" description="The customer company. These details are sent to the till.">
-                        <CompanyFields data={data} setData={(key, value) => setData(key, value)} errors={errors} />
+                        <CompanyFields
+                            data={data}
+                            setData={(key, value) => setData(key, value)}
+                            errors={errors}
+                            businessTypes={licenceOptions.businessTypes}
+                        />
                     </FormSection>
 
                     <FormSection title="Account" description="How the customer starts with us.">
@@ -189,7 +238,7 @@ export default function CreateTenant({ nations, maxTills, plans, defaultPlanId }
                         description="One licence per till, issued now. The keys go to the owner in the welcome email. The first till is the main till: it syncs with the portal."
                     >
                         <div className="sm:col-span-2">
-                            <TillCountPicker value={data.tills} max={maxTills} onChange={(value) => setData('tills', value)} error={errors.tills} />
+                            <TillCountPicker value={data.tills} max={maxTills} onChange={changeTills} error={errors.tills} />
                         </div>
                         {plans.length > 0 ? (
                             <Field
@@ -198,7 +247,7 @@ export default function CreateTenant({ nations, maxTills, plans, defaultPlanId }
                                 hint={plans.find((plan) => plan.value === data.plan_id)?.description ?? 'Also used for tills added later.'}
                                 error={errors.plan_id}
                             >
-                                <Select value={data.plan_id} onValueChange={(value) => setData('plan_id', value)}>
+                                <Select value={data.plan_id} onValueChange={changePlan}>
                                     <SelectTrigger id="plan_id" aria-invalid={!!errors.plan_id}>
                                         <SelectValue placeholder="Choose a plan" />
                                     </SelectTrigger>
@@ -222,8 +271,52 @@ export default function CreateTenant({ nations, maxTills, plans, defaultPlanId }
                         )}
                     </FormSection>
 
+                    <FormSection
+                        title="Licence form"
+                        description="What every till key carries: tills allowed, trial or full, length and features. Defaults come from the plan; you can change them later per branch."
+                    >
+                        <div className="sm:col-span-2">
+                            <LicenceFormFields
+                                values={data}
+                                setValue={(key, value) => setData(key, value as never)}
+                                errors={errors}
+                                options={licenceOptions}
+                                showStart={false}
+                                tillsInUse={data.tills}
+                                trialDays={planDefaults[data.plan_id]?.trialDays}
+                            />
+                        </div>
+                        <div className="flex items-start gap-3 sm:col-span-2">
+                            <Checkbox
+                                id="multi_branch"
+                                checked={data.multi_branch}
+                                onCheckedChange={(checked) => setData('multi_branch', checked === true)}
+                                className="mt-0.5"
+                            />
+                            <div className="grid gap-1">
+                                <Label htmlFor="multi_branch">Multi-branch</Label>
+                                <p className="text-muted-foreground text-sm">The business may run more than one shop.</p>
+                            </div>
+                        </div>
+                        {data.multi_branch && (
+                            <Field id="max_branches" label="Branches allowed" error={errors.max_branches}>
+                                <Input
+                                    id="max_branches"
+                                    type="number"
+                                    inputMode="numeric"
+                                    min={1}
+                                    max={licenceOptions.maxBranches}
+                                    value={data.max_branches}
+                                    onChange={(e) => setData('max_branches', Number.parseInt(e.target.value || '0', 10))}
+                                    className="max-w-32 tabular-nums"
+                                    aria-invalid={!!errors.max_branches}
+                                />
+                            </Field>
+                        )}
+                    </FormSection>
+
                     <FormSection title="Owner login" description="We email the owner a link to set their password.">
-                        <Field id="owner_name" label="Owner’s name" error={errors.owner_name}>
+                        <Field id="owner_name" label="Owner’s name" hint="Also the till’s first user in the licence keys." error={errors.owner_name}>
                             <Input
                                 id="owner_name"
                                 required

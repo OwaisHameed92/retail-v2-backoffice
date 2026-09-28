@@ -1,4 +1,4 @@
-import { type PlanOption } from '@/components/admin/licences/types';
+import { type LicenceOptions, type PlanDefaults, type PlanOption } from '@/components/admin/licences/types';
 import { type Nation, type Option } from '@/components/admin/tenants/types';
 import { type Paginated } from '@/components/shared/data-table';
 
@@ -132,6 +132,8 @@ export type TrialShopInput = {
     code: string;
     tills: number;
     nation: Nation;
+    /** Module 1.11: tills allowed (the keys' maxRegisters), at least `tills`. */
+    tills_allowed?: number;
 };
 
 export interface ApprovalData {
@@ -144,6 +146,9 @@ export interface ApprovalData {
     nations: Option<Nation>[];
     maxTillsPerShop: number;
     maxShops: number;
+    /** Module 1.11: the licence form and each plan's defaults. */
+    licenceOptions: LicenceOptions;
+    planDefaults: PlanDefaults;
 }
 
 export interface LeadShowProps {

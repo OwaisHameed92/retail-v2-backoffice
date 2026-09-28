@@ -53,6 +53,8 @@ class ReissueKey
             $this->release->apply($licence, CarbonImmutable::now());
             $licence->key_hash = $key->hash();
             $licence->key_last4 = $key->last4();
+            // Module 1.11: a new unused key gets a new activate-by window.
+            $licence->activate_by = $licence->activated_at === null ? IssueLicence::activateBy() : $licence->activate_by;
             $licence->save();
 
             $this->audit->handle('licence.key_reissued', $licence, $before, [

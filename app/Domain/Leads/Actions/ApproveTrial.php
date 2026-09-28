@@ -8,6 +8,7 @@ use App\Domain\Leads\Enums\LeadNoteKind;
 use App\Domain\Leads\Enums\LeadStatus;
 use App\Domain\Leads\Models\Lead;
 use App\Domain\Leads\Support\LeadTimeline;
+use App\Domain\Licensing\Data\BranchLicenceSettings;
 use App\Domain\Licensing\Support\DefaultPlan;
 use App\Domain\Mail\Support\MailFormat;
 use App\Domain\Plans\Models\Plan;
@@ -17,6 +18,7 @@ use App\Domain\Tenancy\Data\BranchDetails;
 use App\Domain\Tenancy\Data\CompanyDetails;
 use App\Domain\Tenancy\Data\NewBranch;
 use App\Domain\Tenancy\Data\NewTenant;
+use App\Domain\Tenancy\Enums\BusinessType;
 use App\Domain\Tenancy\Enums\CompanyStatus;
 use App\Domain\Tenancy\Models\Branch;
 use App\Domain\Tenancy\Models\Company;
@@ -69,6 +71,10 @@ class ApproveTrial
                     email: $locked->email,
                     contactName: $locked->contact_name,
                     notes: $this->companyNotes($locked),
+                    businessType: BusinessType::fromLead($locked->business_type->value),
+                    town: $locked->town,
+                    postcode: $locked->postcode,
+                    ownerName: $locked->contact_name,
                 ),
                 branch: $this->branch($first),
                 tills: $first->tills,
@@ -76,7 +82,10 @@ class ApproveTrial
                 ownerEmail: (string) $locked->email,
                 status: CompanyStatus::Trial,
                 planId: $plan->id,
-                moreBranches: array_map(fn (TrialShop $shop) => new NewBranch($this->branch($shop), $shop->tills), $shops),
+                moreBranches: array_map(fn (TrialShop $shop) => new NewBranch($this->branch($shop), $shop->tills, $shop->tillsAllowed), $shops),
+                licence: ($setup->licence ?? new BranchLicenceSettings)->withMaxRegisters(max($first->tills, $first->tillsAllowed ?? 1)),
+                multiBranch: count($setup->shops) > 1,
+                maxBranches: count($setup->shops),
             ));
 
             $from = $locked->status;

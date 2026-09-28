@@ -2,10 +2,12 @@
 
 namespace App\Domain\Tenancy\Data;
 
+use App\Domain\Tenancy\Enums\BusinessType;
 use Illuminate\Support\Carbon;
 
 /**
- * Editable business details of a company (till Company fields + portal contact/notes).
+ * Editable business details of a company (till Company fields + portal contact/notes + the licence key's shop
+ * details, module 1.11).
  */
 final readonly class CompanyDetails
 {
@@ -20,6 +22,12 @@ final readonly class CompanyDetails
         public ?string $contactName = null,
         public ?string $notes = null,
         public ?Carbon $trialEndsAt = null,
+        /** Module 1.11: the key's `company` block (contract §17.2). */
+        public ?BusinessType $businessType = null,
+        public ?string $town = null,
+        public ?string $postcode = null,
+        public ?string $ownerName = null,
+        public ?string $receiptFooter = null,
     ) {}
 
     /**
@@ -38,6 +46,11 @@ final readonly class CompanyDetails
             'contact_name' => $this->contactName,
             'notes' => $this->notes,
             'trial_ends_at' => $this->trialEndsAt,
+            'business_type' => $this->businessType,
+            'town' => $this->town,
+            'postcode' => $this->postcode,
+            'owner_name' => $this->ownerName,
+            'receipt_footer' => $this->receiptFooter,
         ];
     }
 }

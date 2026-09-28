@@ -64,7 +64,7 @@ class DeactivateDevice
             'registerId' => $registerId,
             'seat' => 'deactivated',
             'seatsInUse' => LicenceToken::registersInUse($licence->branch_id),
-            'maxRegisters' => LicenceToken::maxRegisters($licence->branch_id),
+            'maxRegisters' => LicenceToken::maxRegisters($licence->branch),
             'apiKeyRevoked' => false,
             'transferCode' => null,
             'transferCodeExpiresAt' => null,

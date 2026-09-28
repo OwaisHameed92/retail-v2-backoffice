@@ -4,6 +4,7 @@ namespace App\Http\Requests\Admin;
 
 use App\Domain\Tenancy\Data\BranchDetails;
 use App\Domain\Tenancy\Data\CompanyDetails;
+use App\Domain\Tenancy\Enums\BusinessType;
 use App\Domain\Tenancy\Enums\Nation;
 use App\Domain\Tenancy\Models\Branch;
 use Illuminate\Foundation\Http\FormRequest;
@@ -21,6 +22,9 @@ final class TenantRules
 
     public const PHONE_PATTERN = '/^[0-9+()\s-]{7,20}$/';
 
+    /** A UK postcode as typed (the till tidies it): letters, digits and one optional space. */
+    public const POSTCODE_PATTERN = '/^[A-Z]{1,2}[0-9][A-Z0-9]? ?[0-9][A-Z]{2}$/';
+
     /**
      * @return array<string, mixed>
      */
@@ -35,6 +39,11 @@ final class TenantRules
             'phone' => ['nullable', 'string', 'regex:'.self::PHONE_PATTERN],
             'email' => ['nullable', 'string', 'email', 'max:255'],
             'contact_name' => ['nullable', 'string', 'max:120'],
+            'business_type' => ['nullable', Rule::enum(BusinessType::class)],
+            'town' => ['nullable', 'string', 'max:80'],
+            'postcode' => ['nullable', 'string', 'max:10', 'regex:'.self::POSTCODE_PATTERN],
+            'owner_name' => ['nullable', 'string', 'max:80'],
+            'receipt_footer' => ['nullable', 'string', 'max:200'],
             'notes' => ['nullable', 'string', 'max:5000'],
             'trial_ends_at' => ['nullable', 'date'],
         ];
@@ -60,6 +69,9 @@ final class TenantRules
             $prefix.'address' => ['nullable', 'string', 'max:500'],
             $prefix.'phone' => ['nullable', 'string', 'regex:'.self::PHONE_PATTERN],
             $prefix.'vat_number' => ['nullable', 'string', 'regex:'.self::VAT_PATTERN],
+            $prefix.'town' => ['nullable', 'string', 'max:80'],
+            $prefix.'postcode' => ['nullable', 'string', 'max:10', 'regex:'.self::POSTCODE_PATTERN],
+            $prefix.'receipt_footer' => ['nullable', 'string', 'max:200'],
             $prefix.'nation' => ['required', Rule::enum(Nation::class)],
             $prefix.'licensed_hours_json' => ['nullable', 'string', 'json', 'max:4000'],
             $prefix.'is_drs_return_point' => ['boolean'],
@@ -77,6 +89,8 @@ final class TenantRules
             $prefix.'vat_number.regex' => 'Enter a UK VAT number like GB123456789.',
             'company_number.regex' => 'Enter a Companies House number: 8 digits, or 2 letters and 6 digits.',
             'phone.regex' => 'Enter a phone number like 0113 496 0000.',
+            'postcode.regex' => 'Enter a UK postcode like LS1 6AB.',
+            $prefix.'postcode.regex' => 'Enter a UK postcode like LS1 6AB.',
             $prefix.'phone.regex' => 'Enter a phone number like 0113 496 0000.',
             $prefix.'code.regex' => 'Use 2 to 5 capital letters, for example LDS.',
             $prefix.'code.unique' => 'Another branch of this business already uses this code.',
@@ -108,6 +122,11 @@ final class TenantRules
                 if (isset($clean[$key])) {
                     $clean[$key] = strtoupper((string) preg_replace('/\s+/', '', $clean[$key]));
                 }
+            }
+
+            $postcodeKey = $prefix.'postcode';
+            if (isset($clean[$postcodeKey])) {
+                $clean[$postcodeKey] = strtoupper((string) preg_replace('/\s+/', ' ', $clean[$postcodeKey]));
             }
 
             $vatKey = $prefix.'vat_number';
@@ -145,6 +164,11 @@ final class TenantRules
             contactName: self::nullableString($request->input('contact_name')),
             notes: self::nullableString($request->input('notes')),
             trialEndsAt: is_string($trialEndsAt) ? Carbon::parse($trialEndsAt, 'Europe/London')->endOfDay()->utc() : null,
+            businessType: BusinessType::tryFrom((string) $request->input('business_type')),
+            town: self::nullableString($request->input('town')),
+            postcode: self::nullableString($request->input('postcode')),
+            ownerName: self::nullableString($request->input('owner_name')),
+            receiptFooter: self::nullableString($request->input('receipt_footer')),
         );
     }
 
@@ -162,6 +186,9 @@ final class TenantRules
             licensedHoursJson: self::nullableString($request->input($prefix.'licensed_hours_json')),
             isDrsReturnPoint: $request->boolean($prefix.'is_drs_return_point'),
             areaM2: $area === null || $area === '' ? null : (string) $area,
+            town: self::nullableString($request->input($prefix.'town')),
+            postcode: self::nullableString($request->input($prefix.'postcode')),
+            receiptFooter: self::nullableString($request->input($prefix.'receipt_footer')),
         );
     }
 

@@ -2,6 +2,8 @@
 
 namespace App\Http\Requests\Admin;
 
+use App\Domain\Licensing\Data\BranchLicenceSettings;
+use App\Domain\Licensing\Signing\Sspos\TokenKind;
 use App\Domain\Tenancy\Data\NewTenant;
 use App\Domain\Tenancy\Enums\CompanyStatus;
 use App\Domain\Tenancy\Models\Company;
@@ -25,14 +27,21 @@ class StoreTenantRequest extends FormRequest
      */
     public function rules(): array
     {
-        return TenantRules::company() + TenantRules::branch('branch_') + [
+        // Own rules first: `owner_name` is the owner login here (also the keys' owner's name, cut to 80).
+        return [
+            'owner_name' => ['required', 'string', 'max:120'],
+        ] + TenantRules::company() + TenantRules::branch('branch_') + [
             'status' => ['required', Rule::in([CompanyStatus::Trial->value, CompanyStatus::Active->value])],
             'tills' => ['required', 'integer', 'min:1', 'max:'.NewTenant::MAX_TILLS],
             'owner_name' => ['required', 'string', 'max:120'],
             'owner_email' => ['required', 'string', 'email', 'max:255'],
             // Module 1.3: plan for the new tills; blank = the portal default plan.
             'plan_id' => ['nullable', 'string', Rule::exists('plans', 'id')->where('is_active', true)->whereNull('deleted_at')],
-        ];
+        ] + array_merge(LicenceFormRules::branch(false), [
+            // Module 1.11: the licence form is optional here (blank = plan trial and features, one branch).
+            'kind' => ['nullable', Rule::enum(TokenKind::class)],
+            'max_registers' => ['nullable', 'integer', 'min:1', 'max:'.BranchLicenceSettings::MAX_REGISTERS, 'gte:tills'],
+        ]) + LicenceFormRules::limits();
     }
 
     /**
@@ -49,7 +58,8 @@ class StoreTenantRequest extends FormRequest
             'owner_name.required' => 'Enter the owner’s name.',
             'owner_email.required' => 'Enter the owner’s email. We send them a link to set their password.',
             'plan_id.exists' => 'Choose an active plan.',
-        ];
+            'max_registers.gte' => 'Allow at least as many tills as you add now.',
+        ] + LicenceFormRules::messages();
     }
 
     /**
@@ -75,6 +85,9 @@ class StoreTenantRequest extends FormRequest
             ownerEmail: (string) $this->input('owner_email'),
             status: CompanyStatus::from((string) $this->input('status')),
             planId: $this->filled('plan_id') ? (string) $this->input('plan_id') : null,
+            licence: $this->filled('kind') ? LicenceFormRules::settings($this, $this->integer('tills')) : null,
+            multiBranch: $this->boolean('multi_branch'),
+            maxBranches: $this->filled('max_branches') ? $this->integer('max_branches') : 1,
         );
     }
 }

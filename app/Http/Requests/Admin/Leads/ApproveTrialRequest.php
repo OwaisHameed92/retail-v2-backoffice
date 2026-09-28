@@ -5,9 +5,12 @@ namespace App\Http\Requests\Admin\Leads;
 use App\Domain\Leads\Data\TrialSetup;
 use App\Domain\Leads\Data\TrialShop;
 use App\Domain\Leads\Models\Lead;
+use App\Domain\Licensing\Data\BranchLicenceSettings;
+use App\Domain\Licensing\Signing\Sspos\TokenKind;
 use App\Domain\Tenancy\Data\NewTenant;
 use App\Domain\Tenancy\Enums\Nation;
 use App\Domain\Tenancy\Models\Branch;
+use App\Http\Requests\Admin\LicenceFormRules;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -31,6 +34,7 @@ class ApproveTrialRequest extends FormRequest
                 'code' => strtoupper(trim((string) ($shop['code'] ?? ''))),
                 'nation' => $shop['nation'] ?? Nation::England->value,
                 'tills' => $shop['tills'] ?? null,
+                'tills_allowed' => $shop['tills_allowed'] ?? null,
             ] : $shop, $shops)]);
         }
     }
@@ -47,7 +51,11 @@ class ApproveTrialRequest extends FormRequest
             'shops.*.nation' => ['required', Rule::enum(Nation::class)],
             'shops.*.tills' => ['required', 'integer', 'min:1', 'max:'.NewTenant::MAX_TILLS],
             'plan_id' => ['nullable', 'string', Rule::exists('plans', 'id')->where('is_active', true)->whereNull('deleted_at')],
-        ];
+            // Module 1.11: tills allowed per shop, and kind, length and features for every shop's keys.
+            'shops.*.tills_allowed' => ['nullable', 'integer', 'min:1', 'max:'.BranchLicenceSettings::MAX_REGISTERS],
+        ] + array_merge(array_diff_key(LicenceFormRules::branch(false), ['max_registers' => true, 'valid_from' => true]), [
+            'kind' => ['nullable', Rule::enum(TokenKind::class)],
+        ]);
     }
 
     /**
@@ -65,12 +73,13 @@ class ApproveTrialRequest extends FormRequest
             'shops.*.tills.min' => 'At least 1 till.',
             'shops.*.tills.max' => 'Up to '.NewTenant::MAX_TILLS.' tills per shop.',
             'plan_id.exists' => 'Choose an active plan.',
-        ];
+            'shops.*.tills_allowed.min' => 'Allow at least 1 till.',
+        ] + LicenceFormRules::messages();
     }
 
     public function setup(): TrialSetup
     {
-        /** @var list<array{name: string, code: string, nation: string, tills: int|string}> $shops */
+        /** @var list<array{name: string, code: string, nation: string, tills: int|string, tills_allowed: int|string|null}> $shops */
         $shops = array_values((array) $this->input('shops'));
 
         return new TrialSetup(
@@ -79,8 +88,10 @@ class ApproveTrialRequest extends FormRequest
                 code: $shop['code'],
                 tills: (int) $shop['tills'],
                 nation: Nation::from($shop['nation']),
+                tillsAllowed: $shop['tills_allowed'] === null || $shop['tills_allowed'] === '' ? null : (int) $shop['tills_allowed'],
             ), $shops),
             planId: $this->filled('plan_id') ? (string) $this->input('plan_id') : null,
+            licence: $this->filled('kind') ? LicenceFormRules::settings($this) : null,
         );
     }
 }

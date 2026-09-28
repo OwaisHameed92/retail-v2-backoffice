@@ -39,7 +39,17 @@ export function TenantDetails({ tenant }: { tenant: Tenant }) {
                         { label: 'Phone', value: tenant.phone },
                         { label: 'VAT number', value: tenant.vatNumber },
                         { label: 'Company number', value: tenant.companyNumber },
-                        { label: 'Registered address', value: tenant.address && <span className="whitespace-pre-line">{tenant.address}</span> },
+                        {
+                            label: 'Registered address',
+                            value: (tenant.address || tenant.town || tenant.postcode) && (
+                                <span className="whitespace-pre-line">
+                                    {[tenant.address, [tenant.town, tenant.postcode].filter(Boolean).join(' ')].filter(Boolean).join('\n')}
+                                </span>
+                            ),
+                        },
+                        { label: 'Type of shop', value: tenant.businessTypeLabel },
+                        { label: 'Owner on the till', value: tenant.ownerName },
+                        { label: 'Receipt footer', value: tenant.receiptFooter },
                         { label: 'Active since', value: tenant.activatedAt ? formatDate(tenant.activatedAt) : null },
                         { label: 'Tenant id', value: tenant.id, mono: true },
                         ...(tenant.notes

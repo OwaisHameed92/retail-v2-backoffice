@@ -216,7 +216,7 @@ test('a till whose licence was revoked can be issued a new one from the tenant p
 
 test('adding a till or branch from the tenant page answers with the new keys when asked for JSON', function () {
     $company = $this->licensedTenant(tills: 1);
-    $branch = $this->branchOf($company);
+    $branch = $this->allowTills($this->branchOf($company), 3);
     $admin = $this->admin(AdminRole::Sales);
 
     $till = $this->actingAs($admin, 'admin')->postJson("/admin/tenants/{$company->id}/branches/{$branch->id}/registers", ['name' => 'Kiosk'])

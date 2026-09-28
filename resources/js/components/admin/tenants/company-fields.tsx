@@ -1,5 +1,7 @@
 import { Field, Textarea } from '@/components/admin/tenants/field';
+import { type Option } from '@/components/admin/tenants/types';
 import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 export type CompanyFieldsData = {
     name: string;
@@ -10,16 +12,22 @@ export type CompanyFieldsData = {
     phone: string;
     contact_name: string;
     address: string;
+    /** Module 1.11: the licence key's shop details. */
+    business_type: string;
+    town: string;
+    postcode: string;
+    receipt_footer: string;
 };
 
 interface CompanyFieldsProps<T extends CompanyFieldsData> {
     data: T;
     setData: (key: keyof CompanyFieldsData, value: string) => void;
     errors: Partial<Record<string, string>>;
+    businessTypes: Option[];
 }
 
 /** Business details shared by the create wizard and the edit page. Rendered inside a FormSection grid. */
-export function CompanyFields<T extends CompanyFieldsData>({ data, setData, errors }: CompanyFieldsProps<T>) {
+export function CompanyFields<T extends CompanyFieldsData>({ data, setData, errors, businessTypes }: CompanyFieldsProps<T>) {
     return (
         <>
             <Field id="name" label="Business name" hint="As the customer knows it, e.g. Khan Mini Mart." error={errors.name}>
@@ -74,8 +82,58 @@ export function CompanyFields<T extends CompanyFieldsData>({ data, setData, erro
             <Field id="phone" label="Phone" optional error={errors.phone}>
                 <Input id="phone" type="tel" value={data.phone} onChange={(e) => setData('phone', e.target.value)} aria-invalid={!!errors.phone} />
             </Field>
-            <Field id="address" label="Registered address" optional error={errors.address} className="sm:col-span-2">
+            <Field id="business_type" label="Type of shop" optional hint="Starts the till’s first-run wizard." error={errors.business_type}>
+                <Select value={data.business_type || undefined} onValueChange={(value) => setData('business_type', value)}>
+                    <SelectTrigger id="business_type" aria-invalid={!!errors.business_type}>
+                        <SelectValue placeholder="The till asks" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {businessTypes.map((type) => (
+                            <SelectItem key={type.value} value={type.value}>
+                                {type.label}
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+            </Field>
+            <Field
+                id="address"
+                label="Registered address"
+                optional
+                hint="Street lines, as printed on receipts."
+                error={errors.address}
+                className="sm:col-span-2"
+            >
                 <Textarea id="address" rows={3} value={data.address} onChange={(e) => setData('address', e.target.value)} />
+            </Field>
+            <Field id="town" label="Town" optional error={errors.town}>
+                <Input id="town" value={data.town} onChange={(e) => setData('town', e.target.value)} aria-invalid={!!errors.town} />
+            </Field>
+            <Field id="postcode" label="Postcode" optional error={errors.postcode}>
+                <Input
+                    id="postcode"
+                    value={data.postcode}
+                    onChange={(e) => setData('postcode', e.target.value.toUpperCase())}
+                    aria-invalid={!!errors.postcode}
+                    autoComplete="off"
+                    className="max-w-40 uppercase"
+                />
+            </Field>
+            <Field
+                id="receipt_footer"
+                label="Receipt footer"
+                optional
+                hint="Printed at the bottom of every receipt, up to 200 characters."
+                error={errors.receipt_footer}
+                className="sm:col-span-2"
+            >
+                <Textarea
+                    id="receipt_footer"
+                    rows={2}
+                    maxLength={200}
+                    value={data.receipt_footer}
+                    onChange={(e) => setData('receipt_footer', e.target.value)}
+                />
             </Field>
         </>
     );

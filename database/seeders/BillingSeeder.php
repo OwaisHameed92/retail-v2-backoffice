@@ -92,7 +92,7 @@ class BillingSeeder extends Seeder
         $company->save();
 
         User::factory()->withCompany($company)->create(['name' => 'Priya Shah', 'email' => 'owner@cornershop.test']);
-        $branch = Branch::factory()->forCompany($company)->create(['code' => 'WKF', 'name' => 'Wakefield', 'address' => '3 Market Street, Wakefield WF1 1DH']);
+        $branch = Branch::factory()->forCompany($company)->create(['code' => 'WKF', 'name' => 'Wakefield', 'address' => '3 Market Street, Wakefield WF1 1DH', 'max_registers' => 2]);
 
         foreach ([1, 2] as $i) {
             $register = Register::factory()->forBranch($branch)->create(['code' => Register::codeFor($i), 'name' => 'Till '.$i, 'is_main_till' => $i === 1]);

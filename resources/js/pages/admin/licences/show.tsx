@@ -185,12 +185,36 @@ export default function LicenceShow({ licence, timeline, activity, alerts, plans
                                 {licence.register.name}
                                 {licence.register.code && <span className="text-muted-foreground font-mono"> · {licence.register.code}</span>}
                                 {licence.register.isMainTill && <span className="text-muted-foreground"> · main till</span>}, {licence.branch.name}
+                                <p className="text-muted-foreground text-xs">
+                                    {licence.seat.position !== null
+                                        ? `Till ${licence.seat.position} of ${licence.seat.allowed}`
+                                        : `${licence.seat.allowed} tills allowed`}{' '}
+                                    · {licence.seat.keysInUse} {licence.seat.keysInUse === 1 ? 'key' : 'keys'} in use, {licence.seat.activated}{' '}
+                                    activated
+                                </p>
                             </DetailRow>
+                            {licence.activateBy && (
+                                <DetailRow label="Activate by">
+                                    <span className={new Date(licence.activateBy).getTime() < Date.now() ? 'text-destructive' : undefined}>
+                                        {formatDateTimeShort(licence.activateBy)}
+                                    </span>
+                                    <p className="text-muted-foreground text-xs">
+                                        {new Date(licence.activateBy).getTime() < Date.now()
+                                            ? 'Passed: the till is told the key has expired. Extend the date or email a new key.'
+                                            : `An unused key must be activated ${formatRelative(licence.activateBy)}.`}
+                                    </p>
+                                </DetailRow>
+                            )}
                             <DetailRow label="Install">
                                 {licence.deviceId ? (
                                     <>
                                         <span className="font-mono">{licence.installCode ?? '—'}</span>
                                         <p className="text-muted-foreground font-mono text-xs break-all">Install ID {licence.deviceId}</p>
+                                        {licence.existingIds?.registerId && (
+                                            <p className="text-muted-foreground font-mono text-xs break-all">
+                                                Till’s register id {licence.existingIds.registerId}
+                                            </p>
+                                        )}
                                     </>
                                 ) : (
                                     <span className="text-muted-foreground">Not activated</span>

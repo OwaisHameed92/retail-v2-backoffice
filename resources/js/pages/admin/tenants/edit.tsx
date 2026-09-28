@@ -1,7 +1,7 @@
 import { CompanyFields, type CompanyFieldsData } from '@/components/admin/tenants/company-fields';
 import { Field, FormSection, Textarea } from '@/components/admin/tenants/field';
 import { toDateInput } from '@/components/admin/tenants/format';
-import { type Tenant } from '@/components/admin/tenants/types';
+import { type Option, type Tenant } from '@/components/admin/tenants/types';
 import { FormCard } from '@/components/shared/form-section';
 import { PageHeader } from '@/components/shared/page-header';
 import { StatusBadge } from '@/components/shared/status-badge';
@@ -13,9 +13,9 @@ import { Head, Link, useForm } from '@inertiajs/react';
 import { LoaderCircle } from 'lucide-react';
 import { type FormEventHandler } from 'react';
 
-type EditTenantForm = CompanyFieldsData & { notes: string; trial_ends_at: string };
+type EditTenantForm = CompanyFieldsData & { notes: string; trial_ends_at: string; owner_name: string };
 
-export default function EditTenant({ tenant }: { tenant: Tenant }) {
+export default function EditTenant({ tenant, businessTypes }: { tenant: Tenant; businessTypes: Option[] }) {
     const { data, setData, put, processing, errors, isDirty } = useForm<EditTenantForm>({
         name: tenant.name,
         legal_name: tenant.legalName ?? '',
@@ -25,6 +25,11 @@ export default function EditTenant({ tenant }: { tenant: Tenant }) {
         phone: tenant.phone ?? '',
         contact_name: tenant.contactName ?? '',
         address: tenant.address ?? '',
+        business_type: tenant.businessType ?? '',
+        town: tenant.town ?? '',
+        postcode: tenant.postcode ?? '',
+        receipt_footer: tenant.receiptFooter ?? '',
+        owner_name: tenant.ownerName ?? '',
         notes: tenant.notes ?? '',
         trial_ends_at: toDateInput(tenant.trialEndsAt),
     });
@@ -55,7 +60,16 @@ export default function EditTenant({ tenant }: { tenant: Tenant }) {
             <form onSubmit={submit} noValidate>
                 <FormCard>
                     <FormSection title="Business details" description="Name, legal details and contact.">
-                        <CompanyFields data={data} setData={(key, value) => setData(key, value)} errors={errors} />
+                        <CompanyFields data={data} setData={(key, value) => setData(key, value)} errors={errors} businessTypes={businessTypes} />
+                        <Field
+                            id="owner_name"
+                            label="Owner’s name on the till"
+                            optional
+                            hint="The till’s first user. Licence keys carry it; never a PIN or password."
+                            error={errors.owner_name}
+                        >
+                            <Input id="owner_name" maxLength={80} value={data.owner_name} onChange={(e) => setData('owner_name', e.target.value)} />
+                        </Field>
                     </FormSection>
 
                     <FormSection title="Account" description="Status changes are on the tenant page.">

@@ -15,6 +15,10 @@ export type BranchFieldsData = {
     area_m2: string;
     is_drs_return_point: boolean;
     licensed_hours_json: string;
+    /** Module 1.11: the licence key's shop details (blank = the business's). */
+    town: string;
+    postcode: string;
+    receipt_footer: string;
 };
 
 interface BranchFieldsProps {
@@ -76,6 +80,19 @@ export function BranchFields({ prefix = '', data, setField, errors, nations, sho
             <Field id={id('address')} label="Shop address" optional error={error('address')} className="sm:col-span-2">
                 <Textarea id={id('address')} rows={2} value={data.address} onChange={(e) => setField('address', e.target.value)} />
             </Field>
+            <Field id={id('town')} label="Town" optional error={error('town')}>
+                <Input id={id('town')} value={data.town} onChange={(e) => setField('town', e.target.value)} aria-invalid={!!error('town')} />
+            </Field>
+            <Field id={id('postcode')} label="Postcode" optional error={error('postcode')}>
+                <Input
+                    id={id('postcode')}
+                    value={data.postcode}
+                    onChange={(e) => setField('postcode', e.target.value.toUpperCase())}
+                    aria-invalid={!!error('postcode')}
+                    autoComplete="off"
+                    className="max-w-40 uppercase"
+                />
+            </Field>
             <Field id={id('vat_number')} label="Branch VAT number" optional hint="Only if different from the business." error={error('vat_number')}>
                 <Input
                     id={id('vat_number')}
@@ -95,6 +112,22 @@ export function BranchFields({ prefix = '', data, setField, errors, nations, sho
                     value={data.area_m2}
                     onChange={(e) => setField('area_m2', e.target.value)}
                     aria-invalid={!!error('area_m2')}
+                />
+            </Field>
+            <Field
+                id={id('receipt_footer')}
+                label="Receipt footer"
+                optional
+                hint="Only if different from the business’s."
+                error={error('receipt_footer')}
+                className="sm:col-span-2"
+            >
+                <Textarea
+                    id={id('receipt_footer')}
+                    rows={2}
+                    maxLength={200}
+                    value={data.receipt_footer}
+                    onChange={(e) => setField('receipt_footer', e.target.value)}
                 />
             </Field>
             <div className="flex items-start gap-3 sm:col-span-2">

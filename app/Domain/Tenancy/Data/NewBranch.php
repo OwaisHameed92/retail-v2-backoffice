@@ -10,5 +10,7 @@ final readonly class NewBranch
     public function __construct(
         public BranchDetails $details,
         public int $tills,
+        /** Module 1.11: tills allowed (the key's maxRegisters); null = the tills added. */
+        public ?int $tillsAllowed = null,
     ) {}
 }

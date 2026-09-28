@@ -9,10 +9,11 @@ use App\Domain\Licensing\Signing\Sspos\LicenceClaims;
 use App\Domain\Licensing\Signing\Sspos\SsposCodec;
 use App\Domain\Licensing\Signing\Sspos\SsposTokenSigner;
 use App\Domain\Licensing\Signing\Sspos\TokenKind;
+use App\Domain\Licensing\Support\BranchLicenceTerm;
 use App\Domain\Plans\Enums\Feature;
 use App\Domain\Tenancy\Models\Branch;
-use App\Domain\Tenancy\Models\Register;
-use App\Domain\Tenancy\Scopes\CompanyScope;
+use App\Domain\Tenancy\Models\Company;
+use App\Domain\Tenancy\Support\TenantLimits;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Collection;
 
@@ -22,10 +23,13 @@ use Illuminate\Support\Collection;
  *
  * - `companyId`/`branchId`/names/`company` block: the portal's company and branch of the licence (the same in
  *   every till key of the branch), never the till's `existingIds`.
- * - `installCode`: the one the till sent. `maxRegisters`: the branch's active tills. `features`: the licence's
- *   plan features mapped by config('licence.till_features'); `limits.branches` only with `multi_branch`.
- * - `validFrom` = first activation; `expiresAt` = the last day the till may trade, i.e. the end date plus our
- *   grace days (DECISIONS "Licence API v1.3.1"); `kind` trial until the licence is paid.
+ * - `installCode`: the one the till sent. `maxRegisters`: the branch's tills allowed (module 1.11 licence
+ *   settings). `features`: the licence's features mapped by config('licence.till_features'), with `multi_branch`
+ *   exactly when the company has multi-branch on; then `limits.branches` = its branches allowed.
+ * - `validFrom` = the branch's start date, else first activation; `expiresAt` = the last day the till may trade,
+ *   i.e. the end date plus our grace days (DECISIONS "Licence API v1.3.1"); `kind` trial until paid (full).
+ * - `company` block: business type, owner's name from the company; address, town, postcode from the branch when
+ *   it has an address, else the company; phone, VAT number, receipt footer from the branch, else the company.
  */
 final class LicenceToken
 {
@@ -39,9 +43,10 @@ final class LicenceToken
         $licence->loadMissing(['company', 'branch']);
         $company = $licence->company;
         $branch = $licence->branch;
-        $features = self::features($licence->features);
+        $multiBranch = (bool) $company?->multi_branch;
+        $features = self::features($licence->features, $multiBranch);
         $expiresAt = self::expiresAt($state, $now);
-        $validFrom = ($licence->activated_at ?? $now)->utc()->startOfSecond();
+        $validFrom = (BranchLicenceTerm::start($licence, $branch) ?? $now)->utc()->startOfSecond();
 
         if (! $expiresAt->greaterThan($validFrom)) {
             $validFrom = $expiresAt->subDay();
@@ -54,13 +59,13 @@ final class LicenceToken
             branchId: $licence->branch_id,
             businessName: mb_substr((string) $company?->name, 0, 100),
             branchName: mb_substr((string) $branch?->name, 0, 100),
-            maxRegisters: self::maxRegisters($licence->branch_id),
+            maxRegisters: self::maxRegisters($branch),
             issuedAt: $now->utc()->startOfSecond(),
             validFrom: $validFrom,
             expiresAt: $expiresAt,
             installCode: $licence->install_code,
             features: $features,
-            limits: in_array('multi_branch', $features, true) ? ['branches' => self::branches($licence->company_id)] : [],
+            limits: $multiBranch ? ['branches' => TenantLimits::branchesAllowed($company)] : [],
             company: self::companyBlock($licence),
         );
     }
@@ -111,18 +116,24 @@ final class LicenceToken
 
     /**
      * Our plan features as the till's names (config('licence.till_features')), in enum order; unmapped ones
-     * are left out.
+     * are left out. `$multiBranch` true/false forces `multiBranch` on/off (the company's setting).
      *
      * @param  Collection<int, Feature>|iterable<Feature>  $features
      * @return list<string>
      */
-    public static function features(iterable $features): array
+    public static function features(iterable $features, ?bool $multiBranch = null): array
     {
         /** @var array<string, string> $map */
         $map = (array) config('licence.till_features', []);
         $names = [];
+        $features = Feature::normalise($features);
 
-        foreach (Feature::normalise($features) as $feature) {
+        if ($multiBranch !== null) {
+            $features = array_filter($features, fn (Feature $feature) => $feature !== Feature::MultiBranch);
+            $features = Feature::normalise($multiBranch ? [...$features, Feature::MultiBranch] : $features);
+        }
+
+        foreach ($features as $feature) {
             $name = $map[$feature->value] ?? null;
 
             if (is_string($name) && preg_match(LicenceClaims::FEATURE, $name) === 1) {
@@ -133,12 +144,10 @@ final class LicenceToken
         return array_keys($names);
     }
 
-    /** Tills allowed in the branch: its active tills (at least 1). */
-    public static function maxRegisters(string $branchId): int
+    /** Tills allowed in the branch: its licence setting (module 1.11), 1 to 999. */
+    public static function maxRegisters(?Branch $branch): int
     {
-        $count = Register::withoutGlobalScope(CompanyScope::class)->where('branch_id', $branchId)->where('is_active', true)->count();
-
-        return max(1, min(999, $count));
+        return max(1, min(999, (int) $branch?->max_registers));
     }
 
     /** Tills of the branch whose live portal key is bound to an install (§17.16 "counts the tills"). */
@@ -151,14 +160,8 @@ final class LicenceToken
             ->count();
     }
 
-    private static function branches(string $companyId): int
-    {
-        return max(1, Branch::withoutGlobalScope(CompanyScope::class)->where('company_id', $companyId)->where('is_active', true)->count());
-    }
-
     /**
-     * The shop's details from the portal's company and branch (§17.16). Fields we do not hold yet
-     * (businessType, town, postcode, receiptFooter) are left out.
+     * The shop's details from the portal's company and branch (§17.2 `company`, module 1.11).
      *
      * @return array<string, string>
      */
@@ -166,12 +169,17 @@ final class LicenceToken
     {
         $company = $licence->company;
         $branch = $licence->branch;
+        $place = trim((string) $branch?->address) !== '' ? $branch : $company;
         $values = [
-            'address' => $branch?->address ?: $company?->address,
+            'businessType' => $company?->business_type?->value,
+            'address' => $place?->address,
+            'town' => $place?->town,
+            'postcode' => $place?->postcode,
             'phone' => $branch?->phone ?: $company?->phone,
             'email' => $company?->email,
             'vatNumber' => $branch?->vat_number ?: $company?->vat_number,
-            'ownerName' => $company?->contact_name,
+            'ownerName' => $company === null ? null : self::ownerName($company),
+            'receiptFooter' => $branch?->receipt_footer ?: $company?->receipt_footer,
         ];
         $block = [];
 
@@ -184,5 +192,15 @@ final class LicenceToken
         }
 
         return $block;
+    }
+
+    /** The owner's name on the form, else the first active owner login, else the main contact. */
+    private static function ownerName(Company $company): ?string
+    {
+        if (trim((string) $company->owner_name) !== '') {
+            return $company->owner_name;
+        }
+
+        return $company->owners()->orderBy('users.id')->value('users.name') ?? $company->contact_name;
     }
 }

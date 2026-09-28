@@ -5,6 +5,7 @@ namespace App\Domain\Licensing\Actions;
 use App\Domain\Licensing\Data\IssuedLicence;
 use App\Domain\Licensing\Enums\LicenceStatus;
 use App\Domain\Licensing\Models\Licence;
+use App\Domain\Licensing\Support\BranchLicenceTerm;
 use App\Domain\Licensing\Support\DefaultPlan;
 use App\Domain\Licensing\Support\UniqueLicenceKey;
 use App\Domain\Plans\Models\Plan;
@@ -13,6 +14,7 @@ use App\Domain\Tenancy\Models\Branch;
 use App\Domain\Tenancy\Models\Company;
 use App\Domain\Tenancy\Models\Register;
 use App\Domain\Tenancy\Scopes\CompanyScope;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -22,7 +24,9 @@ use Illuminate\Validation\ValidationException;
  * plan's features copied onto the licence. The trial starts on first activation (module 1.5).
  *
  * Rules: the till and its branch are active, the company is not cancelled, the till has no live licence (one
- * licence per till; a revoked one does not count), and the plan is offered (active, not archived). Without a
+ * licence per till; a revoked one does not count), the branch has a key left under its tills allowed (module
+ * 1.11), and the plan is offered (active, not archived). Features and dates follow the branch's licence
+ * settings; the key must be activated by `activate_by`. Without a
  * plan the company's plan applies, then the portal default (DefaultPlan).
  */
 class IssueLicence
@@ -54,9 +58,12 @@ class IssueLicence
                     'key_hash' => $key->hash(),
                     'key_last4' => $key->last4(),
                     'status' => LicenceStatus::Issued,
-                    'features' => $plan->features,
+                    'features' => BranchLicenceTerm::features($branch, $plan->features),
                     'grace_days' => $plan->trial_grace_days,
+                    'activate_by' => self::activateBy(),
                 ]);
+                $licence->setRelation('plan', $plan);
+                BranchLicenceTerm::applyDates($licence, $branch, CarbonImmutable::now());
                 $licence->save();
             } catch (UniqueConstraintViolationException) {
                 throw ValidationException::withMessages(['register' => "{$register->name} already has a licence."]);
@@ -97,6 +104,29 @@ class IssueLicence
         if ($live) {
             throw ValidationException::withMessages(['register' => "{$register->name} already has a licence. Reissue its key or revoke it first."]);
         }
+
+        // Module 1.11: "Till n of N" — no key past the branch's tills allowed.
+        $inUse = self::keysInUse($branch->id, $register->id);
+
+        if ($inUse >= $branch->max_registers) {
+            throw ValidationException::withMessages(['register' => "{$branch->name} has {$inUse} of {$branch->max_registers} till keys in use. Raise the tills allowed in its licence settings first."]);
+        }
+    }
+
+    /** Live keys of the branch's active tills (other than `$exceptRegisterId`): the "n" of "Till n of N". */
+    public static function keysInUse(string $branchId, ?string $exceptRegisterId = null): int
+    {
+        return Licence::query()->withoutGlobalScope(CompanyScope::class)->live()
+            ->where('branch_id', $branchId)
+            ->when($exceptRegisterId !== null, fn ($query) => $query->where('register_id', '!=', $exceptRegisterId))
+            ->whereIn('register_id', Register::withoutCompanyScope()->select('id')->where('branch_id', $branchId)->where('is_active', true))
+            ->count();
+    }
+
+    /** An unused key must be activated within config('licence.activate_by_days') (module 1.11). */
+    public static function activateBy(): CarbonImmutable
+    {
+        return CarbonImmutable::now()->addDays(max(1, (int) config('licence.activate_by_days', 30)));
     }
 
     /**

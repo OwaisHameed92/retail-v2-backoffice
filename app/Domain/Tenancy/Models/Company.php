@@ -5,6 +5,7 @@ namespace App\Domain\Tenancy\Models;
 use App\Domain\Licensing\Models\Licence;
 use App\Domain\Plans\Models\Plan;
 use App\Domain\Tenancy\Concerns\HasPortalUlid;
+use App\Domain\Tenancy\Enums\BusinessType;
 use App\Domain\Tenancy\Enums\CompanyRole;
 use App\Domain\Tenancy\Enums\CompanyStatus;
 use App\Models\User;
@@ -32,6 +33,13 @@ use Illuminate\Support\Carbon;
  * @property string|null $phone
  * @property string|null $email
  * @property string|null $contact_name
+ * @property BusinessType|null $business_type Module 1.11: the till's BusinessType name (key `company` block).
+ * @property string|null $town
+ * @property string|null $postcode
+ * @property string|null $owner_name Name for the till's first user (key `company.ownerName`); defaults to the owner login.
+ * @property string|null $receipt_footer
+ * @property bool $multi_branch May run more than one branch (key feature `multi_branch`). Set via UpdateBranchLimits.
+ * @property int $max_branches Branches allowed (key `limits.branches`). Set via UpdateBranchLimits.
  * @property CompanyStatus $status
  * @property string|null $plan_id Plan for new tills (module 1.3); null = portal default. Set via ChangeCompanyPlan.
  * @property string|null $notes
@@ -65,6 +73,11 @@ class Company extends Model
         'phone',
         'email',
         'contact_name',
+        'business_type',
+        'town',
+        'postcode',
+        'owner_name',
+        'receipt_footer',
         'status',
         'notes',
         'trial_ends_at',
@@ -75,6 +88,8 @@ class Company extends Model
      */
     protected $attributes = [
         'status' => 'trial',
+        'multi_branch' => false,
+        'max_branches' => 1,
     ];
 
     /**
@@ -84,6 +99,9 @@ class Company extends Model
     {
         return [
             'status' => CompanyStatus::class,
+            'business_type' => BusinessType::class,
+            'multi_branch' => 'boolean',
+            'max_branches' => 'integer',
             'suspended_from_status' => CompanyStatus::class,
             'trial_ends_at' => 'datetime',
             'activated_at' => 'datetime',

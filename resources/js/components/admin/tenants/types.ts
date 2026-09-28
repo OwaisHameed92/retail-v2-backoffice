@@ -1,5 +1,5 @@
 import { type TenantBillingData } from '@/components/admin/billing/types';
-import { type PlanOption, type TenantLicensing } from '@/components/admin/licences/types';
+import { type BranchLicence, type BranchLimits, type LicenceOptions, type PlanOption, type TenantLicensing } from '@/components/admin/licences/types';
 import { type Paginated } from '@/components/shared/data-table';
 import { type CompanyRole, type CompanyStatus } from '@/types';
 
@@ -31,6 +31,13 @@ export interface Tenant {
     phone: string | null;
     email: string | null;
     contactName: string | null;
+    /** Module 1.11: the key's shop details. */
+    businessType: string | null;
+    businessTypeLabel: string | null;
+    town: string | null;
+    postcode: string | null;
+    ownerName: string | null;
+    receiptFooter: string | null;
     notes: string | null;
     status: CompanyStatus;
     trialEndsAt: string | null;
@@ -60,6 +67,9 @@ export interface TenantBranch {
     address: string | null;
     phone: string | null;
     vatNumber: string | null;
+    town: string | null;
+    postcode: string | null;
+    receiptFooter: string | null;
     nation: Nation;
     nationLabel: string;
     licensedHoursJson: string | null;
@@ -68,6 +78,8 @@ export interface TenantBranch {
     isActive: boolean;
     createdAt: string | null;
     registers: TenantRegister[];
+    /** Module 1.11: licence settings with in use / allowed. */
+    licence: BranchLicence;
 }
 
 export interface TenantMember {
@@ -111,5 +123,8 @@ export interface TenantShowProps {
     plans: PlanOption[];
     /** Module 1.8: billing settings, balance, invoices and payments. */
     billing: TenantBillingData;
+    /** Module 1.11: the licence form. */
+    branchLimits: BranchLimits;
+    licenceOptions: LicenceOptions;
     can: { manage: boolean; impersonate: boolean; manageLicences: boolean };
 }

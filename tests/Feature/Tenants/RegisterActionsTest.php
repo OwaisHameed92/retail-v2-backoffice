@@ -22,7 +22,8 @@ beforeEach(fn () => Mail::fake());
 
 function emptyBranch(): Branch
 {
-    return Branch::factory()->forCompany(Company::factory()->create())->create(['code' => 'LDS']);
+    // Module 1.11: tills allowed high enough for the code tests.
+    return Branch::factory()->forCompany(Company::factory()->create())->create(['code' => 'LDS', 'max_registers' => 999]);
 }
 
 test('the first till of a branch becomes its main till', function () {

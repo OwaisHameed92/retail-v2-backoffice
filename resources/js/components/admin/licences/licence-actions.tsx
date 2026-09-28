@@ -1,3 +1,4 @@
+import { ActivateByDialog } from '@/components/admin/licences/activate-by-dialog';
 import { ChangePlanDialog } from '@/components/admin/licences/change-plan-dialog';
 import { requestKeys } from '@/components/admin/licences/issue-keys';
 import { RenewDialog } from '@/components/admin/licences/renew-dialog';
@@ -7,10 +8,10 @@ import { ConfirmDialog } from '@/components/shared/confirm-dialog';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { router } from '@inertiajs/react';
-import { Ban, CalendarPlus, CirclePause, CirclePlay, KeyRound, Layers, MonitorX, MoreHorizontal } from 'lucide-react';
+import { Ban, CalendarClock, CalendarPlus, CirclePause, CirclePlay, KeyRound, Layers, Mail, MonitorX, MoreHorizontal } from 'lucide-react';
 import { useState } from 'react';
 
-type DialogName = 'renew' | 'plan' | 'release' | 'reissue' | 'suspend' | 'unsuspend' | 'revoke' | null;
+type DialogName = 'renew' | 'plan' | 'release' | 'reissue' | 'resend' | 'activate-by' | 'suspend' | 'unsuspend' | 'revoke' | null;
 
 function postTo(url: string) {
     return new Promise<void>((resolve) => router.post(url, {}, { preserveScroll: true, onFinish: () => resolve() }));
@@ -57,6 +58,16 @@ export function LicenceActions({ licence, plans }: { licence: LicenceDetail; pla
                             Renew
                         </DropdownMenuItem>
                     )}
+                    <DropdownMenuItem onSelect={() => setDialog('resend')}>
+                        <Mail />
+                        Resend key e-mail
+                    </DropdownMenuItem>
+                    {licence.activateBy && (
+                        <DropdownMenuItem onSelect={() => setDialog('activate-by')}>
+                            <CalendarClock />
+                            Extend activate-by date
+                        </DropdownMenuItem>
+                    )}
                     <DropdownMenuItem onSelect={() => setDialog('plan')}>
                         <Layers />
                         Change plan
@@ -72,7 +83,10 @@ export function LicenceActions({ licence, plans }: { licence: LicenceDetail; pla
                         </DropdownMenuItem>
                     )}
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem className="text-destructive focus:text-destructive [&_svg]:text-destructive" onSelect={() => setDialog('revoke')}>
+                    <DropdownMenuItem
+                        className="text-destructive focus:text-destructive [&_svg]:text-destructive"
+                        onSelect={() => setDialog('revoke')}
+                    >
                         <Ban />
                         Revoke licence
                     </DropdownMenuItem>
@@ -118,6 +132,26 @@ export function LicenceActions({ licence, plans }: { licence: LicenceDetail; pla
                 confirmLabel="Replace key"
                 destructive
                 onConfirm={() => requestKeys(route('admin.licences.reissue', licence.id), { only: ['licence', 'timeline', 'activity'] })}
+            />
+            <ConfirmDialog
+                open={dialog === 'resend'}
+                onOpenChange={open('resend')}
+                title={`Email a new key for ${till}?`}
+                description={
+                    licence.isBound
+                        ? `Keys are not stored, so a new key is made and emailed to the owner. Key ${keyEnd} stops working and ${licence.deviceName ?? 'the current PC'} is released: it locks at its next check-in until the new key is entered.`
+                        : `Keys are not stored, so a new key is made and emailed to the owner. Key ${keyEnd} stops working straight away.`
+                }
+                confirmLabel="Email new key"
+                destructive={licence.isBound}
+                onConfirm={() => postTo(route('admin.licences.resend', licence.id))}
+            />
+            <ActivateByDialog
+                open={dialog === 'activate-by'}
+                onOpenChange={open('activate-by')}
+                licenceId={licence.id}
+                keyLast4={licence.keyLast4}
+                activateBy={licence.activateBy}
             />
             <ReasonDialog
                 open={dialog === 'suspend'}

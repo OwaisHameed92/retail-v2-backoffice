@@ -1,4 +1,5 @@
 import { TenantBillingPanel } from '@/components/admin/billing/tenant-billing-panel';
+import { BranchLimitsDialog } from '@/components/admin/licences/branch-limits-dialog';
 import { TenantLicencesPanel } from '@/components/admin/licences/tenant-licences-panel';
 import { ActivityPanel } from '@/components/admin/tenants/activity-panel';
 import { BranchCard } from '@/components/admin/tenants/branch-card';
@@ -18,7 +19,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import AdminLayout from '@/layouts/admin-layout';
 import { Head } from '@inertiajs/react';
-import { CalendarDays, MonitorSmartphone, Plus, Store, Users } from 'lucide-react';
+import { CalendarDays, MonitorSmartphone, Plus, SlidersHorizontal, Store, Users } from 'lucide-react';
 import { useState } from 'react';
 
 type TabValue = 'branches' | 'users' | 'activity' | 'licences' | 'billing';
@@ -34,9 +35,27 @@ function initialTab(): TabValue {
     return tab && TAB_VALUES.includes(tab) ? tab : 'branches';
 }
 
-export default function TenantShow({ tenant, stats, branches, members, activity, nations, roles, maxTills, licensing, plans, billing, can }: TenantShowProps) {
+export default function TenantShow({
+    tenant,
+    stats,
+    branches,
+    members,
+    activity,
+    nations,
+    roles,
+    maxTills,
+    licensing,
+    plans,
+    billing,
+    branchLimits,
+    licenceOptions,
+    can,
+}: TenantShowProps) {
     const [tab, setTab] = useState<TabValue>(initialTab);
     const [branchDialog, setBranchDialog] = useState<{ open: boolean; branch: TenantBranch | null }>({ open: false, branch: null });
+    const [limitsOpen, setLimitsOpen] = useState(false);
+    // Module 1.11: no branch past the branches allowed (one without multi-branch).
+    const branchesFull = branchLimits.branchesInUse >= branchLimits.branchesAllowed;
 
     const changeTab = (value: TabValue) => {
         setTab(value);
@@ -119,16 +138,46 @@ export default function TenantShow({ tenant, stats, branches, members, activity,
                     {tab === 'branches' && (
                         <>
                             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                                <p className="text-muted-foreground text-sm">
-                                    {plural(stats.branches, 'active branch', 'active branches')} with {plural(stats.tills, 'active till')}. The main
-                                    till of each branch syncs with the portal.
-                                </p>
-                                {can.manage && tenant.status !== 'cancelled' && (
-                                    <Button size="sm" onClick={() => setBranchDialog({ open: true, branch: null })}>
-                                        <Plus />
-                                        Add branch
-                                    </Button>
-                                )}
+                                <div className="grid gap-1">
+                                    <p className="text-muted-foreground text-sm">
+                                        {plural(stats.branches, 'active branch', 'active branches')} with {plural(stats.tills, 'active till')}. The
+                                        main till of each branch syncs with the portal.
+                                    </p>
+                                    <p className="flex flex-wrap items-center gap-2 text-sm">
+                                        <span className="font-medium tabular-nums">
+                                            {branchLimits.branchesInUse} of {branchLimits.branchesAllowed}{' '}
+                                            {branchLimits.branchesAllowed === 1 ? 'branch' : 'branches'} allowed in use
+                                        </span>
+                                        <Badge variant={branchLimits.multiBranch ? 'success' : 'neutral'}>
+                                            Multi-branch {branchLimits.multiBranch ? 'on' : 'off'}
+                                        </Badge>
+                                    </p>
+                                </div>
+                                <div className="flex shrink-0 flex-wrap gap-2">
+                                    {can.manageLicences && (
+                                        <Button size="sm" variant="outline" onClick={() => setLimitsOpen(true)}>
+                                            <SlidersHorizontal />
+                                            Branch limits
+                                        </Button>
+                                    )}
+                                    {can.manage && tenant.status !== 'cancelled' && (
+                                        <Button
+                                            size="sm"
+                                            disabled={branchesFull}
+                                            title={
+                                                branchesFull
+                                                    ? branchLimits.multiBranch
+                                                        ? 'All branches allowed are in use. Raise the branches allowed first.'
+                                                        : 'Licensed for one branch. Turn on multi-branch first.'
+                                                    : undefined
+                                            }
+                                            onClick={() => setBranchDialog({ open: true, branch: null })}
+                                        >
+                                            <Plus />
+                                            Add branch
+                                        </Button>
+                                    )}
+                                </div>
                             </div>
                             {branches.length === 0 ? (
                                 <EmptyState icon={Store} title="No branches yet" body="Add the customer’s first shop and its tills." bordered />
@@ -141,6 +190,7 @@ export default function TenantShow({ tenant, stats, branches, members, activity,
                                         canManage={can.manage}
                                         tillLicences={licensing.tillLicences}
                                         canManageLicences={can.manageLicences}
+                                        licenceOptions={licenceOptions}
                                         onEdit={(selected) => setBranchDialog({ open: true, branch: selected })}
                                     />
                                 ))
@@ -163,6 +213,14 @@ export default function TenantShow({ tenant, stats, branches, members, activity,
                 branch={branchDialog.branch}
                 nations={nations}
                 maxTills={maxTills}
+            />
+            <BranchLimitsDialog
+                open={limitsOpen}
+                onOpenChange={setLimitsOpen}
+                tenantId={tenant.id}
+                tenantName={tenant.name}
+                limits={branchLimits}
+                maxBranches={licenceOptions.maxBranches}
             />
         </AdminLayout>
     );

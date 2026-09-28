@@ -71,7 +71,7 @@ class CompanyFactory extends Factory
     public function withBranch(string $code = 'MAIN', string $name = 'Main shop', int $tills = 1): static
     {
         return $this->afterCreating(function (Company $company) use ($code, $name, $tills) {
-            $branch = Branch::factory()->forCompany($company)->create(['code' => $code, 'name' => $name]);
+            $branch = Branch::factory()->forCompany($company)->create(['code' => $code, 'name' => $name, 'max_registers' => max(1, $tills)]);
 
             for ($i = 1; $i <= $tills; $i++) {
                 Register::factory()->forBranch($branch)->create([

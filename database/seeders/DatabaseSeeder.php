@@ -30,6 +30,9 @@ class DatabaseSeeder extends Seeder
 
         $company = Company::factory()->create(['name' => 'Khan Mini Mart']);
         $company->plan_id = $standard->id;
+        // Module 1.11: licensed for two branches.
+        $company->multi_branch = true;
+        $company->max_branches = 2;
         $company->save();
 
         User::factory()->withCompany($company)->create([
@@ -40,7 +43,7 @@ class DatabaseSeeder extends Seeder
         // Module 1.2: Leeds with 2 tills (01 is main) and Bradford with 1 till.
         $registers = [];
         foreach ([['LDS', 'Leeds', '12 Kirkgate, Leeds LS1 6BY', 2], ['BFD', 'Bradford', '48 Ivegate, Bradford BD1 1SQ', 1]] as [$code, $name, $address, $tills]) {
-            $branch = Branch::factory()->forCompany($company)->create(['code' => $code, 'name' => $name, 'address' => $address]);
+            $branch = Branch::factory()->forCompany($company)->create(['code' => $code, 'name' => $name, 'address' => $address, 'max_registers' => $tills]);
 
             for ($i = 1; $i <= $tills; $i++) {
                 $registers[] = Register::factory()->forBranch($branch)->create([

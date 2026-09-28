@@ -7,6 +7,7 @@ use App\Domain\Tenancy\CurrentCompany;
 use App\Domain\Tenancy\Events\RegisterReactivated;
 use App\Domain\Tenancy\Models\Branch;
 use App\Domain\Tenancy\Models\Register;
+use App\Domain\Tenancy\Support\TenantLimits;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -37,6 +38,8 @@ class ReactivateRegister
             if (! $branch->is_active) {
                 throw ValidationException::withMessages(['register' => "{$branch->name} is inactive. Reactivate the branch first."]);
             }
+
+            TenantLimits::ensureCanAddTill($branch, $register->id, 'register');
 
             $register->is_active = true;
             $register->save();

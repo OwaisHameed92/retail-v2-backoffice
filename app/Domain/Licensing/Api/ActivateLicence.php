@@ -16,6 +16,7 @@ use App\Domain\Licensing\Enums\LicenceStatus;
 use App\Domain\Licensing\LicenceKey;
 use App\Domain\Licensing\LicenceState;
 use App\Domain\Licensing\Models\Licence;
+use App\Domain\Licensing\Support\BranchLicenceTerm;
 use App\Domain\Licensing\Support\LicenceTerms;
 use App\Domain\Shared\Exceptions\ApiException;
 use App\Domain\Tenancy\Enums\CompanyStatus;
@@ -29,8 +30,8 @@ use SensitiveParameter;
  * `POST /api/v1/licence/activate` (contract v1.3.1 §17.15.1): binds an e-mailed key to the till's install and
  * answers with a signed token for that till.
  *
- * 1. Unknown or malformed key → 404 key.not_found; a replaced key, or one revoked before it was ever used →
- *    410 key.expired (both count as wrong keys: 5 per install per 15 minutes, then 429). Revoked after use or
+ * 1. Unknown or malformed key → 404 key.not_found; a replaced key, one revoked before it was ever used, or an
+ *    unused key past its activate-by date (module 1.11) → 410 key.expired (both count as wrong keys: 5 per install per 15 minutes, then 429). Revoked after use or
  *    suspended (licence, company, branch or till) → 403 licence.not_active.
  * 2. Not bound → bind to this installId (+ installCode, deviceName, existingIds). First activation starts the
  *    trial (or the paid term renewed before activation) and the company's trial.
@@ -99,6 +100,11 @@ class ActivateLicence
                 throw LicenceApiErrors::keyExpired();
             }
 
+            // Module 1.11: an unused key must be activated by its activate-by date.
+            if ($licence->activated_at === null && $licence->activate_by !== null && $licence->activate_by->isPast()) {
+                throw LicenceApiErrors::keyExpired();
+            }
+
             return $licence;
         } catch (ApiException $e) {
             $this->wrongKeys->hit($till->installId);
@@ -133,7 +139,7 @@ class ActivateLicence
      */
     private function bind(Licence $licence, TillRequest $till, CarbonImmutable $now): void
     {
-        $maxRegisters = LicenceToken::maxRegisters($licence->branch_id);
+        $maxRegisters = LicenceToken::maxRegisters($licence->branch);
         $inUse = LicenceToken::registersInUse($licence->branch_id, $licence->id);
 
         if ($inUse >= $maxRegisters) {
@@ -162,11 +168,18 @@ class ActivateLicence
         ]));
     }
 
-    /** First activation: start the trial (or the paid term renewed before activation). */
+    /**
+     * First activation: the branch's kind and length when it has one (module 1.11), else start the plan's trial
+     * (or the paid term renewed before activation).
+     */
     private function startTerms(Licence $licence, CarbonImmutable $now): void
     {
         $plan = $licence->plan;
         $licence->activated_at = $now;
+
+        if ($licence->branch !== null && BranchLicenceTerm::applyDates($licence, $licence->branch, $now)) {
+            return;
+        }
 
         if (! LicenceTerms::isPaid($licence)) {
             $licence->trial_ends_at = $now->addDays($plan->trial_days ?? 7);

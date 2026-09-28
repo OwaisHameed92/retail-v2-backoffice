@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Domain\Admin\Enums\AdminRole;
 use App\Domain\Billing\Data\TenantBilling;
 use App\Domain\Licensing\Data\LicenceData;
+use App\Domain\Licensing\Data\LicenceFormData;
 use App\Domain\Licensing\Data\TenantLicences;
 use App\Domain\Licensing\Support\DefaultPlan;
 use App\Domain\Shared\Models\AuditLog;
@@ -15,6 +16,7 @@ use App\Domain\Tenancy\CurrentCompany;
 use App\Domain\Tenancy\Data\NewTenant;
 use App\Domain\Tenancy\Data\TenantActivity;
 use App\Domain\Tenancy\Data\TenantData;
+use App\Domain\Tenancy\Enums\BusinessType;
 use App\Domain\Tenancy\Enums\CompanyRole;
 use App\Domain\Tenancy\Enums\CompanyStatus;
 use App\Domain\Tenancy\Enums\Nation;
@@ -88,6 +90,9 @@ class TenantController extends Controller
             'maxTills' => NewTenant::MAX_TILLS,
             'plans' => LicenceData::planOptions(),
             'defaultPlanId' => DefaultPlan::portal()?->id,
+            // Module 1.11: the licence form, with each plan's defaults.
+            'licenceOptions' => LicenceFormData::options(),
+            'planDefaults' => LicenceFormData::planDefaults(),
         ]);
     }
 
@@ -127,7 +132,10 @@ class TenantController extends Controller
                 'tills' => $branches->where('is_active', true)->sum(fn (Branch $b) => $b->registers->where('is_active', true)->count()),
                 'users' => $members->filter(fn (User $u) => (bool) $u->getRelation('membership')->is_active)->count(),
             ],
-            'branches' => $branches->map(fn (Branch $branch) => TenantData::branch($branch))->values(),
+            'branches' => $branches->map(fn (Branch $branch) => TenantData::branch($branch) + ['licence' => LicenceFormData::branch($branch)])->values(),
+            // Module 1.11: the licence form (company branch limits and the options).
+            'branchLimits' => LicenceFormData::limits($company),
+            'licenceOptions' => LicenceFormData::options(),
             'members' => $members->map(fn (User $user) => TenantData::member($user))->values(),
             'activity' => [
                 'data' => array_map(fn (AuditLog $entry) => $presenter->row($entry), $activity->items()),
@@ -156,6 +164,7 @@ class TenantController extends Controller
     {
         return Inertia::render('admin/tenants/edit', [
             'tenant' => TenantData::company($company),
+            'businessTypes' => BusinessType::options(),
         ]);
     }
 

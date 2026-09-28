@@ -16,6 +16,7 @@ use App\Domain\Leads\Queries\LeadStats;
 use App\Domain\Leads\Support\LeadDuplicates;
 use App\Domain\Leads\Support\TrialSuggestion;
 use App\Domain\Licensing\Data\LicenceData;
+use App\Domain\Licensing\Data\LicenceFormData;
 use App\Domain\Licensing\Support\DefaultPlan;
 use App\Domain\Plans\Models\Plan;
 use App\Domain\Shared\Support\TableQuery;
@@ -185,6 +186,9 @@ class LeadController extends Controller
             'nations' => Nation::options(),
             'maxTillsPerShop' => NewTenant::MAX_TILLS,
             'maxShops' => Lead::MAX_SHOPS,
+            // Module 1.11: the licence form (kind, length, features, tills allowed) with each plan's defaults.
+            'licenceOptions' => LicenceFormData::options(),
+            'planDefaults' => LicenceFormData::planDefaults(),
         ];
     }
 }

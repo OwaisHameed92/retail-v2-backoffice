@@ -1,3 +1,4 @@
+import { licencePayload, type LicenceFormValues } from '@/components/admin/licences/licence-form-fields';
 import { type Nation } from '@/components/admin/tenants/types';
 import { FormField } from '@/components/shared/form-section';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -8,6 +9,7 @@ import { cn } from '@/lib/utils';
 import { Link, useForm } from '@inertiajs/react';
 import { Building2, CircleAlert, KeyRound, Mail, Minus, MonitorSmartphone, Plus, Store, Trash2, UserRound, type LucideIcon } from 'lucide-react';
 import { useEffect, useState, type FormEventHandler, type ReactNode } from 'react';
+import { ApproveLicenceSection } from './approve-licence-section';
 import { DialogForm } from './dialog-form';
 import { plural, suggestBranchCode } from './format';
 import { type ApprovalData, type LeadDetail, type TrialShopInput } from './types';
@@ -19,7 +21,7 @@ interface ApproveTrialDialogProps {
     onOpenChange: (open: boolean) => void;
 }
 
-type ApproveForm = { shops: TrialShopInput[]; plan_id: string };
+type ApproveForm = { shops: TrialShopInput[]; plan_id: string } & LicenceFormValues;
 
 /** Recomputes the codes nobody typed by hand, so they follow the names and stay unique. */
 function withSuggestedCodes(shops: TrialShopInput[], edited: boolean[]): TrialShopInput[] {
@@ -52,11 +54,20 @@ function Outcome({ icon: Icon, children }: { icon: LucideIcon; children: ReactNo
  * lets staff adjust the shops before confirming. Posts to LeadApprovalController; the server re-checks it all.
  */
 export function ApproveTrialDialog({ lead, approval, open, onOpenChange }: ApproveTrialDialogProps) {
+    const initialPlan = approval.suggestion.planId ?? approval.defaultPlanId ?? '';
     const initial: ApproveForm = {
-        shops: approval.suggestion.shops,
-        plan_id: approval.suggestion.planId ?? approval.defaultPlanId ?? '',
+        shops: approval.suggestion.shops.map((shop) => ({ ...shop, tills_allowed: shop.tills })),
+        plan_id: initialPlan,
+        // Module 1.11: the licence form, defaults from the plan.
+        max_registers: 1,
+        kind: 'trial',
+        length: '',
+        length_unit: '',
+        valid_from: '',
+        features: approval.planDefaults[initialPlan]?.features ?? [],
     };
     const form = useForm<ApproveForm>(initial);
+    form.transform((values) => ({ ...values, ...licencePayload(values) }));
     const [edited, setEdited] = useState<boolean[]>(() => approval.suggestion.shops.map(() => false));
     const errors = form.errors as Record<string, string | undefined>;
 
@@ -77,13 +88,17 @@ export function ApproveTrialDialog({ lead, approval, open, onOpenChange }: Appro
 
     const updateShop = (index: number, patch: Partial<TrialShopInput>, codeTyped = false) => {
         const nextEdited = codeTyped ? edited.map((value, i) => (i === index ? true : value)) : edited;
-        const next = shops.map((shop, i) => (i === index ? { ...shop, ...patch } : shop));
+        const next = shops.map((shop, i) =>
+            i === index
+                ? { ...shop, ...patch, tills_allowed: Math.max(patch.tills ?? shop.tills, patch.tills_allowed ?? shop.tills_allowed ?? 1) }
+                : shop,
+        );
         setEdited(nextEdited);
         form.setData('shops', patch.name !== undefined ? withSuggestedCodes(next, nextEdited) : next);
     };
 
     const addShop = () => {
-        const next = [...shops, { name: `Shop ${shops.length + 1}`, code: '', tills: 1, nation: shops[0]?.nation ?? 'england' }];
+        const next = [...shops, { name: `Shop ${shops.length + 1}`, code: '', tills: 1, tills_allowed: 1, nation: shops[0]?.nation ?? 'england' }];
         const nextEdited = [...edited, false];
         setEdited(nextEdited);
         form.setData('shops', withSuggestedCodes(next, nextEdited));
@@ -293,7 +308,16 @@ export function ApproveTrialDialog({ lead, approval, open, onOpenChange }: Appro
 
             {approval.plans.length > 0 && (
                 <FormField id="approve-plan" label="Plan" help={plan?.description ?? undefined} error={errors.plan_id}>
-                    <Select value={form.data.plan_id} onValueChange={(value) => form.setData('plan_id', value)}>
+                    <Select
+                        value={form.data.plan_id}
+                        onValueChange={(value) =>
+                            form.setData((current) => ({
+                                ...current,
+                                plan_id: value,
+                                features: approval.planDefaults[value]?.features ?? current.features,
+                            }))
+                        }
+                    >
                         <SelectTrigger id="approve-plan" className="sm:max-w-xs">
                             <SelectValue placeholder="Choose a plan" />
                         </SelectTrigger>
@@ -308,6 +332,16 @@ export function ApproveTrialDialog({ lead, approval, open, onOpenChange }: Appro
                     </Select>
                 </FormField>
             )}
+
+            <ApproveLicenceSection
+                shops={shops}
+                onTillsAllowed={(index, value) => updateShop(index, { tills_allowed: value })}
+                values={form.data}
+                setValue={(key, value) => form.setData(key, value as never)}
+                errors={errors}
+                options={approval.licenceOptions}
+                trialDays={trialDays}
+            />
 
             <section aria-labelledby="approve-outcome" className="bg-subtle grid gap-3 rounded-xl border p-4">
                 <h3 id="approve-outcome" className="text-sm font-semibold">

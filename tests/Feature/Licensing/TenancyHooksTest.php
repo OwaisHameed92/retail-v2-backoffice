@@ -134,7 +134,7 @@ test('a till added later gets its licence straight away', function () {
     Mail::fake();
     $company = $this->licensedTenant(tills: 1);
 
-    $register = app(AddRegister::class)->handle($this->branchOf($company));
+    $register = app(AddRegister::class)->handle($this->allowTills($this->branchOf($company), 2));
 
     expect($this->licenceOf($register)->status)->toBe(LicenceStatus::Issued);
     Mail::assertQueued(WelcomeTenantMail::class, 1);

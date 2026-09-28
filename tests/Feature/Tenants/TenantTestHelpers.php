@@ -36,7 +36,18 @@ trait TenantTestHelpers
             ownerName: 'Aisha Khan',
             ownerEmail: $ownerEmail,
             status: $status,
+            // Module 1.11: room for more branches (tills allowed = the tills; see allowTills()).
+            multiBranch: true,
+            maxBranches: 10,
         );
+    }
+
+    /** Module 1.11: raise a branch's tills allowed (the licence form) so tests can add tills. */
+    public function allowTills(Branch $branch, int $tills = 20): Branch
+    {
+        $branch->forceFill(['max_registers' => $tills])->saveQuietly();
+
+        return $branch;
     }
 
     public function tenant(string $name = 'Khan Mini Mart', int $tills = 2, string $code = 'LDS', ?string $ownerEmail = null): Company
