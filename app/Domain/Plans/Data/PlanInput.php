@@ -18,6 +18,8 @@ final readonly class PlanInput
 
     public string $pricePerTillYearly;
 
+    public string $setupFee;
+
     /**
      * @param  iterable<Feature|string>  $features
      */
@@ -34,9 +36,11 @@ final readonly class PlanInput
         public bool $isActive = true,
         public bool $isPublic = false,
         public int $sortOrder = 0,
+        string|int $setupFee = '0.00',
     ) {
         $this->pricePerTillMonthly = Money::normalise($pricePerTillMonthly);
         $this->pricePerTillYearly = Money::normalise($pricePerTillYearly);
+        $this->setupFee = Money::normalise($setupFee);
         $this->features = Feature::normalise($features);
     }
 
@@ -53,6 +57,7 @@ final readonly class PlanInput
             'description' => $description === '' ? null : $description,
             'price_per_till_monthly' => $this->pricePerTillMonthly,
             'price_per_till_yearly' => $this->pricePerTillYearly,
+            'setup_fee' => $this->setupFee,
             'currency' => Plan::CURRENCY,
             'trial_days' => $this->trialDays,
             'trial_grace_days' => $this->trialGraceDays,

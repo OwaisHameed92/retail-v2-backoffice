@@ -22,6 +22,9 @@ Schedule::command('licences:refresh')->dailyAt('00:05')->onOneServer()->withoutO
 // Cash billing (module 1.8): due invoices, overdue → suspension after the grace, trial emails. Idempotent.
 Schedule::command('billing:run')->dailyAt('06:00')->onOneServer()->withoutOverlapping();
 
+// GoCardless (module 1.12): heal missed webhooks and amount drift before the billing run.
+Schedule::command('billing:reconcile-gocardless')->dailyAt('05:30')->onOneServer()->withoutOverlapping();
+
 // Email log (module 1.7): delete rows older than the retention period (12 months).
 Schedule::command('model:prune', ['--model' => [EmailLog::class]])->daily()->onOneServer();
 

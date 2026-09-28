@@ -15,16 +15,18 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Route;
 use Inertia\Testing\AssertableInertia;
 use Tests\Feature\Billing\BillingTestHelpers;
+use Tests\Feature\Billing\GoCardless\GoCardlessTestHelpers;
 use Tests\Feature\Licensing\LicensingTestHelpers;
 use Tests\Feature\Tenants\TenantTestHelpers;
 
-uses(TenantTestHelpers::class, LicensingTestHelpers::class, BillingTestHelpers::class);
+uses(TenantTestHelpers::class, LicensingTestHelpers::class, BillingTestHelpers::class, GoCardlessTestHelpers::class);
 
 beforeEach(function () {
     $this->withoutVite();
     Mail::fake();
     $this->atLondon('2026-10-24 10:00');
     $this->setVat(true);
+    $this->fakeGoCardless();
 });
 
 /*
@@ -50,6 +52,12 @@ $billingRoutes = [
     ['admin.billing.tenants.invoices.store', 'post', ['company' => 'company'], 'manage', ['allow_overlap' => true, 'notes' => 'Extra till']],
     ['admin.billing.tenants.payments.store', 'post', ['company' => 'company'], 'manage', ['method' => 'cash', 'amount' => '90.00', 'received_on' => '{today}', 'allocation' => 'auto']],
     ['admin.billing.tenants.settings', 'put', ['company' => 'company'], 'manage', ['billing_name' => 'Khan Holdings', 'billing_address' => '1 High St', 'emails' => ['accounts@khan.test'], 'cycle' => 'monthly', 'payment_terms_days' => 14, 'vat_applies' => true]],
+    // Direct Debit (module 1.12), last: the setup fee takes the next invoice number.
+    ['admin.billing.tenants.direct-debit.settings', 'put', ['company' => 'company'], 'manage', ['billing_mode' => 'directDebit', 'setup_fee_override' => '100.00', 'setup_fee_method' => 'manual', 'setup_fee_instalments' => 1]],
+    ['admin.billing.tenants.direct-debit.setup-email', 'post', ['company' => 'company'], 'manage', []],
+    ['admin.billing.tenants.direct-debit.setup-fee', 'post', ['company' => 'company'], 'manage', []],
+    ['admin.billing.tenants.direct-debit.sync', 'post', ['company' => 'company'], 'manage', []],
+    ['admin.billing.tenants.direct-debit.subscription', 'post', ['company' => 'company', 'action' => 'pause'], 'manage', []],
 ];
 
 /**
@@ -72,17 +80,24 @@ $billingFixture = function (object $test): array {
 
     $payment = $test->pay($company, '5.00', [])->payment;
 
+    // Direct Debit: a subscription still collecting while the mandate is suspended by the payer (so both "send
+    // setup email" and "pause" apply).
+    $subscription = $test->gc->createSubscription('MD000900', 3000, 'monthly', '2026-11-01', 'Test', [], 'fixture-'.$company->id);
+    $account = $test->billingAccountOf($company);
+    $account->forceFill(['gc_mandate_id' => 'MD000900', 'gc_mandate_status' => 'suspendedByPayer', 'gc_subscription_id' => $subscription->id, 'gc_subscription_status' => 'active', 'gc_subscription_amount' => '30.00', 'gc_subscription_cycle' => 'monthly'])->save();
+
     return [
         'company' => $company->id,
         'draft1' => $drafts[1], 'draft2' => $drafts[2], 'draft3' => $drafts[3],
         'issued1' => $issued[1], 'issued2' => $issued[2], 'issued3' => $issued[3],
         'payment' => $payment->id,
+        'pause' => 'pause',
     ];
 };
 
 $billingRequest = function (object $test, array $route, array $fixture, bool $json = false) {
     [$name, $method, $params, , $data] = $route;
-    $url = route($name, array_map(fn (string $key) => $fixture[$key], $params));
+    $url = route($name, array_map(fn (string $key) => $fixture[$key] ?? $key, $params));
     array_walk_recursive($data, function (mixed &$value) {
         $value = $value === '{today}' ? CarbonImmutable::now()->setTimezone('Europe/London')->format('Y-m-d') : $value;
     });
@@ -96,7 +111,7 @@ test('the table covers every billing route', function () use ($billingRoutes) {
         ->map(fn (RoutingRoute $route) => $route->getName())
         ->sort()->values()->all();
 
-    expect($registered)->toHaveCount(18)
+    expect($registered)->toHaveCount(23)
         ->and(collect($billingRoutes)->pluck(0)->sort()->values()->all())->toBe($registered);
 });
 
@@ -139,7 +154,9 @@ test('sales and support cannot read or change billing (owner and accounts only)'
         ->and(Payment::withoutCompanyScope()->count())->toBe(1)
         ->and(CreditNote::withoutCompanyScope()->count())->toBe(0)
         ->and($this->fresh(Invoice::withoutCompanyScope()->findOrFail($fixture['issued1']))->sent_count)->toBe(1)
-        ->and($this->billingAccountOf(Company::query()->findOrFail($fixture['company']))->billing_name)->toBeNull();
+        ->and($this->billingAccountOf(Company::query()->findOrFail($fixture['company']))->billing_name)->toBeNull()
+        ->and($this->billingAccountOf(Company::query()->findOrFail($fixture['company']))->billing_mode->value)->toBe('upfrontCash')
+        ->and($this->gc->calls)->not->toContain('pauseSubscription');
 })->with([AdminRole::Sales, AdminRole::Support]);
 
 test('accounts and owner admins can use every billing route', function (AdminRole $role) use ($billingRoutes, $billingFixture, $billingRequest) {
@@ -169,7 +186,11 @@ test('accounts and owner admins can use every billing route', function (AdminRol
         ->and(Payment::withoutCompanyScope()->where('amount', '90.00')->sole()->received_by_admin_id)->toBe((string) $admin->id)
         ->and(Invoice::withoutCompanyScope()->where('notes', 'Extra till')->sole()->created_by_admin_id)->toBe((string) $admin->id)
         ->and($this->billingAccountOf($company)->billing_name)->toBe('Khan Holdings')
-        ->and($this->billingAccountOf($company)->payment_terms_days)->toBe(14);
+        ->and($this->billingAccountOf($company)->payment_terms_days)->toBe(14)
+        ->and($this->billingAccountOf($company)->billing_mode->value)->toBe('directDebit')
+        ->and($this->billingAccountOf($company)->gc_setup_sent_at)->not->toBeNull()
+        ->and($this->billingAccountOf($company)->gc_subscription_status?->value)->toBe('paused')
+        ->and(Invoice::withoutCompanyScope()->where('kind', 'setupFee')->sole()->total)->toBe('120.00');
 })->with([AdminRole::Accounts, AdminRole::Owner]);
 
 test('the JSON helpers answer with the preview and the open invoices', function () {

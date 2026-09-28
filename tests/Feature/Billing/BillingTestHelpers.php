@@ -137,7 +137,7 @@ trait BillingTestHelpers
     }
 
     /**
-     * @return array{invoicesCreated: int, invoicesOverdue: int, companiesSuspended: int, trialReminders: int, trialEnded: int}
+     * @return array<string, int>
      */
     public function runBilling(): array
     {
@@ -147,7 +147,7 @@ trait BillingTestHelpers
     /**
      * billing:run on the morning (06:00) of a London date.
      *
-     * @return array{invoicesCreated: int, invoicesOverdue: int, companiesSuspended: int, trialReminders: int, trialEnded: int}
+     * @return array<string, int>
      */
     public function runBillingOn(string $date): array
     {

@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "4c249ac19640e0b867410ed26c1cfa92",
+    "content-hash": "ad4215faf85b94b890aa7e1133499d9b",
     "packages": [
         {
             "name": "anthropic-ai/sdk",
@@ -876,6 +876,61 @@
                 }
             ],
             "time": "2025-12-03T09:33:47+00:00"
+        },
+        {
+            "name": "gocardless/gocardless-pro",
+            "version": "8.4.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/gocardless/gocardless-pro-php.git",
+                "reference": "17ada02de4cfb53eaa729413961cbc1dfd7495ff"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/gocardless/gocardless-pro-php/zipball/17ada02de4cfb53eaa729413961cbc1dfd7495ff",
+                "reference": "17ada02de4cfb53eaa729413961cbc1dfd7495ff",
+                "shasum": ""
+            },
+            "require": {
+                "ext-curl": "*",
+                "ext-json": "*",
+                "ext-mbstring": "*",
+                "guzzlehttp/guzzle": "^7.4|^8.0",
+                "php": ">=8.2"
+            },
+            "require-dev": {
+                "phpstan/phpstan": "^2.2.8",
+                "phpunit/phpunit": "^9.6.35",
+                "squizlabs/php_codesniffer": "^4.0.4"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "GoCardlessPro\\": "lib/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "GoCardless and contributors",
+                    "homepage": "https://github.com/gocardless/gocardless-pro-php/contributors"
+                }
+            ],
+            "description": "GoCardless PHP Client Library",
+            "homepage": "https://gocardless.com/",
+            "keywords": [
+                "api",
+                "direct debit",
+                "gocardless"
+            ],
+            "support": {
+                "issues": "https://github.com/gocardless/gocardless-pro-php/issues",
+                "source": "https://github.com/gocardless/gocardless-pro-php/tree/v8.4.0"
+            },
+            "time": "2026-09-25T13:37:56+00:00"
         },
         {
             "name": "graham-campbell/result-type",

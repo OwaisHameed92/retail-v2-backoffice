@@ -3,6 +3,7 @@
 namespace App\Domain\Billing\Actions;
 
 use App\Domain\Billing\Enums\BillingCycle;
+use App\Domain\Billing\GoCardless\Support\SetupLink;
 use App\Domain\Billing\Support\BillingAccounts;
 use App\Domain\Billing\Support\BillingDates;
 use App\Domain\Billing\Support\BillingFormat;
@@ -67,13 +68,16 @@ class SendTrialEmails
 
             $daysLeft = (int) BillingDates::today($now)->diffInDays(BillingDates::londonDate($trialEnds), false);
             $price = $this->priceSummary($company, $licences->first()?->plan);
+            $account = $this->accounts->for($company);
+            // Direct Debit customers without a working mandate get the setup link (module 1.12).
+            $ddUrl = $account->isDirectDebit() && ! $account->hasUsableMandate() ? SetupLink::for($company) : null;
 
-            DB::transaction(function () use ($company, $trialEnds, $now, $daysLeft, $reminderDays, $windowDays, $licences, $price, &$sent) {
+            DB::transaction(function () use ($company, $trialEnds, $now, $daysLeft, $reminderDays, $windowDays, $licences, $price, $ddUrl, &$sent) {
                 $account = $this->accounts->lock($company);
                 $sameEnd = fn (?CarbonImmutable $for) => $for !== null && $for->getTimestamp() === $trialEnds->getTimestamp();
 
                 if ($now->lessThan($trialEnds) && $daysLeft <= $reminderDays && ! $sameEnd($account->trial_reminder_for)) {
-                    $this->mailer->trialReminder($company, $trialEnds, max(0, $daysLeft), $licences->count(), $price);
+                    $this->mailer->trialReminder($company, $trialEnds, max(0, $daysLeft), $licences->count(), $price, $ddUrl);
                     $account->trial_reminder_for = $trialEnds;
                     $account->trial_reminder_sent_at = $now;
                     $account->save();
@@ -82,7 +86,7 @@ class SendTrialEmails
                 }
 
                 if ($now->greaterThanOrEqualTo($trialEnds) && $now->lessThan($trialEnds->addDays($windowDays)) && ! $sameEnd($account->trial_ended_for)) {
-                    $this->mailer->trialEnded($company, $trialEnds, $licences->count(), $price);
+                    $this->mailer->trialEnded($company, $trialEnds, $licences->count(), $price, $ddUrl);
                     $account->trial_ended_for = $trialEnds;
                     $account->trial_ended_sent_at = $now;
                     $account->save();

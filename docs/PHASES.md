@@ -10,7 +10,7 @@ Each module is one agent task. Modules in the same wave can run in parallel. Sta
 included) pass, the UI follows `docs/BRAND.md`, and `composer check`, `npm run lint`, `npx tsc --noEmit` and
 `npm run build` are green.
 
-Totals: **65 modules · 14 done · 4 rework · 47 todo.**
+Totals: **66 modules · 18 done · 2 rework · 3 blocked · 43 todo.**
 
 ---
 
@@ -24,7 +24,7 @@ Totals: **65 modules · 14 done · 4 rework · 47 todo.**
 | 0.4 | Tenant area (companies, memberships, fail-closed company scope) | done |
 | 0.5 | Shared building blocks (audit log, money, API errors, data table, toaster) | done |
 
-## Phase 1: Onboarding and licensing — 6/11
+## Phase 1: Onboarding and licensing — 12/12
 
 Contract: v1.3.1 `docs/web-portal-api.md` §17 (read 17.15–17.17 first), `specs/licensing.md`, `licensing/schemas`,
 `licensing/samples`.
@@ -42,8 +42,9 @@ Contract: v1.3.1 `docs/web-portal-api.md` §17 (read 17.15–17.17 first), `spec
 | 1.11 | Licence form v1.3 | Customer/licence form with every token field (17.16): kind trial/full, validFrom/expiresAt length, `maxRegisters` per branch, `limits.branches`, `multi_branch`, features (till's snake_case names), `company` block; "Till 1 of 3" issuing with limits; installId/installCode, clock skew, lock state; **Release** key; activate-by date; re-sign branch keys on change. Built: shop details (business type, town, postcode, owner's name, receipt footer) on the company/branch forms; branch licence settings dialog + company branch limits; limits enforced in IssueLicence/AddRegister/AddBranch/Reactivate*; `activate_by` (410 `key.expired`, extend, reissue resets); "Resend key e-mail"; wizard and lead approval carry the form | done |
 | 1.9 | Admin dashboard | Customers, trials, licences, leads, cash due (sales tiles come in 3.2) | done |
 | 1.10 | Public trial form | Public API `POST /api/v1/public/trial-requests` + hosted `/trial` page → lead (docs/specs/public-trial-api.md) | done |
+| 1.12 | GoCardless billing | Upfront cash or setup fee + Direct Debit (monthly/yearly): plan setup fee + per-customer override, instalments; mandate by emailed signed link → GoCardless hosted flow; subscription = live tills × plan price + VAT, kept in step; every GoCardless payment ↔ one invoice, confirmed → RecordPayment (`directDebit`) → licences renewed, failed/charged back → reversal + dunning → overdue/suspension via billing:run; `POST /webhooks/gocardless` (HMAC, idempotent, queued, replayable); daily `billing:reconcile-gocardless`; trial without mandate → grace → suspension; admin Billing tab/overview/plan form (docs/specs/gocardless-billing.md) | done |
 
-Waves: **1.4 → 1.5 + 1.11** · then 1.9, 1.10.
+Waves: **1.4 → 1.5 + 1.11** · then 1.9, 1.10, 1.12.
 
 ## Phase 2: Sync and cloud link — 0/9 (2 rework)
 

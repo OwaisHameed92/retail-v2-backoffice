@@ -25,6 +25,9 @@ class BillingRunCommand extends Command
         $this->line("  Businesses suspended: {$result['companiesSuspended']}");
         $this->line("  Trial reminders sent: {$result['trialReminders']}");
         $this->line("  Trial ended emails sent: {$result['trialEnded']}");
+        $this->line("  Suspended without a Direct Debit: {$result['noMandateSuspended']}");
+        $this->line("  Overdue after a lost Direct Debit: {$result['mandateOverdue']}");
+        $this->line("  Direct Debit reminders sent: {$result['directDebitReminders']}");
 
         return self::SUCCESS;
     }

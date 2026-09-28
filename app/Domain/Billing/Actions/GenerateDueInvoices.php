@@ -3,6 +3,7 @@
 namespace App\Domain\Billing\Actions;
 
 use App\Domain\Billing\Data\NewInvoice;
+use App\Domain\Billing\Support\BillingAccounts;
 use App\Domain\Billing\Support\BillingPeriod;
 use App\Domain\Licensing\Actions\RenewCompanyLicences;
 use App\Domain\Licensing\Models\Licence;
@@ -16,11 +17,15 @@ use Illuminate\Validation\ValidationException;
  * billing:run step: creates the next invoice for every company whose tills run out (BillingPeriod::anchor)
  * within `billing.generate.days_before` days and that has no invoice (draft or issued, not void) for that next
  * period yet. Drafts for staff to review, or issued and emailed when `billing.generate.auto_issue` is on.
- * Idempotent: the overlap check stops a second invoice for the same period.
+ * Idempotent: the overlap check stops a second invoice for the same period. Companies paying by Direct Debit
+ * with a live GoCardless subscription are skipped (their invoices come with each GoCardless payment).
  */
 class GenerateDueInvoices
 {
-    public function __construct(private readonly GenerateInvoice $generateInvoice) {}
+    public function __construct(
+        private readonly GenerateInvoice $generateInvoice,
+        private readonly BillingAccounts $accounts,
+    ) {}
 
     /**
      * @return list<string> ids of the invoices created
@@ -42,6 +47,14 @@ class GenerateDueInvoices
             $company = Company::query()->find($companyId);
 
             if ($company === null || $company->status === CompanyStatus::Cancelled) {
+                continue;
+            }
+
+            // Direct Debit (module 1.12): GoCardless creates the payment and the invoice comes with it. Without a
+            // live subscription (no mandate yet, or it was cancelled) the company is invoiced by hand as before.
+            $account = $this->accounts->for($company);
+
+            if ($account->isDirectDebit() && $account->hasLiveSubscription()) {
                 continue;
             }
 

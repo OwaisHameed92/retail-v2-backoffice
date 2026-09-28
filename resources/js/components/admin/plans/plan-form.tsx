@@ -17,6 +17,7 @@ export interface PlanFormData {
     description: string;
     price_per_till_monthly: string;
     price_per_till_yearly: string;
+    setup_fee: string;
     trial_days: string;
     trial_grace_days: string;
     grace_days: string;
@@ -37,6 +38,7 @@ export function planFormDefaults(
         description: plan?.description ?? '',
         price_per_till_monthly: plan?.pricePerTillMonthly ?? '',
         price_per_till_yearly: plan?.pricePerTillYearly ?? '',
+        setup_fee: plan?.setupFee ?? '0.00',
         trial_days: String(plan?.trialDays ?? defaults?.trialDays ?? 7),
         trial_grace_days: String(plan?.trialGraceDays ?? defaults?.trialGraceDays ?? 3),
         grace_days: String(plan?.graceDays ?? defaults?.graceDays ?? 7),
@@ -134,7 +136,7 @@ export function PlanForm({
                     </Field>
                 </FormSection>
 
-                <FormSection title="Pricing" description="Price per till, in pounds (GBP). One licence covers one till.">
+                <FormSection title="Pricing" description="Price per till and the one-off setup fee, in pounds (GBP). One licence covers one till.">
                     <div className="grid gap-5 sm:grid-cols-2">
                         <Field
                             id="price_per_till_monthly"
@@ -180,6 +182,21 @@ export function PlanForm({
                                 value={data.price_per_till_yearly}
                                 invalid={!!errors.price_per_till_yearly}
                                 onChange={(e) => setData('price_per_till_yearly', e.target.value)}
+                            />
+                        </Field>
+                        <Field
+                            id="setup_fee"
+                            label="Setup fee"
+                            error={errors.setup_fee}
+                            help="Charged once per business, before VAT. 0 for none. Can be changed per customer on their Billing tab."
+                        >
+                            <MoneyInput
+                                id="setup_fee"
+                                required
+                                placeholder="0.00"
+                                value={data.setup_fee}
+                                invalid={!!errors.setup_fee}
+                                onChange={(e) => setData('setup_fee', e.target.value)}
                             />
                         </Field>
                     </div>

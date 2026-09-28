@@ -22,6 +22,7 @@ final class PlanActivity
         'description' => 'Description',
         'price_per_till_monthly' => 'Monthly price per till',
         'price_per_till_yearly' => 'Yearly price per till',
+        'setup_fee' => 'Setup fee',
         'currency' => 'Currency',
         'trial_days' => 'Trial length',
         'trial_grace_days' => 'Trial grace',
@@ -105,7 +106,7 @@ final class PlanActivity
         }
 
         return match (true) {
-            str_starts_with($key, 'price_') => self::money($value),
+            str_starts_with($key, 'price_'), $key === 'setup_fee' => self::money($value),
             str_ends_with($key, '_days') => $value.' '.Str::plural('day', (int) $value),
             is_bool($value) => $value ? 'Yes' : 'No',
             $key === 'description' => Str::limit((string) $value, 80),

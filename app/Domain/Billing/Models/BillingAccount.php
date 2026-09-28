@@ -2,7 +2,13 @@
 
 namespace App\Domain\Billing\Models;
 
+use App\Domain\Billing\Casts\CalendarDateCast;
 use App\Domain\Billing\Enums\BillingCycle;
+use App\Domain\Billing\Enums\BillingMode;
+use App\Domain\Billing\Enums\SetupFeeMethod;
+use App\Domain\Billing\GoCardless\Enums\MandateStatus;
+use App\Domain\Billing\GoCardless\Enums\SubscriptionStatus;
+use App\Domain\Shared\Casts\MoneyCast;
 use App\Domain\Tenancy\Concerns\BelongsToCompany;
 use App\Domain\Tenancy\Concerns\HasPortalUlid;
 use App\Domain\Tenancy\Models\Company;
@@ -28,6 +34,28 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property CarbonImmutable|null $trial_reminder_sent_at
  * @property CarbonImmutable|null $trial_ended_for
  * @property CarbonImmutable|null $trial_ended_sent_at
+ * @property BillingMode $billing_mode
+ * @property string|null $setup_fee_override
+ * @property SetupFeeMethod $setup_fee_method
+ * @property int $setup_fee_instalments
+ * @property CarbonImmutable|null $setup_fee_invoiced_at
+ * @property string|null $gc_customer_id
+ * @property string|null $gc_billing_request_id
+ * @property string|null $gc_setup_url
+ * @property CarbonImmutable|null $gc_setup_url_expires_at
+ * @property CarbonImmutable|null $gc_setup_sent_at
+ * @property string|null $gc_mandate_id
+ * @property MandateStatus|null $gc_mandate_status
+ * @property CarbonImmutable|null $gc_mandate_active_at
+ * @property CarbonImmutable|null $gc_mandate_lost_at
+ * @property CarbonImmutable|null $mandate_overdue_at
+ * @property CarbonImmutable|null $mandate_grace_suspended_for
+ * @property string|null $gc_subscription_id
+ * @property SubscriptionStatus|null $gc_subscription_status
+ * @property string|null $gc_subscription_amount
+ * @property BillingCycle|null $gc_subscription_cycle
+ * @property CarbonImmutable|null $gc_next_charge_date
+ * @property CarbonImmutable|null $gc_reconciled_at
  * @property CarbonImmutable|null $created_at
  * @property CarbonImmutable|null $updated_at
  * @property-read Company|null $company
@@ -44,6 +72,9 @@ class BillingAccount extends Model
         'cycle' => 'monthly',
         'payment_terms_days' => 7,
         'vat_applies' => true,
+        'billing_mode' => 'upfrontCash',
+        'setup_fee_method' => 'directDebit',
+        'setup_fee_instalments' => 1,
     ];
 
     /**
@@ -61,6 +92,24 @@ class BillingAccount extends Model
             'trial_reminder_sent_at' => 'immutable_datetime',
             'trial_ended_for' => 'immutable_datetime',
             'trial_ended_sent_at' => 'immutable_datetime',
+            'billing_mode' => BillingMode::class,
+            'setup_fee_override' => MoneyCast::class,
+            'setup_fee_method' => SetupFeeMethod::class,
+            'setup_fee_instalments' => 'integer',
+            'setup_fee_invoiced_at' => 'immutable_datetime',
+            'gc_setup_url' => 'encrypted',
+            'gc_setup_url_expires_at' => 'immutable_datetime',
+            'gc_setup_sent_at' => 'immutable_datetime',
+            'gc_mandate_status' => MandateStatus::class,
+            'gc_mandate_active_at' => 'immutable_datetime',
+            'gc_mandate_lost_at' => 'immutable_datetime',
+            'mandate_overdue_at' => 'immutable_datetime',
+            'mandate_grace_suspended_for' => 'immutable_datetime',
+            'gc_subscription_status' => SubscriptionStatus::class,
+            'gc_subscription_amount' => MoneyCast::class,
+            'gc_subscription_cycle' => BillingCycle::class,
+            'gc_next_charge_date' => CalendarDateCast::class,
+            'gc_reconciled_at' => 'immutable_datetime',
             'created_at' => 'immutable_datetime',
             'updated_at' => 'immutable_datetime',
         ];
@@ -72,6 +121,23 @@ class BillingAccount extends Model
     public function company(): BelongsTo
     {
         return $this->belongsTo(Company::class)->withTrashed();
+    }
+
+    public function isDirectDebit(): bool
+    {
+        return $this->billing_mode === BillingMode::DirectDebit;
+    }
+
+    /** A mandate GoCardless accepts payments on. */
+    public function hasUsableMandate(): bool
+    {
+        return $this->gc_mandate_id !== null && ($this->gc_mandate_status?->isUsable() ?? false);
+    }
+
+    /** A GoCardless subscription that is still collecting (or paused). */
+    public function hasLiveSubscription(): bool
+    {
+        return $this->gc_subscription_id !== null && ($this->gc_subscription_status?->isLive() ?? false);
     }
 
     /**

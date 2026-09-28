@@ -9,7 +9,15 @@ To keep trading without a break, pay for your {{ $tillCount }} before the trial 
 
 ## How to pay
 
+@if ($data->directDebitUrl)
+You pay by Direct Debit. Set it up now (it takes two minutes) so your tills carry on after the trial.
+
+<x-mail::button :url="$data->directDebitUrl">
+Set up Direct Debit
+</x-mail::button>
+@else
 We take payment in cash for now. Reply to this email or call us and we will arrange it with you. Your licences are renewed the same day.
+@endif
 @if ($data->priceSummary)
 
 <x-mail::panel>

@@ -14,13 +14,23 @@ Pay as soon as you can to keep trading. If it stays unpaid, your account is susp
 @else
 # Your invoice {{ $data->invoiceNumber }}
 
+@if ($directDebitOn)
+Hi {{ $firstName }}, {{ $data->resent ? 'here is your invoice again' : 'here is your Switch & Save invoice' }} for **{{ $data->businessName }}**. We collect **{{ $amountDue }}** by Direct Debit on {{ $directDebitOn }}.
+@else
 Hi {{ $firstName }}, {{ $data->resent ? 'here is your invoice again' : 'here is your Switch & Save invoice' }} for **{{ $data->businessName }}**. The amount due is **{{ $amountDue }}**, by {{ $dueOn }}.
+@endif
 @endif
 
 <x-mail::facts :rows="$facts" />
 
 The invoice is attached as a PDF.
-@unless ($paid)
+@if (! $paid && $directDebitOn)
+
+## How to pay
+
+Nothing to do: we collect **{{ $amountDue }}** by Direct Debit on {{ $directDebitOn }}. Your licences are renewed as soon as the payment clears.
+@endif
+@unless ($paid || $directDebitOn)
 
 ## How to pay
 

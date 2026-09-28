@@ -5,7 +5,7 @@ namespace App\Domain\Billing\Enums;
 /**
  * How a payment reached us. Staff record cash, bank transfers and anything else by hand; `online` is reserved
  * for the payment gateway (later), which records payments through the same RecordPayment action with its
- * gateway name and reference.
+ * gateway name and reference. `directDebit` is recorded by the GoCardless integration (module 1.12) only.
  */
 enum PaymentMethod: string
 {
@@ -13,6 +13,7 @@ enum PaymentMethod: string
     case BankTransfer = 'bankTransfer';
     case Other = 'other';
     case Online = 'online';
+    case DirectDebit = 'directDebit';
 
     public function label(): string
     {
@@ -21,13 +22,14 @@ enum PaymentMethod: string
             self::BankTransfer => 'Bank transfer',
             self::Other => 'Other',
             self::Online => 'Online',
+            self::DirectDebit => 'Direct Debit',
         };
     }
 
     /** Staff can record this method by hand. */
     public function isManual(): bool
     {
-        return $this !== self::Online;
+        return ! in_array($this, [self::Online, self::DirectDebit], true);
     }
 
     /**

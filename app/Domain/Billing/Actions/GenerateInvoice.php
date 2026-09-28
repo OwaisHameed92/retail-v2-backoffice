@@ -89,7 +89,7 @@ class GenerateInvoice
             return $invoice;
         });
 
-        return $input->issue ? $this->issueInvoice->handle($invoice) : $invoice->refresh();
+        return $input->issue ? $this->issueInvoice->handle($invoice, $input->send, $input->dueDate) : $invoice->refresh();
     }
 
     /**
@@ -111,7 +111,7 @@ class GenerateInvoice
 
         $lines = InvoiceLineBuilder::build($licences, $start, $end, $cycle, $vatRate, $prorate);
 
-        $overlap = Invoice::withoutCompanyScope()->where('company_id', $company->id)->notVoid()
+        $overlap = Invoice::withoutCompanyScope()->where('company_id', $company->id)->notVoid()->forPeriods()
             ->where('period_start', '<=', $end->format('Y-m-d'))
             ->where('period_end', '>=', $start->format('Y-m-d'))
             ->orderBy('period_start')

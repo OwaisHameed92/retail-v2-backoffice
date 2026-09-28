@@ -63,4 +63,19 @@ return [
         'ended_window_days' => 3,
     ],
 
+    // GoCardless Direct Debit (module 1.12). Keys are in config/services.php (GOCARDLESS_*).
+    'direct_debit' => [
+        // Days a Direct Debit customer keeps trading after the trial ends (or after the mandate is cancelled)
+        // without a working mandate: then suspended (trial) or marked overdue (lost mandate).
+        'mandate_grace_days' => (int) env('BILLING_MANDATE_GRACE_DAYS', 3),
+        // A second "your Direct Debit failed" email this many days after a failed payment still unpaid.
+        'dunning_reminder_days' => (int) env('BILLING_DD_REMINDER_DAYS', 5),
+        // How long the Direct Debit setup link in the email works.
+        'setup_link_days' => 14,
+        // Most setup fee instalments.
+        'max_instalments' => 12,
+        // How far back the daily reconcile compares payments with GoCardless.
+        'reconcile_days' => 45,
+    ],
+
 ];

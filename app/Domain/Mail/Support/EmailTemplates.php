@@ -6,6 +6,9 @@ use App\Domain\Mail\Mailables\AccountReactivatedMail;
 use App\Domain\Mail\Mailables\AccountSuspendedMail;
 use App\Domain\Mail\Mailables\AdminNewLeadMail;
 use App\Domain\Mail\Mailables\BrandedMailable;
+use App\Domain\Mail\Mailables\DirectDebitCancelledMail;
+use App\Domain\Mail\Mailables\DirectDebitFailedMail;
+use App\Domain\Mail\Mailables\DirectDebitSetupMail;
 use App\Domain\Mail\Mailables\InvoiceMail;
 use App\Domain\Mail\Mailables\LeadRejectedMail;
 use App\Domain\Mail\Mailables\LicenceKeyMail;
@@ -27,7 +30,10 @@ final class EmailTemplates
         LicenceKeyMail::class,
         TrialReminderMail::class,
         TrialEndedMail::class,
+        DirectDebitSetupMail::class,
         InvoiceMail::class,
+        DirectDebitFailedMail::class,
+        DirectDebitCancelledMail::class,
         LicenceRenewedMail::class,
         AccountSuspendedMail::class,
         AccountReactivatedMail::class,

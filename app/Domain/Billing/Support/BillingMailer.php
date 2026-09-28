@@ -3,6 +3,8 @@
 namespace App\Domain\Billing\Support;
 
 use App\Domain\Billing\Data\InvoiceDocument;
+use App\Domain\Billing\GoCardless\Enums\PaymentStatus;
+use App\Domain\Billing\GoCardless\Models\GoCardlessPayment;
 use App\Domain\Billing\Models\Invoice;
 use App\Domain\Billing\Models\InvoiceLine;
 use App\Domain\Licensing\Models\Licence;
@@ -62,10 +64,18 @@ final class BillingMailer
                 pdfRenderer: InvoicePdf::class,
                 pdfKey: $invoice->id,
                 companyId: $company->id,
+                directDebitOn: $this->directDebitDate($invoice),
             )));
         }
 
         return count($recipients);
+    }
+
+    /** The day GoCardless collects this invoice, while that payment is still on its way (module 1.12). */
+    private function directDebitDate(Invoice $invoice): ?CarbonImmutable
+    {
+        return GoCardlessPayment::withoutCompanyScope()->where('invoice_id', $invoice->id)
+            ->whereIn('status', PaymentStatus::pendingValues())->orderByDesc('charge_date')->first()?->charge_date;
     }
 
     /**
@@ -150,7 +160,7 @@ final class BillingMailer
         return $owners->count();
     }
 
-    public function trialReminder(Company $company, CarbonImmutable $trialEndsAt, int $daysLeft, int $tillCount, ?string $priceSummary): int
+    public function trialReminder(Company $company, CarbonImmutable $trialEndsAt, int $daysLeft, int $tillCount, ?string $priceSummary, ?string $directDebitUrl = null): int
     {
         $owners = $this->owners($company);
 
@@ -163,13 +173,14 @@ final class BillingMailer
                 tillCount: $tillCount,
                 priceSummary: $priceSummary,
                 companyId: $company->id,
+                directDebitUrl: $directDebitUrl,
             )));
         }
 
         return $owners->count();
     }
 
-    public function trialEnded(Company $company, CarbonImmutable $endedAt, int $tillCount, ?string $priceSummary): int
+    public function trialEnded(Company $company, CarbonImmutable $endedAt, int $tillCount, ?string $priceSummary, ?string $directDebitUrl = null): int
     {
         $owners = $this->owners($company);
 
@@ -181,6 +192,7 @@ final class BillingMailer
                 tillCount: $tillCount,
                 priceSummary: $priceSummary,
                 companyId: $company->id,
+                directDebitUrl: $directDebitUrl,
             )));
         }
 

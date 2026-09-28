@@ -43,4 +43,12 @@ return [
         'verify_url' => 'https://challenges.cloudflare.com/turnstile/v0/siteverify',
     ],
 
+    // GoCardless Direct Debit (module 1.12). Empty token = Direct Debit off (billing works as cash only). The
+    // webhook secret signs POST /webhooks/gocardless. Environment: sandbox or live.
+    'gocardless' => [
+        'access_token' => (string) env('GOCARDLESS_ACCESS_TOKEN', ''),
+        'environment' => env('GOCARDLESS_ENVIRONMENT', 'sandbox') === 'live' ? 'live' : 'sandbox',
+        'webhook_secret' => (string) env('GOCARDLESS_WEBHOOK_SECRET', ''),
+    ],
+
 ];

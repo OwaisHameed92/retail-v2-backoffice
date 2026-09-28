@@ -33,6 +33,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string|null $received_by_admin_id
  * @property string|null $gateway
  * @property string|null $gateway_reference
+ * @property CarbonImmutable|null $reversed_at
+ * @property string|null $reversal_reason
  * @property CarbonImmutable|null $created_at
  * @property CarbonImmutable|null $updated_at
  * @property-read Company|null $company
@@ -62,6 +64,7 @@ class Payment extends Model
             'amount' => MoneyCast::class,
             'unallocated' => MoneyCast::class,
             'received_at' => 'immutable_datetime',
+            'reversed_at' => 'immutable_datetime',
             'created_at' => 'immutable_datetime',
             'updated_at' => 'immutable_datetime',
         ];

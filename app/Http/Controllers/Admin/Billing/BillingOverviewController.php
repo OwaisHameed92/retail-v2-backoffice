@@ -6,6 +6,8 @@ use App\Domain\Admin\Enums\AdminRole;
 use App\Domain\Billing\Data\InvoiceData;
 use App\Domain\Billing\Data\PaymentData;
 use App\Domain\Billing\Enums\InvoiceStatus;
+use App\Domain\Billing\GoCardless\Contracts\GoCardlessClient;
+use App\Domain\Billing\GoCardless\Support\DirectDebitStats;
 use App\Domain\Billing\Models\BillingAccount;
 use App\Domain\Billing\Models\Invoice;
 use App\Domain\Billing\Models\Payment;
@@ -26,7 +28,7 @@ class BillingOverviewController extends Controller
 {
     private const LIMIT = 8;
 
-    public function __invoke(Request $request): Response
+    public function __invoke(Request $request, GoCardlessClient $client): Response
     {
         $now = CarbonImmutable::now();
         $today = BillingDates::today($now);
@@ -59,6 +61,11 @@ class BillingOverviewController extends Controller
                     'since' => $account->billing_suspended_at?->toIso8601String(),
                     'invoiceId' => $account->suspension_invoice_id,
                 ])->values(),
+            'directDebit' => [
+                ...DirectDebitStats::for($now, $client->enabled()),
+                'environment' => $client->environment(),
+                'next' => DirectDebitStats::nextCollections(),
+            ],
             'settings' => [
                 'suspendAfterDays' => (int) config('billing.suspend_after_days', 14),
                 'generateDaysBefore' => (int) config('billing.generate.days_before', 7),

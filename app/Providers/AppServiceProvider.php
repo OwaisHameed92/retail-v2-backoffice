@@ -4,6 +4,9 @@ namespace App\Providers;
 
 use App\Domain\Admin\Enums\AdminRole;
 use App\Domain\Admin\Models\Admin;
+use App\Domain\Billing\GoCardless\Contracts\GoCardlessClient;
+use App\Domain\Billing\GoCardless\Listeners\SyncDirectDebitOnTillChange;
+use App\Domain\Billing\GoCardless\Support\SdkGoCardlessClient;
 use App\Domain\Licensing\Listeners\IssueLicenceForNewTill;
 use App\Domain\Licensing\Listeners\SendWelcomeEmailWithKeys;
 use App\Domain\Licensing\Listeners\SuspendLicenceOfDeactivatedTill;
@@ -23,7 +26,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        // GoCardless Direct Debit (module 1.12). Tests bind FakeGoCardlessClient::install().
+        $this->app->singleton(GoCardlessClient::class, SdkGoCardlessClient::class);
     }
 
     /**
@@ -45,5 +49,8 @@ class AppServiceProvider extends ServiceProvider
         Event::listen(RegisterDeactivated::class, SuspendLicenceOfDeactivatedTill::class);
         Event::listen(RegisterReactivated::class, UnsuspendLicenceOfReactivatedTill::class);
         Event::listen(TenantCreated::class, SendWelcomeEmailWithKeys::class);
+
+        // Direct Debit follows the live tills (module 1.12). Queued, after the till's transaction commits.
+        Event::listen([RegisterAdded::class, RegisterDeactivated::class, RegisterReactivated::class], SyncDirectDebitOnTillChange::class);
     }
 }

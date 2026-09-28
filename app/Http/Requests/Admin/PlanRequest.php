@@ -36,6 +36,7 @@ abstract class PlanRequest extends FormRequest
             'code' => is_string($this->input('code')) ? strtolower(trim($this->input('code'))) : $this->input('code'),
             'price_per_till_monthly' => $clean($this->input('price_per_till_monthly')),
             'price_per_till_yearly' => $clean($this->input('price_per_till_yearly')),
+            'setup_fee' => $clean($this->input('setup_fee', '0')),
             'features' => $this->input('features', []),
         ]);
     }
@@ -54,6 +55,7 @@ abstract class PlanRequest extends FormRequest
             'description' => ['nullable', 'string', 'max:500'],
             'price_per_till_monthly' => ['required', 'string', 'regex:'.self::MONEY_PATTERN],
             'price_per_till_yearly' => ['required', 'string', 'regex:'.self::MONEY_PATTERN],
+            'setup_fee' => ['required', 'string', 'regex:'.self::MONEY_PATTERN],
             'trial_days' => ['required', 'integer', 'min:0', 'max:90'],
             'trial_grace_days' => ['required', 'integer', 'min:0', 'max:30'],
             'grace_days' => ['required', 'integer', 'min:0', 'max:60'],
@@ -77,6 +79,7 @@ abstract class PlanRequest extends FormRequest
             'code.unique' => 'Another plan already uses this code.',
             'price_per_till_monthly.regex' => $money,
             'price_per_till_yearly.regex' => $money,
+            'setup_fee.regex' => $money,
             'features.*.in' => 'Choose features from the list.',
         ];
     }
@@ -89,6 +92,7 @@ abstract class PlanRequest extends FormRequest
         return [
             'price_per_till_monthly' => 'monthly price',
             'price_per_till_yearly' => 'yearly price',
+            'setup_fee' => 'setup fee',
             'trial_days' => 'trial length',
             'trial_grace_days' => 'trial grace',
             'grace_days' => 'payment grace',
@@ -114,6 +118,7 @@ abstract class PlanRequest extends FormRequest
             isActive: $this->boolean('is_active'),
             isPublic: $this->boolean('is_public'),
             sortOrder: $this->integer('sort_order'),
+            setupFee: $this->string('setup_fee')->value(),
         );
     }
 

@@ -22,5 +22,9 @@ final readonly class NewInvoice
         public bool $allowOverlap = false,
         /** Created by billing:run. */
         public bool $auto = false,
+        /** Due date when issued (Direct Debit: the collection date); null = the payment terms. */
+        public ?CarbonImmutable $dueDate = null,
+        /** Email it when issued. */
+        public bool $send = true,
     ) {}
 }

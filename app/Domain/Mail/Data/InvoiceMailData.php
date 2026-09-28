@@ -30,5 +30,7 @@ final readonly class InvoiceMailData
         public ?string $pdfRenderer = null,
         public ?string $pdfKey = null,
         public ?string $companyId = null,
+        /** Collected by Direct Debit on this day (module 1.12): "How to pay" says there is nothing to do. */
+        public ?CarbonInterface $directDebitOn = null,
     ) {}
 }

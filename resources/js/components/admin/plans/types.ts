@@ -23,6 +23,7 @@ export interface PlanRecord {
     description: string | null;
     pricePerTillMonthly: string;
     pricePerTillYearly: string;
+    setupFee: string;
     currency: string;
     trialDays: number;
     trialGraceDays: number;

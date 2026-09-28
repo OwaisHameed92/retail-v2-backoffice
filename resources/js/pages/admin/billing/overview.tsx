@@ -1,4 +1,5 @@
 import { BillingTabs } from '@/components/admin/billing/billing-tabs';
+import { DirectDebitOverview } from '@/components/admin/billing/direct-debit-overview';
 import { formatDate, plural } from '@/components/admin/billing/format';
 import { DueDate, InvoiceNumber } from '@/components/admin/billing/invoice-columns';
 import { type BillingOverviewProps, type InvoiceRow } from '@/components/admin/billing/types';
@@ -62,7 +63,7 @@ function ViewAll({ href, label }: { href: string; label: string }) {
     );
 }
 
-export default function BillingOverview({ stats, overdue, dueSoon, drafts, recentPayments, suspended, settings }: BillingOverviewProps) {
+export default function BillingOverview({ stats, overdue, dueSoon, drafts, recentPayments, suspended, settings, directDebit }: BillingOverviewProps) {
     const nothing = stats.cashDue.count === 0 && stats.drafts.count === 0 && recentPayments.length === 0;
 
     return (
@@ -115,6 +116,8 @@ export default function BillingOverview({ stats, overdue, dueSoon, drafts, recen
                     href={route('admin.billing.payments.index')}
                 />
             </StatGrid>
+
+            <DirectDebitOverview data={directDebit} />
 
             {nothing ? (
                 <SectionCard>

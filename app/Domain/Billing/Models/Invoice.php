@@ -5,6 +5,7 @@ namespace App\Domain\Billing\Models;
 use App\Domain\Admin\Models\Admin;
 use App\Domain\Billing\Casts\CalendarDateCast;
 use App\Domain\Billing\Enums\BillingCycle;
+use App\Domain\Billing\Enums\InvoiceKind;
 use App\Domain\Billing\Enums\InvoiceStatus;
 use App\Domain\Shared\Casts\MoneyCast;
 use App\Domain\Tenancy\Concerns\BelongsToCompany;
@@ -32,6 +33,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property int|null $sequence
  * @property InvoiceStatus $status
  * @property BillingCycle $cycle
+ * @property InvoiceKind $kind
  * @property CarbonImmutable $period_start
  * @property CarbonImmutable $period_end
  * @property CarbonImmutable|null $issue_date
@@ -78,6 +80,7 @@ class Invoice extends Model
     /** @var array<string, mixed> */
     protected $attributes = [
         'status' => 'draft',
+        'kind' => 'subscription',
         'currency' => 'GBP',
         'vat_rate' => '0.00',
         'subtotal' => '0.00',
@@ -102,6 +105,7 @@ class Invoice extends Model
         return [
             'status' => InvoiceStatus::class,
             'cycle' => BillingCycle::class,
+            'kind' => InvoiceKind::class,
             'sequence' => 'integer',
             'period_start' => CalendarDateCast::class,
             'period_end' => CalendarDateCast::class,
@@ -212,6 +216,16 @@ class Invoice extends Model
     public function scopeNotVoid(Builder $query): void
     {
         $query->where($query->qualifyColumn('status'), '!=', InvoiceStatus::Void->value);
+    }
+
+    /**
+     * Invoices for tills over a period (not setup fees): the ones that count when a period is checked for overlap.
+     *
+     * @param  Builder<Invoice>  $query
+     */
+    public function scopeForPeriods(Builder $query): void
+    {
+        $query->where($query->qualifyColumn('kind'), InvoiceKind::Subscription->value);
     }
 
     public function isDraft(): bool

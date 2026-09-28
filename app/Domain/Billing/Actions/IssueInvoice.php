@@ -21,7 +21,8 @@ use Illuminate\Validation\ValidationException;
 /**
  * Issues a draft: takes the next invoice number (gap-free, in this transaction), dates it today (London) with
  * the company's payment terms, freezes who it is billed to, uses any unallocated credit, and emails it with the
- * PDF (InvoiceMail, queued after commit). An invoice with nothing to pay is settled straight away.
+ * PDF (InvoiceMail, queued after commit). An invoice with nothing to pay is settled straight away. A Direct Debit
+ * invoice passes the collection date as its due date.
  */
 class IssueInvoice
 {
@@ -38,9 +39,9 @@ class IssueInvoice
     /**
      * @throws ValidationException
      */
-    public function handle(Invoice $invoice, bool $send = true): Invoice
+    public function handle(Invoice $invoice, bool $send = true, ?CarbonImmutable $dueDate = null): Invoice
     {
-        return DB::transaction(function () use ($invoice, $send) {
+        return DB::transaction(function () use ($invoice, $send, $dueDate) {
             $now = CarbonImmutable::now();
             /** @var Company $company */
             $company = $invoice->company()->firstOrFail();
@@ -68,7 +69,8 @@ class IssueInvoice
                 'sequence' => $sequence,
                 'status' => InvoiceStatus::Issued,
                 'issue_date' => $today,
-                'due_date' => $today->addDays(max(0, $account->payment_terms_days)),
+                // A Direct Debit invoice is due on the day GoCardless collects it (module 1.12).
+                'due_date' => $dueDate !== null ? $dueDate->max($today) : $today->addDays(max(0, $account->payment_terms_days)),
                 'seller_vat_number' => Vat::number(),
                 'bill_to_name' => $billTo['name'],
                 'bill_to_address' => implode("\n", $billTo['address']) ?: null,

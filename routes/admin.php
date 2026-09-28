@@ -12,6 +12,7 @@ use App\Http\Controllers\Admin\AdminSearchController;
 use App\Http\Controllers\Admin\AdminUserController;
 use App\Http\Controllers\Admin\Auth\LoginController;
 use App\Http\Controllers\Admin\Billing\BillingOverviewController;
+use App\Http\Controllers\Admin\Billing\DirectDebitController;
 use App\Http\Controllers\Admin\Billing\InvoiceActionController;
 use App\Http\Controllers\Admin\Billing\InvoiceController;
 use App\Http\Controllers\Admin\Billing\PaymentController;
@@ -198,6 +199,15 @@ Route::middleware(['auth:admin', AdminIsActive::class, BlockAdminWhileImpersonat
         Route::post('tenants/{company}/payments', [TenantBillingController::class, 'recordPayment'])->name('tenants.payments.store');
         Route::put('tenants/{company}/settings', [TenantBillingController::class, 'settings'])->name('tenants.settings');
         Route::post('tenants/{company}/apply-credit', [TenantBillingController::class, 'applyCredit'])->name('tenants.apply-credit');
+
+        // GoCardless Direct Debit (module 1.12).
+        Route::prefix('tenants/{company}/direct-debit')->name('tenants.direct-debit.')->group(function () {
+            Route::put('/', [DirectDebitController::class, 'settings'])->name('settings');
+            Route::post('setup-email', [DirectDebitController::class, 'sendSetup'])->name('setup-email')->middleware('throttle:10,1');
+            Route::post('setup-fee', [DirectDebitController::class, 'chargeSetupFee'])->name('setup-fee');
+            Route::post('subscription/sync', [DirectDebitController::class, 'syncSubscription'])->name('sync');
+            Route::post('subscription/{action}', [DirectDebitController::class, 'subscription'])->name('subscription')->whereIn('action', ['pause', 'resume', 'cancel']);
+        });
     });
 
     // Plans (module 1.1). Archived plans stay viewable, restorable and copyable.

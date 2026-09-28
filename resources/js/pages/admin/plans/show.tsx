@@ -72,7 +72,12 @@ export default function ShowPlan({ plan, features, activity }: ShowPlanProps) {
             )}
 
             <StatGrid>
-                <StatCard label="Monthly price" value={formatMoney(plan.pricePerTillMonthly)} hint="Per till, billed monthly" icon={PoundSterling} />
+                <StatCard
+                    label="Monthly price"
+                    value={formatMoney(plan.pricePerTillMonthly)}
+                    hint={Number(plan.setupFee) > 0 ? `Per till · setup fee ${formatMoney(plan.setupFee)} + VAT` : 'Per till, billed monthly · no setup fee'}
+                    icon={PoundSterling}
+                />
                 <StatCard
                     label="Yearly price"
                     value={formatMoney(plan.pricePerTillYearly)}

@@ -24,6 +24,9 @@ return Application::configure(basePath: dirname(__DIR__))
 
             Route::middleware('web')->prefix('app')->name('app.')
                 ->group(base_path('routes/app.php'));
+
+            // GoCardless webhooks and signed Direct Debit links (module 1.12).
+            Route::group([], base_path('routes/webhooks.php'));
         },
     )
     ->withMiddleware(function (Middleware $middleware) {

@@ -1,5 +1,6 @@
 import { BillingSettingsDialog } from '@/components/admin/billing/billing-settings-dialog';
 import { CreateInvoiceDialog } from '@/components/admin/billing/create-invoice-dialog';
+import { DirectDebitPanel } from '@/components/admin/billing/direct-debit-panel';
 import { formatDate, formatDay } from '@/components/admin/billing/format';
 import { DueDate, InvoiceNumber, Money } from '@/components/admin/billing/invoice-columns';
 import { InvoiceStatusBadge } from '@/components/admin/billing/invoice-status-badge';
@@ -118,6 +119,8 @@ export function TenantBillingPanel({ tenant, billing }: TenantBillingPanelProps)
                     tone="primary"
                 />
             </StatGrid>
+
+            <DirectDebitPanel company={company} directDebit={billing.directDebit} canManage={canManage} />
 
             <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_22rem]">
                 <div className="grid gap-6">

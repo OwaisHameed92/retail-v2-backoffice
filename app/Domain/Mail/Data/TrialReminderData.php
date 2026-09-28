@@ -17,5 +17,7 @@ final readonly class TrialReminderData
         public int $tillCount,
         public ?string $priceSummary = null,
         public ?string $companyId = null,
+        /** Direct Debit customers without a mandate (module 1.12): our signed link to set it up. */
+        public ?string $directDebitUrl = null,
     ) {}
 }

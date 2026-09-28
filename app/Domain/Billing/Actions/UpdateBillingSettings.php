@@ -3,12 +3,15 @@
 namespace App\Domain\Billing\Actions;
 
 use App\Domain\Billing\Data\BillingSettingsInput;
+use App\Domain\Billing\GoCardless\Actions\SyncSubscription;
+use App\Domain\Billing\GoCardless\GoCardlessException;
 use App\Domain\Billing\Models\BillingAccount;
 use App\Domain\Billing\Support\BillingAccounts;
 use App\Domain\Shared\Actions\RecordAudit;
 use App\Domain\Tenancy\Models\Company;
 use App\Domain\Tenancy\Support\AuditChanges;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 /**
  * Saves a company's billing settings: who invoices go to, billing name and address, cycle, payment terms and
@@ -18,12 +21,13 @@ class UpdateBillingSettings
 {
     public function __construct(
         private readonly BillingAccounts $accounts,
+        private readonly SyncSubscription $syncSubscription,
         private readonly RecordAudit $audit,
     ) {}
 
     public function handle(Company $company, BillingSettingsInput $input): BillingAccount
     {
-        return DB::transaction(function () use ($company, $input) {
+        $account = DB::transaction(function () use ($company, $input) {
             $account = $this->accounts->lock($company);
             $blank = fn (?string $value) => trim((string) $value) === '' ? null : trim((string) $value);
             $emails = array_values(array_unique(array_map(fn (string $email) => mb_strtolower(trim($email)), $input->emails)));
@@ -46,5 +50,14 @@ class UpdateBillingSettings
 
             return $account;
         });
+
+        // Direct Debit (module 1.12): a new cycle or VAT setting changes what the subscription collects.
+        try {
+            $this->syncSubscription->handle($company, 'settings');
+        } catch (GoCardlessException $exception) {
+            throw ValidationException::withMessages(['cycle' => 'Saved, but GoCardless did not accept the new amount: '.$exception->getMessage()]);
+        }
+
+        return $account;
     }
 }

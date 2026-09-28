@@ -91,12 +91,18 @@ final class InvoiceMail extends BrandedMailable
             $facts['Due date'] = MailFormat::date($this->data->dueDate);
         }
 
+        if ($this->data->directDebitOn !== null && $this->data->status !== 'paid') {
+            unset($facts['Due date']);
+            $facts['Direct Debit on'] = MailFormat::date($this->data->directDebitOn);
+        }
+
         return new Content(markdown: 'mail.invoice', with: [
             'firstName' => MailFormat::firstName($this->data->recipientName ?? ''),
             'facts' => $facts,
             'overdue' => $this->data->status === 'overdue',
             'paid' => $this->data->status === 'paid',
             'dueOn' => MailFormat::date($this->data->dueDate),
+            'directDebitOn' => $this->data->directDebitOn !== null ? MailFormat::date($this->data->directDebitOn) : null,
             'amountDue' => MailFormat::money($this->data->balance),
             'portalUrl' => config('sspos.portal_url').'/login',
         ]);

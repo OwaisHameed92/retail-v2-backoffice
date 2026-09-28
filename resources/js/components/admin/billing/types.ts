@@ -2,7 +2,7 @@ import { type Paginated } from '@/components/shared/data-table';
 
 export type InvoiceStatus = 'draft' | 'issued' | 'partiallyPaid' | 'paid' | 'overdue' | 'void';
 
-export type PaymentMethod = 'cash' | 'bankTransfer' | 'other' | 'online';
+export type PaymentMethod = 'cash' | 'bankTransfer' | 'other' | 'online' | 'directDebit';
 
 export type BillingCycle = 'monthly' | 'yearly';
 
@@ -189,9 +189,72 @@ export interface TenantBillingData {
     payments: { data: PaymentRow[]; total: number };
     openInvoices: OpenInvoice[];
     options: { cycles: Option<BillingCycle>[]; methods: Option<PaymentMethod>[] };
+    directDebit: DirectDebitData;
     vatEnabled: boolean;
     vatRate: string;
     canManage: boolean;
+}
+
+export type BillingMode = 'upfrontCash' | 'directDebit';
+
+export type SetupFeeMethod = 'manual' | 'directDebit';
+
+/** One GoCardless payment (DirectDebitData::for). Money formatted, dates "YYYY-MM-DD". */
+export interface DirectDebitPaymentRow {
+    id: string;
+    gcPaymentId: string;
+    kind: 'subscription' | 'setupFee';
+    amount: string;
+    chargeDate: string | null;
+    status: string;
+    statusLabel: string;
+    invoiceId: string | null;
+    invoiceNumber: string | null;
+    instalment: string | null;
+    failureReason: string | null;
+}
+
+/** DirectDebitData::for: the Direct Debit part of the tenant Billing tab (module 1.12). */
+export interface DirectDebitData {
+    enabled: boolean;
+    environment: 'sandbox' | 'live';
+    mode: BillingMode;
+    setupFee: {
+        /** Decimal strings (net). */
+        plan: string;
+        override: string | null;
+        net: string;
+        gross: string;
+        hasFee: boolean;
+        method: SetupFeeMethod;
+        instalments: number;
+        invoicedAt: string | null;
+    };
+    mandate: {
+        id: string | null;
+        status: string | null;
+        statusLabel: string;
+        usable: boolean;
+        lostAt: string | null;
+        activeAt: string | null;
+        setupSentAt: string | null;
+    };
+    subscription: {
+        id: string | null;
+        status: string | null;
+        statusLabel: string;
+        live: boolean;
+        amount: string | null;
+        cycle: BillingCycle | null;
+        nextChargeDate: string | null;
+        expected: string;
+        expectedTills: number;
+        inStep: boolean;
+        reconciledAt: string | null;
+    };
+    payments: { data: DirectDebitPaymentRow[]; total: number };
+    options: { modes: Option<BillingMode>[]; setupFeeMethods: Option<SetupFeeMethod>[]; maxInstalments: number };
+    graceDays: number;
 }
 
 /** InvoicePlan::toArray (the "Create invoice" preview). */
@@ -244,5 +307,14 @@ export interface BillingOverviewProps {
     recentPayments: PaymentRow[];
     suspended: { companyId: string; name: string; since: string | null; invoiceId: string | null }[];
     settings: { suspendAfterDays: number; generateDaysBefore: number; autoIssue: boolean };
+    directDebit: {
+        enabled: boolean;
+        environment: 'sandbox' | 'live';
+        activeMandates: number;
+        withoutMandate: number;
+        upcoming: { count: number; amount: string };
+        failed: { count: number; amount: string };
+        next: { id: string; companyId: string; companyName: string; amount: string; chargeDate: string | null; invoiceId: string | null; invoiceNumber: string | null; statusLabel: string }[];
+    };
     canManage: boolean;
 }

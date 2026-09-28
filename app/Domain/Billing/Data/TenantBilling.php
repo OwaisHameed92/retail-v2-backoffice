@@ -5,6 +5,7 @@ namespace App\Domain\Billing\Data;
 use App\Domain\Billing\Enums\BillingCycle;
 use App\Domain\Billing\Enums\InvoiceStatus;
 use App\Domain\Billing\Enums\PaymentMethod;
+use App\Domain\Billing\GoCardless\Data\DirectDebitData;
 use App\Domain\Billing\Models\Invoice;
 use App\Domain\Billing\Models\Payment;
 use App\Domain\Billing\Support\BillingAccounts;
@@ -91,6 +92,7 @@ final class TenantBilling
                 'cycles' => BillingCycle::options(),
                 'methods' => PaymentMethod::options(manualOnly: true),
             ],
+            'directDebit' => DirectDebitData::for($company),
             'vatEnabled' => Vat::enabled(),
             'vatRate' => BillingFormat::percent(Vat::rate()),
             'canManage' => $canManage,

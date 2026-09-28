@@ -30,6 +30,7 @@ use Illuminate\Support\Collection;
  * @property string|null $description
  * @property string $price_per_till_monthly
  * @property string $price_per_till_yearly
+ * @property string $setup_fee
  * @property string $currency
  * @property int $trial_days
  * @property int $trial_grace_days
@@ -62,6 +63,7 @@ class Plan extends Model
         'description',
         'price_per_till_monthly',
         'price_per_till_yearly',
+        'setup_fee',
         'currency',
         'trial_days',
         'trial_grace_days',
@@ -75,6 +77,7 @@ class Plan extends Model
     /** @var array<string, mixed> */
     protected $attributes = [
         'currency' => self::CURRENCY,
+        'setup_fee' => '0.00',
         'trial_days' => self::DEFAULT_TRIAL_DAYS,
         'trial_grace_days' => self::DEFAULT_TRIAL_GRACE_DAYS,
         'grace_days' => self::DEFAULT_GRACE_DAYS,
@@ -92,6 +95,7 @@ class Plan extends Model
         return [
             'price_per_till_monthly' => MoneyCast::class,
             'price_per_till_yearly' => MoneyCast::class,
+            'setup_fee' => MoneyCast::class,
             'trial_days' => 'integer',
             'trial_grace_days' => 'integer',
             'grace_days' => 'integer',
