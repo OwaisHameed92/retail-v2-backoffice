@@ -1,7 +1,0 @@
-{
-    "code": "licence.device_mismatch",
-    "message": "This licence key is now in use on another PC, so this till cannot renew its licence. Please contact Switch & Save support.",
-    "traceId": "01K5XTEST00000000000000038",
-    "retryAfterSeconds": null,
-    "rejectedKey": null
-}

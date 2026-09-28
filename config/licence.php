@@ -5,11 +5,9 @@
 | Licensing (modules 1.3 licences, 1.4 token signing, 1.5 licence API)
 |--------------------------------------------------------------------------
 |
-| Contract v1.3.1 (docs/contracts/portal-api-v1.3.1/docs/web-portal-api.md §17.2, §17.17): SSPOS1 tokens
-| signed by SsposTokenSigner with `token`, `approvers`, `trusted_keys` and `allow_uncertified` below.
-|
-| `issuer`, `token_type`, `offline_days` and `check_in_seconds` belong to the old JWS format
-| (docs/specs/licence-token-verification.md, superseded); they go when module 1.5 switches to SSPOS1.
+| Contract v1.3.1 (docs/contracts/portal-api-v1.3.1/docs/web-portal-api.md §17.2, §17.15, §17.17): SSPOS1 tokens
+| signed by SsposTokenSigner with `token`, `approvers`, `trusted_keys` and `allow_uncertified` below; the per-till
+| licence API (`licence/activate`, `licence/validate`, `devices/deactivate`) reads `api` and `till_features`.
 |
 */
 
@@ -68,26 +66,55 @@ return [
     // "contact" in the public-key hand-over (licence:keys:handover).
     'handover_contact' => env('LICENCE_HANDOVER_CONTACT', ''),
 
-    // Old JWS format only: "iss" claim written into and required on every licence token.
-    'issuer' => env('LICENCE_TOKEN_ISSUER', 'sspos-portal'),
+    // Licence API (module 1.5, contract §17.15).
+    'api' => [
+        // `expiring` instead of `active` when the token's expiresAt is this close (§17.5 step 2: 7 days).
+        'expiring_days' => (int) env('LICENCE_EXPIRING_DAYS', 7),
 
-    // JWS header "typ".
-    'token_type' => 'sspos-licence+jwt',
+        // nextCheckAfterSeconds: while trading, and while locked (expired, suspended, revoked, released).
+        'next_check_seconds' => (int) env('LICENCE_NEXT_CHECK_SECONDS', 86400),
+        'next_check_locked_seconds' => (int) env('LICENCE_NEXT_CHECK_LOCKED_SECONDS', 3600),
 
-    // A till may run this many days without a successful check-in: validUntil = min(iat + offline_days,
-    // expiresAt + graceDays).
-    'offline_days' => (int) env('LICENCE_OFFLINE_DAYS', 14),
+        // Tills below this X-SSPOS-App-Version get 426 app.update_required (null = any version).
+        'minimum_app_version' => env('LICENCE_MINIMUM_APP_VERSION'),
 
-    // How often the till should check in (returned as checkInEverySeconds).
-    'check_in_seconds' => (int) env('LICENCE_CHECK_IN_SECONDS', 86400),
+        // Idempotency-Key replies are kept this long (§17.11 rule 5: at least 24 hours).
+        'idempotency_hours' => 24,
+
+        // §17.12 suggested limits. Wrong keys: per install id.
+        'rate_limits' => [
+            'activate_per_ip_per_hour' => 10,
+            'validate_per_install_per_hour' => 60,
+            'deactivate_per_install_per_hour' => 20,
+            'wrong_keys_per_install' => 5,
+            'wrong_keys_window_seconds' => 900,
+        ],
+    ],
+
+    // Our plan features (App\Domain\Plans\Enums\Feature) → the till's feature names in the token (§17.2,
+    // `^[a-z0-9]+([._-][a-z0-9]+)*$`, compared exactly). Only `multi_branch` is confirmed by the EPOS team
+    // (src/SSPOS.Application/Ports/Feature.cs); the rest are our snake_case names until they confirm theirs.
+    // A feature missing here is left out of the token.
+    'till_features' => [
+        'stockControl' => 'stock_control',
+        'purchasing' => 'purchasing',
+        'cashOffice' => 'cash_office',
+        'accounts' => 'accounts',
+        'staff' => 'staff',
+        'customerOrders' => 'customer_orders',
+        'newsDeliveries' => 'news_deliveries',
+        'multiBranch' => 'multi_branch',
+        'aiAssistant' => 'ai_assistant',
+        'aiInsights' => 'ai_insights',
+    ],
 
     // Module 1.3: plan code used for new tills when their company has no plan of its own. If that plan is
     // missing, archived or inactive, the first active plan (by sort order) is used.
     'default_plan' => env('LICENCE_DEFAULT_PLAN', 'standard'),
 
     'signing_keys' => [
-        // A retired key still verifies (and stays in the JWKS) for this many days, then licence:keys:prune
-        // deletes it. Must stay well above offline_days so tokens signed just before a rotation keep working.
+        // A retired key still verifies for this many days, then licence:keys:prune deletes it. Keep it well
+        // above the tokens' online-check grace so tokens signed just before a rotation keep verifying here.
         'retired_keep_days' => (int) env('LICENCE_RETIRED_KEY_KEEP_DAYS', 60),
     ],
 

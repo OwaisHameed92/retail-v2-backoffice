@@ -145,7 +145,7 @@ Route::middleware(['auth:admin', AdminIsActive::class, BlockAdminWhileImpersonat
             Route::put('{licence}/notes', [LicenceController::class, 'updateNotes'])->name('notes');
             Route::post('{licence}/renew', [LicenceActionController::class, 'renew'])->name('renew');
             Route::post('{licence}/plan', [LicenceActionController::class, 'changePlan'])->name('plan');
-            Route::post('{licence}/reset-device', [LicenceActionController::class, 'resetDevice'])->name('reset-device');
+            Route::post('{licence}/release', [LicenceActionController::class, 'release'])->name('release');
             Route::post('{licence}/reissue', [LicenceActionController::class, 'reissue'])->name('reissue')->middleware('throttle:30,1');
             Route::post('{licence}/suspend', [LicenceActionController::class, 'suspend'])->name('suspend');
             Route::post('{licence}/unsuspend', [LicenceActionController::class, 'unsuspend'])->name('unsuspend');

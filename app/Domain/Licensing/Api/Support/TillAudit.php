@@ -33,7 +33,10 @@ final class TillAudit
         ], actor: $register, companyId: $licence->company_id);
     }
 
-    /** Last contact from the bound PC. Saved with the licence by the caller. */
+    /**
+     * Last contact from the bound PC: time, IP, app version, OS, device name and till clock skew
+     * (tillClockUtc − portal time, seconds). Saved with the licence by the caller.
+     */
     public static function touch(Licence $licence, TillRequest $request, CarbonImmutable $now): void
     {
         $licence->last_check_in_at = $now;
@@ -41,6 +44,23 @@ final class TillAudit
 
         if ($request->appVersion !== null) {
             $licence->last_app_version = mb_substr($request->appVersion, 0, 50);
+        }
+
+        if ($request->os !== null) {
+            $licence->os = $request->os;
+        }
+
+        if ($request->deviceName !== null) {
+            $licence->device_name = mb_substr($request->deviceName, 0, 100);
+        }
+
+        if ($request->installCode !== null) {
+            $licence->install_code = $request->installCode;
+        }
+
+        if ($request->tillClockUtc !== null) {
+            $skew = $request->tillClockUtc->getTimestamp() - $now->getTimestamp();
+            $licence->till_clock_skew_seconds = max(-2147483647, min(2147483647, $skew));
         }
     }
 }

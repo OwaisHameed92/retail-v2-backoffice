@@ -51,6 +51,11 @@ export interface LicenceDetail extends LicenceRow {
     features: Option[];
     graceDays: number;
     lastIp: string | null;
+    installCode: string | null;
+    os: string | null;
+    tillClockSkewSeconds: number | null;
+    lastValidatedAt: string | null;
+    lock: { locked: boolean; reason: string | null } | null;
     suspendedAt: string | null;
     suspendedReason: string | null;
     revokedAt: string | null;
@@ -81,6 +86,7 @@ export interface LicenceAlert {
     help: string;
     details: {
         deviceName: string | null;
+        installCode: string | null;
         deviceIdEnding: string | null;
         ip: string | null;
         appVersion: string | null;

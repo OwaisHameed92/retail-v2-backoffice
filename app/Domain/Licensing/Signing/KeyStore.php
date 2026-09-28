@@ -156,7 +156,8 @@ class KeyStore
     private function newUniquePair(): array
     {
         do {
-            $pair = Ed25519Jws::newKeyPair();
+            $raw = sodium_crypto_sign_keypair();
+            $pair = ['public' => sodium_crypto_sign_publickey($raw), 'secret' => sodium_crypto_sign_secretkey($raw)];
         } while (LicenceSigningKey::query()->where('kid', Kid::for($pair['public']))->exists());
 
         return $pair;

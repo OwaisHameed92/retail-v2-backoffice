@@ -3,28 +3,46 @@
 namespace App\Domain\Licensing\Api;
 
 use App\Domain\Licensing\Api\Support\DeviceHash;
-use App\Domain\Licensing\LicenceKey;
 use Carbon\CarbonImmutable;
 
 /**
- * What a till sent to the licence API, already validated. The key is a {@see LicenceKey} (never printed).
+ * The calling till (one PC install) as a licence API request described it, already validated
+ * (contract v1.3.1 §17.15). Never holds the licence key.
  */
 final readonly class TillRequest
 {
+    /**
+     * @param  array{name?: string, version?: string, architecture?: string|null}|null  $os
+     * @param  list<string>  $trustedKids
+     * @param  list<string>  $approverKids
+     * @param  array{companyId: string, branchId: string, registerId: string}|null  $existingIds
+     */
     public function __construct(
-        public LicenceKey $key,
-        public string $deviceId,
+        public string $installId,
+        public ?string $installCode = null,
         public ?string $deviceName = null,
         public ?string $appVersion = null,
-        public ?string $os = null,
+        public ?array $os = null,
         public ?string $ip = null,
-        public ?string $tokenId = null,
-        public ?CarbonImmutable $lastSaleAt = null,
-        public ?CarbonImmutable $requestedAt = null,
+        public ?CarbonImmutable $tillClockUtc = null,
+        public array $trustedKids = [],
+        public array $approverKids = [],
+        public ?array $existingIds = null,
+        public ?CarbonImmutable $clockWatermarkUtc = null,
+        public ?bool $locked = null,
+        public ?string $lockReason = null,
     ) {}
 
+    /** "Windows 11 Pro 10.0.26200 x64", or null. */
+    public function osLabel(): ?string
+    {
+        $label = trim(implode(' ', array_filter([$this->os['name'] ?? null, $this->os['version'] ?? null, $this->os['architecture'] ?? null])));
+
+        return $label === '' ? null : $label;
+    }
+
     /**
-     * Safe facts about the calling PC for alerts and device history: no key, only the end of the device id.
+     * Safe facts about the calling PC for alerts and device history: no key, only the end of the install id.
      *
      * @return array<string, string|null>
      */
@@ -32,10 +50,11 @@ final readonly class TillRequest
     {
         return [
             'deviceName' => $this->deviceName,
-            'deviceIdEnding' => DeviceHash::ending($this->deviceId),
+            'installCode' => $this->installCode,
+            'deviceIdEnding' => DeviceHash::ending($this->installId),
             'ip' => $this->ip,
             'appVersion' => $this->appVersion,
-            'os' => $this->os,
+            'os' => $this->osLabel(),
         ];
     }
 }

@@ -3,7 +3,7 @@
 use App\Domain\Licensing\Exceptions\InvalidLicenceKey;
 use App\Domain\Licensing\LicenceKey;
 
-/** Test vectors published in docs/specs/licence-api-v1.md ("Key format"). */
+/** Test vectors published in docs/specs/licence-key-format.md. */
 dataset('licence key vectors', [
     ['7K2Q9DMF3XRAP8T', '5', 'SSP-7K2Q-9DMF-3XRA-P8T5'],
     ['4HWCJ6ZB81MEQV5', 'H', 'SSP-4HWC-J6ZB-81ME-QV5H'],

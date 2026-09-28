@@ -2,97 +2,112 @@
 
 namespace App\Domain\Licensing\Api\Simulator;
 
-use App\Domain\Licensing\Signing\Base64Url;
-use App\Domain\Licensing\Signing\Ed25519Jws;
-use App\Domain\Licensing\Signing\Exceptions\MalformedToken;
-use App\Http\Middleware\EnsureLicenceContract;
+use App\Domain\Licensing\Api\Support\TillStatus;
+use App\Domain\Licensing\Signing\Exceptions\LicenceTokenException;
+use App\Domain\Licensing\Signing\Sspos\SsposTokenVerifier;
+use App\Domain\Shared\Support\Ulid;
+use App\Http\Middleware\EnsureTillContract;
+use App\Http\Middleware\IdempotentTillRequest;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
+use SensitiveParameter;
 use Throwable;
 
 /**
- * Behaves like the EPOS till against the licence API over HTTP (for `php artisan licence:simulate`, demos and
- * the EPOS team): sends the real requests, then checks the token only with the public JWKS, exactly as
- * docs/specs/licence-token-verification.md tells the till to, and says what the till would do.
+ * Behaves like the EPOS till against the per-till licence API (contract v1.3.1 §17.15) over HTTP, for
+ * `php artisan licence:simulate`, demos and the EPOS team: sends the till's requests and headers, then checks a
+ * returned `SSPOS1.` token the way the till does (signature, kid and signer certificate, source, installCode,
+ * dates) and says what the till would do (§17.9).
  */
 final class SimulatedTill
 {
-    public const APP_VERSION = '1.0.0-simulator';
+    public const APP_VERSION = '3.0.412';
 
-    public const ISSUER = 'sspos-portal';
-
-    public const TOKEN_TYPE = 'sspos-licence+jwt';
-
-    /** The till warns staff this many days before validUntil. */
-    public const WARN_DAYS = 3;
-
+    /**
+     * @param  array{companyId: string, branchId: string, registerId: string}  $existingIds
+     * @param  list<string>  $trustedKids
+     */
     public function __construct(
         private readonly string $baseUrl,
-        private readonly string $deviceId,
+        public readonly string $installId,
+        public readonly string $installCode,
         private readonly string $deviceName,
+        private readonly array $existingIds,
+        private readonly array $trustedKids,
     ) {}
 
     /**
-     * POST activate / check-in / deactivate with the body the till would send.
-     */
-    public function call(string $action, #[\SensitiveParameter] string $licenceKey, ?string $tokenId = null): Response
-    {
-        $now = CarbonImmutable::now('UTC')->format('Y-m-d\TH:i:s\Z');
-
-        $body = match ($action) {
-            'activate' => [
-                'licenceKey' => $licenceKey,
-                'deviceId' => $this->deviceId,
-                'deviceName' => $this->deviceName,
-                'appVersion' => self::APP_VERSION,
-                'os' => PHP_OS_FAMILY.' (simulator)',
-                'requestedAt' => $now,
-            ],
-            'check-in' => [
-                'licenceKey' => $licenceKey,
-                'deviceId' => $this->deviceId,
-                'appVersion' => self::APP_VERSION,
-                'tokenId' => $tokenId,
-                'lastSaleAt' => null,
-                'requestedAt' => $now,
-            ],
-            default => ['licenceKey' => $licenceKey, 'deviceId' => $this->deviceId],
-        };
-
-        return $this->client()->post($this->url($action), $body);
-    }
-
-    /**
-     * The public keys from GET /keys, as kid → raw 32-byte Ed25519 public key.
+     * A stable fake install for this machine: a ULID-shaped id and a XXXX-XXXX code from a hash.
      *
-     * @return array<string, string>
+     * @return array{installId: string, installCode: string}
      */
-    public function publicKeys(): array
+    public static function installFor(string $seed): array
     {
-        $keys = [];
+        $alphabet = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
+        $hash = hash('sha256', 'sspos-simulator|'.$seed, true);
+        $chars = '';
 
-        foreach ((array) $this->client()->get($this->url('keys'))->json('keys', []) as $jwk) {
-            if (is_array($jwk) && ($jwk['kty'] ?? null) === 'OKP' && ($jwk['crv'] ?? null) === 'Ed25519' && is_string($jwk['kid'] ?? null) && is_string($jwk['x'] ?? null)) {
-                try {
-                    $keys[$jwk['kid']] = Base64Url::decode($jwk['x']);
-                } catch (Throwable) {
-                    continue;
-                }
-            }
+        foreach (str_split($hash) as $byte) {
+            $chars .= $alphabet[ord($byte) & 31];
         }
 
-        return $keys;
+        return ['installId' => '0'.substr($chars, 0, 25), 'installCode' => substr($chars, 24, 4).'-'.substr($chars, 28, 4)];
+    }
+
+    public function activate(#[SensitiveParameter] string $licenceKey): Response
+    {
+        return $this->post('licence/activate', [
+            'licenceKey' => strtoupper((string) preg_replace('/\s+/', '', $licenceKey)),
+            'installId' => $this->installId,
+            'installCode' => $this->installCode,
+            'deviceName' => $this->deviceName,
+            'appVersion' => self::APP_VERSION,
+            'os' => ['name' => PHP_OS_FAMILY.' (simulator)', 'version' => PHP_VERSION, 'architecture' => null],
+            'tillClockUtc' => self::utc(CarbonImmutable::now()),
+            'trustedKids' => $this->trustedKids,
+            'existingIds' => $this->existingIds,
+        ]);
+    }
+
+    public function validate(string $licenceId, ?string $token, bool $locked = false, ?string $lockReason = null): Response
+    {
+        $now = self::utc(CarbonImmutable::now());
+
+        return $this->post('licence/validate', [
+            'installId' => $this->installId,
+            'installCode' => $this->installCode,
+            'licenceId' => $licenceId,
+            'tokenSha256' => hash('sha256', (string) $token),
+            'deviceName' => $this->deviceName,
+            'appVersion' => self::APP_VERSION,
+            'os' => ['name' => PHP_OS_FAMILY.' (simulator)', 'version' => PHP_VERSION, 'architecture' => null],
+            'trustedKids' => $this->trustedKids,
+            'tillClockUtc' => $now,
+            'clockWatermarkUtc' => $now,
+            'lastValidatedAtUtc' => null,
+            'lock' => ['locked' => $locked, 'reason' => $locked ? $lockReason : null],
+        ]);
+    }
+
+    public function deactivate(string $registerId, string $reason = 'removed'): Response
+    {
+        return $this->post('devices/deactivate', [
+            'registerId' => $registerId,
+            'installId' => $this->installId,
+            'reason' => $reason,
+            'note' => 'Released by the licence simulator.',
+        ]);
     }
 
     /**
-     * Verify a token like the till: structure, alg/typ/crit, known kid, signature, iss, deviceId, validUntil.
+     * Check a token like the till: format, v, known kid, signer certificate and signature (SsposTokenVerifier with
+     * this portal's keys and approvers), then source portal, installCode = ours, validFrom ≤ now < expiresAt.
      *
-     * @param  array<string, string>  $publicKeys
-     * @return array{valid: bool, checks: list<array{check: string, ok: bool, detail: string}>, claims: array<string, mixed>}
+     * @return array{valid: bool, checks: list<array{check: string, ok: bool, detail: string}>, payload: array<string, mixed>}
      */
-    public function verify(string $token, array $publicKeys, CarbonImmutable $now): array
+    public function verify(string $token, CarbonImmutable $now): array
     {
         $checks = [];
         $add = function (string $check, bool $ok, string $detail) use (&$checks): bool {
@@ -102,82 +117,74 @@ final class SimulatedTill
         };
 
         try {
-            $jws = Ed25519Jws::parse($token);
-        } catch (MalformedToken $e) {
-            $add('format', false, $e->getMessage());
+            $verified = app(SsposTokenVerifier::class)->verify($token);
+        } catch (LicenceTokenException $e) {
+            $add('signature', false, class_basename($e).': '.$e->getMessage());
 
-            return ['valid' => false, 'checks' => $checks, 'claims' => []];
+            return ['valid' => false, 'checks' => $checks, 'payload' => []];
         }
 
-        $header = $jws['header'];
-        $kid = is_string($header['kid'] ?? null) ? $header['kid'] : '';
-        $ok = $add('header', ($header['alg'] ?? null) === 'EdDSA' && ($header['typ'] ?? null) === self::TOKEN_TYPE && ! array_key_exists('crit', $header), 'alg EdDSA, typ '.self::TOKEN_TYPE.', no crit')
-            && $add('kid', isset($publicKeys[$kid]), $kid === '' ? 'missing' : "{$kid} ".(isset($publicKeys[$kid]) ? 'is in the JWKS' : 'is not in the JWKS'))
-            && $add('signature', Ed25519Jws::verify($jws['signingInput'], $jws['signature'], $publicKeys[$kid]), 'Ed25519 over header.payload');
+        $add('signature', true, 'Ed25519, kid '.$verified->kid().($verified->signerCertificate !== null ? ', signer certificate ok' : ', no signer certificate (dev key)'));
+        $validFrom = $verified->date('validFrom');
+        $expiresAt = $verified->date('expiresAt');
 
-        if (! $ok) {
-            return ['valid' => false, 'checks' => $checks, 'claims' => []];
-        }
+        $ok = $add('trusted kid', $this->trustedKids === [] || in_array($verified->kid(), $this->trustedKids, true) || $verified->signerCertificate !== null, 'kid '.$verified->kid())
+            && $add('source', $verified->source() === 'portal', (string) json_encode($verified->source()))
+            && $add('installCode', $verified->get('installCode') === $this->installCode, 'token '.json_encode($verified->get('installCode')).', this PC '.$this->installCode)
+            && $add('dates', $validFrom !== null && $expiresAt !== null && $now->greaterThanOrEqualTo($validFrom) && $now->lessThan($expiresAt), ($validFrom?->format('Y-m-d H:i') ?? '?').' → '.($expiresAt?->format('Y-m-d H:i') ?? '?').' UTC');
 
-        $claims = Ed25519Jws::decodeJsonObject($jws['payload'], 'payload');
-        $validUntil = self::date($claims['validUntil'] ?? null);
-
-        $ok = $add('iss', ($claims['iss'] ?? null) === self::ISSUER, (string) json_encode($claims['iss'] ?? null))
-            && $add('deviceId', ($claims['deviceId'] ?? null) === $this->deviceId, 'token is for '.json_encode($claims['deviceId'] ?? null).', this PC is "'.$this->deviceId.'"')
-            && $add('validUntil', $validUntil !== null && $now->lessThan($validUntil), $validUntil === null ? 'missing' : $validUntil->format('Y-m-d H:i:s').' UTC');
-
-        return ['valid' => $ok, 'checks' => $checks, 'claims' => $claims];
+        return ['valid' => $ok, 'checks' => $checks, 'payload' => $verified->payload];
     }
 
     /**
-     * What the till does with a verified token: trade, trade with a banner, or lock.
+     * What the till does with a reply status (§17.9, §17.15.2).
      *
-     * @param  array<string, mixed>  $claims
-     * @return array{decision: 'trade'|'grace banner'|'lock', reason: string}
+     * @return array{decision: 'trade'|'trade with banner'|'lock', reason: string}
      */
-    public static function decide(array $claims, bool $valid, CarbonImmutable $now, ?string $message = null): array
+    public static function decide(string $status, bool $tokenValid): array
     {
-        if (! $valid) {
-            return ['decision' => 'lock', 'reason' => 'The token did not verify: block sales until a good check-in.'];
-        }
-
-        $status = (string) ($claims['status'] ?? '');
-        $validUntil = self::date($claims['validUntil'] ?? null);
-        $warn = $validUntil !== null && $now->diffInSeconds($validUntil) < self::WARN_DAYS * 86400
-            ? ' Warn staff: the licence must be renewed online by '.$validUntil->format('Y-m-d H:i').' UTC.'
-            : '';
-
-        return match ($status) {
-            'trial', 'active' => ['decision' => 'trade', 'reason' => ucfirst($status).' licence.'.$warn],
-            'grace' => ['decision' => 'grace banner', 'reason' => 'Trade, with a banner: '.($message ?? 'the licence has ended and is in its grace days.').$warn],
-            default => ['decision' => 'lock', 'reason' => "Status {$status}: block sales. ".($message ?? '')],
+        return match (true) {
+            ! $tokenValid => ['decision' => 'lock', 'reason' => 'The token did not pass the till\'s checks.'],
+            $status === TillStatus::ACTIVE => ['decision' => 'trade', 'reason' => 'Active licence.'],
+            $status === TillStatus::EXPIRING => ['decision' => 'trade with banner', 'reason' => 'The licence ends soon: banner "Your licence ends on …".'],
+            default => ['decision' => 'lock', 'reason' => "Status {$status}: withdraw the token and lock after the sale in progress."],
         };
+    }
+
+    /**
+     * @param  array<string, mixed>  $body
+     */
+    private function post(string $path, array $body): Response
+    {
+        return $this->client()->post(rtrim($this->baseUrl, '/').'/api/v1/'.$path, $body);
     }
 
     private function client(): PendingRequest
     {
-        return Http::acceptJson()->asJson()->timeout(20)->withHeaders([
-            EnsureLicenceContract::HEADER => EnsureLicenceContract::VERSION,
-            EnsureLicenceContract::APP_VERSION_HEADER => self::APP_VERSION,
-            'User-Agent' => 'SSPOS-licence-simulator/1',
+        return Http::acceptJson()->asJson()->timeout(30)->withHeaders([
+            EnsureTillContract::CONTRACT_HEADER => EnsureTillContract::CONTRACT,
+            EnsureTillContract::APP_VERSION_HEADER => self::APP_VERSION,
+            EnsureTillContract::INSTALL_ID_HEADER => $this->installId,
+            'X-SSPOS-Company-Id' => $this->existingIds['companyId'],
+            'X-SSPOS-Branch-Id' => $this->existingIds['branchId'],
+            'X-SSPOS-Register-Id' => $this->existingIds['registerId'],
+            IdempotentTillRequest::HEADER => Ulid::new(),
+            'User-Agent' => 'SSPOS-licence-simulator/2',
         ]);
     }
 
-    private function url(string $action): string
+    private static function utc(CarbonImmutable $at): string
     {
-        return rtrim($this->baseUrl, '/').'/api/v1/licence/'.$action;
+        return $at->utc()->format('Y-m-d\TH:i:s\Z');
     }
 
-    private static function date(mixed $value): ?CarbonImmutable
+    /** Parses a portal time for the verdict; the till trusts the portal's clock over its own. */
+    public static function portalTime(mixed $value): CarbonImmutable
     {
-        if (! is_string($value) || $value === '') {
-            return null;
-        }
-
         try {
-            return CarbonImmutable::parse($value, 'UTC')->utc();
+            return is_string($value) && $value !== '' ? CarbonImmutable::parse($value, 'UTC')->utc() : CarbonImmutable::now('UTC');
         } catch (Throwable) {
-            return null;
+            return CarbonImmutable::now('UTC');
         }
     }
 }

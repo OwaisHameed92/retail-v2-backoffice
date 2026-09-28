@@ -69,7 +69,8 @@ final class LicenceQuery
                 $q->orWhere('licences.key_last4', 'like', '%'.$last4.'%');
             }
             $q->orWhere('licences.device_id', 'like', $like)
-                ->orWhere('licences.device_name', 'like', $like);
+                ->orWhere('licences.device_name', 'like', $like)
+                ->orWhere('licences.install_code', 'like', $like);
 
             if ($includeBusiness) {
                 $q->orWhere('companies.name', 'like', $like);

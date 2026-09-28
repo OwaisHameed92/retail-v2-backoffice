@@ -2,56 +2,51 @@
 
 namespace App\Http\Middleware;
 
-use App\Domain\Licensing\LicenceKey;
-use App\Domain\Shared\Exceptions\ApiException;
+use App\Domain\Licensing\Api\Support\LicenceApiErrors;
 use Closure;
 use Illuminate\Cache\RateLimiter;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
- * Licence API rate limits (docs/specs/licence-api-v1.md): 30 requests a minute per IP and, when the body has a
- * licence key, 10 a minute per key (counted on a hash of the key, never the key). Over a limit → 429
- * `rate_limited` with `retryAfterSeconds`. Every request counts, including failed ones, so guessing keys is slow.
+ * Licence and device endpoint rate limits (contract v1.3.1 §17.12): `licence/activate` 10 an hour per IP,
+ * `licence/validate` 60 an hour per install, `devices/deactivate` 20 an hour per install (the install id from
+ * `X-SSPOS-Install-Id` or the body, else the IP). Over a limit → 429 `rate.limited` with `Retry-After`.
+ * The wrong-key limit of `licence/activate` is separate (WrongKeyLimiter). Buckets hold hashes only.
  */
 class ThrottleLicenceApi
 {
-    public const PER_KEY = 10;
-
-    public const PER_IP = 30;
-
-    public const DECAY_SECONDS = 60;
+    public const HOUR = 3600;
 
     public function __construct(private readonly RateLimiter $limiter) {}
 
     public function handle(Request $request, Closure $next): Response
     {
-        $limits = ['licence-api:ip:'.sha1((string) $request->ip()) => self::PER_IP];
+        [$bucket, $max] = $this->limitFor($request);
 
-        $key = $request->json('licenceKey');
-        if (is_string($key) && $key !== '') {
-            $limits['licence-api:key:'.self::keyBucket($key)] = self::PER_KEY;
+        if ($this->limiter->tooManyAttempts($bucket, $max)) {
+            throw LicenceApiErrors::rateLimited($this->limiter->availableIn($bucket));
         }
 
-        foreach ($limits as $bucket => $max) {
-            if ($this->limiter->tooManyAttempts($bucket, $max)) {
-                throw ApiException::rateLimited(max(1, $this->limiter->availableIn($bucket)));
-            }
-        }
-
-        foreach (array_keys($limits) as $bucket) {
-            $this->limiter->hit($bucket, self::DECAY_SECONDS);
-        }
+        $this->limiter->hit($bucket, self::HOUR);
 
         return $next($request);
     }
 
     /**
-     * The bucket of a key: its HMAC when it parses (so every spelling of one key shares a bucket), else a hash of
-     * what was typed.
+     * @return array{0: string, 1: int}
      */
-    private static function keyBucket(#[\SensitiveParameter] string $input): string
+    private function limitFor(Request $request): array
     {
-        return LicenceKey::tryParse($input)?->hash() ?? hash('sha256', LicenceKey::normalise($input));
+        $route = (string) $request->route()?->getName();
+        $limits = (array) config('licence.api.rate_limits', []);
+        $install = $request->header(EnsureTillContract::INSTALL_ID_HEADER) ?: $request->json('installId');
+        $caller = is_string($install) && $install !== '' ? 'install:'.strtoupper($install) : 'ip:'.$request->ip();
+
+        return match ($route) {
+            'api.licence.activate' => ['licence-api:activate:'.hash('sha256', 'ip:'.$request->ip()), (int) ($limits['activate_per_ip_per_hour'] ?? 10)],
+            'api.licence.validate' => ['licence-api:validate:'.hash('sha256', $caller), (int) ($limits['validate_per_install_per_hour'] ?? 60)],
+            default => ['licence-api:deactivate:'.hash('sha256', $caller), (int) ($limits['deactivate_per_install_per_hour'] ?? 20)],
+        };
     }
 }

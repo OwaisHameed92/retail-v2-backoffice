@@ -160,7 +160,7 @@ export default function LicenceShow({ licence, timeline, activity, alerts, plans
                 <StatCard
                     label="App version"
                     value={<span className="text-xl">{licence.lastAppVersion ? `SSPOS ${licence.lastAppVersion}` : '—'}</span>}
-                    hint={licence.lastIp ? `From ${licence.lastIp}` : 'Reported at check-in'}
+                    hint={[licence.os, licence.lastIp && `from ${licence.lastIp}`].filter(Boolean).join(' · ') || 'Reported at check-in'}
                     icon={Cpu}
                     className="col-span-2 lg:col-span-1"
                 />
@@ -186,11 +186,33 @@ export default function LicenceShow({ licence, timeline, activity, alerts, plans
                                 {licence.register.code && <span className="text-muted-foreground font-mono"> · {licence.register.code}</span>}
                                 {licence.register.isMainTill && <span className="text-muted-foreground"> · main till</span>}, {licence.branch.name}
                             </DetailRow>
-                            <DetailRow label="PC ID">
+                            <DetailRow label="Install">
                                 {licence.deviceId ? (
-                                    <span className="font-mono text-xs break-all">{licence.deviceId}</span>
+                                    <>
+                                        <span className="font-mono">{licence.installCode ?? '—'}</span>
+                                        <p className="text-muted-foreground font-mono text-xs break-all">Install ID {licence.deviceId}</p>
+                                    </>
                                 ) : (
                                     <span className="text-muted-foreground">Not activated</span>
+                                )}
+                            </DetailRow>
+                            <DetailRow label="Till clock">
+                                {licence.tillClockSkewSeconds === null ? (
+                                    <span className="text-muted-foreground">Not reported yet</span>
+                                ) : (
+                                    clockSkew(licence.tillClockSkewSeconds)
+                                )}
+                                {licence.lastValidatedAt && (
+                                    <p className="text-muted-foreground text-xs">Last validated {formatDateTimeShort(licence.lastValidatedAt)}</p>
+                                )}
+                            </DetailRow>
+                            <DetailRow label="Till lock">
+                                {licence.lock === null ? (
+                                    <span className="text-muted-foreground">Not reported yet</span>
+                                ) : licence.lock.locked ? (
+                                    <span className="text-destructive">Locked{licence.lock.reason ? ` (${licence.lock.reason})` : ''}</span>
+                                ) : (
+                                    'Trading'
                                 )}
                             </DetailRow>
                             <DetailRow label="Features">
@@ -228,4 +250,12 @@ export default function LicenceShow({ licence, timeline, activity, alerts, plans
             <LicenceActivity entries={activity} />
         </AdminLayout>
     );
+}
+
+/** "2 min fast", "40 s slow", "In step" (till clock minus portal time). */
+function clockSkew(seconds: number): string {
+    const size = Math.abs(seconds);
+    if (size < 5) return 'In step with the portal';
+    const amount = size < 120 ? `${size} s` : size < 7200 ? `${Math.round(size / 60)} min` : `${Math.round(size / 3600)} h`;
+    return `${amount} ${seconds > 0 ? 'fast' : 'slow'}`;
 }

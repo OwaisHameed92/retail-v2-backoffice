@@ -67,6 +67,12 @@ final class LicenceData
             'features' => $licence->features->map(fn (Feature $feature) => ['value' => $feature->value, 'label' => $feature->label()])->values()->all(),
             'graceDays' => $licence->grace_days,
             'lastIp' => $licence->last_ip,
+            // Contract v1.3.1 §17.15.3: what the till reported (deviceId holds its installId).
+            'installCode' => $licence->install_code,
+            'os' => $licence->os === null ? null : (trim(implode(' ', array_filter([$licence->os['name'] ?? null, $licence->os['version'] ?? null, $licence->os['architecture'] ?? null]))) ?: null),
+            'tillClockSkewSeconds' => $licence->till_clock_skew_seconds,
+            'lastValidatedAt' => self::date($licence->last_validated_at),
+            'lock' => $licence->lock_locked === null ? null : ['locked' => $licence->lock_locked, 'reason' => $licence->lock_reason],
             'suspendedAt' => self::date($licence->suspended_at),
             'suspendedReason' => $licence->suspended_reason,
             'revokedAt' => self::date($licence->revoked_at),

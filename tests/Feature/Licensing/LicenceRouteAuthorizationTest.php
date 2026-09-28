@@ -28,7 +28,7 @@ function licenceRoutes(): array
         ['put', '/admin/licences/{licence}/notes', 'manage'],
         ['post', '/admin/licences/{licence}/renew', 'manage'],
         ['post', '/admin/licences/{licence}/plan', 'manage'],
-        ['post', '/admin/licences/{licence}/reset-device', 'manage'],
+        ['post', '/admin/licences/{licence}/release', 'manage'],
         ['post', '/admin/licences/{licence}/reissue', 'manage'],
         ['post', '/admin/licences/{licence}/suspend', 'manage'],
         ['post', '/admin/licences/{licence}/unsuspend', 'manage'],

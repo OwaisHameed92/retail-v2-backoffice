@@ -6,7 +6,7 @@ use RuntimeException;
 use SensitiveParameter;
 
 /**
- * HMAC-SHA256 (hex) of a till's device id, keyed with APP_KEY: how the portal remembers PCs that are not (or no
+ * HMAC-SHA256 (hex) of a till's installId, keyed with APP_KEY: how the portal remembers PCs that are not (or no
  * longer) the bound one, without keeping their ids. Rotating APP_KEY only makes older history stop matching.
  */
 final class DeviceHash
@@ -24,7 +24,7 @@ final class DeviceHash
         return hash_hmac('sha256', 'sspos-device|'.$deviceId, $secret);
     }
 
-    /** "…4F2A": the last 4 characters of a device id, enough for staff to tell two PCs apart. */
+    /** "…4F2A": the last 4 characters of an install id, enough for staff to tell two PCs apart. */
     public static function ending(?string $deviceId): ?string
     {
         return $deviceId === null || $deviceId === '' ? null : '…'.mb_substr($deviceId, -4);

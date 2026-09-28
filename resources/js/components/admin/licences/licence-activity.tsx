@@ -25,6 +25,8 @@ const icons: Record<string, LucideIcon> = {
     'licence.issued': Sparkles,
     'licence.key_reissued': KeyRound,
     'licence.device_reset': MonitorX,
+    'licence.device_released': MonitorX,
+    'licence.lock_changed': MonitorX,
     'licence.suspended': CirclePause,
     'licence.unsuspended': CirclePlay,
     'licence.revoked': Ban,

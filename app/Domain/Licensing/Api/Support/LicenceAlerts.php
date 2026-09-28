@@ -24,7 +24,7 @@ final class LicenceAlerts
     public function raise(Licence $licence, LicenceAlertType $type, TillRequest $request, array $extra = []): LicenceAlert
     {
         $now = CarbonImmutable::now();
-        $fingerprint = DeviceHash::of($request->deviceId);
+        $fingerprint = DeviceHash::of($request->installId);
         $details = [
             ...$request->describePc(),
             'boundDeviceName' => $licence->device_name,

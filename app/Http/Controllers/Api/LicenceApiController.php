@@ -3,39 +3,35 @@
 namespace App\Http\Controllers\Api;
 
 use App\Domain\Licensing\Api\ActivateLicence;
-use App\Domain\Licensing\Api\CheckInLicence;
-use App\Domain\Licensing\Api\DeactivateLicence;
-use App\Domain\Licensing\Signing\Jwks;
+use App\Domain\Licensing\Api\DeactivateDevice;
+use App\Domain\Licensing\Api\ValidateLicence;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\ActivateLicenceRequest;
-use App\Http\Requests\Api\CheckInLicenceRequest;
-use App\Http\Requests\Api\DeactivateLicenceRequest;
+use App\Http\Requests\Api\DeactivateDeviceRequest;
+use App\Http\Requests\Api\ValidateLicenceRequest;
 use Illuminate\Http\JsonResponse;
 
 /**
- * Licence API v1 (module 1.5, docs/specs/licence-api-v1.md). Thin: validate the body, call one Action, reply
- * JSON. Errors are ApiExceptions rendered as `{code, message, traceId, retryAfterSeconds, rejectedKey}`.
+ * Per-till licensing (contract v1.3.1 §17.15, §17.7). Thin: validate the body, call one Action, reply JSON.
+ * Errors are ApiExceptions rendered as `{code, message, traceId, retryAfterSeconds, rejectedKey, details?}`.
  */
 class LicenceApiController extends Controller
 {
     public function activate(ActivateLicenceRequest $request, ActivateLicence $activate): JsonResponse
     {
-        return self::json($activate->handle($request->tillRequest()));
+        return self::json($activate->handle($request->licenceKey(), $request->tillRequest()));
     }
 
-    public function checkIn(CheckInLicenceRequest $request, CheckInLicence $checkIn): JsonResponse
+    public function validateLicence(ValidateLicenceRequest $request, ValidateLicence $validate): JsonResponse
     {
-        return self::json($checkIn->handle($request->tillRequest()));
+        return self::json($validate->handle((string) $request->validated('licenceId'), (string) $request->validated('tokenSha256'), $request->tillRequest()));
     }
 
-    public function deactivate(DeactivateLicenceRequest $request, DeactivateLicence $deactivate): JsonResponse
+    public function deactivate(DeactivateDeviceRequest $request, DeactivateDevice $deactivate): JsonResponse
     {
-        return self::json($deactivate->handle($request->tillRequest()));
-    }
+        $note = $request->validated('note');
 
-    public function keys(Jwks $jwks): JsonResponse
-    {
-        return self::json($jwks->current());
+        return self::json($deactivate->handle((string) $request->validated('registerId'), $request->tillRequest(), (string) $request->validated('reason'), is_string($note) ? $note : null));
     }
 
     /**

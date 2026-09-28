@@ -45,7 +45,7 @@ final class LicenceAlertData
      */
     private static function details(array $details): array
     {
-        $keys = ['deviceName', 'deviceIdEnding', 'ip', 'appVersion', 'os', 'boundDeviceName', 'boundDeviceIdEnding', 'retiredKeyLast4', 'attempted'];
+        $keys = ['deviceName', 'installCode', 'deviceIdEnding', 'ip', 'appVersion', 'os', 'boundDeviceName', 'boundDeviceIdEnding', 'retiredKeyLast4', 'attempted'];
         $out = [];
 
         foreach ($keys as $key) {

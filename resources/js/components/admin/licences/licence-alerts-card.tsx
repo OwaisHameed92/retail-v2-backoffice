@@ -24,6 +24,9 @@ function pcLabel(name: string | null, ending: string | null): string {
 function AlertFacts({ alert }: { alert: LicenceAlert }) {
     const { details } = alert;
     const facts: { label: string; value: string }[] = [{ label: 'PC', value: pcLabel(details.deviceName, details.deviceIdEnding) }];
+    if (details.installCode) {
+        facts.push({ label: 'Install code', value: details.installCode });
+    }
 
     if (alert.type !== 'reissuedKeyUsed' && (details.boundDeviceName || details.boundDeviceIdEnding)) {
         facts.push({ label: 'Bound PC', value: pcLabel(details.boundDeviceName, details.boundDeviceIdEnding) });

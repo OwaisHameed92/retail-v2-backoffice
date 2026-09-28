@@ -2,6 +2,7 @@
 
 use App\Domain\Licensing\LicenceKey;
 use App\Domain\Licensing\Models\LicenceAlert;
+use App\Domain\Licensing\Models\LicenceDevice;
 use Carbon\CarbonImmutable;
 use Illuminate\Log\Events\MessageLogged;
 use Illuminate\Support\Facades\DB;
@@ -15,69 +16,61 @@ uses(TenantTestHelpers::class, LicensingTestHelpers::class, LicenceApiHelpers::c
 
 beforeEach(function () {
     Mail::fake();
-    $this->travelTo(CarbonImmutable::parse('2026-09-24 09:00:00', 'UTC'));
+    $this->travelTo(CarbonImmutable::parse('2026-10-05 09:00:00', 'UTC'));
     $this->withSigningKey();
 });
 
-test('the key never reaches the logs, the audit log, the database or an error reply', function () {
+test('keys are never logged, stored or echoed, even on errors and alerts', function () {
+    config(['logging.default' => 'null']);
     $logged = [];
-    Event::listen(MessageLogged::class, function (MessageLogged $event) use (&$logged) {
-        $logged[] = $event->message.' '.json_encode($event->context, JSON_PARTIAL_OUTPUT_ON_ERROR | JSON_UNESCAPED_UNICODE);
+    Event::listen(MessageLogged::class, function (MessageLogged $e) use (&$logged) {
+        $logged[] = $e->message.' '.json_encode($e->context);
     });
 
     [, $licence] = $this->keyedTenant();
     $replies = [
-        $this->till('activate', $this->activateBody())->assertOk(),
-        $this->till('activate', $this->activateBody(device: self::OTHER_PC))->assertStatus(409),
-        $this->till('check-in', $this->checkInBody())->assertOk(),
-        $this->till('check-in', $this->checkInBody(device: self::OTHER_PC))->assertForbidden(),
-        $this->till('check-in', $this->checkInBody(key: self::OTHER_KEY))->assertNotFound(),
-        $this->till('check-in', ['licenceKey' => self::KEY])->assertStatus(400),
-        $this->till('check-in', ['licenceKey' => 'SSP-7K2Q-9DMF-3XRA-P8T6', 'deviceId' => self::PC])->assertNotFound(),
-        $this->postJson('/api/v1/licence/check-in?licenceKey='.self::KEY, [], $this->tillHeaders())->assertStatus(400),
-        $this->till('deactivate', ['licenceKey' => self::KEY, 'deviceId' => self::PC])->assertOk(),
+        $this->activateTill()->getContent(),
+        $this->activateTill(install: self::OTHER_INSTALL, code: self::OTHER_CODE)->getContent(), // 409 + alert (logs)
+        $this->activateTill(self::OTHER_KEY, self::OTHER_INSTALL)->getContent(),
+        $this->till('licence/activate', ['licenceKey' => self::KEY])->getContent(),
     ];
 
-    $tables = ['licences', 'audit_logs', 'email_logs', 'licence_alerts', 'licence_devices', 'retired_licence_keys', 'companies', 'jobs', 'failed_jobs'];
-    $stored = collect($tables)->map(fn (string $table) => json_encode(DB::table($table)->get()->all()))->implode("\n");
-    $text = $stored."\n".implode("\n", $logged)."\n".collect($replies)->map(fn ($r) => $r->getContent())->implode("\n");
+    $haystack = implode("\n", [...$logged, ...$replies, $this->storedText(), json_encode(DB::table('licence_devices')->get()), json_encode(DB::table('licence_alerts')->get())]);
+    $bodies = [LicenceKey::parse(self::KEY)->body(), LicenceKey::parse(self::OTHER_KEY)->body()];
 
-    $body = LicenceKey::parse(self::KEY)->body();
-    foreach ([self::KEY, $body, strtolower($body), '7K2Q-9DMF-3XRA'] as $needle) {
-        expect($text)->not->toContain($needle);
+    expect(LicenceAlert::withoutCompanyScope()->count())->toBe(1)->and($logged)->not->toBeEmpty();
+    foreach ($bodies as $body) {
+        expect(str_contains($haystack, $body))->toBeFalse()
+            ->and(str_contains($haystack, implode('-', str_split($body, 4))))->toBeFalse();
     }
 
-    // Other PCs' device ids are only kept hashed.
-    expect($stored)->not->toContain(self::OTHER_PC)
-        ->and($logged)->not->toBeEmpty()
-        ->and(implode("\n", $logged))->toContain('SSP-••••-••••-••••-P8T5');
-    expect($licence->refresh()->key_last4)->toBe('P8T5');
+    // Install ids of other PCs are kept only as hashes.
+    expect(json_encode(DB::table('licence_devices')->get()))->not->toContain(self::OTHER_INSTALL);
 });
 
-test('a key only ever exposes its own company, branch and till', function () {
-    [$khan, $khanLicence] = $this->keyedTenant('Khan Mini Mart', 2, 'LDS');
-    [$patel, $patelLicence] = $this->keyedTenant('Patel News', 1, 'PTL', self::OTHER_KEY);
+test('a key binds only its own company licence and the token names only that company', function () {
+    [$a, $licenceA] = $this->keyedTenant('Khan Mini Mart', 2, 'LDS');
+    [$b, $licenceB] = $this->keyedTenant('Corner Shop', 1, 'CRN', self::OTHER_KEY);
 
-    $reply = $this->till('activate', $this->activateBody(key: self::OTHER_KEY))
-        ->assertOk()
-        ->assertJsonPath('company.id', $patel->id)
-        ->assertJsonPath('branch.code', 'PTL')
-        ->assertJsonPath('register.id', $patelLicence->register_id)
-        ->assertJsonPath('licence.id', $patelLicence->id);
+    $reply = $this->activateTill()->assertOk();
 
-    $content = (string) $reply->getContent();
-    expect($content)->not->toContain($khan->id)
-        ->not->toContain($khanLicence->id)
-        ->not->toContain($khanLicence->register_id)
-        ->not->toContain('Khan Mini Mart')
-        ->and($this->verifyToken($reply)->claim('companyId'))->toBe($patel->id);
+    expect($reply->json('licence.companyId'))->toBe($a->id)
+        ->and((string) $reply->getContent())->not->toContain($b->id)
+        ->and($licenceB->fresh()->device_id)->toBeNull()
+        ->and(LicenceDevice::withoutCompanyScope()->where('company_id', $b->id)->count())->toBe(0);
+});
 
-    // Patel's PC cannot check in with Khan's key, and an alert on Khan's licence stays Khan's.
-    $this->till('check-in', $this->checkInBody(key: self::KEY))->assertForbidden();
-    $this->till('activate', $this->activateBody())->assertOk()->assertJsonPath('company.id', $khan->id);
-    $this->till('activate', $this->activateBody(device: 'PATEL-PC-2'))->assertStatus(409);
+test('company B cannot validate or release company A licence', function () {
+    [, $licenceA] = $this->keyedTenant('Khan Mini Mart', 2, 'LDS');
+    [, $licenceB] = $this->keyedTenant('Corner Shop', 1, 'CRN', self::OTHER_KEY);
+    $tokenA = $this->activateTill()->json('licenceToken');
+    $this->activateTill(self::OTHER_KEY, self::OTHER_INSTALL, self::OTHER_CODE)->assertOk();
 
-    expect(LicenceAlert::withoutCompanyScope()->pluck('company_id')->unique()->all())->toBe([$khan->id]);
-    expect($patelLicence->refresh()->device_id)->toBe(self::PC)
-        ->and($khanLicence->refresh()->device_id)->toBe(self::PC);
+    // B's till asks about A's licence id: not bound to it.
+    $this->validateTill($licenceA->id, $tokenA, self::OTHER_INSTALL)->assertNotFound();
+    // B's till tries to release A's till.
+    $this->deactivateTill($licenceA->register_id, self::OTHER_INSTALL)->assertNotFound();
+
+    expect($licenceA->fresh()->device_id)->toBe(self::INSTALL)
+        ->and($licenceB->fresh()->device_id)->toBe(self::OTHER_INSTALL);
 });

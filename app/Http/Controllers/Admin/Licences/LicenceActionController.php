@@ -4,8 +4,8 @@ namespace App\Http\Controllers\Admin\Licences;
 
 use App\Domain\Licensing\Actions\ChangeLicencePlan;
 use App\Domain\Licensing\Actions\ReissueKey;
+use App\Domain\Licensing\Actions\ReleaseDevice;
 use App\Domain\Licensing\Actions\RenewLicence;
-use App\Domain\Licensing\Actions\ResetDevice;
 use App\Domain\Licensing\Actions\RevokeLicence;
 use App\Domain\Licensing\Actions\SuspendLicence;
 use App\Domain\Licensing\Actions\UnsuspendLicence;
@@ -44,11 +44,11 @@ class LicenceActionController extends Controller
         return back()->with('success', $result->changed ? "Moved to {$plan->name}. The till gets the new features at its next check-in." : "Already on {$plan->name}.");
     }
 
-    public function resetDevice(string $licence, ResetDevice $resetDevice): RedirectResponse
+    public function release(string $licence, ReleaseDevice $release): RedirectResponse
     {
-        $resetDevice->handle($this->findLicence($licence));
+        $release->handle($this->findLicence($licence));
 
-        return back()->with('success', 'PC reset. The key can now be activated on another PC.');
+        return back()->with('success', 'Key released. The old PC locks at its next check-in; the key can now be activated on another PC.');
     }
 
     public function reissue(string $licence, ReissueKey $reissue): JsonResponse

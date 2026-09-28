@@ -2,12 +2,13 @@
 
 use App\Domain\Licensing\Actions\ChangeLicencePlan;
 use App\Domain\Licensing\Actions\ReissueKey;
+use App\Domain\Licensing\Actions\ReleaseDevice;
 use App\Domain\Licensing\Actions\RenewLicence;
-use App\Domain\Licensing\Actions\ResetDevice;
 use App\Domain\Licensing\Actions\RevokeLicence;
 use App\Domain\Licensing\Actions\SuspendLicence;
 use App\Domain\Licensing\Actions\UnsuspendLicence;
 use App\Domain\Licensing\Actions\UpdateLicenceNotes;
+use App\Domain\Licensing\Api\Support\DeviceHistory;
 use App\Domain\Licensing\Data\RenewalTerm;
 use App\Domain\Licensing\Enums\LicenceStatus;
 use App\Domain\Licensing\LicenceKey;
@@ -52,23 +53,24 @@ test('reissuing gives a new key, kills the old one and frees the PC', function (
         ->and(json_encode($entry->toArray()))->not->toContain(LicenceKey::parse($reissued->plainKey())->body());
 });
 
-test('resetting the PC keeps the key and the dates', function () {
+test('releasing the PC keeps the key and the dates and marks the install released', function () {
     $licence = $this->activate($this->firstLicence($this->licensedTenant()));
     $hash = $licence->key_hash;
 
-    $result = app(ResetDevice::class)->handle($licence);
+    $result = app(ReleaseDevice::class)->handle($licence);
 
     expect($result->licence->device_id)->toBeNull()
         ->and($result->licence->device_name)->toBeNull()
         ->and($result->licence->bound_at)->toBeNull()
         ->and($result->licence->key_hash)->toBe($hash)
         ->and($result->licence->status)->toBe(LicenceStatus::Trial)
-        ->and(AuditLog::query()->where('action', 'licence.device_reset')->sole()->before)->toMatchArray(['device_id' => 'PC-0001', 'device_name' => 'FRONT-TILL']);
+        ->and(DeviceHistory::wasReleased($result->licence, 'PC-0001'))->toBeTrue()
+        ->and(AuditLog::query()->where('action', 'licence.device_released')->sole()->before)->toMatchArray(['device_id' => 'PC-0001', 'device_name' => 'FRONT-TILL']);
 });
 
-test('a licence not bound to a PC has no PC to reset', function () {
-    app(ResetDevice::class)->handle($this->firstLicence($this->licensedTenant()));
-})->throws(ValidationException::class, 'not bound');
+test('a licence not in use on a PC has nothing to release', function () {
+    app(ReleaseDevice::class)->handle($this->firstLicence($this->licensedTenant()));
+})->throws(ValidationException::class, 'not in use');
 
 test('suspending needs a reason and locks the licence until it is lifted', function () {
     $licence = $this->activate($this->firstLicence($this->licensedTenant()));
@@ -125,7 +127,7 @@ test('revoking is final: nothing can change a revoked licence', function () {
         'unsuspend' => fn () => app(UnsuspendLicence::class)->handle($licence),
         'renew' => fn () => app(RenewLicence::class)->handle($licence, RenewalTerm::month()),
         'reissue' => fn () => app(ReissueKey::class)->handle($licence),
-        'reset' => fn () => app(ResetDevice::class)->handle($licence),
+        'release' => fn () => app(ReleaseDevice::class)->handle($licence),
         'plan' => fn () => app(ChangeLicencePlan::class)->handle($licence, $this->proPlan()),
     ];
 

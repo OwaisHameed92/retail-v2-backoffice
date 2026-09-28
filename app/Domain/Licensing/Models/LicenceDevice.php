@@ -9,7 +9,7 @@ use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
 
 /**
- * A PC that has used a licence key (module 1.5): the device id is kept only as an HMAC hash
+ * A PC (till install) that has used a licence key (module 1.5): the installId is kept only as an HMAC hash
  * ({@see DeviceHash}). Written by the licence API only.
  *
  * @property string $id
@@ -23,6 +23,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property CarbonImmutable $first_seen_at
  * @property CarbonImmutable $last_seen_at
  * @property int $times_seen
+ * @property CarbonImmutable|null $released_at This install was released: its next validate gets `released`.
  */
 class LicenceDevice extends Model
 {
@@ -40,6 +41,7 @@ class LicenceDevice extends Model
         'first_seen_at',
         'last_seen_at',
         'times_seen',
+        'released_at',
     ];
 
     /** @var list<string> */
@@ -54,6 +56,7 @@ class LicenceDevice extends Model
             'times_seen' => 'integer',
             'first_seen_at' => 'immutable_datetime',
             'last_seen_at' => 'immutable_datetime',
+            'released_at' => 'immutable_datetime',
         ];
     }
 }

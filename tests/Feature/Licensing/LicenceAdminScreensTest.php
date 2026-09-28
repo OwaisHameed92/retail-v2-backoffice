@@ -144,7 +144,7 @@ test('staff change a licence from its page', function () {
     $this->post("/admin/licences/{$licence->id}/plan", ['plan_id' => $this->proPlan()->id])->assertSessionHas('success');
     expect($licence->fresh()->plan->code)->toBe('pro');
 
-    $this->post("/admin/licences/{$licence->id}/reset-device")->assertSessionHas('success');
+    $this->post("/admin/licences/{$licence->id}/release")->assertSessionHas('success');
     expect($licence->fresh()->device_id)->toBeNull();
 
     $this->post("/admin/licences/{$licence->id}/suspend", ['reason' => ''])->assertSessionHasErrors('reason');
@@ -158,7 +158,7 @@ test('staff change a licence from its page', function () {
     $this->post("/admin/licences/{$licence->id}/suspend", ['reason' => 'Again'])->assertSessionHasErrors('status');
 
     expect(AuditLog::query()->where('subject_id', $licence->id)->where('actor_id', $admin->id)->pluck('action')->all())
-        ->toContain('licence.renewed', 'licence.plan_changed', 'licence.device_reset', 'licence.suspended', 'licence.unsuspended', 'licence.notes_updated', 'licence.revoked');
+        ->toContain('licence.renewed', 'licence.plan_changed', 'licence.device_released', 'licence.suspended', 'licence.unsuspended', 'licence.notes_updated', 'licence.revoked');
 });
 
 test('reissuing answers with the new key once, as JSON that is never cached', function () {

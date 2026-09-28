@@ -7,14 +7,20 @@ use App\Domain\Licensing\Signing\Enums\SigningKeyStatus;
 use App\Domain\Licensing\Signing\Exceptions\ActiveSigningKeyExists;
 use App\Domain\Licensing\Signing\Exceptions\NoActiveSigningKey;
 use App\Domain\Licensing\Signing\Exceptions\UnknownKey;
-use App\Domain\Licensing\Signing\Jwks;
 use App\Domain\Licensing\Signing\KeyStore;
 use App\Domain\Licensing\Signing\Kid;
-use App\Domain\Licensing\Signing\LicenceTokenSigner;
-use App\Domain\Licensing\Signing\LicenceTokenVerifier;
 use App\Domain\Licensing\Signing\Models\LicenceSigningKey;
+use App\Domain\Licensing\Signing\Sspos\SsposTokenSigner;
+use App\Domain\Licensing\Signing\Sspos\SsposTokenVerifier;
 use App\Domain\Shared\Models\AuditLog;
 use Carbon\CarbonImmutable;
+use Tests\Support\SsposDocs;
+
+/** A portal token for the documentation sample licence, with another licenceId when given. */
+function rotationToken(string $licenceId = '01K5T0Q8C4000000000000Y001'): string
+{
+    return app(SsposTokenSigner::class)->sign(SsposDocs::claims(['licenceId' => $licenceId] + SsposDocs::sample('licence-token.payload.full.json')));
+}
 
 beforeEach(function () {
     $this->travelTo(CarbonImmutable::parse('2026-09-24 09:00:00', 'UTC'));
@@ -45,13 +51,13 @@ it('refuses to rotate when there is no key yet', function () {
 
 it('rotates: new tokens use the new kid, old tokens still verify', function () {
     $first = app(GenerateSigningKey::class)->handle()->kid;
-    $old = app(LicenceTokenSigner::class)->sign(['lic' => 'old']);
+    $old = rotationToken('01K5T0Q8C4000000000000Y0D0');
 
     $this->travel(1)->days();
     $result = app(RotateSigningKey::class)->handle();
-    $new = app(LicenceTokenSigner::class)->sign(['lic' => 'new']);
+    $new = rotationToken('01K5T0Q8C4000000000000YNEW');
 
-    $verifier = app(LicenceTokenVerifier::class);
+    $verifier = app(SsposTokenVerifier::class);
 
     $second = $result['key']->kid;
 
@@ -59,7 +65,7 @@ it('rotates: new tokens use the new kid, old tokens still verify', function () {
         ->and($result['retired'])->toBe([$first])
         ->and($verifier->verify($new)->kid())->toBe($second)
         ->and($verifier->verify($old)->kid())->toBe($first)
-        ->and($verifier->verify($old)->claim('lic'))->toBe('old')
+        ->and($verifier->verify($old)->licenceId())->toBe('01K5T0Q8C4000000000000Y0D0')
         ->and(LicenceSigningKey::query()->where('is_active', true)->pluck('kid')->all())->toBe([$second]);
 });
 
@@ -78,20 +84,19 @@ it('wipes the secret of a retired key', function () {
 it('keeps old tokens verifying until the keep period ends, then prune removes the key', function () {
     config(['licence.signing_keys.retired_keep_days' => 60]);
     $k1 = app(GenerateSigningKey::class)->handle()->kid;
-    $old = app(LicenceTokenSigner::class)->sign([]);
+    $old = rotationToken();
     $k2 = app(RotateSigningKey::class)->handle()['key']->kid;
 
     $this->travelTo(CarbonImmutable::parse('2026-09-24 09:00:00', 'UTC')->addDays(60)->subSecond());
-    expect(app(LicenceTokenVerifier::class)->verify($old)->kid())->toBe($k1)
+    expect(app(SsposTokenVerifier::class)->verify($old)->kid())->toBe($k1)
         ->and(app(PruneSigningKeys::class)->handle())->toBe([]);
 
     $this->travel(1)->seconds();
-    expect(fn () => app(LicenceTokenVerifier::class)->verify($old))->toThrow(UnknownKey::class)
-        ->and(collect(app(Jwks::class)->current()['keys'])->pluck('kid')->all())->toBe([$k2]);
+    expect(fn () => app(SsposTokenVerifier::class)->verify($old))->toThrow(UnknownKey::class);
 
     expect(app(PruneSigningKeys::class)->handle())->toBe([$k1])
         ->and(LicenceSigningKey::query()->pluck('kid')->all())->toBe([$k2])
-        ->and(fn () => app(LicenceTokenVerifier::class)->verify($old))->toThrow(UnknownKey::class);
+        ->and(fn () => app(SsposTokenVerifier::class)->verify($old))->toThrow(UnknownKey::class);
 });
 
 it('never prunes the active key, however old', function () {
@@ -126,29 +131,6 @@ it('reports key status', function () {
     $this->travel(60)->days();
 
     expect($statuses())->toBe([$k2 => SigningKeyStatus::Active, $k1 => SigningKeyStatus::Expired]);
-});
-
-it('publishes a JWKS with the active key first, then retired keys that still verify', function () {
-    $k1 = app(GenerateSigningKey::class)->handle()->kid;
-    $this->travel(1)->minutes();
-    $k2 = app(RotateSigningKey::class)->handle()['key']->kid;
-
-    $jwks = app(Jwks::class)->current();
-    $active = app(KeyStore::class)->active();
-
-    expect(array_keys($jwks))->toBe(['keys'])
-        ->and($jwks['keys'])->toHaveCount(2)
-        ->and($jwks['keys'][0])->toBe(['kid' => $k2, 'kty' => 'OKP', 'crv' => 'Ed25519', 'x' => $active->x(), 'use' => 'sig'])
-        ->and($jwks['keys'][1]['kid'])->toBe($k1)
-        ->and($jwks['keys'][1]['x'])->toMatch('/^[A-Za-z0-9_-]{43}$/');
-
-    foreach ($jwks['keys'] as $jwk) {
-        expect(array_keys($jwk))->toBe(['kid', 'kty', 'crv', 'x', 'use']);
-    }
-});
-
-it('publishes an empty JWKS when there are no keys', function () {
-    expect(app(Jwks::class)->current())->toBe(['keys' => []]);
 });
 
 it('audits generate, rotate and prune without key material', function () {

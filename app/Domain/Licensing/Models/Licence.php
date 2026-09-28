@@ -50,11 +50,22 @@ use Illuminate\Support\Collection;
  * @property int $grace_days
  * @property CarbonImmutable|null $ends_at
  * @property CarbonImmutable|null $grace_ends_at
- * @property string|null $device_id
+ * @property string|null $device_id The bound till's installId (contract §17.15), null when not bound.
  * @property string|null $device_name
+ * @property string|null $install_code
+ * @property array{companyId?: string, branchId?: string, registerId?: string}|null $existing_ids The till's own ids.
  * @property CarbonImmutable|null $bound_at
  * @property CarbonImmutable|null $last_check_in_at
  * @property string|null $last_app_version
+ * @property array{name?: string, version?: string, architecture?: string|null}|null $os
+ * @property int|null $till_clock_skew_seconds Till clock minus portal time at the last call.
+ * @property CarbonImmutable|null $clock_watermark_at
+ * @property CarbonImmutable|null $last_validated_at
+ * @property bool|null $lock_locked
+ * @property string|null $lock_reason
+ * @property string|null $token_sha256
+ * @property string|null $token_kid
+ * @property string|null $token_fingerprint
  * @property string|null $last_ip
  * @property CarbonImmutable|null $suspended_at
  * @property string|null $suspended_reason
@@ -98,7 +109,7 @@ class Licence extends Model
     ];
 
     /** @var list<string> */
-    protected $hidden = ['key_hash'];
+    protected $hidden = ['key_hash', 'token_sha256', 'token_fingerprint'];
 
     /** @var array<string, mixed> */
     protected $attributes = [
@@ -140,6 +151,12 @@ class Licence extends Model
             'ends_at' => 'immutable_datetime',
             'grace_ends_at' => 'immutable_datetime',
             'bound_at' => 'immutable_datetime',
+            'existing_ids' => 'array',
+            'os' => 'array',
+            'till_clock_skew_seconds' => 'integer',
+            'clock_watermark_at' => 'immutable_datetime',
+            'last_validated_at' => 'immutable_datetime',
+            'lock_locked' => 'boolean',
             'last_check_in_at' => 'immutable_datetime',
             'suspended_at' => 'immutable_datetime',
             'revoked_at' => 'immutable_datetime',

@@ -2,108 +2,164 @@
 
 namespace App\Domain\Licensing\Api\Support;
 
-use App\Domain\Licensing\Enums\LicenceStatus;
 use App\Domain\Licensing\LicenceState;
 use App\Domain\Licensing\Models\Licence;
+use App\Domain\Licensing\Signing\Sspos\LicenceClaims;
 use App\Domain\Shared\Support\ApiDate;
 use Carbon\CarbonImmutable;
-use Illuminate\Contracts\Config\Repository as Config;
 
 /**
- * The success replies of `activate` and `check-in` (docs/specs/licence-api-v1.md, "Endpoints"). Everything is
- * built from the licence's own company, branch and till: a key never reaches another company's rows.
+ * The 200 replies of `licence/activate` (licence-activate-reply.schema.json) and `licence/validate`
+ * (validate-reply.schema.json), contract v1.3.1 §17.15. The `licence` summary lists the token's fields; the
+ * signed token always wins.
  */
 final class LicenceReply
 {
     public const TIMEZONE = 'Europe/London';
 
-    public function __construct(
-        private readonly LicenceToken $token,
-        private readonly Config $config,
-    ) {}
-
     /**
      * @return array<string, mixed>
      */
-    public function activation(Licence $licence, CarbonImmutable $now): array
+    public function activation(Licence $licence, LicenceState $state, LicenceClaims $claims, string $status, string $token, CarbonImmutable $now): array
     {
-        $licence->loadMissing(['company', 'branch', 'register', 'plan']);
-        $state = LicenceState::for($licence, $now);
-
         return [
-            'licence' => $this->licence($licence, $state),
-            'token' => $this->token->for($licence, $state, $now),
-            'company' => $licence->company === null ? null : TillEntities::company($licence->company),
-            'branch' => $licence->branch === null ? null : TillEntities::branch($licence->branch),
-            'register' => $licence->register === null ? null : TillEntities::register($licence->register),
-            // Module 2.1 fills {hubUrl, apiKey} for a main (or single) till; null until then.
-            'sync' => null,
-            'checkInEverySeconds' => $this->checkInEverySeconds(),
-            'serverTimeUtc' => ApiDate::format($now),
+            'status' => $status,
+            'licenceToken' => $token,
+            'licence' => self::summary($claims),
+            'portalTimeUtc' => ApiDate::format($now),
+            'nextCheckAfterSeconds' => TillStatus::nextCheckAfterSeconds($status),
+            'messages' => self::messages($licence, $state, $status, $claims->expiresAt, $now),
         ];
     }
 
     /**
      * @return array<string, mixed>
      */
-    public function checkIn(Licence $licence, CarbonImmutable $now): array
+    public function validation(Licence $licence, LicenceState $state, LicenceClaims $claims, string $status, ?string $token, CarbonImmutable $now): array
     {
-        $licence->loadMissing(['company', 'branch', 'register', 'plan']);
-        $state = LicenceState::for($licence, $now);
-
         return [
-            'licence' => $this->licence($licence, $state),
-            'token' => $this->token->for($licence, $state, $now),
-            'message' => self::message($state),
-            'checkInEverySeconds' => $this->checkInEverySeconds(),
-            'serverTimeUtc' => ApiDate::format($now),
+            'status' => $status,
+            'licenceToken' => $token,
+            'licence' => self::summary($claims),
+            'apiKey' => null,
+            'minimumAppVersion' => self::minimumAppVersion(),
+            'portalTimeUtc' => ApiDate::format($now),
+            'nextCheckAfterSeconds' => TillStatus::nextCheckAfterSeconds($status),
+            'messages' => self::messages($licence, $state, $status, $claims->expiresAt, $now),
         ];
     }
 
     /**
-     * The `licence` object of a reply.
+     * The key was released from this install (validate-reply.released.json).
      *
      * @return array<string, mixed>
      */
-    public function licence(Licence $licence, LicenceState $state): array
+    public function released(CarbonImmutable $now): array
     {
         return [
-            'id' => $licence->id,
-            'keyLast4' => $licence->key_last4,
-            'status' => $state->status->value,
-            'plan' => $licence->plan?->code,
-            'features' => LicenceToken::features($licence),
-            'activatedAt' => ApiDate::format($licence->activated_at),
-            'trialEndsAt' => ApiDate::format($licence->trial_ends_at),
-            'expiresAt' => ApiDate::format($licence->expires_at),
-            'graceDays' => max(0, $licence->grace_days),
-            'deviceId' => $licence->device_id,
+            'status' => TillStatus::RELEASED,
+            'licenceToken' => null,
+            'licence' => null,
+            'apiKey' => null,
+            'minimumAppVersion' => self::minimumAppVersion(),
+            'portalTimeUtc' => ApiDate::format($now),
+            'nextCheckAfterSeconds' => TillStatus::nextCheckAfterSeconds(TillStatus::RELEASED),
+            'messages' => [self::message('released', 'critical', 'Licence moved', 'This licence key was released on the portal. Enter a new key to keep selling.', $now, null, false)],
         ];
     }
 
     /**
-     * en-GB line for the till to show, or null when there is nothing to say (paid and trading).
+     * The plain `licence` summary: the token's fields without the signature parts.
+     *
+     * @return array<string, mixed>
      */
-    public static function message(LicenceState $state): ?string
+    public static function summary(LicenceClaims $claims): array
     {
-        $what = $state->isTrial ? 'free trial' : 'licence';
+        $payload = $claims->toPayload('-', null);
 
-        return match ($state->status) {
-            LicenceStatus::Trial => 'Free trial until '.self::day($state->endsAt).'.',
-            LicenceStatus::Active, LicenceStatus::Issued => null,
-            LicenceStatus::Grace => 'Your '.$what.' ended on '.self::day($state->endsAt).'. The till will stop taking sales on '
-                .self::day($state->graceEndsAt).' unless it is renewed. '.LicenceApiErrors::SUPPORT,
-            default => trim(($state->reason ?? 'This licence cannot be used.').' '.LicenceApiErrors::SUPPORT),
+        return [
+            'licenceId' => $claims->licenceId,
+            'kind' => $claims->kind->value,
+            'source' => 'portal',
+            'companyId' => $claims->companyId,
+            'branchId' => $claims->branchId,
+            'businessName' => $claims->businessName,
+            'branchName' => $claims->branchName,
+            'installCode' => $claims->installCode,
+            'validFrom' => LicenceClaims::utc($claims->validFrom),
+            'expiresAt' => LicenceClaims::utc($claims->expiresAt),
+            'maxRegisters' => $claims->maxRegisters,
+            'features' => $claims->features === [] ? null : $claims->features,
+            'limits' => $claims->limits === [] ? null : $claims->limits,
+            'company' => $payload['company'] ?? null,
+        ];
+    }
+
+    /**
+     * What the till shows the owner for this status (display only, §17.9).
+     *
+     * @return list<array<string, mixed>>
+     */
+    public static function messages(Licence $licence, LicenceState $state, string $status, CarbonImmutable $expiresAt, CarbonImmutable $now): array
+    {
+        $day = self::day($expiresAt);
+        $stamp = $expiresAt->format('Ymd');
+        $reason = trim((string) $state->reason);
+
+        $message = match (true) {
+            $status === TillStatus::EXPIRING && $state->graceEndsAt !== null && $state->endsAt !== null && $now->greaterThanOrEqualTo($state->endsAt) => self::message(
+                "grace-{$stamp}", 'warning', $state->isTrial ? 'Free trial ended' : 'Licence ended',
+                'Your '.($state->isTrial ? 'free trial' : 'licence').' ended on '.self::day($state->endsAt).". The till stops taking sales on {$day} unless it is renewed. ".LicenceApiErrors::SUPPORT,
+                $now, $expiresAt, true,
+            ),
+            $status === TillStatus::EXPIRING && $state->isTrial => self::message(
+                "expiring-{$stamp}", 'warning', 'Trial ends soon', "Your free trial ends on {$day}. Choose a plan to keep trading.", null, $expiresAt, true,
+            ),
+            $status === TillStatus::EXPIRING => self::message(
+                "expiring-{$stamp}", 'warning', 'Licence ends soon', "Your licence ends on {$day}. Renew it to keep trading. ".LicenceApiErrors::SUPPORT, null, $expiresAt, true,
+            ),
+            $status === TillStatus::EXPIRED => self::message(
+                "expired-{$stamp}", 'critical', $state->isTrial ? 'Free trial ended' : 'Licence expired',
+                ($reason !== '' ? $reason : 'The licence has expired.').' '.LicenceApiErrors::SUPPORT, $now, null, false,
+            ),
+            $status === TillStatus::SUSPENDED => self::message(
+                'suspended-'.$licence->id, 'critical', 'Licence suspended', ($reason !== '' ? $reason : 'This licence is suspended.').' '.LicenceApiErrors::SUPPORT, $now, null, false,
+            ),
+            $status === TillStatus::REVOKED => self::message(
+                'revoked-'.$licence->id, 'critical', 'Licence cancelled', ($reason !== '' ? $reason : 'This licence has been cancelled.').' '.LicenceApiErrors::SUPPORT, $now, null, false,
+            ),
+            default => null,
         };
+
+        return $message === null ? [] : [$message];
     }
 
-    private function checkInEverySeconds(): int
+    public static function minimumAppVersion(): ?string
     {
-        return max(60, (int) $this->config->get('licence.check_in_seconds', 86400));
+        $minimum = trim((string) config('licence.api.minimum_app_version'));
+
+        return $minimum === '' ? null : $minimum;
     }
 
-    private static function day(?CarbonImmutable $at): string
+    /**
+     * @return array<string, mixed>
+     */
+    private static function message(string $id, string $level, string $title, string $text, ?CarbonImmutable $from, ?CarbonImmutable $until, bool $dismissible): array
     {
-        return $at === null ? 'an unknown date' : $at->setTimezone(self::TIMEZONE)->format('j F Y');
+        return [
+            'id' => mb_substr($id, 0, 64),
+            'level' => $level,
+            'title' => mb_substr($title, 0, 80),
+            'text' => mb_substr($text, 0, 500),
+            'showFromUtc' => ApiDate::format($from),
+            'showUntilUtc' => ApiDate::format($until),
+            'dismissible' => $dismissible,
+            'link' => null,
+        ];
+    }
+
+    private static function day(CarbonImmutable $at): string
+    {
+        return $at->setTimezone(self::TIMEZONE)->format('j F Y');
     }
 }

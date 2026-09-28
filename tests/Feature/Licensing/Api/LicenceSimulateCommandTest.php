@@ -1,8 +1,6 @@
 <?php
 
 use App\Domain\Licensing\Actions\SuspendLicence;
-use App\Domain\Licensing\Api\Simulator\SimulatedTill;
-use App\Domain\Licensing\Signing\KeyStore;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Client\Request as ClientRequest;
 use Illuminate\Support\Facades\Http;
@@ -15,17 +13,18 @@ uses(TenantTestHelpers::class, LicensingTestHelpers::class, LicenceApiHelpers::c
 
 /*
  * `licence:simulate` against this app: Http::fake hands every request the command makes to the app's own HTTP
- * kernel, so the real routes, middleware and actions answer, and the command verifies the token with the JWKS
- * it fetched over "HTTP", like a till.
+ * kernel, so the real routes, middleware and actions answer, and the command checks the SSPOS1 token like a till.
  */
 beforeEach(function () {
     Mail::fake();
-    $this->travelTo(CarbonImmutable::parse('2026-09-24 09:00:00', 'UTC'));
+    $this->travelTo(CarbonImmutable::parse('2026-10-05 09:00:00', 'UTC'));
     $this->withSigningKey();
     config(['app.url' => 'https://portal.test']);
+    $this->sent = [];
 
     Http::fake(function (ClientRequest $request) {
-        expect($request->url())->toStartWith('https://portal.test/api/v1/licence/');
+        expect($request->url())->toStartWith('https://portal.test/api/v1/');
+        $this->sent[] = $request;
 
         $headers = collect($request->headers())->map(fn (array $values) => $values[0])->all();
         $response = $this->call(
@@ -40,80 +39,46 @@ beforeEach(function () {
     });
 });
 
-test('activate then check-in: the till verifies the token and trades', function () {
+test('activate: the till gets a token, checks it and trades; the key is only shown masked', function () {
     [, $licence] = $this->keyedTenant();
 
-    $this->artisan('licence:simulate', ['key' => self::KEY, '--device' => 'DEMO-PC-1'])
+    $this->artisan('licence:simulate', ['action' => 'activate', '--key' => self::KEY, '--install' => self::INSTALL, '--install-code' => self::INSTALL_CODE])
         ->expectsOutputToContain('SSP-••••-••••-••••-P8T5')
-        ->expectsOutputToContain('HTTP 200')
-        ->expectsOutputToContain('"status": "trial"')
-        ->expectsOutputToContain('Till: TRADE. Trial licence.')
+        ->expectsOutputToContain('Till: TRADE.')
         ->doesntExpectOutputToContain(self::KEY)
         ->assertSuccessful();
 
-    expect($licence->refresh()->device_id)->toBe('DEMO-PC-1')
-        ->and($licence->last_app_version)->toBe('1.0.0-simulator');
-
-    $this->artisan('licence:simulate', ['key' => self::KEY, '--device' => 'DEMO-PC-1', '--action' => 'check-in'])
-        ->expectsOutputToContain(app(KeyStore::class)->active()->kid.' is in the JWKS')
-        ->expectsOutputToContain('Till: TRADE.')
-        ->assertSuccessful();
-
-    Http::assertSent(fn (ClientRequest $request) => $request->hasHeader('X-SSPOS-Licence-Contract', '1')
-        && ! str_contains($request->url(), 'SSP'));
+    expect($licence->fresh()->device_id)->toBe(self::INSTALL)
+        ->and($this->sent[0]->header('X-SSPOS-Contract')[0])->toBe('1')
+        ->and($this->sent[0]->header('Idempotency-Key')[0])->toMatch('/^[0-9A-HJKMNP-TV-Z]{26}$/')
+        ->and($this->sent[0]['installCode'])->toBe(self::INSTALL_CODE);
 });
 
-test('grace shows a banner, suspended locks', function () {
+test('validate: no new token while nothing changed; locks when suspended', function () {
     [, $licence] = $this->keyedTenant();
-    $this->artisan('licence:simulate', ['key' => self::KEY, '--device' => 'DEMO-PC-1'])->assertSuccessful();
+    $token = (string) $this->activateTill()->json('licenceToken');
+    $options = ['action' => 'validate', '--licence' => $licence->id, '--token' => $token, '--install' => self::INSTALL, '--install-code' => self::INSTALL_CODE];
 
-    $this->travelTo(CarbonImmutable::parse('2026-10-02 09:00:00', 'UTC'));
-    $this->artisan('licence:simulate', ['key' => self::KEY, '--device' => 'DEMO-PC-1', '--action' => 'check-in'])
-        ->expectsOutputToContain('Till: TRADE WITH GRACE BANNER.')
-        ->assertSuccessful();
+    $this->artisan('licence:simulate', $options)->expectsOutputToContain('No new token')->expectsOutputToContain('Till: TRADE.')->assertSuccessful();
 
-    // Less than 3 days of token left: the till also warns staff.
-    $decision = SimulatedTill::decide(['status' => 'grace', 'validUntil' => '2026-10-04T09:00:00Z'], true, CarbonImmutable::now());
-    expect($decision['decision'])->toBe('grace banner')->and($decision['reason'])->toContain('Warn staff');
-
-    app(SuspendLicence::class)->handle($licence->refresh(), 'Unpaid invoice');
-    $this->artisan('licence:simulate', ['key' => self::KEY, '--device' => 'DEMO-PC-1', '--action' => 'check-in'])
-        ->expectsOutputToContain('Till: LOCK. Status suspended')
-        ->assertSuccessful();
+    app(SuspendLicence::class)->handle($licence->fresh(), 'Check');
+    $this->artisan('licence:simulate', $options)->expectsOutputToContain('Till: LOCK.')->assertSuccessful();
 });
 
-test('errors are explained the way the till would handle them', function () {
-    $this->keyedTenant();
-    $this->artisan('licence:simulate', ['key' => self::KEY, '--device' => 'DEMO-PC-1'])->assertSuccessful();
+test('deactivate releases the key; a wrong key fails with the portal message', function () {
+    [, $licence] = $this->keyedTenant();
+    $this->activateTill()->assertOk();
 
-    $this->artisan('licence:simulate', ['key' => self::KEY, '--device' => 'DEMO-PC-2'])
-        ->expectsOutputToContain('HTTP 409')
-        ->expectsOutputToContain('licence.bound_to_other_device')
-        ->assertFailed();
-
-    $this->artisan('licence:simulate', ['key' => self::KEY, '--device' => 'DEMO-PC-2', '--action' => 'check-in'])
-        ->expectsOutputToContain('keep trading on the last token until its validUntil')
-        ->assertFailed();
-
-    $this->artisan('licence:simulate', ['key' => self::OTHER_KEY])->expectsOutputToContain('licence.not_found')->assertFailed();
-
-    $this->artisan('licence:simulate', ['key' => self::KEY, '--device' => 'DEMO-PC-1', '--action' => 'deactivate'])
-        ->expectsOutputToContain('"released": true')
+    $this->artisan('licence:simulate', ['action' => 'deactivate', '--register' => self::TILL_REGISTER, '--install' => self::INSTALL])
+        ->expectsOutputToContain('"seat": "deactivated"')
         ->assertSuccessful();
+    expect($licence->fresh()->device_id)->toBeNull();
 
-    $this->artisan('licence:simulate', ['key' => self::KEY, '--action' => 'dance'])->assertExitCode(2);
+    $this->artisan('licence:simulate', ['action' => 'activate', '--key' => self::OTHER_KEY, '--install' => self::OTHER_INSTALL])
+        ->expectsOutputToContain('key.not_found')
+        ->assertFailed();
 });
 
-test('a token for another PC fails the device check', function () {
-    $this->keyedTenant();
-    $till = new SimulatedTill('https://portal.test', 'DEMO-PC-9', 'X');
-    $reply = $this->till('activate', $this->activateBody())->assertOk();
-
-    $result = $till->verify((string) $reply->json('token'), $till->publicKeys(), CarbonImmutable::now());
-    $tampered = $till->verify(substr((string) $reply->json('token'), 0, -2).'AA', $till->publicKeys(), CarbonImmutable::now());
-
-    expect($result['valid'])->toBeFalse()
-        ->and(collect($result['checks'])->firstWhere('check', 'deviceId')['ok'])->toBeFalse()
-        ->and(collect($result['checks'])->firstWhere('check', 'signature')['ok'])->toBeTrue()
-        ->and($tampered['valid'])->toBeFalse();
+test('an unknown action is refused', function () {
+    $this->artisan('licence:simulate', ['action' => 'check-in'])->assertExitCode(2);
 });

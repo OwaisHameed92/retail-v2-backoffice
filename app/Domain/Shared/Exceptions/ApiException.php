@@ -9,7 +9,8 @@ use RuntimeException;
  *
  *     throw new ApiException('licence.not_found', 'We could not find this licence key. Check it and try again.', 404);
  *
- * Rendered by {@see ApiExceptionRenderer} as `{code, message, traceId, retryAfterSeconds, rejectedKey}`.
+ * Rendered by {@see ApiExceptionRenderer} as `{code, message, traceId, retryAfterSeconds, rejectedKey}`, plus
+ * `details` (an open object of machine-readable extras, contract §9/§17.12) when given.
  */
 class ApiException extends RuntimeException
 {
@@ -19,6 +20,8 @@ class ApiException extends RuntimeException
         public readonly int $httpStatus = 400,
         public readonly ?int $retryAfterSeconds = null,
         public readonly ?string $rejectedKey = null,
+        /** @var array<string, mixed>|null */
+        public readonly ?array $details = null,
     ) {
         parent::__construct($message);
     }

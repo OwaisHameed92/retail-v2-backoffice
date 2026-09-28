@@ -1,252 +1,212 @@
 <?php
 
-use App\Domain\Licensing\Actions\RenewLicence;
-use App\Domain\Licensing\Actions\ResetDevice;
+use App\Domain\Licensing\Actions\ReissueKey;
 use App\Domain\Licensing\Actions\RevokeLicence;
-use App\Domain\Licensing\Actions\SuspendLicence;
-use App\Domain\Licensing\Data\RenewalTerm;
 use App\Domain\Licensing\Enums\LicenceAlertType;
 use App\Domain\Licensing\Enums\LicenceStatus;
+use App\Domain\Licensing\Models\Licence;
 use App\Domain\Licensing\Models\LicenceAlert;
-use App\Domain\Licensing\Signing\KeyStore;
+use App\Domain\Licensing\Models\LicenceDevice;
 use App\Domain\Shared\Models\AuditLog;
 use App\Domain\Tenancy\Actions\SuspendCompany;
-use App\Domain\Tenancy\Models\Company;
-use App\Domain\Tenancy\Models\Register;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Mail;
 use Tests\Feature\Licensing\Api\LicenceApiHelpers;
 use Tests\Feature\Licensing\LicensingTestHelpers;
 use Tests\Feature\Tenants\TenantTestHelpers;
+use Tests\Support\SsposDocs;
 
 uses(TenantTestHelpers::class, LicensingTestHelpers::class, LicenceApiHelpers::class);
 
 beforeEach(function () {
     Mail::fake();
-    $this->travelTo(CarbonImmutable::parse('2026-09-24 09:00:00', 'UTC'));
+    $this->travelTo(CarbonImmutable::parse('2026-10-05 09:00:00', 'UTC'));
     $this->withSigningKey();
 });
 
-test('first activation binds the PC, starts the trial from the plan and replies with the till rows', function () {
+test('first activation binds the install, starts the trial and answers with a till token', function () {
     [$company, $licence] = $this->keyedTenant();
 
-    $response = $this->till('activate', $this->activateBody())
-        ->assertOk()
-        ->assertHeader('X-Trace-Id')
-        ->assertJsonPath('licence.id', $licence->id)
-        ->assertJsonPath('licence.keyLast4', 'P8T5')
-        ->assertJsonPath('licence.status', 'trial')
-        ->assertJsonPath('licence.plan', 'standard')
-        ->assertJsonPath('licence.features', ['stockControl', 'cashOffice'])
-        ->assertJsonPath('licence.activatedAt', '2026-09-24T09:00:00Z')
-        ->assertJsonPath('licence.trialEndsAt', '2026-10-01T09:00:00Z')
-        ->assertJsonPath('licence.expiresAt', null)
-        ->assertJsonPath('licence.graceDays', 3)
-        ->assertJsonPath('licence.deviceId', self::PC)
-        ->assertJsonPath('company.id', $company->id)
-        ->assertJsonPath('company.companyId', $company->id)
-        ->assertJsonPath('company.name', 'Khan Mini Mart')
-        ->assertJsonPath('company.legalName', 'Khan Mini Mart Ltd')
-        ->assertJsonPath('branch.code', 'LDS')
-        ->assertJsonPath('branch.nation', 'england')
-        ->assertJsonPath('register.id', $licence->register_id)
-        ->assertJsonPath('register.code', '01')
-        ->assertJsonPath('register.isMainTill', true)
-        ->assertJsonPath('register.branchId', $licence->branch_id)
-        ->assertJsonPath('sync', null)
-        ->assertJsonPath('checkInEverySeconds', 86400)
-        ->assertJsonPath('serverTimeUtc', '2026-09-24T09:00:00Z');
-
-    expect($response->json())->toHaveKeys(['licence', 'token', 'company', 'branch', 'register', 'sync', 'checkInEverySeconds', 'serverTimeUtc'])
-        ->and(array_key_exists('sync', $response->json()))->toBeTrue()
-        ->and($response->json('register'))->not->toHaveKeys(['nextSaleNo', 'nextRefundNo'])
-        ->and($response->json('branch'))->not->toHaveKey('nextPoNo');
+    $response = $this->activateTill()->assertOk()
+        ->assertHeader('X-SSPOS-Contract', '1')
+        ->assertJsonPath('status', 'active')
+        ->assertJsonPath('licence.licenceId', $licence->id)
+        ->assertJsonPath('licence.kind', 'trial')
+        ->assertJsonPath('licence.companyId', $company->id)
+        ->assertJsonPath('licence.installCode', self::INSTALL_CODE)
+        ->assertJsonPath('licence.maxRegisters', 2)
+        ->assertJsonPath('licence.expiresAt', '2026-10-15T09:00:00Z')
+        ->assertJsonPath('portalTimeUtc', '2026-10-05T09:00:00Z')
+        ->assertJsonPath('nextCheckAfterSeconds', 86400)
+        ->assertJsonPath('messages', []);
 
     $licence->refresh();
-    expect($licence->status)->toBe(LicenceStatus::Trial)
-        ->and($licence->device_id)->toBe(self::PC)
-        ->and($licence->device_name)->toBe('FRONT-TILL')
-        ->and($licence->bound_at?->toIso8601String())->toBe('2026-09-24T09:00:00+00:00')
-        ->and($licence->ends_at?->toIso8601String())->toBe('2026-10-01T09:00:00+00:00')
-        ->and($licence->last_app_version)->toBe('1.4.2')
-        ->and($licence->last_ip)->toBe('127.0.0.1')
-        ->and($licence->last_check_in_at)->not->toBeNull();
-
-    // The company's 7-day trial starts on its first till activation.
-    expect(Company::query()->find($company->id)->trial_ends_at?->toIso8601String())->toBe('2026-10-01T09:00:00+00:00');
-
-    $audit = AuditLog::query()->where('action', 'licence.activated')->sole();
-    expect($audit->actor_type)->toBe((new Register)->getMorphClass())
-        ->and($audit->actor_id)->toBe($licence->register_id)
-        ->and($audit->after['device_id'])->toBe(self::PC)
-        ->and($audit->meta['company_trial_ends_at'])->toBe('2026-10-01T09:00:00+00:00');
+    expect($licence->device_id)->toBe(self::INSTALL)
+        ->and($licence->install_code)->toBe(self::INSTALL_CODE)
+        ->and($licence->device_name)->toBe('TILL-1')
+        ->and($licence->existing_ids)->toBe(['companyId' => self::TILL_COMPANY, 'branchId' => self::TILL_BRANCH, 'registerId' => self::TILL_REGISTER])
+        ->and($licence->os)->toBe(['name' => 'Windows', 'version' => '10.0.26200', 'architecture' => 'x64'])
+        ->and($licence->till_clock_skew_seconds)->toBe(90)
+        ->and($licence->status)->toBe(LicenceStatus::Trial)
+        ->and($licence->trial_ends_at?->toIso8601String())->toBe('2026-10-12T09:00:00+00:00')
+        ->and($licence->token_sha256)->toBe(hash('sha256', (string) $response->json('licenceToken')))
+        ->and($company->fresh()->trial_ends_at?->toIso8601String())->toBe('2026-10-12T09:00:00+00:00')
+        ->and(AuditLog::query()->where('action', 'licence.activated')->count())->toBe(1)
+        ->and(LicenceDevice::withoutCompanyScope()->sole()->last_outcome)->toBe('activated');
 });
 
-test('the audit actor is the till even when an admin session shares the request', function () {
-    [, $licence] = $this->keyedTenant();
-
-    $this->actingAs($this->admin(), 'admin');
-    $this->till('activate', $this->activateBody())->assertOk();
-
-    expect(AuditLog::query()->where('action', 'licence.activated')->sole()->actor_id)->toBe($licence->register_id);
-});
-
-test('a licence renewed before activation starts active with the paid grace', function () {
-    [, $licence] = $this->keyedTenant();
-    app(RenewLicence::class)->handle($licence, RenewalTerm::year(), notify: false);
-
-    $this->till('activate', $this->activateBody())
-        ->assertOk()
-        ->assertJsonPath('licence.status', 'active')
-        ->assertJsonPath('licence.trialEndsAt', null)
-        ->assertJsonPath('licence.expiresAt', '2027-09-24T22:59:59Z')
-        ->assertJsonPath('licence.graceDays', 7);
-
-    expect($licence->refresh()->status)->toBe(LicenceStatus::Active)
-        ->and($licence->activated_at)->not->toBeNull();
-});
-
-test('the reply token verifies and carries the spec claims', function () {
+test('the token verifies like the till and carries the shop, install code and mapped features', function () {
     [$company, $licence] = $this->keyedTenant();
+    $company->forceFill(['address' => '14 Kirkgate', 'email' => 'shop@khan.test', 'contact_name' => 'Imran Khan'])->save();
 
-    $response = $this->till('activate', $this->activateBody())->assertOk();
-    $token = $this->verifyToken($response);
+    $token = $this->verifyToken($this->activateTill()->assertOk());
+    $branch = $this->branchOf($company);
 
-    expect($token->header())->toBe(['alg' => 'EdDSA', 'kid' => app(KeyStore::class)->active()->kid, 'typ' => 'sspos-licence+jwt'])
-        ->and(array_keys($token->claims()))->toBe(['iss', 'iat', 'jti', 'lic', 'keyLast4', 'companyId', 'branchId', 'registerId', 'deviceId', 'status', 'plan', 'features', 'expiresAt', 'graceDays', 'validUntil'])
-        ->and($token->claims())->toMatchArray([
-            'iss' => 'sspos-portal',
-            'iat' => CarbonImmutable::parse('2026-09-24 09:00:00', 'UTC')->getTimestamp(),
-            'lic' => $licence->id,
-            'keyLast4' => 'P8T5',
+    expect($token->kid())->toBe(SsposDocs::PORTAL_KID)
+        ->and($token->signerCertificate)->not->toBeNull()
+        ->and($token->payload)->toMatchArray([
+            'licenceId' => $licence->id,
+            'kind' => 'trial',
+            'source' => 'portal',
             'companyId' => $company->id,
-            'branchId' => $licence->branch_id,
-            'registerId' => $licence->register_id,
-            'deviceId' => self::PC,
-            'status' => 'trial',
-            'plan' => 'standard',
-            'features' => ['stockControl', 'cashOffice'],
-            // Trial end, then 3 trial grace days: min(iat + 14 days, 1 Oct + 3 days).
-            'expiresAt' => '2026-10-01T09:00:00Z',
-            'graceDays' => 3,
-            'validUntil' => '2026-10-04T09:00:00Z',
+            'branchId' => $branch->id,
+            'businessName' => 'Khan Mini Mart',
+            'branchName' => $branch->name,
+            'installCode' => self::INSTALL_CODE,
+            'maxRegisters' => 2,
+            'validFrom' => '2026-10-05T09:00:00Z',
+            'expiresAt' => '2026-10-15T09:00:00Z',
+            'onlineCheck' => ['required' => true, 'intervalHours' => 24, 'graceDays' => 14],
         ])
-        ->and($token->jti())->toMatch('/^[0-7][0-9A-HJKMNP-TV-Z]{25}$/');
+        ->and($token->payload['company'])->toMatchArray(['address' => $branch->address ?? '14 Kirkgate', 'email' => 'shop@khan.test', 'ownerName' => 'Imran Khan'])
+        ->and($token->payload['features'] ?? [])->each->toMatch('/^[a-z0-9]+(_[a-z0-9]+)*$/');
 });
 
-test('validUntil is capped at 14 days offline for a long paid licence', function () {
+test('features map to the till names from config, multi_branch adds limits.branches', function () {
     [, $licence] = $this->keyedTenant();
-    app(RenewLicence::class)->handle($licence, RenewalTerm::year(), notify: false);
+    $licence->forceFill(['features' => ['stockControl', 'multiBranch']])->save();
+    config(['licence.till_features.stockControl' => null]);
 
-    $token = $this->verifyToken($this->till('activate', $this->activateBody())->assertOk());
-
-    expect($token->claim('validUntil'))->toBe('2026-10-08T09:00:00Z')
-        ->and($token->claim('expiresAt'))->toBe('2027-09-24T22:59:59Z');
+    $this->activateTill()->assertOk()
+        ->assertJsonPath('licence.features', ['multi_branch'])
+        ->assertJsonPath('licence.limits', ['branches' => 1]);
 });
 
-test('activating again on the bound PC (reinstall) gives the same reply and keeps the trial dates', function () {
+test('the same install activating again gets 200 and stays bound (retry or reinstall)', function () {
     [, $licence] = $this->keyedTenant();
-    $first = $this->till('activate', $this->activateBody())->assertOk()->json();
+    $this->activateTill()->assertOk();
 
-    $this->travel(2)->days();
-    $second = $this->till('activate', $this->activateBody(name: 'FRONT-TILL-NEW'))->assertOk()->json();
+    $this->activateTill()->assertOk()->assertJsonPath('status', 'active');
 
-    expect(array_keys($second))->toBe(array_keys($first))
-        ->and($second['licence']['activatedAt'])->toBe($first['licence']['activatedAt'])
-        ->and($second['licence']['trialEndsAt'])->toBe('2026-10-01T09:00:00Z')
-        ->and($second['company'])->toEqual($first['company'])
-        ->and($licence->refresh()->device_name)->toBe('FRONT-TILL-NEW')
-        ->and(AuditLog::query()->where('action', 'licence.reinstalled')->count())->toBe(1);
+    expect($licence->fresh()->device_id)->toBe(self::INSTALL)
+        ->and(AuditLog::query()->where('action', 'licence.reinstalled')->count())->toBe(1)
+        ->and(AuditLog::query()->where('action', 'licence.activated')->count())->toBe(1);
 });
 
-test('another PC gets 409 bound_to_other_device and raises a sameKeyTwoDevices alert', function () {
+test('another install gets 409 key.already_used with the bound PC and a sameKeyTwoDevices alert', function () {
     [, $licence] = $this->keyedTenant();
-    $this->till('activate', $this->activateBody())->assertOk();
+    $this->activateTill()->assertOk();
 
-    $this->till('activate', $this->activateBody(device: self::OTHER_PC, name: 'BACK-OFFICE'))
-        ->assertStatus(409)
-        ->assertJsonPath('code', 'licence.bound_to_other_device')
-        ->assertJsonStructure(['code', 'message', 'traceId', 'retryAfterSeconds', 'rejectedKey']);
-    $this->till('activate', $this->activateBody(device: self::OTHER_PC, name: 'BACK-OFFICE'))->assertStatus(409);
+    $this->activateTill(install: self::OTHER_INSTALL, code: self::OTHER_CODE)->assertStatus(409)
+        ->assertJsonPath('code', 'key.already_used')
+        ->assertJsonPath('details', ['deviceName' => 'TILL-1', 'installCode' => self::INSTALL_CODE, 'activatedAtUtc' => '2026-10-05T09:00:00Z'])
+        ->assertJsonPath('message', fn (string $message) => str_contains($message, 'TILL-1'));
 
-    $alert = LicenceAlert::withoutCompanyScope()->sole();
-    expect($alert->type)->toBe(LicenceAlertType::SameKeyTwoDevices)
-        ->and($alert->count)->toBe(2)
-        ->and($alert->company_id)->toBe($licence->company_id)
-        ->and($alert->details['deviceName'])->toBe('BACK-OFFICE')
-        ->and($alert->details['boundDeviceName'])->toBe('FRONT-TILL')
-        ->and(json_encode($alert->details))->not->toContain(self::OTHER_PC)
-        ->and($licence->refresh()->device_id)->toBe(self::PC);
+    expect($licence->fresh()->device_id)->toBe(self::INSTALL)
+        ->and(LicenceAlert::withoutCompanyScope()->sole()->type)->toBe(LicenceAlertType::SameKeyTwoDevices);
 });
 
-test('after "Reset PC" a new PC can activate; the trial is not restarted', function () {
-    [, $licence] = $this->keyedTenant();
-    $this->till('activate', $this->activateBody())->assertOk();
-    $this->travel(3)->days();
-
-    app(ResetDevice::class)->handle($licence->refresh());
-
-    $this->till('activate', $this->activateBody(device: self::OTHER_PC, name: 'NEW-PC'))
-        ->assertOk()
-        ->assertJsonPath('licence.deviceId', self::OTHER_PC)
-        ->assertJsonPath('licence.activatedAt', '2026-09-24T09:00:00Z')
-        ->assertJsonPath('licence.trialEndsAt', '2026-10-01T09:00:00Z');
-
-    expect(AuditLog::query()->where('action', 'licence.device_bound')->count())->toBe(1)
-        ->and($licence->refresh()->bound_at?->toIso8601String())->toBe('2026-09-27T09:00:00+00:00');
-});
-
-test('revoked licences cannot be activated', function () {
-    [, $licence] = $this->keyedTenant();
-    app(RevokeLicence::class)->handle($licence, 'Refunded');
-
-    $this->till('activate', $this->activateBody())->assertForbidden()->assertJsonPath('code', 'licence.revoked');
-});
-
-test('suspended or expired licences are not activatable', function (Closure $setup) {
+test('a key past the branch till count gets 403 licence.seat_limit', function () {
     [$company, $licence] = $this->keyedTenant();
-    $setup($this, $company, $licence);
+    $branch = $this->branchOf($company);
+    $second = $this->licenceOf($this->registerOf($branch, '02'));
+    $second->forceFill(['device_id' => self::OTHER_INSTALL, 'bound_at' => now(), 'activated_at' => now(), 'status' => LicenceStatus::Trial, 'trial_ends_at' => now()->addDays(7)])->save();
+    $this->registerOf($branch, '02')->forceFill(['is_active' => false])->saveQuietly();
 
-    $this->till('activate', $this->activateBody())
-        ->assertForbidden()
-        ->assertJsonPath('code', 'licence.not_activatable');
+    $this->activateTill()->assertForbidden()
+        ->assertJsonPath('code', 'licence.seat_limit')
+        ->assertJsonPath('details', ['maxRegisters' => 1, 'registersInUse' => 1]);
 
-    expect($licence->refresh()->device_id)->toBeNull();
-})->with([
-    'suspended by staff' => [fn ($test, $company, $licence) => app(SuspendLicence::class)->handle($licence, 'Unpaid invoice')],
-    'company suspended' => [fn ($test, $company, $licence) => app(SuspendCompany::class)->handle($company, 'Unpaid')],
-    'expired after a reset' => [function ($test, $company, $licence) {
-        $test->activate($licence, CarbonImmutable::now()->subDays(30));
-        app(ResetDevice::class)->handle($licence->refresh());
-    }],
-]);
+    expect($licence->fresh()->device_id)->toBeNull();
+});
 
-test('an unknown key and a mistyped key both get 404 licence.not_found', function (string $key) {
+test('a replaced key or one withdrawn before use is 410 key.expired', function () {
+    [, $licence] = $this->keyedTenant();
+    $this->activateTill()->assertOk();
+    app(ReissueKey::class)->handle($licence->fresh());
+
+    $this->activateTill()->assertStatus(410)->assertJsonPath('code', 'key.expired');
+    expect(LicenceAlert::withoutCompanyScope()->where('type', LicenceAlertType::ReissuedKeyUsed->value)->count())->toBe(1);
+
+    [, $unused] = $this->keyedTenant('Corner Shop', 1, 'CRN', self::OTHER_KEY);
+    app(RevokeLicence::class)->handle($unused, 'Sold');
+    $this->activateTill(self::OTHER_KEY, self::OTHER_INSTALL, self::OTHER_CODE)->assertStatus(410)->assertJsonPath('code', 'key.expired');
+});
+
+test('a suspended account or a licence revoked after use is 403 licence.not_active', function () {
+    [$company, $licence] = $this->keyedTenant();
+    app(SuspendCompany::class)->handle($company, 'Unpaid');
+
+    $this->activateTill()->assertForbidden()->assertJsonPath('code', 'licence.not_active')->assertJsonPath('details.status', 'suspended');
+    expect($licence->fresh()->device_id)->toBeNull();
+
+    [, $used] = $this->keyedTenant('Corner Shop', 1, 'CRN', self::OTHER_KEY);
+    $this->activateTill(self::OTHER_KEY, self::OTHER_INSTALL, self::OTHER_CODE)->assertOk();
+    app(RevokeLicence::class)->handle($used->fresh(), 'Fraud');
+    $this->activateTill(self::OTHER_KEY, self::OTHER_INSTALL, self::OTHER_CODE)->assertForbidden()->assertJsonPath('details.status', 'revoked');
+});
+
+test('unknown and malformed keys are 404 key.not_found', function (string $key) {
     $this->keyedTenant();
 
-    $this->till('activate', $this->activateBody(key: $key))
-        ->assertNotFound()
-        ->assertJsonPath('code', 'licence.not_found')
-        ->assertJsonPath('rejectedKey', null);
-})->with([
-    'unknown' => ['SSP-4HWC-J6ZB-81ME-QV5H'],
-    'bad check character' => ['SSP-7K2Q-9DMF-3XRA-P8T6'],
-    'too short' => ['SSP-7K2Q'],
-]);
+    $this->activateTill($key)->assertNotFound()->assertJsonPath('code', 'key.not_found')->assertJsonMissingPath('details.field');
+})->with(['unknown' => ['SSP-4HWC-J6ZB-81ME-QV5H'], 'typo' => ['SSP-7K2Q-9DMF-3XRA-P8T6'], 'not a key' => ['HELLO-WORLD']]);
 
 test('keys are normalised: lower case with spaces finds the licence', function () {
     [, $licence] = $this->keyedTenant();
 
-    $this->till('activate', $this->activateBody(key: 'ssp 7k2q 9dmf 3xra p8t5'))->assertOk()->assertJsonPath('licence.id', $licence->id);
+    $this->activateTill(' ssp 7k2q 9dmf 3xra p8t5 ')->assertOk();
+    expect($licence->fresh()->device_id)->toBe(self::INSTALL);
 });
 
-test('missing or wrong fields are 400 request.invalid', function (array $body) {
+test('5 wrong keys per install in 15 minutes, then 429 activation.too_many_attempts', function () {
+    [, $licence] = $this->keyedTenant();
+    config(['licence.api.rate_limits.activate_per_ip_per_hour' => 100]);
+
+    foreach (range(1, 5) as $i) {
+        $this->activateTill(self::OTHER_KEY)->assertNotFound();
+    }
+
+    $this->activateTill()->assertStatus(429)
+        ->assertJsonPath('code', 'activation.too_many_attempts')
+        ->assertJsonPath('retryAfterSeconds', 900)
+        ->assertHeader('Retry-After', '900');
+    expect($licence->fresh()->device_id)->toBeNull();
+
+    // Another install is not blocked, and the window passes.
+    $this->activateTill(install: self::OTHER_INSTALL, code: self::OTHER_CODE)->assertOk();
+});
+
+test('missing or malformed fields are 400 request.invalid naming the field', function (string $field, mixed $value) {
+    $this->keyedTenant();
+    $body = $this->activateBody();
+    data_set($body, $field, $value);
+
+    $this->till('licence/activate', $body)->assertStatus(400)
+        ->assertJsonPath('code', 'request.invalid')
+        ->assertJsonPath('details.field', $field);
+})->with([
+    'install id' => ['installId', 'not-a-ulid'],
+    'install code' => ['installCode', 'AC4F3FHG'],
+    'existing ids' => ['existingIds.registerId', null],
+    'app version' => ['appVersion', 'three'],
+    'clock' => ['tillClockUtc', 'yesterday-ish'],
+]);
+
+test('the install id header must match the body', function () {
     $this->keyedTenant();
 
-    $this->till('activate', $body)->assertStatus(400)->assertJsonPath('code', 'request.invalid');
-})->with([
-    'no key' => [['deviceId' => 'PC-1']],
-    'no device' => [['licenceKey' => 'SSP-7K2Q-9DMF-3XRA-P8T5']],
-    'device id too long' => [['licenceKey' => 'SSP-7K2Q-9DMF-3XRA-P8T5', 'deviceId' => str_repeat('x', 192)]],
-    'key not a string' => [['licenceKey' => 123, 'deviceId' => 'PC-1']],
-]);
+    $this->till('licence/activate', $this->activateBody(), $this->tillHeaders(self::OTHER_INSTALL))
+        ->assertStatus(400)->assertJsonPath('details.field', 'installId');
+    expect(Licence::withoutCompanyScope()->whereNotNull('device_id')->count())->toBe(0);
+});

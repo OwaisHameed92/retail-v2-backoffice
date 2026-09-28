@@ -40,7 +40,7 @@ final class ApiExceptionRenderer
     {
         return match (true) {
             $e instanceof ApiException => self::response(
-                $request, $e->errorCode, $e->getMessage(), $e->httpStatus, $e->retryAfterSeconds, $e->rejectedKey,
+                $request, $e->errorCode, $e->getMessage(), $e->httpStatus, $e->retryAfterSeconds, $e->rejectedKey, $e->details,
             ),
             $e instanceof ValidationException => self::response(
                 $request, 'request.invalid', self::validationMessage($e), 400,
@@ -55,6 +55,9 @@ final class ApiExceptionRenderer
 
     /**
      * Build the standard error reply. Controllers may call this directly for a non-exception error.
+     * `details` is added only when given (licence API, contract §17.12).
+     *
+     * @param  array<string, mixed>|null  $details
      */
     public static function response(
         Request $request,
@@ -63,6 +66,7 @@ final class ApiExceptionRenderer
         int $status,
         ?int $retryAfterSeconds = null,
         ?string $rejectedKey = null,
+        ?array $details = null,
     ): JsonResponse {
         $traceId = TraceId::for($request);
 
@@ -72,6 +76,7 @@ final class ApiExceptionRenderer
             'traceId' => $traceId,
             'retryAfterSeconds' => $retryAfterSeconds,
             'rejectedKey' => $rejectedKey,
+            ...($details === null ? [] : ['details' => $details]),
         ], $status);
 
         $response->headers->set(TraceId::HEADER, $traceId);

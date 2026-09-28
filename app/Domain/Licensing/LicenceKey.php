@@ -10,7 +10,7 @@ use SensitiveParameter;
 /**
  * A licence key: `SSP-XXXX-XXXX-XXXX-XXXX`. The 16 characters after the prefix are Crockford base32
  * (0-9, A-Z without I, L, O, U); the first 15 are random, the 16th is a Luhn mod 32 check character so the till
- * can catch typos offline. Algorithm and test vectors: docs/specs/licence-api-v1.md ("Key format").
+ * can catch typos offline. Algorithm and test vectors: docs/specs/licence-key-format.md.
  *
  * A key is a secret. The portal stores only {@see hash()} (HMAC-SHA256 keyed with APP_KEY) and {@see last4()}.
  * This object never prints the key by accident: no __toString, redacted in dumps, cannot be serialised.
@@ -93,7 +93,7 @@ final class LicenceKey
     }
 
     /**
-     * Luhn mod 32 check character for the first 15 characters (see docs/specs/licence-api-v1.md).
+     * Luhn mod 32 check character for the first 15 characters (see docs/specs/licence-key-format.md).
      *
      * @throws InvalidLicenceKey when the payload is not 15 alphabet characters
      */

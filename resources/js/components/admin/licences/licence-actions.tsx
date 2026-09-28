@@ -10,7 +10,7 @@ import { router } from '@inertiajs/react';
 import { Ban, CalendarPlus, CirclePause, CirclePlay, KeyRound, Layers, MonitorX, MoreHorizontal } from 'lucide-react';
 import { useState } from 'react';
 
-type DialogName = 'renew' | 'plan' | 'reset' | 'reissue' | 'suspend' | 'unsuspend' | 'revoke' | null;
+type DialogName = 'renew' | 'plan' | 'release' | 'reissue' | 'suspend' | 'unsuspend' | 'revoke' | null;
 
 function postTo(url: string) {
     return new Promise<void>((resolve) => router.post(url, {}, { preserveScroll: true, onFinish: () => resolve() }));
@@ -61,9 +61,9 @@ export function LicenceActions({ licence, plans }: { licence: LicenceDetail; pla
                         <Layers />
                         Change plan
                     </DropdownMenuItem>
-                    <DropdownMenuItem disabled={!licence.isBound} onSelect={() => setDialog('reset')}>
+                    <DropdownMenuItem disabled={!licence.isBound} onSelect={() => setDialog('release')}>
                         <MonitorX />
-                        Reset PC
+                        Release from PC
                     </DropdownMenuItem>
                     {!licence.isSuspended && (
                         <DropdownMenuItem onSelect={() => setDialog('suspend')}>
@@ -102,13 +102,13 @@ export function LicenceActions({ licence, plans }: { licence: LicenceDetail; pla
                 currentPlanId={licence.plan?.id ?? null}
             />
             <ConfirmDialog
-                open={dialog === 'reset'}
-                onOpenChange={open('reset')}
-                title={`Reset the PC for ${till}?`}
-                description={`${licence.deviceName ?? 'The current PC'} is unlinked from key ${keyEnd}. The same key can then be activated on another PC. The old PC keeps trading only until its offline pass runs out.`}
-                confirmLabel="Reset PC"
+                open={dialog === 'release'}
+                onOpenChange={open('release')}
+                title={`Release key ${keyEnd} from its PC?`}
+                description={`${licence.deviceName ?? 'The current PC'} locks at its next check-in (“released”). The same key can then be activated on another PC.`}
+                confirmLabel="Release"
                 destructive
-                onConfirm={() => postTo(route('admin.licences.reset-device', licence.id))}
+                onConfirm={() => postTo(route('admin.licences.release', licence.id))}
             />
             <ConfirmDialog
                 open={dialog === 'reissue'}

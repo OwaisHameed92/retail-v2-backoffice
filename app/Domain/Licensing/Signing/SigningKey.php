@@ -43,7 +43,7 @@ final class SigningKey implements Arrayable, JsonSerializable
     }
 
     /**
-     * Only for LicenceTokenSigner. Never log, display or return this value.
+     * Only for SsposTokenSigner. Never log, display or return this value.
      */
     public function secretKey(): string
     {
