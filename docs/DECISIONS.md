@@ -285,3 +285,14 @@ How it works: `docs/till-data.md`.
 | Seed data | `BillingSeeder` (local/testing, called from `DatabaseSeeder`): Khan Mini Mart with a paid invoice, an overdue part-paid invoice and a draft; "Corner Shop Express" with an invoice due this week paid partly from credit. Built with the real actions, no emails | Every screen state is visible locally |
 | Open items | (1) No refunds or payment reversal yet: a wrong payment is corrected by voiding the invoice (money goes to credit); a "reverse payment" action is next. (2) Credit notes appear on the invoice and its PDF; they have no PDF or email of their own. (3) Tenant portal banner for overdue accounts and "My subscription" invoices: module 3.8. (4) Online gateway: add the provider and call `RecordPayment` with `PaymentMethod::Online`. (5) Invoice PDFs render in ~1.5 s; they are built in the queue worker, the admin download waits for it. (6) `MailFormat::money` (1.7) formats with a float; fine for display up to billions, but switch it to `BillingFormat::money` when touched. (7) Seller address, company number and bank details come from `BILLING_*` env values: set them before the first real invoice. (8) Our VAT number is printed on every invoice while we are VAT registered, including a company billed without VAT (0%); confirm the wording with the accountant | |
 
+
+## Contract v1.3.1 (owner, 2026-09-28)
+
+| Topic | Decision |
+|---|---|
+| Contract | The EPOS team's package v1.3.1 (`docs/contracts/portal-api-v1.3.1/`) is the source of truth; the till is built against it, so the portal implements it exactly. Our own licence draft (`docs/specs/licence-api-v1.md`) and the unsent handoff doc are superseded. |
+| Licensing | Per-till keys as in §17.15–17.17: token `SSPOS1.…` with `signerCert`, `licence/activate` + `licence/validate` per till, statuses active/expiring/expired/suspended/revoked/released. Our key format and admin model stay. |
+| Database | MySQL 8 stays (the server has MySQL). DASHBOARD.md formulas are built on MySQL, not PostgreSQL. |
+| Signing key | Generated on the production server at deploy; its public-key handover goes to the EPOS team with the base URL. |
+| Plan | `docs/PHASES.md` plan v2: 8 phases, 65 modules; module numbers after phase 2 shifted by one. |
+| UI direction | Design system v2, final = `docs/design/admin-dashboard-reference-2.webp`: dark full-height sidebar + top bar `#0F1C2C`, light canvas, green primary `#007048`, KPI cards with coloured sparklines, needs-attention pills, business overview. No handwriting slogan, subtle glows, no emoji. Logo colours are not required in the UI. |

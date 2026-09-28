@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "redeem-reply",
+  "description": "POST /api/v1/licence/redeem 200 reply.",
+  "type": "object",
+  "properties": {
+    "result": {
+      "type": "string",
+      "enum": [
+        "applied",
+        "recorded"
+      ],
+      "description": "applied = store licenceToken, it replaces the current licence. recorded = the portal logged the local token (and, for a local key report, licenceId -> installCode); the till keeps using the token it verified itself (licenceToken is null) and does not report that token again. Unknown = keep the current licence and show the messages."
+    },
+    "status": {
+      "$ref": "common.schema.json#/$defs/licenceStatus"
+    },
+    "licenceToken": {
+      "$ref": "common.schema.json#/$defs/licenceTokenOrNull"
+    },
+    "licence": {
+      "$ref": "common.schema.json#/$defs/licenceSummary"
+    },
+    "portalTimeUtc": {
+      "$ref": "common.schema.json#/$defs/utc"
+    },
+    "nextCheckAfterSeconds": {
+      "type": "integer",
+      "minimum": 60,
+      "maximum": 2592000,
+      "description": "When to call licence/validate next (the till adds a little random jitter)."
+    },
+    "messages": {
+      "$ref": "common.schema.json#/$defs/messages"
+    }
+  },
+  "required": [
+    "result",
+    "status",
+    "licenceToken",
+    "portalTimeUtc",
+    "messages"
+  ]
+}

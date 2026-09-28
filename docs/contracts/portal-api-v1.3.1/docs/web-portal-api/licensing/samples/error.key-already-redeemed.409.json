@@ -1,0 +1,10 @@
+{
+  "code": "key.already_redeemed",
+  "message": "This licence key has already been used.",
+  "traceId": "req-8a21f0",
+  "retryAfterSeconds": null,
+  "rejectedKey": null,
+  "details": {
+    "redeemedAtUtc": "2026-09-20T10:00:00Z"
+  }
+}

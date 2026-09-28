@@ -1,0 +1,42 @@
+{
+  "id": "01K5VC7N2W000000000000W001",
+  "companyId": "01K5T0Q8C4000000000000C001",
+  "branchId": "01K5T0Q8C4000000000000B001",
+  "reference": "WEB-20260923-0007",
+  "customer": {
+    "name": "Aisha Rahman",
+    "phone": "07700 900123",
+    "email": "aisha.rahman@example.co.uk",
+    "customerId": "01K5T0Q8C4000000000000K001"
+  },
+  "lines": [
+    {
+      "productId": "01K5T0Q8C4000000000000P002",
+      "name": "Coca-Cola Original Taste 500ml",
+      "qty": 4,
+      "unitPrice": 1.85,
+      "vatRateId": "01K5T0Q8C4000000000000V001",
+      "vatPercentage": 20,
+      "lineTotal": 7.40,
+      "vatAmount": 1.23
+    },
+    {
+      "productId": "01K5T0Q8C4000000000000P001",
+      "name": "Warburtons Toastie White Bread 800g",
+      "qty": 2,
+      "unitPrice": 1.45,
+      "vatRateId": "01K5T0Q8C4000000000000V002",
+      "vatPercentage": 0,
+      "lineTotal": 2.90,
+      "vatAmount": 0
+    }
+  ],
+  "money": {
+    "goodsTotal": 10.30,
+    "paidOnline": 0.00,
+    "paymentReference": ""
+  },
+  "collectBy": "2026-09-26",
+  "notes": "Please ring on arrival.",
+  "placedAt": "2026-09-23T08:51:12Z"
+}

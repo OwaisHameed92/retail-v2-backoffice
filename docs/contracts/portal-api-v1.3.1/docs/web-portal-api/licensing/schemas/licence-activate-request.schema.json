@@ -1,0 +1,75 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "licence-activate-request",
+  "description": "POST /api/v1/licence/activate body (section 17.15) - sent by ANY till when the shop pastes the e-mailed key. No branch key needed: the licence key is the credential.",
+  "type": "object",
+  "properties": {
+    "licenceKey": {
+      "$ref": "common.schema.json#/$defs/licenceKey"
+    },
+    "installId": {
+      "$ref": "common.schema.json#/$defs/installId"
+    },
+    "installCode": {
+      "$ref": "common.schema.json#/$defs/installCode"
+    },
+    "deviceName": {
+      "type": "string",
+      "maxLength": 100,
+      "description": "Windows PC name, for the portal's device list."
+    },
+    "appVersion": {
+      "$ref": "common.schema.json#/$defs/appVersion"
+    },
+    "os": {
+      "$ref": "common.schema.json#/$defs/os"
+    },
+    "tillClockUtc": {
+      "$ref": "common.schema.json#/$defs/utc"
+    },
+    "approverKids": {
+      "type": "array",
+      "items": {
+        "$ref": "common.schema.json#/$defs/kid"
+      },
+      "description": "Built-in kids whose signer certificates this till accepts (docs/web-portal-api.md 17.17). Sign a returned token with a kid in trustedKids, or with your certified key when its certificate approvedBy is in this list."
+    },
+    "trustedKids": {
+      "type": "array",
+      "items": {
+        "$ref": "common.schema.json#/$defs/kid"
+      },
+      "description": "Kids this till build trusts: sign the returned token with one of them."
+    },
+    "existingIds": {
+      "type": "object",
+      "description": "The till's own ids. The till has usually traded on its 7-day trial before the key arrives and NEVER re-keys its data: record these ids against the licence (alias them to your company/branch if they differ).",
+      "properties": {
+        "companyId": {
+          "$ref": "common.schema.json#/$defs/ulid"
+        },
+        "branchId": {
+          "$ref": "common.schema.json#/$defs/ulid"
+        },
+        "registerId": {
+          "$ref": "common.schema.json#/$defs/ulid"
+        }
+      },
+      "required": [
+        "companyId",
+        "branchId",
+        "registerId"
+      ]
+    }
+  },
+  "required": [
+    "licenceKey",
+    "installId",
+    "installCode",
+    "deviceName",
+    "appVersion",
+    "tillClockUtc",
+    "trustedKids",
+    "existingIds"
+  ]
+}

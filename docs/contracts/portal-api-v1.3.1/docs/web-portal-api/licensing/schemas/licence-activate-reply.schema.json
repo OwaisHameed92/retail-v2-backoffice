@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "licence-activate-reply",
+  "description": "POST /api/v1/licence/activate 200 reply (section 17.15). The same installId activating the same key again gets the same kind of reply (idempotent - a reinstall that kept its data, or a retry).",
+  "type": "object",
+  "properties": {
+    "status": {
+      "$ref": "common.schema.json#/$defs/licenceStatus"
+    },
+    "licenceToken": {
+      "$ref": "common.schema.json#/$defs/licenceToken",
+      "description": "Signed token for THIS till: source portal, installCode = the request's installCode, onlineCheck required, and (since 2026-09-28) the shop's companyId/branchId, names and company block, maxRegisters = tills allowed in the branch, features (multi_branch), limits.branches, validFrom/expiresAt."
+    },
+    "licence": {
+      "allOf": [
+        {
+          "$ref": "common.schema.json#/$defs/licenceSummary"
+        }
+      ],
+      "description": "Plain summary of the same fields (company block, maxRegisters, limits.branches, features, validFrom, expiresAt)."
+    },
+    "portalTimeUtc": {
+      "$ref": "common.schema.json#/$defs/utc"
+    },
+    "nextCheckAfterSeconds": {
+      "type": "integer",
+      "minimum": 60,
+      "maximum": 2592000
+    },
+    "messages": {
+      "$ref": "common.schema.json#/$defs/messages"
+    }
+  },
+  "required": [
+    "status",
+    "licenceToken",
+    "portalTimeUtc",
+    "messages"
+  ]
+}

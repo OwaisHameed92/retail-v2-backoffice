@@ -1,0 +1,8 @@
+{
+  "code": "key.not_found",
+  "message": "This licence key was not found. Check it was copied in full from the e-mail.",
+  "traceId": "req-7c41ab",
+  "retryAfterSeconds": null,
+  "rejectedKey": null,
+  "details": null
+}

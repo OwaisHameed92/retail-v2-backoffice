@@ -1,0 +1,35 @@
+{
+  "v": 1,
+  "kid": "k76b44696",
+  "licenceId": "01K5M1GR8T000000000000Y004",
+  "kind": "full",
+  "source": "local",
+  "issuer": "SSPOS Licence Generator - Owner PC",
+  "companyId": "01K5M1GR8T000000000000C004",
+  "branchId": "01K5M1GR8T000000000000B004",
+  "businessName": "Allerton News Ltd",
+  "branchName": "Chapel Allerton",
+  "installCode": "",
+  "maxRegisters": 2,
+  "features": [
+    "loyalty"
+  ],
+  "issuedAt": "2026-09-28T10:00:00Z",
+  "validFrom": "2026-09-28T00:00:00Z",
+  "expiresAt": "2027-09-28T23:59:59Z",
+  "limits": {
+    "branches": 1
+  },
+  "notes": "Open key - renewals are made for the till's install code",
+  "company": {
+    "businessType": "Newsagent",
+    "address": "3 Harrogate Road",
+    "town": "Leeds",
+    "postcode": "LS7 3NB",
+    "phone": "0113 496 0456",
+    "email": "",
+    "vatNumber": "",
+    "ownerName": "Sara Khan",
+    "receiptFooter": ""
+  }
+}

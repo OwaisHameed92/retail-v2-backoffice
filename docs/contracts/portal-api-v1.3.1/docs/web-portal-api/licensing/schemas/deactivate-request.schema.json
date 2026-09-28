@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "deactivate-request",
+  "description": "POST /api/v1/devices/deactivate body - free a seat or move the main till to another PC. Sent by the branch's main till.",
+  "type": "object",
+  "properties": {
+    "registerId": {
+      "$ref": "common.schema.json#/$defs/ulid"
+    },
+    "installId": {
+      "anyOf": [
+        {
+          "$ref": "common.schema.json#/$defs/ulid"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "The PC being released, when known."
+    },
+    "reason": {
+      "type": "string",
+      "description": "Why. Known values: transfer, replaced, removed, closed, other. Treat an unknown value as described in docs/web-portal-api.md section 17.11.",
+      "examples": [
+        "transfer",
+        "replaced",
+        "removed",
+        "closed",
+        "other"
+      ]
+    },
+    "note": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 200
+    }
+  },
+  "required": [
+    "registerId",
+    "installId",
+    "reason",
+    "note"
+  ]
+}

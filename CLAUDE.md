@@ -6,7 +6,7 @@ understand old behaviour.
 
 Read before any work: `docs/PHASES.md` (what to build, in what order), `docs/DECISIONS.md` (product
 decisions already made), `docs/BRAND.md` (Switch & Save brand and the UI quality bar), `docs/components.md`
-(shared components to reuse), and for sync work `docs/contracts/portal-api-v1.1/README-web-portal-api.md`.
+(shared components to reuse), and the EPOS contract `docs/contracts/portal-api-v1.3.1/START-HERE.md` (the portal implements it exactly; v1.1 is kept only until module 2.3 moves the generator).
 
 ## The three areas
 

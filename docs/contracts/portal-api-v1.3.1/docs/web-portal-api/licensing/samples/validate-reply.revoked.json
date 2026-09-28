@@ -1,0 +1,39 @@
+{
+  "status": "revoked",
+  "licenceToken": null,
+  "licence": {
+    "licenceId": "01K5T0Q8C4000000000000Y001",
+    "kind": "trial",
+    "source": "portal",
+    "expiresAt": "2026-10-03T09:00:00Z",
+    "maxRegisters": 2,
+    "features": null,
+    "limits": null
+  },
+  "registers": [
+    {
+      "registerId": "01K5T0Q8C4000000000000R001",
+      "seat": "allowed"
+    },
+    {
+      "registerId": "01K5T0Q8C4000000000000R002",
+      "seat": "allowed"
+    }
+  ],
+  "apiKey": null,
+  "minimumAppVersion": null,
+  "portalTimeUtc": "2026-09-29T09:05:01Z",
+  "nextCheckAfterSeconds": 3600,
+  "messages": [
+    {
+      "id": "01K5T0Q8C4000000000000M004",
+      "level": "critical",
+      "title": "Licence stopped",
+      "text": "This licence has been stopped. Please call SSPOS support on 0113 496 0999.",
+      "showFromUtc": null,
+      "showUntilUtc": null,
+      "dismissible": false,
+      "link": null
+    }
+  ]
+}

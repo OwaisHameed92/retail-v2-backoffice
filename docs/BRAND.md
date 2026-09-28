@@ -1,5 +1,7 @@
 # Brand and UI standard: Switch & Save
 
+> **Superseded for colours and layout by `docs/design/DESIGN-SYSTEM-v2.md` (owner-approved 2026-09-28).** Logo rules below still apply.
+
 The owner's bar: **top-notch, professional, classic. Full functionality, no compromise.** Every screen is judged
 against this file. If a screen would look at home in Stripe, Linear or Xero's dashboard, it passes.
 

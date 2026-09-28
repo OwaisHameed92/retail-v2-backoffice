@@ -1,0 +1,21 @@
+{
+  "status": "released",
+  "licenceToken": null,
+  "licence": null,
+  "apiKey": null,
+  "minimumAppVersion": null,
+  "portalTimeUtc": "2026-09-28T09:05:01Z",
+  "nextCheckAfterSeconds": 3600,
+  "messages": [
+    {
+      "id": "released-01",
+      "level": "critical",
+      "title": "Licence moved",
+      "text": "This licence key was released on the portal. Enter a new key to keep selling.",
+      "showFromUtc": "2026-09-28T09:05:01Z",
+      "showUntilUtc": null,
+      "dismissible": false,
+      "link": null
+    }
+  ]
+}

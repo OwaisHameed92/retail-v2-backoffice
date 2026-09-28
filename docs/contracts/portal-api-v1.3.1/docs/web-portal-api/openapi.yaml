@@ -1,0 +1,1699 @@
+# SSPOS web portal API - OpenAPI 3.1. Prose: docs/web-portal-api.md. Generated from the samples; keep in step with them.
+openapi: "3.1.0"
+info:
+  title: SSPOS web portal API
+  version: "1.2.0"
+  summary: "The contract between SSPOS 3 tills and the web portal: sync, licensing, devices, onboarding, migration."
+  description: "Contract major version 1 (X-SSPOS-Contract: 1). The prose contract is docs/web-portal-api.md; where this file and a sample disagree, the sample wins. Schemas are JSON Schema 2020-12 referenced by relative path (schemas/ is generated from the till's C# types; licensing/schemas/ is the section 17 contract). Every reply may gain new fields; clients ignore fields they do not know."
+  license:
+    name: Proprietary - SSPOS
+    identifier: LicenseRef-SSPOS-Proprietary
+servers:
+  - url: "https://{portalHost}"
+    description: The portal. HTTPS only (TLS 1.2+).
+    variables:
+      portalHost:
+        default: portal.example.co.uk
+tags:
+  - name: Onboarding
+    description: Link a till to a portal account (section 17.3-17.4).
+  - name: Licence
+    description: Per-till activate and daily check, renewal, keys typed at a linked till and local keys reported by a local till (sections 17.5-17.6, 17.15-17.16).
+  - name: Devices
+    description: Seats and transfers (section 17.7).
+  - name: Sync
+    description: Rows up and down (sections 3-9).
+  - name: Migration
+    description: Local licence to cloud (section 17.8).
+security:
+  - branchKey: []
+paths:
+  /api/v1/sync/hello:
+    get:
+      tags:
+        - Sync
+      operationId: syncHello
+      summary: "Check the address and key (Settings > Hub sync > Test)"
+      description: Defined in section 4. No body. The till calls it when the owner presses Test, after activation, and before the first push of a day. The portal checks the key, the X-SSPOS-Branch-Id binding and the contract.
+      parameters:
+        - $ref: "#/components/parameters/Contract"
+        - $ref: "#/components/parameters/AppVersion"
+        - $ref: "#/components/parameters/StoreProtocol"
+        - $ref: "#/components/parameters/CompanyId"
+        - $ref: "#/components/parameters/BranchId"
+        - $ref: "#/components/parameters/RegisterId"
+        - $ref: "#/components/parameters/InstallIdOptional"
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-SSPOS-Contract:
+              $ref: "#/components/headers/Contract"
+          content:
+            "application/json":
+              schema:
+                $ref: "./schemas/hello-reply.schema.json"
+              examples:
+                leeds:
+                  summary: Leeds main till
+                  value:
+                    contractVersion: 1
+                    companyId: "01K5T0Q8C4000000000000C001"
+                    branchId: "01K5T0Q8C4000000000000B001"
+                    branchName: Leeds Kirkgate
+                    serverTimeUtc: "2026-09-23T09:41:12Z"
+                    maxBatchRows: 5000
+        "401":
+          $ref: "#/components/responses/E401"
+        "403":
+          $ref: "#/components/responses/E403"
+        "409":
+          $ref: "#/components/responses/E409"
+        "426":
+          $ref: "#/components/responses/E426"
+        "429":
+          $ref: "#/components/responses/E429"
+        "500":
+          $ref: "#/components/responses/E500"
+        "503":
+          $ref: "#/components/responses/E503"
+  /api/v1/sync/push:
+    post:
+      tags:
+        - Sync
+      operationId: syncPush
+      summary: "Till to portal: a batch of changed rows (sections 5 and 7)"
+      description: "Body is gzip (Content-Encoding: gzip); accept an uncompressed body too (test tools). Delta mode keys rows by (branchId, seq). Initial mode (X-SSPOS-Sync-Mode: initial + X-SSPOS-Upload-Id, section 17.8) keys them by (uploadId, seq). Idempotent by (entity, entityId, version)."
+      parameters:
+        - $ref: "#/components/parameters/Contract"
+        - $ref: "#/components/parameters/AppVersion"
+        - $ref: "#/components/parameters/StoreProtocol"
+        - $ref: "#/components/parameters/CompanyId"
+        - $ref: "#/components/parameters/BranchId"
+        - $ref: "#/components/parameters/RegisterId"
+        - $ref: "#/components/parameters/InstallIdOptional"
+        - $ref: "#/components/parameters/ContentEncoding"
+        - $ref: "#/components/parameters/SyncMode"
+        - $ref: "#/components/parameters/UploadId"
+        - $ref: "#/components/parameters/IdempotencyKeyOptional"
+      requestBody:
+        required: true
+        content:
+          "application/json":
+            schema:
+              $ref: "./schemas/push-request.schema.json"
+            examples:
+              leeds:
+                summary: Leeds till 1 (delta)
+                externalValue: "./samples/push-request.json"
+              leedsTill2:
+                summary: A Leeds till 2 sale, sent by till 1
+                externalValue: "./samples/push-request.second-till.json"
+              bradford:
+                summary: Bradford
+                externalValue: "./samples/push-request.second-branch.json"
+              initial:
+                summary: First rows of an initial (migration) upload
+                value:
+                  - seq: 1
+                    entity: VatRate
+                    entityId: "01K5T0Q8C4000000000000V001"
+                    op: I
+                    version: 1
+                    companyId: "01K5M1GR8T000000000000C009"
+                    branchId: ""
+                    registerId: ""
+                    at: "2026-09-01T08:00:00Z"
+                    payload:
+                      name: Standard
+                      code: S
+                      percentage: 20.0
+                      treatment: apply
+                      effectiveFrom: "2011-01-04"
+                      effectiveTo: null
+                      isDefault: true
+                      isZeroValued: false
+                      id: "01K5T0Q8C4000000000000V001"
+                      companyId: "01K5M1GR8T000000000000C009"
+                      createdAt: "2026-09-01T08:00:00Z"
+                      updatedAt: "2026-09-01T08:00:00Z"
+                      rowVersion: 1
+                      deletedAt: null
+                      isDeleted: false
+                      domainEvents: []
+                    key: "VatRate:01K5T0Q8C4000000000000V001:1"
+                  - seq: 2
+                    entity: VatRate
+                    entityId: "01K5T0Q8C4000000000000V002"
+                    op: I
+                    version: 1
+                    companyId: "01K5M1GR8T000000000000C009"
+                    branchId: ""
+                    registerId: ""
+                    at: "2026-09-01T08:00:00Z"
+                    payload:
+                      name: Zero
+                      code: Z
+                      percentage: 0.0
+                      treatment: apply
+                      effectiveFrom: "1973-04-01"
+                      effectiveTo: null
+                      isDefault: false
+                      isZeroValued: true
+                      id: "01K5T0Q8C4000000000000V002"
+                      companyId: "01K5M1GR8T000000000000C009"
+                      createdAt: "2026-09-01T08:00:00Z"
+                      updatedAt: "2026-09-01T08:00:00Z"
+                      rowVersion: 1
+                      deletedAt: null
+                      isDeleted: false
+                      domainEvents: []
+                    key: "VatRate:01K5T0Q8C4000000000000V002:1"
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-SSPOS-Contract:
+              $ref: "#/components/headers/Contract"
+          content:
+            "application/json":
+              schema:
+                $ref: "./schemas/push-reply.schema.json"
+              examples:
+                ack:
+                  summary: Acknowledged
+                  value:
+                    acknowledgedSeq: 18239
+                    accepted: 9
+        "400":
+          $ref: "#/components/responses/E400"
+        "401":
+          $ref: "#/components/responses/E401"
+        "403":
+          $ref: "#/components/responses/E403"
+        "404":
+          $ref: "#/components/responses/E404"
+        "409":
+          $ref: "#/components/responses/E409"
+        "413":
+          $ref: "#/components/responses/E413"
+        "422":
+          $ref: "#/components/responses/E422"
+        "426":
+          $ref: "#/components/responses/E426"
+        "429":
+          $ref: "#/components/responses/E429"
+        "500":
+          $ref: "#/components/responses/E500"
+        "503":
+          $ref: "#/components/responses/E503"
+  /api/v1/sync/pull:
+    get:
+      tags:
+        - Sync
+      operationId: syncPull
+      summary: "Portal to till: changes after `since` (section 8)"
+      parameters:
+        - $ref: "#/components/parameters/Contract"
+        - $ref: "#/components/parameters/AppVersion"
+        - $ref: "#/components/parameters/StoreProtocol"
+        - $ref: "#/components/parameters/CompanyId"
+        - $ref: "#/components/parameters/BranchId"
+        - $ref: "#/components/parameters/RegisterId"
+        - $ref: "#/components/parameters/InstallIdOptional"
+        - $ref: "#/components/parameters/Since"
+        - $ref: "#/components/parameters/Max"
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-SSPOS-Contract:
+              $ref: "#/components/headers/Contract"
+          content:
+            "application/json":
+              schema:
+                $ref: "./schemas/pull-reply.schema.json"
+              examples:
+                leeds:
+                  summary: Rows for Leeds
+                  externalValue: "./samples/pull-reply.json"
+                empty:
+                  summary: Nothing new
+                  value:
+                    changes: []
+                    highestVersion: 90410
+                    hasMore: false
+        "400":
+          $ref: "#/components/responses/E400"
+        "401":
+          $ref: "#/components/responses/E401"
+        "403":
+          $ref: "#/components/responses/E403"
+        "409":
+          $ref: "#/components/responses/E409"
+        "426":
+          $ref: "#/components/responses/E426"
+        "429":
+          $ref: "#/components/responses/E429"
+        "500":
+          $ref: "#/components/responses/E500"
+        "503":
+          $ref: "#/components/responses/E503"
+  /api/v1/devices/activate:
+    post:
+      tags:
+        - Onboarding
+      operationId: activateDevice
+      summary: Link a new till to a portal account (section 17.4)
+      description: "No Authorization header: the activation code in the body is the credential. Rate-limited (section 17.12). Repeating the call with the same code from the same installId within 24 h returns the same 200 reply."
+      security: []
+      parameters:
+        - $ref: "#/components/parameters/Contract"
+        - $ref: "#/components/parameters/AppVersion"
+        - $ref: "#/components/parameters/InstallId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          "application/json":
+            schema:
+              $ref: "./licensing/schemas/activate-request.schema.json"
+            examples:
+              newShop:
+                summary: First till of a new shop
+                value:
+                  activationCode: SSP-7K4M-Q2XD-9HTR
+                  installId: "01K5T0Q8C4000000000000H001"
+                  installCode: "8S91-254H"
+                  deviceName: KIRKGATE-TILL1
+                  appVersion: "3.0.412"
+                  os:
+                    name: Windows 11 Pro
+                    version: "10.0.26200"
+                    architecture: x64
+                  tillClockUtc: "2026-09-26T09:00:03Z"
+                  approverKids:
+                    - k76b44696
+                  trustedKids:
+                    - k13799fa4
+                    - k76b44696
+                  registerName: Till 1
+                  existingIds: null
+                  localLicenceToken: null
+              replacementPc:
+                summary: Replacement PC with a restored backup, using a transfer code
+                value:
+                  activationCode: SSP-TRF-8M3K-2QXD
+                  installId: "01K5T0Q8C4000000000000H003"
+                  installCode: B4RK-ANZV
+                  deviceName: KIRKGATE-TILL1-NEW
+                  appVersion: "3.0.415"
+                  os:
+                    name: Windows 11 Pro
+                    version: "10.0.26200"
+                    architecture: x64
+                  tillClockUtc: "2026-10-05T08:30:00Z"
+                  approverKids:
+                    - k76b44696
+                  trustedKids:
+                    - k13799fa4
+                    - k76b44696
+                  registerName: null
+                  existingIds:
+                    companyId: "01K5T0Q8C4000000000000C001"
+                    branchId: "01K5T0Q8C4000000000000B001"
+                    registerId: "01K5T0Q8C4000000000000R001"
+                  localLicenceToken: null
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-SSPOS-Contract:
+              $ref: "#/components/headers/Contract"
+          content:
+            "application/json":
+              schema:
+                $ref: "./licensing/schemas/activate-reply.schema.json"
+              examples:
+                trial:
+                  summary: Linked, 7-day trial
+                  value:
+                    companyId: "01K5T0Q8C4000000000000C001"
+                    branchId: "01K5T0Q8C4000000000000B001"
+                    registerId: "01K5T0Q8C4000000000000R001"
+                    isMain: true
+                    hubUrl: "https://portal.example.co.uk"
+                    apiKey: sspos_br_SAMPLE_7f3a9c2e41d84b6f9a0c
+                    licenceToken: SSPOS1.eyJ2IjoxLCJraWQiOiJrMTM3OTlmYTQiLCJsaWNlbmNlSWQiOiIwMUs1VDBROEM0MDAwMDAwMDAwMDAwWTAwMSIsImtpbmQiOiJ0cmlhbCIsInNvdXJjZSI6InBvcnRhbCIsImlzc3VlciI6IlNTUE9TIFBvcnRhbCIsImNvbXBhbnlJZCI6IjAxSzVUMFE4QzQwMDAwMDAwMDAwMDBDMDAxIiwiYnJhbmNoSWQiOiIwMUs1VDBROEM0MDAwMDAwMDAwMDAwQjAwMSIsImJ1c2luZXNzTmFtZSI6IktpcmtnYXRlIFN0b3JlcyBMdGQiLCJicmFuY2hOYW1lIjoiTGVlZHMgS2lya2dhdGUiLCJtYXhSZWdpc3RlcnMiOjIsImlzc3VlZEF0IjoiMjAyNi0wOS0yNlQwOTowMDowMFoiLCJ2YWxpZEZyb20iOiIyMDI2LTA5LTI2VDA5OjAwOjAwWiIsImV4cGlyZXNBdCI6IjIwMjYtMTAtMDNUMDk6MDA6MDBaIiwib25saW5lQ2hlY2siOnsicmVxdWlyZWQiOnRydWUsImludGVydmFsSG91cnMiOjI0LCJncmFjZURheXMiOjE0fSwibm90ZXMiOiI3LWRheSBmcmVlIHRyaWFsIC0gZXZlcnkgZmVhdHVyZSBvbiJ9.6AKSS9nL89qp4JT_v7CMKpYHUdUWH6Zr-Dqp9y7KmNncvrFeBHkMVNCAPJ_pVTRiTOWeTyTCZvxlZbPbjo-lDQ
+                    licence:
+                      licenceId: "01K5T0Q8C4000000000000Y001"
+                      kind: trial
+                      source: portal
+                      expiresAt: "2026-10-03T09:00:00Z"
+                      maxRegisters: 2
+                      features: null
+                      limits: null
+                    settingsBootstrap:
+                      company:
+                        name: Kirkgate Stores Ltd
+                        vatNumber: GB123456789
+                        companyNumber: "01234567"
+                      branch:
+                        name: Leeds Kirkgate
+                        code: LDS
+                        address: "12 Kirkgate"
+                        city: Leeds
+                        postcode: LS1 6BY
+                        phone: "0113 496 0000"
+                        email: "leeds@kirkgate.example"
+                      register:
+                        name: Till 1
+                        code: "01"
+                      settings:
+                        shop.currency: GBP
+                        shop.vat_registered: true
+                        sync.interval_seconds: 30
+                    portalTimeUtc: "2026-09-26T09:00:05Z"
+                    nextCheckAfterSeconds: 86400
+                    messages:
+                      - id: "01K5T0Q8C4000000000000M001"
+                        level: info
+                        title: Welcome
+                        text: Your 7-day trial has started. Choose a plan any time on the portal.
+                        showFromUtc: null
+                        showUntilUtc: "2026-09-27T09:00:00Z"
+                        dismissible: true
+                        link:
+                          label: Choose a plan
+                          url: "https://portal.example.co.uk/billing"
+        "400":
+          $ref: "#/components/responses/E400"
+        "403":
+          $ref: "#/components/responses/E403"
+        "404":
+          $ref: "#/components/responses/E404"
+        "409":
+          $ref: "#/components/responses/E409"
+        "410":
+          $ref: "#/components/responses/E410"
+        "422":
+          $ref: "#/components/responses/E422"
+        "426":
+          $ref: "#/components/responses/E426"
+        "429":
+          $ref: "#/components/responses/E429"
+        "500":
+          $ref: "#/components/responses/E500"
+        "503":
+          $ref: "#/components/responses/E503"
+  /api/v1/devices/deactivate:
+    post:
+      tags:
+        - Devices
+      operationId: deactivateDevice
+      summary: Free a seat or release the main till for a transfer (section 17.7)
+      parameters:
+        - $ref: "#/components/parameters/Contract"
+        - $ref: "#/components/parameters/AppVersion"
+        - $ref: "#/components/parameters/StoreProtocol"
+        - $ref: "#/components/parameters/CompanyId"
+        - $ref: "#/components/parameters/BranchId"
+        - $ref: "#/components/parameters/RegisterId"
+        - $ref: "#/components/parameters/InstallIdOptional"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          "application/json":
+            schema:
+              $ref: "./licensing/schemas/deactivate-request.schema.json"
+            examples:
+              secondTill:
+                summary: Remove Till 2
+                value:
+                  registerId: "01K5T0Q8C4000000000000R002"
+                  installId: "01K5T0Q8C4000000000000H002"
+                  reason: removed
+                  note: Till 2 moved to the stock room as a spare.
+              mainTill:
+                summary: Move the main till to a new PC
+                value:
+                  registerId: "01K5T0Q8C4000000000000R001"
+                  installId: "01K5T0Q8C4000000000000H001"
+                  reason: transfer
+                  note: New PC arriving Monday.
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-SSPOS-Contract:
+              $ref: "#/components/headers/Contract"
+          content:
+            "application/json":
+              schema:
+                $ref: "./licensing/schemas/deactivate-reply.schema.json"
+              examples:
+                secondTill:
+                  summary: Seat freed
+                  value:
+                    registerId: "01K5T0Q8C4000000000000R002"
+                    seat: deactivated
+                    seatsInUse: 1
+                    maxRegisters: 2
+                    apiKeyRevoked: false
+                    transferCode: null
+                    transferCodeExpiresAt: null
+                    portalTimeUtc: "2026-10-04T17:00:01Z"
+                    messages: []
+                mainTill:
+                  summary: Released, transfer code issued
+                  value:
+                    registerId: "01K5T0Q8C4000000000000R001"
+                    seat: deactivated
+                    seatsInUse: 1
+                    maxRegisters: 3
+                    apiKeyRevoked: true
+                    transferCode: SSP-TRF-8M3K-2QXD
+                    transferCodeExpiresAt: "2026-10-11T17:00:00Z"
+                    portalTimeUtc: "2026-10-04T17:00:01Z"
+                    messages:
+                      - id: "01K5T0Q8C4000000000000M006"
+                        level: info
+                        title: Till released
+                        text: Enter code SSP-TRF-8M3K-2QXD on the new PC within 7 days. Take a backup first.
+                        showFromUtc: null
+                        showUntilUtc: "2026-10-11T17:00:00Z"
+                        dismissible: false
+                        link: null
+        "400":
+          $ref: "#/components/responses/E400"
+        "401":
+          $ref: "#/components/responses/E401"
+        "403":
+          $ref: "#/components/responses/E403"
+        "404":
+          $ref: "#/components/responses/E404"
+        "409":
+          $ref: "#/components/responses/E409"
+        "422":
+          $ref: "#/components/responses/E422"
+        "426":
+          $ref: "#/components/responses/E426"
+        "429":
+          $ref: "#/components/responses/E429"
+        "500":
+          $ref: "#/components/responses/E500"
+        "503":
+          $ref: "#/components/responses/E503"
+  /api/v1/licence/activate:
+    post:
+      tags:
+        - Licence
+      operationId: activateLicenceKey
+      summary: "Per-till licence: bind an e-mailed licence key to this PC and get its token (section 17.15.1)"
+      description: "Sent by ANY till when the shop pastes the e-mailed key. No Authorization header needed: the licence key in the body is the credential (a till that has a branch key may still send it). First use binds the key to installId; the same installId again gets 200; another installId gets 409 key.already_used. Rate-limited (section 17.12). Since 2026-09-28 the signed token carries the shop: companyId/branchId (the same in every till key of the branch), businessName/branchName, the company block (businessType, address, town, postcode, phone, email, vatNumber, ownerName, receiptFooter), maxRegisters = tills allowed in the branch, features (multi_branch), limits.branches, validFrom/expiresAt - and the reply's licence summary lists them too (section 17.15.1). A new installId past the branch's maxRegisters gets 403 licence.seat_limit."
+      security:
+        - {}
+        - branchKey: []
+      parameters:
+        - $ref: "#/components/parameters/Contract"
+        - $ref: "#/components/parameters/AppVersion"
+        - $ref: "#/components/parameters/InstallId"
+        - $ref: "#/components/parameters/CompanyId"
+        - $ref: "#/components/parameters/BranchId"
+        - $ref: "#/components/parameters/RegisterId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          "application/json":
+            schema:
+              $ref: "./licensing/schemas/licence-activate-request.schema.json"
+            examples:
+              tillOne:
+                summary: Till 1 pastes the e-mailed key
+                externalValue: "./licensing/samples/licence-activate-request.json"
+      responses:
+        "200":
+          description: OK - the key is bound to this PC; store licenceToken
+          headers:
+            X-SSPOS-Contract:
+              $ref: "#/components/headers/Contract"
+          content:
+            "application/json":
+              schema:
+                $ref: "./licensing/schemas/licence-activate-reply.schema.json"
+              examples:
+                active:
+                  summary: "Annual plan, Till 1 of 3, with the shop's details (token signed with the documentation key k13799fa4)"
+                  externalValue: "./licensing/samples/licence-activate-reply.json"
+        "400":
+          $ref: "#/components/responses/E400"
+        "403":
+          $ref: "#/components/responses/E403"
+        "404":
+          description: "key.not_found - no such licence key."
+          content:
+            "application/json":
+              schema:
+                $ref: "./licensing/schemas/error-reply.schema.json"
+              examples:
+                notFound:
+                  externalValue: "./licensing/samples/error.key-not-found.404.json"
+        "409":
+          description: "key.already_used - the key is bound to another PC (details: deviceName, installCode, activatedAtUtc)."
+          content:
+            "application/json":
+              schema:
+                $ref: "./licensing/schemas/error-reply.schema.json"
+              examples:
+                alreadyUsed:
+                  externalValue: "./licensing/samples/error.key-already-used.409.json"
+        "410":
+          description: "key.expired - past its activate-by date or withdrawn before use."
+          content:
+            "application/json":
+              schema:
+                $ref: "./licensing/schemas/error-reply.schema.json"
+        "426":
+          $ref: "#/components/responses/E426"
+        "429":
+          $ref: "#/components/responses/E429"
+        "500":
+          $ref: "#/components/responses/E500"
+        "503":
+          $ref: "#/components/responses/E503"
+  /api/v1/licence/validate:
+    post:
+      tags:
+        - Licence
+      operationId: validateLicence
+      summary: Daily licence check and heartbeat (section 17.5)
+      description: "Per-till licensing (section 17.15.2): EVERY till with a portal licence sends it for itself once per onlineCheck.intervalHours, at start-up when due, and on Check again - identified by installId + licenceId + tokenSha256, no branch key required (example perTill). Branch model (17.5): the main till, listing registers[]. Licence problems are 200 + status (active, expiring, expired, revoked, suspended, released; unknown = not active), never an error status."
+      parameters:
+        - $ref: "#/components/parameters/Contract"
+        - $ref: "#/components/parameters/AppVersion"
+        - $ref: "#/components/parameters/StoreProtocol"
+        - $ref: "#/components/parameters/CompanyId"
+        - $ref: "#/components/parameters/BranchId"
+        - $ref: "#/components/parameters/RegisterId"
+        - $ref: "#/components/parameters/InstallIdOptional"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          "application/json":
+            schema:
+              $ref: "./licensing/schemas/validate-request.schema.json"
+            examples:
+              leeds:
+                summary: Leeds, two tills
+                value:
+                  licenceId: "01K5T0Q8C4000000000000Y001"
+                  tokenSha256: "3848315811206cf590309eeefb2ce627a927f98167825e44049ea59910a2a3eb"
+                  appVersion: "3.0.412"
+                  approverKids:
+                    - k76b44696
+                  trustedKids:
+                    - k13799fa4
+                    - k76b44696
+                  tillClockUtc: "2026-09-27T09:05:00Z"
+                  clockWatermarkUtc: "2026-09-27T09:05:00Z"
+                  lastValidatedAtUtc: "2026-09-26T09:00:05Z"
+                  lastSyncAt: "2026-09-27T09:04:30Z"
+                  lock:
+                    locked: false
+                    reason: null
+                  registers:
+                    - registerId: "01K5T0Q8C4000000000000R001"
+                      code: "01"
+                      name: Till 1
+                      isMain: true
+                      appVersion: "3.0.412"
+                      installId: "01K5T0Q8C4000000000000H001"
+                      deviceName: KIRKGATE-TILL1
+                      lastSeenUtc: "2026-09-27T09:04:58Z"
+                      isActive: true
+                    - registerId: "01K5T0Q8C4000000000000R002"
+                      code: "02"
+                      name: Till 2
+                      isMain: false
+                      appVersion: "3.0.412"
+                      installId: "01K5T0Q8C4000000000000H002"
+                      deviceName: KIRKGATE-TILL2
+                      lastSeenUtc: "2026-09-27T08:59:40Z"
+                      isActive: true
+                  diagnostics:
+                    pendingSyncRows: 0
+                    lastSyncError: null
+                    databaseSizeMb: 84
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-SSPOS-Contract:
+              $ref: "#/components/headers/Contract"
+          content:
+            "application/json":
+              schema:
+                $ref: "./licensing/schemas/validate-reply.schema.json"
+              examples:
+                trialExpiring:
+                  summary: Trial, ends in 6 days
+                  value:
+                    status: expiring
+                    licenceToken: null
+                    licence:
+                      licenceId: "01K5T0Q8C4000000000000Y001"
+                      kind: trial
+                      source: portal
+                      expiresAt: "2026-10-03T09:00:00Z"
+                      maxRegisters: 2
+                      features: null
+                      limits: null
+                    registers:
+                      - registerId: "01K5T0Q8C4000000000000R001"
+                        seat: allowed
+                      - registerId: "01K5T0Q8C4000000000000R002"
+                        seat: allowed
+                    apiKey: null
+                    minimumAppVersion: null
+                    portalTimeUtc: "2026-09-27T09:05:01Z"
+                    nextCheckAfterSeconds: 86400
+                    messages:
+                      - id: "01K5T0Q8C4000000000000M002"
+                        level: warning
+                        title: Trial ends soon
+                        text: Your trial ends on 3 October 2026. Choose a plan to keep trading.
+                        showFromUtc: null
+                        showUntilUtc: "2026-10-03T09:00:00Z"
+                        dismissible: true
+                        link:
+                          label: Choose a plan
+                          url: "https://portal.example.co.uk/billing"
+                renewed:
+                  summary: "Paid: new token"
+                  value:
+                    status: active
+                    licenceToken: SSPOS1.eyJ2IjoxLCJraWQiOiJrMTM3OTlmYTQiLCJsaWNlbmNlSWQiOiIwMUs1VDBROEM0MDAwMDAwMDAwMDAwWTAwMSIsImtpbmQiOiJmdWxsIiwic291cmNlIjoicG9ydGFsIiwiaXNzdWVyIjoiU1NQT1MgUG9ydGFsIiwiY29tcGFueUlkIjoiMDFLNVQwUThDNDAwMDAwMDAwMDAwMEMwMDEiLCJicmFuY2hJZCI6IjAxSzVUMFE4QzQwMDAwMDAwMDAwMDBCMDAxIiwiYnVzaW5lc3NOYW1lIjoiS2lya2dhdGUgU3RvcmVzIEx0ZCIsImJyYW5jaE5hbWUiOiJMZWVkcyBLaXJrZ2F0ZSIsIm1heFJlZ2lzdGVycyI6MywiaXNzdWVkQXQiOiIyMDI2LTEwLTAyVDA5OjA1OjAwWiIsInZhbGlkRnJvbSI6IjIwMjYtMTAtMDJUMDk6MDU6MDBaIiwiZXhwaXJlc0F0IjoiMjAyNy0xMC0wMlQyMzo1OTo1OVoiLCJvbmxpbmVDaGVjayI6eyJyZXF1aXJlZCI6dHJ1ZSwiaW50ZXJ2YWxIb3VycyI6MjQsImdyYWNlRGF5cyI6MTR9LCJub3RlcyI6IkFubnVhbCBwbGFuLCAzIHRpbGxzIiwiZmVhdHVyZXMiOlsid2hhdHNhcHAiLCJtdWx0aV9icmFuY2giXSwibGltaXRzIjp7InVzZXJzIjoxMCwiYnJhbmNoZXMiOjJ9fQ.NKDHN7Q69KhiEHCWFyDK-SKk8MUH_ESBp9yWyeryAgQpfByutZktbUAGR8ts2c5l34eCIIqnWscrKXN4ZeZFDA
+                    licence:
+                      licenceId: "01K5T0Q8C4000000000000Y001"
+                      kind: full
+                      source: portal
+                      expiresAt: "2027-10-02T23:59:59Z"
+                      maxRegisters: 3
+                      features:
+                        - whatsapp
+                        - multi_branch
+                      limits:
+                        users: 10
+                        branches: 2
+                    registers:
+                      - registerId: "01K5T0Q8C4000000000000R001"
+                        seat: allowed
+                      - registerId: "01K5T0Q8C4000000000000R002"
+                        seat: allowed
+                    apiKey: null
+                    minimumAppVersion: null
+                    portalTimeUtc: "2026-10-02T09:05:01Z"
+                    nextCheckAfterSeconds: 86400
+                    messages:
+                      - id: "01K5T0Q8C4000000000000M003"
+                        level: info
+                        title: Thank you
+                        text: Your annual plan is active until 2 October 2027.
+                        showFromUtc: null
+                        showUntilUtc: null
+                        dismissible: true
+                        link: null
+                revoked:
+                  summary: "Revoked: lock"
+                  value:
+                    status: revoked
+                    licenceToken: null
+                    licence:
+                      licenceId: "01K5T0Q8C4000000000000Y001"
+                      kind: trial
+                      source: portal
+                      expiresAt: "2026-10-03T09:00:00Z"
+                      maxRegisters: 2
+                      features: null
+                      limits: null
+                    registers:
+                      - registerId: "01K5T0Q8C4000000000000R001"
+                        seat: allowed
+                      - registerId: "01K5T0Q8C4000000000000R002"
+                        seat: allowed
+                    apiKey: null
+                    minimumAppVersion: null
+                    portalTimeUtc: "2026-09-29T09:05:01Z"
+                    nextCheckAfterSeconds: 3600
+                    messages:
+                      - id: "01K5T0Q8C4000000000000M004"
+                        level: critical
+                        title: Licence stopped
+                        text: This licence has been stopped. Please call SSPOS support on 0113 496 0999.
+                        showFromUtc: null
+                        showUntilUtc: null
+                        dismissible: false
+                        link: null
+                seatLimit:
+                  summary: "Too many tills: Till 3 refused"
+                  value:
+                    status: seatLimit
+                    licenceToken: null
+                    licence:
+                      licenceId: "01K5T0Q8C4000000000000Y001"
+                      kind: trial
+                      source: portal
+                      expiresAt: "2026-10-03T09:00:00Z"
+                      maxRegisters: 2
+                      features: null
+                      limits: null
+                    registers:
+                      - registerId: "01K5T0Q8C4000000000000R001"
+                        seat: allowed
+                      - registerId: "01K5T0Q8C4000000000000R002"
+                        seat: allowed
+                      - registerId: "01K5T0Q8C4000000000000R004"
+                        seat: refused
+                    apiKey: null
+                    minimumAppVersion: null
+                    portalTimeUtc: "2026-09-28T09:05:01Z"
+                    nextCheckAfterSeconds: 86400
+                    messages:
+                      - id: "01K5T0Q8C4000000000000M005"
+                        level: warning
+                        title: Too many tills
+                        text: Your plan allows 2 tills and 3 are in use. Till 3 is locked until you add a till to your plan or remove one.
+                        showFromUtc: null
+                        showUntilUtc: null
+                        dismissible: false
+                        link:
+                          label: Add a till
+                          url: "https://portal.example.co.uk/billing/tills"
+        "400":
+          $ref: "#/components/responses/E400"
+        "401":
+          $ref: "#/components/responses/E401"
+        "403":
+          $ref: "#/components/responses/E403"
+        "409":
+          $ref: "#/components/responses/E409"
+        "422":
+          $ref: "#/components/responses/E422"
+        "426":
+          $ref: "#/components/responses/E426"
+        "429":
+          $ref: "#/components/responses/E429"
+        "500":
+          $ref: "#/components/responses/E500"
+        "503":
+          $ref: "#/components/responses/E503"
+  /api/v1/licence/redeem:
+    post:
+      tags:
+        - Licence
+      operationId: redeemLicence
+      summary: "A key typed at a linked till, or a local key reported by a local till (sections 17.6, 17.16)"
+      description: "(a) A key typed or pasted at a linked till (branch key). (b) Since 2026-09-28 a till holding a local (licence generator) key reports it once, when a licence server is set and reachable: keyType token, installCode, installId, no Authorization - the signed token is the credential. First sighting of a licenceId -> record licenceId -> installCode, 200 result recorded; the same licenceId from another installCode -> 409 key.used_on_another_install (the till locks). Renewals for that till are bound to its installCode."
+      security:
+        - branchKey: []
+        - {}
+      parameters:
+        - $ref: "#/components/parameters/Contract"
+        - $ref: "#/components/parameters/AppVersion"
+        - $ref: "#/components/parameters/StoreProtocol"
+        - $ref: "#/components/parameters/CompanyId"
+        - $ref: "#/components/parameters/BranchId"
+        - $ref: "#/components/parameters/RegisterId"
+        - $ref: "#/components/parameters/InstallIdOptional"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          "application/json":
+            schema:
+              $ref: "./licensing/schemas/redeem-request.schema.json"
+            examples:
+              portalKey:
+                summary: Key bought on the portal
+                value:
+                  key: SSPK-4F7Q-XM2D-9KTR-B6WN
+                  keyType: portalKey
+                  licenceId: "01K5T0Q8C4000000000000Y001"
+                  tokenSha256: "3848315811206cf590309eeefb2ce627a927f98167825e44049ea59910a2a3eb"
+                  approverKids:
+                    - k76b44696
+                  trustedKids:
+                    - k13799fa4
+                    - k76b44696
+                  installCode: "8S91-254H"
+              localToken:
+                summary: Token made by the licence generator
+                value:
+                  key: SSPOS1.eyJ2IjoxLCJraWQiOiJrNzZiNDQ2OTYiLCJsaWNlbmNlSWQiOiIwMUs1TTFHUjhUMDAwMDAwMDAwMDAwWTAwMiIsImtpbmQiOiJmdWxsIiwic291cmNlIjoibG9jYWwiLCJpc3N1ZXIiOiJTU1BPUyBMaWNlbmNlIEdlbmVyYXRvciAtIE93bmVyIFBDIiwiY29tcGFueUlkIjoiIiwiYnJhbmNoSWQiOiIiLCJidXNpbmVzc05hbWUiOiJIeWRlIFBhcmsgTmV3cyBMdGQiLCJicmFuY2hOYW1lIjoiSHlkZSBQYXJrIiwiaW5zdGFsbENvZGUiOiIwTTAxLVRGRzYiLCJtYXhSZWdpc3RlcnMiOjIsImZlYXR1cmVzIjpbIndoYXRzYXBwIl0sImlzc3VlZEF0IjoiMjAyNi0wMy0zMVQxMDowMDowMFoiLCJ2YWxpZEZyb20iOiIyMDI2LTAzLTMxVDAwOjAwOjAwWiIsImV4cGlyZXNBdCI6IjIwMjctMDMtMzFUMjM6NTk6NTlaIiwibm90ZXMiOiJQYWlkIGJ5IGJhbmsgdHJhbnNmZXIsIGludm9pY2UgMTA0MiJ9.c2IlqHOT1WguKa1H6aTEvKWKBiIoejoTubfayzeZhqx-g6apnMwPfM-R1vIbE_DAspKZrY289Bqm7fPWCtOtCg
+                  keyType: token
+                  licenceId: "01K5M1GR8T000000000000Y002"
+                  tokenSha256: b21ec86ab81fd0ba35b96706f913d8a5a3bcd0de4668a4a91a0af265428a7cac
+                  approverKids:
+                    - k76b44696
+                  trustedKids:
+                    - k13799fa4
+                    - k76b44696
+                  installCode: "0M01-TFG6"
+              localReport:
+                summary: "Local till reports its open local key (no Authorization)"
+                externalValue: "./licensing/samples/redeem-request.local-report.json"
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-SSPOS-Contract:
+              $ref: "#/components/headers/Contract"
+          content:
+            "application/json":
+              schema:
+                $ref: "./licensing/schemas/redeem-reply.schema.json"
+              examples:
+                applied:
+                  summary: New token to store
+                  value:
+                    result: applied
+                    status: active
+                    licenceToken: SSPOS1.eyJ2IjoxLCJraWQiOiJrMTM3OTlmYTQiLCJsaWNlbmNlSWQiOiIwMUs1VDBROEM0MDAwMDAwMDAwMDAwWTAwMSIsImtpbmQiOiJmdWxsIiwic291cmNlIjoicG9ydGFsIiwiaXNzdWVyIjoiU1NQT1MgUG9ydGFsIiwiY29tcGFueUlkIjoiMDFLNVQwUThDNDAwMDAwMDAwMDAwMEMwMDEiLCJicmFuY2hJZCI6IjAxSzVUMFE4QzQwMDAwMDAwMDAwMDBCMDAxIiwiYnVzaW5lc3NOYW1lIjoiS2lya2dhdGUgU3RvcmVzIEx0ZCIsImJyYW5jaE5hbWUiOiJMZWVkcyBLaXJrZ2F0ZSIsIm1heFJlZ2lzdGVycyI6MywiaXNzdWVkQXQiOiIyMDI2LTEwLTAyVDA5OjA1OjAwWiIsInZhbGlkRnJvbSI6IjIwMjYtMTAtMDJUMDk6MDU6MDBaIiwiZXhwaXJlc0F0IjoiMjAyNy0xMC0wMlQyMzo1OTo1OVoiLCJvbmxpbmVDaGVjayI6eyJyZXF1aXJlZCI6dHJ1ZSwiaW50ZXJ2YWxIb3VycyI6MjQsImdyYWNlRGF5cyI6MTR9LCJub3RlcyI6IkFubnVhbCBwbGFuLCAzIHRpbGxzIiwiZmVhdHVyZXMiOlsid2hhdHNhcHAiLCJtdWx0aV9icmFuY2giXSwibGltaXRzIjp7InVzZXJzIjoxMCwiYnJhbmNoZXMiOjJ9fQ.NKDHN7Q69KhiEHCWFyDK-SKk8MUH_ESBp9yWyeryAgQpfByutZktbUAGR8ts2c5l34eCIIqnWscrKXN4ZeZFDA
+                    licence:
+                      licenceId: "01K5T0Q8C4000000000000Y001"
+                      kind: full
+                      source: portal
+                      expiresAt: "2027-10-02T23:59:59Z"
+                      maxRegisters: 3
+                      features:
+                        - whatsapp
+                        - multi_branch
+                      limits:
+                        users: 10
+                        branches: 2
+                    portalTimeUtc: "2026-10-02T09:05:01Z"
+                    nextCheckAfterSeconds: 86400
+                    messages:
+                      - id: "01K5T0Q8C4000000000000M003"
+                        level: info
+                        title: Thank you
+                        text: Your annual plan is active until 2 October 2027.
+                        showFromUtc: null
+                        showUntilUtc: null
+                        dismissible: true
+                        link: null
+                localReport:
+                  summary: "Local key report: first sighting recorded (licenceId -> installCode)"
+                  externalValue: "./licensing/samples/redeem-reply.local-report.json"
+                recorded:
+                  summary: Local token recorded
+                  value:
+                    result: recorded
+                    status: active
+                    licenceToken: null
+                    licence:
+                      licenceId: "01K5M1GR8T000000000000Y002"
+                      kind: full
+                      source: local
+                      expiresAt: "2027-03-31T23:59:59Z"
+                      maxRegisters: 2
+                      features:
+                        - whatsapp
+                      limits: null
+                    portalTimeUtc: "2026-09-26T10:15:00Z"
+                    nextCheckAfterSeconds: 86400
+                    messages: []
+        "400":
+          $ref: "#/components/responses/E400"
+        "401":
+          $ref: "#/components/responses/E401"
+        "403":
+          $ref: "#/components/responses/E403"
+        "404":
+          $ref: "#/components/responses/E404"
+        "409":
+          $ref: "#/components/responses/E409"
+        "410":
+          $ref: "#/components/responses/E410"
+        "422":
+          $ref: "#/components/responses/E422"
+        "426":
+          $ref: "#/components/responses/E426"
+        "429":
+          $ref: "#/components/responses/E429"
+        "500":
+          $ref: "#/components/responses/E500"
+        "503":
+          $ref: "#/components/responses/E503"
+  /api/v1/cloud/migrate:
+    post:
+      tags:
+        - Migration
+      operationId: migrateToCloud
+      summary: Move a local-licence shop to the cloud, keeping its ids (section 17.8)
+      description: "No Authorization header: the activation code is the credential. After 200 the till uploads its history with POST /api/v1/sync/push in initial mode, then calls /api/v1/cloud/migrate/complete."
+      security: []
+      parameters:
+        - $ref: "#/components/parameters/Contract"
+        - $ref: "#/components/parameters/AppVersion"
+        - $ref: "#/components/parameters/InstallId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          "application/json":
+            schema:
+              $ref: "./licensing/schemas/migrate-request.schema.json"
+            examples:
+              hydePark:
+                summary: Hyde Park, local licence
+                value:
+                  activationCode: SSP-2WQA-HN4D-R7KM
+                  installId: "01K5M1GR8T000000000000H009"
+                  installCode: "0M01-TFG6"
+                  deviceName: HYDEPARK-TILL
+                  appVersion: "3.0.412"
+                  os:
+                    name: Windows 11 Pro
+                    version: "10.0.26200"
+                    architecture: x64
+                  tillClockUtc: "2026-09-26T11:29:58Z"
+                  approverKids:
+                    - k76b44696
+                  trustedKids:
+                    - k13799fa4
+                    - k76b44696
+                  localLicenceToken: SSPOS1.eyJ2IjoxLCJraWQiOiJrNzZiNDQ2OTYiLCJsaWNlbmNlSWQiOiIwMUs1TTFHUjhUMDAwMDAwMDAwMDAwWTAwMiIsImtpbmQiOiJmdWxsIiwic291cmNlIjoibG9jYWwiLCJpc3N1ZXIiOiJTU1BPUyBMaWNlbmNlIEdlbmVyYXRvciAtIE93bmVyIFBDIiwiY29tcGFueUlkIjoiIiwiYnJhbmNoSWQiOiIiLCJidXNpbmVzc05hbWUiOiJIeWRlIFBhcmsgTmV3cyBMdGQiLCJicmFuY2hOYW1lIjoiSHlkZSBQYXJrIiwiaW5zdGFsbENvZGUiOiIwTTAxLVRGRzYiLCJtYXhSZWdpc3RlcnMiOjIsImZlYXR1cmVzIjpbIndoYXRzYXBwIl0sImlzc3VlZEF0IjoiMjAyNi0wMy0zMVQxMDowMDowMFoiLCJ2YWxpZEZyb20iOiIyMDI2LTAzLTMxVDAwOjAwOjAwWiIsImV4cGlyZXNBdCI6IjIwMjctMDMtMzFUMjM6NTk6NTlaIiwibm90ZXMiOiJQYWlkIGJ5IGJhbmsgdHJhbnNmZXIsIGludm9pY2UgMTA0MiJ9.c2IlqHOT1WguKa1H6aTEvKWKBiIoejoTubfayzeZhqx-g6apnMwPfM-R1vIbE_DAspKZrY289Bqm7fPWCtOtCg
+                  localTrialEndsAt: null
+                  company:
+                    id: "01K5M1GR8T000000000000C009"
+                    name: Hyde Park News Ltd
+                  branch:
+                    id: "01K5M1GR8T000000000000B009"
+                    name: Hyde Park
+                    code: HPK
+                  registers:
+                    - registerId: "01K5M1GR8T000000000000R009"
+                      code: "01"
+                      name: Till 1
+                      isMain: true
+                      appVersion: "3.0.412"
+                      installId: "01K5M1GR8T000000000000H009"
+                      deviceName: HYDEPARK-TILL
+                      lastSeenUtc: "2026-09-26T11:29:58Z"
+                      isActive: true
+                  data:
+                    totalRows: 159306
+                    rowCounts:
+                      VatRate: 4
+                      Department: 12
+                      Category: 58
+                      Product: 3120
+                      ProductBarcode: 3388
+                      Customer: 41
+                      User: 5
+                      Register: 1
+                      BranchProduct: 3120
+                      Shift: 176
+                      Sale: 15840
+                      SaleLine: 41210
+                      SalePayment: 16102
+                      SaleVat: 22017
+                      StockMovement: 44916
+                      ZReport: 176
+                      AuditLog: 9120
+                    firstSaleAtUtc: "2026-04-01T07:02:11Z"
+                    lastSaleAtUtc: "2026-09-26T11:20:40Z"
+                    snapshotChangeLogSeq: 212806
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-SSPOS-Contract:
+              $ref: "#/components/headers/Contract"
+          content:
+            "application/json":
+              schema:
+                $ref: "./licensing/schemas/migrate-reply.schema.json"
+              examples:
+                adopted:
+                  summary: "New account: portal adopts the till's ids"
+                  value:
+                    companyId: "01K5M1GR8T000000000000C009"
+                    branchId: "01K5M1GR8T000000000000B009"
+                    registers:
+                      - registerId: "01K5M1GR8T000000000000R009"
+                        seat: allowed
+                    hubUrl: "https://portal.example.co.uk"
+                    apiKey: sspos_br_SAMPLE_c4d2a9e0f7b3418e95aa
+                    licenceToken: SSPOS1.eyJ2IjoxLCJraWQiOiJrMTM3OTlmYTQiLCJsaWNlbmNlSWQiOiIwMUs1VDBROEM0MDAwMDAwMDAwMDAwWTAwMyIsImtpbmQiOiJmdWxsIiwic291cmNlIjoicG9ydGFsIiwiaXNzdWVyIjoiU1NQT1MgUG9ydGFsIiwiY29tcGFueUlkIjoiMDFLNU0xR1I4VDAwMDAwMDAwMDAwMEMwMDkiLCJicmFuY2hJZCI6IjAxSzVNMUdSOFQwMDAwMDAwMDAwMDBCMDA5IiwiYnVzaW5lc3NOYW1lIjoiSHlkZSBQYXJrIE5ld3MgTHRkIiwiYnJhbmNoTmFtZSI6Ikh5ZGUgUGFyayIsIm1heFJlZ2lzdGVycyI6MiwiZmVhdHVyZXMiOlsid2hhdHNhcHAiXSwiaXNzdWVkQXQiOiIyMDI2LTA5LTI2VDExOjMwOjAwWiIsInZhbGlkRnJvbSI6IjIwMjYtMDktMjZUMTE6MzA6MDBaIiwiZXhwaXJlc0F0IjoiMjAyNy0wMy0zMVQyMzo1OTo1OVoiLCJvbmxpbmVDaGVjayI6eyJyZXF1aXJlZCI6dHJ1ZSwiaW50ZXJ2YWxIb3VycyI6MjQsImdyYWNlRGF5cyI6MTR9LCJub3RlcyI6Ik1vdmVkIGZyb20gbG9jYWwgbGljZW5jZSAwMUs1TTFHUjhUMDAwMDAwMDAwMDAwWTAwMiAoMTg2IGRheXMgY2FycmllZCBvdmVyKSJ9.VIVGeb_kRwrle0a1DPgXGplq4Snr61SOB4qewKN_lJ9Z3Bs88nTudB1K1CHQCkOybamSeW0l1oBjshiLNNq3DQ
+                    licence:
+                      licenceId: "01K5T0Q8C4000000000000Y003"
+                      kind: full
+                      source: portal
+                      expiresAt: "2027-03-31T23:59:59Z"
+                      maxRegisters: 2
+                      features:
+                        - whatsapp
+                      limits: null
+                    carriedOverDays: 186
+                    upload:
+                      uploadId: "01K5TA00000000000000000G01"
+                      mode: initial
+                      maxRowsPerBatch: 5000
+                      resumeFromSeq: 0
+                    settingsBootstrap: null
+                    portalTimeUtc: "2026-09-26T11:30:00Z"
+                    nextCheckAfterSeconds: 86400
+                    messages:
+                      - id: "01K5T0Q8C4000000000000M007"
+                        level: info
+                        title: Uploading your history
+                        text: Your sales history is being copied to the portal in the background. Keep trading as normal.
+                        showFromUtc: null
+                        showUntilUtc: null
+                        dismissible: true
+                        link: null
+                    idMapping:
+                      company:
+                        localId: "01K5M1GR8T000000000000C009"
+                        portalId: "01K5M1GR8T000000000000C009"
+                        action: adopted
+                      branch:
+                        localId: "01K5M1GR8T000000000000B009"
+                        portalId: "01K5M1GR8T000000000000B009"
+                        action: adopted
+                aliased:
+                  summary: "Existing account: portal keeps its company id"
+                  value:
+                    companyId: "01K5M1GR8T000000000000C009"
+                    branchId: "01K5M1GR8T000000000000B009"
+                    registers:
+                      - registerId: "01K5M1GR8T000000000000R009"
+                        seat: allowed
+                    hubUrl: "https://portal.example.co.uk"
+                    apiKey: sspos_br_SAMPLE_c4d2a9e0f7b3418e95aa
+                    licenceToken: SSPOS1.eyJ2IjoxLCJraWQiOiJrMTM3OTlmYTQiLCJsaWNlbmNlSWQiOiIwMUs1VDBROEM0MDAwMDAwMDAwMDAwWTAwMyIsImtpbmQiOiJmdWxsIiwic291cmNlIjoicG9ydGFsIiwiaXNzdWVyIjoiU1NQT1MgUG9ydGFsIiwiY29tcGFueUlkIjoiMDFLNU0xR1I4VDAwMDAwMDAwMDAwMEMwMDkiLCJicmFuY2hJZCI6IjAxSzVNMUdSOFQwMDAwMDAwMDAwMDBCMDA5IiwiYnVzaW5lc3NOYW1lIjoiSHlkZSBQYXJrIE5ld3MgTHRkIiwiYnJhbmNoTmFtZSI6Ikh5ZGUgUGFyayIsIm1heFJlZ2lzdGVycyI6MiwiZmVhdHVyZXMiOlsid2hhdHNhcHAiXSwiaXNzdWVkQXQiOiIyMDI2LTA5LTI2VDExOjMwOjAwWiIsInZhbGlkRnJvbSI6IjIwMjYtMDktMjZUMTE6MzA6MDBaIiwiZXhwaXJlc0F0IjoiMjAyNy0wMy0zMVQyMzo1OTo1OVoiLCJvbmxpbmVDaGVjayI6eyJyZXF1aXJlZCI6dHJ1ZSwiaW50ZXJ2YWxIb3VycyI6MjQsImdyYWNlRGF5cyI6MTR9LCJub3RlcyI6Ik1vdmVkIGZyb20gbG9jYWwgbGljZW5jZSAwMUs1TTFHUjhUMDAwMDAwMDAwMDAwWTAwMiAoMTg2IGRheXMgY2FycmllZCBvdmVyKSJ9.VIVGeb_kRwrle0a1DPgXGplq4Snr61SOB4qewKN_lJ9Z3Bs88nTudB1K1CHQCkOybamSeW0l1oBjshiLNNq3DQ
+                    licence:
+                      licenceId: "01K5T0Q8C4000000000000Y003"
+                      kind: full
+                      source: portal
+                      expiresAt: "2027-03-31T23:59:59Z"
+                      maxRegisters: 2
+                      features:
+                        - whatsapp
+                      limits: null
+                    carriedOverDays: 186
+                    upload:
+                      uploadId: "01K5TA00000000000000000G01"
+                      mode: initial
+                      maxRowsPerBatch: 5000
+                      resumeFromSeq: 0
+                    settingsBootstrap: null
+                    portalTimeUtc: "2026-09-26T11:30:00Z"
+                    nextCheckAfterSeconds: 86400
+                    messages:
+                      - id: "01K5T0Q8C4000000000000M007"
+                        level: info
+                        title: Uploading your history
+                        text: Your sales history is being copied to the portal in the background. Keep trading as normal.
+                        showFromUtc: null
+                        showUntilUtc: null
+                        dismissible: true
+                        link: null
+                    idMapping:
+                      company:
+                        localId: "01K5M1GR8T000000000000C009"
+                        portalId: "01K5T0Q8C4000000000000C001"
+                        action: aliased
+                      branch:
+                        localId: "01K5M1GR8T000000000000B009"
+                        portalId: "01K5M1GR8T000000000000B009"
+                        action: adopted
+        "400":
+          $ref: "#/components/responses/E400"
+        "403":
+          $ref: "#/components/responses/E403"
+        "404":
+          $ref: "#/components/responses/E404"
+        "409":
+          $ref: "#/components/responses/E409"
+        "410":
+          $ref: "#/components/responses/E410"
+        "422":
+          $ref: "#/components/responses/E422"
+        "426":
+          $ref: "#/components/responses/E426"
+        "429":
+          $ref: "#/components/responses/E429"
+        "500":
+          $ref: "#/components/responses/E500"
+        "503":
+          $ref: "#/components/responses/E503"
+  /api/v1/cloud/migrate/complete:
+    post:
+      tags:
+        - Migration
+      operationId: completeMigration
+      summary: Close the initial upload (section 17.8)
+      parameters:
+        - $ref: "#/components/parameters/Contract"
+        - $ref: "#/components/parameters/AppVersion"
+        - $ref: "#/components/parameters/StoreProtocol"
+        - $ref: "#/components/parameters/CompanyId"
+        - $ref: "#/components/parameters/BranchId"
+        - $ref: "#/components/parameters/RegisterId"
+        - $ref: "#/components/parameters/InstallIdOptional"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          "application/json":
+            schema:
+              $ref: "./licensing/schemas/migrate-complete-request.schema.json"
+            examples:
+              done:
+                summary: All rows sent
+                value:
+                  uploadId: "01K5TA00000000000000000G01"
+                  totalRows: 159306
+                  highestSeq: 159306
+                  rowCounts:
+                    VatRate: 4
+                    Department: 12
+                    Category: 58
+                    Product: 3120
+                    ProductBarcode: 3388
+                    Customer: 41
+                    User: 5
+                    Register: 1
+                    BranchProduct: 3120
+                    Shift: 176
+                    Sale: 15840
+                    SaleLine: 41210
+                    SalePayment: 16102
+                    SaleVat: 22017
+                    StockMovement: 44916
+                    ZReport: 176
+                    AuditLog: 9120
+                  snapshotChangeLogSeq: 212806
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-SSPOS-Contract:
+              $ref: "#/components/headers/Contract"
+          content:
+            "application/json":
+              schema:
+                $ref: "./licensing/schemas/migrate-complete-reply.schema.json"
+              examples:
+                complete:
+                  summary: Counts match
+                  value:
+                    uploadId: "01K5TA00000000000000000G01"
+                    status: complete
+                    received: 159306
+                    resumeFromSeq: 159306
+                    missing: []
+                    pushResumesAfterSeq: 212806
+                    portalTimeUtc: "2026-09-26T14:02:10Z"
+                    messages: []
+                incomplete:
+                  summary: "Some rows missing: resend"
+                  value:
+                    uploadId: "01K5TA00000000000000000G01"
+                    status: incomplete
+                    received: 154306
+                    resumeFromSeq: 140000
+                    missing:
+                      - entity: StockMovement
+                        expected: 44916
+                        received: 39916
+                    pushResumesAfterSeq: 212806
+                    portalTimeUtc: "2026-09-26T14:02:10Z"
+                    messages: []
+        "400":
+          $ref: "#/components/responses/E400"
+        "401":
+          $ref: "#/components/responses/E401"
+        "403":
+          $ref: "#/components/responses/E403"
+        "404":
+          $ref: "#/components/responses/E404"
+        "409":
+          $ref: "#/components/responses/E409"
+        "422":
+          $ref: "#/components/responses/E422"
+        "426":
+          $ref: "#/components/responses/E426"
+        "429":
+          $ref: "#/components/responses/E429"
+        "500":
+          $ref: "#/components/responses/E500"
+        "503":
+          $ref: "#/components/responses/E503"
+components:
+  securitySchemes:
+    branchKey:
+      type: http
+      scheme: bearer
+      bearerFormat: opaque
+      description: The branch sync API key (sync.hub_api_key) the portal issued at activation or migration. One key per branch.
+  parameters:
+    Contract:
+      name: X-SSPOS-Contract
+      in: header
+      required: true
+      description: Contract major version the till speaks. 1 today. See section 17.11.
+      schema:
+        type: string
+        pattern: "^[0-9]+$"
+      example: "1"
+    AppVersion:
+      name: X-SSPOS-App-Version
+      in: header
+      required: true
+      description: Till version.
+      schema:
+        $ref: "./licensing/schemas/common.schema.json#/$defs/appVersion"
+      example: "3.0.412"
+    StoreProtocol:
+      name: X-SSPOS-Store-Protocol
+      in: header
+      required: true
+      description: "The till's LAN store protocol version (src/SSPOS.Server/Contracts/StoreProtocol.cs)."
+      schema:
+        type: string
+        pattern: "^[0-9]+$"
+      example: "1"
+    CompanyId:
+      name: X-SSPOS-Company-Id
+      in: header
+      required: true
+      description: Company of the calling till.
+      schema:
+        $ref: "./licensing/schemas/common.schema.json#/$defs/ulid"
+      example: "01K5T0Q8C4000000000000C001"
+    BranchId:
+      name: X-SSPOS-Branch-Id
+      in: header
+      required: true
+      description: "Branch of the calling till; must be the API key's branch."
+      schema:
+        $ref: "./licensing/schemas/common.schema.json#/$defs/ulid"
+      example: "01K5T0Q8C4000000000000B001"
+    RegisterId:
+      name: X-SSPOS-Register-Id
+      in: header
+      required: true
+      description: "The sending till (the branch's main till)."
+      schema:
+        $ref: "./licensing/schemas/common.schema.json#/$defs/ulid"
+      example: "01K5T0Q8C4000000000000R001"
+    InstallId:
+      name: X-SSPOS-Install-Id
+      in: header
+      required: true
+      description: "The PC's install id (same as installId in the body)."
+      schema:
+        $ref: "./licensing/schemas/common.schema.json#/$defs/ulid"
+      example: "01K5T0Q8C4000000000000H001"
+    InstallIdOptional:
+      name: X-SSPOS-Install-Id
+      in: header
+      required: false
+      description: "The PC's install id, when the till has one."
+      schema:
+        $ref: "./licensing/schemas/common.schema.json#/$defs/ulid"
+      example: "01K5T0Q8C4000000000000H001"
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      description: "Unique per logical request (a ULID or UUID); a retry reuses it. The portal stores key + reply for at least 24 h and replays the reply."
+      schema:
+        type: string
+        minLength: 8
+        maxLength: 64
+      example: "01K5T0Q8C4000000000000Z001"
+    IdempotencyKeyOptional:
+      name: Idempotency-Key
+      in: header
+      required: false
+      description: "Optional on push: push is already idempotent by row."
+      schema:
+        type: string
+        minLength: 8
+        maxLength: 64
+    ContentEncoding:
+      name: Content-Encoding
+      in: header
+      required: false
+      description: The till always sends gzip.
+      schema:
+        type: string
+        enum:
+          - gzip
+      example: gzip
+    SyncMode:
+      name: X-SSPOS-Sync-Mode
+      in: header
+      required: false
+      description: "delta (default) or initial (a migration upload). Unknown = 400."
+      schema:
+        type: string
+        enum:
+          - delta
+          - initial
+        default: delta
+      example: delta
+    UploadId:
+      name: X-SSPOS-Upload-Id
+      in: header
+      required: false
+      description: "Required when X-SSPOS-Sync-Mode is initial: upload.uploadId from the migrate reply."
+      schema:
+        $ref: "./licensing/schemas/common.schema.json#/$defs/ulid"
+    Since:
+      name: since
+      in: query
+      required: true
+      description: Highest pull version this branch has applied (0 the first time).
+      schema:
+        type: integer
+        minimum: 0
+      example: 90400
+    Max:
+      name: max
+      in: query
+      required: false
+      description: "Most rows to return (<= 5000; the branch's sync.batch_size)."
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 5000
+        default: 5000
+      example: 5000
+  headers:
+    RetryAfter:
+      description: "Seconds to wait (also in the body's retryAfterSeconds)."
+      schema:
+        type: integer
+        minimum: 1
+    Contract:
+      description: Contract major version of this reply.
+      schema:
+        type: string
+        pattern: "^[0-9]+$"
+      example: "1"
+  schemas:
+    ErrorReply:
+      $ref: "./licensing/schemas/error-reply.schema.json"
+    LicenceTokenPayload:
+      $ref: "./licensing/schemas/licence-token-payload.schema.json"
+  responses:
+    E400:
+      description: "Bad request. Codes: `request.invalid` (*). Full list: licensing/samples/error-codes.json."
+      headers:
+        X-SSPOS-Contract:
+          $ref: "#/components/headers/Contract"
+      content:
+        "application/json":
+          schema:
+            $ref: "#/components/schemas/ErrorReply"
+          examples:
+            request-invalid:
+              summary: request.invalid
+              value:
+                code: request.invalid
+                message: Body or query does not match the schema (missing field, bad ULID, bad date).
+                traceId: req-8a21f0
+                retryAfterSeconds: null
+                rejectedKey: null
+                details:
+                  field: name of the first bad field
+    E401:
+      description: "Unauthorised. Codes: `auth.invalid_key` (sync/*, licence/validate, licence/redeem, devices/deactivate, cloud/migrate/complete); `auth.key_revoked` (sync/*, licence/validate, licence/redeem, devices/deactivate, cloud/migrate/complete). Full list: licensing/samples/error-codes.json."
+      headers:
+        X-SSPOS-Contract:
+          $ref: "#/components/headers/Contract"
+      content:
+        "application/json":
+          schema:
+            $ref: "#/components/schemas/ErrorReply"
+          examples:
+            sync-401:
+              summary: samples/error-reply.401.json
+              value:
+                code: auth.invalid_key
+                message: "The portal API key is not recognised. Check Settings > Hub sync > Portal API key."
+                traceId: req-7c1f9a
+                retryAfterSeconds: null
+                rejectedKey: null
+    E403:
+      description: "Forbidden. Codes: `auth.wrong_branch` (sync/*, licence/validate, licence/redeem, devices/deactivate); `device.not_main_till` (licence/validate, licence/redeem, devices/deactivate, cloud/migrate/complete); `licence.seat_limit` (devices/activate, cloud/migrate, licence/activate); `licence.not_active` (devices/activate, cloud/migrate); `key.not_for_this_branch` (licence/redeem); `key.not_allowed` (licence/redeem). Full list: licensing/samples/error-codes.json."
+      headers:
+        X-SSPOS-Contract:
+          $ref: "#/components/headers/Contract"
+      content:
+        "application/json":
+          schema:
+            $ref: "#/components/schemas/ErrorReply"
+          examples:
+            seat-limit:
+              summary: error.seat-limit.403
+              value:
+                code: licence.seat_limit
+                message: Your plan allows 2 tills and 2 are in use. Add a till to your plan on the portal.
+                traceId: req-8a21f0
+                retryAfterSeconds: null
+                rejectedKey: null
+                details:
+                  maxRegisters: 2
+                  registersInUse: 2
+    E404:
+      description: "Not found. Codes: `activation.code_not_found` (devices/activate, cloud/migrate); `device.not_found` (devices/deactivate); `key.not_found` (licence/redeem); `migrate.upload_not_found` (sync/push (initial), cloud/migrate/complete). Full list: licensing/samples/error-codes.json."
+      headers:
+        X-SSPOS-Contract:
+          $ref: "#/components/headers/Contract"
+      content:
+        "application/json":
+          schema:
+            $ref: "#/components/schemas/ErrorReply"
+          examples:
+            activation-code-not-found:
+              summary: error.activation-code-not-found.404
+              value:
+                code: activation.code_not_found
+                message: That activation code is not recognised. Check the code in your welcome email.
+                traceId: req-8a21f0
+                retryAfterSeconds: null
+                rejectedKey: null
+                details: null
+    E409:
+      description: "Conflict. Codes: `request.in_progress` (*); `contract.unsupported` (*); `activation.code_used` (devices/activate, cloud/migrate); `activation.use_migrate` (devices/activate); `device.branch_already_linked` (devices/activate, cloud/migrate); `key.already_redeemed` (licence/redeem); `key.already_used` (licence/activate); `key.used_on_another_install` (licence/redeem, local key report); `migrate.already_migrated` (cloud/migrate); `migrate.upload_closed` (sync/push (initial)). Full list: licensing/samples/error-codes.json."
+      headers:
+        X-SSPOS-Contract:
+          $ref: "#/components/headers/Contract"
+        Retry-After:
+          $ref: "#/components/headers/RetryAfter"
+      content:
+        "application/json":
+          schema:
+            $ref: "#/components/schemas/ErrorReply"
+          examples:
+            branch-already-linked:
+              summary: error.branch-already-linked.409
+              value:
+                code: device.branch_already_linked
+                message: Leeds Kirkgate is already linked to KIRKGATE-TILL1. Release that till first, on the portal or on the old till.
+                traceId: req-8a21f0
+                retryAfterSeconds: null
+                rejectedKey: null
+                details:
+                  registerId: "01K5T0Q8C4000000000000R001"
+                  deviceName: KIRKGATE-TILL1
+                  lastSeenUtc: "2026-10-04T16:58:00Z"
+            key-already-redeemed:
+              summary: error.key-already-redeemed.409
+              value:
+                code: key.already_redeemed
+                message: This licence key has already been used.
+                traceId: req-8a21f0
+                retryAfterSeconds: null
+                rejectedKey: null
+                details:
+                  redeemedAtUtc: "2026-09-20T10:00:00Z"
+            key-used-on-another-install:
+              summary: error.key-used-on-another-install.409
+              value:
+                code: key.used_on_another_install
+                message: This key is already used on another PC - contact your dealer.
+                traceId: req-5d19be
+                retryAfterSeconds: null
+                rejectedKey: null
+                details:
+                  licenceId: "01K5M1GR8T000000000000Y004"
+                  installCode: "Q3EG-1RNC"
+                  firstSeenUtc: "2026-09-28T11:02:14Z"
+            use-migrate:
+              summary: error.use-migrate.409
+              value:
+                code: activation.use_migrate
+                message: "This till already has sales for another install. Use 'Move my shop to the cloud' so your history is kept."
+                traceId: req-8a21f0
+                retryAfterSeconds: null
+                rejectedKey: null
+                details:
+                  branchId: "01K5T0Q8C4000000000000B001"
+    E410:
+      description: "Gone. Codes: `activation.code_expired` (devices/activate, cloud/migrate); `key.expired` (licence/redeem). Full list: licensing/samples/error-codes.json."
+      headers:
+        X-SSPOS-Contract:
+          $ref: "#/components/headers/Contract"
+      content:
+        "application/json":
+          schema:
+            $ref: "#/components/schemas/ErrorReply"
+          examples:
+            activation-code_expired:
+              summary: activation.code_expired
+              value:
+                code: activation.code_expired
+                message: The code is past its expiry.
+                traceId: req-8a21f0
+                retryAfterSeconds: null
+                rejectedKey: null
+                details: null
+    E413:
+      description: "Payload too large. Codes: `batch.too_large` (sync/push). Full list: licensing/samples/error-codes.json."
+      headers:
+        X-SSPOS-Contract:
+          $ref: "#/components/headers/Contract"
+      content:
+        "application/json":
+          schema:
+            $ref: "#/components/schemas/ErrorReply"
+          examples:
+            batch-too_large:
+              summary: batch.too_large
+              value:
+                code: batch.too_large
+                message: More rows or bytes than accepted.
+                traceId: req-8a21f0
+                retryAfterSeconds: null
+                rejectedKey: null
+                details:
+                  maxRows: 5000
+    E422:
+      description: "Unprocessable. Codes: `request.idempotency_mismatch` (*); `row.invalid` (sync/push); `licence.format` (licence/redeem, devices/activate, cloud/migrate); `licence.bad_signature` (licence/redeem, devices/activate, cloud/migrate); `licence.unknown_key` (licence/redeem, devices/activate, cloud/migrate); `licence.expired` (licence/redeem, cloud/migrate); `licence.wrong_shop` (licence/redeem, cloud/migrate); `licence.unsupported_version` (licence/redeem, devices/activate, cloud/migrate); `licence.wrong_branch` (licence/redeem). Full list: licensing/samples/error-codes.json."
+      headers:
+        X-SSPOS-Contract:
+          $ref: "#/components/headers/Contract"
+      content:
+        "application/json":
+          schema:
+            $ref: "#/components/schemas/ErrorReply"
+          examples:
+            licence-bad-signature:
+              summary: error.licence-bad-signature.422
+              value:
+                code: licence.bad_signature
+                message: This licence key is not genuine or has been changed. Paste it again or ask your dealer.
+                traceId: req-8a21f0
+                retryAfterSeconds: null
+                rejectedKey: null
+                details: null
+            sync-422:
+              summary: samples/error-reply.422.json
+              value:
+                code: row.invalid
+                message: Sale 01K5VB000000000SR001000482 has a total with more than 2 decimal places.
+                traceId: req-7c1fa0
+                retryAfterSeconds: null
+                rejectedKey: "Sale:01K5VB000000000SR001000482:1"
+    E426:
+      description: "Upgrade required. Codes: `app.update_required` (*). Full list: licensing/samples/error-codes.json."
+      headers:
+        X-SSPOS-Contract:
+          $ref: "#/components/headers/Contract"
+      content:
+        "application/json":
+          schema:
+            $ref: "#/components/schemas/ErrorReply"
+          examples:
+            update-required:
+              summary: error.update-required.426
+              value:
+                code: app.update_required
+                message: "This till needs updating before it can link. Settings > Updates > Check now."
+                traceId: req-8a21f0
+                retryAfterSeconds: null
+                rejectedKey: null
+                details:
+                  minimumAppVersion: "3.0.400"
+    E429:
+      description: "Too many requests. Codes: `rate.limited` (*); `activation.too_many_attempts` (devices/activate, cloud/migrate). Full list: licensing/samples/error-codes.json."
+      headers:
+        X-SSPOS-Contract:
+          $ref: "#/components/headers/Contract"
+        Retry-After:
+          $ref: "#/components/headers/RetryAfter"
+      content:
+        "application/json":
+          schema:
+            $ref: "#/components/schemas/ErrorReply"
+          examples:
+            activation-too-many-attempts:
+              summary: error.activation-too-many-attempts.429
+              value:
+                code: activation.too_many_attempts
+                message: Too many wrong codes. Try again in 15 minutes.
+                traceId: req-8a21f0
+                retryAfterSeconds: 900
+                rejectedKey: null
+                details: null
+    E500:
+      description: "Server error. Codes: `server.error` (*). Full list: licensing/samples/error-codes.json."
+      headers:
+        X-SSPOS-Contract:
+          $ref: "#/components/headers/Contract"
+      content:
+        "application/json":
+          schema:
+            $ref: "#/components/schemas/ErrorReply"
+          examples:
+            server-error:
+              summary: server.error
+              value:
+                code: server.error
+                message: Unexpected portal fault.
+                traceId: req-8a21f0
+                retryAfterSeconds: 30
+                rejectedKey: null
+                details: null
+    E503:
+      description: "Service unavailable. Codes: `server.busy` (*). Full list: licensing/samples/error-codes.json."
+      headers:
+        X-SSPOS-Contract:
+          $ref: "#/components/headers/Contract"
+        Retry-After:
+          $ref: "#/components/headers/RetryAfter"
+      content:
+        "application/json":
+          schema:
+            $ref: "#/components/schemas/ErrorReply"
+          examples:
+            server-busy:
+              summary: server.busy
+              value:
+                code: server.busy
+                message: Portal overloaded or in maintenance.
+                traceId: req-8a21f0
+                retryAfterSeconds: 30
+                rejectedKey: null
+                details: null

@@ -1,0 +1,8 @@
+{
+  "code": "activation.code_not_found",
+  "message": "That activation code is not recognised. Check the code in your welcome email.",
+  "traceId": "req-8a21f0",
+  "retryAfterSeconds": null,
+  "rejectedKey": null,
+  "details": null
+}

@@ -1,123 +1,146 @@
 # Phases
 
-Each module is one agent task. Modules in the same "wave" can run in parallel; a wave starts when the waves it
-depends on are done. Status: `todo` · `doing` · `done` · `blocked (reason)`.
+Plan v2 (2026-09-28), rewritten after the EPOS team's contract **v1.3.1** (`docs/contracts/portal-api-v1.3.1/`,
+start at `START-HERE.md`). The till is already built against that contract, so **the portal implements it exactly**;
+where our earlier modules differ, they are reworked (marked 🔄). The v1.1 folder stays only until module 2.3 moves
+the generator to v1.3.1.
 
-Every module is done only when: Actions + Pest tests (incl. tenant isolation and authorisation tests) pass, the
-UI matches the layouts and design rules in `CLAUDE.md`, and pint, `php artisan test`, `npm run lint` and
+Each module is one agent task. Modules in the same wave can run in parallel. Status: `done` · `rework` · `todo` ·
+`blocked (reason)`. A module is done only when its Actions + Pest tests (tenant isolation and authorisation
+included) pass, the UI follows `docs/BRAND.md`, and `composer check`, `npm run lint`, `npx tsc --noEmit` and
 `npm run build` are green.
 
+Totals: **65 modules · 14 done · 4 rework · 47 todo.**
+
 ---
 
-## Phase 0: Foundation
+## Phase 0: Foundation — 5/5
 
-Goal: an empty but solid shell every module builds on.
+| # | Module | Status |
+|---|---|---|
+| 0.1 | Project setup, contract fixtures, docs | done |
+| 0.2 | Quality tooling (Pint, Larastan 6, Pest, `composer check`, CI) | done |
+| 0.3 | Admin area (guard, roles, admin users) | done |
+| 0.4 | Tenant area (companies, memberships, fail-closed company scope) | done |
+| 0.5 | Shared building blocks (audit log, money, API errors, data table, toaster) | done |
+
+## Phase 1: Onboarding and licensing — 6/11
+
+Contract: v1.3.1 `docs/web-portal-api.md` §17 (read 17.15–17.17 first), `specs/licensing.md`, `licensing/schemas`,
+`licensing/samples`.
 
 | # | Module | What | Status |
 |---|---|---|---|
-| 0.1 | Project setup | Laravel 12 React starter kit, contract fixtures in `docs/contracts`, `CLAUDE.md`, docs | done |
-| 0.2 | Quality tooling | Larastan (level 6), Pint, `composer check` (pint + larastan + tests), route files for admin/app/api | done |
-| 0.3 | Admin area shell | `admins` table + `admin` guard, admin login, `admin-layout.tsx` (sidebar from the admin mockup), admin roles (owner, sales, support, accounts) | done |
-| 0.4 | Tenant area shell | Companies table stub, `company_user` membership, `BelongsToCompany` trait + global scope, `/app` routes, `app-layout.tsx` (sidebar + branch switcher + AI search bar placeholder), tenant roles | done |
-| 0.5 | Shared building blocks | Audit log (who, what, before/after), ULID helpers, money cast, API error responder, data-table + filters component, stat card component | done |
+| 1.1 | Plans | Price per till, trial days, features | done |
+| 1.2 | Tenants | Company → branches → registers, suspend, login as customer | done |
+| 1.3 | Licences (admin) | One key per till, renew/reset/reissue/suspend/revoke, alerts, search | done |
+| 1.6 | Leads and trial approval | Leads, board, one-click 7-day trial | done |
+| 1.7 | Emails | Branded templates, email log, previews | done |
+| 1.8 | Cash billing | Invoices + PDF, payments, auto-renew, overdue suspension | done |
+| 1.4 | Token signer | 🔄 Token format `SSPOS1.<payload>.<sig>` (§17.2), kid = `k` + 8 hex of SHA-256(public key), `signerCert` in every token (§17.17), public-key handover file, verify the worked examples byte for byte | rework |
+| 1.5 | Licence API | 🔄 `POST licence/activate` (17.15.1) and `licence/validate` (17.15.2) per till, `devices/deactivate` (17.7); headers `X-SSPOS-Contract`, `X-SSPOS-Install-Id`, `Idempotency-Key`; statuses active/expiring/expired/suspended/revoked/released; error codes from `licensing/samples/error-codes.json`; 426/410; replace our check-in API and simulator | rework |
+| 1.11 | Licence form v1.3 | Customer/licence form with every token field (17.16): kind trial/full, validFrom/expiresAt length, `maxRegisters` per branch, `limits.branches`, `multi_branch`, features (till's snake_case names), `company` block; "Till 1 of 3" issuing with limits; installId/installCode, clock skew, lock state; **Release** key; activate-by date; re-sign branch keys on change | todo |
+| 1.9 | Admin dashboard | Customers, trials, licences, leads, cash due (sales tiles come in 3.2) | todo |
+| 1.10 | Public trial form | Sign-up page → lead | todo |
 
-Waves: 0.2 · then 0.3, 0.4, 0.5 in parallel.
+Waves: **1.4 → 1.5 + 1.11** · then 1.9, 1.10.
 
----
+## Phase 2: Sync and cloud link — 0/9 (2 rework)
 
-## Phase 1: Onboarding and licensing
-
-Goal: we can create a customer and give each till a working licence key.
-
-| # | Module | What | Depends on | Status |
-|---|---|---|---|---|
-| 1.1 | Plans | Plan name, price per till per month/year, trial days, grace days, feature flags | 0.3 | done |
-| 1.2 | Tenants | Company, branches, registers (ULIDs, same fields as till's Company/Branch/Register), status (trial, active, overdue, suspended, cancelled), admin screens, login-as-customer | 0.3, 0.4 | done |
-| 1.3 | Licences | Key generation (format + check char, hash + last4), one per register, statuses, device binding, reset device, suspend/revoke/renew, audit log, admin screens | 1.1, 1.2 | done |
-| 1.4 | Token signing | Ed25519 key pair management (`kid`), JWS issue + verify helper, key rotation command | 0.5 | done |
-| 1.5 | Licence API | `activate`, `check-in`, `deactivate`, `keys` per `docs/specs/licence-api-v1.md`, rate limits, error body, clone alert | 1.3, 1.4 | done |
-| 1.6 | Leads and trial approval | Lead list (new, contacted, approved, rejected), notes, follow-up date, one-click "approve 7-day trial" → tenant + keys + portal owner login + email | 1.2, 1.3, 1.7 | done |
-| 1.7 | Emails | Mail templates: welcome + keys, trial reminder (day 5), trial ended, renewal, suspended; email log | 0.5 | done |
-| 1.8 | Cash billing | Invoices per tenant, record cash payment → renew licences, overdue list, auto-suspend job after grace | 1.3 | done |
-| 1.9 | Admin dashboard | Numbers (tenants, trials, licences, cash due), new leads, trials ending, till health placeholder | 1.2, 1.3, 1.6, 1.8 | todo |
-| 1.10 | Public trial form | Simple page: name, business, email, phone, shops, tills, captcha → creates a lead | 1.6 | todo |
-
-Waves: 1.1, 1.2, 1.4, 1.7 · then 1.3 · then 1.5, 1.6, 1.8 · then 1.9, 1.10.
-
-Needs from EPOS team to go live (not to build): agreement on the licence spec, till-side implementation.
-
----
-
-## Phase 2: Sync API and data store
-
-Goal: tills push their data to us and pull our master data.
-
-| # | Module | What | Depends on | Status |
-|---|---|---|---|---|
-| 2.1 | Sync keys | Per-branch sync API key (hash + last4), issue/revoke, returned on main-till activation | 1.5 | todo |
-| 2.2 | Push endpoint | `POST /api/v1/sync/push`: gzip, ≤5,000 rows, store raw change log, idempotent on `(entity, entityId, version)` and `(branchId, seq)`, `acknowledgedSeq`, error codes | 2.1 | todo |
-| 2.3 | Entity store: master data | Tables + upsert mappers for the 28 hub-owned entities (products, barcodes, categories, customers, users, promotions…) | 2.2 | done |
-| 2.4 | Entity store: transactions | Tables + mappers for sales, payments, VAT, stock, shifts, Z reports, cash, purchasing, accounts, HR (till-owned, read-only) | 2.2 | done |
-| 2.5 | Pull endpoint | Change feed with our own version counter per company, company-wide + branch rows, paging, `hello` | 2.3 | todo |
-| 2.6 | Contract tests | Replay every sample, validate every reply against the JSON schemas | 2.2, 2.5 | todo |
-| 2.7 | Sync monitoring | Per branch: last push/pull, errors, pending, conflicts; till online/version; admin "till health" page | 2.2, 1.5 | todo |
-
-Waves: 2.1 · 2.2 · 2.3, 2.4 in parallel · 2.5 · 2.6, 2.7.
-
----
-
-## Phase 3: Tenant portal core
-
-Goal: the customer logs in and manages their catalogue and sees sales.
-
-| # | Module | What | Depends on | Status |
-|---|---|---|---|---|
-| 3.1 | Portal users | Owner invites managers/accountants, roles + permissions | 0.4, 1.6 | todo |
-| 3.2 | Dashboard | Numbers, hourly chart, alerts, top products, branches (per the mockup) | 2.4 | todo |
-| 3.3 | Products | Products, barcodes, variants, units, departments, categories, suppliers link, CSV import | 2.3, 2.5 | todo |
-| 3.4 | Pricing and promotions | VAT, price changes, promotions, coupons | 2.3, 2.5 | todo |
-| 3.5 | Customers | Loyalty, credit limit, balance, statement, GDPR consent | 2.3, 2.4 | todo |
-| 3.6 | Sales | Receipt list and detail, refunds, voids | 2.4 | todo |
-| 3.7 | Branches and tills | Branch details, tills, licence and sync status | 1.3, 2.7 | todo |
-| 3.8 | My subscription | Plan, invoices, licences | 1.8 | todo |
-| 3.9 | Reports | Sales, profit, tender, hourly, top products, CSV/PDF export | 2.4 | todo |
-
-Waves: 3.1, 3.7, 3.8 · 3.3, 3.4, 3.5, 3.6 in parallel · 3.2, 3.9.
-
----
-
-## Phase 4: Operations
+Contract: v1.3.1 §1–16, §19 (duplicate/echo/conflict rules + test list 19.4), §20, `docs/web-portal-api/openapi.yaml`.
 
 | # | Module | What | Status |
 |---|---|---|---|
-| 4.1 | Stock | Stock on hand per branch, movements, stock takes, FIFO valuation, expiry checks | todo |
-| 4.2 | Purchasing | Suppliers, POs, GRNs, supplier invoices, credit notes, payments, standing orders, rebates | blocked (portal-created PO needs EPOS change) |
-| 4.3 | Stock transfer | Between branches from portal | blocked (needs new till entity) |
-| 4.4 | Branch prices | Per-branch price from portal | blocked (needs new till entity) |
-| 4.5 | Cash and Z | Shifts, Z reports, variance, cash office, card settlement, day lock | todo |
-| 4.6 | Accounts and VAT | Expenses, VAT return, P&L, journals, fixed assets, recurring bills | todo |
-| 4.7 | Staff | Till users and roles, clock events, rota, timesheets | todo |
-| 4.8 | Compliance | Age refusals, compliance licences, exception log, audit, recalls | todo |
-| 4.9 | Newspapers | Titles, deliveries, returns | todo |
-| 4.10 | Seasonal and hours | Seasonal events, opening hours | todo |
-| 4.11 | Till settings | Settings and role permissions from portal | blocked (not synced yet) |
+| 2.1 | Activation codes and devices | Per-branch activation code (single use, hashed, expiring) and setup e-mail; `devices/activate` (17.4: ids, hubUrl, branch API key shown once, token, `settingsBootstrap`); `devices/deactivate` / transfer codes | blocked (EPOS answer on ids and one-code onboarding) |
+| 2.2 | Hello and push | `sync/hello`, `sync/push` (gzip, 5,000 rows, idempotent, ordered, acknowledged, initial mode), branch key auth | todo |
+| 2.3 | Entity store: master data | 🔄 Regenerate for 140 entities (17 new, 11 changed), generator reads v1.3.1, drop v1.1 folder | rework |
+| 2.4 | Entity store: transactions | 🔄 Same regeneration + §19 never-twice/never-backwards rules in the applier | rework |
+| 2.5 | Pull | Hub version counter, company + branch rows, paging, echo prevention (19.2), conflicts | todo |
+| 2.6 | Contract tests | Replay every sample, validate against schemas, pass the §19.4 test list | todo |
+| 2.7 | Till health | Online/offline, versions, last push/validate per branch and till, alerts | todo |
+| 2.8 | Local keys and migration | `licence/redeem` (local key reports, 17.6/17.16), `cloud/migrate` + `migrate/complete` + initial push (17.8) | todo |
+| 2.9 | v1.4 readiness | `receivedAt`, several tills per shop, ledger-derived customer balance, transfer relay, settings/permissions sync | blocked (v1.4 spec) |
 
----
+Waves: 2.3 + 2.4 → 2.2 → 2.5 → 2.6 + 2.7 · 2.1 and 2.8 when unblocked.
 
-## Phase 5: AI
+## Phase 3: Reporting and dashboards — 0/3
+
+Contract: v1.3.1 `docs/web-portal-api/DASHBOARD.md` (formulas; we build them on **MySQL 8**, not PostgreSQL).
 
 | # | Module | What | Status |
 |---|---|---|---|
-| 5.1 | AI foundation | Claude API client, tool registry over Actions (tenant-scoped), usage metering, preview-then-confirm for writes | done |
-| 5.2 | Portal assistant | Ask questions about sales/stock; do changes with confirmation | todo |
-| 5.3 | Morning summary | Daily email/WhatsApp digest per company | todo |
-| 5.4 | Reorder suggestions | PO drafts from sales and stock | todo |
-| 5.5 | Invoice import | Supplier invoice PDF/photo → products, GRN | todo |
-| 5.6 | Anomaly alerts | Voids, refunds, cash variance | todo |
-| 5.7 | Admin AI | Lead summaries, trial conversion hints, sync error triage | todo |
+| 3.1 | Reporting tables | `rpt_*` tables updated idempotently as rows arrive; trading day in Europe/London; refunds subtracted | todo |
+| 3.2 | Admin dashboard: trading | Every Admin-panel tile and chart across all businesses, per business and shop | todo |
+| 3.3 | Business dashboard | Today / week / month, per shop and total, "last updated N minutes ago" | todo |
+
+## Phase 4: Business panel (customer portal) — 0/10
+
+Contract: v1.3.1 §18.4. Roles: business owner, **shop manager** (one branch only).
+
+| # | Module | Status |
+|---|---|---|
+| 4.1 | Portal users and roles (incl. branch-scoped shop manager) | todo |
+| 4.2 | Products, barcodes, units, departments, categories, CSV import | todo |
+| 4.3 | Prices and promotions (incl. per-shop price screen; till row pending on EPOS) | todo |
+| 4.4 | Customers (ledger-based balance and points, statements, consent) | todo |
+| 4.5 | Suppliers, payment types, reasons, staff users/PINs | todo |
+| 4.6 | Sales and receipts (refunds, voids) | todo |
+| 4.7 | Shops and tills (licence read-only, till status, "Ask for more tills") | todo |
+| 4.8 | Reports (sales, refunds, VAT, stock, Z) | todo |
+| 4.9 | Shop settings (receipt text, opening hours; per §18.6) | todo |
+| 4.10 | My subscription and invoices | todo |
+
+## Phase 5: Operations — 0/10
+
+| # | Module | Status |
+|---|---|---|
+| 5.1 | Stock (on hand, movements, stock takes, FIFO valuation, expiry) | todo |
+| 5.2 | Purchasing (POs, GRNs, supplier invoices, credit notes, payments, rebates) | blocked (portal-created PO) |
+| 5.3 | Branch stock transfers (entities now in contract; relay in v1.4) | todo |
+| 5.4 | Cash and Z (shifts, Z reports, cash office, card settlement, day lock) | todo |
+| 5.5 | Accounts and VAT (expenses, VAT return, journals, fixed assets) | todo |
+| 5.6 | Staff (clock events, rota, timesheets, wages) | todo |
+| 5.7 | Compliance (age refusals, incidents, training, diary checks, licences, recalls) | todo |
+| 5.8 | Newspapers (titles, deliveries, returns, vouchers) | todo |
+| 5.9 | Seasonal events and opening hours | todo |
+| 5.10 | Pharmacy and parcels (dispensing, medicine classes, parcel carriers) | todo |
+
+## Phase 6: AI — 1/7
+
+| # | Module | Status |
+|---|---|---|
+| 6.1 | AI foundation (client, tools, preview-then-confirm, metering) | done |
+| 6.2 | Portal assistant | todo |
+| 6.3 | Morning summary | todo |
+| 6.4 | Reorder suggestions | todo |
+| 6.5 | Invoice import | todo |
+| 6.6 | Anomaly alerts | todo |
+| 6.7 | Admin AI | todo |
+
+## Phase 7: Finish and go-live — 0/5
+
+| # | Module | Status |
+|---|---|---|
+| 7.1 | Apply design system v2 to the business panel and remaining screens | todo |
+| 7.2 | Gap analysis (competitors, UK compliance, legacy parity; `docs/research/`) | todo |
+| 7.3 | Security review | todo |
+| 7.4 | Deploy (MySQL server, HTTPS, queues, scheduler, backups, signing key generated on the server) | todo |
+| 7.5 | End-to-end testing with the EPOS team, go-live checklist | todo |
+
+## Phase 8: Later — 0/5
+
+Web orders / click and collect · Online payments · Dealers and resellers · Public marketing site · EPOS update
+channel.
 
 ---
 
-## Phase 6: Later
+## Order
 
-Web orders (click and collect), EPOS versions + update API, online payments, public marketing site, resellers.
+1. Now: EPOS message and questions (sent by the owner).
+1b. **UI v2 (owner priority):** design system v2 (`docs/design/DESIGN-SYSTEM-v2.md`) on the admin shell and every existing admin screen — can run in parallel with 1.4.
+2. **1.4 → 1.5 + 1.11**: licensing to the v1.3.1 contract → first real test with the EPOS team.
+3. 1.9, 1.10, then **Phase 2** (2.3/2.4 rework first).
+4. Phase 3 → Phase 4 → Phase 5 → Phase 6.
+5. Phase 7, then Phase 8.
+
+Module numbers changed in plan v2: old 3.x (tenant portal) → 4.x, old 4.x (operations) → 5.x, old 5.x (AI) → 6.x.

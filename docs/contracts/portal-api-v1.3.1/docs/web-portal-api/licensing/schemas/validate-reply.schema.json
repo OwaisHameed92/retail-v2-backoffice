@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "validate-reply",
+  "description": "POST /api/v1/licence/validate 200 reply. A licence problem is a 200 with a status, never an error code, so the till always gets the messages.",
+  "type": "object",
+  "properties": {
+    "status": {
+      "$ref": "common.schema.json#/$defs/licenceStatus"
+    },
+    "licenceToken": {
+      "allOf": [
+        {
+          "$ref": "common.schema.json#/$defs/licenceTokenOrNull"
+        }
+      ],
+      "description": "A new token to store (renewal, extension, features or seats changed, re-signed with another kid). null = keep the current one."
+    },
+    "licence": {
+      "$ref": "common.schema.json#/$defs/licenceSummary"
+    },
+    "registers": {
+      "type": "array",
+      "items": {
+        "$ref": "common.schema.json#/$defs/registerSeat"
+      },
+      "description": "One entry per register in the request. A register missing here = allowed."
+    },
+    "apiKey": {
+      "anyOf": [
+        {
+          "$ref": "common.schema.json#/$defs/apiKey"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "A replacement branch key (rotation). The till switches to it at once; keep the old key valid for 7 days."
+    },
+    "minimumAppVersion": {
+      "anyOf": [
+        {
+          "$ref": "common.schema.json#/$defs/appVersion"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "Tills below this show 'please update' (they keep trading)."
+    },
+    "portalTimeUtc": {
+      "$ref": "common.schema.json#/$defs/utc"
+    },
+    "nextCheckAfterSeconds": {
+      "type": "integer",
+      "minimum": 60,
+      "maximum": 2592000,
+      "description": "When to call licence/validate next (the till adds a little random jitter)."
+    },
+    "messages": {
+      "$ref": "common.schema.json#/$defs/messages"
+    }
+  },
+  "required": [
+    "status",
+    "licenceToken",
+    "portalTimeUtc",
+    "nextCheckAfterSeconds",
+    "messages"
+  ]
+}

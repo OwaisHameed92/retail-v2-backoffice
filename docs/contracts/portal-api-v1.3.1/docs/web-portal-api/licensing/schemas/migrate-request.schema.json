@@ -1,0 +1,154 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "migrate-request",
+  "description": "POST /api/v1/cloud/migrate body - a shop on a local licence (or the built-in trial) links to a portal account and keeps its ids and history. No Authorization header: the activation code is the credential.",
+  "type": "object",
+  "properties": {
+    "activationCode": {
+      "$ref": "common.schema.json#/$defs/activationCode"
+    },
+    "installId": {
+      "$ref": "common.schema.json#/$defs/installId"
+    },
+    "installCode": {
+      "$ref": "common.schema.json#/$defs/installCode"
+    },
+    "deviceName": {
+      "type": "string",
+      "maxLength": 64,
+      "description": "Windows computer name."
+    },
+    "appVersion": {
+      "$ref": "common.schema.json#/$defs/appVersion"
+    },
+    "os": {
+      "$ref": "common.schema.json#/$defs/os"
+    },
+    "tillClockUtc": {
+      "$ref": "common.schema.json#/$defs/utc"
+    },
+    "approverKids": {
+      "type": "array",
+      "items": {
+        "$ref": "common.schema.json#/$defs/kid"
+      },
+      "description": "Built-in kids whose signer certificates this till accepts (docs/web-portal-api.md 17.17). Sign a returned token with a kid in trustedKids, or with your certified key when its certificate approvedBy is in this list."
+    },
+    "trustedKids": {
+      "type": "array",
+      "items": {
+        "$ref": "common.schema.json#/$defs/kid"
+      },
+      "minItems": 1,
+      "description": "Signing key ids this till version trusts; sign the returned token with one of them."
+    },
+    "localLicenceToken": {
+      "allOf": [
+        {
+          "$ref": "common.schema.json#/$defs/licenceTokenOrNull"
+        }
+      ],
+      "description": "The local token in use; null on the built-in trial."
+    },
+    "localTrialEndsAt": {
+      "allOf": [
+        {
+          "$ref": "common.schema.json#/$defs/utcOrNull"
+        }
+      ],
+      "description": "Built-in trial only (unsigned, informational)."
+    },
+    "company": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "common.schema.json#/$defs/ulid"
+        },
+        "name": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "name"
+      ]
+    },
+    "branch": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "common.schema.json#/$defs/ulid"
+        },
+        "name": {
+          "type": "string"
+        },
+        "code": {
+          "type": "string",
+          "maxLength": 6
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "code"
+      ]
+    },
+    "registers": {
+      "type": "array",
+      "items": {
+        "$ref": "common.schema.json#/$defs/registerReport"
+      },
+      "minItems": 1
+    },
+    "data": {
+      "type": "object",
+      "description": "What the initial upload will contain.",
+      "properties": {
+        "totalRows": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "rowCounts": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "description": "Entity name (as in section 10) -> rows."
+        },
+        "firstSaleAtUtc": {
+          "$ref": "common.schema.json#/$defs/utcOrNull"
+        },
+        "lastSaleAtUtc": {
+          "$ref": "common.schema.json#/$defs/utcOrNull"
+        },
+        "snapshotChangeLogSeq": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "The branch ChangeLog seq the snapshot is taken at; normal push resumes after it."
+        }
+      },
+      "required": [
+        "totalRows",
+        "rowCounts",
+        "snapshotChangeLogSeq"
+      ]
+    }
+  },
+  "required": [
+    "activationCode",
+    "installId",
+    "installCode",
+    "deviceName",
+    "appVersion",
+    "os",
+    "tillClockUtc",
+    "trustedKids",
+    "localLicenceToken",
+    "localTrialEndsAt",
+    "company",
+    "branch",
+    "registers",
+    "data"
+  ]
+}

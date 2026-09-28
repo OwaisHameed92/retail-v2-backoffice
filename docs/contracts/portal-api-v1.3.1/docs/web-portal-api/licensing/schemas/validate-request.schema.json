@@ -1,0 +1,113 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "validate-request",
+  "description": "POST /api/v1/licence/validate body - the daily check-in. Per-till licensing (section 17.15): EVERY till with a portal licence sends it for itself (installId + installCode identify it; registers[] may be absent). Branch model (17.5): the main till, listing registers[].",
+  "type": "object",
+  "properties": {
+    "licenceId": {
+      "$ref": "common.schema.json#/$defs/ulid"
+    },
+    "tokenSha256": {
+      "$ref": "common.schema.json#/$defs/sha256Hex"
+    },
+    "appVersion": {
+      "$ref": "common.schema.json#/$defs/appVersion"
+    },
+    "approverKids": {
+      "type": "array",
+      "items": {
+        "$ref": "common.schema.json#/$defs/kid"
+      },
+      "description": "Built-in kids whose signer certificates this till accepts (docs/web-portal-api.md 17.17). Sign a returned token with a kid in trustedKids, or with your certified key when its certificate approvedBy is in this list."
+    },
+    "trustedKids": {
+      "type": "array",
+      "items": {
+        "$ref": "common.schema.json#/$defs/kid"
+      },
+      "minItems": 1
+    },
+    "tillClockUtc": {
+      "$ref": "common.schema.json#/$defs/utc"
+    },
+    "clockWatermarkUtc": {
+      "allOf": [
+        {
+          "$ref": "common.schema.json#/$defs/utc"
+        }
+      ],
+      "description": "The latest time this till has ever seen (its clock guard)."
+    },
+    "lastValidatedAtUtc": {
+      "$ref": "common.schema.json#/$defs/utcOrNull"
+    },
+    "lastSyncAt": {
+      "$ref": "common.schema.json#/$defs/utcOrNull"
+    },
+    "lock": {
+      "type": "object",
+      "properties": {
+        "locked": {
+          "type": "boolean"
+        },
+        "reason": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Why the till is locked, null when not locked. Known values: trialOver, expired, revoked, suspended, offlineTooLong, clockTampering, seatsExceeded. Treat an unknown value as described in docs/web-portal-api.md section 17.11.",
+          "examples": [
+            "trialOver",
+            "expired",
+            "revoked",
+            "suspended",
+            "offlineTooLong",
+            "clockTampering",
+            "seatsExceeded"
+          ]
+        }
+      },
+      "required": [
+        "locked",
+        "reason"
+      ]
+    },
+    "registers": {
+      "type": "array",
+      "items": {
+        "$ref": "common.schema.json#/$defs/registerReport"
+      },
+      "minItems": 1
+    },
+    "diagnostics": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "description": "Open object for support, e.g. pendingSyncRows, lastSyncError, databaseSizeMb. Store as-is; never required."
+    },
+    "installId": {
+      "$ref": "common.schema.json#/$defs/installId"
+    },
+    "installCode": {
+      "$ref": "common.schema.json#/$defs/installCode"
+    },
+    "deviceName": {
+      "type": "string",
+      "maxLength": 100
+    },
+    "os": {
+      "$ref": "common.schema.json#/$defs/os"
+    }
+  },
+  "required": [
+    "licenceId",
+    "tokenSha256",
+    "appVersion",
+    "trustedKids",
+    "tillClockUtc",
+    "clockWatermarkUtc",
+    "lastValidatedAtUtc",
+    "lock"
+  ]
+}

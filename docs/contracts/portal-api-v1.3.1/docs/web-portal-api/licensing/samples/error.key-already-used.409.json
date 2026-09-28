@@ -1,0 +1,12 @@
+{
+  "code": "key.already_used",
+  "message": "This licence key is already in use on another PC (TILL-2). Ask your dealer to release it.",
+  "traceId": "req-7c41aa",
+  "retryAfterSeconds": null,
+  "rejectedKey": null,
+  "details": {
+    "deviceName": "TILL-2",
+    "installCode": "BK7Q-2MXD",
+    "activatedAtUtc": "2026-09-20T10:00:00Z"
+  }
+}

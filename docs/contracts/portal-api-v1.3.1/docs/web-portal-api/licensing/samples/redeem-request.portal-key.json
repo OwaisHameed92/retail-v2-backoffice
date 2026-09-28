@@ -1,0 +1,14 @@
+{
+  "key": "SSPK-4F7Q-XM2D-9KTR-B6WN",
+  "keyType": "portalKey",
+  "licenceId": "01K5T0Q8C4000000000000Y001",
+  "tokenSha256": "3848315811206cf590309eeefb2ce627a927f98167825e44049ea59910a2a3eb",
+  "approverKids": [
+    "k76b44696"
+  ],
+  "trustedKids": [
+    "k13799fa4",
+    "k76b44696"
+  ],
+  "installCode": "8S91-254H"
+}
