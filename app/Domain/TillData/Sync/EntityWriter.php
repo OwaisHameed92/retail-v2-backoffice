@@ -13,9 +13,12 @@ use Illuminate\Support\Facades\DB;
 /**
  * Applies one entity's changes of a chunk (seq order) with one read and bulk upserts:
  *
- * - upsert by id keeping the highest version; a version not above the stored one is stale (accepted, no change);
+ * - upsert by id keeping the highest version (equal version: the later updatedAt); anything else is stale
+ *   (accepted, no change) — contract §7 and §19.3 "never backwards";
  * - a row id held by another company is rejected (never overwritten);
- * - hub-owned: a till change older than the portal's last edit is not applied, a conflict is recorded;
+ * - hub-owned: content identical to the stored row (`hub_hash`) is an echo, acknowledged with no change (§19.2);
+ *   a till change the portal has overtaken is not applied, a conflict is recorded; an applied one records the
+ *   sending branch as `origin_branch_id` and clears `hub_version` for the pull (2.5) to stamp;
  * - historic rows (definitions `immutable`): once frozen only the allowed columns, deleted_at and the sync
  *   columns change; any other difference is recorded as a conflict;
  * - a delete without a payload soft-deletes the stored row (or is accepted with nothing to store).
@@ -23,7 +26,7 @@ use Illuminate\Support\Facades\DB;
 final class EntityWriter
 {
     /** Columns that change even on a frozen historic row. */
-    private const ALWAYS_MUTABLE = ['deleted_at', 'updated_at', 'row_version', 'synced_at', 'sync_seq', 'branch_id', 'register_id'];
+    private const ALWAYS_MUTABLE = ['deleted_at', 'updated_at', 'row_version', 'synced_at', 'sync_seq', 'branch_id', 'register_id', 'portal_received_at'];
 
     /** @var list<string> ids written by the last write() */
     public array $written = [];
@@ -52,7 +55,16 @@ final class EntityWriter
                 continue;
             }
 
-            if ($current !== null && $change->version <= (int) $current['row_version']) {
+            $hash = $def->isHubOwned() && $mapped->row !== null ? RowHash::of($def, $mapped->row) : null;
+
+            // Never echoed (§19.2): the content the portal already holds is acknowledged and changes nothing.
+            if ($hash !== null && $current !== null && $hash === ($current['hub_hash'] ?? null)) {
+                $outcomes[$change->index] = ChangeOutcome::Unchanged;
+
+                continue;
+            }
+
+            if ($current !== null && ! $this->isNewer($change->version, $mapped->row['updated_at'] ?? null, $current)) {
                 $outcomes[$change->index] = ChangeOutcome::Stale;
 
                 continue;
@@ -68,10 +80,7 @@ final class EntityWriter
                 continue;
             }
 
-            $hubEditedAt = $current['hub_edited_at'] ?? null;
-
-            if ($hubEditedAt !== null && substr((string) $hubEditedAt, 0, 19) > $change->at) {
-                $this->conflicts->add($mapped, ConflictKind::HubEditNewer, (int) $current['row_version'], "The portal edited this {$def->entity} at {$hubEditedAt} UTC, after the till's change at {$change->at} UTC. The portal's version was kept.");
+            if ($current !== null && $def->isHubOwned() && $this->portalWins($def, $mapped, $current)) {
                 $outcomes[$change->index] = ChangeOutcome::Conflict;
 
                 continue;
@@ -83,8 +92,19 @@ final class EntityWriter
                 $row = $this->mergeFrozen($def, $current, $row, $mapped);
             }
 
+            // First arrival at the portal is kept (v1.4 "received by the portal"); synced_at is the latest.
+            $row['portal_received_at'] = $current['portal_received_at'] ?? $this->context->now;
+
+            if ($def->isHubOwned()) {
+                // Pull bookkeeping (2.5): new content from this shop, to be stamped with the next pull version
+                // and sent to every other branch, never back to this one.
+                $row['hub_version'] = null;
+                $row['hub_hash'] = RowHash::of($def, $row);
+                $row['origin_branch_id'] = $this->context->branchId;
+            }
+
             $pending[$id] = $row;
-            $state[$id] = [...$row, 'hub_edited_at' => $hubEditedAt];
+            $state[$id] = [...$row, 'hub_edited_at' => $current['hub_edited_at'] ?? null];
             $outcomes[$change->index] = ChangeOutcome::Applied;
         }
 
@@ -100,6 +120,60 @@ final class EntityWriter
     }
 
     /**
+     * Never backwards (§7, §19.3): a higher version wins. On an equal version (the same row changed at two shops
+     * whose row versions happen to match) the later `updatedAt` wins; the same or no `updatedAt` changes nothing,
+     * so a replay is always a no-op.
+     *
+     * @param  array<string, mixed>  $current
+     */
+    private function isNewer(int $version, ?string $updatedAt, array $current): bool
+    {
+        $stored = (int) $current['row_version'];
+
+        if ($version !== $stored) {
+            return $version > $stored;
+        }
+
+        $storedAt = $current['updated_at'] === null ? null : substr((string) $current['updated_at'], 0, 19);
+
+        return $updatedAt !== null && ($storedAt === null || $updatedAt > $storedAt);
+    }
+
+    /**
+     * A till change to a hub-owned row the portal changed meanwhile: the portal's row is kept and the till's is
+     * recorded as a conflict. With `baseVersion` (§19.3): below the portal's current version, unless that version
+     * is this shop's own earlier change. Without it (tills before v1.4): the portal edited the row after the
+     * till's change.
+     *
+     * @param  array<string, mixed>  $current
+     */
+    private function portalWins(EntityDefinition $def, MappedChange $mapped, array $current): bool
+    {
+        $change = $mapped->change;
+        $hubVersion = $current['hub_version'] === null ? null : (int) $current['hub_version'];
+
+        if ($change->baseVersion !== null) {
+            if ($hubVersion === null || $change->baseVersion >= $hubVersion || $current['origin_branch_id'] === $this->context->branchId) {
+                return false;
+            }
+
+            $this->conflicts->add($mapped, ConflictKind::HubVersionNewer, (int) $current['row_version'], "The portal changed this {$def->entity} (version {$hubVersion}) after the version the till edited ({$change->baseVersion}). The portal's version was kept.");
+
+            return true;
+        }
+
+        $hubEditedAt = $current['hub_edited_at'];
+
+        if ($hubEditedAt === null || substr((string) $hubEditedAt, 0, 19) <= $change->at) {
+            return false;
+        }
+
+        $this->conflicts->add($mapped, ConflictKind::HubEditNewer, (int) $current['row_version'], "The portal edited this {$def->entity} at {$hubEditedAt} UTC, after the till's change at {$change->at} UTC. The portal's version was kept.");
+
+        return true;
+    }
+
+    /**
      * Stored rows for the chunk's ids, across all companies (an id clash must be seen), locked for the transaction
      * where the database supports it. Historic entities load whole rows for the frozen merge.
      *
@@ -109,9 +183,13 @@ final class EntityWriter
     private function existing(EntityDefinition $def, array $changes): array
     {
         $ids = array_values(array_unique(array_map(fn (MappedChange $m) => $m->change->entityId, $changes)));
-        $columns = $def->immutable !== null
-            ? ['*']
-            : ($def->isHubOwned() ? ['id', 'company_id', 'row_version', 'hub_edited_at'] : ['id', 'company_id', 'row_version']);
+        $columns = ['id', 'company_id', 'row_version', 'updated_at', 'portal_received_at'];
+
+        if ($def->isHubOwned()) {
+            array_push($columns, 'hub_edited_at', ...EntityDefinition::HUB_COLUMNS);
+        }
+
+        $columns = $def->immutable !== null ? ['*'] : $columns;
         $existing = [];
 
         foreach (array_chunk($ids, 500) as $chunk) {

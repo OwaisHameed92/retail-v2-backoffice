@@ -22,7 +22,8 @@ use InvalidArgumentException;
 
 /**
  * The one idempotent way till rows enter the store. The push endpoint (2.2) calls it with a decoded batch;
- * pull (2.5) and tests use it too. Contract: docs/contracts/portal-api-v1.1/README-web-portal-api.md sections 5-7.
+ * pull (2.5) and tests use it too. Contract v1.3.1: docs/contracts/portal-api-v1.3.1/docs/web-portal-api.md §5-7
+ * and §19 (never twice, never echoed, never backwards).
  *
  *     $result = app(ApplySyncChanges::class)->handle($company, $sendingBranch, $changes);
  *     return response()->json($result->toPushReply());   // {acknowledgedSeq, accepted}
@@ -60,7 +61,7 @@ final class ApplySyncChanges
             $company->getKey(),
             $sender->getKey(),
             array_fill_keys(DB::table('registers')->where('company_id', $company->getKey())->where('branch_id', $sender->getKey())->pluck('id')->all(), true),
-            gmdate('Y-m-d H:i:s'),
+            now('UTC')->format('Y-m-d H:i:s'),
         );
 
         $read = [];
@@ -103,7 +104,7 @@ final class ApplySyncChanges
 
         $this->warnUnknownEnums($mapped, $context);
 
-        return $this->result($order, $items, $outcomes, $started);
+        return $this->result($order, $items, $outcomes, $started, $context->now);
     }
 
     /**
@@ -156,7 +157,7 @@ final class ApplySyncChanges
      * @param  list<MappedChange|SyncChange|Rejection>  $items
      * @param  array<int, ChangeOutcome|Rejection>  $outcomes
      */
-    private function result(array $order, array $items, array $outcomes, int|float $started): ApplyResult
+    private function result(array $order, array $items, array $outcomes, int|float $started, string $now): ApplyResult
     {
         $acknowledged = null;
         $counts = [];
@@ -185,7 +186,7 @@ final class ApplySyncChanges
             $acknowledged = max(0, ($first ?? 1) - 1);
         }
 
-        return new ApplyResult($acknowledged, array_sum($counts), $rejected, $counts, (hrtime(true) - $started) / 1e6);
+        return new ApplyResult($acknowledged, array_sum($counts), $rejected, $counts, (hrtime(true) - $started) / 1e6, str_replace(' ', 'T', $now).'Z');
     }
 
     /**

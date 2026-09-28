@@ -8,7 +8,7 @@ use App\Domain\TillData\Sync\Data\Rejection;
 use App\Domain\TillData\Sync\Data\SyncChange;
 
 /**
- * Validates one envelope against schemas/sync-change.schema.json and the README's identity rules:
+ * Validates one envelope against schemas/sync-change.schema.json and the contract's identity rules (§5):
  * company must be the pushing company, a non-empty branchId must be the sending branch, a non-empty registerId
  * must be one of its tills, and the entity must be one the store knows.
  */
@@ -72,6 +72,7 @@ final class EnvelopeReader
         return new SyncChange(
             $index, (int) $seq, $entity, $entityId, $raw['op'], (int) $version, $raw['companyId'],
             $raw['branchId'], $raw['registerId'], Values::dateTime($raw['at']), $raw['payload'], $key,
+            isset($raw['baseVersion']) ? $this->integer($raw['baseVersion']) : null,
         );
     }
 
@@ -121,6 +122,10 @@ final class EnvelopeReader
 
         if ($raw['payload'] !== null && ! is_array($raw['payload'])) {
             $problems[] = 'payload must be an object or null';
+        }
+
+        if (isset($raw['baseVersion']) && $this->integer($raw['baseVersion']) === null) {
+            $problems[] = 'baseVersion must be a whole number of 0 or more';
         }
 
         if (array_key_exists('key', $raw) && ! is_string($raw['key'])) {

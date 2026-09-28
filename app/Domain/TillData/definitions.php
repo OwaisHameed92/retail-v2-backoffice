@@ -5,7 +5,7 @@
 | Till entity store: hand-written overrides for `php artisan till:entities:generate`
 |--------------------------------------------------------------------------
 |
-| The generator reads every docs/contracts/<contract>/schemas/entities/*.schema.json, the ownership map in
+| The generator reads every <contract>/schemas/entities/*.schema.json, the ownership map in
 | samples/ownership.json and this file, then writes the migrations, models, enums and EntityRegistry.
 | Everything not listed here is inferred from the schema (see docs/till-data.md, "Overrides").
 |
@@ -22,17 +22,23 @@ use App\Domain\TillData\Concerns\SaleQueries;
 use App\Domain\TillData\Concerns\StockMovementQueries;
 
 return [
-    'contract' => 'docs/contracts/portal-api-v1.1',
+    'contract' => 'docs/contracts/portal-api-v1.3.1/docs/web-portal-api',
 
-    /* Generated migrations are named <prefix><two-digit group order>_create_till_<group>_tables.php. */
-    'migrationPrefix' => '2026_09_27_1100',
+    /*
+     * The contract release this run writes migrations for. Migrations are additive: <prefix>00_create_till_<release>
+     * _tables.php creates the tables earlier releases lack, <prefix>01_add_till_<release>_columns.php adds their
+     * missing columns and indexes. database/till-schema.json records what each release's migrations made (v1.1:
+     * the ten 2026_09_27_1100NN group migrations). For the next contract: new name and a later prefix.
+     */
+    'release' => ['name' => 'v1.3.1', 'migrationPrefix' => '2026_10_02_1000'],
 
-    /* One migration per group, in this order. Every schema entity must be in exactly one group. */
+    /* Entity groups: the order tables are created in. Every schema entity must be in exactly one group. */
     'groups' => [
         'catalogue' => [
             'Department', 'Category', 'Unit', 'VatRate', 'TaxRule', 'Product', 'ProductBarcode', 'ProductAlias',
             'ProductUnit', 'ProductSupplier', 'ProductRecall', 'PriceHistory', 'ExchangeRate', 'BranchProduct',
             'PriceChangeBatch', 'PriceChangeLine', 'ScalePluItem', 'ShelfLabel', 'TopSellerTile', 'HighValueCountItem',
+            'MedicineClassification', 'ProductAllergenMatrix',
         ],
         'promotions' => [
             'PromotionRule', 'PromotionItem', 'PromotionCoupon', 'PromotionRedemption', 'CouponRedemption',
@@ -48,13 +54,14 @@ return [
         ],
         'stock' => [
             'StockMovement', 'StockLayer', 'FifoStockLayer', 'StockReservation', 'StockTake', 'StockTakeSection',
-            'StockTakeLine', 'DateCheck',
+            'StockTakeLine', 'DateCheck', 'StockTransfer', 'StockTransferLine', 'StockTransferReceipt',
+            'StockTransferReceiptLine',
         ],
         'purchasing' => [
             'Supplier', 'PurchaseOrder', 'PurchaseOrderLine', 'GoodsReceipt', 'GoodsReceiptLine', 'SupplierInvoice',
             'SupplierInvoiceLine', 'SupplierCreditNote', 'SupplierCreditNoteLine', 'SupplierPayment',
             'SupplierPaymentAllocation', 'StandingOrder', 'StandingOrderLine', 'RebateAgreement', 'RebateAccrual',
-            'NewsTitle', 'NewsDelivery', 'NewsDeliveryLine',
+            'NewsTitle', 'NewsDelivery', 'NewsDeliveryLine', 'NewsVoucherRedemption',
         ],
         'cash' => [
             'PaymentType', 'Reason', 'Shift', 'ShiftTender', 'CashCount', 'CashMovement', 'CashOfficeBanking',
@@ -64,11 +71,16 @@ return [
             'Account', 'JournalEntry', 'JournalLine', 'FinancialYear', 'FinancialPeriod', 'VatReturn', 'Expense',
             'RecurringBill', 'FixedAssetCategory', 'FixedAsset',
         ],
-        'staff' => ['User', 'Role', 'ClockEvent', 'RotaShift', 'TimesheetApproval', 'WageRate'],
+        'staff' => ['User', 'Role', 'ClockEvent', 'RotaShift', 'TimesheetApproval', 'WageRate', 'TrainingRecord'],
         'system' => [
             'AuditLog', 'ExceptionLog', 'AlertSubscription', 'BackupRun', 'BranchHoursOverride', 'ComplianceLicence',
             'EventSubscription', 'HardwareCheck', 'ImportColumnMap', 'ImportJob', 'Licence', 'LicenceAddOnTrial',
             'PrintJob', 'PrinterProfile', 'ScaleCalibrationLog', 'SyncConflict', 'SyncState', 'UpdateRun',
+            'LayoutProfile', 'ParcelCarrier', 'Parcel',
+        ],
+        'compliance' => [
+            'DiaryCheckDefinition', 'DiaryCheckRecord', 'TemperatureUnit', 'IncidentReport', 'DispensingRecord',
+            'DispensingItem',
         ],
     ],
 
@@ -125,14 +137,17 @@ return [
         'cost' => [
             'avgCost', 'caseCost', 'consignmentCost', 'cost', 'costAtSale', 'costPrice', 'expectedUnitCost',
             'lastCost', 'lineCost', 'newCost', 'oldCost', 'supplierPrice', 'unitCost', 'unitCostSnapshot',
-            'varianceCost', 'RebateAgreement.rate',
+            'varianceCost', 'RebateAgreement.rate', 'dispatchedCost', 'receivedCost',
         ],
         'quantity' => [
             'conversionFactor', 'countedQty', 'expectedQty', 'maxQty', 'maxShiftHours', 'maxStockQty', 'mileageMiles',
             'minQty', 'minStockQty', 'netMassKg', 'orderedUnits', 'overtimeHours', 'qty', 'qtyAfter',
             'qtyAvailable', 'qtyBefore', 'qtyDelta', 'qtyOnHand', 'qtyRemaining', 'qtyReserved', 'receivedQty',
             'refundQty', 'reorderPoint', 'reorderQty', 'returnedQty', 'snapshotQty', 'totalHours', 'unitsSold',
-            'varianceQty', 'volumeMl',
+            'varianceQty', 'volumeMl', 'baseQty', 'unitFactor', 'quantity', 'qtyRequested', 'qtyDispatched',
+            'qtyReceived', 'qtyVariance',
+            // Temperatures (°C) need no more than 4 dp either.
+            'safeMinC', 'safeMaxC',
         ],
         'percent' => [
             'abvPercent', 'changePercent', 'defaultDepreciationRatePercent', 'depreciationRatePercent',
@@ -143,7 +158,7 @@ return [
     ],
 
     /* Strings stored verbatim in longText (embedded JSON documents and print payloads). *Json fields are automatic. */
-    'longText' => ['payload'],
+    'longText' => ['payload', 'priceTiers'],
 
     /* Free-text strings stored in `text` (no length limit worth enforcing). Other strings are varchar. */
     'text' => [
@@ -152,7 +167,8 @@ return [
         'evidence', 'failureReason', 'filePath', 'imagePath', 'instruction', 'lastError', 'lastPushError',
         'logoPath', 'maxQtyReason', 'memo', 'message', 'note', 'notes', 'overrideReason', 'reason', 'reasonText',
         'receiptFile', 'text', 'unlockReason', 'varianceFlags', 'verificationDetail', 'voidReason', 'weekdays',
-        'days', 'afterValue', 'beforeValue',
+        'days', 'afterValue', 'beforeValue', 'directions', 'allergensCsv', 'handOverIdCheckNote', 'declineReason',
+        'resolutionReason', 'attributeFilter',
     ],
 
     /* Integers that may exceed 2^31. */
@@ -178,10 +194,11 @@ return [
      *   derived           Extra derived members (computed from the same row; not stored).
      *   json              Object/array members that ARE stored (json column).
      *   secret            String fields stored as HMAC hash + last 4 only (<column>_hash, <column>_last4).
+     *   drop              Secret members never stored at all: no column, not in `extra`, not in a conflict payload.
      *   hidden            Fields hidden from toArray()/JSON.
      *   indexes           Extra indexes (lists of columns). (company_id, updated_at), (company_id, branch_id)
      *                     and the parent key are indexed automatically.
-     *   immutable         Historic rows (README section 11): once frozen only `mutable` fields, deleted_at and
+     *   immutable         Historic rows (contract §11): once frozen only `mutable` fields, deleted_at and
      *                     the sync columns change. `when` = the stored row matches; `whenParent` = the parent
      *                     matched at the change's seq; `always` = frozen once stored.
      *   traits            Hand-written traits added to the model.
@@ -256,6 +273,8 @@ return [
         'PriceChangeLine' => ['parent' => ['PriceChangeBatch', 'batchId'], 'columns' => ['branchId' => 'price_branch_id']],
         'PromotionItem' => ['parent' => ['PromotionRule', 'promotionRuleId'], 'scope' => 'company'],
         'PromotionCoupon' => ['parent' => ['PromotionRule', 'promotionRuleId'], 'scope' => 'company'],
+        'MedicineClassification' => ['parent' => ['Product', 'productId'], 'scope' => 'company'],
+        'ProductAllergenMatrix' => ['indexes' => [['company_id', 'product_id']]],
         'PromotionRedemption' => ['indexes' => [['company_id', 'branch_id', 'trading_date'], ['sale_id']]],
         'CouponRedemption' => ['indexes' => [['sale_id']]],
 
@@ -270,6 +289,15 @@ return [
         'StockTake' => ['derived' => ['isClosed']],
         'StockTakeSection' => ['parent' => ['StockTake', 'stockTakeId'], 'scope' => 'branch'],
         'StockTakeLine' => ['parent' => ['StockTake', 'stockTakeId'], 'scope' => 'branch', 'derived' => ['isCounted']],
+        // Branch-to-branch transfers (v1.3; relayed to the receiving branch in v1.4). Each row has its own branchId.
+        'StockTransfer' => ['indexes' => [['company_id', 'from_branch_id'], ['company_id', 'to_branch_id'], ['company_id', 'reference']]],
+        'StockTransferLine' => ['parent' => ['StockTransfer', 'transferId'], 'scope' => 'branch', 'indexes' => [['company_id', 'product_id']]],
+        'StockTransferReceipt' => ['parent' => ['StockTransfer', 'transferId'], 'scope' => 'branch'],
+        'StockTransferReceiptLine' => [
+            'parent' => ['StockTransferReceipt', 'receiptId'],
+            'scope' => 'branch',
+            'indexes' => [['transfer_id'], ['transfer_line_id']],
+        ],
 
         // Purchasing.
         'PurchaseOrder' => ['derived' => ['isEditable', 'isOpen'], 'indexes' => [['company_id', 'supplier_id']]],
@@ -285,6 +313,7 @@ return [
         'StandingOrderLine' => ['parent' => ['StandingOrder', 'standingOrderId']],
         'RebateAccrual' => ['derived' => ['isOutstanding']],
         'NewsDeliveryLine' => ['parent' => ['NewsDelivery', 'deliveryId']],
+        'NewsVoucherRedemption' => ['indexes' => [['company_id', 'branch_id', 'redeemed_at']]],
 
         // Cash and end of day.
         'Shift' => ['derived' => ['isOpen'], 'indexes' => [['company_id', 'branch_id', 'opened_at']]],
@@ -310,7 +339,9 @@ return [
         'Expense' => ['indexes' => [['company_id', 'branch_id', 'expense_date']]],
 
         // Staff. `pinHash` and `rfid` sign a person in at the till: never shown.
-        'User' => ['table' => 'till_users', 'class' => 'TillUser', 'hidden' => ['pinHash', 'rfid']],
+        // `remoteApprovalSecret` (v1.3) approves actions from another device: never stored, never sent down.
+        'User' => ['table' => 'till_users', 'class' => 'TillUser', 'hidden' => ['pinHash', 'rfid'], 'drop' => ['remoteApprovalSecret']],
+        'TrainingRecord' => ['indexes' => [['company_id', 'user_id']]],
         'Role' => ['table' => 'till_roles', 'class' => 'TillRole', 'json' => ['permissions']],
         'ClockEvent' => ['indexes' => [['company_id', 'user_id', 'at']]],
 
@@ -327,5 +358,16 @@ return [
         'SyncConflict' => ['table' => 'till_sync_conflicts', 'class' => 'TillSyncConflict', 'derived' => ['isOpen']],
         'SyncState' => ['table' => 'till_sync_states', 'class' => 'TillSyncState', 'derived' => ['isHealthy']],
         'PrintJob' => ['derived' => ['isPending']],
+        'Parcel' => ['parent' => ['ParcelCarrier', 'carrierId'], 'scope' => 'branch', 'indexes' => [['company_id', 'tracking_code']]],
+
+        // Compliance diary, incidents, pharmacy (v1.3). Children carry their own branchId: parents add relations.
+        'DiaryCheckRecord' => [
+            'parent' => ['DiaryCheckDefinition', 'diaryCheckDefinitionId'],
+            'scope' => 'branch',
+            'indexes' => [['company_id', 'branch_id', 'recorded_at']],
+        ],
+        'IncidentReport' => ['indexes' => [['company_id', 'branch_id', 'occurred_at']]],
+        'DispensingRecord' => ['indexes' => [['company_id', 'branch_id', 'dispensed_at'], ['company_id', 'patient_customer_id'], ['sale_id']]],
+        'DispensingItem' => ['parent' => ['DispensingRecord', 'dispensingRecordId'], 'scope' => 'branch'],
     ],
 ];

@@ -66,7 +66,7 @@ it('replays push-request.json and replies exactly like push-reply.json', functio
             ->and($cola->cost_at_sale)->toBe('0.7800')
             ->and($cola->discount_source)->toBe(DiscountSource::Manual)
             ->and($cola->age_verified_dob)->toBeNull()
-            // Child rows carry no branch or till: from the sale (README section 16).
+            // Child rows carry no branch or till: from the sale (contract §16).
             ->and($cola->branch_id)->toBe(TillFixtures::LEEDS)
             ->and($cola->register_id)->toBe(TillFixtures::TILL_1)
             ->and($cola->sale->id)->toBe('01K5VB000000000SR001000482');
@@ -138,7 +138,7 @@ it('refuses one branch\'s batch sent by another branch, children included', func
 it('applies the rows of pull-reply.json with exact values (company-wide, hub-owned)', function () {
     $result = TillFixtures::apply($this->company, $this->leeds, TillFixtures::sample('pull-reply.json')['changes']);
 
-    // WebOrder is a portal-to-till message (README section 12), not a stored till entity.
+    // WebOrder is a portal-to-till message (contract §12), not a stored till entity.
     expect($result->accepted)->toBe(9)
         ->and($result->acknowledgedSeq)->toBe(0)
         ->and($result->rejected)->toHaveCount(1)

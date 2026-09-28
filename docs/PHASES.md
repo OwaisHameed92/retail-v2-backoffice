@@ -2,8 +2,8 @@
 
 Plan v2 (2026-09-28), rewritten after the EPOS team's contract **v1.3.1** (`docs/contracts/portal-api-v1.3.1/`,
 start at `START-HERE.md`). The till is already built against that contract, so **the portal implements it exactly**;
-where our earlier modules differ, they are reworked (marked 🔄). The v1.1 folder stays only until module 2.3 moves
-the generator to v1.3.1.
+where our earlier modules differ, they are reworked (marked 🔄). The v1.1 folder was removed when 2.3 moved the
+generator to v1.3.1.
 
 Each module is one agent task. Modules in the same wave can run in parallel. Status: `done` · `rework` · `todo` ·
 `blocked (reason)`. A module is done only when its Actions + Pest tests (tenant isolation and authorisation
@@ -47,17 +47,17 @@ Contract: v1.3.1 `docs/web-portal-api.md` §17 (read 17.15–17.17 first), `spec
 
 Waves: **1.4 → 1.5 + 1.11** · then 1.9, 1.10, 1.12.
 
-## Phase 2: Sync and cloud link — 0/9 (2 rework)
+## Phase 2: Sync and cloud link — 2/9
 
 Contract: v1.3.1 §1–16, §19 (duplicate/echo/conflict rules + test list 19.4), §20, `docs/web-portal-api/openapi.yaml`.
 
 | # | Module | What | Status |
 |---|---|---|---|
 | 2.1 | Activation codes and devices | Per-branch activation code (single use, hashed, expiring) and setup e-mail; `devices/activate` (17.4: ids, hubUrl, branch API key shown once, token, `settingsBootstrap`); `devices/deactivate` / transfer codes | blocked (EPOS answer on ids and one-code onboarding) |
-| 2.2 | Hello and push | `sync/hello`, `sync/push` (gzip, 5,000 rows, idempotent, ordered, acknowledged, initial mode), branch key auth | todo |
-| 2.3 | Entity store: master data | 🔄 Regenerate for 140 entities (17 new, 11 changed), generator reads v1.3.1, drop v1.1 folder | rework |
-| 2.4 | Entity store: transactions | 🔄 Same regeneration + §19 never-twice/never-backwards rules in the applier | rework |
-| 2.5 | Pull | Hub version counter, company + branch rows, paging, echo prevention (19.2), conflicts | todo |
+| 2.2 | Hello and push | `sync/hello`, `sync/push` (gzip, 5,000 rows, idempotent, ordered, acknowledged, initial mode), branch key auth. v1.3.1 changed the `hello-reply` and `error-reply` schemas: build to those | todo |
+| 2.3 | Entity store: master data | 140 entities from v1.3.1 (17 new tables, new columns) via additive migrations (`database/till-schema.json`); v1.1 folder dropped | done |
+| 2.4 | Entity store: transactions | Applier to §19: never twice (ledger + version), never backwards (version, tie by `updatedAt`), never echoed (`hub_hash`, `origin_branch_id`), `baseVersion` ready, `portal_received_at`; §19.4 store tests | done |
+| 2.5 | Pull | Hub version counter (stamps rows with `hub_version` null), company + branch rows, paging, never back to `origin_branch_id` (19.2), conflicts screen | todo |
 | 2.6 | Contract tests | Replay every sample, validate against schemas, pass the §19.4 test list | todo |
 | 2.7 | Till health | Online/offline, versions, last push/validate per branch and till, alerts | todo |
 | 2.8 | Local keys and migration | `licence/redeem` (local key reports, 17.6/17.16), `cloud/migrate` + `migrate/complete` + initial push (17.8) | todo |
@@ -141,7 +141,7 @@ channel.
 1. Now: EPOS message and questions (sent by the owner).
 1b. **UI v2 (owner priority):** design system v2 (`docs/design/DESIGN-SYSTEM-v2.md`) on the admin shell and every existing admin screen — can run in parallel with 1.4.
 2. **1.4 → 1.5 + 1.11**: licensing to the v1.3.1 contract → first real test with the EPOS team.
-3. 1.9, 1.10, then **Phase 2** (2.3/2.4 rework first).
+3. 1.9, 1.10, then **Phase 2** (2.3/2.4 done; 2.2 next).
 4. Phase 3 → Phase 4 → Phase 5 → Phase 6.
 5. Phase 7, then Phase 8.
 

@@ -187,6 +187,7 @@ final class PayloadMapper
             ...array_keys($def->fields),
             ...FieldTyper::BASE_FIELDS,
             ...$def->derived,
+            ...$def->dropped,
             ...self::ALWAYS_DERIVED,
         ], true);
 

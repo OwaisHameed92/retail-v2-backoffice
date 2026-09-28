@@ -18,6 +18,7 @@ final readonly class EntitySpec
      * @param  list<class-string>  $traits
      * @param  list<string>  $hidden
      * @param  array<string, string>  $tillFields  Tenancy entities: till field => portal column.
+     * @param  list<string>  $dropped  Secret members never stored anywhere (not even hashed) and never put in `extra`.
      */
     public function __construct(
         public string $name,
@@ -38,6 +39,7 @@ final readonly class EntitySpec
         public ?string $tenancyModel,
         public array $tillFields,
         public ?string $parentScope = null,
+        public array $dropped = [],
     ) {}
 
     public function field(string $name): ?FieldSpec
@@ -107,6 +109,7 @@ final readonly class EntitySpec
             $this->name, $this->class, $this->table, $this->ownership, $this->scope, $this->parentEntity,
             $this->parentField, $this->group, $this->fields, $this->derived, $this->indexes, $this->immutable,
             $this->traits, $this->hidden, $this->tenancy, $this->tenancyModel, $this->tillFields, $parentScope,
+            $this->dropped,
         );
     }
 }

@@ -34,6 +34,11 @@ final class SchemaCatalog
         return $this->definitions;
     }
 
+    public function basePath(): string
+    {
+        return $this->basePath;
+    }
+
     public function contract(): string
     {
         return $this->definitions['contract'];
@@ -138,9 +143,16 @@ final class SchemaCatalog
 
         $fields = [];
         $derived = [];
+        $dropped = [];
 
         foreach ($properties as $field => $property) {
             if (in_array($field, FieldTyper::BASE_FIELDS, true)) {
+                continue;
+            }
+
+            if (in_array($field, $def['drop'] ?? [], true)) {
+                $dropped[] = $field;
+
                 continue;
             }
 
@@ -197,6 +209,7 @@ final class SchemaCatalog
             tenancy: $tenancy !== null,
             tenancyModel: $tenancy['model'] ?? null,
             tillFields: $tenancy['tillFields'] ?? [],
+            dropped: $dropped,
         );
     }
 

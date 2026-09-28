@@ -14,7 +14,7 @@ use App\Domain\TillData\Sync\Data\ApplyResult;
  */
 final class TillFixtures
 {
-    public const CONTRACT = 'docs/contracts/portal-api-v1.1';
+    public const CONTRACT = 'docs/contracts/portal-api-v1.3.1/docs/web-portal-api';
 
     public const COMPANY = '01K5T0Q8C4000000000000C001';
 

@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\DB;
 /**
  * Collects sync_conflicts rows during a chunk and inserts them with it (same transaction). The incoming payload is
  * kept as sent so module 2.5 or a person can apply the till's version later, except secret members (licence keys),
- * which are never stored.
+ * and dropped members (a user's remote approval secret), which are never stored.
  */
 final class ConflictRecorder
 {
@@ -24,8 +24,14 @@ final class ConflictRecorder
         $change = $mapped->change;
         $payload = $change->payload;
 
-        foreach ($mapped->definition->fields as $name => $field) {
-            if ($field->type === 'secret' && is_array($payload)) {
+        if (is_array($payload)) {
+            foreach ($mapped->definition->fields as $name => $field) {
+                if ($field->type === 'secret') {
+                    unset($payload[$name]);
+                }
+            }
+
+            foreach ($mapped->definition->dropped as $name) {
                 unset($payload[$name]);
             }
         }

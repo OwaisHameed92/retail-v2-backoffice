@@ -326,7 +326,7 @@ it('never overwrites a row id another company holds', function () {
 });
 
 it('updates only till-owned fields of the portal\'s company, branch and register rows', function () {
-    $branch = ['code' => 'XXX', 'name' => 'Leeds Kirkgate', 'address' => '14 Kirkgate, Leeds', 'phone' => '0113 000', 'vatNumber' => 'GB1', 'nation' => 'england', 'licensedHoursJson' => '{"mon":"06:00-23:00"}', 'isDrsReturnPoint' => true, 'areaM2' => 82.5, 'nextPoNo' => 12, 'id' => TillFixtures::LEEDS, 'companyId' => TillFixtures::COMPANY, 'createdAt' => '2026-09-01T08:00:00Z', 'updatedAt' => '2026-09-23T08:00:00Z', 'rowVersion' => 3, 'deletedAt' => null, 'isDeleted' => false, 'domainEvents' => []];
+    $branch = ['code' => 'XXX', 'name' => 'Leeds Kirkgate', 'address' => '14 Kirkgate, Leeds', 'phone' => '0113 000', 'vatNumber' => 'GB1', 'nation' => 'england', 'licensedHoursJson' => '{"mon":"06:00-23:00"}', 'isDrsReturnPoint' => true, 'areaM2' => 82.5, 'nextPoNo' => 12, 'isActive' => false, 'id' => TillFixtures::LEEDS, 'companyId' => TillFixtures::COMPANY, 'createdAt' => '2026-09-01T08:00:00Z', 'updatedAt' => '2026-09-23T08:00:00Z', 'rowVersion' => 3, 'deletedAt' => null, 'isDeleted' => false, 'domainEvents' => []];
     $register = ['code' => '09', 'name' => 'Front counter', 'nextSaleNo' => 483, 'nextRefundNo' => 7, 'isMainTill' => false, 'isActive' => false, 'branchId' => TillFixtures::LEEDS, 'id' => TillFixtures::TILL_1, 'companyId' => TillFixtures::COMPANY, 'createdAt' => '2026-09-01T08:00:00Z', 'updatedAt' => '2026-09-23T08:00:00Z', 'rowVersion' => 9, 'deletedAt' => null, 'isDeleted' => false, 'domainEvents' => []];
 
     $result = ($this->apply)([

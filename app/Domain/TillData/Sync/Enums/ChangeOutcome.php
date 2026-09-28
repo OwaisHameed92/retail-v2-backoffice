@@ -10,8 +10,17 @@ enum ChangeOutcome: string
     /** Stored (inserted, updated, soft-deleted; for a frozen historic row only its allowed columns). */
     case Applied = 'applied';
 
-    /** Its version was not newer than the stored row: nothing changed (contract section 7). */
+    /**
+     * Its version was older than the stored row, or equal and not newer by `updatedAt`: nothing changed
+     * (contract §7, §19.3).
+     */
     case Stale = 'stale';
+
+    /**
+     * A hub-owned row whose content is exactly what the portal already holds (an echo of a pulled row, or the same
+     * edit arriving from a second shop): nothing changed, nothing is sent down again (contract §19.2).
+     */
+    case Unchanged = 'unchanged';
 
     /** This (branch, seq) was already applied by an earlier push: nothing changed. */
     case Duplicate = 'duplicate';

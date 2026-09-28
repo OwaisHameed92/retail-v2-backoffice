@@ -2,7 +2,9 @@
 
 use App\Domain\TillData\Actions\GenerateTillEntities;
 use App\Domain\TillData\EntityRegistry;
+use App\Domain\TillData\Generator\MigrationPlanner;
 use App\Domain\TillData\Generator\Php;
+use App\Domain\TillData\Generator\SchemaCatalog;
 use Illuminate\Support\Facades\Schema;
 use Tests\Feature\TillData\TillFixtures;
 
@@ -25,7 +27,7 @@ it('is idempotent: regenerating changes no file', function () {
 it('has a registry entry, a table with every mapped column, and a final generated model for every schema entity', function () {
     $entities = tillSchemaEntities();
 
-    expect($entities)->toHaveCount(123)
+    expect($entities)->toHaveCount(140)
         ->and(EntityRegistry::names())->toEqualCanonicalizing($entities);
 
     foreach ($entities as $entity) {
@@ -53,7 +55,7 @@ it('uses exactly the ownership in samples/ownership.json', function () {
         expect(EntityRegistry::get($entity)->ownership)->toBe($ownership[$entity], $entity);
     }
 
-    // Listed by the till but not syncable yet (not Entity-derived, README section 16): no schema, no table.
+    // Listed by the till but not syncable yet (not Entity-derived, contract §16): no schema, no table.
     expect(array_values(array_diff(array_keys($ownership), EntityRegistry::names())))->toBe(['RolePermission', 'Setting']);
 });
 
@@ -76,7 +78,7 @@ it('maps company, branch and register rows onto the tenancy tables without gener
         ->not->toContain('licence_key');
 });
 
-it('classifies scopes and parents as the README describes', function () {
+it('classifies scopes and parents as the contract describes', function () {
     expect(EntityRegistry::get('Sale')->scope)->toBe('register')
         ->and(EntityRegistry::get('CustomerOrder')->scope)->toBe('branch')
         ->and(EntityRegistry::get('Product')->scope)->toBe('company')
@@ -101,4 +103,34 @@ it('stores money as decimal(12,2), costs and quantities as decimal(14,4)', funct
         ->and(EntityRegistry::get('Sale')->derived)->toContain('isCompleted', 'isDeleted', 'domainEvents')
         ->and(EntityRegistry::get('CustomerOrder')->derived)->toContain('balanceDue')
         ->and(EntityRegistry::get('Product')->derived)->toContain('priceIncVat', 'barcodes', 'primaryBarcode');
+});
+
+it('writes additive migrations: applied releases are never rewritten, the current one adds only what they lack', function () {
+    $lock = json_decode((string) file_get_contents(base_path(MigrationPlanner::LOCK)), true);
+    $produced = array_keys(app(GenerateTillEntities::class)->render(new SchemaCatalog(base_path())));
+    $current = $lock['releases'][1];
+
+    expect(array_column($lock['releases'], 'release'))->toBe(['v1.1', 'v1.3.1'])
+        ->and($current['migrations'])->toBe(['2026_10_02_100000_create_till_v1_3_1_tables.php', '2026_10_02_100001_add_till_v1_3_1_columns.php'])
+        ->and($current['tables'])->toHaveKeys(['stock_transfers', 'stock_transfer_receipt_lines', 'medicine_classifications'])
+        ->and($current['tables']['products']['columns'])->toHaveKeys(['variant3_name', 'hub_hash', 'origin_branch_id', 'portal_received_at'])
+        ->and($current['tables']['sales']['columns'])->toHaveKeys(['portal_received_at'])->not->toHaveKey('total');
+
+    foreach ($lock['releases'][0]['migrations'] as $applied) {
+        expect(file_exists(database_path("migrations/{$applied}")))->toBeTrue()
+            ->and($produced)->not->toContain("database/migrations/{$applied}");
+    }
+});
+
+it('models the v1.3 entities: transfers, their lines and receipts, and the hub-owned medicine class', function () {
+    expect(EntityRegistry::get('StockTransferLine')->parent)->toMatchArray(['entity' => 'StockTransfer', 'column' => 'transfer_id'])
+        ->and(EntityRegistry::get('StockTransferReceiptLine')->parent)->toMatchArray(['entity' => 'StockTransferReceipt', 'column' => 'receipt_id'])
+        ->and(EntityRegistry::get('StockTransferLine')->scope)->toBe('branch')
+        ->and(EntityRegistry::get('StockTransferLine')->fields['qtyDispatched']->type)->toBe('quantity')
+        ->and(EntityRegistry::get('StockTransfer')->fields['dispatchedCost']->type)->toBe('cost')
+        ->and(EntityRegistry::get('MedicineClassification')->ownership)->toBe('hub')
+        ->and(EntityRegistry::get('SaleLine')->fields['baseQty']->type)->toBe('quantity')
+        ->and(EntityRegistry::get('User')->dropped)->toBe(['remoteApprovalSecret'])
+        ->and(EntityRegistry::get('User')->fields)->not->toHaveKey('remoteApprovalSecret')
+        ->and(Schema::getColumnListing('products'))->toContain('hub_hash', 'origin_branch_id', 'portal_received_at');
 });

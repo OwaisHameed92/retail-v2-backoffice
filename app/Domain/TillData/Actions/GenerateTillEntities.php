@@ -3,6 +3,7 @@
 namespace App\Domain\TillData\Actions;
 
 use App\Domain\TillData\Generator\EnumWriter;
+use App\Domain\TillData\Generator\MigrationPlanner;
 use App\Domain\TillData\Generator\MigrationWriter;
 use App\Domain\TillData\Generator\ModelWriter;
 use App\Domain\TillData\Generator\Php;
@@ -10,8 +11,8 @@ use App\Domain\TillData\Generator\RegistryWriter;
 use App\Domain\TillData\Generator\SchemaCatalog;
 
 /**
- * Generates the till entity store from the contract: one migration per group, one model per entity, the enums
- * and EntityRegistry. Output is deterministic, so running it twice changes nothing. With $write = false it only
+ * Generates the till entity store from the contract: additive migrations for the current release
+ * (MigrationPlanner), one model per entity, the enums and EntityRegistry. Output is deterministic, so running it twice changes nothing. With $write = false it only
  * reports which files would change (used by `--check` and the idempotency test).
  */
 final class GenerateTillEntities
@@ -65,14 +66,15 @@ final class GenerateTillEntities
         $definitions = $catalog->definitions();
         $files = [];
 
-        $migrations = new MigrationWriter($contract);
-        $order = 1;
+        $stored = [];
 
-        foreach ($definitions['groups'] as $group => $names) {
-            $groupEntities = array_map(fn (string $name) => $entities[$name], $names);
-            $file = sprintf('database/migrations/%s%02d_create_till_%s_tables.php', $definitions['migrationPrefix'], $order++, $group);
-            $files[$file] = $migrations->write($group, $groupEntities);
+        foreach ($definitions['groups'] as $names) {
+            foreach ($names as $name) {
+                $stored[] = $entities[$name];
+            }
         }
+
+        $files = $this->planner($catalog)->plan($stored, $this->lock($catalog->basePath()));
 
         $models = new ModelWriter($contract);
 
@@ -94,6 +96,21 @@ final class GenerateTillEntities
         return $files;
     }
 
+    private function planner(SchemaCatalog $catalog): MigrationPlanner
+    {
+        return new MigrationPlanner(new MigrationWriter($catalog->contract()), $catalog->definitions()['release']);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function lock(string $basePath): array
+    {
+        $path = $basePath.'/'.MigrationPlanner::LOCK;
+
+        return is_file($path) ? json_decode((string) file_get_contents($path), true, 512, JSON_THROW_ON_ERROR) : [];
+    }
+
     /**
      * Generated files (tagged) in the generated folders that this run did not produce.
      *
@@ -105,7 +122,7 @@ final class GenerateTillEntities
         $candidates = [
             ...glob($basePath.'/app/Domain/TillData/Models/*.php') ?: [],
             ...glob($basePath.'/app/Domain/TillData/Enums/*.php') ?: [],
-            ...glob($basePath.'/database/migrations/'.$catalog->definitions()['migrationPrefix'].'*_create_till_*_tables.php') ?: [],
+            ...glob($this->planner($catalog)->currentGlob($basePath)) ?: [],
         ];
         $stale = [];
 

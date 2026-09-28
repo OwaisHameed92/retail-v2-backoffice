@@ -144,6 +144,7 @@ final class ModelWriter
         $casts[] = "'synced_at' => UtcDateTimeCast::class,";
         $casts[] = "'sync_seq' => 'integer',";
         $casts[] = "'extra' => 'array',";
+        $casts[] = "'portal_received_at' => UtcDateTimeCast::class,";
 
         return [$casts, $imports];
     }
@@ -182,11 +183,14 @@ final class ModelWriter
         if ($entity->isHubOwned()) {
             $lines[] = ' * @property int|null $hub_version';
             $lines[] = ' * @property CarbonImmutable|null $hub_edited_at';
+            $lines[] = ' * @property string|null $hub_hash';
+            $lines[] = ' * @property string|null $origin_branch_id';
         }
 
         $lines[] = ' * @property CarbonImmutable|null $synced_at';
         $lines[] = ' * @property int|null $sync_seq';
         $lines[] = ' * @property array<string, mixed>|null $extra';
+        $lines[] = ' * @property CarbonImmutable|null $portal_received_at';
 
         return implode("\n", $lines)."\n";
     }

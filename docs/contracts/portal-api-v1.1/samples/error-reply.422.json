@@ -1,7 +1,0 @@
-{
-  "code": "row.invalid",
-  "message": "Sale 01K5VB000000000SR001000482 has a total with more than 2 decimal places.",
-  "traceId": "req-7c1fa0",
-  "retryAfterSeconds": null,
-  "rejectedKey": "Sale:01K5VB000000000SR001000482:1"
-}

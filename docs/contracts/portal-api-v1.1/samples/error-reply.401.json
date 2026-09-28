@@ -1,7 +1,0 @@
-{
-  "code": "auth.invalid_key",
-  "message": "The portal API key is not recognised. Check Settings \u003E Hub sync \u003E Portal API key.",
-  "traceId": "req-7c1f9a",
-  "retryAfterSeconds": null,
-  "rejectedKey": null
-}

@@ -86,6 +86,7 @@ final class RegistryWriter
             "'parent' => {$parent},",
             "'children' => ".Php::literal($children).',',
             "'derived' => ".Php::literal($entity->derived).',',
+            "'dropped' => ".Php::literal($entity->dropped).',',
             "'immutable' => ".$this->immutable($entity, $all).',',
             "'tillFields' => ".Php::literal($entity->tillFields).',',
             "'fields' => [",

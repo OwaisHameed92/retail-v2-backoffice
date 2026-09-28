@@ -13,7 +13,13 @@ use Illuminate\Database\Eloquent\Model;
 final readonly class EntityDefinition
 {
     /** Columns every till table has besides the payload fields. */
-    public const META_COLUMNS = ['row_version', 'created_at', 'updated_at', 'deleted_at', 'synced_at', 'sync_seq', 'extra'];
+    public const META_COLUMNS = ['row_version', 'created_at', 'updated_at', 'deleted_at', 'synced_at', 'sync_seq', 'extra', 'portal_received_at'];
+
+    /**
+     * Hub-owned tables' pull bookkeeping the applier writes (docs/till-data.md, "Never echoed"). `hub_edited_at`
+     * is only written by a portal edit, so it is not in the upsert.
+     */
+    public const HUB_COLUMNS = ['hub_version', 'hub_hash', 'origin_branch_id'];
 
     /** @var list<string> */
     public array $columns;
@@ -34,6 +40,7 @@ final readonly class EntityDefinition
      * @param  array{when: array<string, list<string>>|null, whenParent: array<string, list<string>>|null, always: bool, mutable: list<string>}|null  $immutable
      * @param  array<string, string>  $tillFields
      * @param  array<string, FieldDefinition>  $fields
+     * @param  list<string>  $dropped  secret members never stored (not even in `extra` or a conflict payload)
      */
     public function __construct(
         public string $entity,
@@ -49,6 +56,7 @@ final readonly class EntityDefinition
         public ?array $immutable,
         public array $tillFields,
         public array $fields,
+        public array $dropped = [],
     ) {
         $columns = ['id', 'company_id', ...$scopeColumns];
 
@@ -60,7 +68,7 @@ final readonly class EntityDefinition
             }
         }
 
-        $this->columns = [...$columns, ...self::META_COLUMNS];
+        $this->columns = [...$columns, ...self::META_COLUMNS, ...($ownership === 'hub' && ! $tenancy ? self::HUB_COLUMNS : [])];
         $this->plan = array_values(array_map(
             fn (FieldDefinition $f) => [$f->name, $f->column, $f->type, $f->nullable, $f->maxLength(), $f->enumClass()],
             $fields,
@@ -92,6 +100,7 @@ final readonly class EntityDefinition
             $data['immutable'],
             $data['tillFields'],
             $fields,
+            $data['dropped'] ?? [],
         );
     }
 

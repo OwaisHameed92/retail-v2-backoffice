@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\DB;
 
 /**
  * Finishes child rows (SaleLine, SalePayment, SaleVat, CustomerOrderPayment, JournalLine, *Line…), which the
- * till sends with no branch or till of their own (README section 16):
+ * till sends with no branch or till of their own (contract §16):
  *
  * - branch_id / register_id come from the row itself when it has them, else from the parent (in this batch or
  *   already stored), else the sending branch and no till. A child that arrives before its parent is fixed up

@@ -23,7 +23,10 @@ use App\Domain\TillData\Enums\CustomerOrderPaymentKind;
 use App\Domain\TillData\Enums\CustomerOrderStatus;
 use App\Domain\TillData\Enums\CustomerTransactionType;
 use App\Domain\TillData\Enums\DateCheckAction;
+use App\Domain\TillData\Enums\DiaryCheckDefinitionSchedule;
 use App\Domain\TillData\Enums\DiscountSource;
+use App\Domain\TillData\Enums\DispensingRecordChargeStatus;
+use App\Domain\TillData\Enums\DispensingRecordExemption;
 use App\Domain\TillData\Enums\EReceiptLogChannel;
 use App\Domain\TillData\Enums\EReceiptLogStatus;
 use App\Domain\TillData\Enums\ExpensePaymentType;
@@ -33,9 +36,12 @@ use App\Domain\TillData\Enums\HardwareCheckKind;
 use App\Domain\TillData\Enums\HardwareCheckResult;
 use App\Domain\TillData\Enums\ImportJobStatus;
 use App\Domain\TillData\Enums\ImportTarget;
+use App\Domain\TillData\Enums\MedicineClassificationClass;
 use App\Domain\TillData\Enums\NegativeStockPolicy;
 use App\Domain\TillData\Enums\NewsDeliveryStatus;
 use App\Domain\TillData\Enums\NewsTitleFrequency;
+use App\Domain\TillData\Enums\ParcelDirection;
+use App\Domain\TillData\Enums\ParcelStatus;
 use App\Domain\TillData\Enums\PaymentAttemptStatus;
 use App\Domain\TillData\Enums\PriceChangeBatchStatus;
 use App\Domain\TillData\Enums\PriceChangeLineStatus;
@@ -64,6 +70,8 @@ use App\Domain\TillData\Enums\StockMovementType;
 use App\Domain\TillData\Enums\StockReservationStatus;
 use App\Domain\TillData\Enums\StockTakeScope;
 use App\Domain\TillData\Enums\StockTakeStatus;
+use App\Domain\TillData\Enums\StockTransferReceiptStatus;
+use App\Domain\TillData\Enums\StockTransferStatus;
 use App\Domain\TillData\Enums\StoreCreditVoucherType;
 use App\Domain\TillData\Enums\SupplierInvoiceStatus;
 use App\Domain\TillData\Enums\SupplierOrderMethod;
@@ -74,6 +82,7 @@ use App\Domain\TillData\Enums\SyncConflictResolution;
 use App\Domain\TillData\Enums\SyncOwnership;
 use App\Domain\TillData\Enums\TaxRuleMode;
 use App\Domain\TillData\Enums\TaxRuleScope;
+use App\Domain\TillData\Enums\TemperatureUnitKind;
 use App\Domain\TillData\Enums\UnitKind;
 use App\Domain\TillData\Enums\UnitType;
 use App\Domain\TillData\Enums\UpdateRunAction;
@@ -106,6 +115,10 @@ use App\Domain\TillData\Models\CustomerTransaction;
 use App\Domain\TillData\Models\DateCheck;
 use App\Domain\TillData\Models\DayLock;
 use App\Domain\TillData\Models\Department;
+use App\Domain\TillData\Models\DiaryCheckDefinition;
+use App\Domain\TillData\Models\DiaryCheckRecord;
+use App\Domain\TillData\Models\DispensingItem;
+use App\Domain\TillData\Models\DispensingRecord;
 use App\Domain\TillData\Models\EReceiptLog;
 use App\Domain\TillData\Models\EventSubscription;
 use App\Domain\TillData\Models\ExceptionLog;
@@ -124,12 +137,18 @@ use App\Domain\TillData\Models\HighValueCountItem;
 use App\Domain\TillData\Models\HourlySales;
 use App\Domain\TillData\Models\ImportColumnMap;
 use App\Domain\TillData\Models\ImportJob;
+use App\Domain\TillData\Models\IncidentReport;
 use App\Domain\TillData\Models\JournalEntry;
 use App\Domain\TillData\Models\JournalLine;
+use App\Domain\TillData\Models\LayoutProfile;
+use App\Domain\TillData\Models\MedicineClassification;
 use App\Domain\TillData\Models\NewsDelivery;
 use App\Domain\TillData\Models\NewsDeliveryLine;
 use App\Domain\TillData\Models\NewsTitle;
+use App\Domain\TillData\Models\NewsVoucherRedemption;
 use App\Domain\TillData\Models\OfflineCardReconciliation;
+use App\Domain\TillData\Models\Parcel;
+use App\Domain\TillData\Models\ParcelCarrier;
 use App\Domain\TillData\Models\PaymentAttempt;
 use App\Domain\TillData\Models\PaymentType;
 use App\Domain\TillData\Models\PriceChangeBatch;
@@ -139,6 +158,7 @@ use App\Domain\TillData\Models\PrinterProfile;
 use App\Domain\TillData\Models\PrintJob;
 use App\Domain\TillData\Models\Product;
 use App\Domain\TillData\Models\ProductAlias;
+use App\Domain\TillData\Models\ProductAllergenMatrix;
 use App\Domain\TillData\Models\ProductBarcode;
 use App\Domain\TillData\Models\ProductRecall;
 use App\Domain\TillData\Models\ProductSupplier;
@@ -175,6 +195,10 @@ use App\Domain\TillData\Models\StockReservation;
 use App\Domain\TillData\Models\StockTake;
 use App\Domain\TillData\Models\StockTakeLine;
 use App\Domain\TillData\Models\StockTakeSection;
+use App\Domain\TillData\Models\StockTransfer;
+use App\Domain\TillData\Models\StockTransferLine;
+use App\Domain\TillData\Models\StockTransferReceipt;
+use App\Domain\TillData\Models\StockTransferReceiptLine;
 use App\Domain\TillData\Models\StoreCreditVoucher;
 use App\Domain\TillData\Models\Supplier;
 use App\Domain\TillData\Models\SupplierCreditNote;
@@ -184,6 +208,7 @@ use App\Domain\TillData\Models\SupplierInvoiceLine;
 use App\Domain\TillData\Models\SupplierPayment;
 use App\Domain\TillData\Models\SupplierPaymentAllocation;
 use App\Domain\TillData\Models\TaxRule;
+use App\Domain\TillData\Models\TemperatureUnit;
 use App\Domain\TillData\Models\TenderDaily;
 use App\Domain\TillData\Models\TillAuditLog;
 use App\Domain\TillData\Models\TillLicence;
@@ -194,6 +219,7 @@ use App\Domain\TillData\Models\TillSyncState;
 use App\Domain\TillData\Models\TillUser;
 use App\Domain\TillData\Models\TimesheetApproval;
 use App\Domain\TillData\Models\TopSellerTile;
+use App\Domain\TillData\Models\TrainingRecord;
 use App\Domain\TillData\Models\Unit;
 use App\Domain\TillData\Models\UpdateRun;
 use App\Domain\TillData\Models\VatRate;
@@ -205,7 +231,7 @@ use App\Domain\TillData\Registry\EntityDefinition;
 use RuntimeException;
 
 /**
- * Every till entity the portal stores (docs/contracts/portal-api-v1.1).
+ * Every till entity the portal stores (docs/contracts/portal-api-v1.3.1/docs/web-portal-api).
  *
  * @generated by `php artisan till:entities:generate` from the entity schemas, samples/ownership.json
  * and app/Domain/TillData/definitions.php. Do not edit.
@@ -226,6 +252,7 @@ final class EntityRegistry
             'parent' => null,
             'children' => [],
             'derived' => ['isDeleted', 'domainEvents'],
+            'dropped' => [],
             'immutable' => null,
             'tillFields' => [],
             'fields' => [
@@ -249,6 +276,7 @@ final class EntityRegistry
             'parent' => null,
             'children' => [],
             'derived' => ['isDeleted', 'domainEvents'],
+            'dropped' => [],
             'immutable' => null,
             'tillFields' => [],
             'fields' => [
@@ -273,6 +301,7 @@ final class EntityRegistry
             'parent' => null,
             'children' => [],
             'derived' => ['isDeleted', 'domainEvents'],
+            'dropped' => [],
             'immutable' => null,
             'tillFields' => [],
             'fields' => [
@@ -298,6 +327,7 @@ final class EntityRegistry
             'parent' => null,
             'children' => [],
             'derived' => ['isDeleted', 'domainEvents'],
+            'dropped' => [],
             'immutable' => ['when' => null, 'whenParent' => null, 'always' => true, 'mutable' => []],
             'tillFields' => [],
             'fields' => [
@@ -323,6 +353,7 @@ final class EntityRegistry
             'parent' => null,
             'children' => [],
             'derived' => ['isDeleted', 'domainEvents'],
+            'dropped' => [],
             'immutable' => null,
             'tillFields' => [],
             'fields' => [
@@ -350,6 +381,7 @@ final class EntityRegistry
             'parent' => null,
             'children' => [],
             'derived' => ['isDeleted', 'domainEvents'],
+            'dropped' => [],
             'immutable' => null,
             'tillFields' => ['name' => 'name', 'address' => 'address', 'phone' => 'phone', 'vatNumber' => 'vat_number', 'nation' => 'nation', 'licensedHoursJson' => 'licensed_hours_json', 'isDrsReturnPoint' => 'is_drs_return_point', 'areaM2' => 'area_m2', 'nextPoNo' => 'next_po_no'],
             'fields' => [
@@ -363,6 +395,7 @@ final class EntityRegistry
                 'isDrsReturnPoint' => ['column' => 'is_drs_return_point', 'type' => 'bool', 'nullable' => false, 'arg' => null],
                 'areaM2' => ['column' => 'area_m2', 'type' => 'money', 'nullable' => false, 'arg' => null],
                 'nextPoNo' => ['column' => 'next_po_no', 'type' => 'int', 'nullable' => false, 'arg' => null],
+                'isActive' => ['column' => 'is_active', 'type' => 'bool', 'nullable' => false, 'arg' => null],
             ],
         ],
         'BranchHoursOverride' => [
@@ -375,6 +408,7 @@ final class EntityRegistry
             'parent' => null,
             'children' => [],
             'derived' => ['isDeleted', 'domainEvents'],
+            'dropped' => [],
             'immutable' => null,
             'tillFields' => [],
             'fields' => [
@@ -400,6 +434,7 @@ final class EntityRegistry
             'parent' => null,
             'children' => [],
             'derived' => ['isDeleted', 'domainEvents'],
+            'dropped' => [],
             'immutable' => null,
             'tillFields' => [],
             'fields' => [
@@ -428,6 +463,7 @@ final class EntityRegistry
             'parent' => null,
             'children' => [],
             'derived' => ['isMatched', 'isDeleted', 'domainEvents'],
+            'dropped' => [],
             'immutable' => null,
             'tillFields' => [],
             'fields' => [
@@ -459,6 +495,7 @@ final class EntityRegistry
             'parent' => null,
             'children' => [],
             'derived' => ['isDeleted', 'domainEvents'],
+            'dropped' => [],
             'immutable' => null,
             'tillFields' => [],
             'fields' => [
@@ -483,6 +520,7 @@ final class EntityRegistry
             'parent' => null,
             'children' => [],
             'derived' => ['isDeleted', 'domainEvents'],
+            'dropped' => [],
             'immutable' => null,
             'tillFields' => [],
             'fields' => [
@@ -507,6 +545,7 @@ final class EntityRegistry
             'parent' => null,
             'children' => [],
             'derived' => ['isDeleted', 'domainEvents'],
+            'dropped' => [],
             'immutable' => null,
             'tillFields' => [],
             'fields' => [
@@ -541,6 +580,7 @@ final class EntityRegistry
             'parent' => null,
             'children' => [],
             'derived' => ['isDeleted', 'domainEvents'],
+            'dropped' => [],
             'immutable' => null,
             'tillFields' => [],
             'fields' => [
@@ -566,6 +606,7 @@ final class EntityRegistry
             'parent' => null,
             'children' => [],
             'derived' => ['isDeleted', 'domainEvents'],
+            'dropped' => [],
             'immutable' => null,
             'tillFields' => [],
             'fields' => [
@@ -591,6 +632,7 @@ final class EntityRegistry
             'parent' => null,
             'children' => [],
             'derived' => ['isDeleted', 'domainEvents'],
+            'dropped' => [],
             'immutable' => null,
             'tillFields' => [],
             'fields' => [
@@ -616,6 +658,7 @@ final class EntityRegistry
             'parent' => null,
             'children' => [],
             'derived' => ['isDeleted', 'domainEvents'],
+            'dropped' => [],
             'immutable' => null,
             'tillFields' => [],
             'fields' => [
@@ -636,6 +679,7 @@ final class EntityRegistry
             'parent' => null,
             'children' => [],
             'derived' => ['isDeleted', 'domainEvents'],
+            'dropped' => [],
             'immutable' => null,
             'tillFields' => ['name' => 'name', 'legalName' => 'legal_name', 'vatNumber' => 'vat_number', 'companyNumber' => 'company_number', 'address' => 'address', 'phone' => 'phone', 'email' => 'email'],
             'fields' => [
@@ -658,6 +702,7 @@ final class EntityRegistry
             'parent' => null,
             'children' => [],
             'derived' => ['isDeleted', 'domainEvents'],
+            'dropped' => [],
             'immutable' => null,
             'tillFields' => [],
             'fields' => [
@@ -680,6 +725,7 @@ final class EntityRegistry
             'parent' => ['entity' => 'Customer', 'column' => 'customer_id', 'table' => 'customers', 'scope' => 'company'],
             'children' => [],
             'derived' => ['isDeleted', 'domainEvents'],
+            'dropped' => [],
             'immutable' => null,
             'tillFields' => [],
             'fields' => [
@@ -702,6 +748,7 @@ final class EntityRegistry
             'parent' => null,
             'children' => [],
             'derived' => ['isDeleted', 'domainEvents'],
+            'dropped' => [],
             'immutable' => null,
             'tillFields' => [],
             'fields' => [
@@ -729,6 +776,7 @@ final class EntityRegistry
             'parent' => null,
             'children' => [],
             'derived' => ['isAnonymised', 'isDeleted', 'domainEvents'],
+            'dropped' => [],
             'immutable' => null,
             'tillFields' => [],
             'fields' => [
@@ -757,6 +805,7 @@ final class EntityRegistry
             'parent' => null,
             'children' => [],
             'derived' => ['isDeleted', 'domainEvents'],
+            'dropped' => [],
             'immutable' => null,
             'tillFields' => [],
             'fields' => [
@@ -783,6 +832,7 @@ final class EntityRegistry
             'parent' => null,
             'children' => ['CustomerOrderPayment'],
             'derived' => ['balanceDue', 'isOpen', 'isDeleted', 'domainEvents'],
+            'dropped' => [],
             'immutable' => null,
             'tillFields' => [],
             'fields' => [
@@ -820,6 +870,7 @@ final class EntityRegistry
             'parent' => ['entity' => 'CustomerOrder', 'column' => 'order_id', 'table' => 'customer_orders', 'scope' => 'branch'],
             'children' => [],
             'derived' => ['isDeleted', 'domainEvents'],
+            'dropped' => [],
             'immutable' => ['when' => null, 'whenParent' => null, 'always' => true, 'mutable' => []],
             'tillFields' => [],
             'fields' => [
@@ -841,6 +892,7 @@ final class EntityRegistry
             'parent' => null,
             'children' => [],
             'derived' => ['isDeleted', 'domainEvents'],
+            'dropped' => [],
             'immutable' => null,
             'tillFields' => [],
             'fields' => [
@@ -867,6 +919,7 @@ final class EntityRegistry
             'parent' => null,
             'children' => [],
             'derived' => ['isDeleted', 'domainEvents'],
+            'dropped' => [],
             'immutable' => null,
             'tillFields' => [],
             'fields' => [
@@ -890,6 +943,7 @@ final class EntityRegistry
             'parent' => null,
             'children' => [],
             'derived' => ['isDeleted', 'domainEvents'],
+            'dropped' => [],
             'immutable' => null,
             'tillFields' => [],
             'fields' => [
@@ -913,6 +967,7 @@ final class EntityRegistry
             'parent' => null,
             'children' => [],
             'derived' => ['isDeleted', 'domainEvents'],
+            'dropped' => [],
             'immutable' => null,
             'tillFields' => [],
             'fields' => [
@@ -925,6 +980,101 @@ final class EntityRegistry
                 'defaultVatRateId' => ['column' => 'default_vat_rate_id', 'type' => 'string', 'nullable' => true, 'arg' => 64],
             ],
         ],
+        'DiaryCheckDefinition' => [
+            'model' => DiaryCheckDefinition::class,
+            'table' => 'diary_check_definitions',
+            'ownership' => 'branch',
+            'scope' => 'branch',
+            'scopeColumns' => ['branch_id'],
+            'tenancy' => false,
+            'parent' => null,
+            'children' => [],
+            'derived' => ['isDeleted', 'domainEvents'],
+            'dropped' => [],
+            'immutable' => null,
+            'tillFields' => [],
+            'fields' => [
+                'name' => ['column' => 'name', 'type' => 'string', 'nullable' => false, 'arg' => 255],
+                'category' => ['column' => 'category', 'type' => 'string', 'nullable' => false, 'arg' => 255],
+                'schedule' => ['column' => 'schedule', 'type' => 'enum', 'nullable' => false, 'arg' => DiaryCheckDefinitionSchedule::class],
+                'isActive' => ['column' => 'is_active', 'type' => 'bool', 'nullable' => false, 'arg' => null],
+                'sortOrder' => ['column' => 'sort_order', 'type' => 'int', 'nullable' => false, 'arg' => null],
+                'branchId' => ['column' => 'branch_id', 'type' => 'string', 'nullable' => false, 'arg' => 26],
+            ],
+        ],
+        'DiaryCheckRecord' => [
+            'model' => DiaryCheckRecord::class,
+            'table' => 'diary_check_records',
+            'ownership' => 'branch',
+            'scope' => 'branch',
+            'scopeColumns' => ['branch_id'],
+            'tenancy' => false,
+            'parent' => ['entity' => 'DiaryCheckDefinition', 'column' => 'diary_check_definition_id', 'table' => 'diary_check_definitions', 'scope' => 'branch'],
+            'children' => [],
+            'derived' => ['isDeleted', 'domainEvents'],
+            'dropped' => [],
+            'immutable' => null,
+            'tillFields' => [],
+            'fields' => [
+                'diaryCheckDefinitionId' => ['column' => 'diary_check_definition_id', 'type' => 'string', 'nullable' => false, 'arg' => 64],
+                'recordedAt' => ['column' => 'recorded_at', 'type' => 'datetime', 'nullable' => false, 'arg' => null],
+                'recordedByUserId' => ['column' => 'recorded_by_user_id', 'type' => 'string', 'nullable' => false, 'arg' => 64],
+                'value' => ['column' => 'value', 'type' => 'string', 'nullable' => false, 'arg' => 255],
+                'passed' => ['column' => 'passed', 'type' => 'bool', 'nullable' => false, 'arg' => null],
+                'note' => ['column' => 'note', 'type' => 'text', 'nullable' => false, 'arg' => null],
+                'branchId' => ['column' => 'branch_id', 'type' => 'string', 'nullable' => false, 'arg' => 26],
+            ],
+        ],
+        'DispensingItem' => [
+            'model' => DispensingItem::class,
+            'table' => 'dispensing_items',
+            'ownership' => 'branch',
+            'scope' => 'branch',
+            'scopeColumns' => ['branch_id'],
+            'tenancy' => false,
+            'parent' => ['entity' => 'DispensingRecord', 'column' => 'dispensing_record_id', 'table' => 'dispensing_records', 'scope' => 'branch'],
+            'children' => [],
+            'derived' => ['isDeleted', 'domainEvents'],
+            'dropped' => [],
+            'immutable' => null,
+            'tillFields' => [],
+            'fields' => [
+                'dispensingRecordId' => ['column' => 'dispensing_record_id', 'type' => 'string', 'nullable' => false, 'arg' => 64],
+                'productId' => ['column' => 'product_id', 'type' => 'string', 'nullable' => false, 'arg' => 64],
+                'description' => ['column' => 'description', 'type' => 'text', 'nullable' => false, 'arg' => null],
+                'quantity' => ['column' => 'quantity', 'type' => 'quantity', 'nullable' => false, 'arg' => null],
+                'directions' => ['column' => 'directions', 'type' => 'text', 'nullable' => false, 'arg' => null],
+            ],
+        ],
+        'DispensingRecord' => [
+            'model' => DispensingRecord::class,
+            'table' => 'dispensing_records',
+            'ownership' => 'branch',
+            'scope' => 'branch',
+            'scopeColumns' => ['branch_id'],
+            'tenancy' => false,
+            'parent' => null,
+            'children' => [],
+            'derived' => ['isDeleted', 'domainEvents'],
+            'dropped' => [],
+            'immutable' => null,
+            'tillFields' => [],
+            'fields' => [
+                'patientCustomerId' => ['column' => 'patient_customer_id', 'type' => 'string', 'nullable' => false, 'arg' => 64],
+                'prescriberName' => ['column' => 'prescriber_name', 'type' => 'string', 'nullable' => false, 'arg' => 255],
+                'prescriberRegistration' => ['column' => 'prescriber_registration', 'type' => 'string', 'nullable' => false, 'arg' => 255],
+                'prescriptionDate' => ['column' => 'prescription_date', 'type' => 'date', 'nullable' => false, 'arg' => null],
+                'dispensedAt' => ['column' => 'dispensed_at', 'type' => 'datetime', 'nullable' => false, 'arg' => null],
+                'dispensedByUserId' => ['column' => 'dispensed_by_user_id', 'type' => 'string', 'nullable' => false, 'arg' => 64],
+                'dispensedByName' => ['column' => 'dispensed_by_name', 'type' => 'string', 'nullable' => false, 'arg' => 255],
+                'chargeStatus' => ['column' => 'charge_status', 'type' => 'enum', 'nullable' => false, 'arg' => DispensingRecordChargeStatus::class],
+                'exemption' => ['column' => 'exemption', 'type' => 'enum', 'nullable' => false, 'arg' => DispensingRecordExemption::class],
+                'chargeAmount' => ['column' => 'charge_amount', 'type' => 'money', 'nullable' => false, 'arg' => null],
+                'saleId' => ['column' => 'sale_id', 'type' => 'string', 'nullable' => true, 'arg' => 64],
+                'notes' => ['column' => 'notes', 'type' => 'text', 'nullable' => false, 'arg' => null],
+                'branchId' => ['column' => 'branch_id', 'type' => 'string', 'nullable' => false, 'arg' => 26],
+            ],
+        ],
         'EReceiptLog' => [
             'model' => EReceiptLog::class,
             'table' => 'e_receipt_logs',
@@ -935,6 +1085,7 @@ final class EntityRegistry
             'parent' => null,
             'children' => [],
             'derived' => ['isDeleted', 'domainEvents'],
+            'dropped' => [],
             'immutable' => null,
             'tillFields' => [],
             'fields' => [
@@ -957,6 +1108,7 @@ final class EntityRegistry
             'parent' => null,
             'children' => [],
             'derived' => ['isDeleted', 'domainEvents'],
+            'dropped' => [],
             'immutable' => null,
             'tillFields' => [],
             'fields' => [
@@ -974,6 +1126,7 @@ final class EntityRegistry
             'parent' => null,
             'children' => [],
             'derived' => ['isDeleted', 'domainEvents'],
+            'dropped' => [],
             'immutable' => null,
             'tillFields' => [],
             'fields' => [
@@ -1000,6 +1153,7 @@ final class EntityRegistry
             'parent' => null,
             'children' => [],
             'derived' => ['isDeleted', 'domainEvents'],
+            'dropped' => [],
             'immutable' => null,
             'tillFields' => [],
             'fields' => [
@@ -1018,6 +1172,7 @@ final class EntityRegistry
             'parent' => null,
             'children' => [],
             'derived' => ['isDeleted', 'domainEvents'],
+            'dropped' => [],
             'immutable' => null,
             'tillFields' => [],
             'fields' => [
@@ -1057,6 +1212,7 @@ final class EntityRegistry
             'parent' => null,
             'children' => [],
             'derived' => ['isDeleted', 'domainEvents'],
+            'dropped' => [],
             'immutable' => null,
             'tillFields' => [],
             'fields' => [
@@ -1079,6 +1235,7 @@ final class EntityRegistry
             'parent' => ['entity' => 'FinancialYear', 'column' => 'financial_year_id', 'table' => 'financial_years', 'scope' => 'sender'],
             'children' => [],
             'derived' => ['isDeleted', 'domainEvents'],
+            'dropped' => [],
             'immutable' => null,
             'tillFields' => [],
             'fields' => [
@@ -1106,6 +1263,7 @@ final class EntityRegistry
             'parent' => null,
             'children' => [],
             'derived' => ['isDeleted', 'domainEvents'],
+            'dropped' => [],
             'immutable' => null,
             'tillFields' => [],
             'fields' => [
@@ -1128,6 +1286,7 @@ final class EntityRegistry
             'parent' => null,
             'children' => [],
             'derived' => ['purchaseCost', 'residualValue', 'disposalProceeds', 'isDisposed', 'isDeleted', 'domainEvents'],
+            'dropped' => [],
             'immutable' => null,
             'tillFields' => [],
             'fields' => [
@@ -1157,6 +1316,7 @@ final class EntityRegistry
             'parent' => null,
             'children' => [],
             'derived' => ['isDeleted', 'domainEvents'],
+            'dropped' => [],
             'immutable' => null,
             'tillFields' => [],
             'fields' => [
@@ -1175,6 +1335,7 @@ final class EntityRegistry
             'parent' => null,
             'children' => ['GoodsReceiptLine'],
             'derived' => ['isDeleted', 'domainEvents'],
+            'dropped' => [],
             'immutable' => null,
             'tillFields' => [],
             'fields' => [
@@ -1205,6 +1366,7 @@ final class EntityRegistry
             'parent' => ['entity' => 'GoodsReceipt', 'column' => 'goods_receipt_id', 'table' => 'goods_receipts', 'scope' => 'branch'],
             'children' => [],
             'derived' => ['isDeleted', 'domainEvents'],
+            'dropped' => [],
             'immutable' => null,
             'tillFields' => [],
             'fields' => [
@@ -1234,6 +1396,7 @@ final class EntityRegistry
             'parent' => null,
             'children' => [],
             'derived' => ['isDeleted', 'domainEvents'],
+            'dropped' => [],
             'immutable' => null,
             'tillFields' => [],
             'fields' => [
@@ -1263,6 +1426,7 @@ final class EntityRegistry
             'parent' => null,
             'children' => [],
             'derived' => ['isDeleted', 'domainEvents'],
+            'dropped' => [],
             'immutable' => null,
             'tillFields' => [],
             'fields' => [
@@ -1285,6 +1449,7 @@ final class EntityRegistry
             'parent' => null,
             'children' => [],
             'derived' => ['isDeleted', 'domainEvents'],
+            'dropped' => [],
             'immutable' => null,
             'tillFields' => [],
             'fields' => [
@@ -1304,6 +1469,7 @@ final class EntityRegistry
             'parent' => null,
             'children' => [],
             'derived' => ['isDeleted', 'domainEvents'],
+            'dropped' => [],
             'immutable' => null,
             'tillFields' => [],
             'fields' => [
@@ -1325,6 +1491,7 @@ final class EntityRegistry
             'parent' => null,
             'children' => [],
             'derived' => ['isDeleted', 'domainEvents'],
+            'dropped' => [],
             'immutable' => null,
             'tillFields' => [],
             'fields' => [
@@ -1346,6 +1513,7 @@ final class EntityRegistry
             'parent' => null,
             'children' => [],
             'derived' => ['isDeleted', 'domainEvents'],
+            'dropped' => [],
             'immutable' => null,
             'tillFields' => [],
             'fields' => [
@@ -1363,6 +1531,29 @@ final class EntityRegistry
                 'errorReportPath' => ['column' => 'error_report_path', 'type' => 'text', 'nullable' => true, 'arg' => null],
             ],
         ],
+        'IncidentReport' => [
+            'model' => IncidentReport::class,
+            'table' => 'incident_reports',
+            'ownership' => 'branch',
+            'scope' => 'branch',
+            'scopeColumns' => ['branch_id'],
+            'tenancy' => false,
+            'parent' => null,
+            'children' => [],
+            'derived' => ['isDeleted', 'domainEvents'],
+            'dropped' => [],
+            'immutable' => null,
+            'tillFields' => [],
+            'fields' => [
+                'occurredAt' => ['column' => 'occurred_at', 'type' => 'datetime', 'nullable' => false, 'arg' => null],
+                'category' => ['column' => 'category', 'type' => 'string', 'nullable' => false, 'arg' => 255],
+                'description' => ['column' => 'description', 'type' => 'text', 'nullable' => false, 'arg' => null],
+                'reportedByUserId' => ['column' => 'reported_by_user_id', 'type' => 'string', 'nullable' => false, 'arg' => 64],
+                'policeReference' => ['column' => 'police_reference', 'type' => 'string', 'nullable' => false, 'arg' => 255],
+                'insurerReference' => ['column' => 'insurer_reference', 'type' => 'string', 'nullable' => false, 'arg' => 255],
+                'branchId' => ['column' => 'branch_id', 'type' => 'string', 'nullable' => false, 'arg' => 26],
+            ],
+        ],
         'JournalEntry' => [
             'model' => JournalEntry::class,
             'table' => 'journal_entries',
@@ -1373,6 +1564,7 @@ final class EntityRegistry
             'parent' => null,
             'children' => ['JournalLine'],
             'derived' => ['lines', 'isDeleted', 'domainEvents'],
+            'dropped' => [],
             'immutable' => ['when' => null, 'whenParent' => null, 'always' => true, 'mutable' => ['is_reversed', 'reversed_by_entry_id']],
             'tillFields' => [],
             'fields' => [
@@ -1402,6 +1594,7 @@ final class EntityRegistry
             'parent' => ['entity' => 'JournalEntry', 'column' => 'journal_entry_id', 'table' => 'journal_entries', 'scope' => 'register'],
             'children' => [],
             'derived' => ['isDeleted', 'domainEvents'],
+            'dropped' => [],
             'immutable' => ['when' => null, 'whenParent' => null, 'always' => true, 'mutable' => []],
             'tillFields' => [],
             'fields' => [
@@ -1417,6 +1610,30 @@ final class EntityRegistry
                 'balance' => ['column' => 'balance', 'type' => 'money', 'nullable' => false, 'arg' => null],
             ],
         ],
+        'LayoutProfile' => [
+            'model' => LayoutProfile::class,
+            'table' => 'layout_profiles',
+            'ownership' => 'branch',
+            'scope' => 'sender',
+            'scopeColumns' => ['branch_id'],
+            'tenancy' => false,
+            'parent' => null,
+            'children' => [],
+            'derived' => ['isDeleted', 'domainEvents'],
+            'dropped' => [],
+            'immutable' => null,
+            'tillFields' => [],
+            'fields' => [
+                'name' => ['column' => 'name', 'type' => 'string', 'nullable' => false, 'arg' => 255],
+                'isBuiltIn' => ['column' => 'is_built_in', 'type' => 'bool', 'nullable' => false, 'arg' => null],
+                'tileColumns' => ['column' => 'tile_columns', 'type' => 'int', 'nullable' => false, 'arg' => null],
+                'density' => ['column' => 'density', 'type' => 'string', 'nullable' => false, 'arg' => 255],
+                'colourPreset' => ['column' => 'colour_preset', 'type' => 'string', 'nullable' => false, 'arg' => 255],
+                'fontScalePercent' => ['column' => 'font_scale_percent', 'type' => 'int', 'nullable' => false, 'arg' => null],
+                'buttonSize' => ['column' => 'button_size', 'type' => 'string', 'nullable' => false, 'arg' => 255],
+                'actionKeysJson' => ['column' => 'action_keys_json', 'type' => 'longText', 'nullable' => false, 'arg' => null],
+            ],
+        ],
         'Licence' => [
             'model' => TillLicence::class,
             'table' => 'till_licences',
@@ -1427,6 +1644,7 @@ final class EntityRegistry
             'parent' => null,
             'children' => [],
             'derived' => ['isDeleted', 'domainEvents'],
+            'dropped' => [],
             'immutable' => null,
             'tillFields' => [],
             'fields' => [
@@ -1452,6 +1670,7 @@ final class EntityRegistry
             'parent' => null,
             'children' => [],
             'derived' => ['isOverUsageCap', 'isDeleted', 'domainEvents'],
+            'dropped' => [],
             'immutable' => null,
             'tillFields' => [],
             'fields' => [
@@ -1467,6 +1686,25 @@ final class EntityRegistry
                 'trialEndsAt' => ['column' => 'trial_ends_at', 'type' => 'datetime', 'nullable' => true, 'arg' => null],
             ],
         ],
+        'MedicineClassification' => [
+            'model' => MedicineClassification::class,
+            'table' => 'medicine_classifications',
+            'ownership' => 'hub',
+            'scope' => 'company',
+            'scopeColumns' => [],
+            'tenancy' => false,
+            'parent' => ['entity' => 'Product', 'column' => 'product_id', 'table' => 'products', 'scope' => 'company'],
+            'children' => [],
+            'derived' => ['isDeleted', 'domainEvents'],
+            'dropped' => [],
+            'immutable' => null,
+            'tillFields' => [],
+            'fields' => [
+                'productId' => ['column' => 'product_id', 'type' => 'string', 'nullable' => false, 'arg' => 64],
+                'class' => ['column' => 'class', 'type' => 'enum', 'nullable' => false, 'arg' => MedicineClassificationClass::class],
+                'note' => ['column' => 'note', 'type' => 'text', 'nullable' => false, 'arg' => null],
+            ],
+        ],
         'NewsDelivery' => [
             'model' => NewsDelivery::class,
             'table' => 'news_deliveries',
@@ -1477,6 +1715,7 @@ final class EntityRegistry
             'parent' => null,
             'children' => ['NewsDeliveryLine'],
             'derived' => ['isDeleted', 'domainEvents'],
+            'dropped' => [],
             'immutable' => null,
             'tillFields' => [],
             'fields' => [
@@ -1499,6 +1738,7 @@ final class EntityRegistry
             'parent' => ['entity' => 'NewsDelivery', 'column' => 'delivery_id', 'table' => 'news_deliveries', 'scope' => 'branch'],
             'children' => [],
             'derived' => ['isDeleted', 'domainEvents'],
+            'dropped' => [],
             'immutable' => null,
             'tillFields' => [],
             'fields' => [
@@ -1523,14 +1763,43 @@ final class EntityRegistry
             'parent' => null,
             'children' => [],
             'derived' => ['isDeleted', 'domainEvents'],
+            'dropped' => [],
             'immutable' => null,
             'tillFields' => [],
             'fields' => [
                 'name' => ['column' => 'name', 'type' => 'string', 'nullable' => false, 'arg' => 255],
+                'publisher' => ['column' => 'publisher', 'type' => 'string', 'nullable' => false, 'arg' => 255],
                 'frequency' => ['column' => 'frequency', 'type' => 'enum', 'nullable' => false, 'arg' => NewsTitleFrequency::class],
                 'supplierId' => ['column' => 'supplier_id', 'type' => 'string', 'nullable' => false, 'arg' => 64],
                 'coverPrice' => ['column' => 'cover_price', 'type' => 'money', 'nullable' => false, 'arg' => null],
+                'linkedProductId' => ['column' => 'linked_product_id', 'type' => 'string', 'nullable' => false, 'arg' => 64],
+                'linkedBarcode' => ['column' => 'linked_barcode', 'type' => 'string', 'nullable' => false, 'arg' => 255],
                 'isActive' => ['column' => 'is_active', 'type' => 'bool', 'nullable' => false, 'arg' => null],
+                'branchId' => ['column' => 'branch_id', 'type' => 'string', 'nullable' => false, 'arg' => 26],
+            ],
+        ],
+        'NewsVoucherRedemption' => [
+            'model' => NewsVoucherRedemption::class,
+            'table' => 'news_voucher_redemptions',
+            'ownership' => 'branch',
+            'scope' => 'register',
+            'scopeColumns' => ['branch_id', 'register_id'],
+            'tenancy' => false,
+            'parent' => null,
+            'children' => [],
+            'derived' => ['isDeleted', 'domainEvents'],
+            'dropped' => [],
+            'immutable' => null,
+            'tillFields' => [],
+            'fields' => [
+                'voucherCode' => ['column' => 'voucher_code', 'type' => 'string', 'nullable' => false, 'arg' => 255],
+                'titleId' => ['column' => 'title_id', 'type' => 'string', 'nullable' => false, 'arg' => 64],
+                'titleName' => ['column' => 'title_name', 'type' => 'string', 'nullable' => false, 'arg' => 255],
+                'amount' => ['column' => 'amount', 'type' => 'money', 'nullable' => false, 'arg' => null],
+                'registerId' => ['column' => 'register_id', 'type' => 'string', 'nullable' => false, 'arg' => 26],
+                'redeemedByUserId' => ['column' => 'redeemed_by_user_id', 'type' => 'string', 'nullable' => false, 'arg' => 64],
+                'redeemedAt' => ['column' => 'redeemed_at', 'type' => 'datetime', 'nullable' => false, 'arg' => null],
+                'claimedAt' => ['column' => 'claimed_at', 'type' => 'datetime', 'nullable' => true, 'arg' => null],
                 'branchId' => ['column' => 'branch_id', 'type' => 'string', 'nullable' => false, 'arg' => 26],
             ],
         ],
@@ -1544,6 +1813,7 @@ final class EntityRegistry
             'parent' => null,
             'children' => [],
             'derived' => ['isDeleted', 'domainEvents'],
+            'dropped' => [],
             'immutable' => null,
             'tillFields' => [],
             'fields' => [
@@ -1552,6 +1822,53 @@ final class EntityRegistry
                 'reconciledAt' => ['column' => 'reconciled_at', 'type' => 'datetime', 'nullable' => false, 'arg' => null],
                 'reconciledByUserId' => ['column' => 'reconciled_by_user_id', 'type' => 'string', 'nullable' => false, 'arg' => 64],
                 'reconciledByName' => ['column' => 'reconciled_by_name', 'type' => 'string', 'nullable' => false, 'arg' => 255],
+                'branchId' => ['column' => 'branch_id', 'type' => 'string', 'nullable' => false, 'arg' => 26],
+            ],
+        ],
+        'Parcel' => [
+            'model' => Parcel::class,
+            'table' => 'parcels',
+            'ownership' => 'branch',
+            'scope' => 'branch',
+            'scopeColumns' => ['branch_id'],
+            'tenancy' => false,
+            'parent' => ['entity' => 'ParcelCarrier', 'column' => 'carrier_id', 'table' => 'parcel_carriers', 'scope' => 'branch'],
+            'children' => [],
+            'derived' => ['isDeleted', 'domainEvents'],
+            'dropped' => [],
+            'immutable' => null,
+            'tillFields' => [],
+            'fields' => [
+                'carrierId' => ['column' => 'carrier_id', 'type' => 'string', 'nullable' => false, 'arg' => 64],
+                'trackingCode' => ['column' => 'tracking_code', 'type' => 'string', 'nullable' => false, 'arg' => 255],
+                'customerName' => ['column' => 'customer_name', 'type' => 'string', 'nullable' => false, 'arg' => 255],
+                'direction' => ['column' => 'direction', 'type' => 'enum', 'nullable' => false, 'arg' => ParcelDirection::class],
+                'status' => ['column' => 'status', 'type' => 'enum', 'nullable' => false, 'arg' => ParcelStatus::class],
+                'registeredAtUtc' => ['column' => 'registered_at_utc', 'type' => 'datetime', 'nullable' => false, 'arg' => null],
+                'registeredByUserId' => ['column' => 'registered_by_user_id', 'type' => 'string', 'nullable' => false, 'arg' => 64],
+                'handedOverAtUtc' => ['column' => 'handed_over_at_utc', 'type' => 'datetime', 'nullable' => true, 'arg' => null],
+                'handedOverByUserId' => ['column' => 'handed_over_by_user_id', 'type' => 'string', 'nullable' => false, 'arg' => 64],
+                'handOverIdCheckNote' => ['column' => 'hand_over_id_check_note', 'type' => 'text', 'nullable' => false, 'arg' => null],
+                'branchId' => ['column' => 'branch_id', 'type' => 'string', 'nullable' => false, 'arg' => 26],
+            ],
+        ],
+        'ParcelCarrier' => [
+            'model' => ParcelCarrier::class,
+            'table' => 'parcel_carriers',
+            'ownership' => 'branch',
+            'scope' => 'branch',
+            'scopeColumns' => ['branch_id'],
+            'tenancy' => false,
+            'parent' => null,
+            'children' => [],
+            'derived' => ['isDeleted', 'domainEvents'],
+            'dropped' => [],
+            'immutable' => null,
+            'tillFields' => [],
+            'fields' => [
+                'name' => ['column' => 'name', 'type' => 'string', 'nullable' => false, 'arg' => 255],
+                'isActive' => ['column' => 'is_active', 'type' => 'bool', 'nullable' => false, 'arg' => null],
+                'position' => ['column' => 'position', 'type' => 'int', 'nullable' => false, 'arg' => null],
                 'branchId' => ['column' => 'branch_id', 'type' => 'string', 'nullable' => false, 'arg' => 26],
             ],
         ],
@@ -1565,6 +1882,7 @@ final class EntityRegistry
             'parent' => null,
             'children' => [],
             'derived' => ['isDeleted', 'domainEvents'],
+            'dropped' => [],
             'immutable' => null,
             'tillFields' => [],
             'fields' => [
@@ -1583,6 +1901,18 @@ final class EntityRegistry
                 'idempotencyKey' => ['column' => 'idempotency_key', 'type' => 'string', 'nullable' => false, 'arg' => 255],
                 'userId' => ['column' => 'user_id', 'type' => 'string', 'nullable' => false, 'arg' => 64],
                 'at' => ['column' => 'at', 'type' => 'datetime', 'nullable' => false, 'arg' => null],
+                'uti' => ['column' => 'uti', 'type' => 'string', 'nullable' => false, 'arg' => 255],
+                'reference' => ['column' => 'reference', 'type' => 'string', 'nullable' => false, 'arg' => 255],
+                'transportMode' => ['column' => 'transport_mode', 'type' => 'string', 'nullable' => false, 'arg' => 255],
+                'requestedAmount' => ['column' => 'requested_amount', 'type' => 'money', 'nullable' => false, 'arg' => null],
+                'isRefund' => ['column' => 'is_refund', 'type' => 'bool', 'nullable' => false, 'arg' => null],
+                'originalAttemptId' => ['column' => 'original_attempt_id', 'type' => 'string', 'nullable' => true, 'arg' => 64],
+                'declineReason' => ['column' => 'decline_reason', 'type' => 'text', 'nullable' => false, 'arg' => null],
+                'resolutionReason' => ['column' => 'resolution_reason', 'type' => 'text', 'nullable' => false, 'arg' => null],
+                'receiptPrintCount' => ['column' => 'receipt_print_count', 'type' => 'int', 'nullable' => false, 'arg' => null],
+                'lastReceiptPrintedAt' => ['column' => 'last_receipt_printed_at', 'type' => 'datetime', 'nullable' => true, 'arg' => null],
+                'lastReceiptPrintedBy' => ['column' => 'last_receipt_printed_by', 'type' => 'string', 'nullable' => false, 'arg' => 255],
+                'askedAmount' => ['column' => 'asked_amount', 'type' => 'money', 'nullable' => false, 'arg' => null],
                 'needsRecovery' => ['column' => 'needs_recovery', 'type' => 'bool', 'nullable' => false, 'arg' => null],
                 'isApproved' => ['column' => 'is_approved', 'type' => 'bool', 'nullable' => false, 'arg' => null],
                 'registerId' => ['column' => 'register_id', 'type' => 'string', 'nullable' => false, 'arg' => 26],
@@ -1599,6 +1929,7 @@ final class EntityRegistry
             'parent' => null,
             'children' => [],
             'derived' => ['isDeleted', 'domainEvents'],
+            'dropped' => [],
             'immutable' => null,
             'tillFields' => [],
             'fields' => [
@@ -1627,6 +1958,7 @@ final class EntityRegistry
             'parent' => null,
             'children' => ['PriceChangeLine'],
             'derived' => ['isEditable', 'canGoLive', 'canCancel', 'isClosed', 'isDeleted', 'domainEvents'],
+            'dropped' => [],
             'immutable' => null,
             'tillFields' => [],
             'fields' => [
@@ -1658,6 +1990,7 @@ final class EntityRegistry
             'parent' => ['entity' => 'PriceChangeBatch', 'column' => 'batch_id', 'table' => 'price_change_batches', 'scope' => 'branch'],
             'children' => [],
             'derived' => ['isDeleted', 'domainEvents'],
+            'dropped' => [],
             'immutable' => null,
             'tillFields' => [],
             'fields' => [
@@ -1687,6 +2020,7 @@ final class EntityRegistry
             'parent' => null,
             'children' => [],
             'derived' => ['isDeleted', 'domainEvents'],
+            'dropped' => [],
             'immutable' => null,
             'tillFields' => [],
             'fields' => [
@@ -1715,6 +2049,7 @@ final class EntityRegistry
             'parent' => null,
             'children' => [],
             'derived' => ['isPending', 'isDeleted', 'domainEvents'],
+            'dropped' => [],
             'immutable' => null,
             'tillFields' => [],
             'fields' => [
@@ -1742,6 +2077,7 @@ final class EntityRegistry
             'parent' => null,
             'children' => [],
             'derived' => ['isDeleted', 'domainEvents'],
+            'dropped' => [],
             'immutable' => null,
             'tillFields' => [],
             'fields' => [
@@ -1772,6 +2108,7 @@ final class EntityRegistry
             'parent' => null,
             'children' => [],
             'derived' => ['barcodes', 'priceIncVat', 'cost', 'effectiveSellPrice', 'primaryBarcode', 'isDeleted', 'domainEvents'],
+            'dropped' => [],
             'immutable' => null,
             'tillFields' => [],
             'fields' => [
@@ -1831,6 +2168,10 @@ final class EntityRegistry
                 'variant1Value' => ['column' => 'variant1_value', 'type' => 'string', 'nullable' => true, 'arg' => 255],
                 'variant2Name' => ['column' => 'variant2_name', 'type' => 'string', 'nullable' => true, 'arg' => 255],
                 'variant2Value' => ['column' => 'variant2_value', 'type' => 'string', 'nullable' => true, 'arg' => 255],
+                'variant3Name' => ['column' => 'variant3_name', 'type' => 'string', 'nullable' => true, 'arg' => 255],
+                'variant3Value' => ['column' => 'variant3_value', 'type' => 'string', 'nullable' => true, 'arg' => 255],
+                'variant4Name' => ['column' => 'variant4_name', 'type' => 'string', 'nullable' => true, 'arg' => 255],
+                'variant4Value' => ['column' => 'variant4_value', 'type' => 'string', 'nullable' => true, 'arg' => 255],
                 'isVariant' => ['column' => 'is_variant', 'type' => 'bool', 'nullable' => false, 'arg' => null],
                 'isWeighed' => ['column' => 'is_weighed', 'type' => 'bool', 'nullable' => false, 'arg' => null],
                 'isOpenPrice' => ['column' => 'is_open_price', 'type' => 'bool', 'nullable' => false, 'arg' => null],
@@ -1848,6 +2189,7 @@ final class EntityRegistry
             'parent' => ['entity' => 'Product', 'column' => 'product_id', 'table' => 'products', 'scope' => 'company'],
             'children' => [],
             'derived' => ['isDeleted', 'domainEvents'],
+            'dropped' => [],
             'immutable' => null,
             'tillFields' => [],
             'fields' => [
@@ -1857,6 +2199,26 @@ final class EntityRegistry
                 'source' => ['column' => 'source', 'type' => 'enum', 'nullable' => false, 'arg' => ProductAliasSource::class],
                 'hitCount' => ['column' => 'hit_count', 'type' => 'int', 'nullable' => false, 'arg' => null],
                 'lastUsedAt' => ['column' => 'last_used_at', 'type' => 'datetime', 'nullable' => true, 'arg' => null],
+            ],
+        ],
+        'ProductAllergenMatrix' => [
+            'model' => ProductAllergenMatrix::class,
+            'table' => 'product_allergen_matrices',
+            'ownership' => 'branch',
+            'scope' => 'branch',
+            'scopeColumns' => ['branch_id'],
+            'tenancy' => false,
+            'parent' => null,
+            'children' => [],
+            'derived' => ['isDeleted', 'domainEvents'],
+            'dropped' => [],
+            'immutable' => null,
+            'tillFields' => [],
+            'fields' => [
+                'productId' => ['column' => 'product_id', 'type' => 'string', 'nullable' => false, 'arg' => 64],
+                'allergensCsv' => ['column' => 'allergens_csv', 'type' => 'text', 'nullable' => false, 'arg' => null],
+                'notes' => ['column' => 'notes', 'type' => 'text', 'nullable' => false, 'arg' => null],
+                'branchId' => ['column' => 'branch_id', 'type' => 'string', 'nullable' => false, 'arg' => 26],
             ],
         ],
         'ProductBarcode' => [
@@ -1869,6 +2231,7 @@ final class EntityRegistry
             'parent' => ['entity' => 'Product', 'column' => 'product_id', 'table' => 'products', 'scope' => 'company'],
             'children' => [],
             'derived' => ['isDeleted', 'domainEvents'],
+            'dropped' => [],
             'immutable' => null,
             'tillFields' => [],
             'fields' => [
@@ -1879,6 +2242,7 @@ final class EntityRegistry
                 'unitCode' => ['column' => 'unit_code', 'type' => 'string', 'nullable' => true, 'arg' => 255],
                 'productUnitId' => ['column' => 'product_unit_id', 'type' => 'string', 'nullable' => true, 'arg' => 64],
                 'source' => ['column' => 'source', 'type' => 'enum', 'nullable' => false, 'arg' => BarcodeSource::class],
+                'notes' => ['column' => 'notes', 'type' => 'text', 'nullable' => true, 'arg' => null],
             ],
         ],
         'ProductRecall' => [
@@ -1891,6 +2255,7 @@ final class EntityRegistry
             'parent' => null,
             'children' => [],
             'derived' => ['isOpen', 'isDeleted', 'domainEvents'],
+            'dropped' => [],
             'immutable' => null,
             'tillFields' => [],
             'fields' => [
@@ -1923,6 +2288,7 @@ final class EntityRegistry
             'parent' => ['entity' => 'Product', 'column' => 'product_id', 'table' => 'products', 'scope' => 'company'],
             'children' => [],
             'derived' => ['unitCost', 'isDeleted', 'domainEvents'],
+            'dropped' => [],
             'immutable' => null,
             'tillFields' => [],
             'fields' => [
@@ -1954,6 +2320,7 @@ final class EntityRegistry
             'parent' => ['entity' => 'Product', 'column' => 'product_id', 'table' => 'products', 'scope' => 'company'],
             'children' => [],
             'derived' => ['isDeleted', 'domainEvents'],
+            'dropped' => [],
             'immutable' => null,
             'tillFields' => [],
             'fields' => [
@@ -1964,6 +2331,7 @@ final class EntityRegistry
                 'cost' => ['column' => 'cost', 'type' => 'cost', 'nullable' => false, 'arg' => null],
                 'isDefaultSellUnit' => ['column' => 'is_default_sell_unit', 'type' => 'bool', 'nullable' => false, 'arg' => null],
                 'isPurchaseUnit' => ['column' => 'is_purchase_unit', 'type' => 'bool', 'nullable' => false, 'arg' => null],
+                'isDefaultPurchaseUnit' => ['column' => 'is_default_purchase_unit', 'type' => 'bool', 'nullable' => false, 'arg' => null],
                 'position' => ['column' => 'position', 'type' => 'int', 'nullable' => false, 'arg' => null],
             ],
         ],
@@ -1977,6 +2345,7 @@ final class EntityRegistry
             'parent' => ['entity' => 'PromotionRule', 'column' => 'promotion_rule_id', 'table' => 'promotion_rules', 'scope' => 'company'],
             'children' => [],
             'derived' => ['isDeleted', 'domainEvents'],
+            'dropped' => [],
             'immutable' => null,
             'tillFields' => [],
             'fields' => [
@@ -1998,6 +2367,7 @@ final class EntityRegistry
             'parent' => ['entity' => 'PromotionRule', 'column' => 'promotion_rule_id', 'table' => 'promotion_rules', 'scope' => 'company'],
             'children' => [],
             'derived' => ['isDeleted', 'domainEvents'],
+            'dropped' => [],
             'immutable' => null,
             'tillFields' => [],
             'fields' => [
@@ -2007,6 +2377,7 @@ final class EntityRegistry
                 'groupNo' => ['column' => 'group_no', 'type' => 'int', 'nullable' => false, 'arg' => null],
                 'quantity' => ['column' => 'quantity', 'type' => 'int', 'nullable' => false, 'arg' => null],
                 'isExcluded' => ['column' => 'is_excluded', 'type' => 'bool', 'nullable' => false, 'arg' => null],
+                'attributeFilter' => ['column' => 'attribute_filter', 'type' => 'text', 'nullable' => true, 'arg' => null],
             ],
         ],
         'PromotionRedemption' => [
@@ -2019,6 +2390,7 @@ final class EntityRegistry
             'parent' => null,
             'children' => [],
             'derived' => ['isDeleted', 'domainEvents'],
+            'dropped' => [],
             'immutable' => null,
             'tillFields' => [],
             'fields' => [
@@ -2047,6 +2419,7 @@ final class EntityRegistry
             'parent' => null,
             'children' => [],
             'derived' => ['isDeleted', 'domainEvents'],
+            'dropped' => [],
             'immutable' => null,
             'tillFields' => [],
             'fields' => [
@@ -2057,8 +2430,10 @@ final class EntityRegistry
                 'percent' => ['column' => 'percent', 'type' => 'percent', 'nullable' => false, 'arg' => null],
                 'amountOff' => ['column' => 'amount_off', 'type' => 'money', 'nullable' => false, 'arg' => null],
                 'dealPrice' => ['column' => 'deal_price', 'type' => 'money', 'nullable' => false, 'arg' => null],
+                'memberValue' => ['column' => 'member_value', 'type' => 'money', 'nullable' => false, 'arg' => null],
                 'buyQuantity' => ['column' => 'buy_quantity', 'type' => 'int', 'nullable' => false, 'arg' => null],
                 'getQuantity' => ['column' => 'get_quantity', 'type' => 'int', 'nullable' => false, 'arg' => null],
+                'priceTiers' => ['column' => 'price_tiers', 'type' => 'longText', 'nullable' => true, 'arg' => null],
                 'minQuantity' => ['column' => 'min_quantity', 'type' => 'int', 'nullable' => false, 'arg' => null],
                 'priority' => ['column' => 'priority', 'type' => 'int', 'nullable' => false, 'arg' => null],
                 'allowStack' => ['column' => 'allow_stack', 'type' => 'bool', 'nullable' => false, 'arg' => null],
@@ -2090,6 +2465,7 @@ final class EntityRegistry
             'parent' => null,
             'children' => ['PurchaseOrderLine'],
             'derived' => ['net', 'vat', 'gross', 'isEditable', 'isOpen', 'isDeleted', 'domainEvents'],
+            'dropped' => [],
             'immutable' => null,
             'tillFields' => [],
             'fields' => [
@@ -2122,6 +2498,7 @@ final class EntityRegistry
             'parent' => ['entity' => 'PurchaseOrder', 'column' => 'purchase_order_id', 'table' => 'purchase_orders', 'scope' => 'branch'],
             'children' => [],
             'derived' => ['unitCost', 'lineNet', 'lineVat', 'lineGross', 'isFullyReceived', 'isDeleted', 'domainEvents'],
+            'dropped' => [],
             'immutable' => null,
             'tillFields' => [],
             'fields' => [
@@ -2147,6 +2524,7 @@ final class EntityRegistry
             'parent' => null,
             'children' => [],
             'derived' => ['isDeleted', 'domainEvents'],
+            'dropped' => [],
             'immutable' => null,
             'tillFields' => [],
             'fields' => [
@@ -2167,6 +2545,7 @@ final class EntityRegistry
             'parent' => null,
             'children' => [],
             'derived' => ['isOutstanding', 'isDeleted', 'domainEvents'],
+            'dropped' => [],
             'immutable' => null,
             'tillFields' => [],
             'fields' => [
@@ -2193,6 +2572,7 @@ final class EntityRegistry
             'parent' => null,
             'children' => [],
             'derived' => ['isDeleted', 'domainEvents'],
+            'dropped' => [],
             'immutable' => null,
             'tillFields' => [],
             'fields' => [
@@ -2219,6 +2599,7 @@ final class EntityRegistry
             'parent' => null,
             'children' => [],
             'derived' => ['isDeleted', 'domainEvents'],
+            'dropped' => [],
             'immutable' => null,
             'tillFields' => [],
             'fields' => [
@@ -2249,6 +2630,7 @@ final class EntityRegistry
             'parent' => null,
             'children' => [],
             'derived' => ['isDeleted', 'domainEvents'],
+            'dropped' => [],
             'immutable' => null,
             'tillFields' => ['name' => 'name', 'nextSaleNo' => 'next_sale_no', 'nextRefundNo' => 'next_refund_no'],
             'fields' => [
@@ -2271,6 +2653,7 @@ final class EntityRegistry
             'parent' => null,
             'children' => [],
             'derived' => ['isDeleted', 'domainEvents'],
+            'dropped' => [],
             'immutable' => null,
             'tillFields' => [],
             'fields' => [
@@ -2291,6 +2674,7 @@ final class EntityRegistry
             'parent' => null,
             'children' => [],
             'derived' => ['isDeleted', 'domainEvents'],
+            'dropped' => [],
             'immutable' => null,
             'tillFields' => [],
             'fields' => [
@@ -2314,6 +2698,7 @@ final class EntityRegistry
             'parent' => null,
             'children' => ['SaleLine', 'SalePayment', 'SaleVat'],
             'derived' => ['isCompleted', 'isDeleted', 'domainEvents'],
+            'dropped' => [],
             'immutable' => ['when' => ['status' => ['completed', 'voided']], 'whenParent' => null, 'always' => false, 'mutable' => ['status', 'void_reason_id', 'voided_by']],
             'tillFields' => [],
             'fields' => [
@@ -2355,6 +2740,7 @@ final class EntityRegistry
             'parent' => ['entity' => 'Sale', 'column' => 'sale_id', 'table' => 'sales', 'scope' => 'register'],
             'children' => [],
             'derived' => ['isDeleted', 'domainEvents'],
+            'dropped' => [],
             'immutable' => ['when' => null, 'whenParent' => ['status' => ['completed', 'voided']], 'always' => false, 'mutable' => []],
             'tillFields' => [],
             'fields' => [
@@ -2365,7 +2751,9 @@ final class EntityRegistry
                 'name' => ['column' => 'name', 'type' => 'string', 'nullable' => false, 'arg' => 255],
                 'barcode' => ['column' => 'barcode', 'type' => 'string', 'nullable' => false, 'arg' => 255],
                 'unitId' => ['column' => 'unit_id', 'type' => 'string', 'nullable' => true, 'arg' => 64],
+                'unitFactor' => ['column' => 'unit_factor', 'type' => 'quantity', 'nullable' => false, 'arg' => null],
                 'qty' => ['column' => 'qty', 'type' => 'quantity', 'nullable' => false, 'arg' => null],
+                'baseQty' => ['column' => 'base_qty', 'type' => 'quantity', 'nullable' => false, 'arg' => null],
                 'unitPrice' => ['column' => 'unit_price', 'type' => 'money', 'nullable' => false, 'arg' => null],
                 'lineDiscount' => ['column' => 'line_discount', 'type' => 'money', 'nullable' => false, 'arg' => null],
                 'discountSource' => ['column' => 'discount_source', 'type' => 'enum', 'nullable' => false, 'arg' => DiscountSource::class],
@@ -2402,6 +2790,7 @@ final class EntityRegistry
             'parent' => ['entity' => 'Sale', 'column' => 'sale_id', 'table' => 'sales', 'scope' => 'register'],
             'children' => [],
             'derived' => ['isDeleted', 'domainEvents'],
+            'dropped' => [],
             'immutable' => ['when' => null, 'whenParent' => ['status' => ['completed', 'voided']], 'always' => false, 'mutable' => ['status']],
             'tillFields' => [],
             'fields' => [
@@ -2436,6 +2825,7 @@ final class EntityRegistry
             'parent' => ['entity' => 'Sale', 'column' => 'sale_id', 'table' => 'sales', 'scope' => 'register'],
             'children' => [],
             'derived' => ['isDeleted', 'domainEvents'],
+            'dropped' => [],
             'immutable' => ['when' => null, 'whenParent' => ['status' => ['completed', 'voided']], 'always' => false, 'mutable' => []],
             'tillFields' => [],
             'fields' => [
@@ -2458,6 +2848,7 @@ final class EntityRegistry
             'parent' => null,
             'children' => [],
             'derived' => ['isDeleted', 'domainEvents'],
+            'dropped' => [],
             'immutable' => null,
             'tillFields' => [],
             'fields' => [
@@ -2488,6 +2879,7 @@ final class EntityRegistry
             'parent' => null,
             'children' => [],
             'derived' => ['isDeleted', 'domainEvents'],
+            'dropped' => [],
             'immutable' => null,
             'tillFields' => [],
             'fields' => [
@@ -2510,6 +2902,7 @@ final class EntityRegistry
             'parent' => null,
             'children' => [],
             'derived' => ['isDeleted', 'domainEvents'],
+            'dropped' => [],
             'immutable' => null,
             'tillFields' => [],
             'fields' => [
@@ -2532,6 +2925,7 @@ final class EntityRegistry
             'parent' => null,
             'children' => [],
             'derived' => ['isDeleted', 'domainEvents'],
+            'dropped' => [],
             'immutable' => null,
             'tillFields' => [],
             'fields' => [
@@ -2556,6 +2950,7 @@ final class EntityRegistry
             'parent' => null,
             'children' => [],
             'derived' => ['isDeleted', 'domainEvents'],
+            'dropped' => [],
             'immutable' => null,
             'tillFields' => [],
             'fields' => [
@@ -2577,6 +2972,7 @@ final class EntityRegistry
             'parent' => null,
             'children' => [],
             'derived' => ['isDeleted', 'domainEvents'],
+            'dropped' => [],
             'immutable' => null,
             'tillFields' => [],
             'fields' => [
@@ -2602,6 +2998,7 @@ final class EntityRegistry
             'parent' => null,
             'children' => [],
             'derived' => ['isOpen', 'isDeleted', 'domainEvents'],
+            'dropped' => [],
             'immutable' => null,
             'tillFields' => [],
             'fields' => [
@@ -2631,6 +3028,7 @@ final class EntityRegistry
             'parent' => ['entity' => 'Shift', 'column' => 'shift_id', 'table' => 'shifts', 'scope' => 'register'],
             'children' => [],
             'derived' => ['isDeleted', 'domainEvents'],
+            'dropped' => [],
             'immutable' => null,
             'tillFields' => [],
             'fields' => [
@@ -2654,6 +3052,7 @@ final class EntityRegistry
             'parent' => null,
             'children' => [],
             'derived' => ['isDeleted', 'domainEvents'],
+            'dropped' => [],
             'immutable' => null,
             'tillFields' => [],
             'fields' => [
@@ -2678,6 +3077,7 @@ final class EntityRegistry
             'parent' => null,
             'children' => ['StandingOrderLine'],
             'derived' => ['isDeleted', 'domainEvents'],
+            'dropped' => [],
             'immutable' => null,
             'tillFields' => [],
             'fields' => [
@@ -2699,6 +3099,7 @@ final class EntityRegistry
             'parent' => ['entity' => 'StandingOrder', 'column' => 'standing_order_id', 'table' => 'standing_orders', 'scope' => 'sender'],
             'children' => [],
             'derived' => ['isDeleted', 'domainEvents'],
+            'dropped' => [],
             'immutable' => null,
             'tillFields' => [],
             'fields' => [
@@ -2719,6 +3120,7 @@ final class EntityRegistry
             'parent' => null,
             'children' => [],
             'derived' => ['isDeleted', 'domainEvents'],
+            'dropped' => [],
             'immutable' => null,
             'tillFields' => [],
             'fields' => [
@@ -2742,6 +3144,7 @@ final class EntityRegistry
             'parent' => null,
             'children' => [],
             'derived' => ['isDeleted', 'domainEvents'],
+            'dropped' => [],
             'immutable' => null,
             'tillFields' => [],
             'fields' => [
@@ -2772,6 +3175,7 @@ final class EntityRegistry
             'parent' => null,
             'children' => [],
             'derived' => ['isHeld', 'isDeleted', 'domainEvents'],
+            'dropped' => [],
             'immutable' => null,
             'tillFields' => [],
             'fields' => [
@@ -2798,6 +3202,7 @@ final class EntityRegistry
             'parent' => null,
             'children' => [],
             'derived' => ['isClosed', 'isDeleted', 'domainEvents'],
+            'dropped' => [],
             'immutable' => null,
             'tillFields' => [],
             'fields' => [
@@ -2831,6 +3236,7 @@ final class EntityRegistry
             'parent' => ['entity' => 'StockTake', 'column' => 'stock_take_id', 'table' => 'stock_takes', 'scope' => 'branch'],
             'children' => [],
             'derived' => ['isCounted', 'isDeleted', 'domainEvents'],
+            'dropped' => [],
             'immutable' => null,
             'tillFields' => [],
             'fields' => [
@@ -2861,6 +3267,7 @@ final class EntityRegistry
             'parent' => ['entity' => 'StockTake', 'column' => 'stock_take_id', 'table' => 'stock_takes', 'scope' => 'branch'],
             'children' => [],
             'derived' => ['isDeleted', 'domainEvents'],
+            'dropped' => [],
             'immutable' => null,
             'tillFields' => [],
             'fields' => [
@@ -2868,6 +3275,108 @@ final class EntityRegistry
                 'name' => ['column' => 'name', 'type' => 'string', 'nullable' => false, 'arg' => 255],
                 'assignedUserId' => ['column' => 'assigned_user_id', 'type' => 'string', 'nullable' => false, 'arg' => 64],
                 'isComplete' => ['column' => 'is_complete', 'type' => 'bool', 'nullable' => false, 'arg' => null],
+                'branchId' => ['column' => 'branch_id', 'type' => 'string', 'nullable' => false, 'arg' => 26],
+            ],
+        ],
+        'StockTransfer' => [
+            'model' => StockTransfer::class,
+            'table' => 'stock_transfers',
+            'ownership' => 'branch',
+            'scope' => 'branch',
+            'scopeColumns' => ['branch_id'],
+            'tenancy' => false,
+            'parent' => null,
+            'children' => [],
+            'derived' => ['isDeleted', 'domainEvents'],
+            'dropped' => [],
+            'immutable' => null,
+            'tillFields' => [],
+            'fields' => [
+                'reference' => ['column' => 'reference', 'type' => 'string', 'nullable' => false, 'arg' => 255],
+                'fromBranchId' => ['column' => 'from_branch_id', 'type' => 'string', 'nullable' => false, 'arg' => 64],
+                'toBranchId' => ['column' => 'to_branch_id', 'type' => 'string', 'nullable' => false, 'arg' => 64],
+                'status' => ['column' => 'status', 'type' => 'enum', 'nullable' => false, 'arg' => StockTransferStatus::class],
+                'requestedAt' => ['column' => 'requested_at', 'type' => 'datetime', 'nullable' => false, 'arg' => null],
+                'requestedByUserId' => ['column' => 'requested_by_user_id', 'type' => 'string', 'nullable' => false, 'arg' => 64],
+                'dispatchedAt' => ['column' => 'dispatched_at', 'type' => 'datetime', 'nullable' => true, 'arg' => null],
+                'dispatchedByUserId' => ['column' => 'dispatched_by_user_id', 'type' => 'string', 'nullable' => false, 'arg' => 64],
+                'dispatchedCost' => ['column' => 'dispatched_cost', 'type' => 'cost', 'nullable' => false, 'arg' => null],
+                'isReturn' => ['column' => 'is_return', 'type' => 'bool', 'nullable' => false, 'arg' => null],
+                'returnOfTransferId' => ['column' => 'return_of_transfer_id', 'type' => 'string', 'nullable' => true, 'arg' => 64],
+                'note' => ['column' => 'note', 'type' => 'text', 'nullable' => false, 'arg' => null],
+                'branchId' => ['column' => 'branch_id', 'type' => 'string', 'nullable' => false, 'arg' => 26],
+            ],
+        ],
+        'StockTransferLine' => [
+            'model' => StockTransferLine::class,
+            'table' => 'stock_transfer_lines',
+            'ownership' => 'branch',
+            'scope' => 'branch',
+            'scopeColumns' => ['branch_id'],
+            'tenancy' => false,
+            'parent' => ['entity' => 'StockTransfer', 'column' => 'transfer_id', 'table' => 'stock_transfers', 'scope' => 'branch'],
+            'children' => [],
+            'derived' => ['isDeleted', 'domainEvents'],
+            'dropped' => [],
+            'immutable' => null,
+            'tillFields' => [],
+            'fields' => [
+                'transferId' => ['column' => 'transfer_id', 'type' => 'string', 'nullable' => false, 'arg' => 64],
+                'productId' => ['column' => 'product_id', 'type' => 'string', 'nullable' => false, 'arg' => 64],
+                'productName' => ['column' => 'product_name', 'type' => 'string', 'nullable' => false, 'arg' => 255],
+                'qtyRequested' => ['column' => 'qty_requested', 'type' => 'quantity', 'nullable' => false, 'arg' => null],
+                'qtyDispatched' => ['column' => 'qty_dispatched', 'type' => 'quantity', 'nullable' => false, 'arg' => null],
+                'unitCost' => ['column' => 'unit_cost', 'type' => 'cost', 'nullable' => false, 'arg' => null],
+                'branchId' => ['column' => 'branch_id', 'type' => 'string', 'nullable' => false, 'arg' => 26],
+            ],
+        ],
+        'StockTransferReceipt' => [
+            'model' => StockTransferReceipt::class,
+            'table' => 'stock_transfer_receipts',
+            'ownership' => 'branch',
+            'scope' => 'branch',
+            'scopeColumns' => ['branch_id'],
+            'tenancy' => false,
+            'parent' => ['entity' => 'StockTransfer', 'column' => 'transfer_id', 'table' => 'stock_transfers', 'scope' => 'branch'],
+            'children' => [],
+            'derived' => ['isDeleted', 'domainEvents'],
+            'dropped' => [],
+            'immutable' => null,
+            'tillFields' => [],
+            'fields' => [
+                'transferId' => ['column' => 'transfer_id', 'type' => 'string', 'nullable' => false, 'arg' => 64],
+                'status' => ['column' => 'status', 'type' => 'enum', 'nullable' => false, 'arg' => StockTransferReceiptStatus::class],
+                'receivedAt' => ['column' => 'received_at', 'type' => 'datetime', 'nullable' => false, 'arg' => null],
+                'receivedByUserId' => ['column' => 'received_by_user_id', 'type' => 'string', 'nullable' => false, 'arg' => 64],
+                'receivedCost' => ['column' => 'received_cost', 'type' => 'cost', 'nullable' => false, 'arg' => null],
+                'varianceCost' => ['column' => 'variance_cost', 'type' => 'cost', 'nullable' => false, 'arg' => null],
+                'closedAt' => ['column' => 'closed_at', 'type' => 'datetime', 'nullable' => true, 'arg' => null],
+                'note' => ['column' => 'note', 'type' => 'text', 'nullable' => false, 'arg' => null],
+                'branchId' => ['column' => 'branch_id', 'type' => 'string', 'nullable' => false, 'arg' => 26],
+            ],
+        ],
+        'StockTransferReceiptLine' => [
+            'model' => StockTransferReceiptLine::class,
+            'table' => 'stock_transfer_receipt_lines',
+            'ownership' => 'branch',
+            'scope' => 'branch',
+            'scopeColumns' => ['branch_id'],
+            'tenancy' => false,
+            'parent' => ['entity' => 'StockTransferReceipt', 'column' => 'receipt_id', 'table' => 'stock_transfer_receipts', 'scope' => 'branch'],
+            'children' => [],
+            'derived' => ['isDeleted', 'domainEvents'],
+            'dropped' => [],
+            'immutable' => null,
+            'tillFields' => [],
+            'fields' => [
+                'receiptId' => ['column' => 'receipt_id', 'type' => 'string', 'nullable' => false, 'arg' => 64],
+                'transferId' => ['column' => 'transfer_id', 'type' => 'string', 'nullable' => false, 'arg' => 64],
+                'transferLineId' => ['column' => 'transfer_line_id', 'type' => 'string', 'nullable' => false, 'arg' => 64],
+                'productId' => ['column' => 'product_id', 'type' => 'string', 'nullable' => false, 'arg' => 64],
+                'qtyDispatched' => ['column' => 'qty_dispatched', 'type' => 'quantity', 'nullable' => false, 'arg' => null],
+                'qtyReceived' => ['column' => 'qty_received', 'type' => 'quantity', 'nullable' => false, 'arg' => null],
+                'qtyVariance' => ['column' => 'qty_variance', 'type' => 'quantity', 'nullable' => false, 'arg' => null],
+                'unitCost' => ['column' => 'unit_cost', 'type' => 'cost', 'nullable' => false, 'arg' => null],
                 'branchId' => ['column' => 'branch_id', 'type' => 'string', 'nullable' => false, 'arg' => 26],
             ],
         ],
@@ -2881,6 +3390,7 @@ final class EntityRegistry
             'parent' => null,
             'children' => [],
             'derived' => ['isActivated', 'hasBalance', 'isDeleted', 'domainEvents'],
+            'dropped' => [],
             'immutable' => null,
             'tillFields' => [],
             'fields' => [
@@ -2908,6 +3418,7 @@ final class EntityRegistry
             'parent' => null,
             'children' => [],
             'derived' => ['minimumOrder', 'isDeleted', 'domainEvents'],
+            'dropped' => [],
             'immutable' => null,
             'tillFields' => [],
             'fields' => [
@@ -2942,6 +3453,7 @@ final class EntityRegistry
             'parent' => null,
             'children' => ['SupplierCreditNoteLine'],
             'derived' => ['isDeleted', 'domainEvents'],
+            'dropped' => [],
             'immutable' => null,
             'tillFields' => [],
             'fields' => [
@@ -2970,6 +3482,7 @@ final class EntityRegistry
             'parent' => ['entity' => 'SupplierCreditNote', 'column' => 'supplier_credit_note_id', 'table' => 'supplier_credit_notes', 'scope' => 'branch'],
             'children' => [],
             'derived' => ['isDeleted', 'domainEvents'],
+            'dropped' => [],
             'immutable' => null,
             'tillFields' => [],
             'fields' => [
@@ -2992,6 +3505,7 @@ final class EntityRegistry
             'parent' => null,
             'children' => ['SupplierInvoiceLine'],
             'derived' => ['isDeleted', 'domainEvents'],
+            'dropped' => [],
             'immutable' => null,
             'tillFields' => [],
             'fields' => [
@@ -3027,6 +3541,7 @@ final class EntityRegistry
             'parent' => ['entity' => 'SupplierInvoice', 'column' => 'supplier_invoice_id', 'table' => 'supplier_invoices', 'scope' => 'branch'],
             'children' => [],
             'derived' => ['isDeleted', 'domainEvents'],
+            'dropped' => [],
             'immutable' => null,
             'tillFields' => [],
             'fields' => [
@@ -3054,6 +3569,7 @@ final class EntityRegistry
             'parent' => null,
             'children' => ['SupplierPaymentAllocation'],
             'derived' => ['isDeleted', 'domainEvents'],
+            'dropped' => [],
             'immutable' => null,
             'tillFields' => [],
             'fields' => [
@@ -3082,6 +3598,7 @@ final class EntityRegistry
             'parent' => ['entity' => 'SupplierPayment', 'column' => 'supplier_payment_id', 'table' => 'supplier_payments', 'scope' => 'branch'],
             'children' => [],
             'derived' => ['isDeleted', 'domainEvents'],
+            'dropped' => [],
             'immutable' => null,
             'tillFields' => [],
             'fields' => [
@@ -3104,6 +3621,7 @@ final class EntityRegistry
             'parent' => null,
             'children' => [],
             'derived' => ['isOpen', 'isDeleted', 'domainEvents'],
+            'dropped' => [],
             'immutable' => null,
             'tillFields' => [],
             'fields' => [
@@ -3130,6 +3648,7 @@ final class EntityRegistry
             'parent' => null,
             'children' => [],
             'derived' => ['isHealthy', 'isDeleted', 'domainEvents'],
+            'dropped' => [],
             'immutable' => null,
             'tillFields' => [],
             'fields' => [
@@ -3153,6 +3672,7 @@ final class EntityRegistry
             'parent' => null,
             'children' => [],
             'derived' => ['isDeleted', 'domainEvents'],
+            'dropped' => [],
             'immutable' => null,
             'tillFields' => [],
             'fields' => [
@@ -3167,6 +3687,29 @@ final class EntityRegistry
                 'isActive' => ['column' => 'is_active', 'type' => 'bool', 'nullable' => false, 'arg' => null],
             ],
         ],
+        'TemperatureUnit' => [
+            'model' => TemperatureUnit::class,
+            'table' => 'temperature_units',
+            'ownership' => 'branch',
+            'scope' => 'branch',
+            'scopeColumns' => ['branch_id'],
+            'tenancy' => false,
+            'parent' => null,
+            'children' => [],
+            'derived' => ['isDeleted', 'domainEvents'],
+            'dropped' => [],
+            'immutable' => null,
+            'tillFields' => [],
+            'fields' => [
+                'name' => ['column' => 'name', 'type' => 'string', 'nullable' => false, 'arg' => 255],
+                'kind' => ['column' => 'kind', 'type' => 'enum', 'nullable' => false, 'arg' => TemperatureUnitKind::class],
+                'safeMinC' => ['column' => 'safe_min_c', 'type' => 'quantity', 'nullable' => false, 'arg' => null],
+                'safeMaxC' => ['column' => 'safe_max_c', 'type' => 'quantity', 'nullable' => false, 'arg' => null],
+                'diaryCheckDefinitionId' => ['column' => 'diary_check_definition_id', 'type' => 'string', 'nullable' => false, 'arg' => 64],
+                'isActive' => ['column' => 'is_active', 'type' => 'bool', 'nullable' => false, 'arg' => null],
+                'branchId' => ['column' => 'branch_id', 'type' => 'string', 'nullable' => false, 'arg' => 26],
+            ],
+        ],
         'TenderDaily' => [
             'model' => TenderDaily::class,
             'table' => 'tender_daily',
@@ -3177,6 +3720,7 @@ final class EntityRegistry
             'parent' => null,
             'children' => [],
             'derived' => ['isDeleted', 'domainEvents'],
+            'dropped' => [],
             'immutable' => null,
             'tillFields' => [],
             'fields' => [
@@ -3199,6 +3743,7 @@ final class EntityRegistry
             'parent' => null,
             'children' => [],
             'derived' => ['isDeleted', 'domainEvents'],
+            'dropped' => [],
             'immutable' => null,
             'tillFields' => [],
             'fields' => [
@@ -3221,6 +3766,7 @@ final class EntityRegistry
             'parent' => null,
             'children' => [],
             'derived' => ['isDeleted', 'domainEvents'],
+            'dropped' => [],
             'immutable' => null,
             'tillFields' => [],
             'fields' => [
@@ -3230,6 +3776,29 @@ final class EntityRegistry
                 'isPinned' => ['column' => 'is_pinned', 'type' => 'bool', 'nullable' => false, 'arg' => null],
                 'pinnedPosition' => ['column' => 'pinned_position', 'type' => 'int', 'nullable' => true, 'arg' => null],
                 'rebuiltAt' => ['column' => 'rebuilt_at', 'type' => 'datetime', 'nullable' => false, 'arg' => null],
+                'branchId' => ['column' => 'branch_id', 'type' => 'string', 'nullable' => false, 'arg' => 26],
+            ],
+        ],
+        'TrainingRecord' => [
+            'model' => TrainingRecord::class,
+            'table' => 'training_records',
+            'ownership' => 'branch',
+            'scope' => 'branch',
+            'scopeColumns' => ['branch_id'],
+            'tenancy' => false,
+            'parent' => null,
+            'children' => [],
+            'derived' => ['isDeleted', 'domainEvents'],
+            'dropped' => [],
+            'immutable' => null,
+            'tillFields' => [],
+            'fields' => [
+                'userId' => ['column' => 'user_id', 'type' => 'string', 'nullable' => false, 'arg' => 64],
+                'topic' => ['column' => 'topic', 'type' => 'string', 'nullable' => false, 'arg' => 255],
+                'trainedOn' => ['column' => 'trained_on', 'type' => 'date', 'nullable' => false, 'arg' => null],
+                'expiresOn' => ['column' => 'expires_on', 'type' => 'date', 'nullable' => true, 'arg' => null],
+                'trainerName' => ['column' => 'trainer_name', 'type' => 'string', 'nullable' => false, 'arg' => 255],
+                'notes' => ['column' => 'notes', 'type' => 'text', 'nullable' => false, 'arg' => null],
                 'branchId' => ['column' => 'branch_id', 'type' => 'string', 'nullable' => false, 'arg' => 26],
             ],
         ],
@@ -3243,14 +3812,17 @@ final class EntityRegistry
             'parent' => null,
             'children' => [],
             'derived' => ['isDeleted', 'domainEvents'],
+            'dropped' => [],
             'immutable' => null,
             'tillFields' => [],
             'fields' => [
                 'code' => ['column' => 'code', 'type' => 'string', 'nullable' => false, 'arg' => 255],
                 'name' => ['column' => 'name', 'type' => 'string', 'nullable' => false, 'arg' => 255],
                 'plural' => ['column' => 'plural', 'type' => 'string', 'nullable' => false, 'arg' => 255],
+                'symbol' => ['column' => 'symbol', 'type' => 'string', 'nullable' => false, 'arg' => 255],
                 'kind' => ['column' => 'kind', 'type' => 'enum', 'nullable' => false, 'arg' => UnitKind::class],
                 'decimalsAllowed' => ['column' => 'decimals_allowed', 'type' => 'bool', 'nullable' => false, 'arg' => null],
+                'decimalPlaces' => ['column' => 'decimal_places', 'type' => 'int', 'nullable' => false, 'arg' => null],
                 'isActive' => ['column' => 'is_active', 'type' => 'bool', 'nullable' => false, 'arg' => null],
                 'isSystem' => ['column' => 'is_system', 'type' => 'bool', 'nullable' => false, 'arg' => null],
                 'position' => ['column' => 'position', 'type' => 'int', 'nullable' => false, 'arg' => null],
@@ -3266,6 +3838,7 @@ final class EntityRegistry
             'parent' => null,
             'children' => [],
             'derived' => ['isDeleted', 'domainEvents'],
+            'dropped' => [],
             'immutable' => null,
             'tillFields' => [],
             'fields' => [
@@ -3292,6 +3865,7 @@ final class EntityRegistry
             'parent' => null,
             'children' => [],
             'derived' => ['role', 'isDeleted', 'domainEvents'],
+            'dropped' => ['remoteApprovalSecret'],
             'immutable' => null,
             'tillFields' => [],
             'fields' => [
@@ -3307,6 +3881,8 @@ final class EntityRegistry
                 'simpleModeOverride' => ['column' => 'simple_mode_override', 'type' => 'bool', 'nullable' => true, 'arg' => null],
                 'bigTextMode' => ['column' => 'big_text_mode', 'type' => 'bool', 'nullable' => false, 'arg' => null],
                 'isActive' => ['column' => 'is_active', 'type' => 'bool', 'nullable' => false, 'arg' => null],
+                'preferredCulture' => ['column' => 'preferred_culture', 'type' => 'string', 'nullable' => false, 'arg' => 255],
+                'remoteApprovalSecretSetAt' => ['column' => 'remote_approval_secret_set_at', 'type' => 'datetime', 'nullable' => true, 'arg' => null],
             ],
         ],
         'VatRate' => [
@@ -3319,6 +3895,7 @@ final class EntityRegistry
             'parent' => null,
             'children' => [],
             'derived' => ['isDeleted', 'domainEvents'],
+            'dropped' => [],
             'immutable' => null,
             'tillFields' => [],
             'fields' => [
@@ -3342,6 +3919,7 @@ final class EntityRegistry
             'parent' => null,
             'children' => [],
             'derived' => ['isDeleted', 'domainEvents'],
+            'dropped' => [],
             'immutable' => null,
             'tillFields' => [],
             'fields' => [
@@ -3372,6 +3950,7 @@ final class EntityRegistry
             'parent' => null,
             'children' => [],
             'derived' => ['isDeleted', 'domainEvents'],
+            'dropped' => [],
             'immutable' => null,
             'tillFields' => [],
             'fields' => [
@@ -3396,6 +3975,7 @@ final class EntityRegistry
             'parent' => null,
             'children' => [],
             'derived' => ['isDeleted', 'domainEvents'],
+            'dropped' => [],
             'immutable' => null,
             'tillFields' => [],
             'fields' => [
@@ -3417,6 +3997,7 @@ final class EntityRegistry
             'parent' => null,
             'children' => [],
             'derived' => ['isDeleted', 'domainEvents'],
+            'dropped' => [],
             'immutable' => null,
             'tillFields' => [],
             'fields' => [
