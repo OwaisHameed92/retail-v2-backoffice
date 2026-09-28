@@ -57,8 +57,8 @@ function BranchLicenceDialogBody({ onOpenChange, tenantId, branch, options }: Br
                 <Alert variant="info">
                     <Info className="size-4" />
                     <AlertDescription>
-                        Each till gets the new key details at its next check-in. A new kind, length or start also sets the dates of every key of the
-                        branch again, replacing renewals.
+                        Each till gets the new key details at its next check-in. A new kind, length or start can extend the keys&apos; dates, but never
+                        shortens a date already paid for and never turns a paid till back into a trial.
                     </AlertDescription>
                 </Alert>
 

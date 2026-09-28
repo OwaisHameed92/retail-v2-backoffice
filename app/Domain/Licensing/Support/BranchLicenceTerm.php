@@ -34,15 +34,21 @@ final class BranchLicenceTerm
             return false;
         }
 
-        $end = $branch->licence_length_unit->add($start, $branch->licence_length);
+        $end = CarbonImmutable::instance($branch->licence_length_unit->add($start, $branch->licence_length));
         $plan = $licence->plan;
+        $paidUntil = $licence->expires_at !== null ? CarbonImmutable::instance($licence->expires_at) : null;
 
+        // Owner rule (2026-09-29): a new term never shortens a date the customer already has, and never turns a
+        // paid licence back into a trial. Shortening is a separate, explicit action.
         if ($branch->licence_kind === TokenKind::Full) {
-            $licence->expires_at = $end;
+            $licence->expires_at = $paidUntil !== null && $paidUntil->greaterThan($end) ? $paidUntil : $end;
             $licence->grace_days = $plan !== null ? $plan->grace_days : $licence->grace_days;
+        } elseif ($paidUntil !== null && $paidUntil->greaterThan($now)) {
+            return false;
         } else {
+            $trialEnds = $licence->trial_ends_at !== null ? CarbonImmutable::instance($licence->trial_ends_at) : null;
             $licence->expires_at = null;
-            $licence->trial_ends_at = $end;
+            $licence->trial_ends_at = $trialEnds !== null && $trialEnds->greaterThan($end) ? $trialEnds : $end;
             $licence->grace_days = $plan !== null ? $plan->trial_grace_days : $licence->grace_days;
         }
 

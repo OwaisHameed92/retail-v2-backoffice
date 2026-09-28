@@ -227,3 +227,26 @@ test('activate-by days come from config', function () {
 
     expect(IssueLicence::activateBy()->toIso8601String())->toBe('2026-10-15T09:00:00+00:00');
 });
+
+test('a new term never shortens a paid expiry and never turns a paid licence back into a trial', function () {
+    [$company, $licence] = $this->keyedTenant();
+    $this->activate($licence);
+    $branch = $this->branchOf($company);
+
+    // Customer paid for a year.
+    app(UpdateBranchLicence::class)->handle($branch, settings(['kind' => TokenKind::Full, 'length' => 1, 'lengthUnit' => LicenceLengthUnit::Years]));
+    expect($licence->refresh()->expires_at?->toIso8601String())->toBe('2027-10-05T09:00:00+00:00');
+
+    // A shorter full term keeps the paid date.
+    app(UpdateBranchLicence::class)->handle($branch->refresh(), settings(['kind' => TokenKind::Full, 'length' => 1, 'lengthUnit' => LicenceLengthUnit::Months]));
+    expect($licence->refresh()->expires_at?->toIso8601String())->toBe('2027-10-05T09:00:00+00:00');
+
+    // Switching the branch to trial does not touch a licence that is still paid.
+    app(UpdateBranchLicence::class)->handle($branch->refresh(), settings(['kind' => TokenKind::Trial, 'length' => 14, 'lengthUnit' => LicenceLengthUnit::Days]));
+    expect($licence->refresh()->expires_at?->toIso8601String())->toBe('2027-10-05T09:00:00+00:00')
+        ->and($licence->status)->toBe(LicenceStatus::Active);
+
+    // A longer full term still extends it.
+    app(UpdateBranchLicence::class)->handle($branch->refresh(), settings(['kind' => TokenKind::Full, 'length' => 2, 'lengthUnit' => LicenceLengthUnit::Years]));
+    expect($licence->refresh()->expires_at?->toIso8601String())->toBe('2028-10-05T09:00:00+00:00');
+});
