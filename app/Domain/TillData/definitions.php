@@ -22,7 +22,7 @@ use App\Domain\TillData\Concerns\SaleQueries;
 use App\Domain\TillData\Concerns\StockMovementQueries;
 
 return [
-    'contract' => 'docs/contracts/portal-api-v1.3.1/docs/web-portal-api',
+    'contract' => 'docs/contracts/portal-api-v1.3.3/docs/web-portal-api',
 
     /*
      * The contract release this run writes migrations for. Migrations are additive: <prefix>00_create_till_<release>

@@ -22,7 +22,7 @@ use InvalidArgumentException;
 
 /**
  * The one idempotent way till rows enter the store. The push endpoint (2.2) calls it with a decoded batch;
- * pull (2.5) and tests use it too. Contract v1.3.1: docs/contracts/portal-api-v1.3.1/docs/web-portal-api.md §5-7
+ * pull (2.5) and tests use it too. Contract v1.3.1: docs/contracts/portal-api-v1.3.3/docs/web-portal-api.md §5-7
  * and §19 (never twice, never echoed, never backwards).
  *
  *     $result = app(ApplySyncChanges::class)->handle($company, $sendingBranch, $changes);

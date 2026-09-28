@@ -58,6 +58,14 @@
     },
     "messages": {
       "$ref": "common.schema.json#/$defs/messages"
+    },
+    "hubUrl": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^https://",
+      "description": "Optional (2026-09-28). Only when sync runs on another host than the address built into the till."
     }
   },
   "required": [

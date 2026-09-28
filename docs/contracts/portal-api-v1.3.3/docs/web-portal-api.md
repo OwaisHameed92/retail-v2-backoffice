@@ -442,7 +442,7 @@ SSPOS1.<base64url(payload JSON)>.<base64url(Ed25519 signature over ASCII "SSPOS1
 | `businessName`, `branchName` | string | Shown on the licence screen; the first-run wizard starts from them (shop name, branch name). |
 | `installCode` | `XXXX-XXXX` | `portal` (per till, 17.15): the activating till's code. `local`: the install it was made for; **absent/empty = an open local key** (17.16) — the first till that accepts it binds it to itself. |
 | `maxRegisters` | integer ≥ 1 | Tills allowed in this branch, **main till included**. The same value in every till key of the branch. |
-| `features` | string[] | Open list of paid feature names (`^[a-z0-9]+([._-][a-z0-9]+)*$`; the till's names are snake_case, e.g. `loyalty`, `multi_branch`, `cloud_sync`, `second_screen` — `src/SSPOS.Application/Ports/Feature.cs`; compared exactly, so `multi-branch` is **not** `multi_branch`). `multi_branch` = the company may add branches. `full`: exactly these (absent/`[]` = none). `trial`: absent/`[]` = **every feature on**; a non-empty list = only those. |
+| `features` | string[] | Open list of paid feature names (`^[a-z0-9]+([._-][a-z0-9]+)*$`; **the till knows exactly these 11** (`src/SSPOS.Application/Ports/Feature.cs`, 2026-09-28): `loyalty`, `promotions`, `purchasing`, `accounts`, `multi_branch`, `second_screen`, `label_printing`, `assist`, `cloud_sync`, `assist_invoice_scan`, `assist_questions` — an unknown name is ignored; compared exactly, so `multi-branch` is **not** `multi_branch`). `multi_branch` = the company may add branches. `full`: exactly these (absent/`[]` = none). `trial`: absent/`[]` = **every feature on**; a non-empty list = only those. |
 | `issuedAt`, `validFrom`, `expiresAt` | UTC date-time | `expiresAt` is **required** — there are no lifetime licences. `validFrom`…`expiresAt` is the length the admin chose (days, months, years). |
 | `onlineCheck` | object | Cloud: `{ "required": true, "intervalHours": 24, "graceDays": 14 }`. Absent or `required:false` = no online check (local). The policy travels in the token, so you can change it per customer without a till release. |
 | `limits` | object | Open map of **whole numbers**, e.g. `{ "users": 10, "branches": 2 }`. Values must be integers (a decimal or null makes the token unreadable on the till). Unknown limit = ignored; missing = unlimited, **except `branches`** = how many branches the company may run, **1 when absent** (`src/SSPOS.Domain/Licensing/LicenceLimits.cs`). Tills are not a limit — they are `maxRegisters`. |
@@ -620,37 +620,46 @@ static string Sign(object payload, byte[] privateSeed32)
 
 ### 17.3 Onboarding, end to end
 
+**Updated 2026-09-28 (owner): per-till keys, a key is required, one code for the shop.** The till does **not** call
+`devices/activate` (17.4 is kept for reference only — do not build it). The shop types only a **licence key** per till,
+plus a **sync key** only if it adds the dashboard later (`docs/web-portal-api/SIMPLE-SETUP.md`).
+
 ```
 Owner              Portal                                   Main till                        Other tills
-  | sign up -------> | Company + Branch + trial licence       |                                 |
-  |                  | (default 7 days, per customer) +       |                                 |
-  |                  | activation code                        |                                 |
-  | <-- e-mail: activation code + installer link              |                                 |
-  | install, first-run wizard step 1 "Link to your account" ->|                                 |
-  |                  | <------ POST devices/activate ---------|                                 |
-  |                  | ------- ids, apiKey, token, time ----->| adopts ids, stores key + token, |
-  |                  |                                        | sets hub URL, Cloud sync ON     |
-  |                  | <------ GET sync/hello ----------------|                                 |
-  |                  | <------ push / pull every 30 s ------->|                                 |
-  |                  |                                        | <-- LAN join (main till refuses |
-  |                  |                                        |     past maxRegisters) ---------|
-  |                  | <------ POST licence/validate ---------| daily: tills, versions, clock   |
-  |                  | ------- status, token?, messages ----->| warns / locks / unlocks         |
+  | sign up -------> | Company + Branch + a TRIAL licence     |                                 |
+  |                  | key per till (length per customer)     |                                 |
+  | <-- e-mail: licence key(s) + installer link               |                                 |
+  | install, wizard step 1 "Licence key" (required) --------->|                                 |
+  |                  | <------ POST licence/activate ---------| existingIds = the till's OWN ids |
+  |                  | ------- token (+ apiKey if dashboard)->| stores token; apiKey → Cloud     |
+  |                  |                                        | sync ON (no second code)         |
+  |                  | <------ GET sync/hello, push / pull -->| every 30 s                       |
+  |                  |                                        | <-- LAN join ---- own key, own licence/activate
+  |                  | <------ POST licence/validate daily, EVERY till for itself ---------------|
 ```
 
-1. **Sign-up (portal).** Create the Company, its first Branch and a **trial licence** (default 7 days; the
-   admin can set any length per customer before or after sign-up). Capture what the till needs on day one
-   (business name, VAT number, branch address) for `settingsBootstrap`. E-mail the owner an **activation code**
-   (one per branch; single use; suggested expiry 30 days) and the installer link we give you.
-2. **Wizard (till).** Step 1 "Link to your account": the owner types the code, or presses **"Skip — use offline"**
-   (local path below).
-3. **Activate** (17.4). The till adopts `companyId`, `branchId`, `registerId` instead of its self-made ids (a fresh
-   install has no trading data yet), stores the key and token, sets `sync.hub_url` = `hubUrl`, turns Cloud sync on
-   and applies `settingsBootstrap`. It then calls `hello` and starts syncing.
-4. **More tills.** Each further till of the branch joins the main till over the LAN exactly as today; the main till
-   refuses a join past `maxRegisters` and lists every till in its next `validate`. A second **branch** gets its own
-   activation code from the portal (Admin → Branches → Add) and its own main till.
-5. **Daily check** (17.5) from each branch's main till. The token's `onlineCheck` sets the rhythm and the 14-day grace.
+1. **Sign-up (portal).** Create the Company, its first Branch and **one trial licence key per till** (length per
+   customer — there is no built-in trial on the till any more). E-mail the key(s) and the installer link.
+2. **Wizard (till).** Step 1 "Licence key" — required; Skip is greyed.
+3. **`licence/activate`** (17.15.1). **Ids (owner, 2026-09-28): the till always keeps its OWN ids** (ULIDs made at its
+   first start) and sends them as `existingIds`; it never adopts yours. Every synced row carries the till's ids.
+   - First activation of a new customer's first branch → **adopt**: create/re-key your Company and Branch rows to the
+     till's `existingIds.companyId` / `branchId` (your sign-up rows have no data yet), or keep a mapping table.
+   - A **second branch** of an existing company → its main till made its own `companyId` → **alias** it to your
+     company (store `till companyId → your companyId`, translate rows at your edge, 17.8 rule). Its `branchId` is
+     adopted as the new branch.
+   - **Bind every key to the branch you issued it for** (you know that from your own records), not by
+     `existingIds`; identify a till by `installId` (stable per PC) and record its `registerId`.
+   - The **token's** `companyId` / `branchId` are **your** customer ids, the same in every key of the branch — the
+     till only compares key to key (two tills of one shop must name the same company/branch).
+   - **One code for the dashboard:** when the licence includes the dashboard (`cloud_sync`), put **`apiKey`** (the
+     branch's sync key) at the top level of the `licence/activate` / `licence/validate` reply — and `hubUrl` only if
+     sync runs on another host than the built-in address. The till stores it and turns Cloud sync on. If you also send
+     `companyId` / `branchId` next to it they must be **the till's own ids or blank** (a link naming other ids is
+     ignored). `settingsBootstrap` is not read from this reply — settings reach the till by `pull` (v1.4).
+4. **More tills.** Each further till of the branch has its **own licence key**, calls `licence/activate` itself and
+   joins the main till over the LAN; only the main till syncs. A second **branch** is a new main till with its own keys.
+5. **Daily check** (17.5 / 17.15.2) from **every** till for itself. The token's `onlineCheck` sets the rhythm and the 14-day grace.
 6. **Lock rules** (17.9): trial over, expired, revoked, suspended, 14 days without a successful check, clock
    tampering, seats exceeded → the till finishes the sale in progress, then shows the lock screen (enter a key /
    Check again; backup and export; the support number — nothing else).
@@ -666,6 +675,9 @@ portal to trade; **when a licence server is set and reachable it reports the loc
 local token carry over.
 
 ### 17.4 `POST /api/v1/devices/activate`
+
+> **Not called by the till (2026-09-28) — do not build it.** Kept for reference only; superseded by per-till
+> `licence/activate` (17.15.1) plus the dashboard link in its reply or a sync key (17.3 step 3, `SIMPLE-SETUP.md`).
 
 **Auth:** none. The **activation code is the credential** — treat it like a password: ≥ 60 bits random, stored
 hashed, single use, expiring, rate-limited (17.12). **Headers:** `X-SSPOS-Contract`, `X-SSPOS-App-Version`,
@@ -1091,8 +1103,10 @@ Still open (defaults used until decided):
 
 ### 17.15 Per-till licensing — one e-mailed key per till (owner, 2026-09-26) — **supersedes the branch model for licences**
 
-**Why:** the owner decided that **every till has its own licence**. A shop installs, trades on the built-in 7-day
-trial, and receives a **licence key by e-mail**. The key is pasted into the till, checked **online**, and from then
+**Why:** the owner decided that **every till has its own licence**. A shop receives a **licence key by e-mail** (a
+trial key at sign-up — since 2026-09-28 a new install cannot be set up without a key and there is **no built-in
+trial**; installs that already started the old built-in trial keep it until it ends). The key is typed in the
+first-run wizard (or Settings → Licence), checked **online**, and from then
 on belongs to **that PC** (its `installId`, the "system id"). The same key typed on another PC is refused. The portal
 admin can release a key and issue a new one at any time — the till never needs to know how.
 
@@ -1105,7 +1119,7 @@ compatibility rules):
 | Only the main till calls the portal (`devices/activate`, `licence/validate`) | **Every** till with a portal licence calls `licence/activate` once and `licence/validate` daily, **for itself** |
 | Portal token bound by `companyId`/`branchId` | Portal token bound by **`installCode`** (as local keys already are); the till no longer checks the branch for such a token |
 | Seats: `registers[]` / `seat` / `seatLimit` | Not used for per-till licences (keep them for a branch-model customer if you ever need one) |
-| Activation code = branch link + sync key | The **licence key** is only a licence. Linking a branch for **cloud sync** (hub URL, branch API key) stays `devices/activate` (17.4) and `cloud/migrate` (17.8) — unchanged |
+| Activation code = branch link + sync key | **No activation code (2026-09-28).** The licence key is the only code. Cloud sync comes either with the licence (`apiKey` in the `licence/activate` / `validate` reply, 17.3 step 3) or from a **sync key** the owner types on the main till (`cloud/migrate` + `sync/*`, `SIMPLE-SETUP.md`). `devices/activate` is not called by the till |
 
 **Local (dealer) keys are unchanged:** the owner's key generator still makes offline keys bound to an install code
 (no internet; for shops without internet). Such a shop can move to the cloud later: the owner gives it a portal key
@@ -1121,8 +1135,8 @@ optional here.
 
 **Request** (`licence-activate-request.schema.json`, `licence-activate-request.json`): `licenceKey` (upper-cased,
 spaces removed — any layout you choose, e.g. `SSPK-4F7Q-XM2D-9KTR-B6WN`), `installId`, `installCode`, `deviceName`,
-`appVersion`, `os`, `tillClockUtc`, `trustedKids`, `existingIds {companyId, branchId, registerId}` (the till has
-usually traded on its trial already and **never re-keys** its data — record these ids against the licence).
+`appVersion`, `os`, `tillClockUtc`, `trustedKids`, `approverKids`, `existingIds {companyId, branchId, registerId}`
+(the till's own ids — it **never re-keys** its data; adopt or alias them as in 17.3 step 3).
 
 **Portal logic:**
 1. Look the key up (hash). Unknown → 404 `key.not_found`; past its activate-by date or withdrawn before use → 410
@@ -1149,7 +1163,8 @@ usually traded on its trial already and **never re-keys** its data — record th
 fields: `licenceId`, `kind`, `source`, `companyId`, `branchId`, `businessName`, `branchName`, `installCode`,
 `validFrom`, `expiresAt`, `maxRegisters`, `features`, `limits` (with `branches`) and `company` (the schema still
 requires only `licenceId`, `kind`, `expiresAt`, `maxRegisters`, so an older reply stays valid); the signed token
-always wins. The sample
+always wins. **Optional (2026-09-28):** `apiKey` (the branch's sync key, when the licence includes the dashboard) and
+`hubUrl` (only if sync is on another host) — the till stores them and turns Cloud sync on (17.3 step 3). The sample
 token is signed with the documentation key `k13799fa4` from `licence-token.worked-example.json` — your signer must
 verify it.
 
@@ -1348,19 +1363,24 @@ owner must never see another business, whatever the URL.
 
 ### 18.3 Admin panel — what it must do
 
+**Per-till model (updated 2026-09-28).** One licence key per till; no activation codes; no seats.
+
 1. **Businesses:** list with search; add (name, owner name, **owner e-mail**, phone, VAT number,
    address); suspend / reactivate.
 2. **Shops under a business:** add any number (name, address, shop code e.g. `LDS` — shown on
-   receipts); for each shop set the **licence**: trial or full, start/end date, **tills allowed**
-   (`maxRegisters`, e.g. 2), paid features.
-3. **Activation e-mail:** "Send setup e-mail" per shop → the owner receives the **activation code**,
-   the installer link and three steps (install → enter the code → done). Resend / new code at any time
-   (the old one stops working). Template in 18.7.
-4. **Tills under a shop:** name, main/secondary, app version, **last check-in**, online/offline,
-   Install code; actions: rename, **free a seat / transfer to a new PC** (§17.7).
-5. **Licence changes take effect by themselves:** raise tills allowed 2 → 3, extend a trial 7 → 30
-   days, add a feature, renew, suspend — the portal issues a new token and the shop's main till picks
-   it up at its next check (daily, §17.5, or at once when someone presses "Check now" on the till).
+   receipts); per shop: **tills allowed** (`maxRegisters`, e.g. 2), licence length (trial / months / years,
+   start/end), paid features (17.2 list), dashboard on/off (`cloud_sync`).
+3. **Licence keys:** per shop, **issue one key per till** up to tills allowed (a trial key at sign-up). "Send
+   setup e-mail" → the owner receives the key(s), the installer link and two steps (install → type the key).
+   If the shop has the dashboard, its **sync key** is shown in the Business panel ("Connect the dashboard") —
+   or simply returned with the licence (17.3 step 3), so the owner types nothing else. Template in 18.7.
+4. **Tills under a shop** (one row per issued key): key (masked), status (not activated / active / released /
+   revoked), bound PC (`deviceName`, `installCode`, `installId`), `registerId`, app version, **last check-in**,
+   online/offline. Actions: **release the key** (the PC locks at its next check; the key can then be activated on
+   another PC — §17.15.3), re-issue a new key (the old one stops), revoke.
+5. **Licence changes take effect by themselves:** raise tills allowed 2 → 3 (issue one more key), extend a
+   trial 7 → 30 days, add a feature, renew, suspend — the portal signs a new token for **each till** and every
+   till picks it up at its own next `licence/validate` (daily, or at once on "Check again").
 6. **Dashboard** (18.5) across all businesses, and per business / per shop.
 7. **Audit:** who changed which licence or record, when (keep your own log).
 

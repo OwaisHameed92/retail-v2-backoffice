@@ -27,6 +27,13 @@ for these. v1.4 of this package will specify each one exactly (fields, samples, 
 - **Settings and role permissions** sync (keyed by scope/key and role/permission). Secrets and device-local settings
   (API keys, passwords, signing material, printer ports, `licence.*`, `install.*`) never leave the till.
 
+## Branch prices and purchase orders from the portal (owner, 2026-09-28)
+- **BranchPrice**: a portal-owned row (`id, companyId, branchId, productId, price`, unit if needed, `validFromUtc`,
+  `validToUtc?`, `version`). The till applies it from `pull`; at that branch it wins over the product's normal price.
+- **Purchase order from the portal**: the portal drafts a `PurchaseOrder` + lines for a branch → relayed in that
+  branch's `pull` (like transfers) → the branch receives the goods (GRN) against it; receipt rows are branch-owned;
+  relaying the same PO twice is a no-op.
+
 ## Reliability (till side, no contract change except where noted)
 - Pull continues after a failed push; parked pulled rows survive a restart; a conflict resolved "portal wins" applies
   your row.

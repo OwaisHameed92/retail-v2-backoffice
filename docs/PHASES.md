@@ -1,6 +1,6 @@
 # Phases
 
-Plan v2 (2026-09-28), rewritten after the EPOS team's contract **v1.3.1** (`docs/contracts/portal-api-v1.3.1/`,
+Plan v2 (2026-09-28), rewritten after the EPOS team's contract **v1.3.1** (`docs/contracts/portal-api-v1.3.3/`,
 start at `START-HERE.md`). The till is already built against that contract, so **the portal implements it exactly**;
 where our earlier modules differ, they are reworked (marked 🔄). The v1.1 folder was removed when 2.3 moved the
 generator to v1.3.1.
@@ -53,7 +53,7 @@ Contract: v1.3.1 §1–16, §19 (duplicate/echo/conflict rules + test list 19.4)
 
 | # | Module | What | Status |
 |---|---|---|---|
-| 2.1 | Activation codes and devices | Per-branch activation code (single use, hashed, expiring) and setup e-mail; `devices/activate` (17.4: ids, hubUrl, branch API key shown once, token, `settingsBootstrap`); `devices/deactivate` / transfer codes | blocked (EPOS answer on ids and one-code onboarding) |
+| 2.1 | IDs and sync keys (v1.3.3 answers 1–2) | `id_map` adopt/alias: tills keep their own ids — adopt the first branch main till's `existingIds`, alias later branches' companyIds, translate at the edge; per-branch sync key (hashed, shown once) returned as `apiKey` in `licence/activate`/`validate` when the licence has `cloud_sync`, plus "Connect" sync key for shops that add the dashboard later (SIMPLE-SETUP.md); revoke/rotate; **no `devices/activate`**; feature names = the till's 11 (`loyalty, promotions, purchasing, accounts, multi_branch, second_screen, label_printing, assist, cloud_sync, assist_invoice_scan, assist_questions`); approver/trusted kid `k290bee23` config | todo |
 | 2.2 | Hello and push | `sync/hello`, `sync/push` (gzip, 5,000 rows, idempotent, ordered, acknowledged, initial mode), branch key auth. v1.3.1 changed the `hello-reply` and `error-reply` schemas: build to those | todo |
 | 2.3 | Entity store: master data | 140 entities from v1.3.1 (17 new tables, new columns) via additive migrations (`database/till-schema.json`); v1.1 folder dropped | done |
 | 2.4 | Entity store: transactions | Applier to §19: never twice (ledger + version), never backwards (version, tie by `updatedAt`), never echoed (`hub_hash`, `origin_branch_id`), `baseVersion` ready, `portal_received_at`; §19.4 store tests | done |
@@ -63,7 +63,7 @@ Contract: v1.3.1 §1–16, §19 (duplicate/echo/conflict rules + test list 19.4)
 | 2.8 | Local keys and migration | `licence/redeem` (local key reports, 17.6/17.16), `cloud/migrate` + `migrate/complete` + initial push (17.8) | todo |
 | 2.9 | v1.4 readiness | `receivedAt`, several tills per shop, ledger-derived customer balance, transfer relay, settings/permissions sync | blocked (v1.4 spec) |
 
-Waves: 2.3 + 2.4 → 2.2 → 2.5 → 2.6 + 2.7 · 2.1 and 2.8 when unblocked.
+Waves: 2.1 → 2.2 → 2.5 → 2.6 + 2.7 → 2.8 · 2.9 with v1.4.
 
 ## Phase 3: Reporting and dashboards — 0/3
 
@@ -97,7 +97,7 @@ Contract: v1.3.1 §18.4. Roles: business owner, **shop manager** (one branch onl
 | # | Module | Status |
 |---|---|---|
 | 5.1 | Stock (on hand, movements, stock takes, FIFO valuation, expiry) | todo |
-| 5.2 | Purchasing (POs, GRNs, supplier invoices, credit notes, payments, rebates) | blocked (portal-created PO) |
+| 5.2 | Purchasing (POs, GRNs, supplier invoices, credit notes, payments, rebates); portal-created PO relayed in pull | blocked (v1.4 spec, due 29 Sep) |
 | 5.3 | Branch stock transfers (entities now in contract; relay in v1.4) | todo |
 | 5.4 | Cash and Z (shifts, Z reports, cash office, card settlement, day lock) | todo |
 | 5.5 | Accounts and VAT (expenses, VAT return, journals, fixed assets) | todo |

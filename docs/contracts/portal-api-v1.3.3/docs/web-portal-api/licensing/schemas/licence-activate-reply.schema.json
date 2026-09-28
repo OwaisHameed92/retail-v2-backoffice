@@ -29,6 +29,21 @@
     },
     "messages": {
       "$ref": "common.schema.json#/$defs/messages"
+    },
+    "apiKey": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Optional (2026-09-28). The branch's sync key when the licence includes the dashboard (cloud_sync). The till stores it and turns Cloud sync on, so the owner types no second code (docs/web-portal-api.md 17.3 step 3)."
+    },
+    "hubUrl": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^https://",
+      "description": "Optional (2026-09-28). Only when sync runs on another host than the address built into the till."
     }
   },
   "required": [

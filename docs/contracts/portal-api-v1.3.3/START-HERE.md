@@ -1,4 +1,4 @@
-# SSPOS web portal — API package (v1.3.1) — START HERE
+# SSPOS web portal — API package (v1.3.3) — START HERE
 
 This package is everything needed to build the SSPOS web portal: the cloud side that the SSPOS tills
 (Windows point-of-sale software in shops) talk to. The tills are written against this contract; the portal must
@@ -6,10 +6,15 @@ implement it exactly.
 
 ## What changed
 
-- **2026-09-28 — v1.3.1 — dashboards build spec: `docs/web-portal-api/DASHBOARD.md`.** Every Business-panel and
-  Admin-panel tile and chart with its exact formula over the synced entities (checked against the schemas and the till's
-  own reports), which sales count, refunds, trading day in Europe/London, reporting tables with idempotent updates,
-  PostgreSQL for the core tiles, and a worked example computed from the sample pushes.
+- **2026-09-28 — v1.3.3 — answers to the portal team: `docs/web-portal-api/ANSWERS-2026-09-28.md`** (read first).
+  Ids: the till keeps its own ids — adopt / alias (§17.3 step 3). One code: return `apiKey` in the
+  `licence/activate` / `validate` reply when the licence has the dashboard (schemas updated); `devices/activate` is
+  not called — do not build it. Trial: key required, no built-in trial (§17.15 fixed). §18.3 rewritten for per-till
+  keys. MySQL 8 appendix in `DASHBOARD.md`. The 11 feature names (§17.2). BranchPrice and portal purchase orders
+  are coming in v1.4 (`UPCOMING-CHANGES.md`).
+- **2026-09-28 — v1.3.2 — `SIMPLE-SETUP.md`**: the shop types a licence key per till and, for the dashboard, a sync
+  key per branch; the portal address is built into the till.
+- **2026-09-28 — v1.3.1 — `DASHBOARD.md`**: dashboards build spec.
 - **2026-09-28 — v1.3**
   - **Signer certificates — your signing key needs no till release** (`docs/web-portal-api.md` §17.17). Send the
     owner your **public** key (`licensing/samples/public-key-handover.json`); you get back a certificate
@@ -42,8 +47,10 @@ implement it exactly.
 
 | # | File | What it is |
 |---|---|---|
-| ★ | `docs/web-portal-api/DASHBOARD.md` | **Build the dashboards from this** (v1.3.1) |
-| ★ | `docs/web-portal-api.md` §17.17 | **New in v1.3**: signer certificates, `signerCert`, `approverKids` |
+| ★ | `docs/web-portal-api/ANSWERS-2026-09-28.md` | **Answers to your 10 questions** (v1.3.3) |
+| ★ | `docs/web-portal-api/SIMPLE-SETUP.md` | What the shop types and what the portal must issue |
+| ★ | `docs/web-portal-api/DASHBOARD.md` | Build the dashboards from this (MySQL 8 appendix at the end) |
+| ★ | `docs/web-portal-api.md` §17.17 | Signer certificates, `signerCert`, `approverKids` |
 | ★ | `docs/web-portal-api/UPCOMING-CHANGES.md` | Decided additions coming in v1.4 |
 | ☆ | `docs/web-portal-api/KEY-CARRIES-SHOP.md`, `PER-TILL-LICENSING.md` | v1.2 and v1.1 changes |
 | 0 | `docs/web-portal-api.md` §18 | The portal product: panels, roles, screens, dashboards, e-mails |

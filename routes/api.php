@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Route;
 // Till APIs, loaded under the /api prefix with the "api" middleware group.
 // Sync API (Phase 2): /api/v1/sync/*
 
-// Per-till licensing, EPOS contract v1.3.1 (docs/contracts/portal-api-v1.3.1/docs/web-portal-api.md §17.15, §17.7):
+// Per-till licensing, EPOS contract v1.3.1 (docs/contracts/portal-api-v1.3.3/docs/web-portal-api.md §17.15, §17.7):
 // `X-SSPOS-Contract: 1` required, rate limited (§17.12), `Idempotency-Key` replayed (§17.11), no branch key.
 Route::prefix('v1')->name('api.')
     ->middleware([EnsureTillContract::class, ThrottleLicenceApi::class, IdempotentTillRequest::class])

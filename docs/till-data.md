@@ -1,8 +1,8 @@
 # Till data store (modules 2.3 + 2.4)
 
 How the portal stores every row the tills send, and the one way rows get in: `ApplySyncChanges`.
-Contract v1.3.1: `docs/contracts/portal-api-v1.3.1/docs/web-portal-api.md` §5–10, §16, §19, §20; schemas and samples in
-`docs/contracts/portal-api-v1.3.1/docs/web-portal-api/` (the samples win where text and samples differ).
+Contract v1.3.1: `docs/contracts/portal-api-v1.3.3/docs/web-portal-api.md` §5–10, §16, §19, §20; schemas and samples in
+`docs/contracts/portal-api-v1.3.3/docs/web-portal-api/` (the samples win where text and samples differ).
 
 ## Shape
 

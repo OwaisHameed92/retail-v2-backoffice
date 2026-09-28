@@ -6,7 +6,7 @@ understand old behaviour.
 
 Read before any work: `docs/PHASES.md` (what to build, in what order), `docs/DECISIONS.md` (product
 decisions already made), `docs/BRAND.md` (Switch & Save brand and the UI quality bar), `docs/components.md`
-(shared components to reuse), and the EPOS contract `docs/contracts/portal-api-v1.3.1/START-HERE.md` (the portal implements it exactly).
+(shared components to reuse), and the EPOS contract `docs/contracts/portal-api-v1.3.3/START-HERE.md` (the portal implements it exactly).
 
 ## The three areas
 
@@ -39,7 +39,7 @@ A tenant = one Company. Company → Branch (shop) → Register (till). One licen
 - **Money.** `decimal(12,2)` for prices/totals, `decimal(14,4)` for costs and quantities. Never float. Pounds, not
   pence (matches the till contract).
 - **Time.** Store UTC. Display Europe/London.
-- **Enums.** PHP backed enums with camelCase string values matching `docs/contracts/portal-api-v1.3.1/docs/web-portal-api/samples/enums.json`.
+- **Enums.** PHP backed enums with camelCase string values matching `docs/contracts/portal-api-v1.3.3/docs/web-portal-api/samples/enums.json`.
 - **Files.** Keep files under ~300 lines. Split before a class grows (the legacy `SyncService.php` hit 4,436 lines).
 
 ## Security rules
@@ -54,7 +54,7 @@ A tenant = one Company. Company → Branch (shop) → Register (till). One licen
 ## Testing and quality
 
 - Every Action and every endpoint gets Pest tests. Sync endpoints get contract tests that validate replies
-  against `docs/contracts/portal-api-v1.3.1/docs/web-portal-api/schemas/*.schema.json` and replay the samples.
+  against `docs/contracts/portal-api-v1.3.3/docs/web-portal-api/schemas/*.schema.json` and replay the samples.
 - Before finishing any task run: `vendor/bin/pint --dirty`, `composer check` (pint, larastan level 6, tests), `npm run lint`, `npm run build`.
   All must pass. Report failures honestly.
 - UI: follow `docs/BRAND.md` exactly (brand tokens, layouts, "complete means complete" checklist). Reuse the shared

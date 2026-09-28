@@ -772,3 +772,23 @@ A new `Sale` arrives: `type` `refund`, `status` `completed`, `originalSaleId` = 
    every shop-day; and `rpt_sales_hourly` net per hour = `HourlySales.net`.
 9. A shop with all costs at 0 shows no margin warnings.
 10. A business owner cannot see another business's shop by changing an id in the URL.
+
+## Appendix — MySQL 8 (the portal team's database)
+
+Nothing in this spec needs PostgreSQL. Every table, formula and tile works on **MySQL 8.0** (8.0.19+ for
+`INSERT … AS new ON DUPLICATE KEY UPDATE`; window functions and CTEs are standard since 8.0). Translate as follows:
+
+| PostgreSQL in this file | MySQL 8 |
+|---|---|
+| `timestamptz` (UTC instant) | `DATETIME(6)` holding **UTC** — set the session `time_zone = '+00:00'` on every connection and never store local time |
+| `numeric(12,2)` / `numeric(12,3)` | `DECIMAL(12,2)` / `DECIMAL(12,3)` — never `FLOAT`/`DOUBLE` for money |
+| `jsonb` (raw row payload) | `JSON` |
+| `x::date`, `x::numeric` casts | `CAST(x AS DATE)`, `CAST(x AS DECIMAL(12,2))` |
+| `ts AT TIME ZONE 'Europe/London'` | **Compute `trading_day` (and `hour`) in your application code at ingest** (e.g. PHP `DateTimeZone('Europe/London')`, Node `Intl`/Luxon) and store them in the raw table. `CONVERT_TZ(ts, '+00:00', 'Europe/London')` also works, but only after the MySQL time-zone tables are loaded (`mysql_tzinfo_to_sql`) — without them it silently returns NULL. Doing it at ingest makes every report a plain `GROUP BY trading_day` and handles the BST change correctly. |
+| `SUM(x) FILTER (WHERE cond)` | `SUM(CASE WHEN cond THEN x ELSE 0 END)`; `COUNT(*) FILTER (WHERE cond)` → `SUM(cond)` |
+| `INSERT … ON CONFLICT (pk) DO UPDATE SET col = EXCLUDED.col WHERE …` | `INSERT … AS new ON DUPLICATE KEY UPDATE col = IF(new.version > version, new.col, col)` — **list `version` last** in the update list (MySQL evaluates the assignments left to right, so updating `version` first would break the other comparisons) |
+| `now()` | `UTC_TIMESTAMP(6)` (not `NOW()`, which follows the session time zone) |
+
+Rebuilding a (shop, trading day) in the reporting tables (§4.8) is `DELETE FROM rpt_… WHERE branch_id = ? AND
+trading_day = ?` followed by `INSERT … SELECT …` from the raw tables, inside one transaction (InnoDB). Keep the raw
+tables' primary key = the till's `id` (`CHAR(26)` ULID, `ascii_bin` collation so ids compare exactly).

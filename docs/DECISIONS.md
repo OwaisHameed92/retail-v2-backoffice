@@ -305,7 +305,7 @@ How it works: `docs/till-data.md`.
 
 | Topic | Decision |
 |---|---|
-| Contract | The EPOS team's package v1.3.1 (`docs/contracts/portal-api-v1.3.1/`) is the source of truth; the till is built against it, so the portal implements it exactly. Our own licence draft (`docs/specs/licence-api-v1.md`) and the unsent handoff doc are superseded. |
+| Contract | The EPOS team's package v1.3.1 (`docs/contracts/portal-api-v1.3.3/`) is the source of truth; the till is built against it, so the portal implements it exactly. Our own licence draft (`docs/specs/licence-api-v1.md`) and the unsent handoff doc are superseded. |
 | Licensing | Per-till keys as in §17.15–17.17: token `SSPOS1.…` with `signerCert`, `licence/activate` + `licence/validate` per till, statuses active/expiring/expired/suspended/revoked/released. Our key format and admin model stay. |
 | Database | MySQL 8 stays (the server has MySQL). DASHBOARD.md formulas are built on MySQL, not PostgreSQL. |
 | Signing key | Generated on the production server at deploy; its public-key handover goes to the EPOS team with the base URL. |
@@ -404,3 +404,16 @@ How it works: `docs/till-data.md`.
 | Deadline | billing:run: a Direct Debit business with no mandate (never lost), something recurring and past `mandate_deadline_at` is billing-suspended once per deadline ("No Direct Debit set up"; tills lock at the next validate); the mandate lifts it (ReleaseBillingHolds). £0 recurring never needs a mandate: no subscription, no banner, no suspension. This replaces 1.12's "trial over without a mandate" rule. The portal banner ("Set up your Direct Debit — N days left before your tills lock", days rounded up) shows to every member; only billing.view users get the button. |
 | Open items | (1) The welcome email's Direct Debit section is chosen from the plan's prices at creation (a later override or Upfront switch is not reflected). (2) A per-branch company with tills on two plans is priced at the first live till's plan. (3) Branches without live tills are not charged per branch. |
 
+
+## EPOS answers, contract v1.3.3 (2026-09-28)
+
+| Topic | Answer / decision |
+|---|---|
+| Ids | Tills keep their own ids forever and send `existingIds`. Portal keeps an `id_map` (adopt the first branch's main till ids, alias later branches' companyIds, translate at the edge). Keys stay bound to the branch we issued them for; tokens carry our customer's ids. |
+| One code | Sync key is returned as `apiKey` (optional `hubUrl`) in `licence/activate`/`validate` when the licence has `cloud_sync`. `devices/activate` is not called — not built. Shops adding the dashboard later type a per-branch sync key ("Connect", SIMPLE-SETUP.md). The portal address is baked into the till. |
+| Trial | Key required on new installs; no built-in trial. |
+| Database | MySQL 8 is fine (DASHBOARD.md MySQL appendix); compute `trading_day` (Europe/London) in app code at ingest. |
+| Features | Exactly the till's 11 names: loyalty, promotions, purchasing, accounts, multi_branch, second_screen, label_printing, assist, cloud_sync, assist_invoice_scan, assist_questions. |
+| Signer | trustedKids/approverKids today `k290bee23` (read from requests, never hard-code). Generator public key for local keys: `krfekeNJrdI3V7ebkpxEA1RaK21yAX/eX8iXtFIUMlE=`. |
+| Support | Lock screen number 07742 089381 (till shows it; use in e-mails). Installer link to follow. |
+| v1.4 | Due 29 Sep: receivedAt, several tills per shop, ledger balances, transfer relay, settings sync, **BranchPrice**, **portal-created PO** relayed in pull. |
