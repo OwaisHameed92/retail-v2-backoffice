@@ -28,6 +28,7 @@ class LicenceKeysGenerateCommand extends Command
 
         $this->info("Licence signing key {$key->kid} created and active.");
         $this->line("Public key (x): {$key->x()}");
+        $this->line('Next: php artisan licence:keys:handover, send it to the SSPOS owner, then licence:keys:import-cert.');
 
         return self::SUCCESS;
     }

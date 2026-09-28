@@ -296,3 +296,16 @@ How it works: `docs/till-data.md`.
 | Signing key | Generated on the production server at deploy; its public-key handover goes to the EPOS team with the base URL. |
 | Plan | `docs/PHASES.md` plan v2: 8 phases, 65 modules; module numbers after phase 2 shifted by one. |
 | UI direction | Design system v2, final = `docs/design/admin-dashboard-reference-2.webp`: dark full-height sidebar + top bar `#0F1C2C`, light canvas, green primary `#007048`, KPI cards with coloured sparklines, needs-attention pills, business overview. No handwriting slogan, subtle glows, no emoji. Logo colours are not required in the UI. |
+
+## SSPOS1 token signer (module 1.4 rework, 2026-09-28)
+
+| Topic | Decision |
+|---|---|
+| Classes | `Signing/Sspos/`: `LicenceClaims` (business fields; signer adds `v`, `kid`, `signerCert`), `SsposTokenSigner::sign(LicenceClaims)`, `SsposTokenVerifier::verify(string)` → `VerifiedSsposToken`, `SignerCertificate`, `PublicKeyHandover`. Old JWS classes (`LicenceTokenSigner`/`Verifier`, `Ed25519Jws`, `Jwks`) stay until 1.5 switches, then are deleted. |
+| Payload | Field order of the contract samples; optional fields (`installCode`, `features`, `limits`, `notes`, `company` and its fields, `signerCert`) omitted when empty; `source` always `portal`; dates `Y-m-d\TH:i:s\Z` UTC; `issuer` and `onlineCheck` from `config/licence.php` `token.*`. |
+| Kid | `k` + 8 hex of SHA-256(public key). A new pair whose kid is already stored is redrawn. Dev `lk…` kids are re-keyed by migration. |
+| Certificates | Stored in `licence_signing_keys.signer_cert` (not secret). Import checks format, configured approver signature, kid and public key equal to the active key, not ended. Approvers come from `LICENCE_APPROVERS` (`kid:key,…`); the worked-example approver lives only in `documentation_test_approvers`, which app code never reads. |
+| Uncertified keys | Signing without a certificate throws unless `licence.allow_uncertified` (default on only for `local`/`testing`); when allowed it logs a warning. |
+| Verification | Known kids = our keys (active or within the keep period) + `LICENCE_TRUSTED_KEYS` (the owner's generator keys, for local tokens in redeem/migrate). A token's `signerCert`, when present, must pass the till's checks. Dates, binding and limits are the caller's job. |
+| Rotation | A rotated key is active at once but cannot sign in production until its certificate is imported. Rotate, hand over and import in one go (or add a pending-key state later). |
+

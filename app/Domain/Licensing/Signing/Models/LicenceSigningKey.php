@@ -17,6 +17,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property string $kid
  * @property string $public_key
  * @property string|null $secret_key
+ * @property string|null $signer_cert
  * @property bool $is_active
  * @property CarbonInterface|null $retired_at
  * @property CarbonInterface|null $created_at
@@ -33,6 +34,7 @@ class LicenceSigningKey extends Model
         'kid',
         'public_key',
         'secret_key',
+        'signer_cert',
         'is_active',
         'retired_at',
     ];
@@ -66,6 +68,7 @@ class LicenceSigningKey extends Model
             secretKey: $secret,
             createdAt: CarbonImmutable::parse($this->created_at ?? 'now')->utc(),
             retiredAt: $this->retired_at !== null ? CarbonImmutable::parse($this->retired_at)->utc() : null,
+            signerCert: $this->signer_cert,
         );
     }
 }

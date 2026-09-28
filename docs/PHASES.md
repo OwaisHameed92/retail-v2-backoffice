@@ -37,7 +37,7 @@ Contract: v1.3.1 `docs/web-portal-api.md` §17 (read 17.15–17.17 first), `spec
 | 1.6 | Leads and trial approval | Leads, board, one-click 7-day trial | done |
 | 1.7 | Emails | Branded templates, email log, previews | done |
 | 1.8 | Cash billing | Invoices + PDF, payments, auto-renew, overdue suspension | done |
-| 1.4 | Token signer | 🔄 Token format `SSPOS1.<payload>.<sig>` (§17.2), kid = `k` + 8 hex of SHA-256(public key), `signerCert` in every token (§17.17), public-key handover file, verify the worked examples byte for byte | rework |
+| 1.4 | Token signer | `SSPOS1.<payload>.<sig>` tokens (§17.2) via `SsposTokenSigner`/`SsposTokenVerifier` + `LicenceClaims`, kid = `k` + 8 hex of SHA-256(public key), `signerCert` in every token (§17.17, `licence:keys:import-cert`), `licence:keys:handover`; worked examples reproduced byte for byte. Old JWS classes stay until 1.5 switches | done |
 | 1.5 | Licence API | 🔄 `POST licence/activate` (17.15.1) and `licence/validate` (17.15.2) per till, `devices/deactivate` (17.7); headers `X-SSPOS-Contract`, `X-SSPOS-Install-Id`, `Idempotency-Key`; statuses active/expiring/expired/suspended/revoked/released; error codes from `licensing/samples/error-codes.json`; 426/410; replace our check-in API and simulator | rework |
 | 1.11 | Licence form v1.3 | Customer/licence form with every token field (17.16): kind trial/full, validFrom/expiresAt length, `maxRegisters` per branch, `limits.branches`, `multi_branch`, features (till's snake_case names), `company` block; "Till 1 of 3" issuing with limits; installId/installCode, clock skew, lock state; **Release** key; activate-by date; re-sign branch keys on change | todo |
 | 1.9 | Admin dashboard | Customers, trials, licences, leads, cash due (sales tiles come in 3.2) | todo |

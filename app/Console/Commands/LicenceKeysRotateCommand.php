@@ -28,6 +28,7 @@ class LicenceKeysRotateCommand extends Command
 
         $this->info("Licence signing key {$result['key']->kid} is now active.");
         $this->line("Public key (x): {$result['key']->x()}");
+        $this->line('Next: php artisan licence:keys:handover, send it to the SSPOS owner, then licence:keys:import-cert.');
 
         foreach ($result['retired'] as $kid) {
             $this->line("Retired {$kid}: still verifies for {$keys->keepDays()} days, then licence:keys:prune removes it.");

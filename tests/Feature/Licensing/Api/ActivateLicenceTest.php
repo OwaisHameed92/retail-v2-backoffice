@@ -8,6 +8,7 @@ use App\Domain\Licensing\Data\RenewalTerm;
 use App\Domain\Licensing\Enums\LicenceAlertType;
 use App\Domain\Licensing\Enums\LicenceStatus;
 use App\Domain\Licensing\Models\LicenceAlert;
+use App\Domain\Licensing\Signing\KeyStore;
 use App\Domain\Shared\Models\AuditLog;
 use App\Domain\Tenancy\Actions\SuspendCompany;
 use App\Domain\Tenancy\Models\Company;
@@ -111,7 +112,7 @@ test('the reply token verifies and carries the spec claims', function () {
     $response = $this->till('activate', $this->activateBody())->assertOk();
     $token = $this->verifyToken($response);
 
-    expect($token->header())->toBe(['alg' => 'EdDSA', 'kid' => 'lk2026-01', 'typ' => 'sspos-licence+jwt'])
+    expect($token->header())->toBe(['alg' => 'EdDSA', 'kid' => app(KeyStore::class)->active()->kid, 'typ' => 'sspos-licence+jwt'])
         ->and(array_keys($token->claims()))->toBe(['iss', 'iat', 'jti', 'lic', 'keyLast4', 'companyId', 'branchId', 'registerId', 'deviceId', 'status', 'plan', 'features', 'expiresAt', 'graceDays', 'validUntil'])
         ->and($token->claims())->toMatchArray([
             'iss' => 'sspos-portal',

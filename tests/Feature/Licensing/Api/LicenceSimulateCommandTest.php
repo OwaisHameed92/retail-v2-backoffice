@@ -2,6 +2,7 @@
 
 use App\Domain\Licensing\Actions\SuspendLicence;
 use App\Domain\Licensing\Api\Simulator\SimulatedTill;
+use App\Domain\Licensing\Signing\KeyStore;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Client\Request as ClientRequest;
 use Illuminate\Support\Facades\Http;
@@ -54,7 +55,7 @@ test('activate then check-in: the till verifies the token and trades', function 
         ->and($licence->last_app_version)->toBe('1.0.0-simulator');
 
     $this->artisan('licence:simulate', ['key' => self::KEY, '--device' => 'DEMO-PC-1', '--action' => 'check-in'])
-        ->expectsOutputToContain('lk2026-01 is in the JWKS')
+        ->expectsOutputToContain(app(KeyStore::class)->active()->kid.' is in the JWKS')
         ->expectsOutputToContain('Till: TRADE.')
         ->assertSuccessful();
 

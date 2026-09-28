@@ -25,6 +25,8 @@ final class SigningKey implements Arrayable, JsonSerializable
         #[\SensitiveParameter] private readonly ?string $secretKey,
         public readonly CarbonImmutable $createdAt,
         public readonly ?CarbonImmutable $retiredAt = null,
+        /** The owner's signer certificate for this key (SSPOSCERT1…, contract §17.17). Not secret. */
+        public readonly ?string $signerCert = null,
     ) {
         if (strlen($publicKey) !== SODIUM_CRYPTO_SIGN_PUBLICKEYBYTES) {
             throw new \InvalidArgumentException('Ed25519 public key must be 32 bytes.');

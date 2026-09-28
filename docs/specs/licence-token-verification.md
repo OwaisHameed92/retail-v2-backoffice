@@ -1,3 +1,7 @@
+> **Superseded (2026-09-28)** by the EPOS contract v1.3.1: `docs/contracts/portal-api-v1.3.1/docs/web-portal-api.md`
+> §17.2 (SSPOS1 licence token) and §17.17 (signer certificates). Kept only as a record of the old JWS format
+> until module 1.5 removes it.
+
 # Licence token verification (for the EPOS / .NET team)
 
 Status: draft, 2026-09-24. Companion to `docs/specs/licence-api-v1.md` (the API). Portal side: module 1.4,

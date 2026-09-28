@@ -14,7 +14,8 @@ use Illuminate\Support\Facades\Cache;
  * Persists licence signing keys in `licence_signing_keys`.
  *
  * Invariants: at most one key is active (the newest wins if that is ever broken); a retired key has no
- * secret; a retired key verifies until retired_at + keep days; a kid is never reused.
+ * secret; a retired key verifies until retired_at + keep days; a kid (k + 8 hex of SHA-256(public key),
+ * contract §17.2) is never reused: a new pair whose kid is already stored is thrown away and redrawn.
  */
 class KeyStore
 {
@@ -72,14 +73,14 @@ class KeyStore
     }
 
     /**
-     * Every stored key, newest first (for licence:keys:list).
+     * Every stored key, active first then newest first (for licence:keys:list).
      *
      * @return list<SigningKey>
      */
     public function all(): array
     {
         return LicenceSigningKey::query()
-            ->orderByDesc('created_at')->orderByDesc('kid')
+            ->orderByDesc('is_active')->orderByDesc('created_at')->orderByDesc('kid')
             ->get()->map(fn (LicenceSigningKey $row) => $row->toSigningKey())->values()->all();
     }
 
@@ -99,11 +100,11 @@ class KeyStore
                 $old->forceFill(['is_active' => false, 'retired_at' => $now, 'secret_key' => null])->save();
             }
 
-            $pair = Ed25519Jws::newKeyPair();
+            $pair = $this->newUniquePair();
 
             $row = new LicenceSigningKey;
             $row->forceFill([
-                'kid' => $this->nextKid($now),
+                'kid' => Kid::for($pair['public']),
                 'public_key' => Base64Url::encode($pair['public']),
                 'secret_key' => Base64Url::encode($pair['secret']),
                 'is_active' => true,
@@ -139,18 +140,26 @@ class KeyStore
     }
 
     /**
-     * `lk<year>-<nn>`, e.g. lk2026-01. The sequence continues from the highest kid ever kept for that year;
-     * the newest key is never pruned, so a kid is never handed out twice.
+     * Stores the owner's signer certificate on a key. The caller has checked it (ImportSignerCertificate).
      */
-    private function nextKid(CarbonImmutable $now): string
+    public function saveSignerCert(string $kid, string $certificate): SigningKey
     {
-        $prefix = 'lk'.$now->format('Y').'-';
+        $row = LicenceSigningKey::query()->where('kid', $kid)->firstOrFail();
+        $row->forceFill(['signer_cert' => $certificate])->save();
 
-        $max = LicenceSigningKey::query()->where('kid', 'like', $prefix.'%')->pluck('kid')
-            ->map(fn (string $kid) => preg_match('/^lk\d{4}-(\d+)$/', $kid, $m) === 1 ? (int) $m[1] : 0)
-            ->max() ?? 0;
+        return $row->toSigningKey();
+    }
 
-        return $prefix.str_pad((string) ($max + 1), 2, '0', STR_PAD_LEFT);
+    /**
+     * @return array{public: string, secret: string}
+     */
+    private function newUniquePair(): array
+    {
+        do {
+            $pair = Ed25519Jws::newKeyPair();
+        } while (LicenceSigningKey::query()->where('kid', Kid::for($pair['public']))->exists());
+
+        return $pair;
     }
 
     /**

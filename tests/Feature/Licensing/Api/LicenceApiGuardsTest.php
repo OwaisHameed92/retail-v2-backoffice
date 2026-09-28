@@ -2,6 +2,7 @@
 
 use App\Domain\Licensing\Signing\Actions\RotateSigningKey;
 use App\Domain\Licensing\Signing\Jwks;
+use App\Domain\Licensing\Signing\KeyStore;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Mail;
 use Tests\Feature\Licensing\Api\LicenceApiHelpers;
@@ -32,14 +33,15 @@ test('every licence endpoint needs X-SSPOS-Licence-Contract: 1', function (strin
 ]);
 
 test('GET keys returns the JWKS: active and retired keys that still verify, no secrets', function () {
-    app(RotateSigningKey::class)->handle();
+    $first = app(KeyStore::class)->active()->kid;
+    $second = app(RotateSigningKey::class)->handle()['key']->kid;
 
     $response = $this->getJson('/api/v1/licence/keys', $this->tillHeaders())
         ->assertOk()
         ->assertHeader('Cache-Control', 'no-store, private')
         ->assertExactJson(app(Jwks::class)->current());
 
-    expect(collect($response->json('keys'))->pluck('kid')->all())->toEqualCanonicalizing(['lk2026-01', 'lk2026-02'])
+    expect(collect($response->json('keys'))->pluck('kid')->all())->toEqualCanonicalizing([$first, $second])
         ->and($response->json('keys.0'))->toHaveKeys(['kid', 'kty', 'crv', 'x', 'use'])
         ->and($response->json('keys.0.kty'))->toBe('OKP')
         ->and($response->json('keys.0.crv'))->toBe('Ed25519')

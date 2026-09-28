@@ -30,10 +30,11 @@ class LicenceKeysListCommand extends Command
         $keep = $keys->keepDays();
 
         $this->table(
-            ['kid', 'status', 'created (UTC)', 'retired (UTC)', 'verifies until (UTC)'],
+            ['kid', 'status', 'signer cert', 'created (UTC)', 'retired (UTC)', 'verifies until (UTC)'],
             array_map(fn (SigningKey $key) => [
                 $key->kid,
                 $key->status($now, $keep)->value,
+                $key->signerCert !== null ? 'yes' : 'no',
                 $key->createdAt->format('Y-m-d H:i:s'),
                 $key->retiredAt?->format('Y-m-d H:i:s') ?? '-',
                 $key->expiresAt($keep)?->format('Y-m-d H:i:s') ?? '-',
