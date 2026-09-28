@@ -251,3 +251,39 @@ Stops row clicks; destructive items go last behind a separator and should open a
 - `InvoiceDocument` (`components/admin/billing/invoice-document.tsx`): the print-style invoice preview, fed by the same data as the PDF.
 - Backend: `App\Domain\Billing\Support\BillingFormat::money('1234.5')` → "£1,234.50" without floats; `BillingDates` for London calendar dates and ranges ("1 Oct – 31 Oct 2026"); `App\Domain\Mail\Contracts\RendersAttachment` for mail attachments built at send time.
 
+
+## Design system v2 foundation (see `docs/design/DESIGN-SYSTEM-v2.md`)
+
+Tokens live only in `resources/css/app.css` (v2 palette, light + dark): `chrome`, `chrome-active`,
+`chrome-foreground`, `chrome-muted`, `chrome-hover/border/input/glow`, `primary`/`primary-hover`/`primary-soft`,
+`success`/`info`/`violet`/`warning`/`danger` each with `-foreground` (text on soft) and `-soft`, `rounded-card`,
+`shadow-card`, `text-kpi`. The shadcn sidebar variables map to the chrome tokens. No raw hex in components.
+
+### Shell (`components/shell/`)
+
+- `ShellFrame` — the dark frame: fixed 64px top bar + dark sidebar under it, page on the canvas. Props
+  `storageKey`, `header`, `sidebar`, optional `banner` + `bannerHeight`. Sets `--shell-top` and `--app-header-height`.
+- `Topbar` (`brand`, `search`, `actions`), `TopbarBrand`, `SearchTrigger` (chrome style, icon-only on phones, passes
+  button props through), `TopbarBreadcrumbs` (now rendered above the page content), `HelpMenu`,
+  `NotificationsMenu` (`unread` dot — only from real data), `AccountTrigger` (avatar + name + role).
+- `ShellSidebar` (`groups`, `pinned`, `header`) — dark sidebar with Settings pinned and the logo + tagline footer.
+  `SidebarNav` items accept `count` (green pill) and `live` (green dot) besides `badge`/`soon`.
+- Admin nav (`admin-nav.ts`): groups Overview/Customers/Billing/Operations/Communications/Settings;
+  `activePattern` may be an array; `countKey` reads the optional `admin.navCounts` shared prop (not sent by the
+  backend yet — the Leads pill appears once it is).
+
+### Dashboard building blocks (`components/shared/`)
+
+- `kpi-card.tsx` — `KpiCard` (`label`, `icon`, `tone`, `value` — `null` shows "—" + "No data yet", `delta`,
+  `series` for the sparkline, `footer`, `menu` slot, `href`) and `KpiGrid`. `StatCard` is unchanged.
+- `trend-chart.tsx` — Recharts `AreaSparkline` and `TrendChart` (`variant` line with markers + soft area, or bar;
+  hover tooltip); `ChartTone`, `toneVar`, `toneCircle`.
+- `chart-card.tsx` — `ChartCard` (`title`, `subtitle`, `icon`, `controls`, `stat`, `footer`), `SegmentedControl`
+  (12W/6M/1Y, active filled primary), `StatPill`.
+- `attention-list.tsx` — `AttentionList` (`items: {id, label, tone, text, at, href}`, `total`, empty copy).
+- `overview-tile.tsx` — `OverviewTile`; `quick-actions.tsx` — `QuickActions` (first `primary` filled);
+  `health-list.tsx` — `HealthList` (`healthy|degraded|down|unknown`, summary pill); `welcome-banner.tsx` —
+  `WelcomeBanner` + `greeting()`.
+- `status-badge.tsx` — new `violet` tone, `StatusPill` (label pill without dot), `pillToneClasses`.
+- `entity-cell.tsx` — `EntityCell` defaults to the soft grey avatar (`tone="neutral"`); `InitialsAvatar` has `tone`.
+- `@/lib/relative-time` — `relativeTime(iso)` → "2h ago".

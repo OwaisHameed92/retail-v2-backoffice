@@ -1,6 +1,7 @@
 import { cn } from '@/lib/utils';
+import { type ReactNode } from 'react';
 
-export type StatusTone = 'success' | 'warning' | 'danger' | 'neutral' | 'info';
+export type StatusTone = 'success' | 'warning' | 'danger' | 'neutral' | 'info' | 'violet';
 
 export type StatusToneMap = Record<string, StatusTone>;
 
@@ -8,16 +9,28 @@ export type StatusToneMap = Record<string, StatusTone>;
 export const statusToneClasses: Record<StatusTone, string> = {
     success: 'bg-success-soft text-success-foreground ring-success/20',
     warning: 'bg-warning-soft text-warning-foreground ring-warning/30',
-    danger: 'bg-danger-soft text-danger-foreground ring-destructive/20',
-    info: 'bg-info-soft text-info-foreground ring-primary/20',
+    danger: 'bg-danger-soft text-danger-foreground ring-danger/20',
+    info: 'bg-info-soft text-info-foreground ring-info/20',
+    violet: 'bg-violet-soft text-violet-foreground ring-violet/20',
     neutral: 'bg-muted text-muted-foreground ring-border-strong/70',
+};
+
+/** Soft background + strong text, no ring (StatusPill, overview tiles, icon circles). */
+export const pillToneClasses: Record<StatusTone, string> = {
+    success: 'bg-success-soft text-success-foreground',
+    warning: 'bg-warning-soft text-warning-foreground',
+    danger: 'bg-danger-soft text-danger-foreground',
+    info: 'bg-info-soft text-info-foreground',
+    violet: 'bg-violet-soft text-violet-foreground',
+    neutral: 'bg-muted text-muted-foreground',
 };
 
 export const statusDotClasses: Record<StatusTone, string> = {
     success: 'bg-success',
     warning: 'bg-warning',
-    danger: 'bg-destructive',
+    danger: 'bg-danger',
     info: 'bg-info',
+    violet: 'bg-violet',
     neutral: 'bg-muted-foreground/60',
 };
 
@@ -94,6 +107,24 @@ export function StatusBadge({ status, tones, label, tone: forcedTone, className 
         >
             <span className={cn('size-1.5 shrink-0 rounded-full', statusDotClasses[tone])} aria-hidden />
             {label ?? statusLabel(status)}
+        </span>
+    );
+}
+
+/**
+ * Plain toned pill without the dot (v2 "label pill"): soft background + strong text. Used for row labels such as
+ * Trial / Alert / Sync / License / Invoice in AttentionList and short statuses in dense tables.
+ */
+export function StatusPill({ tone = 'neutral', children, className }: { tone?: StatusTone; children: ReactNode; className?: string }) {
+    return (
+        <span
+            className={cn(
+                'inline-flex h-6 items-center rounded-md px-2 text-xs leading-none font-medium whitespace-nowrap',
+                pillToneClasses[tone],
+                className,
+            )}
+        >
+            {children}
         </span>
     );
 }

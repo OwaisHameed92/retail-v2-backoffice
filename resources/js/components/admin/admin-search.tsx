@@ -1,6 +1,7 @@
 import { LicenceStatusBadge } from '@/components/admin/licences/licence-status-badge';
 import { type LicenceStatus } from '@/components/admin/licences/types';
 import { StatusBadge } from '@/components/shared/status-badge';
+import { SearchTrigger } from '@/components/shell/topbar';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 import { sendJson } from '@/lib/http';
 import { cn } from '@/lib/utils';
@@ -159,19 +160,12 @@ export function AdminSearch() {
 
     return (
         <>
-            <button
-                type="button"
+            <SearchTrigger
+                placeholder="Search tenants, businesses, licence keys, or anything…"
                 onClick={() => setOpen(true)}
-                className="border-input bg-card text-muted-foreground hover:border-border-strong focus-visible:border-ring focus-visible:ring-ring/20 dark:bg-background/40 flex h-9 w-full max-w-md flex-1 items-center gap-2 rounded-lg border px-3 text-sm shadow-xs transition-[border-color,box-shadow] duration-150 outline-none focus-visible:ring-[3px]"
                 aria-haspopup="dialog"
                 aria-keyshortcuts={isMac ? 'Meta+K' : 'Control+K'}
-            >
-                <Search className="size-4 shrink-0" aria-hidden />
-                <span className="truncate">Search tenants, licence keys, PCs</span>
-                <kbd className="bg-muted ml-auto hidden rounded border px-1.5 font-sans text-[11px] font-medium sm:inline">
-                    {isMac ? '⌘K' : 'Ctrl K'}
-                </kbd>
-            </button>
+            />
 
             <Dialog open={open} onOpenChange={(value) => (value ? setOpen(true) : close())}>
                 <DialogContent

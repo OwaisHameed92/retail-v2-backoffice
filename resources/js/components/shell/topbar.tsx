@@ -1,76 +1,83 @@
-import { EmptyState } from '@/components/shared/empty-state';
-import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { SidebarTrigger } from '@/components/ui/sidebar';
+import AppLogoIcon from '@/components/app-logo-icon';
+import { SidebarTrigger, useSidebar } from '@/components/ui/sidebar';
 import { cn } from '@/lib/utils';
 import { Link } from '@inertiajs/react';
-import { Bell, BookOpen, ChevronRight, CircleHelp, Keyboard, LifeBuoy, Search } from 'lucide-react';
-import { Fragment, useState, type ReactNode } from 'react';
+import { ChevronRight, Search } from 'lucide-react';
+import { Fragment, type ComponentProps, type ReactNode } from 'react';
+
+import { modKey } from '@/components/shell/topbar-menus';
+
+export { AccountTrigger, chromeButton, HelpMenu, modKey, NotificationsMenu } from '@/components/shell/topbar-menus';
 
 export interface TopbarCrumb {
     title: string;
     href?: string;
 }
 
-const isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform);
-export const modKey = isMac ? '⌘' : 'Ctrl';
-
 /**
- * The 56px sticky top bar: sidebar toggle and breadcrumbs on the left, search in the middle, help,
- * notifications and the account menu on the right. Layouts fill the slots.
+ * Left end of the top bar: the logo, as wide as the sidebar below it so the two read as one dark frame.
+ * Shrinks to the mark when the sidebar is collapsed; on phones a menu button opens the sidebar sheet.
  */
-export function Topbar({
-    breadcrumbs,
-    search,
-    actions,
-    className,
-}: {
-    breadcrumbs?: ReactNode;
-    search?: ReactNode;
-    actions?: ReactNode;
-    className?: string;
-}) {
+export function TopbarBrand({ href }: { href: string }) {
+    const { state } = useSidebar();
+    const collapsed = state === 'collapsed';
+
     return (
-        <header
+        <div
             className={cn(
-                'bg-background/85 supports-[backdrop-filter]:bg-background/70 sticky top-0 z-30 flex h-14 shrink-0 items-center gap-3 border-b px-3 backdrop-blur-md sm:px-4 lg:px-6',
-                className,
+                'flex h-full shrink-0 items-center gap-1 pl-2 transition-[width] duration-200 ease-linear md:pl-4',
+                'md:w-(--sidebar-width)',
+                collapsed && 'md:w-(--sidebar-width-icon) md:justify-center md:pl-0',
             )}
         >
-            <SidebarTrigger className="text-muted-foreground hover:text-foreground -ml-1 size-8" />
-            <div className="bg-border hidden h-5 w-px sm:block" aria-hidden />
-            <div className="flex min-w-0 flex-1 items-center gap-3">
-                <div className="hidden min-w-0 shrink md:block">{breadcrumbs}</div>
-                {search && <div className="flex min-w-0 flex-1 justify-center md:px-4">{search}</div>}
+            <SidebarTrigger className="text-chrome-muted hover:bg-chrome-hover hover:text-chrome-foreground size-9 md:hidden" />
+            <Link
+                href={href}
+                prefetch
+                className="focus-visible:ring-sidebar-ring flex min-w-0 items-center gap-2.5 rounded-lg px-1 py-1 outline-none focus-visible:ring-2"
+            >
+                <AppLogoIcon className="size-8 shrink-0" alt="" />
+                <span className={cn('hidden truncate text-[17px] font-semibold tracking-[-0.015em] sm:inline', collapsed && 'md:hidden')}>
+                    <span className="text-chrome-foreground">Switch</span> <span className="text-brand-green">&amp; Save</span>
+                </span>
+                <span className="sr-only">Switch &amp; Save home</span>
+            </Link>
+        </div>
+    );
+}
+
+/**
+ * The 64px dark top bar (chrome), fixed above the sidebar: logo left, search centred, actions right
+ * (help, notifications, account). Layouts fill the slots; ShellFrame positions it.
+ */
+export function Topbar({ brand, search, actions, className }: { brand: ReactNode; search?: ReactNode; actions?: ReactNode; className?: string }) {
+    return (
+        <header className={cn('bg-chrome-frame text-chrome-foreground border-chrome-border flex h-16 shrink-0 items-center border-b', className)}>
+            {brand}
+            <div className="flex h-full min-w-0 flex-1 items-center gap-2 pr-2 pl-1 sm:gap-3 sm:pr-4 md:pl-3 lg:pr-6">
+                <SidebarTrigger className="text-chrome-muted hover:bg-chrome-hover hover:text-chrome-foreground hidden size-9 md:inline-flex" />
+                <div className="flex min-w-0 flex-1 justify-end sm:justify-center">{search}</div>
+                <div className="flex shrink-0 items-center gap-0.5 sm:gap-1">{actions}</div>
             </div>
-            <div className="flex shrink-0 items-center gap-1">{actions}</div>
         </header>
     );
 }
 
-/** Breadcrumb trail for the top bar. The last crumb is the current page. */
-export function TopbarBreadcrumbs({ items }: { items: TopbarCrumb[] }) {
+/** Breadcrumb trail shown above the page content (detail pages). The last crumb is the current page. */
+export function TopbarBreadcrumbs({ items, className }: { items: TopbarCrumb[]; className?: string }) {
     if (items.length === 0) {
         return null;
     }
 
     return (
-        <nav aria-label="Breadcrumb">
-            <ol className="text-muted-foreground flex min-w-0 items-center gap-1.5 text-sm">
+        <nav aria-label="Breadcrumb" className={className}>
+            <ol className="text-muted-foreground flex min-w-0 items-center gap-1.5 text-[13px]">
                 {items.map((item, index) => {
                     const last = index === items.length - 1;
 
                     return (
                         <Fragment key={`${item.title}-${index}`}>
-                            <li className={cn('min-w-0 truncate', last ? 'text-foreground font-medium' : 'hidden lg:block')}>
+                            <li className={cn('min-w-0 truncate', last && 'text-foreground font-medium')}>
                                 {item.href && !last ? (
                                     <Link href={item.href} className="hover:text-foreground transition-colors">
                                         {item.title}
@@ -80,7 +87,7 @@ export function TopbarBreadcrumbs({ items }: { items: TopbarCrumb[] }) {
                                 )}
                             </li>
                             {!last && (
-                                <li aria-hidden className="text-muted-foreground/50 hidden lg:block">
+                                <li aria-hidden className="text-muted-foreground/50">
                                     <ChevronRight className="size-3.5" />
                                 </li>
                             )}
@@ -92,131 +99,46 @@ export function TopbarBreadcrumbs({ items }: { items: TopbarCrumb[] }) {
     );
 }
 
-/**
- * Button that looks like a search field and opens a command palette. `disabled` shows it as "coming soon"
- * (e.g. the tenant AI search).
- */
-export function SearchTrigger({
-    placeholder,
-    onClick,
-    disabled = false,
-    icon: Icon = Search,
-    shortcut = true,
-}: {
+interface SearchTriggerProps extends Omit<ComponentProps<'button'>, 'children'> {
     placeholder: string;
-    onClick?: () => void;
+    /** Shows it as "coming soon" (e.g. the tenant AI search). */
     disabled?: boolean;
     icon?: typeof Search;
     shortcut?: boolean;
-}) {
+}
+
+/**
+ * Button that looks like a search field on the dark top bar and opens a command palette. On phones it
+ * collapses to an icon button.
+ */
+export function SearchTrigger({ placeholder, disabled = false, icon: Icon = Search, shortcut = true, className, ...props }: SearchTriggerProps) {
     return (
         <button
             type="button"
-            onClick={onClick}
             disabled={disabled}
             title={disabled ? 'Coming soon' : undefined}
+            aria-label={placeholder}
             className={cn(
-                'border-input bg-card text-muted-foreground flex h-9 w-full max-w-md items-center gap-2 rounded-lg border px-3 text-sm shadow-xs transition-[border-color,box-shadow] duration-150',
-                'hover:border-border-strong focus-visible:border-ring focus-visible:ring-ring/20 outline-none focus-visible:ring-[3px]',
-                'disabled:hover:border-input dark:bg-background/40 disabled:cursor-default disabled:opacity-70',
+                'text-chrome-muted border-chrome-border bg-chrome-input flex size-10 items-center justify-center gap-2.5 rounded-lg border text-sm outline-none',
+                'sm:h-10 sm:w-full sm:max-w-xl sm:justify-start sm:px-3.5',
+                'hover:bg-chrome-hover hover:border-chrome-muted/30 hover:text-chrome-foreground transition-[color,border-color,background-color] duration-150',
+                'focus-visible:border-sidebar-ring focus-visible:ring-sidebar-ring/25 focus-visible:ring-[3px]',
+                'disabled:hover:text-chrome-muted disabled:hover:border-chrome-border disabled:cursor-default disabled:opacity-70',
+                className,
             )}
+            {...props}
         >
-            <Icon className="size-4 shrink-0" aria-hidden />
-            <span className="truncate">{placeholder}</span>
+            <Icon className="size-[18px] shrink-0" aria-hidden />
+            <span className="hidden truncate sm:inline">{placeholder}</span>
             {disabled ? (
-                <span className="bg-muted ml-auto hidden rounded px-1.5 text-[11px] font-medium sm:inline">Soon</span>
+                <span className="bg-chrome-hover ml-auto hidden rounded px-1.5 text-[11px] font-medium sm:inline">Soon</span>
             ) : (
                 shortcut && (
-                    <kbd className="bg-muted ml-auto hidden rounded border px-1.5 font-sans text-[11px] font-medium sm:inline">{modKey} K</kbd>
+                    <kbd className="border-chrome-border bg-chrome-hover ml-auto hidden rounded-md border px-1.5 py-0.5 font-sans text-[11px] font-medium sm:inline">
+                        {modKey} K
+                    </kbd>
                 )
             )}
         </button>
-    );
-}
-
-const shortcuts: { keys: string[]; label: string }[] = [
-    { keys: [modKey, 'K'], label: 'Open search' },
-    { keys: ['/'], label: 'Open search (when not typing)' },
-    { keys: [modKey, 'B'], label: 'Show or hide the sidebar' },
-    { keys: ['↑', '↓'], label: 'Move through search results' },
-    { keys: ['Enter'], label: 'Open the highlighted result or row' },
-    { keys: ['Esc'], label: 'Close a dialog or menu' },
-];
-
-/** "?" menu: help centre and support (soon) and the keyboard shortcuts sheet. */
-export function HelpMenu() {
-    const [shortcutsOpen, setShortcutsOpen] = useState(false);
-
-    return (
-        <>
-            <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground size-9" aria-label="Help">
-                        <CircleHelp className="size-[18px]" />
-                    </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-60">
-                    <DropdownMenuLabel>Help</DropdownMenuLabel>
-                    <DropdownMenuItem onSelect={() => setShortcutsOpen(true)}>
-                        <Keyboard className="text-muted-foreground size-4" aria-hidden />
-                        Keyboard shortcuts
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem disabled>
-                        <BookOpen className="text-muted-foreground size-4" aria-hidden />
-                        Help centre
-                        <span className="text-muted-foreground ml-auto text-[11px]">Soon</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem disabled>
-                        <LifeBuoy className="text-muted-foreground size-4" aria-hidden />
-                        Contact support
-                        <span className="text-muted-foreground ml-auto text-[11px]">Soon</span>
-                    </DropdownMenuItem>
-                </DropdownMenuContent>
-            </DropdownMenu>
-
-            <Dialog open={shortcutsOpen} onOpenChange={setShortcutsOpen}>
-                <DialogContent className="sm:max-w-md">
-                    <DialogTitle>Keyboard shortcuts</DialogTitle>
-                    <DialogDescription>Move around the backoffice without the mouse.</DialogDescription>
-                    <ul className="divide-y rounded-lg border">
-                        {shortcuts.map((shortcut) => (
-                            <li key={shortcut.label} className="flex items-center justify-between gap-4 px-3 py-2.5 text-sm">
-                                <span>{shortcut.label}</span>
-                                <span className="flex shrink-0 gap-1">
-                                    {shortcut.keys.map((key) => (
-                                        <kbd
-                                            key={key}
-                                            className="bg-muted text-muted-foreground min-w-6 rounded border px-1.5 py-0.5 text-center font-sans text-xs font-medium"
-                                        >
-                                            {key}
-                                        </kbd>
-                                    ))}
-                                </span>
-                            </li>
-                        ))}
-                    </ul>
-                </DialogContent>
-            </Dialog>
-        </>
-    );
-}
-
-/** Bell with an empty inbox until notifications exist. */
-export function NotificationsMenu() {
-    return (
-        <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground size-9" aria-label="Notifications">
-                    <Bell className="size-[18px]" />
-                </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-80 p-0">
-                <div className="flex items-center justify-between border-b px-4 py-3">
-                    <p className="text-sm font-semibold">Notifications</p>
-                </div>
-                <EmptyState icon={Bell} title="You are all caught up" body="Alerts about tills, trials and payments will show here." size="sm" />
-            </DropdownMenuContent>
-        </DropdownMenu>
     );
 }

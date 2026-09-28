@@ -9,7 +9,7 @@
 /*
   Switch & Save design tokens. Every colour in the product comes from here; pages use the Tailwind names
   (bg-card, text-muted-foreground, border-border, bg-success-soft...), never raw hex or palette classes.
-  See docs/BRAND.md (the design system) before adding or changing a token.
+  See docs/design/DESIGN-SYSTEM-v2.md before adding or changing a token.
 */
 @theme {
     --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
@@ -19,6 +19,7 @@
     --radius-lg: var(--radius);
     --radius-md: calc(var(--radius) - 2px);
     --radius-sm: calc(var(--radius) - 4px);
+    --radius-card: var(--radius-card-value);
 
     /* Elevation: cards sit on the canvas with a hairline border and a whisper of shadow. */
     --shadow-card: var(--elevation-card);
@@ -30,6 +31,8 @@
     --text-2xs--line-height: 1rem;
     --text-stat: 1.75rem;
     --text-stat--line-height: 2.125rem;
+    --text-kpi: 2rem;
+    --text-kpi--line-height: 2.5rem;
 
     --color-background: var(--background);
     --color-foreground: var(--foreground);
@@ -64,11 +67,24 @@
     --color-warning: var(--warning);
     --color-warning-foreground: var(--warning-foreground);
     --color-warning-soft: var(--warning-soft);
+    --color-danger: var(--danger);
     --color-danger-foreground: var(--danger-foreground);
     --color-danger-soft: var(--danger-soft);
     --color-info: var(--info);
     --color-info-foreground: var(--info-foreground);
     --color-info-soft: var(--info-soft);
+    --color-violet: var(--violet);
+    --color-violet-foreground: var(--violet-foreground);
+    --color-violet-soft: var(--violet-soft);
+
+    --color-chrome: var(--chrome);
+    --color-chrome-active: var(--chrome-active);
+    --color-chrome-foreground: var(--chrome-foreground);
+    --color-chrome-muted: var(--chrome-muted);
+    --color-chrome-hover: var(--chrome-hover);
+    --color-chrome-border: var(--chrome-border);
+    --color-chrome-input: var(--chrome-input);
+    --color-chrome-glow: var(--chrome-glow);
     --color-brand-blue: var(--brand-blue);
     --color-brand-green: var(--brand-green);
     --color-brand-panel: var(--brand-panel);
@@ -94,6 +110,7 @@
     --color-sidebar-border: var(--sidebar-border);
     --color-sidebar-ring: var(--sidebar-ring);
     --color-sidebar-muted: var(--sidebar-muted);
+    --color-sidebar-active: var(--sidebar-active);
 }
 
 /*
@@ -110,152 +127,171 @@
 }
 
 /*
-  Light theme. Brand blue #015CFC (primary), brand green #01C301 (positive). Cool slate neutrals:
-  white cards on a soft grey canvas, hairline borders, very soft shadows.
+  Design system v2 (docs/design/DESIGN-SYSTEM-v2.md). Light theme: dark navy "chrome" frame (sidebar + top bar),
+  light canvas, white cards, Switch & Save green as the primary action colour, soft tinted status tones.
 */
 :root {
-    --background: hsl(216, 28%, 97%);
-    --foreground: hsl(222, 47%, 11%);
-    --card: hsl(0, 0%, 100%);
-    --card-foreground: hsl(222, 47%, 11%);
-    --popover: hsl(0, 0%, 100%);
-    --popover-foreground: hsl(222, 47%, 11%);
+    --chrome: #0f1c2c;
+    --chrome-active: #103c38;
+    --chrome-foreground: #e6ebf0;
+    --chrome-muted: #8fa0b3;
+    --chrome-hover: hsl(210 40% 96% / 0.06);
+    --chrome-border: hsl(210 40% 96% / 0.08);
+    --chrome-input: hsl(210 40% 96% / 0.07);
+    --chrome-glow: hsl(156 100% 40% / 0.1);
 
-    --primary: hsl(218, 99%, 50%);
-    --primary-hover: hsl(218, 99%, 45%);
-    --primary-foreground: hsl(0, 0%, 100%);
-    --primary-soft: hsl(218, 100%, 96.5%);
+    --background: #f4f8fa;
+    --foreground: #0f172a;
+    --card: #ffffff;
+    --card-foreground: #0f172a;
+    --popover: #ffffff;
+    --popover-foreground: #0f172a;
 
-    --secondary: hsl(220, 16%, 95%);
-    --secondary-foreground: hsl(222, 47%, 11%);
-    --muted: hsl(220, 16%, 95.5%);
-    --muted-foreground: hsl(220, 9%, 43%);
+    --primary: #007048;
+    --primary-hover: #005e3c;
+    --primary-foreground: #ffffff;
+    --primary-soft: #e3f4ec;
+    --primary-text: #007048;
+
+    --secondary: #eef2f5;
+    --secondary-foreground: #0f172a;
+    --muted: #eef2f5;
+    --muted-foreground: #64748b;
     /* Very light fill for table headers, code blocks and inset panels. */
-    --subtle: hsl(220, 20%, 98.2%);
+    --subtle: #f8fafb;
 
-    --accent: hsl(218, 100%, 96.5%);
-    --accent-foreground: hsl(218, 90%, 36%);
+    --accent: #e3f4ec;
+    --accent-foreground: #005e3c;
 
-    --destructive: hsl(0, 72%, 51%);
-    --destructive-foreground: hsl(0, 0%, 100%);
-    --danger-foreground: hsl(0, 70%, 40%);
-    --danger-soft: hsl(0, 86%, 97%);
+    --destructive: #d12e3b;
+    --destructive-foreground: #ffffff;
+    --danger: #d12e3b;
+    /* Text on danger-soft: a shade darker than danger so small text keeps AA contrast. */
+    --danger-foreground: #c02835;
+    --danger-soft: #fde1e3;
 
-    --success: hsl(121, 99%, 38%);
-    --success-foreground: hsl(122, 80%, 24%);
-    --success-soft: hsl(120, 60%, 95.5%);
-    --warning: hsl(38, 92%, 50%);
-    --warning-foreground: hsl(28, 85%, 30%);
-    --warning-soft: hsl(45, 100%, 95%);
-    --info: hsl(218, 99%, 50%);
-    --info-foreground: hsl(218, 90%, 38%);
-    --info-soft: hsl(218, 100%, 96.5%);
+    --success: #067a4a;
+    --success-foreground: #067a4a;
+    --success-soft: #dcf5e8;
+    --warning: #b45309;
+    --warning-foreground: #b45309;
+    --warning-soft: #fef1d6;
+    --info: #2f5bd8;
+    --info-foreground: #2f5bd8;
+    --info-soft: #e4ecfd;
+    --violet: #7c3aed;
+    --violet-foreground: #7c3aed;
+    --violet-soft: #efe7fd;
 
-    --overlay: hsl(222 47% 11% / 0.4);
-    --border: hsl(220, 14%, 90%);
-    --border-strong: hsl(220, 13%, 84%);
-    --input: hsl(220, 13%, 85%);
-    --ring: hsl(218, 99%, 50%);
+    --overlay: hsl(213 49% 12% / 0.45);
+    --border: #e4e8ec;
+    --border-strong: #cfd6dd;
+    --input: #d9dfe5;
+    --ring: #007048;
 
-    --chart-1: hsl(218, 99%, 50%);
-    --chart-2: hsl(121, 80%, 40%);
-    --chart-3: hsl(199, 89%, 48%);
-    --chart-4: hsl(38, 92%, 50%);
-    --chart-5: hsl(262, 52%, 55%);
+    --chart-1: #007048;
+    --chart-2: #2f5bd8;
+    --chart-3: #7c3aed;
+    --chart-4: #b45309;
+    --chart-5: #d12e3b;
 
     --radius: 0.5rem;
+    --radius-card-value: 0.75rem;
 
-    --elevation-card: 0 1px 2px 0 hsl(220 40% 20% / 0.04), 0 1px 3px 0 hsl(220 40% 20% / 0.03);
-    --elevation-raised: 0 1px 2px 0 hsl(220 40% 20% / 0.05), 0 4px 12px -2px hsl(220 40% 20% / 0.08);
-    --elevation-overlay: 0 12px 32px -8px hsl(220 40% 15% / 0.18), 0 4px 8px -4px hsl(220 40% 15% / 0.08);
+    --elevation-card: 0 1px 2px 0 hsl(213 49% 12% / 0.04), 0 2px 8px -2px hsl(213 49% 12% / 0.05);
+    --elevation-raised: 0 1px 2px 0 hsl(213 49% 12% / 0.05), 0 8px 20px -6px hsl(213 49% 12% / 0.1);
+    --elevation-overlay: 0 16px 40px -12px hsl(213 49% 12% / 0.22), 0 4px 10px -4px hsl(213 49% 12% / 0.08);
 
-    --sidebar-background: hsl(0, 0%, 100%);
-    --sidebar-foreground: hsl(220, 14%, 28%);
-    --sidebar-muted: hsl(220, 9%, 52%);
-    --sidebar-primary: hsl(218, 99%, 50%);
-    --sidebar-primary-foreground: hsl(0, 0%, 100%);
-    --sidebar-accent: hsl(220, 16%, 95.5%);
-    --sidebar-accent-foreground: hsl(222, 47%, 11%);
-    --sidebar-border: hsl(220, 14%, 91%);
-    --sidebar-ring: hsl(218, 99%, 50%);
+    /* The sidebar is part of the dark chrome frame in both themes. */
+    --sidebar-background: var(--chrome);
+    --sidebar-foreground: var(--chrome-foreground);
+    --sidebar-muted: var(--chrome-muted);
+    --sidebar-primary: var(--primary);
+    --sidebar-primary-foreground: #ffffff;
+    --sidebar-accent: var(--chrome-hover);
+    --sidebar-accent-foreground: #ffffff;
+    --sidebar-active: var(--chrome-active);
+    --sidebar-border: var(--chrome-border);
+    --sidebar-ring: #1fae78;
 
     --brand-blue: #015cfc;
-    --brand-green: #01c301;
-    /* Flat brand blue for the auth brand panel. */
-    --brand-panel: hsl(218, 99%, 50%);
+    --brand-green: #22c55e;
+    /* Auth brand panel matches the chrome frame. */
+    --brand-panel: var(--chrome);
 }
 
-/*
-  Dark theme. Near-black blue-grey canvas, slightly lifted cards, the same brand blue for filled buttons
-  (white text keeps AA contrast) and a lighter blue for links and text (see .text-primary below).
-*/
+/* Dark theme: deeper canvas and chrome, lifted cards, a brighter green that reads on dark surfaces. */
 .dark {
-    --background: hsl(222, 22%, 6.5%);
-    --foreground: hsl(216, 30%, 96%);
-    --card: hsl(222, 20%, 9.5%);
-    --card-foreground: hsl(216, 30%, 96%);
-    --popover: hsl(222, 20%, 11%);
-    --popover-foreground: hsl(216, 30%, 96%);
+    --chrome: #08111c;
+    --chrome-active: #0e3a33;
+    --chrome-foreground: #e6ebf0;
+    --chrome-muted: #8394a8;
+    --chrome-hover: hsl(210 40% 96% / 0.05);
+    --chrome-border: hsl(210 40% 96% / 0.07);
+    --chrome-input: hsl(210 40% 96% / 0.06);
+    --chrome-glow: hsl(156 100% 40% / 0.08);
 
-    --primary: hsl(218, 96%, 52%);
-    --primary-hover: hsl(218, 96%, 58%);
-    --primary-foreground: hsl(0, 0%, 100%);
-    --primary-soft: hsl(218, 70%, 15%);
-    --primary-text: hsl(217, 100%, 72%);
+    --background: #0b121b;
+    --foreground: #e8eef4;
+    --card: #121b26;
+    --card-foreground: #e8eef4;
+    --popover: #152030;
+    --popover-foreground: #e8eef4;
 
-    --secondary: hsl(222, 16%, 15%);
-    --secondary-foreground: hsl(216, 30%, 96%);
-    --muted: hsl(222, 16%, 14%);
-    --muted-foreground: hsl(218, 12%, 65%);
-    --subtle: hsl(222, 18%, 11%);
+    --primary: #1fae78;
+    --primary-hover: #28c287;
+    --primary-foreground: #04170f;
+    --primary-soft: #10302a;
+    --primary-text: #3cc991;
 
-    --accent: hsl(218, 60%, 16%);
-    --accent-foreground: hsl(215, 100%, 80%);
+    --secondary: #1a2533;
+    --secondary-foreground: #e8eef4;
+    --muted: #19232f;
+    --muted-foreground: #8d9bab;
+    --subtle: #0f1822;
 
-    --destructive: hsl(0, 72%, 55%);
-    --destructive-foreground: hsl(0, 0%, 100%);
-    --danger-foreground: hsl(0, 90%, 76%);
-    --danger-soft: hsl(0, 50%, 14%);
+    --accent: #10302a;
+    --accent-foreground: #6fdcb0;
 
-    --success: hsl(121, 65%, 45%);
-    --success-foreground: hsl(120, 60%, 68%);
-    --success-soft: hsl(125, 40%, 12%);
-    --warning: hsl(38, 92%, 55%);
-    --warning-foreground: hsl(40, 95%, 70%);
-    --warning-soft: hsl(35, 55%, 12%);
-    --info: hsl(217, 100%, 64%);
-    --info-foreground: hsl(215, 100%, 80%);
-    --info-soft: hsl(218, 60%, 15%);
+    --destructive: #e5484d;
+    --destructive-foreground: #ffffff;
+    --danger: #e5484d;
+    --danger-foreground: #ff8b92;
+    --danger-soft: #3a161b;
+
+    --success: #34c489;
+    --success-foreground: #5bd6a3;
+    --success-soft: #0f2e22;
+    --warning: #f0a23b;
+    --warning-foreground: #f7bd6b;
+    --warning-soft: #33240c;
+    --info: #6b8df0;
+    --info-foreground: #9bb3f7;
+    --info-soft: #17223f;
+    --violet: #a78bfa;
+    --violet-foreground: #c4b5fd;
+    --violet-soft: #251b45;
 
     --overlay: hsl(0 0% 0% / 0.62);
-    --border: hsl(222, 14%, 17%);
-    --border-strong: hsl(222, 13%, 24%);
-    --input: hsl(222, 13%, 23%);
-    --ring: hsl(217, 100%, 62%);
+    --border: #223041;
+    --border-strong: #2e3e52;
+    --input: #2a394b;
+    --ring: #1fae78;
 
-    --chart-1: hsl(217, 100%, 62%);
-    --chart-2: hsl(121, 60%, 48%);
-    --chart-3: hsl(199, 89%, 58%);
-    --chart-4: hsl(38, 92%, 58%);
-    --chart-5: hsl(262, 70%, 70%);
+    --chart-1: #1fae78;
+    --chart-2: #6b8df0;
+    --chart-3: #a78bfa;
+    --chart-4: #f0a23b;
+    --chart-5: #e5484d;
 
     --elevation-card: 0 1px 2px 0 hsl(0 0% 0% / 0.3);
     --elevation-raised: 0 1px 2px 0 hsl(0 0% 0% / 0.35), 0 6px 16px -4px hsl(0 0% 0% / 0.45);
-    --elevation-overlay: 0 16px 40px -8px hsl(0 0% 0% / 0.6), 0 0 0 1px hsl(222 14% 20%);
+    --elevation-overlay: 0 16px 40px -8px hsl(0 0% 0% / 0.6), 0 0 0 1px #223041;
 
-    --sidebar-background: hsl(222, 22%, 8%);
-    --sidebar-foreground: hsl(216, 16%, 78%);
-    --sidebar-muted: hsl(218, 10%, 55%);
-    --sidebar-primary: hsl(218, 96%, 52%);
-    --sidebar-primary-foreground: hsl(0, 0%, 100%);
-    --sidebar-accent: hsl(222, 16%, 14%);
-    --sidebar-accent-foreground: hsl(216, 30%, 96%);
-    --sidebar-border: hsl(222, 14%, 15%);
-    --sidebar-ring: hsl(217, 100%, 62%);
+    --sidebar-primary-foreground: #04170f;
 
     --brand-blue: #4d8dff;
-    --brand-green: #2fd12f;
-    --brand-panel: hsl(218, 80%, 34%);
+    --brand-green: #2fd16a;
 }
 
 @layer base {
@@ -307,9 +343,14 @@
 }
 
 @layer utilities {
-    /* Dark mode: the filled brand blue is too dark for text on dark surfaces, so text uses a lighter blue. */
+    /* Dark mode: text in the primary colour uses a slightly lighter green than filled buttons. */
     .dark .text-primary {
         color: var(--primary-text);
+    }
+
+    /* The dark chrome frame (top bar) with the barely visible green glow at the top edge. */
+    .bg-chrome-frame {
+        background: radial-gradient(48rem 7rem at 72% -3.5rem, var(--chrome-glow), transparent 70%), var(--chrome);
     }
 
     /* Hide scrollbars on horizontal tab strips while keeping them scrollable. */

@@ -13,7 +13,10 @@ export interface AdminSession {
 }
 
 export interface AdminSharedData extends SharedData {
-    admin: AdminSession;
+    admin: AdminSession & {
+        /** Optional sidebar counts (e.g. `{ leads: 3 }`). Not shared by the backend yet; the pill shows when present. */
+        navCounts?: Record<string, number>;
+    };
 }
 
 /** An admin row as shaped by App\Domain\Admin\Data\AdminData::fromModel(). */

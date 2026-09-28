@@ -1,7 +1,7 @@
 import { type AdminSession } from '@/components/admin/types';
 import { InitialsAvatar } from '@/components/shared/entity-cell';
 import { ThemeSubmenu } from '@/components/shell/theme-menu';
-import { Button } from '@/components/ui/button';
+import { AccountTrigger } from '@/components/shell/topbar';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -10,13 +10,11 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from '@/components/ui/sidebar';
-import { useIsMobile } from '@/hooks/use-mobile';
 import { useMobileNavigation } from '@/hooks/use-mobile-navigation';
 import { Link } from '@inertiajs/react';
-import { ChevronsUpDown, LogOut } from 'lucide-react';
+import { LogOut } from 'lucide-react';
 
-/** Menu items shared by the top-bar avatar and the sidebar user card. */
+/** The admin account menu: who is signed in, theme, log out. */
 function AdminMenuItems({ admin }: { admin: AdminSession }) {
     const cleanup = useMobileNavigation();
 
@@ -29,7 +27,7 @@ function AdminMenuItems({ admin }: { admin: AdminSession }) {
                         <span className="text-foreground truncate font-medium">{admin.name}</span>
                         <span className="text-muted-foreground truncate text-xs">{admin.email}</span>
                     </div>
-                    <span className="bg-primary-soft text-accent-foreground ml-auto shrink-0 rounded px-1.5 py-0.5 text-[11px] font-medium">
+                    <span className="bg-primary-soft text-primary ml-auto shrink-0 rounded px-1.5 py-0.5 text-[11px] font-medium">
                         {admin.roleLabel}
                     </span>
                 </div>
@@ -47,51 +45,16 @@ function AdminMenuItems({ admin }: { admin: AdminSession }) {
     );
 }
 
-/** Top-bar avatar button with the admin's account menu. */
+/** Top-bar account button (avatar, name, role) with the admin's account menu. */
 export function AdminUserMenu({ admin }: { admin: AdminSession }) {
     return (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="ml-1 size-9 rounded-full" aria-label="Account menu">
-                    <InitialsAvatar name={admin.name} />
-                </Button>
+                <AccountTrigger name={admin.name} subtitle={admin.roleLabel} />
             </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-72" align="end">
+            <DropdownMenuContent className="w-72" align="end" sideOffset={8}>
                 <AdminMenuItems admin={admin} />
             </DropdownMenuContent>
         </DropdownMenu>
-    );
-}
-
-/** Sidebar footer card: avatar, name and role; opens the same account menu. */
-export function AdminSidebarUser({ admin }: { admin: AdminSession }) {
-    const { state } = useSidebar();
-    const isMobile = useIsMobile();
-
-    return (
-        <SidebarMenu>
-            <SidebarMenuItem>
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <SidebarMenuButton size="lg" className="data-[state=open]:bg-sidebar-accent h-12 gap-2.5 px-2">
-                            <InitialsAvatar name={admin.name} />
-                            <span className="grid min-w-0 flex-1 text-left text-sm leading-tight">
-                                <span className="text-sidebar-accent-foreground truncate font-medium">{admin.name}</span>
-                                <span className="text-sidebar-muted truncate text-xs font-normal">{admin.roleLabel}</span>
-                            </span>
-                            <ChevronsUpDown className="ml-auto size-4" />
-                        </SidebarMenuButton>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent
-                        className="w-(--radix-dropdown-menu-trigger-width) min-w-64"
-                        align="end"
-                        side={isMobile ? 'bottom' : state === 'collapsed' ? 'right' : 'top'}
-                        sideOffset={6}
-                    >
-                        <AdminMenuItems admin={admin} />
-                    </DropdownMenuContent>
-                </DropdownMenu>
-            </SidebarMenuItem>
-        </SidebarMenu>
     );
 }

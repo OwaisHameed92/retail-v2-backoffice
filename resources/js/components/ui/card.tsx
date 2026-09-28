@@ -2,9 +2,9 @@ import * as React from 'react';
 
 import { cn } from '@/lib/utils';
 
-/** White surface on the grey canvas: 12px radius, hairline border, whisper shadow. */
+/** White surface on the canvas (v2): 12px card radius, hairline border, very soft shadow. */
 const Card = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(({ className, ...props }, ref) => (
-    <div ref={ref} data-slot="card" className={cn('rounded-xl border bg-card text-card-foreground shadow-card', className)} {...props} />
+    <div ref={ref} data-slot="card" className={cn('rounded-card border bg-card text-card-foreground shadow-card', className)} {...props} />
 ));
 Card.displayName = 'Card';
 

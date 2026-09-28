@@ -31,7 +31,7 @@ interface PageHeaderProps {
 }
 
 /**
- * The top of every page: breadcrumbs or back link, title (text-2xl semibold), optional status, one-line
+ * The top of every page: breadcrumbs or back link, title (28px bold, tight tracking), optional status, one-line
  * description, actions on the right, optional tabs. Pages never hand-roll their own title block.
  */
 export function PageHeader({ title, description, actions, breadcrumbs, back, status, media, meta, tabs, className }: PageHeaderProps) {
@@ -87,7 +87,9 @@ export function PageHeader({ title, description, actions, breadcrumbs, back, sta
                     {media && <div className="shrink-0">{media}</div>}
                     <div className="min-w-0 space-y-1">
                         <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
-                            <h1 className="text-foreground truncate text-2xl leading-8 font-semibold tracking-[-0.02em]">{title}</h1>
+                            <h1 className="text-foreground truncate text-2xl leading-8 font-bold tracking-[-0.025em] sm:text-[28px] sm:leading-9">
+                                {title}
+                            </h1>
                             {status}
                         </div>
                         {description && <div className="text-muted-foreground max-w-3xl text-sm leading-6">{description}</div>}

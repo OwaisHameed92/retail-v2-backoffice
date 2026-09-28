@@ -1,11 +1,9 @@
 import { AppBranchSwitcher } from '@/components/app-branch-switcher';
-import { InitialsAvatar } from '@/components/shared/entity-cell';
-import { HelpMenu, NotificationsMenu, SearchTrigger, Topbar, TopbarBreadcrumbs } from '@/components/shell/topbar';
-import { Button } from '@/components/ui/button';
+import { AccountTrigger, HelpMenu, NotificationsMenu, SearchTrigger, Topbar, TopbarBrand } from '@/components/shell/topbar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { UserMenuContent } from '@/components/user-menu-content';
-import { type BreadcrumbItem as BreadcrumbItemType, type SharedData } from '@/types';
+import { type SharedData } from '@/types';
 import { usePage } from '@inertiajs/react';
 import { CalendarDays, Sparkles } from 'lucide-react';
 
@@ -26,32 +24,26 @@ function DateRange() {
     );
 }
 
-/**
- * Tenant portal top bar: breadcrumbs, "Ask anything" (soon), branch and date filters, help, notifications,
- * account menu. Below xl the branch and date filters move to AppFilterBar.
- */
-export function AppSidebarHeader({ breadcrumbs = [] }: { breadcrumbs?: BreadcrumbItemType[] }) {
-    const { auth } = usePage<SharedData>().props;
+/** Business portal top bar (dark chrome): logo, "Ask anything" (soon), help, notifications, account menu. */
+export function AppSidebarHeader() {
+    const { auth, companyRole } = usePage<SharedData>().props;
 
     return (
         <Topbar
-            breadcrumbs={<TopbarBreadcrumbs items={breadcrumbs} />}
+            brand={<TopbarBrand href="/app" />}
             search={<SearchTrigger placeholder="Ask anything, e.g. top sellers in Leeds" icon={Sparkles} disabled />}
             actions={
                 <>
-                    <div className="mr-2 hidden items-center gap-2 xl:flex">
-                        <AppBranchSwitcher />
-                        <DateRange />
-                    </div>
-                    <HelpMenu />
                     <NotificationsMenu />
+                    <HelpMenu />
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="ml-1 size-9 rounded-full" aria-label="Account menu">
-                                <InitialsAvatar name={auth.user.name} />
-                            </Button>
+                            <AccountTrigger
+                                name={auth.user.name}
+                                subtitle={companyRole ? companyRole.charAt(0).toUpperCase() + companyRole.slice(1) : undefined}
+                            />
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-64">
+                        <DropdownMenuContent align="end" className="w-64" sideOffset={8}>
                             <UserMenuContent user={auth.user} />
                         </DropdownMenuContent>
                     </DropdownMenu>
@@ -61,10 +53,10 @@ export function AppSidebarHeader({ breadcrumbs = [] }: { breadcrumbs?: Breadcrum
     );
 }
 
-/** Branch and date filters under the top bar on screens narrower than xl (the top bar has no room). */
+/** Branch and date filters at the top of the page, right-aligned (kept off the dark top bar). */
 export function AppFilterBar() {
     return (
-        <div className="bg-background flex items-center gap-2 border-b px-3 py-2 sm:px-4 lg:px-6 xl:hidden">
+        <div className="flex flex-wrap items-center justify-end gap-2">
             <AppBranchSwitcher />
             <DateRange />
         </div>

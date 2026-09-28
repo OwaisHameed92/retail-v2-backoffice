@@ -123,7 +123,7 @@ test('an unknown or malformed lead id is a 404', function () {
 
 test('the Leads nav item links to the list and needs tenants.view like the page', function () {
     $nav = file_get_contents(resource_path('js/components/admin/admin-nav.ts'));
-    preg_match("/\\{ title: 'Leads',[^}]*\\}/", (string) $nav, $match);
+    preg_match("/\\{\\s*title: 'Leads',[^}]*\\}/", (string) $nav, $match);
 
     expect($match[0] ?? '')->toContain("route: 'admin.leads.index'")
         ->toContain("activePattern: 'admin.leads.*'")

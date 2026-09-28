@@ -1,44 +1,54 @@
 import AppLogoIcon from '@/components/app-logo-icon';
-import { SidebarHeader } from '@/components/ui/sidebar';
-import { Link } from '@inertiajs/react';
+import { SidebarNav, type ShellNavGroup } from '@/components/shell/sidebar-nav';
+import { Sidebar, SidebarContent, SidebarFooter, SidebarRail } from '@/components/ui/sidebar';
+import { type ReactNode } from 'react';
 
-interface SidebarBrandProps {
-    href: string;
-    /** Second line under the wordmark: "Admin" or the company name. */
-    subtitle?: string | null;
-    /** Small pill after the subtitle, e.g. "Staff". */
-    tag?: string;
-}
-
-/** Sidebar header: the "S" mark, "Switch & Save" and a subtitle, 56px tall to line up with the top bar. */
-export function SidebarBrand({ href, subtitle, tag }: SidebarBrandProps) {
+/** Bottom of the sidebar: the mark, "Switch & Save" and the tagline. Just the mark when collapsed. */
+export function SidebarBrandFooter() {
     return (
-        <SidebarHeader className="border-sidebar-border h-14 justify-center border-b px-3 py-0 group-data-[collapsible=icon]:px-2">
-            <Link
-                href={href}
-                prefetch
-                className="focus-visible:ring-sidebar-ring flex min-w-0 items-center gap-2.5 rounded-md px-1 py-1 outline-none group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0 focus-visible:ring-2"
-            >
-                <AppLogoIcon className="size-8 shrink-0" alt="" />
-                <span className="grid min-w-0 flex-1 leading-tight group-data-[collapsible=icon]:hidden">
-                    <span className="text-sidebar-accent-foreground truncate text-[15px] font-semibold tracking-[-0.01em]">
-                        Switch <span className="text-brand-green">&amp;</span> Save
-                    </span>
-                    {subtitle && (
-                        <span className="text-sidebar-muted flex min-w-0 items-center gap-1.5 text-xs">
-                            <span className="truncate">{subtitle}</span>
-                            {tag && (
-                                <span className="bg-primary-soft text-accent-foreground shrink-0 rounded px-1 text-[10px] leading-4 font-semibold tracking-wide uppercase">
-                                    {tag}
-                                </span>
-                            )}
-                        </span>
-                    )}
-                </span>
-                <span className="sr-only">Switch &amp; Save home</span>
-            </Link>
-        </SidebarHeader>
+        <div className="border-sidebar-border mx-3 flex items-center gap-3 border-t px-1 pt-4 pb-5 group-data-[collapsible=icon]:mx-2 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0">
+            <AppLogoIcon className="size-9 shrink-0" alt="" />
+            <div className="min-w-0 leading-tight group-data-[collapsible=icon]:hidden">
+                <p className="truncate text-[15px] font-semibold tracking-[-0.01em]">
+                    <span className="text-sidebar-accent-foreground">Switch</span> <span className="text-brand-green">&amp; Save</span>
+                </p>
+                <p className="text-sidebar-muted truncate text-[11px]">Smarter EPOS. Bigger growth.</p>
+            </div>
+        </div>
     );
 }
 
-export default SidebarBrand;
+interface ShellSidebarProps {
+    /** Main navigation, scrolls when tall. */
+    groups: ShellNavGroup[];
+    /** Groups pinned near the bottom (Settings). */
+    pinned?: ShellNavGroup[];
+    /** Optional block above the navigation, e.g. the business name in the tenant portal. */
+    header?: ReactNode;
+}
+
+/**
+ * The dark full-height sidebar under the top bar: grouped nav, pinned Settings near the bottom and the logo +
+ * tagline at the very bottom. Collapses to icons on desktop; a sheet on phones.
+ */
+export function ShellSidebar({ groups, pinned = [], header }: ShellSidebarProps) {
+    return (
+        <Sidebar collapsible="icon" className="top-(--shell-top) h-[calc(100svh-var(--shell-top))]">
+            {header}
+            <SidebarContent className="gap-0 py-2">
+                <SidebarNav groups={groups} />
+            </SidebarContent>
+            <SidebarFooter className="gap-0 p-0">
+                {pinned.length > 0 && (
+                    <div className="border-sidebar-border mx-3 border-t pt-1 group-data-[collapsible=icon]:mx-2">
+                        <SidebarNav groups={pinned} className="px-0" />
+                    </div>
+                )}
+                <SidebarBrandFooter />
+            </SidebarFooter>
+            <SidebarRail />
+        </Sidebar>
+    );
+}
+
+export default ShellSidebar;

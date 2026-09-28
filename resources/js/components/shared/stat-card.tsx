@@ -121,9 +121,6 @@ export function StatCard({ label, value, delta, hint, icon: Icon, tone = 'primar
     return <Card className={classes}>{body}</Card>;
 }
 
-/** Alias: some teams call these KPI cards. Same component. */
-export const KpiCard = StatCard;
-
 /** A row of stat cards: 2 columns on phones and tablets, `columns` on desktop. */
 export function StatGrid({ columns = 4, className, children }: { columns?: 2 | 3 | 4; className?: string; children: ReactNode }) {
     return (
