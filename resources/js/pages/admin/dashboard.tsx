@@ -48,7 +48,7 @@ interface Kpi {
 }
 
 const kpis: Kpi[] = [
-    { key: 'revenue', label: 'Monthly revenue', icon: Coins, tone: 'primary', link: { label: 'Open billing', route: 'admin.billing.index', ability: 'tenants.view' } },
+    { key: 'revenue', label: 'Monthly revenue', icon: Coins, tone: 'primary', link: { label: 'Open billing', route: 'admin.billing.index', ability: 'billing.manage' } },
     { key: 'activeTills', label: 'Active tills', icon: Monitor, tone: 'info', link: { label: 'View licences', route: 'admin.licences.index', ability: 'tenants.view' } },
     { key: 'trials', label: 'Trials running', icon: UsersRound, tone: 'violet', link: { label: 'View tenants', route: 'admin.tenants.index', ability: 'tenants.view' } },
     {
@@ -56,7 +56,7 @@ const kpis: Kpi[] = [
         label: 'Overdue',
         icon: FileWarning,
         tone: 'danger',
-        link: { label: 'View invoices', route: 'admin.billing.invoices.index', ability: 'tenants.view' },
+        link: { label: 'View invoices', route: 'admin.billing.invoices.index', ability: 'billing.manage' },
     },
 ];
 

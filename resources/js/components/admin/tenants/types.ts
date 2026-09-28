@@ -121,8 +121,8 @@ export interface TenantShowProps {
     /** Module 1.3: licences of this tenant and of each till. */
     licensing: TenantLicensing;
     plans: PlanOption[];
-    /** Module 1.8: billing settings, balance, invoices and payments. */
-    billing: TenantBillingData;
+    /** Module 1.8: billing settings, balance, invoices and payments. Null without billing.manage (tab hidden). */
+    billing: TenantBillingData | null;
     /** Module 1.11: the licence form. */
     branchLimits: BranchLimits;
     licenceOptions: LicenceOptions;

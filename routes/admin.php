@@ -172,35 +172,32 @@ Route::middleware(['auth:admin', AdminIsActive::class, BlockAdminWhileImpersonat
             ->middleware(['can:sendTest,'.EmailLog::class, 'throttle:10,1']);
     });
 
-    // Cash billing (module 1.8): tenants.view reads, billing.manage changes. Invoice and payment ids are looked up
-    // across companies in the controllers (FindsBillingRecords), never by route model binding.
-    Route::prefix('billing')->name('billing.')->group(function () {
-        Route::middleware('can:'.AdminRole::TENANTS_VIEW)->group(function () {
-            Route::get('/', BillingOverviewController::class)->name('index');
-            Route::get('invoices', [InvoiceController::class, 'index'])->name('invoices.index');
-            Route::get('invoices/{invoice}', [InvoiceController::class, 'show'])->name('invoices.show')->whereUlid('invoice');
-            Route::get('invoices/{invoice}/pdf', [InvoiceController::class, 'pdf'])->name('invoices.pdf')->whereUlid('invoice')->middleware('throttle:60,1');
-            Route::get('payments', [PaymentController::class, 'index'])->name('payments.index');
-            Route::get('payments/{payment}', [PaymentController::class, 'show'])->name('payments.show')->whereUlid('payment');
+    // Cash billing (module 1.8): owner and accounts only (billing.manage), reading included (owner decision
+    // 2026-09-28). Invoice and payment ids are looked up across companies in the controllers
+    // (FindsBillingRecords), never by route model binding.
+    Route::prefix('billing')->name('billing.')->middleware('can:'.AdminRole::BILLING_MANAGE)->group(function () {
+        Route::get('/', BillingOverviewController::class)->name('index');
+        Route::get('invoices', [InvoiceController::class, 'index'])->name('invoices.index');
+        Route::get('invoices/{invoice}', [InvoiceController::class, 'show'])->name('invoices.show')->whereUlid('invoice');
+        Route::get('invoices/{invoice}/pdf', [InvoiceController::class, 'pdf'])->name('invoices.pdf')->whereUlid('invoice')->middleware('throttle:60,1');
+        Route::get('payments', [PaymentController::class, 'index'])->name('payments.index');
+        Route::get('payments/{payment}', [PaymentController::class, 'show'])->name('payments.show')->whereUlid('payment');
+
+        Route::whereUlid('invoice')->group(function () {
+            Route::put('invoices/{invoice}', [InvoiceActionController::class, 'update'])->name('invoices.update');
+            Route::delete('invoices/{invoice}', [InvoiceActionController::class, 'destroy'])->name('invoices.destroy');
+            Route::post('invoices/{invoice}/issue', [InvoiceActionController::class, 'issue'])->name('invoices.issue');
+            Route::post('invoices/{invoice}/send', [InvoiceActionController::class, 'send'])->name('invoices.send')->middleware('throttle:20,1');
+            Route::post('invoices/{invoice}/void', [InvoiceActionController::class, 'void'])->name('invoices.void');
+            Route::post('invoices/{invoice}/credit-notes', [InvoiceActionController::class, 'credit'])->name('invoices.credit');
         });
 
-        Route::middleware('can:'.AdminRole::BILLING_MANAGE)->group(function () {
-            Route::whereUlid('invoice')->group(function () {
-                Route::put('invoices/{invoice}', [InvoiceActionController::class, 'update'])->name('invoices.update');
-                Route::delete('invoices/{invoice}', [InvoiceActionController::class, 'destroy'])->name('invoices.destroy');
-                Route::post('invoices/{invoice}/issue', [InvoiceActionController::class, 'issue'])->name('invoices.issue');
-                Route::post('invoices/{invoice}/send', [InvoiceActionController::class, 'send'])->name('invoices.send')->middleware('throttle:20,1');
-                Route::post('invoices/{invoice}/void', [InvoiceActionController::class, 'void'])->name('invoices.void');
-                Route::post('invoices/{invoice}/credit-notes', [InvoiceActionController::class, 'credit'])->name('invoices.credit');
-            });
-
-            Route::get('tenants/{company}/invoice-preview', [TenantBillingController::class, 'preview'])->name('tenants.invoice-preview');
-            Route::get('tenants/{company}/open-invoices', [TenantBillingController::class, 'openInvoices'])->name('tenants.open-invoices');
-            Route::post('tenants/{company}/invoices', [TenantBillingController::class, 'createInvoice'])->name('tenants.invoices.store');
-            Route::post('tenants/{company}/payments', [TenantBillingController::class, 'recordPayment'])->name('tenants.payments.store');
-            Route::put('tenants/{company}/settings', [TenantBillingController::class, 'settings'])->name('tenants.settings');
-            Route::post('tenants/{company}/apply-credit', [TenantBillingController::class, 'applyCredit'])->name('tenants.apply-credit');
-        });
+        Route::get('tenants/{company}/invoice-preview', [TenantBillingController::class, 'preview'])->name('tenants.invoice-preview');
+        Route::get('tenants/{company}/open-invoices', [TenantBillingController::class, 'openInvoices'])->name('tenants.open-invoices');
+        Route::post('tenants/{company}/invoices', [TenantBillingController::class, 'createInvoice'])->name('tenants.invoices.store');
+        Route::post('tenants/{company}/payments', [TenantBillingController::class, 'recordPayment'])->name('tenants.payments.store');
+        Route::put('tenants/{company}/settings', [TenantBillingController::class, 'settings'])->name('tenants.settings');
+        Route::post('tenants/{company}/apply-credit', [TenantBillingController::class, 'applyCredit'])->name('tenants.apply-credit');
     });
 
     // Plans (module 1.1). Archived plans stay viewable, restorable and copyable.

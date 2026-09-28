@@ -1,8 +1,11 @@
 <?php
 
 use App\Http\Controllers\Api\LicenceApiController;
+use App\Http\Controllers\Api\TrialRequestController;
 use App\Http\Middleware\EnsureTillContract;
+use App\Http\Middleware\GuardPublicTrialRequests;
 use App\Http\Middleware\IdempotentTillRequest;
+use App\Http\Middleware\PublicFormCors;
 use App\Http\Middleware\ThrottleLicenceApi;
 use Illuminate\Support\Facades\Route;
 
@@ -18,4 +21,13 @@ Route::prefix('v1')->name('api.')
         Route::post('licence/activate', 'activate')->name('licence.activate');
         Route::post('licence/validate', 'validateLicence')->name('licence.validate');
         Route::post('devices/deactivate', 'deactivate')->name('devices.deactivate');
+    });
+
+// Public trial form (module 1.10, docs/specs/public-trial-api.md): our marketing website and the hosted /trial page.
+// No auth. CORS allow-list (PUBLIC_FORM_ORIGINS), 5 an hour per IP, honeypot, Turnstile and 3 a day per email.
+Route::prefix('v1/public')->name('api.public.')->middleware(PublicFormCors::class)
+    ->controller(TrialRequestController::class)
+    ->group(function () {
+        Route::options('trial-requests', 'preflight')->name('trial-requests.preflight');
+        Route::post('trial-requests', 'store')->name('trial-requests.store')->middleware(GuardPublicTrialRequests::class);
     });

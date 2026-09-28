@@ -137,7 +137,7 @@ test('Alpha\'s open invoices, billing tab and settings never include Bravo\'s', 
 });
 
 test('the invoice filter by company only lists that company', function () {
-    $this->actingAs($this->admin(AdminRole::Support), 'admin')
+    $this->actingAs($this->admin(AdminRole::Accounts), 'admin')
         ->get(route('admin.billing.invoices.index', ['company' => $this->bravo->id]))
         ->assertInertia(fn (AssertableInertia $page) => $page->has('invoices.data', 1)
             ->where('invoices.data.0.id', $this->bravoInvoice->id)

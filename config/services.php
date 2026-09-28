@@ -35,4 +35,12 @@ return [
         ],
     ],
 
+    // Cloudflare Turnstile for the public trial form (module 1.10). The site key is public (shown on /trial); the
+    // secret is server-side only.
+    'turnstile' => [
+        'site_key' => (string) env('TURNSTILE_SITE_KEY', ''),
+        'secret' => (string) env('TURNSTILE_SECRET', ''),
+        'verify_url' => 'https://challenges.cloudflare.com/turnstile/v0/siteverify',
+    ],
+
 ];

@@ -73,7 +73,7 @@ export const adminNavItems: AdminNavItem[] = [
         icon: Receipt,
         route: 'admin.billing.index',
         activePattern: ['admin.billing.index', 'admin.billing.payments.*', 'admin.billing.tenants.*'],
-        ability: 'tenants.view',
+        ability: 'billing.manage',
         group: 'Billing',
     },
     {
@@ -81,7 +81,7 @@ export const adminNavItems: AdminNavItem[] = [
         icon: FileText,
         route: 'admin.billing.invoices.index',
         activePattern: 'admin.billing.invoices.*',
-        ability: 'tenants.view',
+        ability: 'billing.manage',
         group: 'Billing',
     },
     { title: 'Plans', icon: Layers, route: 'admin.plans.index', activePattern: 'admin.plans.*', ability: 'billing.manage', group: 'Billing' },

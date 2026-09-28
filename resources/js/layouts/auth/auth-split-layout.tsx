@@ -1,10 +1,10 @@
 import AppLogoIcon from '@/components/app-logo-icon';
 import BrandLogo from '@/components/brand-logo';
 import { Link } from '@inertiajs/react';
-import { BarChart3, Building2, CircleCheck, KeyRound, ScrollText, ShieldCheck, Store, type LucideIcon } from 'lucide-react';
+import { BarChart3, Building2, CircleCheck, Headset, KeyRound, ScrollText, ShieldCheck, Store, type LucideIcon } from 'lucide-react';
 import { type ReactNode } from 'react';
 
-export type AuthVariant = 'customer' | 'staff';
+export type AuthVariant = 'customer' | 'staff' | 'trial';
 
 interface AuthLayoutProps {
     children: ReactNode;
@@ -23,6 +23,16 @@ const copy: Record<AuthVariant, { eyebrow: string; heading: string; body: string
             { icon: BarChart3, text: 'Sales, stock and cash-ups from every till in one place' },
             { icon: Store, text: 'Every branch side by side, or one at a time' },
             { icon: ShieldCheck, text: 'Your tills sync securely, even after going offline' },
+        ],
+    },
+    trial: {
+        eyebrow: 'Free 7-day trial',
+        heading: 'Run your shop on Switch & Save',
+        body: 'The EPOS till and cloud backoffice for UK convenience stores, newsagents and grocers.',
+        points: [
+            { icon: Store, text: 'Every till and branch, set up for you' },
+            { icon: BarChart3, text: 'Sales, stock and cash-ups in one place' },
+            { icon: Headset, text: 'A real person calls you to get started' },
         ],
     },
     staff: {
@@ -105,7 +115,7 @@ export default function AuthSplitLayout({ children, title, description, variant 
             </aside>
 
             <main className="flex flex-col items-center justify-center px-5 py-10 sm:px-8">
-                <div className="w-full max-w-[400px]">
+                <div className={variant === 'trial' ? 'w-full max-w-[560px]' : 'w-full max-w-[400px]'}>
                     <div className="mb-8 flex items-center justify-between gap-3 lg:hidden">
                         <Link href={route('home')} aria-label="Switch & Save home">
                             <BrandLogo className="h-9" />

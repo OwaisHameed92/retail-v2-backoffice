@@ -26,13 +26,13 @@ type TabValue = 'branches' | 'users' | 'activity' | 'licences' | 'billing';
 
 const TAB_VALUES: TabValue[] = ['branches', 'users', 'activity', 'licences', 'billing'];
 
-function initialTab(): TabValue {
+function initialTab(canBill: boolean): TabValue {
     if (typeof window === 'undefined') {
         return 'branches';
     }
     const tab = new URLSearchParams(window.location.search).get('tab') as TabValue | null;
 
-    return tab && TAB_VALUES.includes(tab) ? tab : 'branches';
+    return tab && TAB_VALUES.includes(tab) && (tab !== 'billing' || canBill) ? tab : 'branches';
 }
 
 export default function TenantShow({
@@ -51,7 +51,7 @@ export default function TenantShow({
     licenceOptions,
     can,
 }: TenantShowProps) {
-    const [tab, setTab] = useState<TabValue>(initialTab);
+    const [tab, setTab] = useState<TabValue>(() => initialTab(billing !== null));
     const [branchDialog, setBranchDialog] = useState<{ open: boolean; branch: TenantBranch | null }>({ open: false, branch: null });
     const [limitsOpen, setLimitsOpen] = useState(false);
     // Module 1.11: no branch past the branches allowed (one without multi-branch).
@@ -79,7 +79,8 @@ export default function TenantShow({
                     </Badge>
                 ) : undefined,
         },
-        { value: 'billing', label: 'Billing' },
+        // Billing is for owner and accounts only (billing.manage): no data, no tab.
+        ...(billing ? [{ value: 'billing', label: 'Billing' } satisfies PageTab] : []),
     ];
 
     return (
@@ -202,7 +203,7 @@ export default function TenantShow({
                     )}
                     {tab === 'activity' && <ActivityPanel activity={activity} />}
                     {tab === 'licences' && <TenantLicencesPanel tenant={tenant} licensing={licensing} plans={plans} canManage={can.manageLicences} />}
-                    {tab === 'billing' && <TenantBillingPanel tenant={tenant} billing={billing} />}
+                    {tab === 'billing' && billing && <TenantBillingPanel tenant={tenant} billing={billing} />}
                 </div>
             </div>
 

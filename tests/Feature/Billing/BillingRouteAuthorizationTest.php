@@ -121,7 +121,7 @@ test('customer users cannot reach billing admin routes', function () use ($billi
     expect(Invoice::withoutCompanyScope()->count())->toBe(6);
 });
 
-test('sales and support can read billing but every change is forbidden', function (AdminRole $role) use ($billingRoutes, $billingFixture, $billingRequest) {
+test('sales and support cannot read or change billing (owner and accounts only)', function (AdminRole $role) use ($billingRoutes, $billingFixture, $billingRequest) {
     expect($role->can(AdminRole::TENANTS_VIEW))->toBeTrue()->and($role->can(AdminRole::BILLING_MANAGE))->toBeFalse();
 
     $fixture = $billingFixture($this);
@@ -129,9 +129,8 @@ test('sales and support can read billing but every change is forbidden', functio
 
     foreach ($billingRoutes as $route) {
         $response = $billingRequest($this->actingAs($admin, 'admin'), $route, $fixture);
-        $expected = $route[3] === 'view' ? 200 : 403;
 
-        expect($response->status())->toBe($expected, "{$role->value} {$route[1]} {$route[0]} gave {$response->status()}");
+        expect($response->status())->toBe(403, "{$role->value} {$route[1]} {$route[0]} gave {$response->status()}");
     }
 
     expect(Invoice::withoutCompanyScope()->count())->toBe(6)
@@ -201,7 +200,7 @@ test('the billing overview page', function () {
     $this->draftFor($this->payingTenant('Bravo Mart', 1, 'BRV')); // £30.00 draft
     $this->atLondon('2026-10-26 10:00');
 
-    $this->actingAs($this->admin(AdminRole::Support), 'admin')->get(route('admin.billing.index'))
+    $this->actingAs($this->admin(AdminRole::Accounts), 'admin')->get(route('admin.billing.index'))
         ->assertOk()
         ->assertInertia(fn (AssertableInertia $page) => $page->component('admin/billing/overview')
             ->where('stats.cashDue', ['count' => 1, 'amount' => '£50.00'])
@@ -218,7 +217,7 @@ test('the billing overview page', function () {
             ->where('recentPayments.0.amount', '£40.00')
             ->has('suspended', 0)
             ->where('settings.suspendAfterDays', 14)
-            ->where('canManage', false));
+            ->where('canManage', true));
 });
 
 test('the invoice list, with filters and totals', function () {
@@ -255,7 +254,7 @@ test('the invoice page shows the document, payments and what the admin may do', 
     $invoice = $this->issuedFor($company);
     $this->pay($company, '20.00');
 
-    $this->actingAs($this->admin(AdminRole::Support), 'admin')->get(route('admin.billing.invoices.show', $invoice->id))
+    $this->actingAs($this->admin(AdminRole::Owner), 'admin')->get(route('admin.billing.invoices.show', $invoice->id))
         ->assertOk()
         ->assertInertia(fn (AssertableInertia $page) => $page->component('admin/billing/invoices/show')
             ->where('invoice.number', 'INV-000001')
@@ -265,8 +264,7 @@ test('the invoice page shows the document, payments and what the admin may do', 
             ->has('invoice.lines', 2)
             ->has('invoice.payments', 1)
             ->where('invoice.document.number', 'INV-000001')
-            ->where('invoice.can.manage', false)
-            ->where('invoice.can.void', false)
+            ->where('invoice.can.manage', true)
             ->has('activity'));
 
     $this->actingAs($this->admin(AdminRole::Accounts), 'admin')->get(route('admin.billing.invoices.show', $invoice->id))
@@ -281,7 +279,7 @@ test('the payment list and payment page', function () {
     $this->issuedFor($company);
     $payment = $this->pay($company, '50.00')->payment;
     $this->pay($this->payingTenant('Bravo Mart', 1, 'BRV'), '12.50', null, PaymentMethod::BankTransfer);
-    $admin = $this->admin(AdminRole::Sales);
+    $admin = $this->admin(AdminRole::Accounts);
 
     $this->actingAs($admin, 'admin')->get(route('admin.billing.payments.index'))
         ->assertOk()
@@ -289,7 +287,7 @@ test('the payment list and payment page', function () {
             ->has('payments.data', 2)
             ->where('totals', ['count' => 2, 'amount' => '£62.50'])
             ->has('manualMethods', 3)
-            ->where('canManage', false));
+            ->where('canManage', true));
 
     $this->actingAs($admin, 'admin')->get(route('admin.billing.payments.index', ['method' => 'bankTransfer']))
         ->assertInertia(fn (AssertableInertia $page) => $page->has('payments.data', 1)->where('payments.data.0.amount', '£12.50'));
@@ -305,12 +303,18 @@ test('the payment list and payment page', function () {
             ->has('activity', 1));
 });
 
-test('the tenant page carries the billing tab', function () {
+test('the tenant page carries the billing tab for owner and accounts only', function () {
     $company = $this->payingTenant(tills: 2);
     $this->issuedFor($company);
     $this->pay($company, '70.00');
 
-    $this->actingAs($this->admin(AdminRole::Support), 'admin')->get(route('admin.tenants.show', $company))
+    foreach ([AdminRole::Sales, AdminRole::Support] as $role) {
+        $this->actingAs($this->admin($role), 'admin')->get(route('admin.tenants.show', $company))
+            ->assertOk()
+            ->assertInertia(fn (AssertableInertia $page) => $page->component('admin/tenants/show')->where('billing', null));
+    }
+
+    $this->actingAs($this->admin(AdminRole::Accounts), 'admin')->get(route('admin.tenants.show', $company))
         ->assertOk()
         ->assertInertia(fn (AssertableInertia $page) => $page->component('admin/tenants/show')
             ->where('billing.summary.balance', '£0.00')
@@ -319,7 +323,7 @@ test('the tenant page carries the billing tab', function () {
             ->has('billing.invoices.data', 1)
             ->has('billing.payments.data', 1)
             ->where('billing.settings.recipientsAreOwners', true)
-            ->where('billing.canManage', false));
+            ->where('billing.canManage', true));
 });
 
 test('unknown invoice and payment ids are 404s', function () {

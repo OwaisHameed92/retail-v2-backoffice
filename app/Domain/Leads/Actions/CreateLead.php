@@ -23,6 +23,10 @@ use Illuminate\Validation\ValidationException;
  * Records a trial request: from the admin "Add lead" form, and from the public trial form (module 1.10, where no
  * admin is signed in). Flags possible duplicates on the timeline and emails the staff alert (AdminNewLeadMail,
  * to `sspos.lead_alert_emails`, queued after commit).
+ *
+ * With `$mergeIntoOpenLead` (public form) a request whose email or phone matches an open lead (new or contacted)
+ * becomes a `duplicate` note on that lead instead of a second lead; the existing lead is returned
+ * (`wasRecentlyCreated` false) and staff are still alerted.
  */
 class CreateLead
 {
@@ -34,15 +38,25 @@ class CreateLead
     /**
      * @throws ValidationException
      */
-    public function handle(LeadDetails $details, ?Admin $assignTo = null, ?CarbonInterface $followUpAt = null): Lead
-    {
+    public function handle(
+        LeadDetails $details,
+        ?Admin $assignTo = null,
+        ?CarbonInterface $followUpAt = null,
+        bool $mergeIntoOpenLead = false,
+    ): Lead {
         LeadRules::ensureValid($details);
 
         if ($assignTo !== null) {
             AssignLead::ensureAssignable($assignTo);
         }
 
-        return DB::transaction(function () use ($details, $assignTo, $followUpAt) {
+        return DB::transaction(function () use ($details, $assignTo, $followUpAt, $mergeIntoOpenLead) {
+            $open = $mergeIntoOpenLead ? LeadDuplicates::openLeadMatching($details) : null;
+
+            if ($open !== null) {
+                return $this->repeatRequest($open, $details);
+            }
+
             $lead = new Lead($details->toAttributes());
             $lead->status = LeadStatus::New;
             $lead->assigned_admin_id = $assignTo?->id;
@@ -78,21 +92,57 @@ class CreateLead
                 'assigned_admin_id' => $lead->assigned_admin_id,
             ], ['possible_duplicates' => count($duplicates)]);
 
-            Mail::queue(new AdminNewLeadMail(new NewLeadData(
-                contactName: $lead->contact_name,
-                businessName: $lead->business_name,
-                email: $lead->email ?? 'Not given',
-                phone: $lead->phone,
-                shops: $lead->shops_count,
-                tills: $lead->tills_count,
-                receivedAt: $lead->created_at ?? now(),
-                message: $lead->message,
-                leadId: $lead->id,
-                possibleDuplicate: $duplicates === [] ? null : ucfirst($duplicates[0]->describe()).(count($duplicates) > 1 ? ' and '.(count($duplicates) - 1).' more' : ''),
-                addedBy: $admin?->name,
-            )));
+            $this->alertStaff($lead, $details, $duplicates === []
+                ? null
+                : ucfirst($duplicates[0]->describe()).(count($duplicates) > 1 ? ' and '.(count($duplicates) - 1).' more' : ''), $admin);
 
             return $lead;
         });
+    }
+
+    /** A repeat request for an open lead: one `duplicate` note with what was asked this time, no second lead. */
+    private function repeatRequest(Lead $lead, LeadDetails $details): Lead
+    {
+        $contact = implode(', ', array_filter([$details->contactName, $details->email, $details->phone]));
+
+        $this->timeline->record($lead, LeadNoteKind::Duplicate, sprintf(
+            'Asked for a trial again from the %s: %s · %d %s, %d %s',
+            mb_strtolower($details->source->label()),
+            $contact,
+            $details->shopsCount,
+            $details->shopsCount === 1 ? 'shop' : 'shops',
+            $details->tillsCount,
+            $details->tillsCount === 1 ? 'till' : 'tills',
+        ), array_filter([
+            'repeat' => true,
+            'source' => $details->source->value,
+            'shops_count' => $details->shopsCount,
+            'tills_count' => $details->tillsCount,
+            'utm' => $details->utm === [] ? null : $details->utm,
+        ], fn ($value) => $value !== null));
+
+        $this->audit->handle('lead.repeat_request', $lead, null, null, ['source' => $details->source->value]);
+
+        $this->alertStaff($lead, $details, 'Repeat request: added as a note to the open lead '.$lead->business_name
+            .' ('.$lead->status->value.')', $this->timeline->currentAdmin());
+
+        return $lead;
+    }
+
+    private function alertStaff(Lead $lead, LeadDetails $details, ?string $possibleDuplicate, ?Admin $admin): void
+    {
+        Mail::queue(new AdminNewLeadMail(new NewLeadData(
+            contactName: $details->contactName,
+            businessName: $details->businessName,
+            email: $details->email ?? 'Not given',
+            phone: $details->phone,
+            shops: $details->shopsCount,
+            tills: $details->tillsCount,
+            receivedAt: now(),
+            message: $details->message,
+            leadId: $lead->id,
+            possibleDuplicate: $possibleDuplicate,
+            addedBy: $admin?->name,
+        )));
     }
 }

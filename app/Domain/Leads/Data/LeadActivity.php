@@ -18,6 +18,7 @@ final class LeadActivity
             'lead.converted' => 'Approved the trial request: created from a lead with '
                 .self::count((int) ($meta['shops'] ?? 1), 'shop').' and '.self::count((int) ($meta['tills'] ?? 1), 'till'),
             'lead.created' => 'Added the lead',
+            'lead.repeat_request' => 'Asked for a trial again',
             'lead.updated' => 'Updated the lead’s details',
             'lead.note_added' => 'Added a note to the lead',
             'lead.assigned' => 'Changed who looks after the lead',

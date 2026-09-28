@@ -29,6 +29,13 @@ return [
     // Customer portal home. The portal login is at {portal_url}/login.
     'portal_url' => rtrim((string) (env('SSPOS_PORTAL_URL') ?: env('APP_URL', 'http://localhost')), '/'),
 
+    // Public trial form API (module 1.10): browser origins allowed to post to /api/v1/public/*, comma-separated,
+    // e.g. "https://switchandsave.co.uk,https://www.switchandsave.co.uk". Our own /trial page is always allowed.
+    'public_form_origins' => array_values(array_filter(array_map(
+        fn (string $origin) => rtrim(trim($origin), '/'),
+        explode(',', (string) env('PUBLIC_FORM_ORIGINS', '')),
+    ))),
+
     // Email log retention (months). Older rows are pruned daily by model:prune.
     'email_log_retention_months' => (int) env('SSPOS_EMAIL_LOG_RETENTION_MONTHS', 12),
 

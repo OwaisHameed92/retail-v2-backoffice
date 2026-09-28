@@ -205,7 +205,7 @@ test('the invoice PDF renders from the invoice', function () {
 
 test('the PDF route downloads the invoice as INV-000001.pdf, or shows it inline', function () {
     $invoice = $this->issuedFor($this->payingTenant(tills: 1));
-    $admin = $this->admin(AdminRole::Support);
+    $admin = $this->admin(AdminRole::Accounts);
 
     $download = $this->actingAs($admin, 'admin')->get(route('admin.billing.invoices.pdf', $invoice->id));
 

@@ -2,6 +2,8 @@
 
 namespace App\Domain\Leads\Enums;
 
+use App\Domain\Tenancy\Enums\BusinessType as TillBusinessType;
+
 /**
  * The kind of shop a lead runs. camelCase values (contract convention).
  */
@@ -23,6 +25,20 @@ enum BusinessType: string
             self::Grocery => 'Grocery',
             self::Forecourt => 'Forecourt',
             self::Other => 'Other',
+        };
+    }
+
+    /**
+     * The till's BusinessType name (public trial form, module 1.10) as a lead's type; kinds a lead has no
+     * type for are Other (the form keeps the till's name in the lead's message).
+     */
+    public static function fromContract(TillBusinessType $type): self
+    {
+        return match ($type) {
+            TillBusinessType::ConvenienceOffLicence => self::Convenience,
+            TillBusinessType::Newsagent => self::Newsagent,
+            TillBusinessType::GroceryHalalButcher => self::Grocery,
+            default => self::Other,
         };
     }
 

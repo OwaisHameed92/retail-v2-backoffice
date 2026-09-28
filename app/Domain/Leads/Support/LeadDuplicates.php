@@ -3,6 +3,7 @@
 namespace App\Domain\Leads\Support;
 
 use App\Domain\Leads\Data\DuplicateMatch;
+use App\Domain\Leads\Data\LeadDetails;
 use App\Domain\Leads\Models\Lead;
 use App\Domain\Tenancy\Models\Company;
 use App\Models\User;
@@ -28,6 +29,34 @@ final class LeadDuplicates
         }
 
         return array_merge(self::leads($lead, $email, $phone), self::tenants($lead, $email, $phone));
+    }
+
+    /**
+     * The newest open lead (not archived) with the same email or phone number: where a repeat
+     * request from the public trial form (module 1.10) is added as a note.
+     */
+    public static function openLeadMatching(LeadDetails $details): ?Lead
+    {
+        $email = $details->email;
+        $phone = PhoneDigits::from($details->phone);
+
+        if ($email === null && $phone === null) {
+            return null;
+        }
+
+        return Lead::query()
+            ->open()
+            ->where(function (Builder $q) use ($email, $phone) {
+                if ($email !== null) {
+                    $q->orWhere('email', $email);
+                }
+                if ($phone !== null) {
+                    $q->orWhere('phone_digits', $phone);
+                }
+            })
+            ->latest()
+            ->lockForUpdate()
+            ->first();
     }
 
     /**

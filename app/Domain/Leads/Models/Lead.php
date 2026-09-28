@@ -67,6 +67,8 @@ class Lead extends Model
 
     public const MAX_TILLS = 100;
 
+    public const REFERENCE_PREFIX = 'TR-';
+
     /**
      * Details only. Status, assignment, follow-up and conversion fields are set by the actions.
      *
@@ -164,6 +166,15 @@ class Lead extends Model
     public function notes(): HasMany
     {
         return $this->hasMany(LeadNote::class)->latest('created_at')->orderByDesc('id');
+    }
+
+    /**
+     * What the prospect is told to quote ("TR-7K3QZD"): the last 6 characters of the id, upper case. Staff can
+     * search for it on the lead list (module 1.10).
+     */
+    public function reference(): string
+    {
+        return self::REFERENCE_PREFIX.strtoupper(substr($this->id, -6));
     }
 
     public function isOpen(): bool

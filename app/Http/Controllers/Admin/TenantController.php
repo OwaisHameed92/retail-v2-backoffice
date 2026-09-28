@@ -120,11 +120,13 @@ class TenantController extends Controller
         $presenter = new TenantActivity(collect($activity->items()));
 
         $admin = $request->user('admin');
+        // Billing is for owner and accounts only (billing.manage), reading included: no tab data for others.
+        $billingAccess = $admin?->hasAbility(AdminRole::BILLING_MANAGE) ?? false;
 
         return Inertia::render('admin/tenants/show', [
             'tenant' => TenantData::company($company),
             'licensing' => TenantLicences::for($company, CarbonImmutable::now()),
-            'billing' => TenantBilling::for($company, $admin?->hasAbility(AdminRole::BILLING_MANAGE) ?? false),
+            'billing' => $billingAccess ? TenantBilling::for($company, true) : null,
             'plans' => LicenceData::planOptions(),
             'stats' => [
                 'branches' => $branches->where('is_active', true)->count(),

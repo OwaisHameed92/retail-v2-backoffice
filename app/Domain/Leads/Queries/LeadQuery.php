@@ -67,8 +67,10 @@ final class LeadQuery
     {
         $like = '%'.$search.'%';
         $digits = PhoneDigits::from($search);
+        // A reference from the public trial form reply ("TR-7K3QZD", module 1.10): the end of the lead's id.
+        $reference = preg_match('/^TR-?([0-9A-Z]{6})$/i', trim($search), $m) === 1 ? strtolower($m[1]) : null;
 
-        $query->where(function (Builder $q) use ($like, $digits) {
+        $query->where(function (Builder $q) use ($like, $digits, $reference) {
             $q->where('business_name', 'like', $like)
                 ->orWhere('contact_name', 'like', $like)
                 ->orWhere('email', 'like', $like)
@@ -78,6 +80,10 @@ final class LeadQuery
 
             if ($digits !== null) {
                 $q->orWhere('phone_digits', 'like', '%'.$digits.'%');
+            }
+
+            if ($reference !== null) {
+                $q->orWhere('id', 'like', '%'.$reference);
             }
         });
     }
