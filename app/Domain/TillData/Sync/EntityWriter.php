@@ -161,8 +161,8 @@ final class EntityWriter
      * A till change to a hub-owned row changed meanwhile by the portal or another shop: the stored row is kept and
      * the till's is recorded as a conflict (§19.3). With `baseVersion`: below the portal's current version (unless
      * that version is this shop's own earlier change), or another shop's accepted edit not yet stamped with a
-     * version (newer than any version this till has seen). Without it (tills before v1.4): the portal or another
-     * shop changed the row after the till's change.
+     * version (newer than any version this till has seen). Without it (tills before v1.4): the portal deleted the row
+     * (whenever the till's change was made), or the portal or another shop changed it after the till's change.
      *
      * @param  array<string, mixed>  $current
      */
@@ -191,6 +191,13 @@ final class EntityWriter
         }
 
         $hubEditedAt = $current['hub_edited_at'];
+
+        // §19.3/§19.4 #7: a row the portal deleted stays deleted; a till change that would bring it back is a conflict.
+        if ($origin === null && $current['deleted_at'] !== null && ($mapped->row['deleted_at'] ?? null) === null) {
+            $this->conflicts->add($mapped, ConflictKind::HubEditNewer, $local, "The portal deleted this {$def->entity} at {$current['deleted_at']} UTC. It stays deleted.");
+
+            return true;
+        }
 
         if ($hubEditedAt !== null && substr((string) $hubEditedAt, 0, 19) > $change->at) {
             $this->conflicts->add($mapped, ConflictKind::HubEditNewer, $local, "The portal edited this {$def->entity} at {$hubEditedAt} UTC, after the till's change at {$change->at} UTC. The portal's version was kept.");
@@ -224,7 +231,7 @@ final class EntityWriter
         $columns = ['id', 'company_id', 'row_version', 'updated_at', 'portal_received_at'];
 
         if ($def->isHubOwned()) {
-            array_push($columns, 'hub_edited_at', ...EntityDefinition::HUB_COLUMNS);
+            array_push($columns, 'hub_edited_at', 'deleted_at', ...EntityDefinition::HUB_COLUMNS);
         }
 
         $columns = $def->immutable !== null ? ['*'] : $columns;

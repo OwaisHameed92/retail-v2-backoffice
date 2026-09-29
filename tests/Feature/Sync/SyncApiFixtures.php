@@ -12,7 +12,7 @@ use App\Domain\Tenancy\Models\Company;
 use App\Domain\Tenancy\Models\Register;
 use Illuminate\Testing\TestResponse;
 use Tests\Feature\TillData\TillFixtures;
-use Tests\Support\JsonSchemaSubset;
+use Tests\Support\ContractSchema;
 use Tests\TestCase;
 
 /**
@@ -122,12 +122,16 @@ final class SyncApiFixtures
     }
 
     /**
-     * @return list<string> schema errors of a reply (empty when valid)
+     * Schema errors of a reply (empty when valid); a pull reply's payloads are checked against their entity schemas.
+     *
+     * @return list<string>
      */
     public static function schemaErrors(TestResponse $response, string $schema): array
     {
-        return (new JsonSchemaSubset(base_path(TillFixtures::CONTRACT.'/schemas')))
-            ->validate(json_decode((string) $response->getContent(), false, 512, JSON_THROW_ON_ERROR), $schema);
+        $content = (string) $response->getContent();
+        $data = json_decode(str_contains((string) $response->headers->get('Content-Encoding'), 'gzip') ? (string) gzdecode($content) : $content, false, 512, JSON_THROW_ON_ERROR);
+
+        return $schema === 'pull-reply.schema.json' ? ContractSchema::pullErrors($data) : ContractSchema::errors($data, 'schemas/'.$schema);
     }
 
     /**

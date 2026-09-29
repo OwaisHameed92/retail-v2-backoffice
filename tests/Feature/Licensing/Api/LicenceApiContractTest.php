@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Mail;
 use Tests\Feature\Licensing\Api\LicenceApiHelpers;
 use Tests\Feature\Licensing\LicensingTestHelpers;
 use Tests\Feature\Tenants\TenantTestHelpers;
+use Tests\Support\ContractSchema;
 use Tests\Support\SsposDocs;
 
 uses(TenantTestHelpers::class, LicensingTestHelpers::class, LicenceApiHelpers::class);
@@ -49,7 +50,7 @@ test('every sample of these endpoints validates against its schema', function ()
         }
 
         $data = json_decode((string) file_get_contents($path), false, 512, JSON_THROW_ON_ERROR);
-        expect($this->schemas()->validate($data, $schema))->toBe([], basename($path));
+        expect(ContractSchema::errors($data, 'licensing/schemas/'.$schema))->toBe([], basename($path));
         $checked++;
     }
 

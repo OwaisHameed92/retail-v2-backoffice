@@ -2,6 +2,7 @@
 
 namespace App\Domain\TillData\Sync;
 
+use App\Domain\Shared\Support\Redactor;
 use App\Domain\TillData\EntityRegistry;
 use App\Domain\TillData\Sync\Data\SyncChange;
 use App\Domain\TillData\Sync\Enums\ChangeOutcome;
@@ -10,7 +11,7 @@ use Illuminate\Support\Facades\Log;
 
 /**
  * Rows of an entity the portal does not know yet (a newer till, contract v1.4.1 §18.8, §21.1): accepted and kept raw
- * in `till_unknown_rows` (payload JSON as sent), one row per (company, entity, id) at its highest version. Recorded in
+ * in `till_unknown_rows` (payload JSON as sent, secret-looking members redacted, §21.8), one row per (company, entity, id) at its highest version. Recorded in
  * the push ledger like any other change, so a retry is a duplicate and changes nothing.
  */
 final class UnknownEntityRows
@@ -87,7 +88,8 @@ final class UnknownEntityRows
             'version' => $change->version,
             'seq' => $change->seq,
             'at' => $change->at,
-            'payload' => $change->payload === null ? null : json_encode($change->payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRESERVE_ZERO_FRACTION),
+            // §21.8: kept raw except secret-looking members (a password, key, token or secret), as `extra` is.
+            'payload' => $change->payload === null ? null : json_encode(Redactor::redact($change->payload), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRESERVE_ZERO_FRACTION),
             'received_at' => $context->now,
         ];
         $key = ['company_id' => $context->companyId, 'entity' => $change->entity, 'entity_id' => $change->entityId];

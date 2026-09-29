@@ -75,6 +75,7 @@ test('the same batch twice gives the same reply and no duplicates; an Idempotenc
 });
 
 test('a rejected row mid-batch: 200 with acknowledgedSeq before it; the rows after it are stored and come back as duplicates', function () {
+    $this->freezeSecond(); // the fixed batch's receivedAt is its latest row's first storage: the same second here
     $batch = TillFixtures::sample('push-request.json');
     $batch[3]['payload']['amount'] = 'lots';   // seq 18234, SalePayment
 

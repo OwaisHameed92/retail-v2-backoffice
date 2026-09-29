@@ -15,7 +15,7 @@ use App\Domain\Licensing\Signing\Sspos\SsposTokenSigner;
 use App\Domain\Licensing\Signing\Sspos\SsposTokenVerifier;
 use App\Domain\Licensing\Signing\Sspos\TokenKind;
 use Illuminate\Support\Facades\Log;
-use Tests\Support\JsonSchemaSubset;
+use Tests\Support\ContractSchema;
 use Tests\Support\SsposDocs;
 
 /** Re-signs a payload with a documentation key (for tampering tests). */
@@ -170,7 +170,7 @@ it('omits empty optional fields and writes UTC dates with Z', function () {
 });
 
 it('produces payloads that validate against licence-token-payload.schema.json', function () {
-    $schema = new JsonSchemaSubset(SsposDocs::dir().'/schemas');
+    $errors = fn (mixed $json) => ContractSchema::errors($json, 'licensing/schemas/licence-token-payload.schema.json');
     SsposDocs::storeActive(signerCert: SsposDocs::certificate(SsposDocs::key(SsposDocs::PORTAL_KID)['public']));
     $signer = app(SsposTokenSigner::class);
 
@@ -178,17 +178,19 @@ it('produces payloads that validate against licence-token-payload.schema.json', 
         $token = $signer->sign(SsposDocs::claims(SsposDocs::sample("licence-token.payload.{$sample}.json")));
         $json = json_decode(Base64Url::decode(explode('.', $token)[1]));
 
-        expect($schema->validate($json, 'licence-token-payload.schema.json'))->toBe([]);
+        expect($errors($json))->toBe([]);
     }
 
     foreach (['local', 'local-open'] as $sample) {
         $json = json_decode((string) file_get_contents(SsposDocs::dir()."/samples/licence-token.payload.{$sample}.json"));
-        expect($schema->validate($json, 'licence-token-payload.schema.json'))->toBe([]);
+        expect($errors($json))->toBe([]);
     }
 
     // The validator really checks: a decimal limit and a portal token without companyId are refused.
-    $bad = json_decode('{"v":1,"kid":"k1","licenceId":"01K5T0Q8C4000000000000Y001","kind":"full","source":"portal","issuer":"x","businessName":"b","branchName":"c","maxRegisters":1,"issuedAt":"2026-09-26T09:00:00Z","validFrom":"2026-09-26T09:00:00Z","expiresAt":"2026-10-03T09:00:00Z","limits":{"users":1.5}}');
-    expect($schema->validate($bad, 'licence-token-payload.schema.json'))->toContain('$.limits.users: expected integer', '$: missing companyId');
+    $portal = ['v' => 1, 'kid' => 'k1', 'licenceId' => '01K5T0Q8C4000000000000Y001', 'kind' => 'full', 'source' => 'portal', 'issuer' => 'x', 'businessName' => 'b', 'branchName' => 'c', 'maxRegisters' => 1, 'issuedAt' => '2026-09-26T09:00:00Z', 'validFrom' => '2026-09-26T09:00:00Z', 'expiresAt' => '2026-10-03T09:00:00Z', 'companyId' => '01K5T0Q8C4000000000000C001', 'branchId' => '01K5T0Q8C4000000000000B001'];
+    expect($errors($portal))->toBe([])
+        ->and(implode(' | ', $errors([...$portal, 'limits' => ['users' => 1.5]])))->toContain('$.limits.users:', 'integer')
+        ->and(implode(' | ', $errors(array_diff_key($portal, ['companyId' => 1]))))->toContain('companyId');
 });
 
 it('rejects invalid claims', function (array $change) {

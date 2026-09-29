@@ -18,8 +18,8 @@ use Throwable;
  *
  * Framework errors get contract codes (`area.snake_case`, contract v1.4.1 §17.11 rule 10,
  * licensing/samples/error-codes.json): request.invalid, auth.invalid_key, rate.limited, server.busy, server.error;
- * statuses the contract has no code for use request.* / auth.* names (a new code is allowed at any time, and the
- * till acts on the HTTP status when it does not know one).
+ * on the till's endpoints every other 4xx is 400 request.invalid (module 2.6: only contract codes reach a till);
+ * elsewhere under api/* (the public trial form) statuses the contract has no code for use request.* / auth.* names.
  *
  * Registered in bootstrap/app.php: `ApiExceptionRenderer::register($exceptions)`.
  */
@@ -41,6 +41,18 @@ final class ApiExceptionRenderer
         return $request->is('api/*');
     }
 
+    /** The §17 licensing endpoints (licence, devices, cloud migration). */
+    public static function isLicenceApi(Request $request): bool
+    {
+        return $request->is('api/v1/licence/*', 'api/v1/devices/*', 'api/v1/cloud/*');
+    }
+
+    /** The EPOS till's endpoints (contract v1.4.1): sync, licence, devices and cloud migration. */
+    public static function isTillApi(Request $request): bool
+    {
+        return $request->is('api/v1/sync', 'api/v1/sync/*', 'api/v1/licence/*', 'api/v1/devices/*', 'api/v1/cloud/*');
+    }
+
     public static function render(Throwable $e, Request $request): JsonResponse
     {
         return match (true) {
@@ -60,7 +72,7 @@ final class ApiExceptionRenderer
 
     /**
      * Build the standard error reply. Controllers may call this directly for a non-exception error.
-     * `details` is added only when given (licence API, contract §17.12).
+     * `details` is added when given, and always (null when none) on the licensing endpoints (contract §17.12).
      *
      * @param  array<string, mixed>|null  $details
      */
@@ -81,7 +93,8 @@ final class ApiExceptionRenderer
             'traceId' => $traceId,
             'retryAfterSeconds' => $retryAfterSeconds,
             'rejectedKey' => $rejectedKey,
-            ...($details === null ? [] : ['details' => $details]),
+            // §17.12: licensing errors always carry `details` (null when none, as every licensing/samples/error.*).
+            ...($details === null && ! self::isLicenceApi($request) ? [] : ['details' => $details]),
         ], $status);
 
         $response->headers->set(TraceId::HEADER, $traceId);
@@ -97,6 +110,12 @@ final class ApiExceptionRenderer
     {
         $status = $e->getStatusCode();
         $retryAfter = self::retryAfter($e->getHeaders());
+
+        // The till's endpoints use only codes of the contract (error-codes.json): a framework 403/404/405 there (a call
+        // the portal does not offer, a wrong method) is 400 request.invalid, which the till shows and retries later.
+        if (self::isTillApi($request) && ! in_array($status, [401, 413, 429], true) && $status < 500) {
+            return self::response($request, 'request.invalid', ApiErrorMessages::INVALID.' The portal does not offer this call.', 400);
+        }
 
         [$code, $message] = match (true) {
             $status === 401 => ['auth.invalid_key', ApiErrorMessages::UNAUTHENTICATED],

@@ -6,15 +6,14 @@ use App\Domain\Tenancy\Models\Company;
 use Tests\Feature\Sync\PullTestHelpers as Pull;
 use Tests\Feature\Sync\SyncApiFixtures;
 use Tests\Feature\TillData\TillFixtures;
-use Tests\Support\JsonSchemaSubset;
+use Tests\Support\ContractSchema;
 
 /** Module 2.9B: portal edits of the till's Company and Branch rows in the pull (contract v1.4.1 §6.1, §18.3). */
 beforeEach(function () {
     $this->sync = new SyncApiFixtures($this);
     $this->company = $this->sync->company;
     $this->travelTo('2026-09-29 10:00:00');
-    $this->entityErrors = fn (array $payload, string $entity) => (new JsonSchemaSubset(base_path(TillFixtures::CONTRACT.'/schemas')))
-        ->validate(json_decode((string) json_encode($payload)), "entities/{$entity}.schema.json");
+    $this->entityErrors = fn (array $payload, string $entity) => ContractSchema::errors($payload, "schemas/entities/{$entity}.schema.json");
 });
 
 test('nothing is sent for companies and branches the portal has not edited since', function () {

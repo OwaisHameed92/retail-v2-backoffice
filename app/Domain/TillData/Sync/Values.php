@@ -152,6 +152,12 @@ final class Values
 
         if (str_contains($string, 'E') || strlen($fraction) > $scale) {
             $normalised = Money::normalise($value, $scale);
+
+            // Contract §6 (samples/error-reply.422.json): prices and totals have at most 2 dp, costs and quantities 4.
+            // Trailing zeros are fine ("1.4500"); a value the column cannot hold exactly is refused, never rounded.
+            if (bccomp(Money::parse($value), $normalised, 12) !== 0) {
+                throw new InvalidValue("has more than {$scale} decimal places");
+            }
         } else {
             $whole = $dot === false ? $string : substr($string, 0, $dot);
             $normalised = $whole.'.'.str_pad($fraction, $scale, '0');

@@ -9,7 +9,7 @@ use App\Domain\Licensing\Signing\Sspos\VerifiedSsposToken;
 use App\Domain\Shared\Support\Ulid;
 use App\Domain\Tenancy\Models\Company;
 use Illuminate\Testing\TestResponse;
-use Tests\Support\JsonSchemaSubset;
+use Tests\Support\ContractSchema;
 use Tests\Support\SsposDocs;
 
 /**
@@ -170,18 +170,13 @@ trait LicenceApiHelpers
         return app(SsposTokenVerifier::class)->verify((string) $response->json('licenceToken'));
     }
 
-    public function schemas(): JsonSchemaSubset
-    {
-        return new JsonSchemaSubset(SsposDocs::dir().'/schemas');
-    }
-
     /**
-     * Errors of a reply against a licensing schema (empty when valid).
+     * Errors of a reply against a licensing schema (empty when valid): opis/json-schema, draft 2020-12 (module 2.6).
      *
      * @return list<string>
      */
     public function schemaErrors(TestResponse $response, string $schema): array
     {
-        return $this->schemas()->validate(json_decode((string) $response->getContent(), false, 512, JSON_THROW_ON_ERROR), $schema);
+        return ContractSchema::errors(json_decode((string) $response->getContent(), false, 512, JSON_THROW_ON_ERROR), 'licensing/schemas/'.$schema);
     }
 }
