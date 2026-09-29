@@ -147,6 +147,39 @@ and `maxBatchRows`. Settings: `config/sync.php` (`push.*`, `rate_limit_per_minut
 (`php artisan test --group=perf`). Production: PHP `post_max_size` must exceed the compressed body; the cache store
 must be shared between PHP workers (locks).
 
+## Pull (module 2.5)
+
+`GET /api/v1/sync/pull?since={version}&max={n}` → the same middleware as push → `SyncController::pull` →
+`App\Domain\Sync\Actions\PullChanges`:
+
+1. `since` (required, ≥ 0) and `max` (1…, capped at 5,000) → else 400 `request.invalid`.
+2. `HubVersions::stampPending($company)`: every hub-owned row with `hub_version` null (accepted from a till, or a
+   portal change whose after-commit stamp did not run) gets the next version, parents first
+   (`HubVersions::ORDER`), oldest change first.
+3. In one transaction: `PullFeed::page()` — a `UNION ALL` over the 27 hub-owned tables of `(entity, id, hub_version)`
+   where `hub_version > since`, `origin_branch_id` is not the caller, and (tables with `branch_id`, i.e. NewsTitle)
+   the row is for no branch or the caller; `ORDER BY hub_version LIMIT max + 1`. Then the full rows per entity.
+4. `PullPayload::envelope()`: `seq` 0, `op` D / I (`createdAt` = `updatedAt`) / U, `version` = `hub_version`, the till's
+   company/branch ids (`IdTranslator::toTill`), `branchId` "" or the addressed branch, `registerId` "", the whole
+   row in the till's shape (see DECISIONS "Pull"), no secrets. `highestVersion` = the last version on the page (or
+   `since`), `hasMore` = more rows waiting.
+5. `SyncStatusRecorder::pulled()` → `sync_branch_status.last_pull_*`. gzip reply when the till accepts it.
+
+**The change feed.** `sync_hub_counters` holds each company's last version. Stamping (`HubVersions::stamp` /
+`stampPending`) updates that row first in a transaction, so the lock orders all stamps of a company and versions
+become visible in order. Who stamps:
+
+- A portal save, soft delete or restore of a hub-owned model: `HubOwnedRow` clears `hub_version` and
+  `origin_branch_id`, sets `hub_hash`, then stamps after the transaction commits (a rollback uses no version).
+- Code that writes hub-owned rows without Eloquent: call
+  `app(PublishHubChange::class)->handle($companyId, 'Product', $ids)` after the write (it sets the same
+  bookkeeping and stamps). Never hard-delete a hub-owned row: a pull cannot send it.
+- Rows a till pushes (`ApplySyncChanges` clears `hub_version` and sets `origin_branch_id`): the next pull's sweep.
+
+Indexes: `(company_id, hub_version)` on every hub-owned table (`2026_10_05_100000_add_sync_pull_feed.php`, hand
+written; not in `till-schema.json`). Timing: 5,000 products pulled by another branch (stamping included, gzip):
+≈ 0.6 s wall / CPU, a repeat ≈ 0.4 s (`php artisan test --group=perf`).
+
 ## Reading (phase 3)
 
 All models are tenant-scoped (`BelongsToCompany`): run inside a request with a current company, or

@@ -110,6 +110,18 @@ final class SyncApiFixtures
     }
 
     /**
+     * GET sync/pull. `$since` null leaves it out.
+     *
+     * @param  array<string, string|null>  $headers
+     */
+    public function pull(int|string|null $since = 0, int|string|null $max = null, array $headers = [], bool $bradford = false): TestResponse
+    {
+        $query = http_build_query(array_filter(['since' => $since, 'max' => $max], fn ($value) => $value !== null));
+
+        return $this->test->call('GET', '/api/v1/sync/pull'.($query === '' ? '' : '?'.$query), [], [], [], $this->server([...$this->headers($bradford), ...$headers]));
+    }
+
+    /**
      * @return list<string> schema errors of a reply (empty when valid)
      */
     public static function schemaErrors(TestResponse $response, string $schema): array

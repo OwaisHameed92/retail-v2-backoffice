@@ -4,6 +4,7 @@ namespace App\Domain\TillData\Concerns;
 
 use App\Domain\Shared\Support\Ulid;
 use App\Domain\TillData\EntityRegistry;
+use App\Domain\TillData\Sync\HubVersions;
 use App\Domain\TillData\Sync\RowHash;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
@@ -13,9 +14,10 @@ use Illuminate\Database\Eloquent\Model;
  * the portal's version. A portal save stamps `hub_edited_at` (the sync applier uses it to spot a till edit that
  * clashes with a newer portal edit) and `updated_at`; new rows get an upper-case ULID like till-made rows.
  *
- * Pull bookkeeping (docs/till-data.md, "Never echoed"): a save clears `hub_version` (module 2.5 stamps it with the
- * next pull version and sends the row to every branch), clears `origin_branch_id` (the portal made this content)
- * and sets `hub_hash`, so a till pushing the same content back is recognised as an echo.
+ * Pull bookkeeping (docs/till-data.md, "Never echoed", "Pull"): a save or soft delete clears `origin_branch_id` (the
+ * portal made this content), sets `hub_hash` (a till pushing the same content back is an echo) and, once the
+ * transaction commits, stamps the next pull version (HubVersions), so every branch receives it. A new row also gets
+ * `createdAt` = `updatedAt` and `rowVersion` 1, as the till writes them.
  *
  * @mixin Model
  */
@@ -27,7 +29,17 @@ trait HubOwnedRow
             if ($model->getKey() === null) {
                 $model->setAttribute($model->getKeyName(), Ulid::new());
             }
+
+            if ($model->getAttribute('created_at') === null) {
+                $model->setAttribute('created_at', $model->getAttribute('updated_at') ?? CarbonImmutable::now('UTC'));
+            }
+
+            if ($model->getAttribute('row_version') === null) {
+                $model->setAttribute('row_version', 1);
+            }
         });
+
+        static::saved(fn (Model $model) => self::publishHubVersion($model));
 
         static::saving(function (Model $model): void {
             if ($model->exists && $model->isDirty('hub_version') && $model->getAttribute('hub_version') !== null) {
@@ -55,7 +67,19 @@ trait HubOwnedRow
                 'origin_branch_id' => null,
                 'hub_hash' => self::hubHash($model),
             ]);
+
+            self::publishHubVersion($model);
         });
+    }
+
+    /** Stamps the row's pull version after the surrounding transaction commits (at once when there is none). */
+    private static function publishHubVersion(Model $model): void
+    {
+        $companyId = (string) $model->getAttribute('company_id');
+        $id = (string) $model->getKey();
+        $entity = (string) constant($model::class.'::TILL_ENTITY');
+
+        $model->getConnection()->afterCommit(fn () => app(HubVersions::class)->stamp($companyId, $entity, [$id]));
     }
 
     private static function hubHash(Model $model): string

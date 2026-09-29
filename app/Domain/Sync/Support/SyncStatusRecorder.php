@@ -11,8 +11,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 /**
- * Keeps `sync_branch_status` (module 2.7 reads it): one row per branch, written after each hello and push. Push
- * writes happen inside the branch's push lock, so the day counters never race.
+ * Keeps `sync_branch_status` (module 2.7 reads it): one row per branch, written after each hello, push and pull.
+ * Push writes happen inside the branch's push lock, so the day counters never race.
  */
 final class SyncStatusRecorder
 {
@@ -38,6 +38,17 @@ final class SyncStatusRecorder
         }
 
         $this->write($caller, $values);
+    }
+
+    public function pulled(SyncCaller $caller, int $since, int $highestVersion, int $rows, string $appVersion, string $tillRegisterId): void
+    {
+        $this->write($caller, [
+            'last_pull_at' => now('UTC'),
+            'last_pull_since' => $since,
+            'last_pull_version' => $highestVersion,
+            'last_pull_rows' => $rows,
+            ...$this->till($caller, $appVersion, $tillRegisterId),
+        ]);
     }
 
     public function failed(SyncCaller $caller, ApiException $error, string $appVersion, string $tillRegisterId): void

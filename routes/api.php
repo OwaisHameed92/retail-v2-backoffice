@@ -15,13 +15,14 @@ use Illuminate\Support\Facades\Route;
 // Till APIs, loaded under the /api prefix with the "api" middleware group.
 // Sync API (Phase 2, contract v1.3.3 §3-4, §7, §9): `X-SSPOS-Contract: 1` (409 otherwise, echoed on every reply),
 // Bearer branch sync key checked against X-SSPOS-Branch-Id via id_map (module 2.1), the other §3 headers and a
-// per-key rate limit. Module 2.2: hello, push; 2.5 adds pull.
+// per-key rate limit. Module 2.2: hello, push; 2.5: pull.
 Route::prefix('v1/sync')->name('api.sync.')
     ->middleware([EnsureTillContract::class, AuthenticateSyncKey::class, GuardSyncRequest::class])
     ->controller(SyncController::class)
     ->group(function () {
         Route::get('hello', 'hello')->name('hello');
         Route::post('push', 'push')->name('push');
+        Route::get('pull', 'pull')->name('pull');
     });
 
 // Per-till licensing, EPOS contract v1.3.1 (docs/contracts/portal-api-v1.3.3/docs/web-portal-api.md §17.15, §17.7):
