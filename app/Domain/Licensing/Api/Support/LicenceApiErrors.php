@@ -7,7 +7,7 @@ use App\Domain\Shared\Exceptions\ApiException;
 use App\Domain\Shared\Support\ApiDate;
 
 /**
- * The licence API's error replies, codes and statuses exactly as contract v1.3.1 §17.12 and
+ * The licence API's error replies, codes and statuses exactly as contract v1.4.1 §17.12 and
  * licensing/samples/error-codes.json. Messages are en-GB for the shop owner; they never contain a key.
  */
 final class LicenceApiErrors

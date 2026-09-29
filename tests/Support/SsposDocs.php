@@ -10,7 +10,7 @@ use App\Domain\Licensing\Signing\Sspos\TokenKind;
 use Carbon\CarbonImmutable;
 
 /**
- * Contract v1.3.1 licensing samples and the documentation-only key pairs they are signed with.
+ * Contract v1.4.1 licensing samples and the documentation-only key pairs they are signed with.
  */
 final class SsposDocs
 {

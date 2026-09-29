@@ -18,7 +18,7 @@ use Illuminate\Database\Eloquent\Model;
  * - forUser: a tenant user; the role is read from their active membership and re-read on every tool call and
  *   confirmation (currentRole()), so a role change or removal takes effect immediately.
  * - forSystem: a job for one company (morning summary, alerts). Read tools only; writes always need a person.
- * - forAdmin: an SSPOS staff member (admin tools, module 5.7). Company is optional context.
+ * - forAdmin: an SSPOS staff member (admin tools, module 6.7). Company is optional context.
  */
 final class AiContext
 {

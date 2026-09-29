@@ -13,7 +13,7 @@ use Tests\Support\JsonSchemaSubset;
 use Tests\Support\SsposDocs;
 
 /**
- * Helpers for the module 1.5 licence API tests (contract v1.3.1 §17.15). Use with
+ * Helpers for the module 1.5 licence API tests (contract v1.4.1 §17.15). Use with
  * `uses(TenantTestHelpers::class, LicensingTestHelpers::class, LicenceApiHelpers::class)`.
  */
 trait LicenceApiHelpers
@@ -103,7 +103,8 @@ trait LicenceApiHelpers
             'os' => ['name' => 'Windows', 'version' => '10.0.26200', 'architecture' => 'x64'],
             'tillClockUtc' => now()->addSeconds(90)->utc()->format('Y-m-d\TH:i:s\Z'),
             'approverKids' => [SsposDocs::APPROVER_KID],
-            'trustedKids' => [SsposDocs::PORTAL_KID, SsposDocs::APPROVER_KID],
+            // A real till: only the approver is built in; our key is trusted through its certificate (§17.17).
+            'trustedKids' => [SsposDocs::APPROVER_KID],
             'existingIds' => $install === self::INSTALL
                 ? ['companyId' => self::TILL_COMPANY, 'branchId' => self::TILL_BRANCH, 'registerId' => self::TILL_REGISTER]
                 : ['companyId' => self::OTHER_TILL_COMPANY, 'branchId' => self::OTHER_TILL_BRANCH, 'registerId' => self::OTHER_TILL_REGISTER],
@@ -127,7 +128,8 @@ trait LicenceApiHelpers
             'appVersion' => '3.0.412',
             'os' => ['name' => 'Windows', 'version' => '10.0.26200', 'architecture' => 'x64'],
             'approverKids' => [SsposDocs::APPROVER_KID],
-            'trustedKids' => [SsposDocs::PORTAL_KID, SsposDocs::APPROVER_KID],
+            // A real till: only the approver is built in; our key is trusted through its certificate (§17.17).
+            'trustedKids' => [SsposDocs::APPROVER_KID],
             'tillClockUtc' => $now,
             'clockWatermarkUtc' => $now,
             'lastValidatedAtUtc' => null,

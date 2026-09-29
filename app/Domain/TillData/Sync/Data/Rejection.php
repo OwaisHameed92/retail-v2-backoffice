@@ -6,7 +6,7 @@ namespace App\Domain\TillData\Sync\Data;
  * A change the store refused. The till keeps it and sends it again; the push reply acknowledges only the rows
  * before the first rejection. `key` is the change's `entity:entityId:version` (the error body's rejectedKey).
  *
- * Codes: change.invalid, entity.unknown, sync.wrong_company, sync.wrong_branch, sync.unknown_register,
+ * Codes: change.invalid, sync.wrong_company, sync.wrong_branch, sync.unknown_register,
  * sync.duplicate_seq, sync.parent_rejected, payload.missing, payload.id_mismatch, payload.invalid, entity.id_taken,
  * entity.not_found, store.failed.
  */

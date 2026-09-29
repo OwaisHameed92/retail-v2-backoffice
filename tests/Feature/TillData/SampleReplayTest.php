@@ -141,12 +141,11 @@ it('refuses one branch\'s batch sent by another branch, children included', func
 it('applies the rows of pull-reply.json with exact values (company-wide, hub-owned)', function () {
     $result = TillFixtures::apply($this->company, $this->leeds, TillFixtures::sample('pull-reply.json')['changes']);
 
-    // WebOrder is a portal-to-till message (contract §12), not a stored till entity.
-    expect($result->accepted)->toBe(9)
+    // WebOrder is a portal-to-till message (contract §12) with no table of its own: accepted and kept raw (§18.8).
+    expect($result->accepted)->toBe(10)
         ->and($result->acknowledgedSeq)->toBe(0)
-        ->and($result->rejected)->toHaveCount(1)
-        ->and($result->rejected[0]->code)->toBe('entity.unknown')
-        ->and($result->rejected[0]->key)->toBe('WebOrder:01K5VC7N2W000000000000W001:90410');
+        ->and($result->rejected)->toBe([])
+        ->and(DB::table('till_unknown_rows')->where('entity', 'WebOrder')->value('entity_id'))->toBe('01K5VC7N2W000000000000W001');
 
     ($this->asCompany)(function () {
         $bread = Product::findOrFail('01K5T0Q8C4000000000000P001');

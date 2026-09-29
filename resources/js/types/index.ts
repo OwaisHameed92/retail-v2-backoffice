@@ -41,7 +41,8 @@ export type Ability =
     | 'reports.view'
     | 'settings.manage'
     | 'users.manage'
-    | 'billing.view';
+    | 'billing.view'
+    | 'billing.manage';
 
 /** The company the user is working in (shared by HandleInertiaRequests). */
 export interface CurrentCompany {

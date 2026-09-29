@@ -16,7 +16,7 @@ use SensitiveParameter;
 use Throwable;
 
 /**
- * Behaves like the EPOS till against the per-till licence API (contract v1.3.1 §17.15) over HTTP, for
+ * Behaves like the EPOS till against the per-till licence API (contract v1.4.1 §17.15) over HTTP, for
  * `php artisan licence:simulate`, demos and the EPOS team: sends the till's requests and headers, then checks a
  * returned `SSPOS1.` token the way the till does (signature, kid and signer certificate, source, installCode,
  * dates) and says what the till would do (§17.9).

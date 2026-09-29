@@ -7,7 +7,7 @@ use Carbon\CarbonImmutable;
 
 /**
  * The calling till (one PC install) as a licence API request described it, already validated
- * (contract v1.3.1 §17.15). Never holds the licence key.
+ * (contract v1.4.1 §17.15). Never holds the licence key.
  */
 final readonly class TillRequest
 {

@@ -9,6 +9,7 @@ use App\Domain\Licensing\Data\LicenceAlertData;
 use App\Domain\Licensing\Data\LicenceData;
 use App\Domain\Licensing\Data\LicenceTimeline;
 use App\Domain\Licensing\Enums\LicenceStatus;
+use App\Domain\Licensing\LicenceKey;
 use App\Domain\Licensing\Models\Licence;
 use App\Domain\Licensing\Queries\LicenceQuery;
 use App\Domain\Plans\Models\Plan;
@@ -30,8 +31,14 @@ class LicenceController extends Controller
 {
     use FindsLicences;
 
-    public function index(Request $request): Response
+    public function index(Request $request): Response|RedirectResponse
     {
+        // A full licence key must never sit in a URL (contract §17.11 rule 12): drop it, never search or echo it.
+        if (LicenceKey::tryParse(trim((string) $request->query('search', ''))) !== null) {
+            return redirect()->route('admin.licences.index', $request->except('search'))
+                ->with('error', 'For security, search the list by the last 4 characters. To find a full key, use the top-bar search (Ctrl K).');
+        }
+
         $filters = $request->validate([
             'status' => ['nullable', Rule::enum(LicenceStatus::class)],
             'plan' => ['nullable', 'string', 'max:26'],

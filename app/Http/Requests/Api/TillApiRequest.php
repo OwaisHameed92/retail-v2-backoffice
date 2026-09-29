@@ -11,7 +11,7 @@ use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 
 /**
- * Body of a licence or device call (contract v1.3.1 §17.15, §17.7). Validates the JSON body only; unknown fields
+ * Body of a licence or device call (contract v1.4.1 §17.15, §17.7). Validates the JSON body only; unknown fields
  * are ignored (§17.11 rule 2). A failure is 400 `request.invalid` with `details.field`, never echoing values.
  */
 abstract class TillApiRequest extends FormRequest

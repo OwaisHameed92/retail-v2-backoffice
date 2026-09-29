@@ -21,4 +21,7 @@ enum Ability: string
     case SettingsManage = 'settings.manage';
     case UsersManage = 'users.manage';
     case BillingView = 'billing.view';
+
+    /** Set up or change how the business pays (Direct Debit). Owner only. */
+    case BillingManage = 'billing.manage';
 }

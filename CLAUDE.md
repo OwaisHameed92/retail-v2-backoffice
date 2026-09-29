@@ -40,6 +40,8 @@ A tenant = one Company. Company → Branch (shop) → Register (till). One licen
   pence (matches the till contract).
 - **Time.** Store UTC. Display Europe/London.
 - **Enums.** PHP backed enums with camelCase string values matching `docs/contracts/portal-api-v1.4.1/docs/web-portal-api/samples/enums.json`.
+  Exception: the plan `Feature` enum uses the till's 11 snake_case feature names (`multi_branch`, `cloud_sync`…), as
+  they go into the licence token unchanged.
 - **Files.** Keep files under ~300 lines. Split before a class grows (the legacy `SyncService.php` hit 4,436 lines).
 
 ## Security rules
@@ -55,7 +57,8 @@ A tenant = one Company. Company → Branch (shop) → Register (till). One licen
 
 - Every Action and every endpoint gets Pest tests. Sync endpoints get contract tests that validate replies
   against `docs/contracts/portal-api-v1.4.1/docs/web-portal-api/schemas/*.schema.json` and replay the samples.
-- Before finishing any task run: `vendor/bin/pint --dirty`, `composer check` (pint, larastan level 6, tests), `npm run lint`, `npm run build`.
+- Before finishing any task run: `vendor/bin/pint --dirty`, `composer check` (pint, larastan level 6, tests), `npm run lint`,
+  `npx tsc --noEmit`, `npm run build`.
   All must pass. Report failures honestly.
 - UI: follow `docs/BRAND.md` exactly (brand tokens, layouts, "complete means complete" checklist). Reuse the shared
   components in `resources/js/components/shared`. The owner wants top-notch, professional, full functionality.

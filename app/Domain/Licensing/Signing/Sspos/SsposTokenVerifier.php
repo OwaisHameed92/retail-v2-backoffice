@@ -14,7 +14,7 @@ use Illuminate\Contracts\Config\Repository as Config;
 use Throwable;
 
 /**
- * Verifies an `SSPOS1.` licence token (contract v1.3.1 §17.2 "How a till verifies"), in the till's order:
+ * Verifies an `SSPOS1.` licence token (contract v1.4.1 §17.2 "How a till verifies"), in the till's order:
  * format → `v` = 1 → known kid → signer certificate (when present) → Ed25519 signature over the payload
  * part exactly as received (never re-serialised).
  *

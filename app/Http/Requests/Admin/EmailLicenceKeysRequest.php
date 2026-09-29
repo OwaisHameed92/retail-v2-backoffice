@@ -22,6 +22,16 @@ class EmailLicenceKeysRequest extends FormRequest
     }
 
     /**
+     * Validate the body only: a key in the query string is ignored (contract §17.11 rule 12).
+     *
+     * @return array<string, mixed>
+     */
+    public function validationData(): array
+    {
+        return $this->request->all();
+    }
+
+    /**
      * @return array<string, mixed>
      */
     public function rules(): array
@@ -42,7 +52,7 @@ class EmailLicenceKeysRequest extends FormRequest
     {
         $keys = [];
 
-        foreach ((array) $this->input('licences', []) as $row) {
+        foreach ((array) $this->request->all('licences') as $row) {
             if (is_array($row) && isset($row['id'], $row['key'])) {
                 $keys[(string) $row['id']] = (string) $row['key'];
             }

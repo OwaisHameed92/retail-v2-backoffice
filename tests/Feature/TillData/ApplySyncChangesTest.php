@@ -2,6 +2,7 @@
 
 use App\Domain\Shared\Support\Money;
 use App\Domain\Tenancy\CurrentCompany;
+use App\Domain\Tenancy\Models\Branch;
 use App\Domain\Tenancy\Models\Company;
 use App\Domain\TillData\Enums\SaleStatus;
 use App\Domain\TillData\Exceptions\ReadOnlyTillRow;
@@ -183,7 +184,7 @@ it('rejects a malformed row with its key while the others apply, and acknowledge
         ->and($result->rejected)->toHaveCount(1)
         ->and($result->rejected[0]->key)->toBe('SaleLine:01K5VB0000000SN1R001000482:1')
         ->and($result->rejected[0]->code)->toBe('payload.invalid')
-        ->and($result->rejected[0]->message)->toContain('qty must be a number', 'unitPrice must not be null', 'barcode is missing')
+        ->and($result->rejected[0]->message)->toContain('qty must be a number', 'unitPrice must not be null')
         ->and(DB::table('stock_movements')->where('id', $movement['entityId'])->exists())->toBeTrue()
         ->and(DB::table('sale_lines')->count())->toBe(1);
 
@@ -191,6 +192,29 @@ it('rejects a malformed row with its key while the others apply, and acknowledge
     $retry = ($this->apply)(array_slice(TillFixtures::sample('push-request.json'), 1));
     expect(TillFixtures::ack($retry))->toBe(['acknowledgedSeq' => 18239, 'accepted' => 8])
         ->and($retry->count(ChangeOutcome::Duplicate))->toBe(7);
+});
+
+it('stores a row from an older till that leaves members out: null, or the type\'s default (§17.11)', function () {
+    $line = tillChange(($this->change)('SaleLine'), 1, 1);
+    unset($line['payload']['barcode'], $line['payload']['position'], $line['payload']['lineDiscount']);
+    ($this->apply)([tillChange(($this->change)('Sale'), 0, 1)]);
+
+    $result = ($this->apply)([$line]);
+    $row = DB::table('sale_lines')->first();
+
+    expect($result->rejected)->toBe([])
+        ->and($result->count(ChangeOutcome::Applied))->toBe(1)
+        ->and($row->barcode)->toBe('')
+        ->and((int) $row->position)->toBe(0)
+        ->and(tillMoney($row->line_discount))->toBe('0.00');
+
+    $noId = tillChange(($this->change)('SaleLine'), 2, 2);
+    unset($noId['payload']['id']);
+    expect(($this->apply)([$noId])->rejected[0]->code)->toBe('payload.id_mismatch');
+
+    $noCompany = tillChange(($this->change)('SaleLine'), 3, 3);
+    unset($noCompany['payload']['companyId']);
+    expect(($this->apply)([$noCompany])->rejected[0]->code)->toBe('sync.wrong_company');
 });
 
 it('reads numbers sent as strings, as the till itself does', function () {
@@ -213,9 +237,52 @@ it('rejects malformed envelopes without failing the batch', function () {
         tillChange($sale, 8, 1),
     ]);
 
-    expect(collect($result->rejected)->pluck('code')->all())->toBe(['change.invalid', 'change.invalid', 'entity.unknown', 'change.invalid'])
-        ->and($result->accepted)->toBe(1)
+    expect(collect($result->rejected)->pluck('code')->all())->toBe(['change.invalid', 'change.invalid', 'change.invalid'])
+        ->and($result->accepted)->toBe(2)
         ->and($result->acknowledgedSeq)->toBe(0);
+});
+
+it('accepts an entity it does not know, keeps it raw at its highest version, and dedupes retries', function () {
+    $sale = ($this->change)('Sale');
+    $future = fn (int $seq, int $version, array $payload) => [...$sale, 'entity' => 'LoyaltyBadge', 'seq' => $seq, 'version' => $version, 'payload' => $payload, 'key' => "LoyaltyBadge:{$sale['entityId']}:{$version}"];
+
+    $first = ($this->apply)([$future(40, 2, ['name' => 'Gold', 'points' => 1.50]), $future(41, 1, ['name' => 'Old'])]);
+    $row = DB::table('till_unknown_rows')->sole();
+
+    expect(TillFixtures::ack($first))->toBe(['acknowledgedSeq' => 41, 'accepted' => 2])
+        ->and($first->rejected)->toBe([])
+        ->and($first->count(ChangeOutcome::Applied))->toBe(1)
+        ->and($first->count(ChangeOutcome::Stale))->toBe(1)
+        ->and($row->company_id)->toBe($this->company->id)
+        ->and($row->branch_id)->toBe($this->leeds->id)
+        ->and($row->entity)->toBe('LoyaltyBadge')
+        ->and($row->entity_id)->toBe($sale['entityId'])
+        ->and((int) $row->version)->toBe(2)
+        ->and((int) $row->seq)->toBe(40)
+        ->and(json_decode($row->payload, true))->toBe(['name' => 'Gold', 'points' => 1.5]);
+
+    $retry = ($this->apply)([$future(40, 2, ['name' => 'Gold', 'points' => 1.50]), $future(41, 1, ['name' => 'Old'])]);
+    expect($retry->toPushReply())->toBe($first->toPushReply())
+        ->and($retry->count(ChangeOutcome::Duplicate))->toBe(2);
+
+    ($this->apply)([$future(42, 3, ['name' => 'Platinum'])]);
+    expect(DB::table('till_unknown_rows')->count())->toBe(1)
+        ->and(json_decode((string) DB::table('till_unknown_rows')->value('payload'), true))->toBe(['name' => 'Platinum']);
+});
+
+it('keeps unknown rows per company: another company never sees or changes them', function () {
+    $sale = ($this->change)('Sale');
+    $badge = fn (array $overrides) => [...$sale, 'entity' => 'LoyaltyBadge', 'seq' => 1, 'version' => 5, 'key' => 'b', 'payload' => ['name' => 'A'], ...$overrides];
+    ($this->apply)([$badge([])]);
+
+    $other = Company::factory()->create();
+    $otherBranch = Branch::factory()->forCompany($other)->create();
+    $result = TillFixtures::apply($other, $otherBranch, [$badge(['companyId' => $other->id, 'branchId' => $otherBranch->id, 'registerId' => '', 'version' => 9, 'payload' => ['name' => 'B']])]);
+
+    expect($result->rejected)->toBe([])
+        ->and(DB::table('till_unknown_rows')->count())->toBe(2)
+        ->and(DB::table('till_unknown_rows')->where('company_id', $this->company->id)->value('payload'))->toBe('{"name":"A"}')
+        ->and(DB::table('till_unknown_rows')->where('company_id', $other->id)->value('payload'))->toBe('{"name":"B"}');
 });
 
 it('acknowledges across gaps in seq numbering and stops at the first rejection', function () {

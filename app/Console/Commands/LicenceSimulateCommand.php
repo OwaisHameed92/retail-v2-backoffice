@@ -11,7 +11,7 @@ use Illuminate\Http\Client\Response;
 use Throwable;
 
 /**
- * A pretend till for demos and the EPOS team (module 1.5, contract v1.3.1 §17.15). Calls the real licence API
+ * A pretend till for demos and the EPOS team (module 1.5, contract v1.4.1 §17.15). Calls the real licence API
  * over HTTP with the till's headers, prints the reply, checks a returned SSPOS1 token like the till and says
  * what the till would do.
  *

@@ -15,7 +15,7 @@ use Symfony\Component\HttpFoundation\Response;
 
 /**
  * Anti-spam in front of the public trial form API (module 1.10):
- * - 5 requests an hour per IP (429 `rate_limited`); replies 400 (a typo in the form) do not count;
+ * - 5 requests an hour per IP (429 `rate.limited`); replies 400 (a typo in the form) do not count;
  * - honeypot: a filled `website` field gets the normal 201 reply, but no lead is created.
  * Buckets hold hashes only.
  */
@@ -30,7 +30,7 @@ class GuardPublicTrialRequests
         $bucket = 'trial-request:ip:'.hash('sha256', (string) $request->ip());
 
         if ($this->limiter->tooManyAttempts($bucket, self::IP_LIMIT_PER_HOUR)) {
-            throw new ApiException('rate_limited', SubmitTrialRequest::RATE_LIMITED, 429, $this->limiter->availableIn($bucket));
+            throw new ApiException('rate.limited', SubmitTrialRequest::RATE_LIMITED, 429, $this->limiter->availableIn($bucket));
         }
 
         $honeypot = $request->input('website');

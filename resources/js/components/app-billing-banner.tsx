@@ -8,7 +8,7 @@ export interface BillingNotice {
     deadline: string;
     daysLeft: number;
     passed: boolean;
-    /** The user can open Billing (billing.view) and set it up. */
+    /** The user may set the Direct Debit up (billing.manage: the owner). */
     canSetUp: boolean;
     url: string;
 }
@@ -22,7 +22,7 @@ function daysText(days: number): string {
 }
 
 /**
- * Module 1.13: across the business portal until a Direct Debit exists. Owners (billing.view) get the button to the
+ * Module 1.13: across the business portal until a Direct Debit exists. Owners (billing.manage) get the button to the
  * Billing page; everyone else is asked to tell the owner. Hidden on the Billing page itself.
  */
 export function AppBillingBanner() {

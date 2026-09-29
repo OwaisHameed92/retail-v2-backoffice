@@ -51,13 +51,20 @@ test('an unchanged licence answers active with licenceToken null and records the
         ->and(AuditLog::query()->where('action', 'licence.lock_changed')->count())->toBe(0);
 });
 
-test('a new token when the till holds another token or does not trust our kid', function () {
+test('a new token when the till holds another token or does not accept our kid', function () {
     $other = $this->validateTill($this->licence->id, 'SSPOS1.old.token')->assertOk()->json('licenceToken');
     expect($other)->toStartWith('SSPOS1.');
 
-    $this->validateTill($this->licence->id, $other)->assertOk()->assertJsonPath('licenceToken', null);
+    // Our kid is not built in, but its certificate's approver is one of the till's approverKids: accepted.
+    $this->validateTill($this->licence->id, $other, overrides: ['trustedKids' => [SsposDocs::APPROVER_KID], 'approverKids' => [SsposDocs::APPROVER_KID]])
+        ->assertOk()->assertJsonPath('licenceToken', null);
 
-    $this->validateTill($this->licence->id, $other, overrides: ['trustedKids' => [SsposDocs::APPROVER_KID]])
+    // Built in (trustedKids) is accepted too.
+    $this->validateTill($this->licence->id, $other, overrides: ['trustedKids' => [SsposDocs::PORTAL_KID], 'approverKids' => []])
+        ->assertOk()->assertJsonPath('licenceToken', null);
+
+    // Neither built in nor certified by an approver the till knows: a new token.
+    $this->validateTill($this->licence->id, $other, overrides: ['trustedKids' => [SsposDocs::APPROVER_KID], 'approverKids' => ['k00000000']])
         ->assertOk()->assertJsonPath('licenceToken', fn (?string $token) => is_string($token));
 });
 

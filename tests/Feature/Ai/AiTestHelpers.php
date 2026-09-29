@@ -12,7 +12,7 @@ use App\Domain\Tenancy\Models\Company;
 use App\Models\User;
 
 /**
- * Helpers for the module 5.1 tests. Use with `uses(AiTestHelpers::class)`. No test touches the network.
+ * Helpers for the module 6.1 tests. Use with `uses(AiTestHelpers::class)`. No test touches the network.
  */
 trait AiTestHelpers
 {

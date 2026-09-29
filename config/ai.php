@@ -5,7 +5,7 @@ use App\Domain\Ai\Tools\RenameBranch;
 
 /*
 |--------------------------------------------------------------------------
-| AI (module 5.1)
+| AI (module 6.1)
 |--------------------------------------------------------------------------
 |
 | Claude via the official Anthropic PHP SDK. With no ANTHROPIC_API_KEY every AI feature reports
@@ -96,7 +96,8 @@ return [
     /*
     | Monthly token budgets (input + cache writes + cache reads + output), per calendar month in Europe/London.
     | `plans` overrides the default by plan code, e.g. 'pro' => 5_000_000. 0 = no AI for that plan.
-    | The plan must also include the aiAssistant / aiInsights feature.
+    | The plan must also include the AI feature: assist_questions (assistant), assist_invoice_scan (invoice import) or
+    | assist (morning summary, reorder suggestions, anomaly alerts).
     */
     'budgets' => [
         'default_monthly_tokens' => (int) env('AI_MONTHLY_TOKENS', 2_000_000),

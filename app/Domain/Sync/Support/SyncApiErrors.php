@@ -45,6 +45,11 @@ final class SyncApiErrors
         return new ApiException('server.busy', 'The portal is still storing this shop\'s last batch. The till will try again in a moment.', 503, max(1, $retryAfterSeconds));
     }
 
+    public static function inProgress(): ApiException
+    {
+        return new ApiException('request.in_progress', 'The portal is still storing this batch. The till will try again in a moment.', 409, 1);
+    }
+
     public static function rateLimited(int $retryAfterSeconds): ApiException
     {
         return new ApiException('rate.limited', 'Too many sync requests from this shop. The till will try again shortly.', 429, max(1, $retryAfterSeconds));

@@ -149,9 +149,21 @@ test('the owner sees the portal Billing page; roles without billing.view and oth
         ->where('directDebit.deadline.daysLeft', 3)
         ->where('invoices', []));
 
-    $this->actingAs($this->addMember($company, CompanyRole::Staff), 'web')->get('/app/billing')->assertForbidden();
+    $staff = $this->addMember($company, CompanyRole::Staff);
+    $ownInvoice = $this->issuedFor($company);
+    $this->actingAs($staff, 'web')->get('/app/billing')->assertForbidden();
+    $this->actingAs($staff, 'web')->post('/app/billing/direct-debit')->assertForbidden();
+    $this->actingAs($staff, 'web')->get('/app/billing/direct-debit/return')->assertForbidden();
+    $this->actingAs($staff, 'web')->get("/app/billing/invoices/{$ownInvoice->id}/pdf")->assertForbidden();
     $this->actingAs($this->addMember($company, CompanyRole::Manager), 'web')->post('/app/billing/direct-debit')->assertForbidden();
-    $this->actingAs($this->addMember($company, CompanyRole::Accountant), 'web')->get('/app/billing')->assertOk();
+    $this->actingAs($this->addMember($company, CompanyRole::Manager), 'web')->get('/app/billing/direct-debit/return')->assertForbidden();
+
+    // The accountant reads Billing but may not set up or finish the Direct Debit (owner only: billing.manage).
+    $accountant = $this->addMember($company, CompanyRole::Accountant);
+    $this->actingAs($accountant, 'web')->get('/app/billing')->assertOk()->assertInertia(fn (Assert $page) => $page->where('directDebit.canSetUp', false));
+    $this->actingAs($accountant, 'web')->post('/app/billing/direct-debit')->assertForbidden();
+    $this->actingAs($accountant, 'web')->get('/app/billing/direct-debit/return')->assertForbidden();
+    expect($this->billingAccountOf($company)->gc_billing_request_id)->toBeNull();
 
     // Company A never sees company B's invoices or PDFs.
     $this->actingAs($owner, 'web')->get("/app/billing/invoices/{$otherInvoice->id}/pdf")->assertNotFound();
@@ -160,6 +172,17 @@ test('the owner sees the portal Billing page; roles without billing.view and oth
         ->has('invoices', 1)
         ->where('invoices.0.number', $otherInvoice->number));
     $this->get('/logout');
+});
+
+test('guests are sent to the login from every Billing route', function () {
+    $company = onboardedTenant($this);
+    $invoice = $this->issuedFor($company);
+
+    $this->get('/app/billing')->assertRedirect('/login');
+    $this->post('/app/billing/direct-debit')->assertRedirect('/login');
+    $this->get('/app/billing/direct-debit/return')->assertRedirect('/login');
+    $this->get("/app/billing/invoices/{$invoice->id}/pdf")->assertRedirect('/login');
+    expect($this->billingAccountOf($company)->gc_billing_request_id)->toBeNull();
 });
 
 test('the banner counts the days left and disappears once the Direct Debit exists', function () {

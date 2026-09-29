@@ -9,7 +9,7 @@ use Illuminate\Contracts\Config\Repository as Config;
 use Illuminate\Support\Facades\Log;
 
 /**
- * Signs portal licence tokens with the active key (contract v1.3.1 §17.2):
+ * Signs portal licence tokens with the active key (contract v1.4.1 §17.2):
  * `SSPOS1.<base64url(payload JSON)>.<base64url(Ed25519 over "SSPOS1." + payload part)>`.
  *
  * Every token carries the active key's `signerCert` (§17.17). Without one, signing is refused unless

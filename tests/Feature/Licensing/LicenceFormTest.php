@@ -27,7 +27,7 @@ use Tests\Feature\Licensing\LicensingTestHelpers;
 use Tests\Feature\Tenants\TenantTestHelpers;
 
 /*
- * Module 1.11: the licence form (contract v1.3.1 §17.2 `company` block, §17.15.3, §17.16).
+ * Module 1.11: the licence form (contract v1.4.1 §17.2 `company` block, §17.15.3, §17.16).
  */
 
 uses(TenantTestHelpers::class, LicensingTestHelpers::class, LicenceApiHelpers::class);

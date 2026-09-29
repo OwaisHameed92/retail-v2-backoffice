@@ -24,7 +24,8 @@ use Illuminate\Support\Facades\Log;
  * 2. Mode: delta (default; seq = the branch's ChangeLog) or `initial` with `X-SSPOS-Upload-Id` (seq = the upload's
  *    own 1…N, kept apart in the ledger). Checking that the upload is open is module 2.8 (cloud/migrate).
  * 3. Per-branch lock: two pushes of one branch never interleave; a second one waits up to
- *    config('sync.push.lock_wait_seconds'), then 503 server.busy with retryAfterSeconds.
+ *    config('sync.push.lock_wait_seconds'), then 503 server.busy with retryAfterSeconds. The same Idempotency-Key
+ *    while its first request still runs → 409 request.in_progress (§21.7).
  * 4. Idempotency-Key replay (PushIdempotency), then ApplySyncChanges as the key's branch (it translates the till's
  *    ids through id_map).
  * 5. Reply 200 `{acknowledgedSeq, accepted}`; when the first row of the batch is rejected (nothing can be
@@ -50,7 +51,7 @@ final class PushChanges
             self::raiseMemoryLimit();
             ['changes' => $changes, 'fingerprint' => $fingerprint] = PushBody::decode($input->body, $input->encoding);
 
-            return $this->locked($caller, function () use ($caller, $input, $stream, $idempotencyKey, $changes, $fingerprint) {
+            return $this->locked($caller, $idempotencyKey, function () use ($caller, $input, $stream, $idempotencyKey, $changes, $fingerprint) {
                 $fingerprint = hash('sha256', $stream.'|'.$fingerprint);
 
                 if (($replay = $this->idempotency->find($caller->branch->id, $idempotencyKey, $fingerprint)) !== null) {
@@ -73,29 +74,45 @@ final class PushChanges
     }
 
     /**
+     * The branch lock, and a marker for the Idempotency-Key: a repeat of a request still running gets 409
+     * request.in_progress (contract §17.11 rule 5, §21.7); another push of the branch waits, then 503 server.busy.
+     *
      * @param  callable(): PushReply  $callback
      *
      * @throws ApiException
      */
-    private function locked(SyncCaller $caller, callable $callback): PushReply
+    private function locked(SyncCaller $caller, ?string $idempotencyKey, callable $callback): PushReply
     {
-        $lock = Cache::lock('sync-push:branch:'.$caller->branch->id, max(10, (int) config('sync.push.lock_seconds', 120)));
-        $wait = max(0, (int) config('sync.push.lock_wait_seconds', 10));
+        $seconds = max(10, (int) config('sync.push.lock_seconds', 120));
+        $running = $idempotencyKey === null ? null : 'sync-push:running:'.$caller->branch->id.':'.strtoupper($idempotencyKey);
 
-        try {
-            $acquired = $wait > 0 ? $lock->block($wait) : $lock->get();
-        } catch (LockTimeoutException) {
-            $acquired = false;
-        }
-
-        if (! $acquired) {
-            throw SyncApiErrors::busy((int) config('sync.push.busy_retry_after', 5));
+        if ($running !== null && ! Cache::add($running, true, $seconds)) {
+            throw SyncApiErrors::inProgress();
         }
 
         try {
-            return $callback();
+            $lock = Cache::lock('sync-push:branch:'.$caller->branch->id, $seconds);
+            $wait = max(0, (int) config('sync.push.lock_wait_seconds', 10));
+
+            try {
+                $acquired = $wait > 0 ? $lock->block($wait) : $lock->get();
+            } catch (LockTimeoutException) {
+                $acquired = false;
+            }
+
+            if (! $acquired) {
+                throw SyncApiErrors::busy((int) config('sync.push.busy_retry_after', 5));
+            }
+
+            try {
+                return $callback();
+            } finally {
+                $lock->release();
+            }
         } finally {
-            $lock->release();
+            if ($running !== null) {
+                Cache::forget($running);
+            }
         }
     }
 

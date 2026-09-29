@@ -17,6 +17,8 @@ class CompanyMiddlewareTest extends TestCase
     public function test_guests_are_redirected_to_login(): void
     {
         $this->get('/app')->assertRedirect('/login');
+        $this->post('/app/company/switch', ['company_id' => Company::factory()->create()->id])->assertRedirect('/login');
+        $this->post('/app/branch/switch', ['branch_id' => ''])->assertRedirect('/login');
     }
 
     public function test_user_without_membership_is_logged_out_with_a_message(): void

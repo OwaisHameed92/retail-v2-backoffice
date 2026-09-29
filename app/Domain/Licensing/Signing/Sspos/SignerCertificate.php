@@ -11,7 +11,7 @@ use Carbon\CarbonInterface;
 use Throwable;
 
 /**
- * A signer certificate (contract v1.3.1 §17.17):
+ * A signer certificate (contract v1.4.1 §17.17):
  * `SSPOSCERT1.<base64url(payload)>.<base64url(approver's Ed25519 signature over "SSPOSCERT1." + payload part)>`.
  *
  * The owner's key generator (an approver) certifies our public key; we put the string, unchanged, in every

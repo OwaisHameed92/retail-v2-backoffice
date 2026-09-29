@@ -9,6 +9,7 @@ use App\Domain\Tenancy\Enums\CompanyStatus;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Query\Builder as QueryBuilder;
+use SensitiveParameter;
 
 /**
  * Admin queries over licences of every company (the documented `withoutCompanyScope()` escape hatch), joined to
@@ -43,20 +44,21 @@ final class LicenceQuery
     }
 
     /**
-     * Search by full licence key (exact, via its hash), last 4 characters, device id or name, or business name.
+     * Search by last 4 characters of the key, device id or name, or business name. Safe for a query string: a
+     * full licence key is never matched here (a key must never travel in a URL, contract §17.11 rule 12) and finds
+     * nothing; look it up with {@see whereKey()} from a POST body instead.
      *
      * @param  Builder<Licence>  $query
      */
-    public static function search(Builder $query, string $term, bool $includeBusiness = true): void
+    public static function search(Builder $query, #[SensitiveParameter] string $term, bool $includeBusiness = true): void
     {
         $term = trim($term);
         if ($term === '') {
             return;
         }
 
-        $key = LicenceKey::tryParse($term);
-        if ($key !== null) {
-            $query->whereIn('licences.key_hash', $key->hashCandidates());
+        if (LicenceKey::tryParse($term) !== null) {
+            $query->whereRaw('1 = 0');
 
             return;
         }
@@ -76,6 +78,16 @@ final class LicenceQuery
                 $q->orWhere('companies.name', 'like', $like);
             }
         });
+    }
+
+    /**
+     * Exact match on a full key (via its hash). Only for a key that arrived in a POST body.
+     *
+     * @param  Builder<Licence>  $query
+     */
+    public static function whereKey(Builder $query, LicenceKey $key): void
+    {
+        $query->whereIn('licences.key_hash', $key->hashCandidates());
     }
 
     /**

@@ -12,7 +12,7 @@ use App\Http\Requests\Api\ValidateLicenceRequest;
 use Illuminate\Http\JsonResponse;
 
 /**
- * Per-till licensing (contract v1.3.1 §17.15, §17.7). Thin: validate the body, call one Action, reply JSON.
+ * Per-till licensing (contract v1.4.1 §17.15, §17.7). Thin: validate the body, call one Action, reply JSON.
  * Errors are ApiExceptions rendered as `{code, message, traceId, retryAfterSeconds, rejectedKey, details?}`.
  */
 class LicenceApiController extends Controller

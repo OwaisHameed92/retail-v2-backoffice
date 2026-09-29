@@ -36,11 +36,18 @@ interface SearchReply {
 
 type Item = { kind: 'tenant'; hit: TenantHit } | { kind: 'licence'; hit: LicenceHit } | { kind: 'all'; url: string };
 
+/** A whole licence key (16 characters after an optional "SSP"): a secret, so it never goes into a URL. */
+function looksLikeFullKey(value: string): boolean {
+    const body = value.toUpperCase().replace(/[^0-9A-Z]/g, '');
+
+    return (body.startsWith('SSP') ? body.slice(3) : body).length === 16;
+}
+
 const isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform);
 
 /**
  * Admin top-bar search as a command palette (⌘K / Ctrl K, or "/"): tenants by name or owner email, licences by
- * key ending, full key, PC name or id. Arrow keys move, Enter opens.
+ * key ending, full key (sent in the body), PC name or id. Arrow keys move, Enter opens.
  */
 export function AdminSearch() {
     const [open, setOpen] = useState(false);
@@ -84,12 +91,8 @@ export function AdminSearch() {
         setLoading(true);
         const timer = window.setTimeout(async () => {
             try {
-                const result = await sendJson<SearchReply>(
-                    'GET',
-                    `${route('admin.search')}?q=${encodeURIComponent(term)}`,
-                    undefined,
-                    controller.signal,
-                );
+                // POST: the term may be a full licence key, which must travel in the body, never in the URL.
+                const result = await sendJson<SearchReply>('POST', route('admin.search'), { q: term }, controller.signal);
                 setReply(result.ok ? result.data : null);
                 setError(result.ok ? null : result.message);
                 setActive(0);
@@ -113,7 +116,7 @@ export function AdminSearch() {
         return [
             ...reply.tenants.map((hit) => ({ kind: 'tenant' as const, hit })),
             ...reply.licences.map((hit) => ({ kind: 'licence' as const, hit })),
-            ...(reply.licences.length > 0
+            ...(reply.licences.length > 0 && !looksLikeFullKey(term)
                 ? [{ kind: 'all' as const, url: `${route('admin.licences.index')}?search=${encodeURIComponent(term)}` }]
                 : []),
         ];
@@ -269,7 +272,7 @@ export function AdminSearch() {
                                         </div>
                                     );
                                 })}
-                                {(() => {
+                                {!looksLikeFullKey(term) && (() => {
                                     index++;
                                     const i = index;
 

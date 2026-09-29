@@ -16,6 +16,12 @@ enum ConflictKind: string
      */
     case HubVersionNewer = 'hubVersionNewer';
 
+    /**
+     * A till pushed a hub-owned row another shop changed after this till's change (by time, or an edit not yet sent
+     * to this till when it carries `baseVersion`, §19.3). The stored row was kept.
+     */
+    case BranchEditNewer = 'branchEditNewer';
+
     /** A till changed columns of a historic row (completed sale, journal, audit…). Only allowed columns applied. */
     case ImmutableChange = 'immutableChange';
 

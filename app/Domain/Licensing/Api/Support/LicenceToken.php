@@ -4,8 +4,11 @@ namespace App\Domain\Licensing\Api\Support;
 
 use App\Domain\Licensing\LicenceState;
 use App\Domain\Licensing\Models\Licence;
+use App\Domain\Licensing\Signing\Exceptions\BadSignerCertificate;
 use App\Domain\Licensing\Signing\KeyStore;
+use App\Domain\Licensing\Signing\SigningKey;
 use App\Domain\Licensing\Signing\Sspos\LicenceClaims;
+use App\Domain\Licensing\Signing\Sspos\SignerCertificate;
 use App\Domain\Licensing\Signing\Sspos\SsposCodec;
 use App\Domain\Licensing\Signing\Sspos\SsposTokenSigner;
 use App\Domain\Licensing\Signing\Sspos\TokenKind;
@@ -18,7 +21,7 @@ use Carbon\CarbonImmutable;
 use Illuminate\Support\Collection;
 
 /**
- * The SSPOS1 token of one till's licence (contract v1.3.1 §17.15.1 step 5), and whether validate must send a
+ * The SSPOS1 token of one till's licence (contract v1.4.1 §17.15.1 step 5), and whether validate must send a
  * new one (§17.5 step 3).
  *
  * - `companyId`/`branchId`/names/`company` block: the portal's company and branch of the licence (the same in
@@ -97,17 +100,43 @@ final class LicenceToken
 
     /**
      * §17.5 step 3: a new token when the till holds another token than our last one, our last one's kid is not
-     * one the till trusts (or is no longer our signing key), or anything in the claims changed.
+     * one the till accepts (or is no longer our signing key), or anything in the claims changed.
+     *
+     * The till accepts a kid it has built in (`trustedKids`), or our certified key when its certificate's
+     * `approvedBy` is one of its `approverKids` (§17.2 "Keys: who holds what", §17.17).
      *
      * @param  list<string>  $trustedKids
+     * @param  list<string>  $approverKids
      */
-    public function needsNew(Licence $licence, LicenceClaims $claims, string $tokenSha256, array $trustedKids): bool
+    public function needsNew(Licence $licence, LicenceClaims $claims, string $tokenSha256, array $trustedKids, array $approverKids = []): bool
     {
+        $active = $this->keys->active();
+
         return $licence->token_sha256 === null
             || ! hash_equals($licence->token_sha256, strtolower($tokenSha256))
-            || ! in_array($licence->token_kid, $trustedKids, true)
-            || $licence->token_kid !== $this->keys->active()->kid
+            || $licence->token_kid !== $active->kid
+            || ! (in_array($active->kid, $trustedKids, true) || self::certifiedFor($active, $approverKids))
             || $licence->token_fingerprint !== self::fingerprint($claims);
+    }
+
+    /**
+     * Our key carries a signer certificate from one of the till's approvers.
+     *
+     * @param  list<string>  $approverKids
+     */
+    private static function certifiedFor(SigningKey $key, array $approverKids): bool
+    {
+        if ($key->signerCert === null || $approverKids === []) {
+            return false;
+        }
+
+        try {
+            $certificate = SignerCertificate::parse($key->signerCert);
+        } catch (BadSignerCertificate) {
+            return false;
+        }
+
+        return $certificate->kid === $key->kid && in_array($certificate->approvedBy, $approverKids, true);
     }
 
     /** SHA-256 of the claims without the parts that change on every signature. */

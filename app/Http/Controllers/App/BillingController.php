@@ -8,6 +8,7 @@ use App\Domain\Billing\GoCardless\Actions\StartOwnerMandateSetup;
 use App\Domain\Billing\Models\Invoice;
 use App\Domain\Billing\Support\InvoicePdf;
 use App\Domain\Tenancy\CurrentCompany;
+use App\Domain\Tenancy\Enums\Ability;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Response as HttpResponse;
@@ -17,14 +18,15 @@ use Symfony\Component\HttpFoundation\Response as SymfonyResponse;
 
 /**
  * The tenant portal Billing page (module 1.13): plan, pricing, upfront payment, Direct Debit and invoices, and the
- * owner's own Direct Debit setup through the GoCardless hosted page. `company.can:billing.view` (route
- * middleware); reachable while the business is suspended, so the owner can set the Direct Debit up.
+ * owner's own Direct Debit setup through the GoCardless hosted page. `company.can:billing.view` to read,
+ * `billing.manage` (owner only) for the Direct Debit setup (route middleware); reachable while the business is
+ * suspended, so the owner can set the Direct Debit up.
  */
 class BillingController extends Controller
 {
     public function index(CurrentCompany $tenancy): Response
     {
-        return Inertia::render('app/billing', PortalBilling::for($tenancy->require()));
+        return Inertia::render('app/billing', PortalBilling::for($tenancy->require(), canManage: $tenancy->can(Ability::BillingManage)));
     }
 
     public function startDirectDebit(CurrentCompany $tenancy, StartOwnerMandateSetup $start): SymfonyResponse

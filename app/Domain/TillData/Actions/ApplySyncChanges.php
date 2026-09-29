@@ -18,6 +18,7 @@ use App\Domain\TillData\Sync\NeverStored;
 use App\Domain\TillData\Sync\ParentResolver;
 use App\Domain\TillData\Sync\PayloadMapper;
 use App\Domain\TillData\Sync\SyncContext;
+use App\Domain\TillData\Sync\UnknownEntityRows;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use InvalidArgumentException;
@@ -50,6 +51,7 @@ final class ApplySyncChanges
         private readonly PayloadMapper $mapper,
         private readonly ChunkApplier $chunks,
         private readonly ChangeLedger $ledger,
+        private readonly UnknownEntityRows $unknown,
     ) {}
 
     /**
@@ -92,13 +94,13 @@ final class ApplySyncChanges
                 $outcomes[$i] = ChangeOutcome::Skipped;
             }
 
-            $items[] = $item instanceof SyncChange && ! isset($outcomes[$i])
+            $items[] = $item instanceof SyncChange && ! isset($outcomes[$i]) && ! UnknownEntityRows::matches($item)
                 ? $this->mapper->map($item, EntityRegistry::get($item->entity), $context)
                 : $item;
         }
 
         $order = $this->seqOrder($items);
-        $this->rejectRepeatedSeqs($order, $items);
+        $this->rejectRepeatedSeqs($order, $items, $outcomes);
 
         $mapped = array_values(array_filter(array_map(fn (int $i) => $items[$i], $order), fn ($item) => $item instanceof MappedChange));
         $parents = new ParentResolver($mapped, array_filter($items, fn ($item) => $item instanceof Rejection));
@@ -106,6 +108,17 @@ final class ApplySyncChanges
         foreach (array_chunk($mapped, self::CHUNK_SIZE) as $chunk) {
             $outcomes += $this->chunks->apply($chunk, $context, $parents);
         }
+
+        // Entities we do not know yet (a newer till): kept raw, never a rejection (§18.8, §21.1).
+        $unknown = [];
+
+        foreach ($order as $i) {
+            if ($items[$i] instanceof SyncChange && ! isset($outcomes[$i])) {
+                $unknown[] = $items[$i];
+            }
+        }
+
+        $outcomes += $this->unknown->store($unknown, $context);
 
         foreach ($items as $i => $item) {
             if ($item instanceof Rejection) {
@@ -145,8 +158,9 @@ final class ApplySyncChanges
     /**
      * @param  list<int>  $order
      * @param  list<MappedChange|SyncChange|Rejection>  $items
+     * @param  array<int, ChangeOutcome>  $outcomes  outcomes already known (duplicates, skipped)
      */
-    private function rejectRepeatedSeqs(array $order, array &$items): void
+    private function rejectRepeatedSeqs(array $order, array &$items, array $outcomes): void
     {
         $seen = [];
 
@@ -157,8 +171,14 @@ final class ApplySyncChanges
                 continue;
             }
 
-            if (isset($seen[$seq]) && $items[$i] instanceof MappedChange) {
-                $items[$i] = Rejection::for($items[$i]->change, 'sync.duplicate_seq', "Seq {$seq} appears more than once in the batch.");
+            $change = match (true) {
+                $items[$i] instanceof MappedChange => $items[$i]->change,
+                $items[$i] instanceof SyncChange && ! isset($outcomes[$i]) => $items[$i],
+                default => null,
+            };
+
+            if (isset($seen[$seq]) && $change !== null) {
+                $items[$i] = Rejection::for($change, 'sync.duplicate_seq', "Seq {$seq} appears more than once in the batch.");
             }
 
             $seen[$seq] = true;

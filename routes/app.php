@@ -16,11 +16,13 @@ Route::middleware(['auth:web', 'verified', 'company'])->group(function () {
     Route::post('company/switch', SwitchCompanyController::class)->name('company.switch');
     Route::post('branch/switch', SwitchBranchController::class)->name('branch.switch');
 
-    // Module 1.13: plan, pricing, Direct Debit (set up by the owner) and invoices. Open while suspended.
+    // Module 1.13: plan, pricing, Direct Debit (set up by the owner: billing.manage) and invoices. Open while suspended.
     Route::prefix('billing')->name('billing')->middleware('company.can:billing.view')->group(function () {
         Route::get('/', [BillingController::class, 'index']);
-        Route::post('direct-debit', [BillingController::class, 'startDirectDebit'])->name('.direct-debit')->middleware('throttle:10,1');
-        Route::get('direct-debit/return', [BillingController::class, 'directDebitReturn'])->name('.direct-debit.return');
+        Route::middleware('company.can:billing.manage')->group(function () {
+            Route::post('direct-debit', [BillingController::class, 'startDirectDebit'])->name('.direct-debit')->middleware('throttle:10,1');
+            Route::get('direct-debit/return', [BillingController::class, 'directDebitReturn'])->name('.direct-debit.return');
+        });
         Route::get('invoices/{invoice}/pdf', [BillingController::class, 'invoicePdf'])->name('.invoices.pdf')->whereUlid('invoice')->middleware('throttle:60,1');
     });
 });

@@ -7,7 +7,7 @@ use App\Domain\Licensing\LicenceState;
 use Carbon\CarbonImmutable;
 
 /**
- * Our effective licence status ({@see LicenceState}) as the contract's `status` (v1.3.1 §17.5, §17.15.2):
+ * Our effective licence status ({@see LicenceState}) as the contract's `status` (v1.4.1 §17.5, §17.15.2):
  *
  * | LicenceState | status |
  * |---|---|

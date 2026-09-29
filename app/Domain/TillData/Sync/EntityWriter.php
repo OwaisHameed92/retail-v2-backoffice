@@ -17,7 +17,8 @@ use Illuminate\Support\Facades\DB;
  *   (accepted, no change) — contract §7 and §19.3 "never backwards"; keyed rows (§10.3) by the later updatedAt;
  * - a row id held by another company is rejected (never overwritten);
  * - hub-owned: content identical to the stored row (`hub_hash`) is an echo, acknowledged with no change (§19.2);
- *   a till change the portal has overtaken is not applied, a conflict is recorded; an applied one records the
+ *   not ordered by one till's row version against another's; a till change the portal or another shop has
+ *   overtaken is not applied, a conflict is recorded; an applied one records the
  *   sending branch as `origin_branch_id` and clears `hub_version` for the pull (2.5) to stamp;
  * - historic rows (definitions `immutable`): once frozen only the allowed columns, deleted_at and the sync
  *   columns change; any other difference is recorded as a conflict;
@@ -124,6 +125,10 @@ final class EntityWriter
      * whose row versions happen to match) the later `updatedAt` wins; the same or no `updatedAt` changes nothing,
      * so a replay is always a no-op.
      *
+     * A hub-owned row last written by the portal or by another shop is not ordered by row versions: each till
+     * counts its own, so one shop's number says nothing about another's. portalWins() decides it by the hub
+     * version (`baseVersion`) or by time, and records a conflict rather than dropping the change.
+     *
      * @param  array<string, mixed>  $current
      */
     private function isNewer(EntityDefinition $def, int $version, ?string $updatedAt, array $current): bool
@@ -138,6 +143,10 @@ final class EntityWriter
             return [(string) $updatedAt, $version] > [$storedAt, $stored];
         }
 
+        if ($def->isHubOwned() && ($current['origin_branch_id'] ?? null) !== $this->context->branchId) {
+            return true;
+        }
+
         if ($version !== $stored) {
             return $version > $stored;
         }
@@ -148,10 +157,11 @@ final class EntityWriter
     }
 
     /**
-     * A till change to a hub-owned row the portal changed meanwhile: the portal's row is kept and the till's is
-     * recorded as a conflict. With `baseVersion` (§19.3): below the portal's current version, unless that version
-     * is this shop's own earlier change. Without it (tills before v1.4): the portal edited the row after the
-     * till's change.
+     * A till change to a hub-owned row changed meanwhile by the portal or another shop: the stored row is kept and
+     * the till's is recorded as a conflict (§19.3). With `baseVersion`: below the portal's current version (unless
+     * that version is this shop's own earlier change), or another shop's accepted edit not yet stamped with a
+     * version (newer than any version this till has seen). Without it (tills before v1.4): the portal or another
+     * shop changed the row after the till's change.
      *
      * @param  array<string, mixed>  $current
      */
@@ -159,26 +169,45 @@ final class EntityWriter
     {
         $change = $mapped->change;
         $hubVersion = $current['hub_version'] === null ? null : (int) $current['hub_version'];
+        $origin = $current['origin_branch_id'] ?? null;
+        $otherShop = $origin !== null && $origin !== $this->context->branchId;
+        $local = (int) $current['row_version'];
 
         if ($change->baseVersion !== null) {
-            if ($hubVersion === null || $change->baseVersion >= $hubVersion || $current['origin_branch_id'] === $this->context->branchId) {
+            if ($origin === $this->context->branchId || ($hubVersion !== null && $change->baseVersion >= $hubVersion)) {
                 return false;
             }
 
-            $this->conflicts->add($mapped, ConflictKind::HubVersionNewer, (int) $current['row_version'], "The portal changed this {$def->entity} (version {$hubVersion}) after the version the till edited ({$change->baseVersion}). The portal's version was kept.");
+            if ($hubVersion === null && ! $otherShop) {
+                return false;
+            }
+
+            $hubVersion === null
+                ? $this->conflicts->add($mapped, ConflictKind::BranchEditNewer, $local, "Another shop changed this {$def->entity} after the version the till edited ({$change->baseVersion}). The stored version was kept.")
+                : $this->conflicts->add($mapped, ConflictKind::HubVersionNewer, $local, "The portal changed this {$def->entity} (version {$hubVersion}) after the version the till edited ({$change->baseVersion}). The portal's version was kept.");
 
             return true;
         }
 
         $hubEditedAt = $current['hub_edited_at'];
 
-        if ($hubEditedAt === null || substr((string) $hubEditedAt, 0, 19) <= $change->at) {
-            return false;
+        if ($hubEditedAt !== null && substr((string) $hubEditedAt, 0, 19) > $change->at) {
+            $this->conflicts->add($mapped, ConflictKind::HubEditNewer, $local, "The portal edited this {$def->entity} at {$hubEditedAt} UTC, after the till's change at {$change->at} UTC. The portal's version was kept.");
+
+            return true;
         }
 
-        $this->conflicts->add($mapped, ConflictKind::HubEditNewer, (int) $current['row_version'], "The portal edited this {$def->entity} at {$hubEditedAt} UTC, after the till's change at {$change->at} UTC. The portal's version was kept.");
+        // Both shops' own "last changed" times (the row's updatedAt, else the change time).
+        $storedAt = $current['updated_at'] === null ? null : substr((string) $current['updated_at'], 0, 19);
+        $incomingAt = (string) ($mapped->row['updated_at'] ?? $change->at);
 
-        return true;
+        if ($otherShop && $storedAt !== null && $storedAt > $incomingAt) {
+            $this->conflicts->add($mapped, ConflictKind::BranchEditNewer, $local, "Another shop changed this {$def->entity} at {$storedAt} UTC, after this till's change at {$incomingAt} UTC. The stored version was kept.");
+
+            return true;
+        }
+
+        return false;
     }
 
     /**

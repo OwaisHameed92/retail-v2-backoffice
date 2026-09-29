@@ -28,7 +28,7 @@ Schedule::command('billing:reconcile-gocardless')->dailyAt('05:30')->onOneServer
 // Email log (module 1.7): delete rows older than the retention period (12 months).
 Schedule::command('model:prune', ['--model' => [EmailLog::class]])->daily()->onOneServer();
 
-// AI (module 5.1): conversations and proposals after `ai.retention_days`, usage rows after `ai.usage_retention_months`.
+// AI (module 6.1): conversations and proposals after `ai.retention_days`, usage rows after `ai.usage_retention_months`.
 Schedule::command('model:prune', ['--model' => [AiConversation::class, AiPendingAction::class, AiUsage::class]])->dailyAt('02:30')->onOneServer();
 
 // Admin dashboard (module 1.9): a heartbeat so System health can show the scheduler is running.

@@ -12,8 +12,10 @@ use App\Domain\TillData\Sync\Data\Rejection;
 use App\Domain\TillData\Sync\Data\SyncChange;
 
 /**
- * Validates a payload against its entity's field map (every schema member must be present with the right type)
- * and maps it to a complete table row. Members the schema does not know go to `extra`, so an additive till change
+ * Validates a payload against its entity's field map and maps it to a complete table row. Only `id` and `companyId`
+ * are required: a member an older till does not send yet is stored as null, or its type's default when the column
+ * is not nullable (contract §17.11 rule 2: absent, null and "" mean the same). A member that is present must have
+ * the right type. Members the schema does not know go to `extra`, so an additive till change
  * never loses data (secret-looking members are redacted); derived members are dropped. Also applies the scope rules that need no database:
  * a branch/register row must belong to the sending branch and one of its tills.
  */
@@ -62,7 +64,13 @@ final class PayloadMapper
 
         foreach ($def->plan as [$name, $column, $type, $nullable, $max, $enum]) {
             if (! array_key_exists($name, $payload)) {
-                $errors[] = "{$name} is missing";
+                if ($nullable) {
+                    $row[$column] = null;
+                } elseif ($type === 'secret') {
+                    [$row[$column.'_hash'], $row[$column.'_last4']] = [null, null];
+                } else {
+                    $row[$column] = Values::toColumn($def->fields[$name], self::absentDefault($type, $change));
+                }
 
                 continue;
             }
@@ -254,6 +262,20 @@ final class PayloadMapper
         }
 
         return ($dot === false ? $string.'.' : $string).str_repeat('0', $scale - $decimals);
+    }
+
+    /** What a member the till did not send stands for in a non-nullable column (before Values::toColumn). */
+    private static function absentDefault(string $type, SyncChange $change): mixed
+    {
+        return match ($type) {
+            'int', 'bigint', 'money', 'cost', 'quantity', 'percent', 'rate' => 0,
+            'bool' => false,
+            'date' => substr($change->at, 0, 10),
+            'time' => '00:00:00',
+            'datetime' => str_replace(' ', 'T', $change->at).'Z',
+            'json' => [],
+            default => '',
+        };
     }
 
     public static function fieldOf(EntityDefinition $def, string $column): ?FieldDefinition

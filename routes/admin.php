@@ -57,8 +57,8 @@ Route::middleware(['auth:admin', AdminIsActive::class, BlockAdminWhileImpersonat
 
     Route::get('/', DashboardController::class)->name('dashboard');
 
-    // Top-bar search (module 1.3): tenants and licences, JSON.
-    Route::get('search', AdminSearchController::class)->name('search')->middleware(['can:'.AdminRole::TENANTS_VIEW, 'throttle:120,1']);
+    // Top-bar search (module 1.3): tenants and licences, JSON. GET for names and key endings; POST (body) is the only way to look up a full licence key.
+    Route::match(['get', 'post'], 'search', AdminSearchController::class)->name('search')->middleware(['can:'.AdminRole::TENANTS_VIEW, 'throttle:120,1']);
 
     Route::prefix('admins')->name('admins.')->controller(AdminUserController::class)->group(function () {
         Route::get('/', 'index')->name('index')->can('viewAny', Admin::class);

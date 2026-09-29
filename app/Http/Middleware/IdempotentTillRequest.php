@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Crypt;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
- * `Idempotency-Key` on the licence and device POSTs (contract v1.3.1 §17.11 rule 5). The reply to
+ * `Idempotency-Key` on the licence and device POSTs (contract v1.4.1 §17.11 rule 5). The reply to
  * (key, endpoint, caller install, body) is kept for config('licence.api.idempotency_hours'):
  *
  * - same key and body again → the same status and body (header `Idempotency-Replayed: true`);
@@ -62,7 +62,7 @@ class IdempotentTillRequest
             $response = $next($request);
 
             $status = $response->getStatusCode();
-            $final = $status < 500 && $status !== 429 && ! ($status === 409 && str_contains((string) $response->getContent(), '"request.in_progress"'));
+            $final = $status < 500 && ! in_array($status, [408, 429], true) && ! ($status === 409 && str_contains((string) $response->getContent(), '"request.in_progress"'));
 
             if ($final) {
                 $this->cache->put($slot, [

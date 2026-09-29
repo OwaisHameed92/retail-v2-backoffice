@@ -25,7 +25,7 @@ Route::prefix('v1/sync')->name('api.sync.')
         Route::get('pull', 'pull')->name('pull');
     });
 
-// Per-till licensing, EPOS contract v1.3.1 (docs/contracts/portal-api-v1.4.1/docs/web-portal-api.md §17.15, §17.7):
+// Per-till licensing, EPOS contract v1.4.1 (docs/contracts/portal-api-v1.4.1/docs/web-portal-api.md §17.15, §17.7):
 // `X-SSPOS-Contract: 1` required, rate limited (§17.12), `Idempotency-Key` replayed (§17.11), no branch key.
 Route::prefix('v1')->name('api.')
     ->middleware([EnsureTillContract::class, ThrottleLicenceApi::class, IdempotentTillRequest::class])

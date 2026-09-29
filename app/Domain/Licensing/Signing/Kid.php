@@ -5,7 +5,7 @@ namespace App\Domain\Licensing\Signing;
 use InvalidArgumentException;
 
 /**
- * Signing key id (contract v1.3.1 §17.2, till `LicenceTokens.KidFor`): "k" + the first 8 lower-case hex digits
+ * Signing key id (contract v1.4.1 §17.2, till `LicenceTokens.KidFor`): "k" + the first 8 lower-case hex digits
  * of SHA-256(raw 32-byte Ed25519 public key), e.g. k13799fa4.
  */
 final class Kid

@@ -53,6 +53,6 @@ class ApiException extends RuntimeException
 
     public static function rateLimited(int $retryAfterSeconds): self
     {
-        return new self('rate_limited', ApiErrorMessages::RATE_LIMITED, 429, $retryAfterSeconds);
+        return new self('rate.limited', ApiErrorMessages::RATE_LIMITED, 429, $retryAfterSeconds);
     }
 }

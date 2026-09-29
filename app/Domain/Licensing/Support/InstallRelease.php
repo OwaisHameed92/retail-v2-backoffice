@@ -7,7 +7,7 @@ use App\Domain\Licensing\Models\Licence;
 use Carbon\CarbonImmutable;
 
 /**
- * Releases a licence key from its PC (contract v1.3.1 §17.15.3 "Release"): the binding is cleared, so the key
+ * Releases a licence key from its PC (contract v1.4.1 §17.15.3 "Release"): the binding is cleared, so the key
  * can be activated on another PC, and the old install is remembered as released, so its next
  * `licence/validate` answers `released` and it locks. Used by the admin Release action, `devices/deactivate`
  * and "Reissue key". The caller locks the row, saves nothing else and audits.

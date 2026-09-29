@@ -9,7 +9,7 @@ use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
- * Licence and device endpoint rate limits (contract v1.3.1 §17.12): `licence/activate` 10 an hour per IP,
+ * Licence and device endpoint rate limits (contract v1.4.1 §17.12): `licence/activate` 10 an hour per IP,
  * `licence/validate` 60 an hour per install, `devices/deactivate` 20 an hour per install (the install id from
  * `X-SSPOS-Install-Id` or the body, else the IP). Over a limit → 429 `rate.limited` with `Retry-After`.
  * The wrong-key limit of `licence/activate` is separate (WrongKeyLimiter). Buckets hold hashes only.

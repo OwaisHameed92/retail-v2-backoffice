@@ -13,7 +13,7 @@ use Tests\Support\SsposDocs;
 uses(TenantTestHelpers::class, LicensingTestHelpers::class, LicenceApiHelpers::class);
 
 /*
- * Contract tests (v1.3.1 §17.7, §17.15): every sample of the three endpoints validates against its schema, the
+ * Contract tests (v1.4.1 §17.7, §17.15): every sample of the three endpoints validates against its schema, the
  * samples replay against the API, and our replies (success and error) validate against the reply schemas.
  */
 

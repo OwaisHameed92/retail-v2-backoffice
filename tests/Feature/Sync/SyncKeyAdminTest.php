@@ -77,9 +77,21 @@ test('only licences.manage admins may generate, rotate or revoke', function (Adm
     expect(SyncKey::withoutCompanyScope()->count())->toBe(0);
 })->with([AdminRole::Sales, AdminRole::Accounts]);
 
-test('guests are sent to the admin login', function () {
-    $this->post($this->base)->assertRedirect();
+test('guests are sent to the admin login: generate, rotate and revoke', function () {
+    $this->post($this->base)->assertRedirect(route('admin.login'));
     expect(SyncKey::withoutCompanyScope()->count())->toBe(0);
+
+    $this->actingAs($this->admin(AdminRole::Support), 'admin')->postJson($this->base)->assertOk();
+    $key = SyncKey::withoutCompanyScope()->sole();
+    auth('admin')->logout();
+
+    $this->post("{$this->base}/rotate")->assertRedirect(route('admin.login'));
+    $this->postJson("{$this->base}/rotate")->assertUnauthorized();
+    $this->delete($this->base)->assertRedirect(route('admin.login'));
+    $this->deleteJson($this->base)->assertUnauthorized();
+
+    expect(SyncKey::withoutCompanyScope()->count())->toBe(1)
+        ->and($key->fresh()?->revoked_at)->toBeNull();
 });
 
 test('a branch of another business cannot be reached through this business', function () {

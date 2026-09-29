@@ -72,7 +72,7 @@ test('the list filters by effective status, plan and business', function () {
     $this->actingAs($admin, 'admin')->get('/admin/licences?status=nonsense')->assertSessionHasErrors('status');
 });
 
-test('the list searches by last 4, full key, device and business', function () {
+test('the list searches by last 4, device and business, never by a full key in the URL', function () {
     $company = $this->licensedTenant(tills: 1);
     $register = $this->registerOf($this->branchOf($company), '01');
     $this->firstLicence($company)->delete();
@@ -82,9 +82,16 @@ test('the list searches by last 4, full key, device and business', function () {
     $admin = $this->admin();
     $key = LicenceKey::parse($issued->plainKey());
 
-    foreach ([$key->last4(), strtolower($key->last4()), $issued->plainKey(), strtolower(str_replace('-', ' ', $issued->plainKey())), 'HW-7781', 'back-office', 'Khan'] as $term) {
+    foreach ([$key->last4(), strtolower($key->last4()), 'HW-7781', 'back-office', 'Khan'] as $term) {
         $this->actingAs($admin, 'admin')->get('/admin/licences?search='.urlencode($term))
             ->assertInertia(fn (Assert $page) => $page->has('licences.data', 1)->where('licences.data.0.id', $issued->licence->id)->etc());
+    }
+
+    // A full key in the query string is dropped (redirect without it), never searched or echoed.
+    foreach ([$issued->plainKey(), strtolower(str_replace('-', ' ', $issued->plainKey()))] as $term) {
+        $response = $this->actingAs($admin, 'admin')->get('/admin/licences?status=active&search='.urlencode($term));
+        $response->assertRedirect(route('admin.licences.index', ['status' => 'active']))->assertSessionHas('error');
+        expect((string) $response->getContent())->not->toContain($key->body());
     }
 
     $this->actingAs($admin, 'admin')->get('/admin/licences?search=nothing-like-this')
@@ -286,6 +293,19 @@ test('email keys sends the shown keys to every owner, never logging them', funct
     $entry = AuditLog::query()->where('action', 'licence.key_emailed')->sole();
     expect($entry->meta)->toBe(['owners' => 2, 'key_last4' => $issued->licence->key_last4])
         ->and($this->storedText())->not->toContain(LicenceKey::parse($issued->plainKey())->body());
+});
+
+test('email keys reads keys from the body only, never the query string', function () {
+    $register = $this->registerOf($this->branchOf($this->licensedTenant(tills: 1)), '01');
+    $this->licenceOf($register)->delete();
+    $issued = $this->issue($register);
+    $query = http_build_query(['licences' => [['id' => $issued->licence->id, 'key' => $issued->plainKey()]]]);
+
+    $this->actingAs($this->admin(AdminRole::Sales), 'admin')
+        ->postJson('/admin/licences/email-keys?'.$query, [])
+        ->assertUnprocessable()->assertJsonValidationErrors('licences');
+
+    expect(AuditLog::query()->where('action', 'licence.key_emailed')->exists())->toBeFalse();
 });
 
 test('email keys refuses keys that do not match, mixed businesses, revoked licences and businesses without an owner', function () {

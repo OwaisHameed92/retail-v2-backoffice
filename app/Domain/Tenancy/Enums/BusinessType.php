@@ -3,7 +3,7 @@
 namespace App\Domain\Tenancy\Enums;
 
 /**
- * The kind of shop, as the till's first-run wizard knows it (contract v1.3.1 §17.2 `company.businessType`,
+ * The kind of shop, as the till's first-run wizard knows it (contract v1.4.1 §17.2 `company.businessType`,
  * `BusinessType` names in common.schema.json). Values are the till's names exactly (PascalCase), because the
  * till compares them as written; blank or unknown = the wizard asks.
  */

@@ -194,6 +194,21 @@ test('two pushes of one branch never interleave: 503 server.busy while the branc
     expect(Cache::lock('sync-push:branch:'.$this->sync->leeds->id, 1)->get())->toBeTrue(); // released after the push
 });
 
+test('the same Idempotency-Key while its first push still runs: 409 request.in_progress, never stored', function () {
+    $key = '01K5VB0000000000000000KEYS';
+    $running = 'sync-push:running:'.$this->sync->leeds->id.':'.$key;
+    Cache::add($running, true, 60);
+
+    $reply = $this->sync->push(TillFixtures::sample('push-request.json'), ['Idempotency-Key' => $key])->assertStatus(409)
+        ->assertJsonPath('code', 'request.in_progress')->assertJsonPath('retryAfterSeconds', 1)->assertHeader('Retry-After', '1');
+    expect(SyncApiFixtures::schemaErrors($reply, 'error-reply.schema.json'))->toBe([])
+        ->and(Sale::withoutCompanyScope()->count())->toBe(0);
+
+    Cache::forget($running);
+    $this->sync->push(TillFixtures::sample('push-request.json'), ['Idempotency-Key' => $key])->assertOk();
+    expect(Cache::has($running))->toBeFalse();
+});
+
 test('sync_branch_status: last push, acknowledged seq, app version, register and counts for the London day', function () {
     $this->travelTo(now('UTC')->setTime(22, 30));
     $this->sync->push(TillFixtures::sample('push-request.json'), ['X-SSPOS-App-Version' => '3.0.500'])->assertOk();

@@ -6,7 +6,7 @@ use App\Domain\Shared\Exceptions\ApiException;
 use Illuminate\Cache\RateLimiter;
 
 /**
- * `licence/activate` wrong-key limit (contract v1.3.1 §17.15.1, §17.12): 5 wrong keys per install per 15 minutes,
+ * `licence/activate` wrong-key limit (contract v1.4.1 §17.15.1, §17.12): 5 wrong keys per install per 15 minutes,
  * then 429 `activation.too_many_attempts` with `retryAfterSeconds`. Counted on a hash of the install id.
  */
 final class WrongKeyLimiter

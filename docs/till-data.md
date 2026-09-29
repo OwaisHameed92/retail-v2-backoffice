@@ -107,8 +107,10 @@ Per change, in seq order, 500 per transaction:
    when their sale was completed at the child's seq.
 6. **Hub-owned rows** pushed by a till are stored like any row, unless the portal has overtaken the till's change:
    with `baseVersion` (v1.4) below `hub_version` (and that version is not the sender's own change) →
-   `hubVersionNewer`; without it, `hub_edited_at` > the change's `at` → `hubEditNewer`. The portal's row is kept
-   and the conflict holds the till's payload. An applied change sets `origin_branch_id` = sender, `hub_hash`, and
+   `hubVersionNewer`; without it, `hub_edited_at` > the change's `at` → `hubEditNewer`. Row versions order a hub
+   row only against the same shop's earlier edit (`origin_branch_id` = sender): each till counts its own. A row
+   last written by another shop is overtaken when that shop's `updatedAt` is later, or (with `baseVersion`) when its
+   edit is not stamped yet → `branchEditNewer`. The stored row is kept and the conflict holds the till's payload. An applied change sets `origin_branch_id` = sender, `hub_hash`, and
    clears `hub_version`. A portal save or soft delete (`HubOwnedRow`) clears `hub_version` and `origin_branch_id` and
    sets `hub_hash`. **Module 2.5** stamps rows with a null `hub_version` with its next pull version and never sends a
    row to its `origin_branch_id`.
@@ -120,10 +122,14 @@ Per change, in seq order, 500 per transaction:
    stops it (first change rejected → its seq − 1). Gaps in seq numbering do not. Rows after a rejection are still
    applied; the till resends them and they come back as duplicates.
 
+**Unknown entities** (a newer till, contract §18.8, §21.1) are never rejected: `UnknownEntityRows` keeps them raw in
+`till_unknown_rows` (company, branch, entity, id, op, version, seq, `at`, payload JSON, received_at), one row per
+(company, entity, id) at its highest version, recorded in the push ledger so a retry is a duplicate.
+
 If the database refuses a chunk, it is rolled back and replayed one change at a time: only the change that fails is
 rejected (`store.failed`, logged without the payload).
 
-Rejection codes: `change.invalid`, `entity.unknown`, `sync.wrong_company`, `sync.wrong_branch`,
+Rejection codes: `change.invalid`, `sync.wrong_company`, `sync.wrong_branch`,
 `sync.unknown_register`, `sync.duplicate_seq`, `sync.parent_rejected`, `payload.missing`, `payload.id_mismatch`,
 `payload.invalid`, `entity.id_taken`, `entity.not_found`, `store.failed`.
 

@@ -74,16 +74,16 @@ class ApiErrorRenderingTest extends TestCase
 
     public function test_not_found(): void
     {
-        $this->assertErrorShape($this->getJson('/api/test-errors/missing'), 404, 'not_found');
+        $this->assertErrorShape($this->getJson('/api/test-errors/missing'), 404, 'request.not_found');
         // Unknown route: the api middleware never ran, the renderer still adds a trace id.
-        $this->assertErrorShape($this->getJson('/api/does-not-exist'), 404, 'not_found');
+        $this->assertErrorShape($this->getJson('/api/does-not-exist'), 404, 'request.not_found');
     }
 
     public function test_rate_limited(): void
     {
         $response = $this->getJson('/api/test-errors/throttled');
 
-        $this->assertErrorShape($response, 429, 'rate_limited');
+        $this->assertErrorShape($response, 429, 'rate.limited');
         $response->assertJsonPath('retryAfterSeconds', 42)->assertHeader('Retry-After', '42');
     }
 

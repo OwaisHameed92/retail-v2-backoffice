@@ -29,7 +29,7 @@ use Illuminate\Support\Facades\DB;
 use SensitiveParameter;
 
 /**
- * `POST /api/v1/licence/activate` (contract v1.3.1 §17.15.1): binds an e-mailed key to the till's install and
+ * `POST /api/v1/licence/activate` (contract v1.4.1 §17.15.1): binds an e-mailed key to the till's install and
  * answers with a signed token for that till.
  *
  * 1. Unknown or malformed key → 404 key.not_found; a replaced key, one revoked before it was ever used, or an

@@ -25,7 +25,7 @@ interface StatCardProps {
     icon?: LucideIcon;
     /** Colour of the icon circle. Default primary (brand blue). */
     tone?: StatTone;
-    /** Sparkline or mini chart, shown bottom-right (see Sparkline). */
+    /** Sparkline or mini chart, shown bottom-right (see AreaSparkline in trend-chart.tsx). */
     chart?: ReactNode;
     /** Makes the whole card a link, e.g. to the filtered list. */
     href?: string;

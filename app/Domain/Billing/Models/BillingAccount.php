@@ -76,6 +76,13 @@ class BillingAccount extends Model
     /** @var list<string> */
     protected $guarded = [];
 
+    /**
+     * The GoCardless setup link works without signing in: never in toArray()/JSON.
+     *
+     * @var list<string>
+     */
+    protected $hidden = ['gc_setup_url'];
+
     /** @var array<string, mixed> */
     protected $attributes = [
         'cycle' => 'monthly',

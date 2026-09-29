@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 /**
- * Admin "Release" (contract v1.3.1 §17.15.3): frees a licence key from its PC (reinstall, new PC, stolen PC).
+ * Admin "Release" (contract v1.4.1 §17.15.3): frees a licence key from its PC (reinstall, new PC, stolen PC).
  * The old PC's next `licence/validate` answers `released` and it locks; the same key can then be activated on
  * another PC. Status, plan and dates are kept.
  */

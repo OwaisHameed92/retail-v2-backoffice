@@ -184,7 +184,7 @@ All props of the components above stayed compatible; these are additions. Colour
 ```
 
 ### `stat-card.tsx` (extended) — `StatGrid`, `KpiCard`
-`tone` (primary, success, warning, danger, neutral) colours the icon circle; `chart={<Sparkline values={[…]} />}`; `href` makes the card a link.
+`tone` (primary, success, warning, danger, neutral) colours the icon circle; `chart={<AreaSparkline values={[…]} />}` (from `trend-chart.tsx`); `href` makes the card a link.
 ```tsx
 <StatGrid><StatCard label="Failed" value={3} hint="Last 30 days" icon={CircleAlert} tone="danger" /></StatGrid>
 ```
@@ -228,8 +228,9 @@ Audit/activity lists: items `{ id, icon, tone, title, time, body }`; `<TimelineC
 `<RowActions label="Actions for Khan Mini Mart" actions={[{ label: 'Edit', icon: Pencil, href }, { label: 'Suspend', destructive: true, onSelect }]} />`
 Stops row clicks; destructive items go last behind a separator and should open a `ConfirmDialog`.
 
-### `mobile-card-list.tsx`, `sparkline.tsx`
-`MobileCardList` renders `{ title, aside, fields, actions }` cards (DataTable uses it). `Sparkline` is a tiny SVG trend line.
+### `mobile-card-list.tsx`
+`MobileCardList` renders `{ title, aside, fields, actions }` cards (DataTable uses it). For a trend line use
+`AreaSparkline` (`trend-chart.tsx`).
 
 ### UI primitives added or changed
 `ui/textarea.tsx` (new), `Badge` variants `success | warning | danger | info | neutral`, `Alert` variants

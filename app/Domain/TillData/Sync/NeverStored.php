@@ -38,8 +38,12 @@ final class NeverStored
         $seqs = [];
 
         foreach ($items as $i => $item) {
-            if ($item instanceof MappedChange && $item->change->seq > 0 && $outcomes[$i] instanceof ChangeOutcome && $outcomes[$i] !== ChangeOutcome::Duplicate) {
-                $seqs[] = $item->change->seq;
+            // A SyncChange here is either never stored (Skipped), a retry (Duplicate) or an unknown entity's raw row.
+            $change = $item instanceof MappedChange ? $item->change : ($item instanceof SyncChange ? $item : null);
+            $outcome = $outcomes[$i];
+
+            if ($change !== null && $change->seq > 0 && $outcome instanceof ChangeOutcome && ! in_array($outcome, [ChangeOutcome::Duplicate, ChangeOutcome::Skipped], true)) {
+                $seqs[] = $change->seq;
             }
         }
 

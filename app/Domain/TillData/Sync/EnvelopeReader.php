@@ -10,8 +10,8 @@ use App\Domain\TillData\Sync\Data\SyncChange;
 /**
  * Validates one envelope against schemas/sync-change.schema.json and the contract's identity rules (§5):
  * company must be the pushing company, a non-empty branchId must be the sending branch, a non-empty registerId
- * must be one of its tills, and the entity must be one the store knows (or a `local` one, which ApplySyncChanges
- * acknowledges without storing).
+ * must be one of its tills. Any entity name is accepted (§18.8, §21.1): a `local` one is acknowledged without
+ * storing, one the portal does not know yet is kept raw (UnknownEntityRows).
  */
 final class EnvelopeReader
 {
@@ -52,10 +52,6 @@ final class EnvelopeReader
 
         if ($problems !== []) {
             return $reject('change.invalid', 'Invalid change: '.implode('; ', $problems).'.');
-        }
-
-        if (! EntityRegistry::has($entity) && ! EntityRegistry::isLocal($entity)) {
-            return $reject('entity.unknown', "Unknown entity \"{$entity}\".");
         }
 
         if ($raw['companyId'] !== $context->companyId) {

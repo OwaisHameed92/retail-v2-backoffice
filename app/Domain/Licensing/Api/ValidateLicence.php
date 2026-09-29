@@ -18,7 +18,7 @@ use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 
 /**
- * `POST /api/v1/licence/validate` per till (contract v1.3.1 §17.15.2, §17.5): the daily check-in. A licence
+ * `POST /api/v1/licence/validate` per till (contract v1.4.1 §17.15.2, §17.5): the daily check-in. A licence
  * problem is a 200 with a `status`, never an error.
  *
  * - The licence (`licenceId`) bound to this `installId` → records the check-in (time, app version, OS, device
@@ -67,7 +67,7 @@ class ValidateLicence
             $state = LicenceState::for($licence, $now);
             $claims = $this->tokens->claims($licence, $state, $now);
             $status = TillStatus::of($state, $claims->expiresAt, $now);
-            $token = TillStatus::trades($status) && $this->tokens->needsNew($licence, $claims, $tokenSha256, $till->trustedKids)
+            $token = TillStatus::trades($status) && $this->tokens->needsNew($licence, $claims, $tokenSha256, $till->trustedKids, $till->approverKids)
                 ? $this->tokens->issue($licence, $claims)
                 : null;
             $licence->save();

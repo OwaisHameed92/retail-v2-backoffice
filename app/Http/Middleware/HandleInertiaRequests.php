@@ -114,7 +114,7 @@ class HandleInertiaRequests extends Middleware
 
         $state = MandateDeadline::state($company, app(BillingAccounts::class)->for($company));
 
-        return $state === null ? null : $state + ['canSetUp' => $tenancy->can(Ability::BillingView), 'url' => route('app.billing')];
+        return $state === null ? null : $state + ['canSetUp' => $tenancy->can(Ability::BillingManage), 'url' => route('app.billing')];
     }
 
     private function currentBranchId(Request $request): ?string

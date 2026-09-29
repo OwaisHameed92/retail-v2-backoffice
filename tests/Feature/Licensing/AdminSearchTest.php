@@ -25,7 +25,7 @@ test('it finds tenants by name, legal name and owner email', function () {
     }
 });
 
-test('it finds licences by last 4, full key, device id and device name', function () {
+test('it finds licences by last 4, device id and device name, and by full key only in a POST body', function () {
     $company = $this->licensedTenant('Khan Mini Mart', 1);
     $register = $this->registerOf($this->branchOf($company), '01');
     $this->licenceOf($register)->delete();
@@ -34,8 +34,15 @@ test('it finds licences by last 4, full key, device id and device name', functio
     $admin = $this->admin(AdminRole::Support);
     $last4 = LicenceKey::parse($issued->plainKey())->last4();
 
-    foreach ([$last4, $issued->plainKey(), 'hw-5521', 'kiosk'] as $term) {
-        $this->actingAs($admin, 'admin')->getJson('/admin/search?q='.urlencode($term))
+    $searches = [
+        ...array_map(fn (string $term) => fn () => $this->getJson('/admin/search?q='.urlencode($term)), [$last4, 'hw-5521', 'kiosk']),
+        fn () => $this->postJson('/admin/search', ['q' => $issued->plainKey()]),
+        fn () => $this->postJson('/admin/search', ['q' => 'kiosk']),
+    ];
+
+    foreach ($searches as $search) {
+        $this->actingAs($admin, 'admin');
+        $search()
             ->assertOk()
             ->assertJsonPath('licences.0.id', $issued->licence->id)
             ->assertJsonPath('licences.0.maskedKey', 'SSP-••••-••••-••••-'.$last4)
@@ -43,8 +50,17 @@ test('it finds licences by last 4, full key, device id and device name', functio
             ->assertJsonPath('licences.0.url', route('admin.licences.show', $issued->licence->id));
     }
 
-    $json = $this->actingAs($admin, 'admin')->getJson('/admin/search?q='.urlencode($issued->plainKey()))->json();
-    expect(json_encode($json))->not->toContain(LicenceKey::parse($issued->plainKey())->body());
+    $body = LicenceKey::parse($issued->plainKey())->body();
+    $posted = $this->actingAs($admin, 'admin')->postJson('/admin/search', ['q' => $issued->plainKey()]);
+    $posted->assertJsonPath('query', 'SSP-••••-••••-••••-'.$last4);
+    expect((string) $posted->getContent())->not->toContain($body);
+
+    // A full key in the query string finds nothing and is not echoed back.
+    $viaUrl = $this->actingAs($admin, 'admin')->getJson('/admin/search?q='.urlencode($issued->plainKey()))
+        ->assertOk()
+        ->assertJsonCount(0, 'licences')
+        ->assertJsonCount(0, 'tenants');
+    expect((string) $viaUrl->getContent())->not->toContain($body);
 });
 
 test('it returns at most 5 of each and nothing for one character', function () {

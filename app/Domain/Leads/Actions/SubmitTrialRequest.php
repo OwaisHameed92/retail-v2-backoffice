@@ -27,7 +27,7 @@ class SubmitTrialRequest
     ) {}
 
     /**
-     * @throws ApiException captcha.failed (422), rate_limited (429)
+     * @throws ApiException captcha.failed (422), rate.limited (429)
      */
     public function handle(LeadDetails $details, ?string $captchaToken): Lead
     {
@@ -38,7 +38,7 @@ class SubmitTrialRequest
         $bucket = 'trial-request:email:'.hash('sha256', (string) $details->email);
 
         if ($this->limiter->tooManyAttempts($bucket, self::EMAIL_LIMIT_PER_DAY)) {
-            throw new ApiException('rate_limited', self::RATE_LIMITED, 429, $this->limiter->availableIn($bucket));
+            throw new ApiException('rate.limited', self::RATE_LIMITED, 429, $this->limiter->availableIn($bucket));
         }
 
         $lead = $this->createLead->handle($details, mergeIntoOpenLead: true);

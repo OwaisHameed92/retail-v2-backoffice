@@ -12,7 +12,7 @@ use App\Models\User;
 use Illuminate\Console\Command;
 
 /**
- * Manual test of the AI assistant against the real API (module 5.1). Staff only: it runs on the server.
+ * Manual test of the AI assistant against the real API (module 6.1). Staff only: it runs on the server.
  *
  * Without --user the question is asked as a system job: read tools only, no changes can even be proposed.
  * With --user=<email> it runs as that member, with their role; write tools create proposals (not confirmed).

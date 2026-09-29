@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\DB;
 use Tests\Feature\TillData\TillFixtures;
 
 /*
- * Contract v1.3.1 §19 "synced once, never twice, never backwards": the §19.4 test list, store and applier side.
+ * Contract v1.4.1 §19 "synced once, never twice, never backwards": the §19.4 test list, store and applier side.
  * What the portal sends down (pull, 19.4 #3-5 second halves) belongs to modules 2.5/2.6; the bookkeeping it will
  * read (hub_version, hub_hash, origin_branch_id) is asserted here.
  */
@@ -133,20 +133,38 @@ it('19.4 #5: a portal and a till edit of one product before either syncs make on
     expect(($this->apply)([rulesProduct($this->product, 4, 4, ['sellPrice' => 1.40], ['baseVersion' => 8])])->count(ChangeOutcome::Applied))->toBe(1);
 });
 
-it('19.4 #6: keeps the newer row when an older version arrives late; an equal version goes by updatedAt', function () {
+it('19.4 #6: keeps the newer row when an older version arrives late; another shop is ordered by time, not its row version', function () {
     ($this->apply)([rulesProduct($this->product, 1, 5, ['sellPrice' => 1.60, 'updatedAt' => '2026-09-20T10:00:00Z'])]);
 
     $late = ($this->apply)([rulesProduct($this->product, 2, 4, ['sellPrice' => 1.10])]);
-    $sameVersionEarlier = ($this->apply)([rulesProduct($this->product, 1, 5, ['sellPrice' => 1.20, 'updatedAt' => '2026-09-20T09:00:00Z'])], $this->bradford);
+    // Bradford's till counts its own row versions: an older edit there is a recorded conflict, never silently dropped.
+    $otherShopEarlier = ($this->apply)([rulesProduct($this->product, 1, 9, ['sellPrice' => 1.20, 'updatedAt' => '2026-09-20T09:00:00Z'])], $this->bradford);
 
     expect($late->count(ChangeOutcome::Stale))->toBe(1)
-        ->and($sameVersionEarlier->count(ChangeOutcome::Stale))->toBe(1)
+        ->and($otherShopEarlier->count(ChangeOutcome::Conflict))->toBe(1)
+        ->and(DB::table('sync_conflicts')->where('branch_id', $this->bradford->id)->value('kind'))->toBe('branchEditNewer')
         ->and(tillRulesPrice())->toBe('1.60');
 
-    $sameVersionLater = ($this->apply)([rulesProduct($this->product, 2, 5, ['sellPrice' => 1.70, 'updatedAt' => '2026-09-20T11:00:00Z'])], $this->bradford);
+    // A later edit at Bradford applies even with a lower row version than Leeds' (5 > 2 means nothing across tills).
+    $otherShopLater = ($this->apply)([rulesProduct($this->product, 2, 2, ['sellPrice' => 1.70, 'updatedAt' => '2026-09-20T11:00:00Z'])], $this->bradford);
 
-    expect($sameVersionLater->count(ChangeOutcome::Applied))->toBe(1)
+    expect($otherShopLater->count(ChangeOutcome::Applied))->toBe(1)
         ->and(tillRulesPrice())->toBe('1.70');
+
+    // Now Bradford's own row: its lower versions are stale again.
+    expect(($this->apply)([rulesProduct($this->product, 3, 1, ['sellPrice' => 1.00, 'updatedAt' => '2026-09-20T12:00:00Z'])], $this->bradford)->count(ChangeOutcome::Stale))->toBe(1);
+});
+
+it('records a conflict when a till edits from a version older than another shop\'s unsent edit', function () {
+    ($this->apply)([rulesProduct($this->product, 1, 1)]);
+    ($this->stamp)(7);
+    ($this->apply)([rulesProduct($this->product, 1, 1, ['sellPrice' => 1.55], ['baseVersion' => 7])], $this->bradford);
+
+    $leeds = ($this->apply)([rulesProduct($this->product, 2, 8, ['sellPrice' => 1.35], ['baseVersion' => 7])]);
+
+    expect($leeds->count(ChangeOutcome::Conflict))->toBe(1)
+        ->and(DB::table('sync_conflicts')->value('kind'))->toBe('branchEditNewer')
+        ->and(tillRulesPrice())->toBe('1.55');
 });
 
 it('19.4 #7: a product deleted on the portal stays deleted when a late till update arrives', function () {

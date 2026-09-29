@@ -28,7 +28,7 @@ final class PortalBilling
     /**
      * @return array<string, mixed>
      */
-    public static function for(Company $company, ?CarbonImmutable $now = null): array
+    public static function for(Company $company, ?CarbonImmutable $now = null, bool $canManage = true): array
     {
         $account = app(BillingAccounts::class)->for($company);
         $amount = SubscriptionAmount::for($company, $account, $now);
@@ -59,7 +59,7 @@ final class PortalBilling
                 'method' => $account->upfront_method?->label(),
                 'recordedAt' => $account->upfront_recorded_at?->toIso8601String(),
             ],
-            'directDebit' => self::directDebit($company, $account, $now),
+            'directDebit' => self::directDebit($company, $account, $now, $canManage),
             'invoices' => self::invoices(),
         ];
     }
@@ -67,7 +67,7 @@ final class PortalBilling
     /**
      * @return array<string, mixed>
      */
-    private static function directDebit(Company $company, BillingAccount $account, ?CarbonImmutable $now): array
+    private static function directDebit(Company $company, BillingAccount $account, ?CarbonImmutable $now, bool $canManage): array
     {
         $usable = $account->hasUsableMandate();
 
@@ -86,7 +86,7 @@ final class PortalBilling
                 'amount' => BillingFormat::money((string) $account->gc_subscription_amount),
             ] : null,
             'deadline' => MandateDeadline::state($company, $account, $now),
-            'canSetUp' => $account->isDirectDebit() && ! $usable && ! $company->isCancelled(),
+            'canSetUp' => $canManage && $account->isDirectDebit() && ! $usable && ! $company->isCancelled(),
         ];
     }
 

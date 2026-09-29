@@ -1,7 +1,7 @@
-# AI foundation (module 5.1)
+# AI foundation (module 6.1)
 
-The engine that the AI features (5.2 portal assistant, 5.3 morning summary, 5.4 reorder suggestions, 5.5 invoice
-import, 5.6 anomaly alerts, 5.7 admin AI) plug into. Code: `app/Domain/Ai`. Config: `config/ai.php`. Decisions and
+The engine that the AI features (6.2 portal assistant, 6.3 morning summary, 6.4 reorder suggestions, 6.5 invoice
+import, 6.6 anomaly alerts, 6.7 admin AI) plug into. Code: `app/Domain/Ai`. Config: `config/ai.php`. Decisions and
 reasons: `docs/DECISIONS.md` → "AI foundation".
 
 ## Setup
@@ -34,7 +34,7 @@ php artisan ai:ask 01J9Z... "Rename Leeds to Leeds Kirkgate" --user=owner@khan.t
 
 ## Using it from a feature
 
-Conversation (5.2, 5.7):
+Conversation (6.2, 6.7):
 
 ```php
 $context = AiContext::forUser($request->user(), $currentCompany->require());
@@ -42,7 +42,7 @@ $reply = app(RunAssistant::class)->handle($context, $question, $conversation, on
 // $reply->text, $reply->proposals (AiPendingAction[] to show with Confirm / Cancel), $reply->usage, $reply->costGbp
 ```
 
-Single call (5.3, 5.6): build an `AiRequest` with `AiSettings::modelFor($feature)`, `SystemPrompt::blocks()` (or
+Single call (6.3, 6.6): build an `AiRequest` with `AiSettings::modelFor($feature)`, `SystemPrompt::blocks()` (or
 your own frozen prompt with `cache_control` on the last block) and pass it to `CallModel::handle($context, $request)`.
 Put anything that changes per call (dates, figures) in the messages, never in the system prompt.
 
@@ -116,7 +116,9 @@ Write tools may also return plain data instead of a proposal (e.g. "already call
 
 - Every model call writes one `ai_usage` row (also errors and refusals): tokens (input, output, cache read, cache
   write, total), `cost_gbp` (6 dp, from `config('ai.pricing')` × `ai.usd_to_gbp`), latency, feature, model.
-- A company needs the plan feature: `aiAssistant` for the assistant, `aiInsights` for the other tenant features.
+- A company needs the plan feature (the till's names, `AiFeature::planFeature()`): `assist_questions` for the
+  assistant, `assist_invoice_scan` for invoice import, `assist` for the morning summary, reorder suggestions and
+  anomaly alerts.
 - Monthly budget = total tokens this calendar month (Europe/London): `ai.budgets.plans.<plan code>` or
   `ai.budgets.default_monthly_tokens`. Admin AI uses `ai.budgets.admin_monthly_tokens`.
 - `AiBudget::remaining($context)` and `AiGate::isAvailable($context)` let the UI hide or explain AI features.

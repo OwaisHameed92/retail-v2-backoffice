@@ -10,7 +10,8 @@ Each module is one agent task. Modules in the same wave can run in parallel. Sta
 included) pass, the UI follows `docs/BRAND.md`, and `composer check`, `npm run lint`, `npx tsc --noEmit` and
 `npm run build` are green.
 
-Totals: **64 modules · 25 done · 39 todo** (2026-09-29, counted from the tables; 2.9 split into A and B).
+Totals: **64 modules · 25 done · 39 todo** (2026-09-29, counted from the tables of phases 0–7; 2.9 split into A and
+B; Phase 8's five later items are not modules yet).
 
 ---
 
@@ -26,7 +27,7 @@ Totals: **64 modules · 25 done · 39 todo** (2026-09-29, counted from the table
 
 ## Phase 1: Onboarding and licensing — 13/13
 
-Contract: v1.3.1 `docs/web-portal-api.md` §17 (read 17.15–17.17 first), `specs/licensing.md`, `licensing/schemas`,
+Contract: v1.4.1 `docs/web-portal-api.md` §17 (read 17.15–17.17 first), `specs/licensing.md`, `licensing/schemas`,
 `licensing/samples`.
 
 | # | Module | What | Status |
@@ -37,38 +38,36 @@ Contract: v1.3.1 `docs/web-portal-api.md` §17 (read 17.15–17.17 first), `spec
 | 1.6 | Leads and trial approval | Leads, board, one-click 7-day trial | done |
 | 1.7 | Emails | Branded templates, email log, previews | done |
 | 1.8 | Cash billing | Invoices + PDF, payments, auto-renew, overdue suspension | done |
-| 1.4 | Token signer | `SSPOS1.<payload>.<sig>` tokens (§17.2) via `SsposTokenSigner`/`SsposTokenVerifier` + `LicenceClaims`, kid = `k` + 8 hex of SHA-256(public key), `signerCert` in every token (§17.17, `licence:keys:import-cert`), `licence:keys:handover`; worked examples reproduced byte for byte. Old JWS classes stay until 1.5 switches | done |
-| 1.5 | Licence API | `POST licence/activate` (17.15.1), `licence/validate` (17.15.2) per till and `devices/deactivate` (17.7) exactly as contract v1.3.1: headers `X-SSPOS-Contract` (echoed), `X-SSPOS-App-Version` (426), `X-SSPOS-Install-Id`, `Idempotency-Key` replay (24 h); statuses active/expiring/expired/suspended/revoked/released; error codes of `error-codes.json` with `details`; §17.12 rate limits + 5 wrong keys/install/15 min; SSPOS1 tokens with full claims, new token only on change; admin **Release**, install code/id, clock skew, lock state on the licence page; `licence:simulate` speaks the contract. Old check-in API, JWS classes and our draft docs removed; contract tests replay the samples | done |
-| 1.11 | Licence form v1.3 | Customer/licence form with every token field (17.16): kind trial/full, validFrom/expiresAt length, `maxRegisters` per branch, `limits.branches`, `multi_branch`, features (till's snake_case names), `company` block; "Till 1 of 3" issuing with limits; installId/installCode, clock skew, lock state; **Release** key; activate-by date; re-sign branch keys on change. Built: shop details (business type, town, postcode, owner's name, receipt footer) on the company/branch forms; branch licence settings dialog + company branch limits; limits enforced in IssueLicence/AddRegister/AddBranch/Reactivate*; `activate_by` (410 `key.expired`, extend, reissue resets); "Resend key e-mail"; wizard and lead approval carry the form | done |
+| 1.4 | Token signer | `SSPOS1.<payload>.<sig>` tokens (§17.2) via `SsposTokenSigner`/`SsposTokenVerifier` + `LicenceClaims`, kid = `k` + 8 hex of SHA-256(public key), `signerCert` in every token (§17.17, `licence:keys:import-cert`), `licence:keys:handover`; worked examples reproduced byte for byte | done |
+| 1.5 | Licence API | `POST licence/activate` (17.15.1), `licence/validate` (17.15.2) per till and `devices/deactivate` (17.7) exactly as contract v1.4.1: headers `X-SSPOS-Contract` (echoed), `X-SSPOS-App-Version` (informational: never 426 on `licence/*`), `X-SSPOS-Install-Id`, `Idempotency-Key` replay (24 h); statuses active/expiring/expired/suspended/revoked/released; error codes of `error-codes.json` with `details`; §17.12 rate limits + 5 wrong keys/install/15 min; SSPOS1 tokens with full claims, new token only on change; admin **Release**, install code/id, clock skew, lock state on the licence page; `licence:simulate` speaks the contract. Old check-in API, JWS classes and our draft docs removed; contract tests replay the samples | done |
+| 1.11 | Licence form | Customer/licence form with every token field (17.16): kind trial/full, validFrom/expiresAt length, `maxRegisters` per branch, `limits.branches`, `multi_branch`, features (till's snake_case names), `company` block; "Till 1 of 3" issuing with limits; installId/installCode, clock skew, lock state; **Release** key; activate-by date; re-sign branch keys on change. Built: shop details (business type, town, postcode, owner's name, receipt footer) on the company/branch forms; branch licence settings dialog + company branch limits; limits enforced in IssueLicence/AddRegister/AddBranch/Reactivate*; `activate_by` (410 `key.expired`, extend, reissue resets); "Resend key e-mail"; wizard and lead approval carry the form | done |
 | 1.9 | Admin dashboard | Customers, trials, licences, leads, cash due (sales tiles come in 3.2) | done |
 | 1.10 | Public trial form | Public API `POST /api/v1/public/trial-requests` + hosted `/trial` page → lead (docs/specs/public-trial-api.md) | done |
 | 1.12 | GoCardless billing | Upfront cash or setup fee + Direct Debit (monthly/yearly): plan setup fee + per-customer override, instalments; mandate by emailed signed link → GoCardless hosted flow; subscription = live tills × plan price + VAT, kept in step; every GoCardless payment ↔ one invoice, confirmed → RecordPayment (`directDebit`) → licences renewed, failed/charged back → reversal + dunning → overdue/suspension via billing:run; `POST /webhooks/gocardless` (HMAC, idempotent, queued, replayable); daily `billing:reconcile-gocardless`; trial without mandate → grace → suspension; admin Billing tab/overview/plan form (docs/specs/gocardless-billing.md) | done |
 | 1.13 | Pricing modes + self-serve Direct Debit | Plan `pricing_mode` perTill/perBranch (per-till columns renamed `price_monthly`/`price_yearly`) + per-company override (billing.manage, audited); invoice lines per till or per branch (branch line renews its tills); DD amount follows tills, branches and pricing; upfront payment recorded in the wizard, lead approval and Billing tab (cash/bank, £0); tenant portal `/app/billing` (billing.view: plan, pricing, upfront, mandate, next collection, invoices + PDF) with "Set up Direct Debit" → GoCardless → return; portal banner with days left; `BILLING_MANDATE_DEADLINE_DAYS` (3) suspension lifted by the mandate, never for £0 recurring; welcome email links to Billing | done |
 
-Waves: **1.4 → 1.5 + 1.11** · then 1.9, 1.10, 1.12.
-
 ## Phase 2: Sync and cloud link — 6/10
 
-Contract: v1.3.1 §1–16, §19 (duplicate/echo/conflict rules + test list 19.4), §20, `docs/web-portal-api/openapi.yaml`.
+Contract: v1.4.1 §1–16, §19, §21 (duplicate/echo/conflict rules + test list 19.4), §20, `docs/web-portal-api/openapi.yaml`.
 
 | # | Module | What | Status |
 |---|---|---|---|
-| 2.1 | IDs and sync keys (v1.3.3 answers 1–2) | `id_map` (adopt the first till company id, alias later ones, branch = the key's branch, register = the key's register; conflicts → 409 `licence.ids_conflict` + alert) and `IdTranslator` at the edge (ApplySyncChanges; `toTill()` for 2.5 pull); per-branch sync key (`SSK-…`, 160 bits, HMAC + last 4) sent as `apiKey` (+ `hubUrl`) to the main till of a `cloud_sync` licence; admin Sync key panel (generate shown once, send new key to till, revoke; old key 7 days' grace); `AuthenticateSyncKey` for `/api/v1/sync/*`; feature names = the till's 11; `k290bee23` in `.env.example`. **`devices/activate` is not built** (the till never calls it) | done |
-| 2.2 | Hello and push | `sync/hello`, `sync/push` (gzip, 5,000 rows, idempotent, ordered, acknowledged, initial mode), branch key auth. v1.3.1 changed the `hello-reply` and `error-reply` schemas: build to those. Built: contract/header checks, per-key rate limit, per-branch lock (503 `server.busy`), Idempotency-Key replay, 413/422 per §9, initial uploads kept apart by upload id, `sync_branch_status` for 2.7; 5,000-row gzip push ≈ 0.7 s | done |
-| 2.3 | Entity store: master data | 140 entities from v1.3.1 (17 new tables, new columns) via additive migrations (`database/till-schema.json`); v1.1 folder dropped | done |
+| 2.1 | IDs and sync keys | `id_map` (adopt the first till company id, alias later ones, branch = the key's branch, register = the key's register; conflicts → 409 `licence.ids_conflict` + alert) and `IdTranslator` at the edge (ApplySyncChanges; `toTill()` for 2.5 pull); per-branch sync key (`SSK-…`, 160 bits, HMAC + last 4) sent as `apiKey` (+ `hubUrl`) to the main till of a `cloud_sync` licence; admin Sync key panel (generate shown once, send new key to till, revoke; old key 7 days' grace); `AuthenticateSyncKey` for `/api/v1/sync/*`; feature names = the till's 11; `k290bee23` in `.env.example`. **`devices/activate` is not built** (the till never calls it) | done |
+| 2.2 | Hello and push | `sync/hello`, `sync/push` (gzip, 5,000 rows, idempotent, ordered, acknowledged, initial mode), branch key auth, to the v1.4.1 `hello-reply` and `error-reply` schemas. Built: contract/header checks, per-key rate limit, per-branch lock (503 `server.busy`), Idempotency-Key replay, 413/422 per §9, initial uploads kept apart by upload id, `sync_branch_status` for 2.7; 5,000-row gzip push ≈ 0.7 s | done |
+| 2.3 | Entity store: master data | 145 entities of v1.4.1 via additive migrations (`database/till-schema.json`); an entity the portal does not know yet is kept raw in `till_unknown_rows` (§18.8, §21.1) | done |
 | 2.4 | Entity store: transactions | Applier to §19: never twice (ledger + version), never backwards (version, tie by `updatedAt`), never echoed (`hub_hash`, `origin_branch_id`), `baseVersion` ready, `portal_received_at`; §19.4 store tests | done |
 | 2.5 | Pull | `GET sync/pull`: per-company counter (`sync_hub_counters`, row lock; after-commit stamp in `HubOwnedRow`, `PublishHubChange` for non-Eloquent writes, rows accepted from tills stamped at the next pull, parents first), hub-owned rows only, company-wide + addressed to the branch, never back to `origin_branch_id` (19.2), paging, till ids (`toTill`), no secrets, gzip reply, `sync_branch_status` last pull; 5,000-row page ≈ 0.6 s. **The `sync_conflicts` screen is not built** (this module was backend only; still to schedule) | done |
 | 2.6 | Contract tests | Replay every sample, validate against schemas, pass the §19.4 test list | todo |
 | 2.7 | Till health | Online/offline, versions, last push/validate per branch and till, alerts | todo |
 | 2.8 | Local keys and migration | `licence/redeem` (local key reports, 17.6/17.16), `cloud/migrate` + `migrate/complete` + initial push (17.8) | todo |
 | 2.9A | v1.4.1 alignment, part A | Contract swap to v1.4.1; entity store 145 schemas (new BranchPrice, PurchaseReturn(+Line), Setting, RolePermission; `local` SyncState/DomainEventRecord/ProcessedCommand acknowledged, never stored; new columns) by additive migrations; keyed Setting/RolePermission rows (ids derived from the payload, settings deny-list never stored); push reply `receivedAt` (after commit, retry = first time); BranchPrice pushed by its own shop only, pulled only by its shop, portal prices always new rows (`SetBranchPrice`); licence `expiresAt` without grace days, `minimumAppVersion` 0.1.0, no 426 on `licence/*`, 426 on `sync/*` only for listed versions; main-till `devices/deactivate` revokes + rotates the key it was sent (`apiKeyRevoked: true`); `X-SSPOS-Store-Protocol` informational | done |
-| 2.9B | v1.4.1 alignment, part B | Relay (transfers to `toBranchId`, receipts to `fromBranchId`, customer ledger to the other branches, §10.2) and ledger-derived customer balance/points (§10.1); settings + role permissions in the pull (keyed envelope, deny-list, §10.3); head-office purchase orders drafted on the portal and pulled by one shop (§10.6); `hubChange` on the conflicts screen | todo |
+| 2.9B | v1.4.1 alignment, part B | Relay (transfers to `toBranchId`, receipts to `fromBranchId`, customer ledger to the other branches, §10.2; transfer relay for 5.3) and ledger-derived customer balance/points (§10.1); settings + role permissions in the pull (keyed envelope, deny-list, §10.3); head-office purchase orders drafted on the portal and pulled by one shop (§10.6); portal edits of Company/Branch in the pull (§6.1); the `sync_conflicts` screen (review and resolve `hubEditNewer`, `hubVersionNewer`, `branchEditNewer`, `immutableChange`, `tenancyDelete`; `hubChange`) | todo |
 
-Waves: 2.1 → 2.2 → 2.5 → 2.9A → 2.9B · 2.6 + 2.7 → 2.8.
+Waves: 2.9B → 2.6 → 2.7 → 2.8.
 
 ## Phase 3: Reporting and dashboards — 0/3
 
-Contract: v1.3.1 `docs/web-portal-api/DASHBOARD.md` (formulas; we build them on **MySQL 8**, not PostgreSQL).
+Contract: v1.4.1 `docs/web-portal-api/DASHBOARD.md` (formulas; we build them on **MySQL 8**, not PostgreSQL).
 
 | # | Module | What | Status |
 |---|---|---|---|
@@ -78,13 +77,13 @@ Contract: v1.3.1 `docs/web-portal-api/DASHBOARD.md` (formulas; we build them on 
 
 ## Phase 4: Business panel (customer portal) — 0/10
 
-Contract: v1.3.1 §18.4. Roles: business owner, **shop manager** (one branch only).
+Contract: v1.4.1 §18.4. Roles: business owner, **shop manager** (one branch only).
 
 | # | Module | Status |
 |---|---|---|
 | 4.1 | Portal users and roles (incl. branch-scoped shop manager) | todo |
 | 4.2 | Products, barcodes, units, departments, categories, CSV import | todo |
-| 4.3 | Prices and promotions (incl. per-shop price screen; till row pending on EPOS) | todo |
+| 4.3 | Prices and promotions (incl. per-shop price screen, `BranchPrice`) | todo |
 | 4.4 | Customers (ledger-based balance and points, statements, consent) | todo |
 | 4.5 | Suppliers, payment types, reasons, staff users/PINs | todo |
 | 4.6 | Sales and receipts (refunds, voids) | todo |
@@ -98,8 +97,8 @@ Contract: v1.3.1 §18.4. Roles: business owner, **shop manager** (one branch onl
 | # | Module | Status |
 |---|---|---|
 | 5.1 | Stock (on hand, movements, stock takes, FIFO valuation, expiry) | todo |
-| 5.2 | Purchasing (POs, GRNs, supplier invoices, credit notes, payments, rebates); portal-created PO relayed in pull | blocked (v1.4 spec, due 29 Sep) |
-| 5.3 | Branch stock transfers (entities now in contract; relay in v1.4) | todo |
+| 5.2 | Purchasing (POs, GRNs, supplier invoices, credit notes, purchase returns, payments, rebates); portal-created PO relayed in pull (§10.6) | todo |
+| 5.3 | Branch stock transfers (screens; the relay is built in 2.9B) | todo |
 | 5.4 | Cash and Z (shifts, Z reports, cash office, card settlement, day lock) | todo |
 | 5.5 | Accounts and VAT (expenses, VAT return, journals, fixed assets) | todo |
 | 5.6 | Staff (clock events, rota, timesheets, wages) | todo |
@@ -140,11 +139,6 @@ channel.
 
 ## Order
 
-1. Now: EPOS message and questions (sent by the owner).
-1b. **UI v2 (owner priority):** design system v2 (`docs/design/DESIGN-SYSTEM-v2.md`) on the admin shell and every existing admin screen — can run in parallel with 1.4.
-2. **1.4 → 1.5 + 1.11**: licensing to the v1.3.1 contract → first real test with the EPOS team.
-3. 1.9, 1.10, then **Phase 2** (2.1/2.2/2.3/2.4/2.5 done; 2.6 + 2.7 next).
-4. Phase 3 → Phase 4 → Phase 5 → Phase 6.
-5. Phase 7, then Phase 8.
+Phase 2 (2.9B → 2.6 → 2.7 → 2.8) → 3.1 → Phases 3–6 in waves → 7. Phase 8 later.
 
 Module numbers changed in plan v2: old 3.x (tenant portal) → 4.x, old 4.x (operations) → 5.x, old 5.x (AI) → 6.x.

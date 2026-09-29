@@ -157,7 +157,7 @@ test('five requests an hour per IP; form typos do not count', function () {
 
     postTrial($this, ['email' => 'shop6@example.test', 'phone' => '0113 496 0006'])
         ->assertStatus(429)
-        ->assertJsonPath('code', 'rate_limited')
+        ->assertJsonPath('code', 'rate.limited')
         ->assertHeader('Retry-After');
 
     postTrial($this, ['email' => 'shop6@example.test', 'phone' => '0113 496 0006'], ip: '198.51.100.7')->assertCreated();
@@ -169,7 +169,7 @@ test('three requests a day per email address', function () {
         postTrial($this, ip: "198.51.100.{$i}")->assertCreated();
     }
 
-    postTrial($this, ip: '198.51.100.4')->assertStatus(429)->assertJsonPath('code', 'rate_limited');
+    postTrial($this, ip: '198.51.100.4')->assertStatus(429)->assertJsonPath('code', 'rate.limited');
     expect(Lead::query()->count())->toBe(1);
 });
 

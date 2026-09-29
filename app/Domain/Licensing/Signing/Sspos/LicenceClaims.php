@@ -7,7 +7,7 @@ use Carbon\CarbonInterface;
 use InvalidArgumentException;
 
 /**
- * The business fields of a portal licence token (contract v1.3.1 §17.2, licence-token-payload.schema.json).
+ * The business fields of a portal licence token (contract v1.4.1 §17.2, licence-token-payload.schema.json).
  * `SsposTokenSigner` adds `v`, `kid` and `signerCert`. Optional fields are omitted when empty, in the field
  * order of the contract samples, so the worked example reproduces byte for byte.
  *

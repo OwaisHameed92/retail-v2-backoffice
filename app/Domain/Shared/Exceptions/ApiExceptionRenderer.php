@@ -16,6 +16,11 @@ use Throwable;
  * Renders every error under `api/*` as `{code, message, traceId, retryAfterSeconds, rejectedKey}`.
  * Never includes exception details or stack traces, even with APP_DEBUG on.
  *
+ * Framework errors get contract codes (`area.snake_case`, contract v1.4.1 §17.11 rule 10,
+ * licensing/samples/error-codes.json): request.invalid, auth.invalid_key, rate.limited, server.busy, server.error;
+ * statuses the contract has no code for use request.* / auth.* names (a new code is allowed at any time, and the
+ * till acts on the HTTP status when it does not know one).
+ *
  * Registered in bootstrap/app.php: `ApiExceptionRenderer::register($exceptions)`.
  */
 final class ApiExceptionRenderer
@@ -46,7 +51,7 @@ final class ApiExceptionRenderer
                 $request, 'request.invalid', self::validationMessage($e), 400,
             ),
             $e instanceof AuthenticationException => self::response(
-                $request, 'unauthenticated', ApiErrorMessages::UNAUTHENTICATED, 401,
+                $request, 'auth.invalid_key', ApiErrorMessages::UNAUTHENTICATED, 401,
             ),
             $e instanceof HttpExceptionInterface => self::fromHttpException($e, $request),
             default => self::response($request, 'server.error', ApiErrorMessages::SERVER_ERROR, 500),
@@ -94,12 +99,12 @@ final class ApiExceptionRenderer
         $retryAfter = self::retryAfter($e->getHeaders());
 
         [$code, $message] = match (true) {
-            $status === 401 => ['unauthenticated', ApiErrorMessages::UNAUTHENTICATED],
-            $status === 403 => ['forbidden', ApiErrorMessages::FORBIDDEN],
-            $status === 404 => ['not_found', ApiErrorMessages::NOT_FOUND],
-            $status === 405 => ['method_not_allowed', ApiErrorMessages::METHOD_NOT_ALLOWED],
-            $status === 413 => ['request.too_large', ApiErrorMessages::TOO_LARGE],
-            $status === 429 => ['rate_limited', ApiErrorMessages::RATE_LIMITED],
+            $status === 401 => ['auth.invalid_key', ApiErrorMessages::UNAUTHENTICATED],
+            $status === 403 => ['auth.forbidden', ApiErrorMessages::FORBIDDEN],
+            $status === 404 => ['request.not_found', ApiErrorMessages::NOT_FOUND],
+            $status === 405 => ['request.method_not_allowed', ApiErrorMessages::METHOD_NOT_ALLOWED],
+            $status === 413 => ['batch.too_large', ApiErrorMessages::TOO_LARGE],
+            $status === 429 => ['rate.limited', ApiErrorMessages::RATE_LIMITED],
             $status === 503 => ['server.busy', ApiErrorMessages::BUSY],
             $status >= 500 => ['server.error', ApiErrorMessages::SERVER_ERROR],
             default => ['request.invalid', ApiErrorMessages::INVALID],

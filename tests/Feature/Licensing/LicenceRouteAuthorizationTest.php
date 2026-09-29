@@ -1,6 +1,8 @@
 <?php
 
 use App\Domain\Admin\Enums\AdminRole;
+use App\Domain\Licensing\Enums\LicenceAlertType;
+use App\Domain\Licensing\Models\LicenceAlert;
 use App\Domain\Tenancy\Enums\CompanyRole;
 use Illuminate\Support\Facades\Mail;
 use Tests\Feature\Licensing\LicensingTestHelpers;
@@ -25,6 +27,7 @@ function licenceRoutes(): array
         ['get', '/admin/licences', 'view'],
         ['get', '/admin/licences/{licence}', 'view'],
         ['get', '/admin/search?q=khan', 'view'],
+        ['post', '/admin/search', 'view'],
         ['put', '/admin/licences/{licence}/notes', 'manage'],
         ['post', '/admin/licences/{licence}/renew', 'manage'],
         ['post', '/admin/licences/{licence}/plan', 'manage'],
@@ -43,6 +46,8 @@ function licenceRoutes(): array
         ['put', '/admin/tenants/{company}/branch-limits', 'manage'],
         ['post', '/admin/licences/{licence}/resend', 'manage'],
         ['put', '/admin/licences/{licence}/activate-by', 'manage'],
+        // Module 1.5: licence API alerts.
+        ['post', '/admin/licences/{licence}/alerts/{alert}/resolve', 'manage'],
     ];
 }
 
@@ -51,7 +56,13 @@ function fillLicenceRoute(string $uri, object $test): string
     $company = $test->licensedTenant('Khan '.uniqid(), 1, 'KHN');
     $register = $test->registerOf($test->branchOf($company, 'KHN'), '01');
 
-    return strtr($uri, ['{company}' => $company->id, '{branch}' => $register->branch_id, '{register}' => $register->id, '{licence}' => $test->licenceOf($register)->id]);
+    $licence = $test->licenceOf($register);
+    $alert = str_contains($uri, '{alert}') ? LicenceAlert::withoutCompanyScope()->create([
+        'company_id' => $company->id, 'licence_id' => $licence->id, 'type' => LicenceAlertType::DeviceMismatch,
+        'fingerprint' => 'fp-'.uniqid(), 'first_seen_at' => now(), 'last_seen_at' => now(), 'count' => 1,
+    ])->id : '';
+
+    return strtr($uri, ['{company}' => $company->id, '{branch}' => $register->branch_id, '{register}' => $register->id, '{licence}' => $licence->id, '{alert}' => $alert]);
 }
 
 test('guests are sent to the admin login, or get 401 as JSON', function () {
