@@ -8,10 +8,10 @@ use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Reads one page of the pull feed for a branch (module 2.5, contract §8, §10, §19.2): hub-owned rows only (a
- * till-owned table is never read), `hub_version > since`, oldest first. A row is visible to the branch when it is
- * company-wide or addressed to it (a hub-owned table with its own `branch_id`, e.g. NewsTitle), and never when that
- * branch pushed its current content (`origin_branch_id`).
+ * Reads one page of the pull feed for a branch (module 2.5, contract §8, §10, §19.2): the tables of
+ * HubVersions::feed() only (hub-owned rows, relayed and drafted branch rows, portal edits of Company / Branch; any
+ * other till-owned table is never read), `hub_version > since`, oldest first, filtered by PullVisibility (company-wide
+ * or addressed to this branch, never a row whose current content this branch pushed).
  */
 final class PullFeed
 {
@@ -24,7 +24,7 @@ final class PullFeed
     {
         $query = null;
 
-        foreach (HubVersions::entities() as $def) {
+        foreach (HubVersions::feed() as $def) {
             $part = $this->visible($def, $companyId, $branchId, $since);
             $query = $query === null ? $part : $query->unionAll($part);
         }
@@ -49,7 +49,7 @@ final class PullFeed
         $rows = [];
 
         foreach (array_chunk($ids, 500) as $chunk) {
-            foreach (DB::table($def->table)->where('company_id', $companyId)->whereIn('id', $chunk)->get() as $row) {
+            foreach (DB::table($def->table)->where(HubVersions::companyColumn($def), $companyId)->whereIn('id', $chunk)->get() as $row) {
                 $rows[(string) $row->id] = (array) $row;
             }
         }
@@ -59,13 +59,11 @@ final class PullFeed
 
     private function visible(EntityDefinition $def, string $companyId, string $branchId, int $since): Builder
     {
-        return DB::table($def->table)
+        $query = DB::table($def->table)
             ->selectRaw('? as entity, id, hub_version as version', [$def->entity])
-            ->where('company_id', $companyId)
-            ->where('hub_version', '>', $since)
-            ->where(fn (Builder $q) => $q->whereNull('origin_branch_id')->orWhere('origin_branch_id', '<>', $branchId))
-            ->when($def->hasScopeColumn('branch_id'), fn (Builder $q) => $q->where(
-                fn (Builder $w) => $w->whereNull('branch_id')->orWhere('branch_id', '')->orWhere('branch_id', $branchId),
-            ));
+            ->where(HubVersions::companyColumn($def), $companyId)
+            ->where('hub_version', '>', $since);
+
+        return PullVisibility::apply($query, $def, $companyId, $branchId);
     }
 }

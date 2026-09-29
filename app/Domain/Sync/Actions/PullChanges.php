@@ -4,8 +4,8 @@ namespace App\Domain\Sync\Actions;
 
 use App\Domain\Shared\Exceptions\ApiException;
 use App\Domain\Sync\Data\SyncCaller;
+use App\Domain\Sync\Support\PullEnvelopes;
 use App\Domain\Sync\Support\PullFeed;
-use App\Domain\Sync\Support\PullPayload;
 use App\Domain\Sync\Support\SyncApiErrors;
 use App\Domain\Sync\Support\SyncStatusRecorder;
 use App\Domain\TillData\EntityRegistry;
@@ -19,10 +19,12 @@ use Illuminate\Support\Facades\DB;
  * 1. Stamps the company's unstamped hub-owned rows (HubVersions::stampPending): rows accepted from a till since the
  *    last pull, and any portal change whose after-commit stamp did not run.
  * 2. Reads, in one transaction (a consistent snapshot), up to `max` (≤ 5,000) rows with `version > since` visible to
- *    the branch (PullFeed): hub-owned entities only, company-wide or addressed to this branch, never a row whose
+ *    the branch (PullFeed, PullVisibility): hub-owned rows, settings and role permissions (§10.3), other branches'
+ *    relayed transfers, receipts and ledger rows (§10.2), head-office orders drafted for this branch (§10.6) and
+ *    portal edits of its Company / Branch (§6.1); company-wide or addressed to this branch, never a row whose
  *    current content this branch pushed. Oldest first.
- * 3. Envelopes in the till's shape with the till's own ids (PullPayload). `highestVersion` = the page's last version
- *    (`since` when nothing is new, as samples/pull-reply.empty.json); `hasMore` when rows are still waiting.
+ * 3. Envelopes in the till's shape with the till's own ids (PullEnvelopes). `highestVersion` = the page's last
+ *    version (`since` when nothing is new, as samples/pull-reply.empty.json); `hasMore` when rows are still waiting.
  * 4. Records the pull in `sync_branch_status`.
  */
 final class PullChanges
@@ -58,7 +60,7 @@ final class PullChanges
             $page = $this->feed->page($companyId, $caller->branch->id, $since, $max + 1);
             $hasMore = count($page) > $max;
             $page = array_slice($page, 0, $max);
-            $payloads = new PullPayload($caller->ids, $caller->branch->id);
+            $envelopes = new PullEnvelopes($caller->ids, $caller->branch->id);
             $rows = [];
 
             foreach ($this->byEntity($page) as $entity => $ids) {
@@ -73,7 +75,11 @@ final class PullChanges
                 // Changed since the page was read (not possible inside the snapshot, kept for READ COMMITTED
                 // servers): its newer version comes in a later pull.
                 if ($row !== null && (int) $row['hub_version'] === $version) {
-                    $changes[] = $payloads->envelope(EntityRegistry::get($entity), $row, $version);
+                    $envelope = $envelopes->for(EntityRegistry::get($entity), $row, $version);
+
+                    if ($envelope !== null) {
+                        $changes[] = $envelope;
+                    }
                 }
             }
 

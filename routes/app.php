@@ -8,6 +8,7 @@ use App\Http\Controllers\App\BillingController;
 use App\Http\Controllers\App\DashboardController;
 use App\Http\Controllers\App\SwitchBranchController;
 use App\Http\Controllers\App\SwitchCompanyController;
+use App\Http\Controllers\App\SyncConflictController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth:web', 'verified', 'company'])->group(function () {
@@ -24,5 +25,13 @@ Route::middleware(['auth:web', 'verified', 'company'])->group(function () {
             Route::get('direct-debit/return', [BillingController::class, 'directDebitReturn'])->name('.direct-debit.return');
         });
         Route::get('invoices/{invoice}/pdf', [BillingController::class, 'invoicePdf'])->name('.invoices.pdf')->whereUlid('invoice')->middleware('throttle:60,1');
+    });
+
+    // Module 2.9B: sync conflicts (a shop's change the portal kept out) and the tills' own clashes. Owner and manager.
+    Route::prefix('sync')->name('sync.')->middleware('company.can:sync.manage')->group(function () {
+        Route::get('conflicts', [SyncConflictController::class, 'index'])->name('conflicts.index');
+        Route::get('conflicts/{conflict}', [SyncConflictController::class, 'show'])->name('conflicts.show')->whereUlid('conflict');
+        Route::post('conflicts/{conflict}/resolve', [SyncConflictController::class, 'resolve'])->name('conflicts.resolve')->whereUlid('conflict')->middleware('throttle:60,1');
+        Route::get('clashes/{clash}', [SyncConflictController::class, 'clash'])->name('clashes.show')->whereUlid('clash');
     });
 });

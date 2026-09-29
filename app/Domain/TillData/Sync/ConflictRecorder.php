@@ -3,14 +3,16 @@
 namespace App\Domain\TillData\Sync;
 
 use App\Domain\Shared\Support\Ulid;
+use App\Domain\TillData\EntityRegistry;
 use App\Domain\TillData\Sync\Data\MappedChange;
 use App\Domain\TillData\Sync\Enums\ConflictKind;
 use Illuminate\Support\Facades\DB;
 
 /**
  * Collects sync_conflicts rows during a chunk and inserts them with it (same transaction). The incoming payload is
- * kept as sent so module 2.5 or a person can apply the till's version later, except secret members (licence keys),
- * and dropped members (a user's remote approval secret), which are never stored.
+ * kept as sent so a person can apply the till's version later (ResolveSyncConflict), except secret members (licence
+ * keys), and dropped members (a user's remote approval secret), which are never stored. A hub-owned row kept against
+ * a till's change is queued for the pull again, so the portal's winning row reaches that shop (§19.3).
  */
 final class ConflictRecorder
 {
@@ -58,9 +60,23 @@ final class ConflictRecorder
     public function flush(): int
     {
         $count = count($this->rows);
+        $requeue = [];
 
         foreach (array_chunk($this->rows, 200) as $chunk) {
             DB::table('sync_conflicts')->insert($chunk);
+        }
+
+        foreach ($this->rows as $row) {
+            if (ConflictKind::from($row['kind'])->isHubRow()) {
+                $requeue[$row['entity']][$row['entity_id']] = true;
+            }
+        }
+
+        // §19.3: the stored row wins by default, so send it down again (next pull): the shop whose change was kept out
+        // gets it, tills that already hold it treat identical content as applied.
+        foreach ($requeue as $entity => $ids) {
+            DB::table(EntityRegistry::get($entity)->table)->where('company_id', $this->context->companyId)
+                ->whereIn('id', array_keys($ids))->update(['hub_version' => null]);
         }
 
         $this->rows = [];

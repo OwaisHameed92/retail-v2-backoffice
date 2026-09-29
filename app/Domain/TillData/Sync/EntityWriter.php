@@ -73,7 +73,7 @@ final class EntityWriter
 
             if ($mapped->row === null) {
                 if ($current !== null) {
-                    $tombstones[$id] = ['deleted_at' => $change->at, 'row_version' => $change->version, 'synced_at' => $this->context->now, 'sync_seq' => $change->seq ?: null];
+                    $tombstones[$id] = ['deleted_at' => $change->at, 'row_version' => $change->version, 'synced_at' => $this->context->now, 'sync_seq' => $change->seq ?: null, ...OwnershipRules::copyColumns($def->copy, $this->context->branchId)];
                     $state[$id] = [...$current, ...$tombstones[$id]];
                 }
                 $outcomes[$change->index] = ChangeOutcome::Applied;
@@ -104,6 +104,7 @@ final class EntityWriter
                 $row['origin_branch_id'] = $this->context->branchId;
             }
 
+            $row = [...$row, ...OwnershipRules::copyColumns($def->copy, $this->context->branchId)];
             $pending[$id] = $row;
             $state[$id] = [...$row, 'hub_edited_at' => $current['hub_edited_at'] ?? null];
             $outcomes[$change->index] = ChangeOutcome::Applied;

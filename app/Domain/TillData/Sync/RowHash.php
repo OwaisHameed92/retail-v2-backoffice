@@ -10,7 +10,9 @@ use BackedEnum;
  * The content hash of a hub-owned row (`hub_hash`): SHA-256 over the stored value of every schema field plus the
  * delete flag, each normalised by type so a mapped payload, a database row (any driver) and a model's attributes
  * hash the same. Timestamps, versions and sync columns are left out: an unchanged row that a till re-stamps or
- * re-versions still hashes the same. Contract §19.2: identical content is "already applied", not a change.
+ * re-versions still hashes the same. Contract §19.2: identical content is "already applied", not a change. Ledger-derived
+ * columns (OwnershipRules::DERIVED_COLUMNS, a customer's balance and points, §10.1) are left out too: a till's cached
+ * sum is not an edit of the row.
  */
 final class RowHash
 {
@@ -22,9 +24,14 @@ final class RowHash
     public static function of(EntityDefinition $def, array $row): string
     {
         $parts = [];
+        $derived = OwnershipRules::derivedColumns($def->entity);
 
         foreach ($def->fields as $field) {
             foreach ($field->columns() as $column) {
+                if ($derived !== [] && in_array($column, $derived, true)) {
+                    continue;
+                }
+
                 $parts[$column] = self::normalise($field->type, $row[$column] ?? null);
             }
         }

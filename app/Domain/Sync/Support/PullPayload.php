@@ -35,9 +35,12 @@ final class PullPayload
     {
         $id = (string) $row['id'];
         $deleted = $row['deleted_at'] !== null;
-        $branchId = $def->hasScopeColumn('branch_id') && is_string($row['branch_id']) && $row['branch_id'] !== ''
-            ? $this->till(IdKind::Branch, $row['branch_id'])
-            : '';
+        $branchId = match (true) {
+            // A relayed or drafted row is addressed to the receiving branch; its payload keeps the owner (§10.2, §10.6).
+            $def->copy !== null => $this->till(IdKind::Branch, $this->branchId),
+            $def->hasScopeColumn('branch_id') && is_string($row['branch_id']) && $row['branch_id'] !== '' => $this->till(IdKind::Branch, $row['branch_id']),
+            default => '',
+        };
 
         return [
             'seq' => 0,
@@ -45,6 +48,8 @@ final class PullPayload
             'entityId' => $id,
             'op' => match (true) {
                 $deleted => 'D',
+                // §10.2: a relayed row is `I`, or `U` for a receipt that moved on (received → closed).
+                $def->copy === 'relay' => $def->entity === 'StockTransferReceipt' && ($row['status'] ?? null) !== 'received' ? 'U' : 'I',
                 self::dateTime($row['created_at']) === self::dateTime($row['updated_at']) => 'I',
                 default => 'U',
             },
@@ -52,7 +57,7 @@ final class PullPayload
             'companyId' => $this->till(IdKind::Company, (string) $row['company_id']),
             'branchId' => $branchId,
             'registerId' => '',
-            'at' => self::dateTime($row['origin_branch_id'] !== null ? $row['synced_at'] : $row['hub_edited_at'])
+            'at' => self::dateTime(($row['origin_branch_id'] ?? null) !== null ? $row['synced_at'] : ($row['hub_edited_at'] ?? null))
                 ?? self::dateTime($row['updated_at']) ?? self::dateTime(now('UTC')),
             'payload' => $this->payload($def, $row),
             'key' => "{$def->entity}:{$id}:{$version}",
@@ -103,7 +108,12 @@ final class PullPayload
             unset($payload[$secret]);
         }
 
-        return $payload;
+        // §10.6: the till writes a head-office order's shop code itself and never reads `receivedQty` from a pull.
+        return match ($def->entity) {
+            'PurchaseOrder' => [...$payload, 'branchCode' => ''],
+            'PurchaseOrderLine' => [...$payload, 'receivedQty' => 0],
+            default => $payload,
+        };
     }
 
     /**
@@ -125,12 +135,13 @@ final class PullPayload
             && ! str_contains((string) json_encode($value), Redactor::REDACTED), ARRAY_FILTER_USE_BOTH);
     }
 
-    private function till(IdKind $kind, string $portalId): string
+    /** Our id → the one the pulling till knows (cached per reply). */
+    public function till(IdKind $kind, string $portalId): string
     {
         return $this->ids[$kind->value.':'.$portalId] ??= $this->translator->toTill($kind, $portalId, $this->branchId);
     }
 
-    private static function value(string $type, mixed $value): mixed
+    public static function value(string $type, mixed $value): mixed
     {
         if ($value === null) {
             return null;
@@ -168,7 +179,7 @@ final class PullPayload
         return str_contains($trimmed, '.') ? (float) $trimmed : (int) $trimmed;
     }
 
-    private static function dateTime(mixed $value): ?string
+    public static function dateTime(mixed $value): ?string
     {
         if ($value === null || $value === '') {
             return null;

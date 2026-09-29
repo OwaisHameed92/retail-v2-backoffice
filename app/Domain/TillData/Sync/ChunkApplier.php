@@ -2,6 +2,7 @@
 
 namespace App\Domain\TillData\Sync;
 
+use App\Domain\TillData\Actions\RecomputeCustomerBalances;
 use App\Domain\TillData\EntityRegistry;
 use App\Domain\TillData\Registry\EntityDefinition;
 use App\Domain\TillData\Sync\Data\MappedChange;
@@ -13,14 +14,15 @@ use Illuminate\Support\Facades\Log;
 
 /**
  * Applies one chunk of mapped changes in one transaction: ledger dedupe, child scope resolution, tenancy rows,
- * one EntityWriter pass per entity (parents before children), child backfill, ledger and conflict rows.
+ * one EntityWriter pass per entity (parents before children), child backfill, customer balances from the ledger,
+ * ledger and conflict rows.
  *
  * If the database refuses the chunk (a constraint, a value MySQL will not take), the chunk is rolled back and
  * retried one change at a time, so only the failing change is rejected (`store.failed`) and the rest apply.
  */
 final class ChunkApplier
 {
-    public function __construct(private readonly ChangeLedger $ledger) {}
+    public function __construct(private readonly ChangeLedger $ledger, private readonly RecomputeCustomerBalances $balances) {}
 
     /**
      * @param  list<MappedChange>  $chunk  seq order
@@ -105,6 +107,9 @@ final class ChunkApplier
                 }
             }
         }
+
+        // §10.1: a customer's balance and points are the sum of their ledger, never a till's cached figures.
+        $this->balances->afterPush($context->companyId, $todo);
 
         $accepted = [];
 

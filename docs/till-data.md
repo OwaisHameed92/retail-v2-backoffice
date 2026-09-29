@@ -174,11 +174,14 @@ must be shared between PHP workers (locks).
 2. `HubVersions::stampPending($company)`: every hub-owned row with `hub_version` null (accepted from a till, or a
    portal change whose after-commit stamp did not run) gets the next version, parents first
    (`HubVersions::ORDER`), oldest change first.
-3. In one transaction: `PullFeed::page()` — a `UNION ALL` over the 28 hub-owned tables of `(entity, id, hub_version)`
-   (keyed `Setting`/`RolePermission` are left out until module 2.9B builds their envelope) where
-   `hub_version > since`, `origin_branch_id` is not the caller, and (tables with `branch_id`: NewsTitle, and
-   BranchPrice — v1.4.1, a shop's own price, pulled only by that shop) the row is for no branch or the caller; `ORDER BY hub_version LIMIT max + 1`. Then the full rows per entity.
-4. `PullPayload::envelope()`: `seq` 0, `op` D / I (`createdAt` = `updatedAt`) / U, `version` = `hub_version`, the till's
+3. In one transaction: `PullFeed::page()` — a `UNION ALL` over the tables of `HubVersions::feed()` of
+   `(entity, id, hub_version)` where `hub_version > since` and `PullVisibility` allows it: hub-owned rows (keyed
+   `Setting`/`RolePermission` included; a branch setting, `NewsTitle` and `BranchPrice` only for their branch), the
+   relayed branch rows (§10.2: a dispatched transfer + lines to its `toBranchId`, a receipt + lines to the
+   transfer's `fromBranchId`, ledger rows to every other branch), head-office orders drafted for this branch (§10.6)
+   and portal edits of its Company / Branch (§6.1); never a row whose `origin_branch_id` is the caller;
+   `ORDER BY hub_version LIMIT max + 1`. Then the full rows per entity.
+4. `PullEnvelopes` → `PullPayload::envelope()` (keyed and Company/Branch rows have their own shapes, module 2.9B): `seq` 0, `op` D / I (`createdAt` = `updatedAt`) / U, `version` = `hub_version`, the till's
    company/branch ids (`IdTranslator::toTill`), `branchId` "" or the addressed branch, `registerId` "", the whole
    row in the till's shape (see DECISIONS "Pull"), no secrets. `highestVersion` = the last version on the page (or
    `since`), `hasMore` = more rows waiting.
@@ -194,6 +197,13 @@ become visible in order. Who stamps:
   `app(PublishHubChange::class)->handle($companyId, 'Product', $ids)` after the write (it sets the same
   bookkeeping and stamps). Never hard-delete a hub-owned row: a pull cannot send it.
 - Rows a till pushes (`ApplySyncChanges` clears `hub_version` and sets `origin_branch_id`): the next pull's sweep.
+  Relayed tables (`OwnershipRules::RELAYED`) too; a shop's own drafted-table rows (its purchase orders) get
+  `hub_version` 0 and never enter the feed. Stamping a transfer header or a receipt re-queues its lines after it.
+- Head-office orders: `DraftHeadOfficeOrder` (stamps the order, then its lines). Settings and permissions:
+  `SaveTillSetting`, `SetRolePermission` (HubOwnedRow). Company / Branch: `SentToTills` on a portal save of a till
+  member. A hub conflict re-queues the row the portal kept, so the overruled shop gets the winner.
+- Customer `balance` / `points` are the ledger's sum (`RecomputeCustomerBalances`, run in every push chunk); they are
+  not part of `hub_hash` and never stamp a new version (§10.1).
 
 Indexes: `(company_id, hub_version)` on every hub-owned table (`2026_10_05_100000_add_sync_pull_feed.php`; v1.4.1's
 three new hub tables in `2026_10_06_100002_add_v1_4_1_sync_columns.php`; hand

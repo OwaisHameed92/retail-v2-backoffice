@@ -8,6 +8,7 @@ use App\Domain\Tenancy\Concerns\HasPortalUlid;
 use App\Domain\Tenancy\Enums\BusinessType;
 use App\Domain\Tenancy\Enums\CompanyRole;
 use App\Domain\Tenancy\Enums\CompanyStatus;
+use App\Domain\TillData\Concerns\SentToTills;
 use App\Models\User;
 use Database\Factories\CompanyFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -60,7 +61,7 @@ use Illuminate\Support\Carbon;
 class Company extends Model
 {
     /** @use HasFactory<CompanyFactory> */
-    use HasFactory, HasPortalUlid, SoftDeletes;
+    use HasFactory, HasPortalUlid, SentToTills, SoftDeletes;
 
     /**
      * @var list<string>

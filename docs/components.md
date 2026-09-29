@@ -300,3 +300,7 @@ Tokens live only in `resources/css/app.css` (v2 palette, light + dark): `chrome`
 - `components/admin/dashboard/`: `RevenueCard` (chart card with 12W/6M/1Y, total and "% vs previous" pill, lock state without billing access), `RecentTenantsCard` (table on desktop, card list on phones), `types.ts` matching `AdminDashboardData::forViewer()` and `RevenueChart::for()`.
 - `KpiCard.emptyText` and the new `OverviewTile.emptyText` take a ReactNode (used for the "Needs billing access" lock hint). `OverviewTile` shows a flat delta in muted grey. `HealthList` no longer counts "unknown" rows as a problem: with some rows unmonitored the pill reads "Monitored systems healthy".
 - Backend: `Admin\Queries\AdminDashboard` (`forAdmin`, `revenueFor`, `forget`), `Leads\Queries\LeadNavCount` (shared as `admin.navCounts.leads`), `Shared\Support\SchedulerHeartbeat`.
+## Added by module 2.9B (sync conflicts, tenant portal)
+- `components/app/sync/`: `types.ts` (matches `SyncConflictList::for()` / `SyncConflictDetail`), `format.tsx` (`KindPill`, `ConflictStatusBadge`, `ClashBadge`, `kindHelp`), `conflictColumns` / `clashColumns`, `ConflictFilters`, `FieldComparisonCard` (portal value vs the other side's, differences first, "Show every field", card list on phones) and `ResolveCard` (choices behind `ConfirmDialog`, optional note).
+- Backend: `TillData\Queries\SyncConflictList` / `SyncConflictDetail` (a row's members in the till's terms, secrets never shown), `TillData\Sync\OwnershipRules` (relayed / hubDrafted / derivedColumns of ownership.json).
+

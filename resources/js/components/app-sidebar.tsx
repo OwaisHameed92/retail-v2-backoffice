@@ -3,7 +3,22 @@ import { ShellSidebar } from '@/components/shell/sidebar-brand';
 import { type ShellNavGroup } from '@/components/shell/sidebar-nav';
 import { type SharedData } from '@/types';
 import { usePage } from '@inertiajs/react';
-import { Banknote, BarChart3, BookOpen, Boxes, CreditCard, LayoutGrid, Package, Receipt, Settings, Tag, Truck, UserCog, Users } from 'lucide-react';
+import {
+    Banknote,
+    BarChart3,
+    BookOpen,
+    Boxes,
+    CreditCard,
+    GitCompareArrows,
+    LayoutGrid,
+    Package,
+    Receipt,
+    Settings,
+    Tag,
+    Truck,
+    UserCog,
+    Users,
+} from 'lucide-react';
 
 /**
  * Tenant portal navigation, grouped by job. Items without an `href` are modules not built yet ("Soon").
@@ -12,6 +27,9 @@ import { Banknote, BarChart3, BookOpen, Boxes, CreditCard, LayoutGrid, Package, 
 function tenantNav(path: string, abilities: string[]): ShellNavGroup[] {
     const billing = abilities.includes('billing.view')
         ? [{ title: 'Billing', icon: CreditCard, href: '/app/billing', active: path.startsWith('/app/billing') }]
+        : [];
+    const sync = abilities.includes('sync.manage')
+        ? [{ title: 'Sync conflicts', icon: GitCompareArrows, href: '/app/sync/conflicts', active: path.startsWith('/app/sync') }]
         : [];
 
     return [
@@ -41,7 +59,7 @@ function tenantNav(path: string, abilities: string[]): ShellNavGroup[] {
             ],
         },
         { label: 'Team', items: [{ title: 'Staff', icon: UserCog, soon: true }] },
-        { label: 'Settings', items: [...billing, { title: 'Business settings', icon: Settings, soon: true }] },
+        { label: 'Settings', items: [...sync, ...billing, { title: 'Business settings', icon: Settings, soon: true }] },
     ];
 }
 

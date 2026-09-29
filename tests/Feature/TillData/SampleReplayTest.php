@@ -21,6 +21,7 @@ use App\Domain\TillData\Models\SaleVat;
 use App\Domain\TillData\Models\StockMovement;
 use App\Domain\TillData\Models\VatRate;
 use App\Domain\TillData\Sync\Enums\ChangeOutcome;
+use App\Domain\TillData\Sync\OwnershipRules;
 use App\Domain\TillData\Sync\Values;
 use Illuminate\Support\Facades\DB;
 use Tests\Feature\TillData\TillFixtures;
@@ -180,6 +181,13 @@ it('stores every sample entity with every field exactly as sent', function (stri
     $row = (array) DB::table($def->table)->where('id', $payload['id'])->first();
 
     foreach ($def->fields as $name => $field) {
+        // §10.1: ledger-derived columns (a customer's balance and points) are the portal's own sum, never the till's.
+        if (in_array($field->column, OwnershipRules::derivedColumns($entity), true)) {
+            expect(Values::same($field, $row[$field->column], Values::toColumn($field, 0)))->toBeTrue("{$entity}.{$name} is the ledger's sum");
+
+            continue;
+        }
+
         expect(Values::same($field, $row[$field->column], Values::toColumn($field, $payload[$name])))
             ->toBeTrue("{$entity}.{$name}: stored ".var_export($row[$field->column], true).', sent '.json_encode($payload[$name]));
     }

@@ -8,6 +8,7 @@ use App\Domain\Tenancy\Casts\AreaCast;
 use App\Domain\Tenancy\Concerns\BelongsToCompany;
 use App\Domain\Tenancy\Concerns\HasPortalUlid;
 use App\Domain\Tenancy\Enums\Nation;
+use App\Domain\TillData\Concerns\SentToTills;
 use Carbon\CarbonImmutable;
 use Database\Factories\BranchFactory;
 use Illuminate\Database\Eloquent\Builder;
@@ -49,7 +50,7 @@ use Illuminate\Support\Carbon;
 class Branch extends Model
 {
     /** @use HasFactory<BranchFactory> */
-    use BelongsToCompany, HasFactory, HasPortalUlid, SoftDeletes;
+    use BelongsToCompany, HasFactory, HasPortalUlid, SentToTills, SoftDeletes;
 
     public const CODE_PATTERN = '/^[A-Z]{2,5}$/';
 

@@ -5,6 +5,7 @@ namespace Tests\Feature\Sync;
 use App\Domain\Tenancy\CurrentCompany;
 use App\Domain\Tenancy\Models\Company;
 use App\Domain\TillData\EntityRegistry;
+use App\Domain\TillData\Sync\Models\SyncConflict;
 use App\Domain\TillData\Sync\Values;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Testing\TestResponse;
@@ -81,6 +82,23 @@ final class PullTestHelpers
             ...$payload, 'id' => $id, 'companyId' => TillFixtures::COMPANY, 'createdAt' => '2026-09-23T09:41:12Z',
             'updatedAt' => '2026-09-23T09:41:12Z', 'rowVersion' => 1, 'deletedAt' => null, ...$overrides,
         ];
+    }
+
+    /**
+     * A sync_conflicts row as the applier writes it (module 2.9B screen and resolution tests).
+     *
+     * @param  array<string, mixed>  $attributes
+     */
+    public static function conflict(Company $company, array $attributes): SyncConflict
+    {
+        $conflict = new SyncConflict;
+        $conflict->forceFill([
+            'company_id' => $company->id, 'entity' => 'Sale', 'entity_id' => '01K5VB000000000SR001000482', 'kind' => 'immutableChange',
+            'incoming_version' => 3, 'incoming_at' => '2026-09-29 09:00:00', 'detail' => 'Historic Sale: the till changed total.',
+            'status' => 'open', ...$attributes,
+        ])->save();
+
+        return $conflict;
     }
 
     /**

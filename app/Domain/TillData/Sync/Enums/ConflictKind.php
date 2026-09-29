@@ -27,4 +27,21 @@ enum ConflictKind: string
 
     /** A till soft-deleted its Company, Branch or Register row. Portal-owned: not deleted. */
     case TenancyDelete = 'tenancyDelete';
+
+    public function label(): string
+    {
+        return match ($this) {
+            self::HubEditNewer => 'Edited on the portal since',
+            self::HubVersionNewer => 'Newer portal version',
+            self::BranchEditNewer => 'Another shop edited it since',
+            self::ImmutableChange => 'Change to a historic record',
+            self::TenancyDelete => 'Shop, till or business deleted',
+        };
+    }
+
+    /** A hub-owned row the stored version was kept for (the shop's change can still be taken). */
+    public function isHubRow(): bool
+    {
+        return in_array($this, [self::HubEditNewer, self::HubVersionNewer, self::BranchEditNewer], true);
+    }
 }

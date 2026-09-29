@@ -2,6 +2,7 @@
 
 namespace App\Domain\TillData\Registry;
 
+use App\Domain\TillData\Sync\OwnershipRules;
 use Illuminate\Database\Eloquent\Model;
 
 /**
@@ -23,6 +24,9 @@ final readonly class EntityDefinition
 
     /** @var list<string> */
     public array $columns;
+
+    /** 'relay' / 'draft' for the branch-owned tables the portal copies to another shop (OwnershipRules), else null. */
+    public ?string $copy;
 
     /**
      * The field map flattened for the applier's hot loop: [field, column, type, nullable, max length, enum class].
@@ -70,7 +74,13 @@ final readonly class EntityDefinition
             }
         }
 
-        $this->columns = [...$columns, ...self::META_COLUMNS, ...($ownership === 'hub' && ! $tenancy ? self::HUB_COLUMNS : [])];
+        $this->copy = $tenancy ? null : OwnershipRules::copyKind($entity);
+        $this->columns = [
+            ...$columns,
+            ...self::META_COLUMNS,
+            ...($ownership === 'hub' && ! $tenancy ? self::HUB_COLUMNS : []),
+            ...($this->copy !== null ? OwnershipRules::COPY_COLUMNS : []),
+        ];
         $this->plan = array_values(array_map(
             fn (FieldDefinition $f) => [$f->name, $f->column, $f->type, $f->nullable, $f->maxLength(), $f->enumClass()],
             $fields,

@@ -22,6 +22,9 @@ enum Ability: string
     case UsersManage = 'users.manage';
     case BillingView = 'billing.view';
 
+    /** Review and settle sync conflicts (a shop's change the portal kept out). Owner and manager. */
+    case SyncManage = 'sync.manage';
+
     /** Set up or change how the business pays (Direct Debit). Owner only. */
     case BillingManage = 'billing.manage';
 }
