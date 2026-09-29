@@ -9,12 +9,14 @@ use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
 
 /**
- * One accepted pushed change in the sync_applied_changes ledger (dedupe on company + sending branch + seq).
+ * One accepted pushed change in the sync_applied_changes ledger (dedupe on company + sending branch + stream + seq;
+ * stream '' = the ChangeLog, else an initial upload id).
  * Written only by ChangeLedger with the query builder; this model is for reading (monitoring, support).
  *
  * @property int $id
  * @property string $company_id
  * @property string $branch_id
+ * @property string $stream
  * @property int $seq
  * @property string $entity
  * @property string $entity_id

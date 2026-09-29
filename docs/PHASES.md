@@ -54,7 +54,7 @@ Contract: v1.3.1 §1–16, §19 (duplicate/echo/conflict rules + test list 19.4)
 | # | Module | What | Status |
 |---|---|---|---|
 | 2.1 | IDs and sync keys (v1.3.3 answers 1–2) | `id_map` (adopt the first till company id, alias later ones, branch = the key's branch, register = the key's register; conflicts → 409 `licence.ids_conflict` + alert) and `IdTranslator` at the edge (ApplySyncChanges; `toTill()` for 2.5 pull); per-branch sync key (`SSK-…`, 160 bits, HMAC + last 4) sent as `apiKey` (+ `hubUrl`) to the main till of a `cloud_sync` licence; admin Sync key panel (generate shown once, send new key to till, revoke; old key 7 days' grace); `AuthenticateSyncKey` for `/api/v1/sync/*`; feature names = the till's 11; `k290bee23` in `.env.example`. **`devices/activate` is not built** (the till never calls it) | done |
-| 2.2 | Hello and push | `sync/hello`, `sync/push` (gzip, 5,000 rows, idempotent, ordered, acknowledged, initial mode), branch key auth. v1.3.1 changed the `hello-reply` and `error-reply` schemas: build to those | todo |
+| 2.2 | Hello and push | `sync/hello`, `sync/push` (gzip, 5,000 rows, idempotent, ordered, acknowledged, initial mode), branch key auth. v1.3.1 changed the `hello-reply` and `error-reply` schemas: build to those. Built: contract/header checks, per-key rate limit, per-branch lock (503 `server.busy`), Idempotency-Key replay, 413/422 per §9, initial uploads kept apart by upload id, `sync_branch_status` for 2.7; 5,000-row gzip push ≈ 0.7 s | done |
 | 2.3 | Entity store: master data | 140 entities from v1.3.1 (17 new tables, new columns) via additive migrations (`database/till-schema.json`); v1.1 folder dropped | done |
 | 2.4 | Entity store: transactions | Applier to §19: never twice (ledger + version), never backwards (version, tie by `updatedAt`), never echoed (`hub_hash`, `origin_branch_id`), `baseVersion` ready, `portal_received_at`; §19.4 store tests | done |
 | 2.5 | Pull | Hub version counter (stamps rows with `hub_version` null), company + branch rows, paging, never back to `origin_branch_id` (19.2), conflicts screen | todo |
@@ -142,7 +142,7 @@ channel.
 1. Now: EPOS message and questions (sent by the owner).
 1b. **UI v2 (owner priority):** design system v2 (`docs/design/DESIGN-SYSTEM-v2.md`) on the admin shell and every existing admin screen — can run in parallel with 1.4.
 2. **1.4 → 1.5 + 1.11**: licensing to the v1.3.1 contract → first real test with the EPOS team.
-3. 1.9, 1.10, then **Phase 2** (2.1/2.3/2.4 done; 2.2 next).
+3. 1.9, 1.10, then **Phase 2** (2.1/2.2/2.3/2.4 done; 2.5 next).
 4. Phase 3 → Phase 4 → Phase 5 → Phase 6.
 5. Phase 7, then Phase 8.
 

@@ -40,6 +40,10 @@ return Application::configure(basePath: dirname(__DIR__))
             AssignTraceId::class,
         ]);
 
+        // A sync push body (up to 5,000 rows) is read raw by PushChanges: never decode and walk it twice (module 2.2).
+        $middleware->trimStrings(except: [fn (Request $request) => $request->is('api/v1/sync/*')]);
+        $middleware->convertEmptyStringsToNull(except: [fn (Request $request) => $request->is('api/v1/sync/*')]);
+
         // Tenant portal (module 0.4).
         $middleware->alias([
             'company' => EnsureCompanyMember::class,

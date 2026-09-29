@@ -432,3 +432,20 @@ How it works: `docs/till-data.md`.
 | Sync auth | `AuthenticateSyncKey` on `/api/v1/sync/*` (no routes until 2.2): Bearer → key; 401 `auth.invalid_key` (missing/unknown), 401 `auth.key_revoked` (revoked, replaced > 7 days, branch inactive, business cancelled), 403 `auth.wrong_branch` (branch header missing or not the key's branch after id_map, company header another company). Last use written at most once a minute. Rate limits and suspension checks: 2.2. |
 | Not built | `devices/activate` (the till never calls it); `cloud/migrate` is 2.8 (must accept the same sync key as its code). |
 | Sharding groundwork | `companies.data_connection` + `CompanyConnection::for()`; plan in `docs/scaling.md`; module 7.6. |
+
+## Hello and push (module 2.2, 2026-09-29)
+
+| Topic | Decision |
+|---|---|
+| Routes | `GET sync/hello`, `POST sync/push` behind `EnsureTillContract` (409 `contract.unsupported`, 426 `app.update_required`, `X-SSPOS-Contract` echoed on every reply) → `AuthenticateSyncKey` (401/403) → `GuardSyncRequest` (per-key rate limit, then `X-SSPOS-App-Version`, `-Store-Protocol`, `-Company-Id`, `-Register-Id` required → 400). Work in `SayHello` / `PushChanges`. |
+| Hello | Company and branch as the till knows them (`IdTranslator::toTill`, company alias per branch); `maxBatchRows` = `sync.push.max_rows` (5,000). Records `last_hello_at`. |
+| Body | gzip (or recognised by magic bytes) or plain JSON; inflated in 16 KB steps so a bomb stops at 50 MB → 413 `batch.too_large`; > 5,000 rows → 413; bad gzip/JSON, not a non-empty list, other encoding → 400. PHP memory raised to `sync.push.memory_limit` (1 GB) for a push only. `TrimStrings`/`ConvertEmptyStringsToNull` skip `api/v1/sync/*` (the raw body is read once). |
+| Ordering | Cache lock per branch (`sync-push:branch:{id}`, 120 s); a second push waits `lock_wait_seconds` (10), then 503 `server.busy`, `retryAfterSeconds` 5. Production cache store must be shared (database/redis). |
+| Replies | 200 `{acknowledgedSeq, accepted}` only: **`receivedAt` is not sent** (v1.3.3 schema does not define it; `ApplyResult::$receivedAt` waits for v1.4). When the first row of the batch is rejected (nothing to acknowledge) → 422 `row.invalid` + `rejectedKey`; otherwise 200 with the lower ack (§9). |
+| Idempotency | Optional `Idempotency-Key` (ULID/UUID): reply kept 24 h per (branch, key), fingerprint = SHA-256 of the decompressed JSON + stream (a re-gzipped retry still matches); other body → 422 `request.idempotency_mismatch`. Looked up inside the branch lock, so no `request.in_progress`. Without a key the ledger already gives the same reply. |
+| Initial mode | `X-SSPOS-Sync-Mode: initial` needs a ULID `X-SSPOS-Upload-Id` (else 400); unknown mode → 400. `sync_applied_changes` gained `stream` ('' = ChangeLog, else upload id; unique company+branch+stream+seq) so upload seqs 1…N never collide with ChangeLog seqs. **2.8** must check the upload exists/is open (404 `migrate.upload_not_found` / 409 `migrate.upload_closed`). |
+| Rate limit | `sync.rate_limit_per_minute` (240, min 12) per sync key, all sync endpoints; 429 `rate.limited` + Retry-After. |
+| Suspension | Pushes are accepted for suspended/overdue businesses (the till's licence decides trading; data is never lost); cancelled businesses and revoked keys are 401 (2.1). No `cloud_sync` licence check on push: a key exists only where sync was allowed. |
+| Status | `sync_branch_status` (one row per branch, tenant-scoped `SyncBranchStatus`): last hello/push, last acknowledged seq (delta) and last upload id/seq, rows accepted/rejected on the London day (`rows_day`), last error (code, message, rejected key, time), last app version, register (ours + as sent). Written by `SyncStatusRecorder` inside the lock. |
+| For the EPOS team | (1) We answer 422 only when nothing in the batch can be acknowledged; please confirm the till re-sends from `acknowledgedSeq + 1` on a 200 with a lower ack. (2) Is `X-SSPOS-Store-Protocol` meaningful to the portal? We only require it. (3) `receivedAt` in the push reply is ready for v1.4 once the schema defines it. |
+

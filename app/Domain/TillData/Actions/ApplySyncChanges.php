@@ -53,8 +53,9 @@ final class ApplySyncChanges
 
     /**
      * @param  iterable<mixed>  $changes  decoded sync-change envelopes (associative arrays), oldest first
+     * @param  string  $stream  '' for a delta push (seq = the branch's ChangeLog); an initial upload's id (§17.8)
      */
-    public function handle(Company $company, Branch $sender, iterable $changes): ApplyResult
+    public function handle(Company $company, Branch $sender, iterable $changes, string $stream = ''): ApplyResult
     {
         $started = hrtime(true);
 
@@ -67,6 +68,7 @@ final class ApplySyncChanges
             $sender->getKey(),
             array_fill_keys(DB::table('registers')->where('company_id', $company->getKey())->where('branch_id', $sender->getKey())->pluck('id')->all(), true),
             now('UTC')->format('Y-m-d H:i:s'),
+            $stream,
         );
 
         $ids = IdTranslator::forCompany($company->getKey());

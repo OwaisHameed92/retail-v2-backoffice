@@ -118,13 +118,34 @@ Rejection codes: `change.invalid`, `entity.unknown`, `sync.wrong_company`, `sync
 `sync.unknown_register`, `sync.duplicate_seq`, `sync.parent_rejected`, `payload.missing`, `payload.id_mismatch`,
 `payload.invalid`, `entity.id_taken`, `entity.not_found`, `store.failed`.
 
-### What the caller (module 2.2) must do
+### What the caller must do (done by module 2.2's `PushChanges`)
 
 - Authenticate the branch's sync key and pass that branch as `$sender`; take a per-branch lock around `handle()`.
 - Decode JSON with `json_decode(..., true)`. Numbers arrive as PHP floats; their shortest round-trip string is the
   number the till wrote (up to 15 significant digits), which is what the applier stores.
 - Reply 200 with `toPushReply()`. When `rejected` is not empty, put `rejected[0]->key` in logs / the error body's
   `rejectedKey` as the contract suggests.
+
+## Push (module 2.2)
+
+`POST /api/v1/sync/push` → `EnsureTillContract` → `AuthenticateSyncKey` → `GuardSyncRequest` →
+`SyncController::push` → `App\Domain\Sync\Actions\PushChanges`:
+
+1. Headers: `X-SSPOS-Contract: 1` (409), Bearer key for `X-SSPOS-Branch-Id` (401/403), app version, store
+   protocol, company and register headers (400), per-key rate limit (429 `rate.limited`).
+2. `X-SSPOS-Sync-Mode` (`delta` default, `initial` + `X-SSPOS-Upload-Id`), optional `Idempotency-Key`.
+3. `PushBody::decode`: gzip or plain JSON, ≤ 50 MB inflated, ≤ 5,000 rows (413 `batch.too_large`), a non-empty list.
+4. Branch lock (`Cache::lock('sync-push:branch:{id}')`); busy → 503 `server.busy`.
+5. Idempotency-Key replay, else `ApplySyncChanges::handle($company, $keyBranch, $changes, $stream)` (`$stream` =
+   '' or the upload id: the ledger keys changes by company + branch + stream + seq).
+6. `SyncStatusRecorder::pushed()` → `sync_branch_status`; reply 200 `toPushReply()`, or 422 `row.invalid` with
+   `rejectedKey` when the first row of the batch was rejected.
+
+`GET /api/v1/sync/hello` (`SayHello`) returns the key's company/branch in the till's ids, the branch name, server time
+and `maxBatchRows`. Settings: `config/sync.php` (`push.*`, `rate_limit_per_minute`). Timing: a 5,000-row gzip push
+(4.7 MB JSON, 121 KB gzip) takes ≈ 0.7 s wall / CPU through HTTP on in-memory SQLite, a retry ≈ 0.25 s
+(`php artisan test --group=perf`). Production: PHP `post_max_size` must exceed the compressed body; the cache store
+must be shared between PHP workers (locks).
 
 ## Reading (phase 3)
 
