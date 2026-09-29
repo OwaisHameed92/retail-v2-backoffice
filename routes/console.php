@@ -31,5 +31,8 @@ Schedule::command('model:prune', ['--model' => [EmailLog::class]])->daily()->onO
 // AI (module 6.1): conversations and proposals after `ai.retention_days`, usage rows after `ai.usage_retention_months`.
 Schedule::command('model:prune', ['--model' => [AiConversation::class, AiPendingAction::class, AiUsage::class]])->dailyAt('02:30')->onOneServer();
 
+// Till health (module 2.7): online/offline, versions, sync and clock per till; raises and clears health alerts.
+Schedule::command('till-health:refresh')->everyFiveMinutes()->onOneServer()->withoutOverlapping(10);
+
 // Admin dashboard (module 1.9): a heartbeat so System health can show the scheduler is running.
 Schedule::call(fn () => SchedulerHeartbeat::beat())->everyMinute()->name('scheduler:heartbeat')->onOneServer();

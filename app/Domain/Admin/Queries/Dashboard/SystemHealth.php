@@ -4,13 +4,14 @@ namespace App\Domain\Admin\Queries\Dashboard;
 
 use App\Domain\Licensing\Signing\KeyStore;
 use App\Domain\Shared\Support\SchedulerHeartbeat;
+use App\Domain\TillHealth\Queries\TillHealthSummary;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 use Throwable;
 
 /**
- * Only what the portal can really check about itself. Anything else says "Not monitored yet"; till health
- * arrives with module 2.7. States: healthy | degraded | down | unknown.
+ * Only what the portal can really check about itself. Anything else says "Not monitored yet". "Till sync" reads
+ * the Till health rows (module 2.7). States: healthy | degraded | down | unknown.
  *
  * @phpstan-type Health array{key: string, name: string, state: string, detail: string}
  */
@@ -33,8 +34,35 @@ final class SystemHealth
             self::scheduler($now),
             self::signingKey(),
             ['key' => 'email', 'name' => 'Email delivery', 'state' => 'unknown', 'detail' => 'Not monitored yet'],
-            ['key' => 'tills', 'name' => 'Till sync', 'state' => 'unknown', 'detail' => 'Arrives with module 2.7'],
+            self::tills(),
         ];
+    }
+
+    /**
+     * Module 2.7: degraded while any till is offline or a shop's sync is failing or stalled.
+     *
+     * @return Health
+     */
+    private static function tills(): array
+    {
+        $item = fn (string $state, string $detail) => ['key' => 'tills', 'name' => 'Till sync', 'state' => $state, 'detail' => $detail];
+
+        try {
+            $summary = TillHealthSummary::compute();
+        } catch (Throwable) {
+            return $item('unknown', 'Could not be read');
+        }
+
+        if ($summary['tills'] - $summary['notActivated'] === 0) {
+            return $item('unknown', 'No tills reporting yet');
+        }
+
+        $problems = array_filter([
+            $summary['offline'] > 0 ? "{$summary['offline']} offline" : null,
+            $summary['sync'] > 0 ? "{$summary['sync']} sync ".($summary['sync'] === 1 ? 'problem' : 'problems') : null,
+        ]);
+
+        return $problems === [] ? $item('healthy', "{$summary['online']} online") : $item('degraded', implode(', ', $problems));
     }
 
     /**

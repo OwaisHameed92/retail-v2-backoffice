@@ -6,6 +6,7 @@ use App\Domain\Billing\Enums\InvoiceStatus;
 use App\Domain\Billing\Models\Invoice;
 use App\Domain\Billing\Support\BillingFormat;
 use App\Domain\Leads\Models\Lead;
+use App\Domain\Licensing\Enums\LicenceAlertType;
 use App\Domain\Licensing\Models\LicenceAlert;
 use Carbon\CarbonImmutable;
 
@@ -40,8 +41,17 @@ final class Attention
                 ->map(fn (LicenceAlert $alert) => [
                     'id' => 'alert-'.$alert->id,
                     'area' => 'licences',
-                    'label' => 'Alert',
-                    'tone' => 'danger',
+                    // Module 2.7: Till health alerts read "Sync" (violet) or "Till" (amber).
+                    'label' => match (true) {
+                        in_array($alert->type, [LicenceAlertType::SyncFailing, LicenceAlertType::SyncStalled], true) => 'Sync',
+                        $alert->type->isAutomatic() => 'Till',
+                        default => 'Alert',
+                    },
+                    'tone' => match (true) {
+                        in_array($alert->type, [LicenceAlertType::SyncFailing, LicenceAlertType::SyncStalled], true) => 'violet',
+                        $alert->type->isAutomatic() => 'warning',
+                        default => 'danger',
+                    },
                     'text' => $alert->type->label().' · '.($rows->company($alert->company_id)->name ?? 'Unknown business'),
                     'at' => $alert->last_seen_at->utc()->toIso8601String(),
                     'href' => route('admin.licences.show', $alert->licence_id, false),

@@ -1,3 +1,4 @@
+import { type HealthThresholds, type ShopHealth, type TillHealth } from '@/components/till-health/types';
 import { type Paginated } from '@/components/shared/data-table';
 
 export type LicenceStatus = 'issued' | 'trial' | 'active' | 'grace' | 'expired' | 'suspended' | 'revoked';
@@ -82,7 +83,13 @@ export interface TimelineEvent {
     tone: 'neutral' | 'success' | 'info' | 'warning' | 'danger';
 }
 
-export type LicenceAlertType = 'sameKeyTwoDevices' | 'deviceMismatch' | 'reissuedKeyUsed' | 'tillIdsConflict';
+export type LicenceAlertType =
+    | 'sameKeyTwoDevices' | 'deviceMismatch' | 'reissuedKeyUsed' | 'tillIdsConflict'
+    | 'tillOffline'
+    | 'syncFailing'
+    | 'syncStalled'
+    | 'appVersionOutdated'
+    | 'clockSkew';
 
 /** LicenceAlertData::forLicence: alerts raised by the till API (module 1.5). No keys, only device id endings. */
 export interface LicenceAlert {
@@ -90,7 +97,11 @@ export interface LicenceAlert {
     type: LicenceAlertType;
     label: string;
     help: string;
+    /** Module 2.7: a Till health alert, raised and cleared by the scheduler. */
+    automatic: boolean;
     details: {
+        /** Module 2.7: what the health check saw. */
+        summary: string | null;
         deviceName: string | null;
         installCode: string | null;
         deviceIdEnding: string | null;
@@ -176,6 +187,8 @@ export interface LicenceShowProps {
     alerts: LicenceAlert[];
     plans: PlanOption[];
     can: { manage: boolean };
+    /** Module 2.7: this till's health, null when the licence is not the till's live one. */
+    health: { till: TillHealth; shop: ShopHealth | null; thresholds: HealthThresholds } | null;
 }
 
 export type LicenceKind = 'trial' | 'full';

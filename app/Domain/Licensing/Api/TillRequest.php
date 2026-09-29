@@ -33,6 +33,15 @@ final readonly class TillRequest
         public ?string $lockReason = null,
         /** validate: the till's last successful sync, null = never (module 2.1: "the till reports no sync key"). */
         public ?CarbonImmutable $lastSyncAt = null,
+        /** Module 2.7: `X-SSPOS-Contract` as the till sent it. */
+        public ?string $contractVersion = null,
+        /**
+         * Module 2.7: validate `diagnostics`, only the known non-secret members (pendingSyncRows, lastSyncError,
+         * databaseSizeMb); null when the till sent none.
+         *
+         * @var array{pendingSyncRows?: int, lastSyncError?: string, databaseSizeMb?: float}|null
+         */
+        public ?array $diagnostics = null,
     ) {}
 
     /** "Windows 11 Pro 10.0.26200 x64", or null. */

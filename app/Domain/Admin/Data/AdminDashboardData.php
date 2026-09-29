@@ -7,6 +7,7 @@ use App\Domain\Admin\Queries\Dashboard\Change;
 use App\Domain\Admin\Queries\Dashboard\Kpis;
 use App\Domain\Admin\Queries\Dashboard\RecentTenants;
 use App\Domain\Admin\Queries\Dashboard\SystemHealth;
+use App\Domain\TillHealth\Queries\TillHealthSummary;
 
 /**
  * Every admin dashboard figure, the same for every admin (this is what is cached). `forViewer()` then removes
@@ -18,8 +19,9 @@ use App\Domain\Admin\Queries\Dashboard\SystemHealth;
  * @phpstan-import-type Item from Attention
  * @phpstan-import-type TenantRow from RecentTenants
  * @phpstan-import-type Health from SystemHealth
+ * @phpstan-import-type Summary from TillHealthSummary
  *
- * @phpstan-type Stored array{generatedAt: string, kpis: array<string, Kpi>, overview: array<string, Tile>, attention: list<Item>, attentionTotals: array<string, int>, recentTenants: list<TenantRow>, health: list<Health>}
+ * @phpstan-type Stored array{generatedAt: string, kpis: array<string, Kpi>, overview: array<string, Tile>, attention: list<Item>, attentionTotals: array<string, int>, recentTenants: list<TenantRow>, health: list<Health>, tills: Summary}
  */
 final readonly class AdminDashboardData
 {
@@ -30,6 +32,7 @@ final readonly class AdminDashboardData
      * @param  array<string, int>  $attentionTotals  Area → total items.
      * @param  list<TenantRow>  $recentTenants
      * @param  list<Health>  $health
+     * @param  Summary  $tills  Module 2.7: Till health counts.
      */
     public function __construct(
         public string $generatedAt,
@@ -39,6 +42,7 @@ final readonly class AdminDashboardData
         public array $attentionTotals,
         public array $recentTenants,
         public array $health,
+        public array $tills,
     ) {}
 
     /**
@@ -80,6 +84,7 @@ final readonly class AdminDashboardData
             ],
             'recentTenants' => array_map(fn (array $row) => [...$row, 'mrr' => $billing ? $row['mrr'] : null], $this->recentTenants),
             'health' => $this->health,
+            'tills' => $this->tills,
         ];
     }
 }

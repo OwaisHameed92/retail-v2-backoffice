@@ -12,6 +12,7 @@ use App\Domain\Admin\Queries\Dashboard\Kpis;
 use App\Domain\Admin\Queries\Dashboard\RecentTenants;
 use App\Domain\Admin\Queries\Dashboard\RevenueChart;
 use App\Domain\Admin\Queries\Dashboard\SystemHealth;
+use App\Domain\TillHealth\Queries\TillHealthSummary;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Cache;
 
@@ -29,7 +30,7 @@ final class AdminDashboard
 {
     public const CACHE_SECONDS = 60;
 
-    public const CACHE_KEY = 'admin-dashboard:v1';
+    public const CACHE_KEY = 'admin-dashboard:v2';
 
     public function data(): AdminDashboardData
     {
@@ -53,6 +54,7 @@ final class AdminDashboard
             attentionTotals: $attention['totals'],
             recentTenants: RecentTenants::collect($rows),
             health: SystemHealth::check($now),
+            tills: TillHealthSummary::compute(),
         );
     }
 

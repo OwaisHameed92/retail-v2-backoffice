@@ -1,4 +1,5 @@
 import { RecentTenantsCard } from '@/components/admin/dashboard/recent-tenants-card';
+import { TillHealthTile } from '@/components/admin/dashboard/till-health-tile';
 import { dashboardRangeLabel, dashboardRanges, RevenueCard } from '@/components/admin/dashboard/revenue-card';
 import { type AdminDashboardProps, type DashboardFigure, type DashboardRange, type RevenueChartData } from '@/components/admin/dashboard/types';
 import { type AdminSharedData } from '@/components/admin/types';
@@ -130,11 +131,13 @@ export default function AdminDashboard({
         ...(can('licences.manage') ? [{ label: 'Send test email', icon: Mail, href: route('admin.emails.templates') }] : []),
     ];
 
+    const tillHealthHref = can('tenants.view') ? route('admin.till-health.index') : undefined;
     const health: HealthItem[] = dashboard.health.map((item) => ({
         name: item.name,
         icon: healthIcons[item.key] ?? Server,
         state: item.state,
         detail: item.detail,
+        href: item.key === 'tills' ? tillHealthHref : undefined,
     }));
 
     return (
@@ -232,6 +235,8 @@ export default function AdminDashboard({
                             />
                         </div>
                     </Card>
+
+                    <TillHealthTile summary={dashboard.tills} href={tillHealthHref} />
 
                     <QuickActions actions={actions} />
 

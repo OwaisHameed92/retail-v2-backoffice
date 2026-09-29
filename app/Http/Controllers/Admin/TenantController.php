@@ -25,6 +25,7 @@ use App\Domain\Tenancy\Enums\Nation;
 use App\Domain\Tenancy\Models\Branch;
 use App\Domain\Tenancy\Models\Company;
 use App\Domain\Tenancy\Scopes\CompanyScope;
+use App\Domain\TillHealth\Queries\CompanyHealth;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreTenantRequest;
 use App\Http\Requests\Admin\UpdateTenantRequest;
@@ -128,6 +129,8 @@ class TenantController extends Controller
         $billingAccess = $admin?->hasAbility(AdminRole::BILLING_MANAGE) ?? false;
 
         $syncKeys = SyncKeyData::forBranches($company, $branches);
+        // Module 2.7: each shop's and till's health, worked out now for this business only.
+        $health = CompanyHealth::for($company->id, CarbonImmutable::now());
 
         return Inertia::render('admin/tenants/show', [
             'tenant' => TenantData::company($company),
@@ -140,7 +143,14 @@ class TenantController extends Controller
                 'tills' => $branches->where('is_active', true)->sum(fn (Branch $b) => $b->registers->where('is_active', true)->count()),
                 'users' => $members->filter(fn (User $u) => (bool) $u->getRelation('membership')->is_active)->count(),
             ],
-            'branches' => $branches->map(fn (Branch $branch) => TenantData::branch($branch) + ['licence' => LicenceFormData::branch($branch), 'syncKey' => $syncKeys[$branch->id]])->values(),
+            'branches' => $branches->map(fn (Branch $branch) => TenantData::branch($branch) + [
+                'licence' => LicenceFormData::branch($branch),
+                'syncKey' => $syncKeys[$branch->id],
+                'health' => [
+                    'shop' => $health['branches'][$branch->id] ?? null,
+                    'tills' => (object) array_filter($health['tills'], fn (array $till) => $till['branchId'] === $branch->id),
+                ],
+            ])->values(),
             // Module 1.11: the licence form (company branch limits and the options).
             'branchLimits' => LicenceFormData::limits($company),
             'licenceOptions' => LicenceFormData::options(),

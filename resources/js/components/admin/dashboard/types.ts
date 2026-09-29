@@ -1,3 +1,4 @@
+import { type TillHealthSummary } from '@/components/till-health/types';
 import { type AttentionItem } from '@/components/shared/attention-list';
 import { type HealthState } from '@/components/shared/health-list';
 import { type StatDelta } from '@/components/shared/stat-card';
@@ -44,6 +45,8 @@ export interface AdminDashboardProps {
     attention: { items: AttentionItem[]; total: number };
     recentTenants: RecentTenant[];
     health: DashboardHealth[];
+    /** Module 2.7: Till health counts. */
+    tills: TillHealthSummary;
 }
 
 /** `RevenueChart::for()`: the "revenue" page prop (null without billing access). */

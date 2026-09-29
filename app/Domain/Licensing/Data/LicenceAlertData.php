@@ -28,6 +28,8 @@ final class LicenceAlertData
             'type' => $alert->type->value,
             'label' => $alert->type->label(),
             'help' => $alert->type->help(),
+            // Module 2.7: Till health alerts clear themselves; staff do not resolve them by hand.
+            'automatic' => $alert->type->isAutomatic(),
             'details' => self::details($alert->details ?? []),
             'count' => $alert->count,
             'firstSeenAt' => LicenceData::date($alert->first_seen_at),
@@ -45,7 +47,7 @@ final class LicenceAlertData
      */
     private static function details(array $details): array
     {
-        $keys = ['deviceName', 'installCode', 'deviceIdEnding', 'ip', 'appVersion', 'os', 'boundDeviceName', 'boundDeviceIdEnding', 'retiredKeyLast4', 'attempted'];
+        $keys = ['summary', 'deviceName', 'installCode', 'deviceIdEnding', 'ip', 'appVersion', 'os', 'boundDeviceName', 'boundDeviceIdEnding', 'retiredKeyLast4', 'attempted'];
         $out = [];
 
         foreach ($keys as $key) {

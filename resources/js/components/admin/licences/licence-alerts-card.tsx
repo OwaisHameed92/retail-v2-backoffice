@@ -23,6 +23,9 @@ function pcLabel(name: string | null, ending: string | null): string {
 
 function AlertFacts({ alert }: { alert: LicenceAlert }) {
     const { details } = alert;
+    if (alert.automatic) {
+        return details.summary ? <p className="text-foreground mt-2 text-xs">{details.summary}</p> : null;
+    }
     const facts: { label: string; value: string }[] = [{ label: 'PC', value: pcLabel(details.deviceName, details.deviceIdEnding) }];
     if (details.installCode) {
         facts.push({ label: 'Install code', value: details.installCode });
@@ -81,7 +84,7 @@ export function LicenceAlertsCard({ licenceId, alerts, canManage }: LicenceAlert
                 </h2>
                 <p className="text-muted-foreground text-sm">
                     {open.length > 0
-                        ? `${plural(open.length, 'open alert')} from the till API.`
+                        ? `${plural(open.length, 'open alert')} from the till API and Till health.`
                         : 'No open alerts. Recently resolved ones are listed below.'}
                 </p>
             </CardHeader>
@@ -107,10 +110,13 @@ export function LicenceAlertsCard({ licenceId, alerts, canManage }: LicenceAlert
                                     <p className="text-muted-foreground mt-2 text-xs tabular-nums">
                                         First {formatDateTimeShort(alert.firstSeenAt)} · last {formatRelative(alert.lastSeenAt)}
                                         {resolved &&
-                                            ` · resolved ${formatRelative(alert.resolvedAt)}${alert.resolvedBy ? ` by ${alert.resolvedBy}` : ''}`}
+                                            ` · ${alert.automatic && !alert.resolvedBy ? 'cleared' : 'resolved'} ${formatRelative(alert.resolvedAt)}${alert.resolvedBy ? ` by ${alert.resolvedBy}` : ''}`}
                                     </p>
                                 </div>
-                                {!resolved && canManage && (
+                                {!resolved && alert.automatic && (
+                                    <span className="text-muted-foreground shrink-0 text-xs sm:pt-1">Clears itself when fixed</span>
+                                )}
+                                {!resolved && !alert.automatic && canManage && (
                                     <Button
                                         variant="outline"
                                         size="sm"

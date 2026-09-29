@@ -15,6 +15,7 @@ use App\Domain\Licensing\Queries\LicenceQuery;
 use App\Domain\Plans\Models\Plan;
 use App\Domain\Shared\Support\TableQuery;
 use App\Domain\Tenancy\Models\Company;
+use App\Domain\TillHealth\Queries\CompanyHealth;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\LicenceNotesRequest;
 use Carbon\CarbonImmutable;
@@ -84,12 +85,20 @@ class LicenceController extends Controller
     {
         $model = $this->findLicence($licence);
         $now = CarbonImmutable::now();
+        // Module 2.7: this till's health (only while the licence is the till's live one) and its shop's sync.
+        $health = CompanyHealth::for($model->company_id, $now);
+        $till = $health['tills'][$model->register_id] ?? null;
 
         return Inertia::render('admin/licences/show', [
             'licence' => LicenceData::detail($model, $now),
             'timeline' => LicenceTimeline::for($model, $now),
             'activity' => LicenceActivity::forLicence($model),
             'alerts' => LicenceAlertData::forLicence($model),
+            'health' => $till !== null && $till['licenceId'] === $model->id ? [
+                'till' => $till,
+                'shop' => $health['branches'][$model->branch_id] ?? null,
+                'thresholds' => $health['thresholds'],
+            ] : null,
             'plans' => LicenceData::planOptions(),
             'can' => ['manage' => $request->user('admin')?->hasAbility(AdminRole::LICENCES_MANAGE) ?? false],
         ]);

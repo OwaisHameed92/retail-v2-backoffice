@@ -2,6 +2,8 @@ import { EmptyState } from '@/components/shared/empty-state';
 import { PageHeader } from '@/components/shared/page-header';
 import { SectionCard } from '@/components/shared/section-card';
 import { StatCard, StatGrid } from '@/components/shared/stat-card';
+import { ShopsStatusCard } from '@/components/till-health/shops-status-card';
+import { type ShopsStatus } from '@/components/till-health/types';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem, type SharedData } from '@/types';
 import { Head, usePage } from '@inertiajs/react';
@@ -16,7 +18,7 @@ const stats = [
     { label: 'Gross profit', icon: TrendingUp },
 ];
 
-export default function Dashboard() {
+export default function Dashboard({ status }: { status: ShopsStatus | null }) {
     const { company } = usePage<SharedData>().props;
 
     return (
@@ -36,6 +38,8 @@ export default function Dashboard() {
                     />
                 ))}
             </StatGrid>
+
+            {status && <ShopsStatusCard status={status} />}
 
             <SectionCard title="Sales today" description="Takings by hour, per branch." className="flex-1">
                 <EmptyState

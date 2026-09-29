@@ -40,6 +40,7 @@ use App\Http\Controllers\Admin\TenantController;
 use App\Http\Controllers\Admin\TenantRegisterController;
 use App\Http\Controllers\Admin\TenantStatusController;
 use App\Http\Controllers\Admin\TenantUserController;
+use App\Http\Controllers\Admin\TillHealthController;
 use App\Http\Middleware\AdminIsActive;
 use App\Http\Middleware\BlockAdminWhileImpersonating;
 use App\Http\Middleware\ShareAdminInertiaData;
@@ -169,6 +170,9 @@ Route::middleware(['auth:admin', AdminIsActive::class, BlockAdminWhileImpersonat
             Route::post('{licence}/alerts/{alert}/resolve', [LicenceAlertController::class, 'resolve'])->name('alerts.resolve')->whereUlid('alert');
         });
     });
+
+    // Till health (module 2.7): every till's online state, versions, sync and clock, across businesses. Read only.
+    Route::get('till-health', [TillHealthController::class, 'index'])->name('till-health.index')->middleware('can:'.AdminRole::TENANTS_VIEW);
 
     // Emails (module 1.7): log, template previews and test sends. Owner and support (EmailLogPolicy).
     Route::prefix('emails')->name('emails.')->middleware('can:viewAny,'.EmailLog::class)->group(function () {

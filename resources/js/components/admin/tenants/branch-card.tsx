@@ -6,6 +6,7 @@ import { type LicenceOptions, type TillLicence } from '@/components/admin/licenc
 import { RegisterDialog } from '@/components/admin/tenants/register-dialog';
 import { type TenantBranch, type TenantRegister } from '@/components/admin/tenants/types';
 import { ConfirmDialog } from '@/components/shared/confirm-dialog';
+import { BranchHealthStrip, TillHealthCell } from '@/components/till-health/branch-health-strip';
 import { EmptyState } from '@/components/shared/empty-state';
 import { InitialsAvatar } from '@/components/shared/entity-cell';
 import { StatusBadge } from '@/components/shared/status-badge';
@@ -165,6 +166,7 @@ export function BranchCard({ tenantId, branch, canManage, tillLicences, canManag
 
             <BranchLicenceStrip tenantId={tenantId} branch={branch} options={licenceOptions} canManage={canManageLicences} />
             <BranchSyncKeyStrip tenantId={tenantId} branch={branch} canManage={canManageLicences} />
+            <BranchHealthStrip health={branch.health.shop} href={route('admin.till-health.index', { company: tenantId })} />
 
             {branch.registers.length === 0 ? (
                 <div className="border-t">
@@ -193,6 +195,7 @@ export function BranchCard({ tenantId, branch, canManage, tillLicences, canManag
                                 <TableHead>Till</TableHead>
                                 <TableHead className="hidden sm:table-cell">Status</TableHead>
                                 <TableHead className="hidden md:table-cell">Licence</TableHead>
+                                <TableHead className="hidden lg:table-cell">Health</TableHead>
                                 <TableHead className="w-12 pr-4 sm:pr-5">
                                     <span className="sr-only">Actions</span>
                                 </TableHead>
@@ -218,12 +221,18 @@ export function BranchCard({ tenantId, branch, canManage, tillLicences, canManag
                                         <div className="mt-1 md:hidden">
                                             <TillLicenceCell licence={tillLicences[register.id]} />
                                         </div>
+                                        <div className="mt-1.5 lg:hidden">
+                                            <TillHealthCell health={branch.health.tills[register.id]} />
+                                        </div>
                                     </TableCell>
                                     <TableCell className="hidden sm:table-cell">
                                         <StatusBadge status={register.isActive ? 'active' : 'inactive'} />
                                     </TableCell>
                                     <TableCell className="hidden md:table-cell">
                                         <TillLicenceCell licence={tillLicences[register.id]} />
+                                    </TableCell>
+                                    <TableCell className="hidden lg:table-cell">
+                                        <TillHealthCell health={branch.health.tills[register.id]} />
                                     </TableCell>
                                     <TableCell className="pr-4 text-right sm:pr-5">
                                         {canManage && (

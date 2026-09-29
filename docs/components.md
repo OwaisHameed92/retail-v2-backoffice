@@ -304,3 +304,9 @@ Tokens live only in `resources/css/app.css` (v2 palette, light + dark): `chrome`
 - `components/app/sync/`: `types.ts` (matches `SyncConflictList::for()` / `SyncConflictDetail`), `format.tsx` (`KindPill`, `ConflictStatusBadge`, `ClashBadge`, `kindHelp`), `conflictColumns` / `clashColumns`, `ConflictFilters`, `FieldComparisonCard` (portal value vs the other side's, differences first, "Show every field", card list on phones) and `ResolveCard` (choices behind `ConfirmDialog`, optional note).
 - Backend: `TillData\Queries\SyncConflictList` / `SyncConflictDetail` (a row's members in the till's terms, secrets never shown), `TillData\Sync\OwnershipRules` (relayed / hubDrafted / derivedColumns of ownership.json).
 
+
+## Added by module 2.7 (till health)
+
+- `components/till-health/` (admin and tenant portal): `types.ts` (matches `HealthPresenter`, `TillHealthSummary`, `ShopsStatus`), `format.tsx` (`TillStateBadge`, `SyncStateBadge`, `ProblemPills`, `ago`, `londonDateTime`, `clockSkewText`), `BranchHealthStrip` + `TillHealthCell` (tenant page branch card), `TillHealthCard` (licence page), `ShopsStatusCard` (tenant dashboard).
+- `components/admin/till-health/`: `tillHealthColumns`, `TillHealthRules`; `components/admin/dashboard/till-health-tile.tsx`.
+- Backend: `TillHealth\Queries\CompanyHealth::for($companyId, $now)` (live health of one business, by branch and register id), `TillHealthSummary::compute(?$companyId)`, `TillHealthList`, `ShopsStatus`; `HealthPresenter` shapes rows for React.

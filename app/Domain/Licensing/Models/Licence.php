@@ -58,6 +58,9 @@ use Illuminate\Support\Collection;
  * @property CarbonImmutable|null $bound_at
  * @property CarbonImmutable|null $last_check_in_at
  * @property string|null $last_app_version
+ * @property string|null $last_contract_version Module 2.7: X-SSPOS-Contract of the last licence call.
+ * @property array{pendingSyncRows?: int, lastSyncError?: string, databaseSizeMb?: float}|null $diagnostics Module 2.7: last validate diagnostics.
+ * @property CarbonImmutable|null $diagnostics_at
  * @property array{name?: string, version?: string, architecture?: string|null}|null $os
  * @property int|null $till_clock_skew_seconds Till clock minus portal time at the last call.
  * @property CarbonImmutable|null $clock_watermark_at
@@ -160,6 +163,8 @@ class Licence extends Model
             'clock_watermark_at' => 'immutable_datetime',
             'last_validated_at' => 'immutable_datetime',
             'lock_locked' => 'boolean',
+            'diagnostics' => 'array',
+            'diagnostics_at' => 'immutable_datetime',
             'last_check_in_at' => 'immutable_datetime',
             'suspended_at' => 'immutable_datetime',
             'revoked_at' => 'immutable_datetime',

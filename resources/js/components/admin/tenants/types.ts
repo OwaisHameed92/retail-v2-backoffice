@@ -1,3 +1,4 @@
+import { type ShopHealth, type TillHealth } from '@/components/till-health/types';
 import { type TenantBillingData } from '@/components/admin/billing/types';
 import { type BranchLicence, type BranchLimits, type LicenceOptions, type PlanOption, type TenantLicensing } from '@/components/admin/licences/types';
 import { type Paginated } from '@/components/shared/data-table';
@@ -82,6 +83,8 @@ export interface TenantBranch {
     licence: BranchLicence;
     /** Module 2.1: the branch's sync key (never the key itself). */
     syncKey: BranchSyncKey;
+    /** Module 2.7: the shop's and its tills' health (tills by register id), worked out on page load. */
+    health: { shop: ShopHealth | null; tills: Record<string, TillHealth> };
 }
 
 /** SyncKeyData: a branch's sync key panel. */

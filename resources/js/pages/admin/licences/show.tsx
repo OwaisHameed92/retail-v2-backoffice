@@ -11,6 +11,7 @@ import { InitialsAvatar } from '@/components/shared/entity-cell';
 import { PageHeader } from '@/components/shared/page-header';
 import { SectionCard } from '@/components/shared/section-card';
 import { StatCard } from '@/components/shared/stat-card';
+import { TillHealthCard } from '@/components/till-health/till-health-card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import AdminLayout from '@/layouts/admin-layout';
 import { Head, Link } from '@inertiajs/react';
@@ -92,7 +93,7 @@ function StatusAlert({ licence }: { licence: LicenceDetail }) {
     return null;
 }
 
-export default function LicenceShow({ licence, timeline, activity, alerts, plans, can }: LicenceShowProps) {
+export default function LicenceShow({ licence, timeline, activity, alerts, plans, can, health }: LicenceShowProps) {
     const expiry = expiryCard(licence);
 
     return (
@@ -268,7 +269,17 @@ export default function LicenceShow({ licence, timeline, activity, alerts, plans
                     </SectionCard>
                     <LicenceNotes licenceId={licence.id} notes={licence.notes} canEdit={can.manage} />
                 </div>
-                <LicenceTimeline events={timeline} />
+                <div className="grid gap-6">
+                    {health && (
+                        <TillHealthCard
+                            till={health.till}
+                            shop={health.shop}
+                            thresholds={health.thresholds}
+                            listHref={route('admin.till-health.index', { company: licence.company.id })}
+                        />
+                    )}
+                    <LicenceTimeline events={timeline} />
+                </div>
             </div>
 
             <LicenceActivity entries={activity} />

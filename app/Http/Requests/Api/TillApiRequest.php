@@ -108,6 +108,7 @@ abstract class TillApiRequest extends FormRequest
             'tillClockUtc' => ApiDate::parse($data['tillClockUtc'] ?? null),
             'trustedKids' => array_values(array_filter((array) ($data['trustedKids'] ?? []), 'is_string')),
             'approverKids' => array_values(array_filter((array) ($data['approverKids'] ?? []), 'is_string')),
+            'contractVersion' => self::text(mb_substr((string) $this->header(EnsureTillContract::CONTRACT_HEADER), 0, 16)),
             ...$extra,
         ]);
     }

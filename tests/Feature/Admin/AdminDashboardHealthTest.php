@@ -15,7 +15,7 @@ test('system health reports only what it can check and labels the rest', functio
         ->and(healthOf('scheduler'))->toMatchArray(['state' => 'unknown', 'detail' => 'No run recorded yet'])
         ->and(healthOf('signing'))->toMatchArray(['state' => 'down', 'detail' => 'No active key'])
         ->and(healthOf('email'))->toMatchArray(['state' => 'unknown', 'detail' => 'Not monitored yet'])
-        ->and(healthOf('tills'))->toMatchArray(['state' => 'unknown', 'detail' => 'Arrives with module 2.7']);
+        ->and(healthOf('tills'))->toMatchArray(['state' => 'unknown', 'detail' => 'No tills reporting yet']);
 });
 
 test('the scheduler heartbeat shows the last run and goes down when it stops', function () {

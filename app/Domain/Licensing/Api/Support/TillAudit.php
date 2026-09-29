@@ -34,8 +34,8 @@ final class TillAudit
     }
 
     /**
-     * Last contact from the bound PC: time, IP, app version, OS, device name and till clock skew
-     * (tillClockUtc − portal time, seconds). Saved with the licence by the caller.
+     * Last contact from the bound PC: time, IP, app version, contract version, OS, device name, validate
+     * diagnostics and till clock skew (tillClockUtc − portal time, seconds). Saved with the licence by the caller.
      */
     public static function touch(Licence $licence, TillRequest $request, CarbonImmutable $now): void
     {
@@ -56,6 +56,16 @@ final class TillAudit
 
         if ($request->installCode !== null) {
             $licence->install_code = $request->installCode;
+        }
+
+        if ($request->contractVersion !== null) {
+            $licence->last_contract_version = $request->contractVersion;
+        }
+
+        // Module 2.7: validate diagnostics (Till health backlog). An empty object still dates the report.
+        if ($request->diagnostics !== null) {
+            $licence->diagnostics = $request->diagnostics === [] ? null : $request->diagnostics;
+            $licence->diagnostics_at = $now;
         }
 
         if ($request->tillClockUtc !== null) {
