@@ -2,21 +2,25 @@
 
 namespace App\Domain\Licensing\Api\Support;
 
+use App\Domain\Licensing\Enums\LicenceStatus;
 use App\Domain\Licensing\LicenceState;
 use App\Domain\Licensing\Models\Licence;
 use App\Domain\Licensing\Signing\Sspos\LicenceClaims;
 use App\Domain\Shared\Support\ApiDate;
+use App\Domain\Shared\Support\AppVersion;
 use Carbon\CarbonImmutable;
 
 /**
  * The 200 replies of `licence/activate` (licence-activate-reply.schema.json) and `licence/validate`
- * (validate-reply.schema.json), contract v1.3.1 §17.15. The `licence` summary lists the token's fields; the
+ * (validate-reply.schema.json), contract v1.4.1 §17.15. The `licence` summary lists the token's fields; the
  * signed token always wins. Module 2.1: `apiKey` (+ `hubUrl`) is added by SyncKeyDelivery; top-level
  * `companyId`/`branchId` are never sent next to it (§17.3: they would have to be the till's own ids).
  */
 final class LicenceReply
 {
     public const TIMEZONE = 'Europe/London';
+
+    public const DEFAULT_MINIMUM_APP_VERSION = '0.1.0';
 
     /**
      * @return array<string, mixed>
@@ -110,16 +114,16 @@ final class LicenceReply
         $reason = trim((string) $state->reason);
 
         $message = match (true) {
-            $status === TillStatus::EXPIRING && $state->graceEndsAt !== null && $state->endsAt !== null && $now->greaterThanOrEqualTo($state->endsAt) => self::message(
-                "grace-{$stamp}", 'warning', $state->isTrial ? 'Free trial ended' : 'Licence ended',
-                'Your '.($state->isTrial ? 'free trial' : 'licence').' ended on '.self::day($state->endsAt).". The till stops taking sales on {$day} unless it is renewed. ".LicenceApiErrors::SUPPORT,
-                $now, $expiresAt, true,
-            ),
             $status === TillStatus::EXPIRING && $state->isTrial => self::message(
                 "expiring-{$stamp}", 'warning', 'Trial ends soon', "Your free trial ends on {$day}. Choose a plan to keep trading.", null, $expiresAt, true,
             ),
             $status === TillStatus::EXPIRING => self::message(
                 "expiring-{$stamp}", 'warning', 'Licence ends soon', "Your licence ends on {$day}. Renew it to keep trading. ".LicenceApiErrors::SUPPORT, null, $expiresAt, true,
+            ),
+            $status === TillStatus::EXPIRED && $state->status === LicenceStatus::Grace && $state->endsAt !== null => self::message(
+                "expired-{$stamp}", 'critical', $state->isTrial ? 'Free trial ended' : 'Licence ended',
+                'Your '.($state->isTrial ? 'free trial' : 'licence').' ended on '.self::day($state->endsAt).'. Renewal pending: the till starts trading again as soon as it is renewed. '.LicenceApiErrors::SUPPORT,
+                $now, null, false,
             ),
             $status === TillStatus::EXPIRED => self::message(
                 "expired-{$stamp}", 'critical', $state->isTrial ? 'Free trial ended' : 'Licence expired',
@@ -137,11 +141,16 @@ final class LicenceReply
         return $message === null ? [] : [$message];
     }
 
-    public static function minimumAppVersion(): ?string
+    /**
+     * The oldest supported till version, sent in every validate reply (contract v1.4.1 §17.5; ANSWERS-2026-09-29
+     * §3): informational only — the till keeps trading and we never answer 426 on licence/*. Default `0.1.0`
+     * (tills send `0.1.x`); raise it only when the owner says so. An unreadable value falls back to the default.
+     */
+    public static function minimumAppVersion(): string
     {
         $minimum = trim((string) config('licence.api.minimum_app_version'));
 
-        return $minimum === '' ? null : $minimum;
+        return AppVersion::isValid($minimum) ? $minimum : self::DEFAULT_MINIMUM_APP_VERSION;
     }
 
     /**

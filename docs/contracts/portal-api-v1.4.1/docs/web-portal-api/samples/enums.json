@@ -1,0 +1,131 @@
+{
+  "AgeRule": [
+    "none",
+    "over16",
+    "over18",
+    "tobaccoGenerational",
+    "nicotine",
+    "lottery18",
+    "knives18",
+    "fireworks18",
+    "solvents18",
+    "energyDrink16",
+    "paracetamol16"
+  ],
+  "BarcodeSource": [
+    "internal",
+    "supplier",
+    "plu",
+    "weighted",
+    "coupon",
+    "gs1"
+  ],
+  "CustomerOrderPaymentKind": [
+    "deposit",
+    "partPayment",
+    "collection",
+    "refund"
+  ],
+  "CustomerOrderStatus": [
+    "ordered",
+    "ready",
+    "collected",
+    "cancelled",
+    "expired"
+  ],
+  "CustomerTransactionType": [
+    "charge",
+    "payment",
+    "refund",
+    "pointsEarn",
+    "pointsBurn",
+    "pointsAdjust",
+    "pointsExpire",
+    "opening"
+  ],
+  "DiscountSource": [
+    "manual",
+    "promotion",
+    "customerGroup",
+    "staff",
+    "coupon"
+  ],
+  "NegativeStockPolicy": [
+    "allow",
+    "warn",
+    "block"
+  ],
+  "PurchaseOrderOrigin": [
+    "branch",
+    "headOffice"
+  ],
+  "PurchaseOrderStatus": [
+    "draft",
+    "sent",
+    "partReceived",
+    "received",
+    "invoiced",
+    "paid",
+    "cancelled"
+  ],
+  "SalePaymentStatus": [
+    "approved",
+    "reversed",
+    "recovered"
+  ],
+  "SaleStatus": [
+    "open",
+    "held",
+    "completed",
+    "voided"
+  ],
+  "SaleType": [
+    "sale",
+    "refund",
+    "exchange",
+    "quote",
+    "training",
+    "deposit"
+  ],
+  "SettingScope": [
+    "company",
+    "branch",
+    "register"
+  ],
+  "StockMovementType": [
+    "sale",
+    "refund",
+    "adjustment",
+    "received",
+    "wastage",
+    "transfer",
+    "stockTake",
+    "damaged",
+    "supplierReturn",
+    "expiry",
+    "theft",
+    "openingStock",
+    "promotionSample"
+  ],
+  "StockTransferStatus": [
+    "requested",
+    "dispatched",
+    "received",
+    "closed",
+    "cancelled"
+  ],
+  "SyncOwnership": [
+    "hubOwned",
+    "branchOwned"
+  ],
+  "UnitType": [
+    "pcs",
+    "kg",
+    "open"
+  ],
+  "VatTreatment": [
+    "apply",
+    "exempt",
+    "outOfScope"
+  ]
+}

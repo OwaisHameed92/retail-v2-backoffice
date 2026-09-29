@@ -24,7 +24,7 @@ final class HubVersions
      */
     private const ORDER = [
         'Unit', 'VatRate', 'TaxRule', 'Account', 'ExchangeRate', 'PaymentType', 'Reason', 'FixedAssetCategory',
-        'Role', 'User', 'Department', 'Category', 'Supplier', 'Product', 'ProductUnit', 'ProductBarcode',
+        'Role', 'User', 'Department', 'Category', 'Supplier', 'Product', 'ProductUnit', 'BranchPrice', 'ProductBarcode',
         'ProductAlias', 'ProductSupplier', 'ProductRecall', 'MedicineClassification', 'PriceHistory',
         'PromotionRule', 'PromotionItem', 'PromotionCoupon', 'RebateAgreement', 'Customer', 'NewsTitle',
     ];
@@ -35,7 +35,7 @@ final class HubVersions
     private static ?array $entities = null;
 
     /**
-     * Hub-owned entities with their own table, in apply order.
+     * Hub-owned entities with their own table, in apply order (keyed rows excluded until their pull is built).
      *
      * @return list<EntityDefinition>
      */
@@ -45,7 +45,12 @@ final class HubVersions
             return self::$entities;
         }
 
-        $hub = array_filter(EntityRegistry::names(), fn (string $name) => EntityRegistry::get($name)->isHubOwned() && ! EntityRegistry::get($name)->tenancy);
+        // Keyed rows (Setting, RolePermission, §10.3) have their own pull envelope: not in the feed yet (module 2.9 part B).
+        $hub = array_filter(EntityRegistry::names(), function (string $name): bool {
+            $def = EntityRegistry::get($name);
+
+            return $def->isHubOwned() && ! $def->tenancy && ! $def->isKeyed();
+        });
         $rank = array_flip(self::ORDER);
         usort($hub, fn (string $a, string $b) => [$rank[$a] ?? PHP_INT_MAX, $a] <=> [$rank[$b] ?? PHP_INT_MAX, $b]);
 
@@ -67,7 +72,7 @@ final class HubVersions
     {
         $def = EntityRegistry::get($entity);
 
-        if (! $def->isHubOwned() || $def->tenancy || $ids === []) {
+        if (! $def->isHubOwned() || $def->tenancy || $def->isKeyed() || $ids === []) {
             return null;
         }
 

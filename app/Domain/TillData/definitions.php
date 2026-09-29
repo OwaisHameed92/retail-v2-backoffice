@@ -19,10 +19,11 @@ use App\Domain\Tenancy\Models\Company;
 use App\Domain\Tenancy\Models\Register;
 use App\Domain\TillData\Concerns\SaleLineQueries;
 use App\Domain\TillData\Concerns\SaleQueries;
+use App\Domain\TillData\Concerns\ShopPriceRows;
 use App\Domain\TillData\Concerns\StockMovementQueries;
 
 return [
-    'contract' => 'docs/contracts/portal-api-v1.3.3/docs/web-portal-api',
+    'contract' => 'docs/contracts/portal-api-v1.4.1/docs/web-portal-api',
 
     /*
      * The contract release this run writes migrations for. Migrations are additive: <prefix>00_create_till_<release>
@@ -30,7 +31,7 @@ return [
      * missing columns and indexes. database/till-schema.json records what each release's migrations made (v1.1:
      * the ten 2026_09_27_1100NN group migrations). For the next contract: new name and a later prefix.
      */
-    'release' => ['name' => 'v1.3.1', 'migrationPrefix' => '2026_10_02_1000'],
+    'release' => ['name' => 'v1.4.1', 'migrationPrefix' => '2026_10_06_1000'],
 
     /* Entity groups: the order tables are created in. Every schema entity must be in exactly one group. */
     'groups' => [
@@ -38,7 +39,7 @@ return [
             'Department', 'Category', 'Unit', 'VatRate', 'TaxRule', 'Product', 'ProductBarcode', 'ProductAlias',
             'ProductUnit', 'ProductSupplier', 'ProductRecall', 'PriceHistory', 'ExchangeRate', 'BranchProduct',
             'PriceChangeBatch', 'PriceChangeLine', 'ScalePluItem', 'ShelfLabel', 'TopSellerTile', 'HighValueCountItem',
-            'MedicineClassification', 'ProductAllergenMatrix',
+            'MedicineClassification', 'ProductAllergenMatrix', 'BranchPrice',
         ],
         'promotions' => [
             'PromotionRule', 'PromotionItem', 'PromotionCoupon', 'PromotionRedemption', 'CouponRedemption',
@@ -61,7 +62,8 @@ return [
             'Supplier', 'PurchaseOrder', 'PurchaseOrderLine', 'GoodsReceipt', 'GoodsReceiptLine', 'SupplierInvoice',
             'SupplierInvoiceLine', 'SupplierCreditNote', 'SupplierCreditNoteLine', 'SupplierPayment',
             'SupplierPaymentAllocation', 'StandingOrder', 'StandingOrderLine', 'RebateAgreement', 'RebateAccrual',
-            'NewsTitle', 'NewsDelivery', 'NewsDeliveryLine', 'NewsVoucherRedemption',
+            'NewsTitle', 'NewsDelivery', 'NewsDeliveryLine', 'NewsVoucherRedemption', 'PurchaseReturn',
+            'PurchaseReturnLine',
         ],
         'cash' => [
             'PaymentType', 'Reason', 'Shift', 'ShiftTender', 'CashCount', 'CashMovement', 'CashOfficeBanking',
@@ -71,12 +73,12 @@ return [
             'Account', 'JournalEntry', 'JournalLine', 'FinancialYear', 'FinancialPeriod', 'VatReturn', 'Expense',
             'RecurringBill', 'FixedAssetCategory', 'FixedAsset',
         ],
-        'staff' => ['User', 'Role', 'ClockEvent', 'RotaShift', 'TimesheetApproval', 'WageRate', 'TrainingRecord'],
+        'staff' => ['User', 'Role', 'ClockEvent', 'RotaShift', 'TimesheetApproval', 'WageRate', 'TrainingRecord', 'RolePermission'],
         'system' => [
             'AuditLog', 'ExceptionLog', 'AlertSubscription', 'BackupRun', 'BranchHoursOverride', 'ComplianceLicence',
             'EventSubscription', 'HardwareCheck', 'ImportColumnMap', 'ImportJob', 'Licence', 'LicenceAddOnTrial',
-            'PrintJob', 'PrinterProfile', 'ScaleCalibrationLog', 'SyncConflict', 'SyncState', 'UpdateRun',
-            'LayoutProfile', 'ParcelCarrier', 'Parcel',
+            'PrintJob', 'PrinterProfile', 'ScaleCalibrationLog', 'SyncConflict', 'UpdateRun', 'LayoutProfile',
+            'ParcelCarrier', 'Parcel', 'Setting',
         ],
         'compliance' => [
             'DiaryCheckDefinition', 'DiaryCheckRecord', 'TemperatureUnit', 'IncidentReport', 'DispensingRecord',
@@ -109,7 +111,10 @@ return [
         'Register' => [
             'table' => 'registers',
             'model' => Register::class,
-            'tillFields' => ['name' => 'name', 'nextSaleNo' => 'next_sale_no', 'nextRefundNo' => 'next_refund_no'],
+            'tillFields' => [
+                'name' => 'name', 'nextSaleNo' => 'next_sale_no', 'nextRefundNo' => 'next_refund_no',
+                'nextOrderNo' => 'next_order_no',
+            ],
         ],
     ],
 
@@ -145,7 +150,7 @@ return [
             'qtyAvailable', 'qtyBefore', 'qtyDelta', 'qtyOnHand', 'qtyRemaining', 'qtyReserved', 'receivedQty',
             'refundQty', 'reorderPoint', 'reorderQty', 'returnedQty', 'snapshotQty', 'totalHours', 'unitsSold',
             'varianceQty', 'volumeMl', 'baseQty', 'unitFactor', 'quantity', 'qtyRequested', 'qtyDispatched',
-            'qtyReceived', 'qtyVariance',
+            'qtyReceived', 'qtyVariance', 'damagedQty',
             // Temperatures (°C) need no more than 4 dp either.
             'safeMinC', 'safeMaxC',
         ],
@@ -158,7 +163,7 @@ return [
     ],
 
     /* Strings stored verbatim in longText (embedded JSON documents and print payloads). *Json fields are automatic. */
-    'longText' => ['payload', 'priceTiers'],
+    'longText' => ['payload', 'priceTiers', 'hubChange'],
 
     /* Free-text strings stored in `text` (no length limit worth enforcing). Other strings are varchar. */
     'text' => [
@@ -168,7 +173,7 @@ return [
         'logoPath', 'maxQtyReason', 'memo', 'message', 'note', 'notes', 'overrideReason', 'reason', 'reasonText',
         'receiptFile', 'text', 'unlockReason', 'varianceFlags', 'verificationDetail', 'voidReason', 'weekdays',
         'days', 'afterValue', 'beforeValue', 'directions', 'allergensCsv', 'handOverIdCheckNote', 'declineReason',
-        'resolutionReason', 'attributeFilter',
+        'resolutionReason', 'attributeFilter', 'Setting.value',
     ],
 
     /* Integers that may exceed 2^31. */
@@ -195,6 +200,9 @@ return [
      *   json              Object/array members that ARE stored (json column).
      *   secret            String fields stored as HMAC hash + last 4 only (<column>_hash, <column>_last4).
      *   drop              Secret members never stored at all: no column, not in `extra`, not in a conflict payload.
+     *                     Members the contract has removed may stay listed, so an older till's value is still dropped.
+     *   keyedBy           Keyed rows (contract §10.3: Setting, RolePermission): no ULID or row version of their own;
+     *                     the row id is derived from these payload fields (SyncRowIds), whatever id the till sent.
      *   hidden            Fields hidden from toArray()/JSON.
      *   indexes           Extra indexes (lists of columns). (company_id, updated_at), (company_id, branch_id)
      *                     and the parent key are indexed automatically.
@@ -268,6 +276,14 @@ return [
         'ProductRecall' => ['derived' => ['isOpen']],
         'PriceHistory' => ['indexes' => [['company_id', 'product_id', 'at']]],
         'BranchProduct' => ['indexes' => [['company_id', 'branch_id', 'product_id']]],
+        // A shop's own price (v1.4 §10.5, SHOP-OR-EVERY-SHOP.md): hub-owned, written by the portal and (v1.4.1) by
+        // that shop's till. Its branchId must be the pushing branch; pulled only by that branch.
+        'BranchPrice' => [
+            'parent' => ['Product', 'productId'],
+            'scope' => 'branch',
+            'indexes' => [['company_id', 'branch_id', 'product_id', 'valid_from_utc']],
+            'traits' => [ShopPriceRows::class],
+        ],
         'PriceChangeBatch' => ['derived' => ['isEditable', 'canGoLive', 'canCancel', 'isClosed']],
         // The line's own branchId is the price's target branch (null = all), not the owning branch.
         'PriceChangeLine' => ['parent' => ['PriceChangeBatch', 'batchId'], 'columns' => ['branchId' => 'price_branch_id']],
@@ -300,7 +316,12 @@ return [
         ],
 
         // Purchasing.
-        'PurchaseOrder' => ['derived' => ['isEditable', 'isOpen'], 'indexes' => [['company_id', 'supplier_id']]],
+        // v1.4.1: `reference` (PO-LDS-000001 / HO-LDS-000123) is what people see; isFromHeadOffice / hasReceivingStarted
+        // are worked out from origin and status on the till.
+        'PurchaseOrder' => [
+            'derived' => ['isEditable', 'isOpen', 'isFromHeadOffice', 'hasReceivingStarted'],
+            'indexes' => [['company_id', 'supplier_id'], ['company_id', 'reference']],
+        ],
         'PurchaseOrderLine' => ['parent' => ['PurchaseOrder', 'purchaseOrderId'], 'derived' => ['isFullyReceived']],
         'GoodsReceipt' => ['indexes' => [['company_id', 'supplier_id']]],
         'GoodsReceiptLine' => ['parent' => ['GoodsReceipt', 'goodsReceiptId']],
@@ -314,6 +335,9 @@ return [
         'RebateAccrual' => ['derived' => ['isOutstanding']],
         'NewsDeliveryLine' => ['parent' => ['NewsDelivery', 'deliveryId']],
         'NewsVoucherRedemption' => ['indexes' => [['company_id', 'branch_id', 'redeemed_at']]],
+        // Purchase returns (v1.4.1): branch-owned, read-only to the portal, like goods receipts.
+        'PurchaseReturn' => ['indexes' => [['company_id', 'supplier_id'], ['company_id', 'goods_receipt_id']]],
+        'PurchaseReturnLine' => ['parent' => ['PurchaseReturn', 'purchaseReturnId'], 'indexes' => [['company_id', 'product_id']]],
 
         // Cash and end of day.
         'Shift' => ['derived' => ['isOpen'], 'indexes' => [['company_id', 'branch_id', 'opened_at']]],
@@ -339,8 +363,20 @@ return [
         'Expense' => ['indexes' => [['company_id', 'branch_id', 'expense_date']]],
 
         // Staff. `pinHash` and `rfid` sign a person in at the till: never shown.
-        // `remoteApprovalSecret` (v1.3) approves actions from another device: never stored, never sent down.
-        'User' => ['table' => 'till_users', 'class' => 'TillUser', 'hidden' => ['pinHash', 'rfid'], 'drop' => ['remoteApprovalSecret']],
+        // `remoteApprovalSecret` (+ `…SetAt`) left the contract in v1.4 (§10.7): an older till's value is never stored.
+        'User' => [
+            'table' => 'till_users',
+            'class' => 'TillUser',
+            'hidden' => ['pinHash', 'rfid'],
+            'drop' => ['remoteApprovalSecret', 'remoteApprovalSecretSetAt'],
+        ],
+        // Role permissions (v1.4 §10.3): keyed by (roleId, permissionKey); `I` = granted, `D` = taken away.
+        'RolePermission' => [
+            'table' => 'till_role_permissions',
+            'class' => 'TillRolePermission',
+            'keyedBy' => ['roleId', 'permissionKey'],
+            'indexes' => [['company_id', 'role_id']],
+        ],
         'TrainingRecord' => ['indexes' => [['company_id', 'user_id']]],
         'Role' => ['table' => 'till_roles', 'class' => 'TillRole', 'json' => ['permissions']],
         'ClockEvent' => ['indexes' => [['company_id', 'user_id', 'at']]],
@@ -356,7 +392,16 @@ return [
         'Licence' => ['table' => 'till_licences', 'class' => 'TillLicence', 'secret' => ['licenceKey']],
         'LicenceAddOnTrial' => ['table' => 'till_licence_add_on_trials', 'class' => 'TillLicenceAddOnTrial', 'derived' => ['isOverUsageCap']],
         'SyncConflict' => ['table' => 'till_sync_conflicts', 'class' => 'TillSyncConflict', 'derived' => ['isOpen']],
-        'SyncState' => ['table' => 'till_sync_states', 'class' => 'TillSyncState', 'derived' => ['isHealthy']],
+        // SyncState is `local` since v1.4 (never synced, never stored): its v1.3.1 table till_sync_states is left as is.
+        // Shared settings (v1.4 §10.3): keyed by (scope, scopeId, key). Deny-listed ones are never stored
+        // (App\Domain\TillData\Sync\SettingSyncPolicy). `key` is a reserved word in MySQL: column setting_key.
+        'Setting' => [
+            'table' => 'till_settings',
+            'class' => 'TillSetting',
+            'keyedBy' => ['scope', 'scopeId', 'key'],
+            'columns' => ['key' => 'setting_key'],
+            'indexes' => [['company_id', 'scope', 'scope_id', 'setting_key']],
+        ],
         'PrintJob' => ['derived' => ['isPending']],
         'Parcel' => ['parent' => ['ParcelCarrier', 'carrierId'], 'scope' => 'branch', 'indexes' => [['company_id', 'tracking_code']]],
 

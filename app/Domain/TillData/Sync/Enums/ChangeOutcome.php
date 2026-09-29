@@ -27,4 +27,10 @@ enum ChangeOutcome: string
 
     /** Not applied; a sync_conflicts row records it (hub-owned row with a newer portal edit). */
     case Conflict = 'conflict';
+
+    /**
+     * Never stored: a `local` table (contract §10, e.g. SyncState from an older till) or a deny-listed setting
+     * (§10.3). Acknowledged so the till's queue moves on.
+     */
+    case Skipped = 'skipped';
 }

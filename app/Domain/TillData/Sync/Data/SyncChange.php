@@ -28,6 +28,19 @@ final readonly class SyncChange
         public ?int $baseVersion = null,
     ) {}
 
+    /**
+     * The same change stored under another id (a keyed row's id derived from its payload, contract §10.3).
+     *
+     * @param  array<string, mixed>|null  $payload  a normalised payload, else the same one
+     */
+    public function withEntityId(string $entityId, ?array $payload = null): self
+    {
+        return new self(
+            $this->index, $this->seq, $this->entity, $entityId, $this->op, $this->version, $this->companyId,
+            $this->branchId, $this->registerId, $this->at, $payload ?? $this->payload, $this->key, $this->baseVersion,
+        );
+    }
+
     public function isDelete(): bool
     {
         return $this->op === 'D';

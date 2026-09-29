@@ -2,7 +2,7 @@
 
 use App\Domain\Plans\Enums\Feature;
 
-it('lists exactly the till\'s 11 feature names (contract v1.3.3)', function () {
+it('lists exactly the till\'s 11 feature names (contract v1.4.1)', function () {
     expect(Feature::values())->toBe([
         'loyalty', 'promotions', 'purchasing', 'accounts', 'multi_branch', 'second_screen', 'label_printing',
         'cloud_sync', 'assist', 'assist_invoice_scan', 'assist_questions',

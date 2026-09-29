@@ -60,7 +60,7 @@ it('applies 5,000 mixed rows well within the budget, and a retry of them faster 
         sys_getloadavg()[0] ?? 0,
     ));
 
-    expect($result->toPushReply())->toBe(['acknowledgedSeq' => 5000, 'accepted' => 5000])
+    expect(TillFixtures::ack($result))->toBe(['acknowledgedSeq' => 5000, 'accepted' => 5000])
         ->and($retry->toPushReply())->toBe($result->toPushReply())
         ->and(DB::table('sales')->count())->toBe(700)
         ->and(DB::table('sale_lines')->whereNull('register_id')->count())->toBe(0)

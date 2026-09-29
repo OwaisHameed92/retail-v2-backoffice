@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\DB;
  * Applies one entity's changes of a chunk (seq order) with one read and bulk upserts:
  *
  * - upsert by id keeping the highest version (equal version: the later updatedAt); anything else is stale
- *   (accepted, no change) — contract §7 and §19.3 "never backwards";
+ *   (accepted, no change) — contract §7 and §19.3 "never backwards"; keyed rows (§10.3) by the later updatedAt;
  * - a row id held by another company is rejected (never overwritten);
  * - hub-owned: content identical to the stored row (`hub_hash`) is an echo, acknowledged with no change (§19.2);
  *   a till change the portal has overtaken is not applied, a conflict is recorded; an applied one records the
@@ -64,7 +64,7 @@ final class EntityWriter
                 continue;
             }
 
-            if ($current !== null && ! $this->isNewer($change->version, $mapped->row['updated_at'] ?? null, $current)) {
+            if ($current !== null && ! $this->isNewer($def, $change->version, $mapped->row['updated_at'] ?? null, $current)) {
                 $outcomes[$change->index] = ChangeOutcome::Stale;
 
                 continue;
@@ -126,9 +126,17 @@ final class EntityWriter
      *
      * @param  array<string, mixed>  $current
      */
-    private function isNewer(int $version, ?string $updatedAt, array $current): bool
+    private function isNewer(EntityDefinition $def, int $version, ?string $updatedAt, array $current): bool
     {
         $stored = (int) $current['row_version'];
+
+        // Keyed rows (§10.3): the version is the pushing branch's seq, not comparable across shops. The later
+        // change wins, then the higher seq; a replay changes nothing.
+        if ($def->isKeyed()) {
+            $storedAt = $current['updated_at'] === null ? '' : substr((string) $current['updated_at'], 0, 19);
+
+            return [(string) $updatedAt, $version] > [$storedAt, $stored];
+        }
 
         if ($version !== $stored) {
             return $version > $stored;

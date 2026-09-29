@@ -44,7 +44,7 @@ test('activate: the till gets a token, checks it and trades; the key is only sho
 
     $this->artisan('licence:simulate', ['action' => 'activate', '--key' => self::KEY, '--install' => self::INSTALL, '--install-code' => self::INSTALL_CODE])
         ->expectsOutputToContain('SSP-••••-••••-••••-P8T5')
-        ->expectsOutputToContain('Till: TRADE.')
+        ->expectsOutputToContain('Till: TRADE WITH BANNER.')
         ->doesntExpectOutputToContain(self::KEY)
         ->assertSuccessful();
 
@@ -59,7 +59,7 @@ test('validate: no new token while nothing changed; locks when suspended', funct
     $token = (string) $this->activateTill()->json('licenceToken');
     $options = ['action' => 'validate', '--licence' => $licence->id, '--token' => $token, '--install' => self::INSTALL, '--install-code' => self::INSTALL_CODE];
 
-    $this->artisan('licence:simulate', $options)->expectsOutputToContain('No new token')->expectsOutputToContain('Till: TRADE.')->assertSuccessful();
+    $this->artisan('licence:simulate', $options)->expectsOutputToContain('No new token')->expectsOutputToContain('Till: TRADE WITH BANNER.')->assertSuccessful();
 
     app(SuspendLicence::class)->handle($licence->fresh(), 'Check');
     $this->artisan('licence:simulate', $options)->expectsOutputToContain('Till: LOCK.')->assertSuccessful();

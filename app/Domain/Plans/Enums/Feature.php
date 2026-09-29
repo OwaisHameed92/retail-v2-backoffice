@@ -4,7 +4,7 @@ namespace App\Domain\Plans\Enums;
 
 /**
  * Product features a plan or a branch licence can switch on. The values are **exactly the till's 11 feature
- * names** (`Feature.cs`, contract v1.3.3 ANSWERS §6): they go into the licence token as they are, so they are
+ * names** (`Feature.cs`, contract v1.4.1 ANSWERS §6): they go into the licence token as they are, so they are
  * snake_case, not our usual camelCase (DECISIONS "Module 2.1"). Stored in `plans.features`, `licences.features`
  * and `branches.licence_features` as JSON lists. `multi_branch` in a token follows the company's multi-branch
  * setting, not the plan.

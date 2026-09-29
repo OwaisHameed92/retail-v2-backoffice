@@ -5,7 +5,7 @@
 | Till sync (Phase 2)
 |--------------------------------------------------------------------------
 |
-| Contract v1.3.3 docs/web-portal-api.md §2–4, SIMPLE-SETUP.md. The till has our address built in; `hub_url` is
+| Contract v1.4.1 docs/web-portal-api.md §2–4, SIMPLE-SETUP.md. The till has our address built in; `hub_url` is
 | sent to it (`hubUrl` in licence/activate and licence/validate replies, with a sync key) only when sync runs on
 | another host than APP_URL. Must be https.
 |
@@ -36,6 +36,10 @@ return [
 
     // Requests per minute per sync key (hello + push + pull). A normal run every 30 s is a handful of calls and an
     // initial upload sends back to back; §17.12 asks for never less than one per 5 seconds.
+    // Till app versions that damage portal data: sync/* answers them 426 app.update_required (the till keeps trading
+    // and stops syncing until updated). Exact versions ("0.1.4") or prefixes ("0.1.*"), comma separated. Default none;
+    // only on the owner's say-so (ANSWERS-2026-09-29 §3). Never applies to licence/*.
+    'blocked_app_versions' => array_values(array_filter(array_map('trim', explode(',', (string) env('SYNC_BLOCKED_APP_VERSIONS', ''))))),
     'rate_limit_per_minute' => max(12, (int) env('SYNC_RATE_LIMIT_PER_MINUTE', 240)),
 
 ];

@@ -56,8 +56,8 @@ it('19.4 #1-2: stores a retried, overlapping batch once, with identical replies 
     $retry = ($this->apply)($push);                         // the till resends from the start, with more rows
     $again = ($this->apply)($push);
 
-    expect($retry->toPushReply())->toBe(TillFixtures::sample('push-reply.json'))
-        ->and($again->toPushReply())->toBe($retry->toPushReply())
+    expect(TillFixtures::ack($retry))->toBe(TillFixtures::ack(TillFixtures::sample('push-reply.json')))
+        ->and($again->toPushReply())->toBe($retry->toPushReply()) // receivedAt included: the first time, not now
         ->and($retry->count(ChangeOutcome::Duplicate))->toBe(5)
         ->and(DB::table('sales')->count())->toBe(1)
         ->and(DB::table('sale_lines')->count())->toBe(2)
@@ -236,7 +236,7 @@ it('19.4 #9: pushes and pull replays killed a dozen times end with exactly the d
     expect(rulesSnapshot($tables))->toEqual($clean);
 });
 
-it('never stores a user\'s remote approval secret: no column, not in extra, not in a conflict', function () {
+it('never stores a user\'s remote approval secret an older till sends: no column, not in extra, not in a conflict', function () {
     $user = ['name' => 'Sam', 'pinHash' => 'pbkdf2$x', 'rfid' => '', 'roleId' => '01K5T0Q8C4000000000000L001', 'role' => null, 'ratePerHour' => 11.44, 'maxShiftHours' => 10, 'isServiceStaff' => false, 'allowCommission' => false, 'isPersonalLicenceHolder' => false, 'simpleModeOverride' => null, 'bigTextMode' => false, 'isActive' => true, 'preferredCulture' => 'en-GB', 'remoteApprovalSecret' => 'JBSWY3DPEHPK3PXP', 'remoteApprovalSecretSetAt' => '2026-09-20T08:00:00Z', 'id' => '01K5T0Q8C4000000000000A009', 'companyId' => TillFixtures::COMPANY, 'createdAt' => '2026-09-01T08:00:00Z', 'updatedAt' => '2026-09-20T08:00:00Z', 'rowVersion' => 1, 'deletedAt' => null, 'isDeleted' => false, 'domainEvents' => []];
 
     ($this->apply)([TillFixtures::envelope('User', $user, 1)]);
@@ -247,7 +247,9 @@ it('never stores a user\'s remote approval secret: no column, not in extra, not 
     expect($conflict->count(ChangeOutcome::Conflict))->toBe(1)
         ->and(json_encode($row))->not->toContain('JBSWY3DPEHPK3PXP')
         ->and(array_keys($row))->not->toContain('remote_approval_secret')
-        ->and($row['remote_approval_secret_set_at'])->toBe('2026-09-20 08:00:00')
+        // v1.4 removed both members; the v1.3.1 column stays (additive migrations) and is never written again.
+        ->and($row['remote_approval_secret_set_at'])->toBeNull()
+        ->and($row['extra'])->toBeNull()
         ->and(json_decode((string) DB::table('sync_conflicts')->value('incoming_payload'), true))->not->toHaveKey('remoteApprovalSecret')->toHaveKey('name')
         ->and((string) DB::table('sync_conflicts')->value('incoming_payload'))->not->toContain('JBSWY3DPEHPK3PXP');
 });

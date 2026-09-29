@@ -25,9 +25,13 @@ it('is idempotent: regenerating changes no file', function () {
 });
 
 it('has a registry entry, a table with every mapped column, and a final generated model for every schema entity', function () {
-    $entities = tillSchemaEntities();
+    $schemas = tillSchemaEntities();
+    $entities = array_values(array_diff($schemas, EntityRegistry::LOCAL));
 
-    expect($entities)->toHaveCount(140)
+    // v1.4.1: 145 schemas; SyncState is `local` (never synced, never stored), so no registry entry.
+    expect($schemas)->toHaveCount(145)
+        ->and(EntityRegistry::LOCAL)->toBe(['DomainEventRecord', 'ProcessedCommand', 'SyncState'])
+        ->and($entities)->toHaveCount(144)
         ->and(EntityRegistry::names())->toEqualCanonicalizing($entities);
 
     foreach ($entities as $entity) {
@@ -55,8 +59,13 @@ it('uses exactly the ownership in samples/ownership.json', function () {
         expect(EntityRegistry::get($entity)->ownership)->toBe($ownership[$entity], $entity);
     }
 
-    // Listed by the till but not syncable yet (not Entity-derived, contract §16): no schema, no table.
-    expect(array_values(array_diff(array_keys($ownership), EntityRegistry::names())))->toBe(['RolePermission', 'Setting']);
+    // Every table the till lists is stored, except the `local` ones (v1.4: never pushed, never pulled).
+    expect(array_values(array_diff(array_keys($ownership), EntityRegistry::names())))->toBe(EntityRegistry::LOCAL)
+        ->and(array_keys(array_filter($ownership, fn (string $owner) => $owner === 'local')))->toBe(EntityRegistry::LOCAL)
+        ->and(EntityRegistry::get('Setting')->keyedBy)->toBe(['scope', 'scopeId', 'key'])
+        ->and(EntityRegistry::get('RolePermission')->keyedBy)->toBe(['roleId', 'permissionKey'])
+        ->and(EntityRegistry::get('BranchPrice')->ownership)->toBe('hub')
+        ->and(EntityRegistry::get('BranchPrice')->scope)->toBe('branch');
 });
 
 it('generates PHP backed enums with exactly the values of samples/enums.json', function () {
@@ -108,15 +117,23 @@ it('stores money as decimal(12,2), costs and quantities as decimal(14,4)', funct
 it('writes additive migrations: applied releases are never rewritten, the current one adds only what they lack', function () {
     $lock = json_decode((string) file_get_contents(base_path(MigrationPlanner::LOCK)), true);
     $produced = array_keys(app(GenerateTillEntities::class)->render(new SchemaCatalog(base_path())));
-    $current = $lock['releases'][1];
+    $previous = $lock['releases'][1];
+    $current = $lock['releases'][2];
 
-    expect(array_column($lock['releases'], 'release'))->toBe(['v1.1', 'v1.3.1'])
-        ->and($current['migrations'])->toBe(['2026_10_02_100000_create_till_v1_3_1_tables.php', '2026_10_02_100001_add_till_v1_3_1_columns.php'])
-        ->and($current['tables'])->toHaveKeys(['stock_transfers', 'stock_transfer_receipt_lines', 'medicine_classifications'])
-        ->and($current['tables']['products']['columns'])->toHaveKeys(['variant3_name', 'hub_hash', 'origin_branch_id', 'portal_received_at'])
-        ->and($current['tables']['sales']['columns'])->toHaveKeys(['portal_received_at'])->not->toHaveKey('total');
+    expect(array_column($lock['releases'], 'release'))->toBe(['v1.1', 'v1.3.1', 'v1.4.1'])
+        ->and($previous['migrations'])->toBe(['2026_10_02_100000_create_till_v1_3_1_tables.php', '2026_10_02_100001_add_till_v1_3_1_columns.php'])
+        ->and($previous['tables']['products']['columns'])->toHaveKeys(['variant3_name', 'hub_hash', 'origin_branch_id', 'portal_received_at'])
+        ->and($current['migrations'])->toBe(['2026_10_06_100000_create_till_v1_4_1_tables.php', '2026_10_06_100001_add_till_v1_4_1_columns.php'])
+        ->and(array_keys($current['tables']))->toEqualCanonicalizing([
+            'branch_prices', 'purchase_returns', 'purchase_return_lines', 'till_settings', 'till_role_permissions',
+            'purchase_orders', 'goods_receipt_lines', 'stock_transfers', 'supplier_invoices', 'till_sync_conflicts',
+        ])
+        ->and($current['tables']['purchase_orders']['columns'])->toHaveKeys(['origin', 'branch_code', 'reference'])
+        ->not->toHaveKeys(['is_from_head_office', 'has_receiving_started', 'supplier_id'])
+        ->and($current['tables']['goods_receipt_lines']['columns'])->toBe(['damaged_qty' => "decimal('damaged_qty', 14, 4)->nullable()"])
+        ->and($current['tables']['till_sync_conflicts']['columns'])->toBe(['hub_change' => "longText('hub_change')->nullable()"]);
 
-    foreach ($lock['releases'][0]['migrations'] as $applied) {
+    foreach ([...$lock['releases'][0]['migrations'], ...$previous['migrations']] as $applied) {
         expect(file_exists(database_path("migrations/{$applied}")))->toBeTrue()
             ->and($produced)->not->toContain("database/migrations/{$applied}");
     }
@@ -130,7 +147,7 @@ it('models the v1.3 entities: transfers, their lines and receipts, and the hub-o
         ->and(EntityRegistry::get('StockTransfer')->fields['dispatchedCost']->type)->toBe('cost')
         ->and(EntityRegistry::get('MedicineClassification')->ownership)->toBe('hub')
         ->and(EntityRegistry::get('SaleLine')->fields['baseQty']->type)->toBe('quantity')
-        ->and(EntityRegistry::get('User')->dropped)->toBe(['remoteApprovalSecret'])
-        ->and(EntityRegistry::get('User')->fields)->not->toHaveKey('remoteApprovalSecret')
+        ->and(EntityRegistry::get('User')->dropped)->toBe(['remoteApprovalSecret', 'remoteApprovalSecretSetAt'])
+        ->and(EntityRegistry::get('User')->fields)->not->toHaveKeys(['remoteApprovalSecret', 'remoteApprovalSecretSetAt'])
         ->and(Schema::getColumnListing('products'))->toContain('hub_hash', 'origin_branch_id', 'portal_received_at');
 });

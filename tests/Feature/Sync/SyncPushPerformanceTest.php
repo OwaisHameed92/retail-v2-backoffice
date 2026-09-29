@@ -56,8 +56,8 @@ it('stores a 5,000-row gzip push well inside the till\'s 30-second timeout', fun
         memory_get_peak_usage(true) / 1048576, sys_getloadavg()[0] ?? 0,
     ));
 
-    $response->assertOk()->assertExactJson(['acknowledgedSeq' => 5000, 'accepted' => 5000]);
-    $retry->assertOk()->assertExactJson(['acknowledgedSeq' => 5000, 'accepted' => 5000]);
+    expect(TillFixtures::ack($response->assertOk()->json()))->toBe(['acknowledgedSeq' => 5000, 'accepted' => 5000])
+        ->and($retry->assertOk()->json())->toBe($response->json()); // the same receivedAt on the retry
     expect(DB::table('sales')->where('branch_id', $sync->leeds->id)->count())->toBe(700)
         ->and(DB::table('stock_movements')->where('register_id', $sync->tills[TillFixtures::TILL_1]->id)->count())->toBe(1400)
         ->and($cpuUsed)->toBeLessThan($budget)

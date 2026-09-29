@@ -10,7 +10,8 @@ use App\Domain\TillData\Sync\Data\SyncChange;
 /**
  * Validates one envelope against schemas/sync-change.schema.json and the contract's identity rules (§5):
  * company must be the pushing company, a non-empty branchId must be the sending branch, a non-empty registerId
- * must be one of its tills, and the entity must be one the store knows.
+ * must be one of its tills, and the entity must be one the store knows (or a `local` one, which ApplySyncChanges
+ * acknowledges without storing).
  */
 final class EnvelopeReader
 {
@@ -53,7 +54,7 @@ final class EnvelopeReader
             return $reject('change.invalid', 'Invalid change: '.implode('; ', $problems).'.');
         }
 
-        if (! EntityRegistry::has($entity)) {
+        if (! EntityRegistry::has($entity) && ! EntityRegistry::isLocal($entity)) {
             return $reject('entity.unknown', "Unknown entity \"{$entity}\".");
         }
 
@@ -96,7 +97,10 @@ final class EnvelopeReader
             $problems[] = 'entity must be a non-empty string';
         }
 
-        if (! Ulid::isValid($entityId)) {
+        // Setting / RolePermission ids are 26 Crockford characters derived from their key, not ULIDs (§10.3).
+        $keyed = EntityRegistry::has($entity) && EntityRegistry::get($entity)->isKeyed();
+
+        if (! Ulid::isValid($entityId) && ! ($keyed && preg_match(SyncRowIds::PATTERN, $entityId) === 1)) {
             $problems[] = 'entityId must be a ULID';
         }
 

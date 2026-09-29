@@ -72,7 +72,7 @@ it('keeps the highest version: an older version is accepted but changes nothing'
     ($this->apply)([tillChange($order, 10, 5, ['status' => 'collected'])]);
     $stale = ($this->apply)([tillChange($order, 11, 4, ['status' => 'cancelled'])]);
 
-    expect($stale->toPushReply())->toBe(['acknowledgedSeq' => 11, 'accepted' => 1])
+    expect(TillFixtures::ack($stale))->toBe(['acknowledgedSeq' => 11, 'accepted' => 1])
         ->and($stale->count(ChangeOutcome::Stale))->toBe(1)
         ->and(DB::table('customer_orders')->value('status'))->toBe('collected')
         ->and(DB::table('customer_orders')->value('row_version'))->toBe(5);
@@ -179,7 +179,7 @@ it('rejects a malformed row with its key while the others apply, and acknowledge
 
     $result = ($this->apply)($batch);
 
-    expect($result->toPushReply())->toBe(['acknowledgedSeq' => 18231, 'accepted' => 8])
+    expect(TillFixtures::ack($result))->toBe(['acknowledgedSeq' => 18231, 'accepted' => 8])
         ->and($result->rejected)->toHaveCount(1)
         ->and($result->rejected[0]->key)->toBe('SaleLine:01K5VB0000000SN1R001000482:1')
         ->and($result->rejected[0]->code)->toBe('payload.invalid')
@@ -189,7 +189,7 @@ it('rejects a malformed row with its key while the others apply, and acknowledge
 
     // The till resends from the rejected row; once fixed, everything is acknowledged.
     $retry = ($this->apply)(array_slice(TillFixtures::sample('push-request.json'), 1));
-    expect($retry->toPushReply())->toBe(['acknowledgedSeq' => 18239, 'accepted' => 8])
+    expect(TillFixtures::ack($retry))->toBe(['acknowledgedSeq' => 18239, 'accepted' => 8])
         ->and($retry->count(ChangeOutcome::Duplicate))->toBe(7);
 });
 
@@ -197,7 +197,7 @@ it('reads numbers sent as strings, as the till itself does', function () {
     $line = ($this->change)('SaleLine');
     $result = ($this->apply)([[...tillChange($line, 1, 1, ['qty' => '2.5', 'unitPrice' => '1.85', 'position' => '3']), 'seq' => '1', 'version' => '1']]);
 
-    expect($result->toPushReply())->toBe(['acknowledgedSeq' => 1, 'accepted' => 1])
+    expect(TillFixtures::ack($result))->toBe(['acknowledgedSeq' => 1, 'accepted' => 1])
         ->and(DB::table('sale_lines')->first())
         ->position->toBe(3)
         ->and(tillQty(DB::table('sale_lines')->value('qty')))->toBe('2.5000');
@@ -327,7 +327,7 @@ it('never overwrites a row id another company holds', function () {
 
 it('updates only till-owned fields of the portal\'s company, branch and register rows', function () {
     $branch = ['code' => 'XXX', 'name' => 'Leeds Kirkgate', 'address' => '14 Kirkgate, Leeds', 'phone' => '0113 000', 'vatNumber' => 'GB1', 'nation' => 'england', 'licensedHoursJson' => '{"mon":"06:00-23:00"}', 'isDrsReturnPoint' => true, 'areaM2' => 82.5, 'nextPoNo' => 12, 'isActive' => false, 'id' => TillFixtures::LEEDS, 'companyId' => TillFixtures::COMPANY, 'createdAt' => '2026-09-01T08:00:00Z', 'updatedAt' => '2026-09-23T08:00:00Z', 'rowVersion' => 3, 'deletedAt' => null, 'isDeleted' => false, 'domainEvents' => []];
-    $register = ['code' => '09', 'name' => 'Front counter', 'nextSaleNo' => 483, 'nextRefundNo' => 7, 'isMainTill' => false, 'isActive' => false, 'branchId' => TillFixtures::LEEDS, 'id' => TillFixtures::TILL_1, 'companyId' => TillFixtures::COMPANY, 'createdAt' => '2026-09-01T08:00:00Z', 'updatedAt' => '2026-09-23T08:00:00Z', 'rowVersion' => 9, 'deletedAt' => null, 'isDeleted' => false, 'domainEvents' => []];
+    $register = ['code' => '09', 'name' => 'Front counter', 'nextSaleNo' => 483, 'nextRefundNo' => 7, 'nextOrderNo' => 18, 'isMainTill' => false, 'isActive' => false, 'branchId' => TillFixtures::LEEDS, 'id' => TillFixtures::TILL_1, 'companyId' => TillFixtures::COMPANY, 'createdAt' => '2026-09-01T08:00:00Z', 'updatedAt' => '2026-09-23T08:00:00Z', 'rowVersion' => 9, 'deletedAt' => null, 'isDeleted' => false, 'domainEvents' => []];
 
     $result = ($this->apply)([
         TillFixtures::envelope('Branch', $branch, 1),
@@ -348,6 +348,7 @@ it('updates only till-owned fields of the portal\'s company, branch and register
         ->code->toBe('01')
         ->name->toBe('Front counter')
         ->next_sale_no->toBe(483)
+        ->next_order_no->toBe(18)
         ->is_main_till->toBe(1)
         ->is_active->toBe(1);
 
@@ -389,7 +390,7 @@ it('rejects only the change the database refuses and applies the rest', function
 
     $result = ($this->apply)($this->push);
 
-    expect($result->toPushReply())->toBe(['acknowledgedSeq' => 18236, 'accepted' => 7])
+    expect(TillFixtures::ack($result))->toBe(['acknowledgedSeq' => 18236, 'accepted' => 7])
         ->and(collect($result->rejected)->pluck('code')->all())->toBe(['store.failed', 'store.failed'])
         ->and(collect($result->rejected)->pluck('seq')->all())->toBe([18237, 18238])
         ->and(DB::table('sale_vats')->count())->toBe(2)

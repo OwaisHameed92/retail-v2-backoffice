@@ -9,7 +9,7 @@ use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
 
 /**
- * One till id → one of our ids (module 2.1, contract v1.3.3 §17.3 step 3). Tenant-owned: sync and licence API
+ * One till id → one of our ids (module 2.1, contract v1.4.1 §17.3 step 3). Tenant-owned: sync and licence API
  * code reads it with `withoutCompanyScope()` and always filters by company. Written only by RecordTillIds.
  *
  * `branch_id` = our branch whose till sent it (for a company alias: the branch that uses it, so pull can echo the

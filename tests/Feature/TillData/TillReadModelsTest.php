@@ -18,11 +18,12 @@ beforeEach(function () {
 
 it('filters sales by status, trading type, branch, till and completion time', function () {
     ($this->as)(function () {
-        expect(Sale::query()->completed()->count())->toBe(3)
-            ->and(Sale::query()->trading()->forBranch($this->leeds)->count())->toBe(2)
-            ->and(Sale::query()->trading()->forBranch(null)->count())->toBe(3)
-            ->and(Sale::query()->forRegister(TillFixtures::TILL_2)->count())->toBe(1)
-            ->and(Sale::query()->completedBetween(CarbonImmutable::parse('2026-09-23 00:00', 'Europe/London'), CarbonImmutable::parse('2026-09-24 00:00', 'Europe/London'))->count())->toBe(3)
+        // Leeds: one sale on till 1, two on till 2 (v1.4.1 second-till sample); Bradford: one.
+        expect(Sale::query()->completed()->count())->toBe(4)
+            ->and(Sale::query()->trading()->forBranch($this->leeds)->count())->toBe(3)
+            ->and(Sale::query()->trading()->forBranch(null)->count())->toBe(4)
+            ->and(Sale::query()->forRegister(TillFixtures::TILL_2)->count())->toBe(2)
+            ->and(Sale::query()->completedBetween(CarbonImmutable::parse('2026-09-23 00:00', 'Europe/London'), CarbonImmutable::parse('2026-09-24 00:00', 'Europe/London'))->count())->toBe(4)
             ->and(Sale::query()->completedBetween(CarbonImmutable::parse('2026-09-24'), CarbonImmutable::parse('2026-09-25'))->count())->toBe(0);
     });
 });
@@ -31,8 +32,8 @@ it('sums money exactly in the database', function () {
     ($this->as)(function () {
         $totals = Sale::totals(Sale::query()->trading()->forBranch($this->leeds));
 
-        expect($totals['count'])->toBe(2)
-            ->and($totals['total'])->toBe(bcadd('5.15', (string) Sale::query()->forRegister(TillFixtures::TILL_2)->value('total'), 2))
+        expect($totals['count'])->toBe(3)
+            ->and($totals['total'])->toBe(bcadd('5.15', TillSum::of(Sale::query()->forRegister(TillFixtures::TILL_2), 'total'), 2))
             ->and($totals['net_total'])->toBe(bcsub($totals['total'], $totals['vat_total'], 2))
             ->and(TillSum::of(Sale::query()->whereRaw('1 = 0'), 'total'))->toBe('0.00');
 

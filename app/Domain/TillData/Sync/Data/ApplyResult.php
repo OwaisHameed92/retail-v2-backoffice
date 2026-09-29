@@ -7,9 +7,9 @@ use App\Domain\TillData\Sync\Enums\ChangeOutcome;
 /**
  * Result of ApplySyncChanges. `acknowledgedSeq` is the highest seq with every lower seq of the batch accepted
  * (contract section 7): the first rejected change stops it. `accepted` counts every accepted change, including
- * stale, unchanged, duplicate and conflict ones. A retried batch gives the same numbers. `receivedAt` is when this
- * batch was stored (UTC, ISO-8601 Z): v1.4 adds it to the push reply; each row keeps its first one in
- * `portal_received_at`.
+ * stale, unchanged, duplicate, conflict and skipped ones. A retried batch gives the same numbers. `receivedAt`
+ * (required in the v1.4 push reply) is when the batch was durably stored (UTC, ISO-8601 Z, after the commit); a
+ * retry gets the first time (ChangeLedger::receivedAt). Each row keeps its first arrival in `portal_received_at`.
  */
 final readonly class ApplyResult
 {
@@ -39,10 +39,10 @@ final readonly class ApplyResult
     /**
      * The push reply body (schemas/push-reply.schema.json).
      *
-     * @return array{acknowledgedSeq: int, accepted: int}
+     * @return array{acknowledgedSeq: int, accepted: int, receivedAt: string}
      */
     public function toPushReply(): array
     {
-        return ['acknowledgedSeq' => $this->acknowledgedSeq, 'accepted' => $this->accepted];
+        return ['acknowledgedSeq' => $this->acknowledgedSeq, 'accepted' => $this->accepted, 'receivedAt' => $this->receivedAt];
     }
 }

@@ -14,7 +14,7 @@ use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
- * Till sync API (modules 2.2 and 2.5, contract v1.3.3 §4): `GET sync/hello`, `POST sync/push` and `GET sync/pull`.
+ * Till sync API (modules 2.2 and 2.5, contract v1.4.1 §4): `GET sync/hello`, `POST sync/push` and `GET sync/pull`.
  * Auth, contract version, headers and rate limit are the route group's middleware; the work is in SayHello,
  * PushChanges and PullChanges.
  */

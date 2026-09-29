@@ -3,7 +3,6 @@
 namespace App\Http\Middleware;
 
 use App\Domain\Licensing\Api\Support\LicenceApiErrors;
-use App\Domain\Licensing\Api\Support\LicenceReply;
 use App\Domain\Shared\Exceptions\ApiException;
 use App\Domain\Shared\Exceptions\ApiExceptionRenderer;
 use Closure;
@@ -11,13 +10,13 @@ use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
- * Contract v1.3.1 §17.11 for the licence, device and sync endpoints:
+ * Contract v1.4.1 §17.11 for the licence, device and sync endpoints:
  *
  * - `X-SSPOS-Contract: 1` required (anything else → 409 contract.unsupported with supportedContracts), echoed
  *   on every reply with the HTTP `Date` header and `Cache-Control: no-store`.
- * - `X-SSPOS-App-Version` (else, outside sync/*, the body's appVersion) below
- *   config('licence.api.minimum_app_version') → 426 app.update_required. A sync body (gzip, up to 50 MB) is never
- *   read here.
+ * - Never 426 here (contract v1.4.1 ANSWERS-2026-09-29 §3): a till that cannot validate its licence locks after the
+ *   offline grace just because it was not updated. `minimumAppVersion` travels in the validate reply instead
+ *   (informational); sync/* alone may answer 426 for a version known to damage data (GuardSyncRequest).
  * - No query string on a POST: a key, code or token never travels in a URL (§17.11 rule 12) → 400 request.invalid.
  *   GETs may page with one (sync/pull `since`/`max`, module 2.5).
  */
@@ -60,18 +59,5 @@ class EnsureTillContract
         if (! $request->isMethod('GET') && $request->getQueryString() !== null && $request->getQueryString() !== '') {
             throw LicenceApiErrors::invalid('Keys, codes and tokens must be sent in the request body, never in the address.');
         }
-
-        $minimum = LicenceReply::minimumAppVersion();
-        $version = trim((string) ($request->header(self::APP_VERSION_HEADER) ?: ($request->routeIs('api.sync.*') ? '' : $request->json('appVersion'))));
-
-        if ($minimum !== null && $version !== '' && version_compare(self::numeric($version), self::numeric($minimum), '<')) {
-            throw LicenceApiErrors::updateRequired($minimum);
-        }
-    }
-
-    /** "3.0.412-beta+5" → "3.0.412" (pre-release and build parts ignored). */
-    private static function numeric(string $version): string
-    {
-        return (string) preg_replace('/[-+].*$/', '', $version);
     }
 }

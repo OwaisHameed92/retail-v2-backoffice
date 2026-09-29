@@ -40,11 +40,17 @@ final class PayloadMapper
                 : Rejection::for($change, 'payload.missing', 'An insert or update must carry the whole row.');
         }
 
-        if (($payload['id'] ?? null) !== $change->entityId) {
-            return Rejection::for($change, 'payload.id_mismatch', 'payload.id must equal entityId.');
-        }
+        if ($def->isKeyed()) {
+            $change = KeyedRows::identify($change, $def, $context);
 
-        if (($payload['companyId'] ?? null) !== $context->companyId) {
+            if ($change instanceof Rejection) {
+                return $change;
+            }
+
+            $payload = (array) $change->payload;
+        } elseif (($payload['id'] ?? null) !== $change->entityId) {
+            return Rejection::for($change, 'payload.id_mismatch', 'payload.id must equal entityId.');
+        } elseif (($payload['companyId'] ?? null) !== $context->companyId) {
             return Rejection::for($change, 'sync.wrong_company', 'The row belongs to another company.');
         }
 
@@ -120,6 +126,11 @@ final class PayloadMapper
             $more = count($errors) > 5 ? ' (and '.(count($errors) - 5).' more)' : '';
 
             return Rejection::for($change, 'payload.invalid', "Invalid {$def->entity}: ".implode('; ', array_slice($errors, 0, 5)).$more.'.');
+        }
+
+        // A keyed row has no updatedAt of its own (RolePermission): the change's time orders it (EntityWriter).
+        if ($def->isKeyed() && $row['updated_at'] === null) {
+            $row['updated_at'] = $change->at;
         }
 
         if ($change->isDelete() && $row['deleted_at'] === null) {

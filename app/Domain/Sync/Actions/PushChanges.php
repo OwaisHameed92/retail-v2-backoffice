@@ -18,7 +18,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 
 /**
- * `POST /api/v1/sync/push` (module 2.2, contract v1.3.3 §3, §7, §9, §17.8, §19): one branch's batch of changed rows.
+ * `POST /api/v1/sync/push` (module 2.2, contract v1.4.1 §3, §7, §9, §17.8, §19): one branch's batch of changed rows.
  *
  * 1. Body: gzip or plain JSON, ≤ 5,000 rows and 50 MB (PushBody; else 413 / 400).
  * 2. Mode: delta (default; seq = the branch's ChangeLog) or `initial` with `X-SSPOS-Upload-Id` (seq = the upload's

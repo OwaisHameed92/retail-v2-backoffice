@@ -13,8 +13,7 @@ use Carbon\CarbonImmutable;
  * |---|---|
  * | revoked | revoked |
  * | suspended (licence, company, branch or till) | suspended |
- * | expired (and never-activated issued) | expired |
- * | grace | expiring |
+ * | expired, grace (past the end date: the token's expiresAt has passed), never-activated issued | expired |
  * | trial, active | expiring when the token's expiresAt is within config('licence.api.expiring_days'), else active |
  *
  * `released` is not a licence state: it answers an install that was released from the key. `seatLimit` is the
@@ -39,7 +38,6 @@ final class TillStatus
         return match ($state->status) {
             LicenceStatus::Revoked => self::REVOKED,
             LicenceStatus::Suspended => self::SUSPENDED,
-            LicenceStatus::Grace => self::EXPIRING,
             LicenceStatus::Trial, LicenceStatus::Active => $now->addDays(max(0, (int) config('licence.api.expiring_days', 7)))->greaterThanOrEqualTo($expiresAt)
                 ? self::EXPIRING
                 : self::ACTIVE,

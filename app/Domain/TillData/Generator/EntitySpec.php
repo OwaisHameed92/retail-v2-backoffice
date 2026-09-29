@@ -19,6 +19,8 @@ final readonly class EntitySpec
      * @param  list<string>  $hidden
      * @param  array<string, string>  $tillFields  Tenancy entities: till field => portal column.
      * @param  list<string>  $dropped  Secret members never stored anywhere (not even hashed) and never put in `extra`.
+     * @param  list<string>|null  $keyedBy  Keyed rows (contract §10.3, Setting / RolePermission): the payload fields
+     *                                      that identify the row; the id is derived from them.
      */
     public function __construct(
         public string $name,
@@ -40,6 +42,7 @@ final readonly class EntitySpec
         public array $tillFields,
         public ?string $parentScope = null,
         public array $dropped = [],
+        public ?array $keyedBy = null,
     ) {}
 
     public function field(string $name): ?FieldSpec
@@ -109,7 +112,7 @@ final readonly class EntitySpec
             $this->name, $this->class, $this->table, $this->ownership, $this->scope, $this->parentEntity,
             $this->parentField, $this->group, $this->fields, $this->derived, $this->indexes, $this->immutable,
             $this->traits, $this->hidden, $this->tenancy, $this->tenancyModel, $this->tillFields, $parentScope,
-            $this->dropped,
+            $this->dropped, $this->keyedBy,
         );
     }
 }

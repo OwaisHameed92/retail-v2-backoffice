@@ -14,6 +14,7 @@ use App\Domain\TillData\Sync\Data\Rejection;
 use App\Domain\TillData\Sync\Data\SyncChange;
 use App\Domain\TillData\Sync\Enums\ChangeOutcome;
 use App\Domain\TillData\Sync\EnvelopeReader;
+use App\Domain\TillData\Sync\NeverStored;
 use App\Domain\TillData\Sync\ParentResolver;
 use App\Domain\TillData\Sync\PayloadMapper;
 use App\Domain\TillData\Sync\SyncContext;
@@ -23,11 +24,11 @@ use InvalidArgumentException;
 
 /**
  * The one idempotent way till rows enter the store. The push endpoint (2.2) calls it with a decoded batch;
- * pull (2.5) and tests use it too. Contract v1.3.1: docs/contracts/portal-api-v1.3.3/docs/web-portal-api.md §5-7
+ * pull (2.5) and tests use it too. Contract v1.4.1: docs/contracts/portal-api-v1.4.1/docs/web-portal-api.md §5-7
  * and §19 (never twice, never echoed, never backwards).
  *
  *     $result = app(ApplySyncChanges::class)->handle($company, $sendingBranch, $changes);
- *     return response()->json($result->toPushReply());   // {acknowledgedSeq, accepted}
+ *     return response()->json($result->toPushReply());   // {acknowledgedSeq, accepted, receivedAt}
  *
  * Every change is validated on its own: a bad change becomes a rejection (with its key), never an exception for
  * the batch. Changes are stored in seq order, in chunks of CHUNK_SIZE, one transaction per chunk. The same batch
@@ -87,6 +88,8 @@ final class ApplySyncChanges
         foreach ($read as $i => $item) {
             if ($item instanceof SyncChange && $item->seq > 0 && isset($known[$item->seq])) {
                 $outcomes[$i] = ChangeOutcome::Duplicate;
+            } elseif ($item instanceof SyncChange && NeverStored::matches($item)) {
+                $outcomes[$i] = ChangeOutcome::Skipped;
             }
 
             $items[] = $item instanceof SyncChange && ! isset($outcomes[$i])
@@ -111,8 +114,10 @@ final class ApplySyncChanges
         }
 
         $this->warnUnknownEnums($mapped, $context);
+        NeverStored::log($items, $outcomes, $context);
+        $receivedAt = $this->ledger->receivedAt($context, NeverStored::storedSeqs($items, $outcomes), NeverStored::acceptedSeqs($items, $outcomes));
 
-        return $this->result($order, $items, $outcomes, $started, $context->now);
+        return $this->result($order, $items, $outcomes, $started, $receivedAt);
     }
 
     /**
@@ -165,7 +170,7 @@ final class ApplySyncChanges
      * @param  list<MappedChange|SyncChange|Rejection>  $items
      * @param  array<int, ChangeOutcome|Rejection>  $outcomes
      */
-    private function result(array $order, array $items, array $outcomes, int|float $started, string $now): ApplyResult
+    private function result(array $order, array $items, array $outcomes, int|float $started, string $receivedAt): ApplyResult
     {
         $acknowledged = null;
         $counts = [];
@@ -194,7 +199,7 @@ final class ApplySyncChanges
             $acknowledged = max(0, ($first ?? 1) - 1);
         }
 
-        return new ApplyResult($acknowledged, array_sum($counts), $rejected, $counts, (hrtime(true) - $started) / 1e6, str_replace(' ', 'T', $now).'Z');
+        return new ApplyResult($acknowledged, array_sum($counts), $rejected, $counts, (hrtime(true) - $started) / 1e6, $receivedAt);
     }
 
     /**

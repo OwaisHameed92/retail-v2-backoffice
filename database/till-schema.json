@@ -5827,6 +5827,257 @@
                     "indexes": []
                 }
             }
+        },
+        {
+            "release": "v1.4.1",
+            "migrations": [
+                "2026_10_06_100000_create_till_v1_4_1_tables.php",
+                "2026_10_06_100001_add_till_v1_4_1_columns.php"
+            ],
+            "tables": {
+                "branch_prices": {
+                    "columns": {
+                        "id": "string('id', 26)->primary()",
+                        "company_id": "string('company_id', 26)",
+                        "branch_id": "string('branch_id', 26)->nullable()",
+                        "product_id": "string('product_id', 64)->nullable()",
+                        "product_unit_id": "string('product_unit_id', 64)->nullable()",
+                        "price": "decimal('price', 12, 2)->nullable()",
+                        "valid_from_utc": "dateTime('valid_from_utc')->nullable()",
+                        "valid_to_utc": "dateTime('valid_to_utc')->nullable()",
+                        "row_version": "unsignedBigInteger('row_version')->default(0)",
+                        "created_at": "dateTime('created_at')->nullable()",
+                        "updated_at": "dateTime('updated_at')->nullable()",
+                        "deleted_at": "dateTime('deleted_at')->nullable()",
+                        "hub_version": "unsignedBigInteger('hub_version')->nullable()",
+                        "hub_edited_at": "dateTime('hub_edited_at')->nullable()",
+                        "hub_hash": "char('hub_hash', 64)->nullable()",
+                        "origin_branch_id": "string('origin_branch_id', 26)->nullable()",
+                        "synced_at": "dateTime('synced_at')->nullable()",
+                        "sync_seq": "unsignedBigInteger('sync_seq')->nullable()",
+                        "extra": "json('extra')->nullable()",
+                        "portal_received_at": "dateTime('portal_received_at')->nullable()"
+                    },
+                    "indexes": {
+                        "branch_prices_company_id_updated_at_index": [
+                            "company_id",
+                            "updated_at"
+                        ],
+                        "branch_prices_company_id_branch_id_index": [
+                            "company_id",
+                            "branch_id"
+                        ],
+                        "branch_prices_product_id_index": [
+                            "product_id"
+                        ],
+                        "branch_prices_469b9308_idx": [
+                            "company_id",
+                            "branch_id",
+                            "product_id",
+                            "valid_from_utc"
+                        ]
+                    }
+                },
+                "goods_receipt_lines": {
+                    "columns": {
+                        "damaged_qty": "decimal('damaged_qty', 14, 4)->nullable()"
+                    },
+                    "indexes": []
+                },
+                "purchase_orders": {
+                    "columns": {
+                        "origin": "string('origin', 40)->nullable()",
+                        "branch_code": "string('branch_code', 255)->nullable()",
+                        "reference": "string('reference', 255)->nullable()"
+                    },
+                    "indexes": {
+                        "purchase_orders_company_id_reference_index": [
+                            "company_id",
+                            "reference"
+                        ]
+                    }
+                },
+                "purchase_return_lines": {
+                    "columns": {
+                        "id": "string('id', 26)->primary()",
+                        "company_id": "string('company_id', 26)",
+                        "branch_id": "string('branch_id', 26)->nullable()",
+                        "purchase_return_id": "string('purchase_return_id', 64)->nullable()",
+                        "product_id": "string('product_id', 64)->nullable()",
+                        "product_name": "string('product_name', 255)->nullable()",
+                        "qty": "decimal('qty', 14, 4)->nullable()",
+                        "unit_cost": "decimal('unit_cost', 14, 4)->nullable()",
+                        "vat_rate_id": "string('vat_rate_id', 64)->nullable()",
+                        "vat_percentage": "decimal('vat_percentage', 9, 4)->nullable()",
+                        "reason": "string('reason', 40)->nullable()",
+                        "from_stock": "boolean('from_stock')->nullable()",
+                        "goods_receipt_line_id": "string('goods_receipt_line_id', 64)->nullable()",
+                        "line_net": "decimal('line_net', 12, 2)->nullable()",
+                        "line_vat": "decimal('line_vat', 12, 2)->nullable()",
+                        "note": "text('note')->nullable()",
+                        "row_version": "unsignedBigInteger('row_version')->default(0)",
+                        "created_at": "dateTime('created_at')->nullable()",
+                        "updated_at": "dateTime('updated_at')->nullable()",
+                        "deleted_at": "dateTime('deleted_at')->nullable()",
+                        "synced_at": "dateTime('synced_at')->nullable()",
+                        "sync_seq": "unsignedBigInteger('sync_seq')->nullable()",
+                        "extra": "json('extra')->nullable()",
+                        "portal_received_at": "dateTime('portal_received_at')->nullable()"
+                    },
+                    "indexes": {
+                        "purchase_return_lines_company_id_updated_at_index": [
+                            "company_id",
+                            "updated_at"
+                        ],
+                        "purchase_return_lines_company_id_branch_id_index": [
+                            "company_id",
+                            "branch_id"
+                        ],
+                        "purchase_return_lines_purchase_return_id_index": [
+                            "purchase_return_id"
+                        ],
+                        "purchase_return_lines_company_id_product_id_index": [
+                            "company_id",
+                            "product_id"
+                        ]
+                    }
+                },
+                "purchase_returns": {
+                    "columns": {
+                        "id": "string('id', 26)->primary()",
+                        "company_id": "string('company_id', 26)",
+                        "branch_id": "string('branch_id', 26)->nullable()",
+                        "supplier_id": "string('supplier_id', 64)->nullable()",
+                        "supplier_name": "string('supplier_name', 255)->nullable()",
+                        "number": "integer('number')->nullable()",
+                        "reference": "string('reference', 255)->nullable()",
+                        "status": "string('status', 40)->nullable()",
+                        "return_date": "date('return_date')->nullable()",
+                        "goods_receipt_id": "string('goods_receipt_id', 64)->nullable()",
+                        "purchase_order_id": "string('purchase_order_id', 64)->nullable()",
+                        "net_amount": "decimal('net_amount', 12, 2)->nullable()",
+                        "vat_amount": "decimal('vat_amount', 12, 2)->nullable()",
+                        "gross_amount": "decimal('gross_amount', 12, 2)->nullable()",
+                        "created_by_user_id": "string('created_by_user_id', 64)->nullable()",
+                        "sent_at": "dateTime('sent_at')->nullable()",
+                        "sent_by_user_id": "string('sent_by_user_id', 64)->nullable()",
+                        "credit_note_number": "string('credit_note_number', 255)->nullable()",
+                        "credit_date": "date('credit_date')->nullable()",
+                        "credited_at": "dateTime('credited_at')->nullable()",
+                        "supplier_credit_note_id": "string('supplier_credit_note_id', 64)->nullable()",
+                        "cancelled_at": "dateTime('cancelled_at')->nullable()",
+                        "note": "text('note')->nullable()",
+                        "row_version": "unsignedBigInteger('row_version')->default(0)",
+                        "created_at": "dateTime('created_at')->nullable()",
+                        "updated_at": "dateTime('updated_at')->nullable()",
+                        "deleted_at": "dateTime('deleted_at')->nullable()",
+                        "synced_at": "dateTime('synced_at')->nullable()",
+                        "sync_seq": "unsignedBigInteger('sync_seq')->nullable()",
+                        "extra": "json('extra')->nullable()",
+                        "portal_received_at": "dateTime('portal_received_at')->nullable()"
+                    },
+                    "indexes": {
+                        "purchase_returns_company_id_updated_at_index": [
+                            "company_id",
+                            "updated_at"
+                        ],
+                        "purchase_returns_company_id_branch_id_index": [
+                            "company_id",
+                            "branch_id"
+                        ],
+                        "purchase_returns_company_id_supplier_id_index": [
+                            "company_id",
+                            "supplier_id"
+                        ],
+                        "purchase_returns_company_id_goods_receipt_id_index": [
+                            "company_id",
+                            "goods_receipt_id"
+                        ]
+                    }
+                },
+                "stock_transfers": {
+                    "columns": {
+                        "line_count": "integer('line_count')->nullable()"
+                    },
+                    "indexes": []
+                },
+                "supplier_invoices": {
+                    "columns": {
+                        "goods_receipt_id": "string('goods_receipt_id', 64)->nullable()"
+                    },
+                    "indexes": []
+                },
+                "till_role_permissions": {
+                    "columns": {
+                        "id": "string('id', 26)->primary()",
+                        "company_id": "string('company_id', 26)",
+                        "role_id": "string('role_id', 64)->nullable()",
+                        "permission_key": "string('permission_key', 255)->nullable()",
+                        "row_version": "unsignedBigInteger('row_version')->default(0)",
+                        "created_at": "dateTime('created_at')->nullable()",
+                        "updated_at": "dateTime('updated_at')->nullable()",
+                        "deleted_at": "dateTime('deleted_at')->nullable()",
+                        "hub_version": "unsignedBigInteger('hub_version')->nullable()",
+                        "hub_edited_at": "dateTime('hub_edited_at')->nullable()",
+                        "hub_hash": "char('hub_hash', 64)->nullable()",
+                        "origin_branch_id": "string('origin_branch_id', 26)->nullable()",
+                        "synced_at": "dateTime('synced_at')->nullable()",
+                        "sync_seq": "unsignedBigInteger('sync_seq')->nullable()",
+                        "extra": "json('extra')->nullable()",
+                        "portal_received_at": "dateTime('portal_received_at')->nullable()"
+                    },
+                    "indexes": {
+                        "till_role_permissions_company_id_updated_at_index": [
+                            "company_id",
+                            "updated_at"
+                        ],
+                        "till_role_permissions_company_id_role_id_index": [
+                            "company_id",
+                            "role_id"
+                        ]
+                    }
+                },
+                "till_settings": {
+                    "columns": {
+                        "id": "string('id', 26)->primary()",
+                        "company_id": "string('company_id', 26)",
+                        "scope": "string('scope', 40)->nullable()",
+                        "scope_id": "string('scope_id', 64)->nullable()",
+                        "setting_key": "string('setting_key', 255)->nullable()",
+                        "value": "text('value')->nullable()",
+                        "row_version": "unsignedBigInteger('row_version')->default(0)",
+                        "created_at": "dateTime('created_at')->nullable()",
+                        "updated_at": "dateTime('updated_at')->nullable()",
+                        "deleted_at": "dateTime('deleted_at')->nullable()",
+                        "hub_version": "unsignedBigInteger('hub_version')->nullable()",
+                        "hub_edited_at": "dateTime('hub_edited_at')->nullable()",
+                        "hub_hash": "char('hub_hash', 64)->nullable()",
+                        "origin_branch_id": "string('origin_branch_id', 26)->nullable()",
+                        "synced_at": "dateTime('synced_at')->nullable()",
+                        "sync_seq": "unsignedBigInteger('sync_seq')->nullable()",
+                        "extra": "json('extra')->nullable()",
+                        "portal_received_at": "dateTime('portal_received_at')->nullable()"
+                    },
+                    "indexes": {
+                        "till_settings_company_id_updated_at_index": [
+                            "company_id",
+                            "updated_at"
+                        ],
+                        "till_settings_company_id_scope_scope_id_setting_key_index": [
+                            "company_id",
+                            "scope",
+                            "scope_id",
+                            "setting_key"
+                        ]
+                    }
+                },
+                "till_sync_conflicts": {
+                    "columns": {
+                        "hub_change": "longText('hub_change')->nullable()"
+                    },
+                    "indexes": []
+                }
+            }
         }
     ]
 }

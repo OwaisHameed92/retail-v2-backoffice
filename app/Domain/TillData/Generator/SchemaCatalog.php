@@ -53,6 +53,19 @@ final class SchemaCatalog
     }
 
     /**
+     * Entities the till never syncs (`local` in samples/ownership.json, contract §10): no table, no model.
+     *
+     * @return list<string>
+     */
+    public function localEntities(): array
+    {
+        $local = array_keys(array_filter($this->ownership(), fn (string $owner) => $owner === 'local'));
+        sort($local);
+
+        return $local;
+    }
+
+    /**
      * @return array<string, list<string>> enum name => values, exactly as samples/enums.json
      */
     public function knownEnums(): array
@@ -75,6 +88,10 @@ final class SchemaCatalog
 
         foreach (glob($this->contractPath.'/schemas/entities/*.schema.json') ?: [] as $file) {
             $name = basename($file, '.schema.json');
+
+            if (($ownership[$name] ?? null) === 'local') {
+                continue;
+            }
             $specs[$name] = $this->buildEntity($name, $this->readJson('schemas/entities/'.basename($file)), $ownership, $typer);
         }
 
@@ -141,6 +158,7 @@ final class SchemaCatalog
             default => [],
         };
 
+        $keyedBy = $def['keyedBy'] ?? null;
         $fields = [];
         $derived = [];
         $dropped = [];
@@ -156,7 +174,9 @@ final class SchemaCatalog
                 continue;
             }
 
-            if (in_array($field, $this->definitions['derived'], true) || in_array($field, $def['derived'] ?? [], true)) {
+            $keyField = in_array($field, $keyedBy ?? [], true);
+
+            if (! $keyField && (in_array($field, $this->definitions['derived'], true) || in_array($field, $def['derived'] ?? [], true))) {
                 $derived[] = $field;
 
                 continue;
@@ -209,7 +229,9 @@ final class SchemaCatalog
             tenancy: $tenancy !== null,
             tenancyModel: $tenancy['model'] ?? null,
             tillFields: $tenancy['tillFields'] ?? [],
-            dropped: $dropped,
+            // Members the contract removed (e.g. User.remoteApprovalSecret in v1.4) stay dropped if an older till sends them.
+            dropped: array_values(array_unique([...$dropped, ...($def['drop'] ?? [])])),
+            keyedBy: $keyedBy,
         );
     }
 

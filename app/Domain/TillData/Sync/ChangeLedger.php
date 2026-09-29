@@ -4,6 +4,7 @@ namespace App\Domain\TillData\Sync;
 
 use App\Domain\TillData\Sync\Data\SyncChange;
 use App\Domain\TillData\Sync\Enums\ChangeOutcome;
+use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -65,5 +66,46 @@ final class ChangeLedger
         }
 
         BulkWriter::insertOrIgnore('sync_applied_changes', self::COLUMNS, $rows);
+    }
+
+    /**
+     * The push reply's `receivedAt` (contract v1.4 §7, §6.1): when the batch's rows were durably stored, by our
+     * clock, taken after the commit. Rows this call stored are stamped with that time; a retry answers with the
+     * latest time the ledger holds for its (branch, seq) values — the first time, never "now". A batch with nothing
+     * in the ledger (all rejected, or pull-shaped seq 0) answers now.
+     *
+     * @param  list<int>  $stored  seqs this call wrote
+     * @param  list<int>  $accepted  every accepted seq of the batch
+     */
+    public function receivedAt(SyncContext $context, array $stored, array $accepted): string
+    {
+        $now = now('UTC')->format('Y-m-d H:i:s');
+
+        foreach (array_chunk(array_values(array_unique($stored)), 1000) as $chunk) {
+            $this->scoped($context, $chunk)->update(['applied_at' => $now]);
+        }
+
+        $latest = null;
+
+        if ($stored === []) {
+            foreach (array_chunk(array_values(array_unique($accepted)), 1000) as $chunk) {
+                $max = $this->scoped($context, $chunk)->max('applied_at');
+                $latest = $max !== null && ($latest === null || (string) $max > $latest) ? substr((string) $max, 0, 19) : $latest;
+            }
+        }
+
+        return str_replace(' ', 'T', $latest ?? $now).'Z';
+    }
+
+    /**
+     * @param  list<int>  $seqs
+     */
+    private function scoped(SyncContext $context, array $seqs): Builder
+    {
+        return DB::table('sync_applied_changes')
+            ->where('company_id', $context->companyId)
+            ->where('branch_id', $context->branchId)
+            ->where('stream', $context->stream)
+            ->whereIn('seq', $seqs);
     }
 }

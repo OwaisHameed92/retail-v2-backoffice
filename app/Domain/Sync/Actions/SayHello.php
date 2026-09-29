@@ -8,7 +8,7 @@ use App\Domain\Sync\Enums\IdKind;
 use App\Domain\Sync\Support\SyncStatusRecorder;
 
 /**
- * `GET /api/v1/sync/hello` (module 2.2, contract v1.3.3 §4.1, schemas/hello-reply.schema.json): proves the address,
+ * `GET /api/v1/sync/hello` (module 2.2, contract v1.4.1 §4.1, schemas/hello-reply.schema.json): proves the address,
  * the key and the key's branch. `companyId` / `branchId` are the key's company and branch **as the till knows them**
  * (id_map, IdTranslator::toTill; the till compares them with its own). `maxBatchRows` = config('sync.push.max_rows').
  */

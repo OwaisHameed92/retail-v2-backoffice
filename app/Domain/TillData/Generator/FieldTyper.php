@@ -74,7 +74,7 @@ final class FieldTyper
             'date' => new FieldSpec($name, $column, 'date', $nullable),
             'date-time' => new FieldSpec($name, $column, 'datetime', $nullable),
             'time' => new FieldSpec($name, $column, 'time', $nullable),
-            default => $this->stringField($name, $column, $nullable, $entityDef, $scopeColumns),
+            default => $this->stringField($entity, $name, $column, $nullable, $entityDef, $scopeColumns),
         };
     }
 
@@ -82,7 +82,7 @@ final class FieldTyper
      * @param  array<string, mixed>  $entityDef
      * @param  list<string>  $scopeColumns
      */
-    private function stringField(string $name, string $column, bool $nullable, array $entityDef, array $scopeColumns): FieldSpec
+    private function stringField(string $entity, string $name, string $column, bool $nullable, array $entityDef, array $scopeColumns): FieldSpec
     {
         if (in_array($name, $entityDef['secret'] ?? [], true)) {
             return new FieldSpec($name, $column, 'secret', $nullable);
@@ -92,7 +92,7 @@ final class FieldTyper
             return new FieldSpec($name, $column, 'longText', $nullable);
         }
 
-        if (in_array($name, $this->definitions['text'] ?? [], true)) {
+        if (in_array($name, $this->definitions['text'] ?? [], true) || in_array("{$entity}.{$name}", $this->definitions['text'] ?? [], true)) {
             return new FieldSpec($name, $column, 'text', $nullable);
         }
 

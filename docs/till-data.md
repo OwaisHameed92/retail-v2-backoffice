@@ -1,8 +1,8 @@
 # Till data store (modules 2.3 + 2.4)
 
 How the portal stores every row the tills send, and the one way rows get in: `ApplySyncChanges`.
-Contract v1.3.1: `docs/contracts/portal-api-v1.3.3/docs/web-portal-api.md` §5–10, §16, §19, §20; schemas and samples in
-`docs/contracts/portal-api-v1.3.3/docs/web-portal-api/` (the samples win where text and samples differ).
+Contract v1.4.1: `docs/contracts/portal-api-v1.4.1/docs/web-portal-api.md` §5–10, §16, §19, §20; schemas and samples in
+`docs/contracts/portal-api-v1.4.1/docs/web-portal-api/` (the samples win where text and samples differ).
 
 ## Shape
 
@@ -10,18 +10,20 @@ Contract v1.3.1: `docs/contracts/portal-api-v1.3.3/docs/web-portal-api.md` §5�
 |---|---|---|
 | Overrides | `app/Domain/TillData/definitions.php` | hand |
 | Generator | `app/Domain/TillData/Generator/*`, `php artisan till:entities:generate` | hand |
-| Migrations, additive per release | v1.1: `2026_09_27_1100NN_create_till_<group>_tables.php`; v1.3.1: `2026_10_02_100000_create_till_v1_3_1_tables.php`, `2026_10_02_100001_add_till_v1_3_1_columns.php` | generated |
+| Migrations, additive per release | v1.1: `2026_09_27_1100NN_create_till_<group>_tables.php`; v1.3.1: `2026_10_02_10000{0,1}_…_v1_3_1_…`; v1.4.1: `2026_10_06_100000_create_till_v1_4_1_tables.php`, `2026_10_06_100001_add_till_v1_4_1_columns.php` (+ hand `2026_10_06_100002_add_v1_4_1_sync_columns.php`) | generated |
 | Schema lock | `database/till-schema.json`: what each release's migrations made | generated |
-| Models (137) | `app/Domain/TillData/Models/*.php` | generated |
-| Enums (85) | `app/Domain/TillData/Enums/*.php` | generated |
+| Models (141) | `app/Domain/TillData/Models/*.php` | generated |
+| Enums (88) | `app/Domain/TillData/Enums/*.php` | generated |
 | Registry | `app/Domain/TillData/EntityRegistry.php` | generated |
 | Behaviour traits, casts, queries | `app/Domain/TillData/{Concerns,Casts,Queries}` | hand |
 | Applier | `app/Domain/TillData/Actions/ApplySyncChanges.php` + `app/Domain/TillData/Sync/*` | hand |
 | Sync bookkeeping | `2026_09_27_100000_create_till_sync_tables.php`, `…100001_add_till_columns_to_tenancy_tables.php` | hand |
 
-All 140 schema entities have a registry entry. 137 have their own table and model. `Company`, `Branch` and
-`Register` land on module 1.2's `companies`, `branches` and `registers` tables. `Setting` and `RolePermission` are
-in `ownership.json` but have no schema: the till cannot sync them yet (contract §16), so they have no table.
+145 schema entities (v1.4.1). 144 have a registry entry; 141 have their own table and model. `Company`, `Branch` and
+`Register` land on module 1.2's `companies`, `branches` and `registers` tables. The `local` tables of
+`ownership.json` (`SyncState`, `DomainEventRecord`, `ProcessedCommand`; `EntityRegistry::LOCAL`) are never synced
+and never stored: a push of one is acknowledged as `skipped` (v1.3.1's `till_sync_states` table is kept, unused).
+`Setting` and `RolePermission` are **keyed rows** (below).
 
 Groups (table order): catalogue, promotions, customers, sales, stock, purchasing, cash, accounts, staff, system,
 compliance.
@@ -50,8 +52,15 @@ compliance.
   `priceIncVat`, navigation collections like `Product.barcodes`) are not stored.
 - Unknown members (a newer till adds a column) go into `extra` (json). Secret-looking ones are redacted there.
 - Secrets: `Licence.licenceKey` is stored as `licence_key_hash` (HMAC-SHA256 under APP_KEY, as module 1.3 hashes
-  keys) and `licence_key_last4`. `User.remoteApprovalSecret` is dropped (`drop`): no column, not in `extra`, not in a
-  conflict payload. `User.pinHash` and `rfid` are `$hidden`.
+  keys) and `licence_key_last4`. `User.remoteApprovalSecret` and `…SetAt` (removed from the contract in v1.4, still
+  sent by older tills) are dropped (`drop`): not stored, not in `extra`, not in a conflict payload. `User.pinHash` and
+  `rfid` are `$hidden`. Deny-listed settings are never stored (keyed rows, below).
+- **Keyed rows** (v1.4 §10.3): `Setting` (scope, scopeId, key → `till_settings`, column `setting_key`) and
+  `RolePermission` (roleId, permissionKey → `till_role_permissions`) have no ULID, companyId or row version. The
+  stored id is derived from the payload with our ids (`SyncRowIds`, the till's formula); `row_version` = the pushing
+  branch's seq; the later `updatedAt` (RolePermission: the change's `at`) wins, then the higher seq. A setting must be
+  scoped to the pushing company/branch. `SettingSyncPolicy` (= `samples/settings-local-only.json`): register-scope
+  and deny-listed keys are acknowledged as `skipped` and never stored; their values are never logged.
 - Every till column is nullable in the database; the applier enforces the schema's nullability. The database
   stays tolerant of schema relaxations and tombstones.
 - Sync columns: `row_version` (the till's rowVersion), `created_at` / `updated_at` / `deleted_at` (the till's),
@@ -72,10 +81,10 @@ compliance.
 
 ```php
 $result = app(ApplySyncChanges::class)->handle($company, $sendingBranch, $changes); // decoded envelopes
-$result->toPushReply();   // ['acknowledgedSeq' => 18239, 'accepted' => 9]
+$result->toPushReply();   // ['acknowledgedSeq' => 18239, 'accepted' => 9, 'receivedAt' => '2026-09-28T10:15:02Z']
 $result->rejected;        // list<Rejection>: key, seq, code, message (in seq order)
-$result->outcomes;        // ['applied' => 7, 'stale' => 1, 'unchanged' => 0, 'duplicate' => 0, 'conflict' => 1]
-$result->receivedAt;      // '2026-09-28T10:15:02Z' (the batch time; v1.4 push reply)
+$result->outcomes;        // ['applied' => 7, 'stale' => 1, 'unchanged' => 0, 'duplicate' => 0, 'conflict' => 1, 'skipped' => 0]
+$result->receivedAt;      // after the commit; a retry gets the first time (ChangeLedger::receivedAt)
 ```
 
 Per change, in seq order, 500 per transaction:
@@ -131,15 +140,18 @@ Rejection codes: `change.invalid`, `entity.unknown`, `sync.wrong_company`, `sync
 `POST /api/v1/sync/push` → `EnsureTillContract` → `AuthenticateSyncKey` → `GuardSyncRequest` →
 `SyncController::push` → `App\Domain\Sync\Actions\PushChanges`:
 
-1. Headers: `X-SSPOS-Contract: 1` (409), Bearer key for `X-SSPOS-Branch-Id` (401/403), app version, store
-   protocol, company and register headers (400), per-key rate limit (429 `rate.limited`).
+1. Headers: `X-SSPOS-Contract: 1` (409), Bearer key for `X-SSPOS-Branch-Id` (401/403), app version, company and
+   register headers (400), per-key rate limit (429 `rate.limited`). `X-SSPOS-Store-Protocol` is optional (log
+   context only). 426 `app.update_required` only for a version in `sync.blocked_app_versions` (never on licence calls).
 2. `X-SSPOS-Sync-Mode` (`delta` default, `initial` + `X-SSPOS-Upload-Id`), optional `Idempotency-Key`.
 3. `PushBody::decode`: gzip or plain JSON, ≤ 50 MB inflated, ≤ 5,000 rows (413 `batch.too_large`), a non-empty list.
 4. Branch lock (`Cache::lock('sync-push:branch:{id}')`); busy → 503 `server.busy`.
 5. Idempotency-Key replay, else `ApplySyncChanges::handle($company, $keyBranch, $changes, $stream)` (`$stream` =
    '' or the upload id: the ledger keys changes by company + branch + stream + seq).
-6. `SyncStatusRecorder::pushed()` → `sync_branch_status`; reply 200 `toPushReply()`, or 422 `row.invalid` with
-   `rejectedKey` when the first row of the batch was rejected.
+6. `SyncStatusRecorder::pushed()` → `sync_branch_status`; reply 200 `toPushReply()` (`receivedAt` required since
+   v1.4.1: UTC `Z`, taken after the commit; the ledger's `applied_at` of the rows this call stored is set to it, and a
+   retry answers the latest `applied_at` of its seqs, i.e. the first time), or 422 `row.invalid` with `rejectedKey`
+   when the first row of the batch was rejected.
 
 `GET /api/v1/sync/hello` (`SayHello`) returns the key's company/branch in the till's ids, the branch name, server time
 and `maxBatchRows`. Settings: `config/sync.php` (`push.*`, `rate_limit_per_minute`). Timing: a 5,000-row gzip push
@@ -156,9 +168,10 @@ must be shared between PHP workers (locks).
 2. `HubVersions::stampPending($company)`: every hub-owned row with `hub_version` null (accepted from a till, or a
    portal change whose after-commit stamp did not run) gets the next version, parents first
    (`HubVersions::ORDER`), oldest change first.
-3. In one transaction: `PullFeed::page()` — a `UNION ALL` over the 27 hub-owned tables of `(entity, id, hub_version)`
-   where `hub_version > since`, `origin_branch_id` is not the caller, and (tables with `branch_id`, i.e. NewsTitle)
-   the row is for no branch or the caller; `ORDER BY hub_version LIMIT max + 1`. Then the full rows per entity.
+3. In one transaction: `PullFeed::page()` — a `UNION ALL` over the 28 hub-owned tables of `(entity, id, hub_version)`
+   (keyed `Setting`/`RolePermission` are left out until module 2.9B builds their envelope) where
+   `hub_version > since`, `origin_branch_id` is not the caller, and (tables with `branch_id`: NewsTitle, and
+   BranchPrice — v1.4.1, a shop's own price, pulled only by that shop) the row is for no branch or the caller; `ORDER BY hub_version LIMIT max + 1`. Then the full rows per entity.
 4. `PullPayload::envelope()`: `seq` 0, `op` D / I (`createdAt` = `updatedAt`) / U, `version` = `hub_version`, the till's
    company/branch ids (`IdTranslator::toTill`), `branchId` "" or the addressed branch, `registerId` "", the whole
    row in the till's shape (see DECISIONS "Pull"), no secrets. `highestVersion` = the last version on the page (or
@@ -176,7 +189,8 @@ become visible in order. Who stamps:
   bookkeeping and stamps). Never hard-delete a hub-owned row: a pull cannot send it.
 - Rows a till pushes (`ApplySyncChanges` clears `hub_version` and sets `origin_branch_id`): the next pull's sweep.
 
-Indexes: `(company_id, hub_version)` on every hub-owned table (`2026_10_05_100000_add_sync_pull_feed.php`, hand
+Indexes: `(company_id, hub_version)` on every hub-owned table (`2026_10_05_100000_add_sync_pull_feed.php`; v1.4.1's
+three new hub tables in `2026_10_06_100002_add_v1_4_1_sync_columns.php`; hand
 written; not in `till-schema.json`). Timing: 5,000 products pulled by another branch (stamping included, gzip):
 ≈ 0.6 s wall / CPU, a repeat ≈ 0.4 s (`php artisan test --group=perf`).
 

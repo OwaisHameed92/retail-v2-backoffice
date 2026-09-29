@@ -18,7 +18,7 @@ use Tests\Feature\Tenants\TenantTestHelpers;
 
 uses(TenantTestHelpers::class, LicensingTestHelpers::class, LicenceApiHelpers::class);
 
-/** Module 2.1 (contract v1.3.3 §17.3 step 3, ANSWERS §2): the branch's sync key rides in the licence replies. */
+/** Module 2.1 (contract v1.4.1 §17.3 step 3, ANSWERS §2): the branch's sync key rides in the licence replies. */
 beforeEach(function () {
     Mail::fake();
     $this->travelTo(CarbonImmutable::parse('2026-10-05 09:00:00', 'UTC'));
@@ -145,4 +145,39 @@ test('a replayed activate answers with the same key but the cache never holds it
     expect($stored)->toContain('licence-api:idem:')
         ->not->toContain((string) $first->json('apiKey'))
         ->not->toContain(SyncKeySecret::canonical((string) $first->json('apiKey')));
+});
+
+test('deactivating the main till that was sent the branch key revokes and rotates it: apiKeyRevoked true (v1.4.1)', function () {
+    $apiKey = (string) $this->activateTill()->assertOk()->json('apiKey');
+    $sent = currentSyncKeyOf($this->licence);
+
+    $reply = $this->deactivateTill()->assertOk()->assertJsonPath('apiKeyRevoked', true)->assertJsonPath('seat', 'deactivated');
+    expect($this->schemaErrors($reply, 'deactivate-reply.schema.json'))->toBe([])
+        ->and($sent->fresh()->revoked_at)->not->toBeNull()
+        ->and($sent->fresh()->isUsable(CarbonImmutable::now()))->toBeFalse()
+        ->and(SyncKeySecret::hash($apiKey))->toBe($sent->key_hash);
+
+    // A new current key replaces it, sent to nobody yet; the old PC's key is dead.
+    $replacement = currentSyncKeyOf($this->licence);
+    expect($replacement->id)->not->toBe($sent->id)
+        ->and($replacement->delivered_install_id)->toBeNull();
+
+    // Deactivating twice gives the same reply.
+    $this->deactivateTill()->assertOk()->assertJsonPath('apiKeyRevoked', true);
+
+    // The till (or its replacement PC) activates again and gets a fresh key of its own.
+    $again = (string) $this->activateTill()->assertOk()->json('apiKey');
+    expect(SyncKeySecret::looksValid($again))->toBeTrue()->and($again)->not->toBe($apiKey)
+        ->and(currentSyncKeyOf($this->licence)->delivered_install_id)->toBe(self::INSTALL);
+});
+
+test('deactivating a till that never got the branch key leaves the key alone: apiKeyRevoked false', function () {
+    $this->licence->forceFill(['features' => ['loyalty']])->save();
+    $admin = app(IssueSyncKey::class)->handle($this->licence->branch, SyncKeySource::Admin);
+    $this->activateTill()->assertOk()->assertJsonMissingPath('apiKey');
+
+    $this->deactivateTill()->assertOk()->assertJsonPath('apiKeyRevoked', false);
+
+    expect(currentSyncKeyOf($this->licence)->key_hash)->toBe(SyncKeySecret::hash($admin))
+        ->and(currentSyncKeyOf($this->licence)->revoked_at)->toBeNull();
 });

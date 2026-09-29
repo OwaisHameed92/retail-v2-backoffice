@@ -7,7 +7,7 @@ use App\Domain\Sync\Models\SyncBranchStatus;
 use Tests\Feature\Sync\SyncApiFixtures;
 use Tests\Feature\TillData\TillFixtures;
 
-/** Module 2.2: `GET /api/v1/sync/hello` (contract v1.3.3 §4.1, hello-reply schema). */
+/** Module 2.2: `GET /api/v1/sync/hello` (contract v1.4.1 §4.1, hello-reply schema). */
 beforeEach(function () {
     $this->sync = new SyncApiFixtures($this);
 });
@@ -49,7 +49,7 @@ test('a branch whose till uses an aliased company id gets that alias back; maxBa
 });
 
 test('hello errors use the error-reply envelope', function (array $headers, int $status, string $code) {
-    config(['licence.api.minimum_app_version' => '3.0.400']);
+    config(['sync.blocked_app_versions' => ['3.0.100', '2.*']]);
 
     $reply = $this->sync->hello($headers)->assertStatus($status)->assertJsonPath('code', $code)->assertHeader('X-SSPOS-Contract', '1');
 
@@ -60,7 +60,13 @@ test('hello errors use the error-reply envelope', function (array $headers, int 
     'another branch' => [['X-SSPOS-Branch-Id' => TillFixtures::BRADFORD], 403, 'auth.wrong_branch'],
     'another company' => [['X-SSPOS-Company-Id' => '01K5T0Q8C4000000000000C009'], 403, 'auth.wrong_branch'],
     'no contract' => [['X-SSPOS-Contract' => null], 409, 'contract.unsupported'],
-    'old till' => [['X-SSPOS-App-Version' => '3.0.100'], 426, 'app.update_required'],
-    'no store protocol' => [['X-SSPOS-Store-Protocol' => null], 400, 'request.invalid'],
+    'a blocked version' => [['X-SSPOS-App-Version' => '3.0.100+7'], 426, 'app.update_required'],
+    'a blocked series' => [['X-SSPOS-App-Version' => '2.9.1'], 426, 'app.update_required'],
     'no company header' => [['X-SSPOS-Company-Id' => null], 400, 'request.invalid'],
 ]);
+
+test('X-SSPOS-Store-Protocol is informational: any value or none is accepted; old versions still sync unless blocked', function (?string $protocol) {
+    config(['licence.api.minimum_app_version' => '9.0.0', 'sync.blocked_app_versions' => []]);
+
+    $this->sync->hello(['X-SSPOS-Store-Protocol' => $protocol, 'X-SSPOS-App-Version' => '0.1.2'])->assertOk();
+})->with(['none' => [null], 'current' => ['3'], 'unknown' => ['99'], 'text' => ['beta']]);

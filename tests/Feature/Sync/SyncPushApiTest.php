@@ -5,34 +5,37 @@ use App\Domain\Tenancy\CurrentCompany;
 use App\Domain\TillData\Models\Sale;
 use App\Domain\TillData\Models\SaleLine;
 use App\Domain\TillData\Models\StockMovement;
+use App\Domain\TillData\Sync\SyncRowIds;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Tests\Feature\Sync\SyncApiFixtures;
 use Tests\Feature\TillData\TillFixtures;
 
-/** Module 2.2: `POST /api/v1/sync/push` (contract v1.3.3 §3, §7, §9, §17.8, §19). */
+/** Module 2.2: `POST /api/v1/sync/push` (contract v1.4.1 §3, §7, §9, §17.8, §19). */
 beforeEach(function () {
     $this->sync = new SyncApiFixtures($this);
     $this->status = fn ($branch) => SyncBranchStatus::withoutCompanyScope()->where('branch_id', $branch->id)->first();
 });
 
 test('the three push samples replay into the right company, branch and tills, with replies valid per push-reply', function () {
+    $this->freezeSecond();
     $s = $this->sync;
 
     $leeds = $s->push(TillFixtures::sample('push-request.json'))->assertOk()->assertHeader('X-SSPOS-Contract', '1');
-    expect($leeds->json())->toBe(TillFixtures::sample('push-reply.json'))
+    expect(TillFixtures::ack($leeds->json()))->toBe(TillFixtures::ack(TillFixtures::sample('push-reply.json')))
+        ->and($leeds->json('receivedAt'))->toBe(now('UTC')->format('Y-m-d\TH:i:s\Z'))
         ->and(SyncApiFixtures::schemaErrors($leeds, 'push-reply.schema.json'))->toBe([]);
 
     $till2 = $s->push(TillFixtures::sample('push-request.second-till.json'))->assertOk();
-    expect($till2->json())->toBe(['acknowledgedSeq' => 18247, 'accepted' => 8])
+    expect(TillFixtures::ack($till2->json()))->toBe(['acknowledgedSeq' => 18257, 'accepted' => 18])
         ->and(SyncApiFixtures::schemaErrors($till2, 'push-reply.schema.json'))->toBe([]);
 
     $bradford = $s->push(TillFixtures::sample('push-request.second-branch.json'), bradford: true)->assertOk();
-    expect($bradford->json())->toBe(['acknowledgedSeq' => 5127, 'accepted' => 8])
+    expect(TillFixtures::ack($bradford->json()))->toBe(['acknowledgedSeq' => 5127, 'accepted' => 8])
         ->and(SyncApiFixtures::schemaErrors($bradford, 'push-reply.schema.json'))->toBe([]);
 
     $sales = Sale::withoutCompanyScope()->get()->keyBy('id');
-    expect($sales)->toHaveCount(3)
+    expect($sales)->toHaveCount(4)
         ->and($sales->pluck('company_id')->unique()->all())->toBe([$s->company->id])
         ->and($sales['01K5VB000000000SR001000482']->branch_id)->toBe($s->leeds->id)
         ->and($sales['01K5VB000000000SR001000482']->register_id)->toBe($s->tills[TillFixtures::TILL_1]->id)
@@ -40,12 +43,13 @@ test('the three push samples replay into the right company, branch and tills, wi
         ->and($sales->firstWhere('register_id', $s->tills[TillFixtures::BRADFORD_TILL]->id)?->branch_id)->toBe($s->bradford->id)
         ->and(SaleLine::withoutCompanyScope()->whereNotIn('branch_id', [$s->leeds->id, $s->bradford->id])->count())->toBe(0)
         ->and(StockMovement::withoutCompanyScope()->where('branch_id', $s->bradford->id)->count())->toBe(2)
-        ->and(DB::table('sync_applied_changes')->where('branch_id', $s->leeds->id)->count())->toBe(17);
+        ->and(DB::table('sync_applied_changes')->where('branch_id', $s->leeds->id)->count())->toBe(27);
 });
 
 test('a plain JSON body is accepted as well as gzip', function () {
-    $this->sync->push(TillFixtures::sample('push-request.json'), gzip: false)->assertOk()
-        ->assertExactJson(TillFixtures::sample('push-reply.json'));
+    $reply = $this->sync->push(TillFixtures::sample('push-request.json'), gzip: false)->assertOk();
+
+    expect(TillFixtures::ack($reply->json()))->toBe(TillFixtures::ack(TillFixtures::sample('push-reply.json')));
 
     expect(Sale::withoutCompanyScope()->count())->toBe(1);
 });
@@ -64,7 +68,7 @@ test('the same batch twice gives the same reply and no duplicates; an Idempotenc
     $tagged = $this->sync->push(TillFixtures::sample('push-request.second-till.json'), $key)->assertOk()->assertHeaderMissing('Idempotency-Replayed');
     $replay = $this->sync->push(TillFixtures::sample('push-request.second-till.json'), $key, gzip: false)->assertOk()->assertHeader('Idempotency-Replayed', 'true');
 
-    expect($replay->json())->toBe($tagged->json())->and(Sale::withoutCompanyScope()->count())->toBe(2);
+    expect($replay->json())->toBe($tagged->json())->and(Sale::withoutCompanyScope()->count())->toBe(3);
 
     $mismatch = $this->sync->push($batch, $key)->assertStatus(422)->assertJsonPath('code', 'request.idempotency_mismatch');
     expect(SyncApiFixtures::schemaErrors($mismatch, 'error-reply.schema.json'))->toBe([]);
@@ -76,7 +80,7 @@ test('a rejected row mid-batch: 200 with acknowledgedSeq before it; the rows aft
 
     $reply = $this->sync->push($batch)->assertOk();
 
-    expect($reply->json())->toBe(['acknowledgedSeq' => 18233, 'accepted' => 8])
+    expect(TillFixtures::ack($reply->json()))->toBe(['acknowledgedSeq' => 18233, 'accepted' => 8])
         ->and(SyncApiFixtures::schemaErrors($reply, 'push-reply.schema.json'))->toBe([])
         ->and(StockMovement::withoutCompanyScope()->count())->toBe(2);
 
@@ -96,7 +100,9 @@ test('a rejected row mid-batch: 200 with acknowledgedSeq before it; the rows aft
         ->and($again->json('message'))->toContain('SalePayment');
 
     // Fixed on the till: the rest are duplicates, and the batch is acknowledged in full.
-    $this->sync->push(TillFixtures::sample('push-request.json'))->assertOk()->assertExactJson(['acknowledgedSeq' => 18239, 'accepted' => 9]);
+    $fixed = $this->sync->push(TillFixtures::sample('push-request.json'))->assertOk();
+    expect(TillFixtures::ack($fixed->json()))->toBe(['acknowledgedSeq' => 18239, 'accepted' => 9])
+        ->and($fixed->json('receivedAt'))->toBe($reply->json('receivedAt'));
 });
 
 test('errors: 401, 403, 409, 400 and 413 use the error-reply envelope', function (string $case, int $status, string $code) {
@@ -196,8 +202,8 @@ test('sync_branch_status: last push, acknowledged seq, app version, register and
     $status = ($this->status)($this->sync->leeds);
     expect($status->company_id)->toBe($this->sync->company->id)
         ->and($status->last_push_at?->toIso8601ZuluString())->toBe(now('UTC')->toIso8601ZuluString())
-        ->and($status->last_acknowledged_seq)->toBe(18247)
-        ->and($status->rows_accepted_today)->toBe(17)
+        ->and($status->last_acknowledged_seq)->toBe(18257)
+        ->and($status->rows_accepted_today)->toBe(27)
         ->and($status->rows_rejected_today)->toBe(0)
         ->and($status->last_app_version)->toBe('3.0.412')
         ->and($status->last_register_id)->toBe($this->sync->tills[TillFixtures::TILL_1]->id)
@@ -248,17 +254,49 @@ test('initial upload (X-SSPOS-Sync-Mode: initial): seqs 1…N are kept apart fro
     $upload = '01K6ZZZZZZ0000000000000001';
     $initial = array_map(fn (array $change, int $i) => [...$change, 'seq' => $i + 1], TillFixtures::sample('push-request.json'), array_keys(TillFixtures::sample('push-request.json')));
 
-    $this->sync->push($initial, ['X-SSPOS-Sync-Mode' => 'initial', 'X-SSPOS-Upload-Id' => $upload])->assertOk()
-        ->assertExactJson(['acknowledgedSeq' => 9, 'accepted' => 9]);
+    $reply = $this->sync->push($initial, ['X-SSPOS-Sync-Mode' => 'initial', 'X-SSPOS-Upload-Id' => $upload])->assertOk();
+    expect(TillFixtures::ack($reply->json()))->toBe(['acknowledgedSeq' => 9, 'accepted' => 9]);
 
-    // A delta push whose ChangeLog seqs are 1…8 is not mistaken for the upload's rows.
+    // A delta push whose ChangeLog seqs are 1…18 is not mistaken for the upload's rows.
     $delta = array_map(fn (array $change, int $i) => [...$change, 'seq' => $i + 1], TillFixtures::sample('push-request.second-till.json'), array_keys(TillFixtures::sample('push-request.second-till.json')));
-    $this->sync->push($delta)->assertOk()->assertExactJson(['acknowledgedSeq' => 8, 'accepted' => 8]);
+    expect(TillFixtures::ack($this->sync->push($delta)->assertOk()->json()))->toBe(['acknowledgedSeq' => 18, 'accepted' => 18]);
 
-    expect(Sale::withoutCompanyScope()->count())->toBe(2)
+    expect(Sale::withoutCompanyScope()->count())->toBe(3)
         ->and(DB::table('sync_applied_changes')->where('stream', $upload)->count())->toBe(9)
-        ->and(DB::table('sync_applied_changes')->where('stream', '')->count())->toBe(8);
+        ->and(DB::table('sync_applied_changes')->where('stream', '')->count())->toBe(18);
 
     $status = ($this->status)($this->sync->leeds);
-    expect($status->last_upload_id)->toBe($upload)->and($status->last_upload_seq)->toBe(9)->and($status->last_acknowledged_seq)->toBe(8);
+    expect($status->last_upload_id)->toBe($upload)->and($status->last_upload_seq)->toBe(9)->and($status->last_acknowledged_seq)->toBe(18);
+});
+
+test('receivedAt: UTC Z after the commit; a retry (duplicates or the same Idempotency-Key) gets the first time, never now', function () {
+    $this->travelTo('2026-09-29 10:00:00');
+    $batch = TillFixtures::sample('push-request.json');
+    $first = $this->sync->push(array_slice($batch, 0, 5))->assertOk();
+    expect($first->json('receivedAt'))->toBe('2026-09-29T10:00:00Z')
+        ->and(SyncApiFixtures::schemaErrors($first, 'push-reply.schema.json'))->toBe([]);
+
+    // The reply was lost; an hour later the till resends the same rows: the first time comes back.
+    $this->travelTo('2026-09-29 11:00:00');
+    expect($this->sync->push(array_slice($batch, 0, 5))->assertOk()->json('receivedAt'))->toBe('2026-09-29T10:00:00Z');
+
+    // The resend carries more rows: those are stored now, so the batch's time is now.
+    expect($this->sync->push($batch)->assertOk()->json('receivedAt'))->toBe('2026-09-29T11:00:00Z')
+        ->and($this->sync->push($batch)->assertOk()->json('receivedAt'))->toBe('2026-09-29T11:00:00Z');
+
+    $key = ['Idempotency-Key' => '01K6AAAAAAAAAAAAAAAAAAAAAB'];
+    $tagged = $this->sync->push(TillFixtures::sample('push-request.second-till.json'), $key)->assertOk();
+    $this->travelTo('2026-09-29 12:00:00');
+    expect($this->sync->push(TillFixtures::sample('push-request.second-till.json'), $key)->assertOk()->json('receivedAt'))
+        ->toBe($tagged->json('receivedAt'))->toBe('2026-09-29T11:00:00Z');
+});
+
+test('push-request.settings.json replays over HTTP: settings and role permissions are keyed by our own ids', function () {
+    $reply = $this->sync->push(TillFixtures::sample('push-request.settings.json'))->assertOk();
+
+    expect(TillFixtures::ack($reply->json()))->toBe(['acknowledgedSeq' => 18263, 'accepted' => 3])
+        ->and(SyncApiFixtures::schemaErrors($reply, 'push-reply.schema.json'))->toBe([])
+        ->and(DB::table('till_settings')->value('scope_id'))->toBe($this->sync->leeds->id)
+        ->and(DB::table('till_settings')->value('id'))->toBe(SyncRowIds::setting('branch', $this->sync->leeds->id, 'receipt.footer_text'))
+        ->and(DB::table('till_role_permissions')->count())->toBe(2);
 });

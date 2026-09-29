@@ -1,16 +1,16 @@
 # Phases
 
-Plan v2 (2026-09-28), rewritten after the EPOS team's contract **v1.3.1** (`docs/contracts/portal-api-v1.3.3/`,
-start at `START-HERE.md`). The till is already built against that contract, so **the portal implements it exactly**;
-where our earlier modules differ, they are reworked (marked 🔄). The v1.1 folder was removed when 2.3 moved the
-generator to v1.3.1.
+Plan v2 (2026-09-28), rewritten after the EPOS team's contract v1.3.1; **current contract v1.4.1** (2026-09-29,
+`docs/contracts/portal-api-v1.4.1/`, start at `START-HERE.md` and `docs/web-portal-api/ANSWERS-2026-09-29.md`). The
+till is already built against that contract, so **the portal implements it exactly**; where our earlier modules
+differ, they are reworked (marked 🔄). Earlier contract folders (v1.1, v1.3.3) were removed when the generator moved on.
 
 Each module is one agent task. Modules in the same wave can run in parallel. Status: `done` · `rework` · `todo` ·
 `blocked (reason)`. A module is done only when its Actions + Pest tests (tenant isolation and authorisation
 included) pass, the UI follows `docs/BRAND.md`, and `composer check`, `npm run lint`, `npx tsc --noEmit` and
 `npm run build` are green.
 
-Totals: **68 modules · 22 done · 46 todo** (2026-10-02).
+Totals: **64 modules · 25 done · 39 todo** (2026-09-29, counted from the tables; 2.9 split into A and B).
 
 ---
 
@@ -47,7 +47,7 @@ Contract: v1.3.1 `docs/web-portal-api.md` §17 (read 17.15–17.17 first), `spec
 
 Waves: **1.4 → 1.5 + 1.11** · then 1.9, 1.10, 1.12.
 
-## Phase 2: Sync and cloud link — 3/9
+## Phase 2: Sync and cloud link — 6/10
 
 Contract: v1.3.1 §1–16, §19 (duplicate/echo/conflict rules + test list 19.4), §20, `docs/web-portal-api/openapi.yaml`.
 
@@ -61,9 +61,10 @@ Contract: v1.3.1 §1–16, §19 (duplicate/echo/conflict rules + test list 19.4)
 | 2.6 | Contract tests | Replay every sample, validate against schemas, pass the §19.4 test list | todo |
 | 2.7 | Till health | Online/offline, versions, last push/validate per branch and till, alerts | todo |
 | 2.8 | Local keys and migration | `licence/redeem` (local key reports, 17.6/17.16), `cloud/migrate` + `migrate/complete` + initial push (17.8) | todo |
-| 2.9 | v1.4 readiness | `receivedAt`, several tills per shop, ledger-derived customer balance, transfer relay, settings/permissions sync | blocked (v1.4 spec) |
+| 2.9A | v1.4.1 alignment, part A | Contract swap to v1.4.1; entity store 145 schemas (new BranchPrice, PurchaseReturn(+Line), Setting, RolePermission; `local` SyncState/DomainEventRecord/ProcessedCommand acknowledged, never stored; new columns) by additive migrations; keyed Setting/RolePermission rows (ids derived from the payload, settings deny-list never stored); push reply `receivedAt` (after commit, retry = first time); BranchPrice pushed by its own shop only, pulled only by its shop, portal prices always new rows (`SetBranchPrice`); licence `expiresAt` without grace days, `minimumAppVersion` 0.1.0, no 426 on `licence/*`, 426 on `sync/*` only for listed versions; main-till `devices/deactivate` revokes + rotates the key it was sent (`apiKeyRevoked: true`); `X-SSPOS-Store-Protocol` informational | done |
+| 2.9B | v1.4.1 alignment, part B | Relay (transfers to `toBranchId`, receipts to `fromBranchId`, customer ledger to the other branches, §10.2) and ledger-derived customer balance/points (§10.1); settings + role permissions in the pull (keyed envelope, deny-list, §10.3); head-office purchase orders drafted on the portal and pulled by one shop (§10.6); `hubChange` on the conflicts screen | todo |
 
-Waves: 2.1 → 2.2 → 2.5 → 2.6 + 2.7 → 2.8 · 2.9 with v1.4.
+Waves: 2.1 → 2.2 → 2.5 → 2.9A → 2.9B · 2.6 + 2.7 → 2.8.
 
 ## Phase 3: Reporting and dashboards — 0/3
 

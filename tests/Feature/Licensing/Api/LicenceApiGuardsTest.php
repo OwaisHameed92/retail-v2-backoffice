@@ -43,13 +43,21 @@ test('a query string is refused: keys never travel in a URL', function () {
         ->assertStatus(400)->assertJsonPath('code', 'request.invalid');
 });
 
-test('a till below the minimum version gets 426 app.update_required', function () {
-    config(['licence.api.minimum_app_version' => '3.1.0']);
+test('licence calls never answer 426: a till below minimumAppVersion activates and validates as usual', function () {
+    config(['licence.api.minimum_app_version' => '3.1.0', 'sync.blocked_app_versions' => ['0.1.*', '3.0.412']]);
 
-    $this->activateTill()->assertStatus(426)
-        ->assertJsonPath('code', 'app.update_required')
-        ->assertJsonPath('details.minimumAppVersion', '3.1.0');
-    expect($this->licence->fresh()->device_id)->toBeNull();
+    $token = $this->activateTill()->assertOk()->json('licenceToken');
+    expect($this->licence->fresh()->device_id)->toBe(self::INSTALL);
+
+    $this->validateTill($this->licence->id, $token)->assertOk()->assertJsonPath('minimumAppVersion', '3.1.0');
+});
+
+test('minimumAppVersion defaults to 0.1.0 and an unreadable value falls back to it', function () {
+    $token = $this->activateTill()->assertOk()->json('licenceToken');
+    $this->validateTill($this->licence->id, $token)->assertOk()->assertJsonPath('minimumAppVersion', '0.1.0');
+
+    config(['licence.api.minimum_app_version' => 'soon']);
+    $this->validateTill($this->licence->id, $token)->assertOk()->assertJsonPath('minimumAppVersion', '0.1.0');
 });
 
 test('a repeated Idempotency-Key gets the same status and body; the action runs once', function () {

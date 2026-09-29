@@ -14,7 +14,7 @@ use Tests\Feature\Sync\PullTestHelpers as Pull;
 use Tests\Feature\Sync\SyncApiFixtures;
 use Tests\Feature\TillData\TillFixtures;
 
-/** Module 2.5: `GET /api/v1/sync/pull` (contract v1.3.3 §5, §6, §8, §10, §11, §19). */
+/** Module 2.5: `GET /api/v1/sync/pull` (contract v1.4.1 §5, §6, §8, §10, §11, §19). */
 beforeEach(function () {
     $this->sync = new SyncApiFixtures($this);
     $this->company = $this->sync->company;
@@ -192,7 +192,9 @@ test('ids go out as the till knows them: the company alias the branch uses, its 
 
 test('secrets never go down: no remote approval secret, no secret-looking extra member', function () {
     $user = Pull::payload('User', '01K5T0Q8C40000000000SS0001', [
-        'remoteApprovalSecret' => 'TOP-SECRET-1234', 'apiKey' => 'SSK-LEAKED-KEY', 'favouriteColour' => 'green',
+        // An older till still sends the members v1.4 removed (§10.7).
+        'remoteApprovalSecret' => 'TOP-SECRET-1234', 'remoteApprovalSecretSetAt' => '2026-09-20T08:00:00Z',
+        'apiKey' => 'SSK-LEAKED-KEY', 'favouriteColour' => 'green',
     ]);
     $this->sync->push([TillFixtures::envelope('User', $user, 1)])->assertOk();
 
@@ -201,9 +203,8 @@ test('secrets never go down: no remote approval secret, no secret-looking extra 
     $payload = Pull::changes($reply)[0]['payload'];
 
     expect(Pull::changes($reply)[0]['entity'])->toBe('User')
-        ->and($payload)->not->toHaveKeys(['remoteApprovalSecret', 'apiKey'])
+        ->and($payload)->not->toHaveKeys(['remoteApprovalSecret', 'remoteApprovalSecretSetAt', 'apiKey'])
         ->and($payload['favouriteColour'])->toBe('green')                    // a newer till's member goes back as it came
-        ->and($payload)->toHaveKey('remoteApprovalSecretSetAt')
         ->and((string) $reply->getContent())->not->toContain('TOP-SECRET', 'SSK-LEAKED', 'redacted');
 });
 

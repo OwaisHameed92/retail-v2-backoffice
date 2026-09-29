@@ -29,16 +29,17 @@ test('first activation binds the install, starts the trial and answers with a ti
 
     $response = $this->activateTill()->assertOk()
         ->assertHeader('X-SSPOS-Contract', '1')
-        ->assertJsonPath('status', 'active')
+        // v1.4.1: expiresAt is the trial's real end (no grace days), 7 days away → the till's 7-day warning.
+        ->assertJsonPath('status', 'expiring')
         ->assertJsonPath('licence.licenceId', $licence->id)
         ->assertJsonPath('licence.kind', 'trial')
         ->assertJsonPath('licence.companyId', $company->id)
         ->assertJsonPath('licence.installCode', self::INSTALL_CODE)
         ->assertJsonPath('licence.maxRegisters', 2)
-        ->assertJsonPath('licence.expiresAt', '2026-10-15T09:00:00Z')
+        ->assertJsonPath('licence.expiresAt', '2026-10-12T09:00:00Z')
         ->assertJsonPath('portalTimeUtc', '2026-10-05T09:00:00Z')
         ->assertJsonPath('nextCheckAfterSeconds', 86400)
-        ->assertJsonPath('messages', []);
+        ->assertJsonPath('messages.0.title', 'Trial ends soon');
 
     $licence->refresh();
     expect($licence->device_id)->toBe(self::INSTALL)
@@ -75,7 +76,7 @@ test('the token verifies like the till and carries the shop, install code and ma
             'installCode' => self::INSTALL_CODE,
             'maxRegisters' => 2,
             'validFrom' => '2026-10-05T09:00:00Z',
-            'expiresAt' => '2026-10-15T09:00:00Z',
+            'expiresAt' => '2026-10-12T09:00:00Z',
             'onlineCheck' => ['required' => true, 'intervalHours' => 24, 'graceDays' => 14],
         ])
         // Module 1.11: the owner's name defaults from the owner login given when the tenant was created.
@@ -97,7 +98,7 @@ test('the same install activating again gets 200 and stays bound (retry or reins
     [, $licence] = $this->keyedTenant();
     $this->activateTill()->assertOk();
 
-    $this->activateTill()->assertOk()->assertJsonPath('status', 'active');
+    $this->activateTill()->assertOk()->assertJsonPath('status', 'expiring');
 
     expect($licence->fresh()->device_id)->toBe(self::INSTALL)
         ->and(AuditLog::query()->where('action', 'licence.reinstalled')->count())->toBe(1)

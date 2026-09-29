@@ -107,6 +107,17 @@ final class IdTranslator
 
         if (is_array($raw['payload'] ?? null)) {
             $raw['payload'] = $this->payload($raw['payload'], $entityKind);
+
+            // A setting's scopeId is the till's company or branch id (contract §10.3).
+            $scopeKind = ($raw['entity'] ?? null) === 'Setting' ? match ($raw['payload']['scope'] ?? null) {
+                'company' => IdKind::Company,
+                'branch' => IdKind::Branch,
+                default => null,
+            } : null;
+
+            if ($scopeKind !== null && is_string($raw['payload']['scopeId'] ?? null) && $raw['payload']['scopeId'] !== '') {
+                $raw['payload']['scopeId'] = $this->toPortal($scopeKind, $raw['payload']['scopeId']);
+            }
         }
 
         return $raw;

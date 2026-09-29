@@ -1,0 +1,562 @@
+[
+  {
+    "code": "request.invalid",
+    "status": 400,
+    "endpoints": [
+      "*"
+    ],
+    "meaning": "Body or query does not match the schema (missing field, bad ULID, bad date).",
+    "tillDoes": "Shows message; retries at the next scheduled time. Never drops data.",
+    "details": {
+      "field": "name of the first bad field"
+    },
+    "retryable": false
+  },
+  {
+    "code": "request.idempotency_mismatch",
+    "status": 422,
+    "endpoints": [
+      "*"
+    ],
+    "meaning": "Same Idempotency-Key reused with a different body.",
+    "tillDoes": "Logs it and makes a new key (a till bug).",
+    "details": null,
+    "retryable": false
+  },
+  {
+    "code": "request.in_progress",
+    "status": 409,
+    "endpoints": [
+      "*"
+    ],
+    "meaning": "A request with this Idempotency-Key is still being processed.",
+    "tillDoes": "Waits Retry-After (5 s when none), then repeats with the same Idempotency-Key and the same body. Never store this reply under the key.",
+    "details": null,
+    "retryable": true
+  },
+  {
+    "code": "auth.invalid_key",
+    "status": 401,
+    "endpoints": [
+      "sync/*",
+      "licence/validate",
+      "licence/redeem",
+      "devices/deactivate",
+      "cloud/migrate/complete"
+    ],
+    "meaning": "Bearer key unknown.",
+    "tillDoes": "Stops calling with this key; shows 'API key rejected'. For licence/validate the day counts as not validated.",
+    "details": null,
+    "retryable": false
+  },
+  {
+    "code": "auth.key_revoked",
+    "status": 401,
+    "endpoints": [
+      "sync/*",
+      "licence/validate",
+      "licence/redeem",
+      "devices/deactivate",
+      "cloud/migrate/complete"
+    ],
+    "meaning": "Key was valid but is revoked (branch deactivated, key rotated more than 7 days ago).",
+    "tillDoes": "As auth.invalid_key; shows 'This till is no longer linked - re-link it'.",
+    "details": null,
+    "retryable": false
+  },
+  {
+    "code": "auth.wrong_branch",
+    "status": 403,
+    "endpoints": [
+      "sync/*",
+      "licence/validate",
+      "licence/redeem",
+      "devices/deactivate"
+    ],
+    "meaning": "X-SSPOS-Branch-Id is not the key's branch.",
+    "tillDoes": "As auth.invalid_key.",
+    "details": null,
+    "retryable": false
+  },
+  {
+    "code": "contract.unsupported",
+    "status": 409,
+    "endpoints": [
+      "*"
+    ],
+    "meaning": "X-SSPOS-Contract not served at this path.",
+    "tillDoes": "Stops; shows message (update the till).",
+    "details": {
+      "supportedContracts": [
+        1
+      ]
+    },
+    "retryable": false
+  },
+  {
+    "code": "app.update_required",
+    "status": 426,
+    "endpoints": [
+      "*"
+    ],
+    "meaning": "The till's X-SSPOS-App-Version is below the portal's minimum for this endpoint.",
+    "tillDoes": "Shows 'Update the till'; keeps trading on its current licence token.",
+    "details": {
+      "minimumAppVersion": "3.0.400"
+    },
+    "retryable": false
+  },
+  {
+    "code": "batch.too_large",
+    "status": 413,
+    "endpoints": [
+      "sync/push"
+    ],
+    "meaning": "More rows or bytes than accepted.",
+    "tillDoes": "Halves the batch and retries.",
+    "details": {
+      "maxRows": 5000
+    },
+    "retryable": false
+  },
+  {
+    "code": "row.invalid",
+    "status": 422,
+    "endpoints": [
+      "sync/push"
+    ],
+    "meaning": "One row cannot be stored; rejectedKey names it.",
+    "tillDoes": "Shows the row on Sync status; retries next run.",
+    "details": null,
+    "retryable": false
+  },
+  {
+    "code": "rate.limited",
+    "status": 429,
+    "endpoints": [
+      "*"
+    ],
+    "meaning": "Too many requests.",
+    "tillDoes": "Waits Retry-After / retryAfterSeconds.",
+    "details": null,
+    "retryable": true
+  },
+  {
+    "code": "server.busy",
+    "status": 503,
+    "endpoints": [
+      "*"
+    ],
+    "meaning": "Portal overloaded or in maintenance.",
+    "tillDoes": "Waits Retry-After, then backoff.",
+    "details": null,
+    "retryable": true
+  },
+  {
+    "code": "server.error",
+    "status": 500,
+    "endpoints": [
+      "*"
+    ],
+    "meaning": "Unexpected portal fault.",
+    "tillDoes": "Backoff and retry; licence/validate counts as not validated that day.",
+    "details": null,
+    "retryable": true
+  },
+  {
+    "code": "activation.code_not_found",
+    "status": 404,
+    "endpoints": [
+      "devices/activate",
+      "cloud/migrate"
+    ],
+    "meaning": "No such activation or transfer code.",
+    "tillDoes": "Shows 'Code not recognised - check the email'.",
+    "details": null,
+    "retryable": false
+  },
+  {
+    "code": "activation.code_expired",
+    "status": 410,
+    "endpoints": [
+      "devices/activate",
+      "cloud/migrate"
+    ],
+    "meaning": "The code is past its expiry.",
+    "tillDoes": "Shows message with the portal link to send a new code.",
+    "details": null,
+    "retryable": false
+  },
+  {
+    "code": "activation.code_used",
+    "status": 409,
+    "endpoints": [
+      "devices/activate",
+      "cloud/migrate"
+    ],
+    "meaning": "The code was already used by another install (same install within 24 h gets the same 200 reply instead).",
+    "tillDoes": "Shows message.",
+    "details": {
+      "usedAtUtc": "2026-09-26T09:00:05Z",
+      "deviceName": "KIRKGATE-TILL1"
+    },
+    "retryable": false
+  },
+  {
+    "code": "activation.too_many_attempts",
+    "status": 429,
+    "endpoints": [
+      "devices/activate",
+      "cloud/migrate",
+      "licence/activate"
+    ],
+    "meaning": "Too many wrong codes from this address or install.",
+    "tillDoes": "Disables the Link key for retryAfterSeconds.",
+    "details": null,
+    "retryable": true
+  },
+  {
+    "code": "activation.use_migrate",
+    "status": 409,
+    "endpoints": [
+      "devices/activate"
+    ],
+    "meaning": "The till holds trading data for other ids; it must call cloud/migrate.",
+    "tillDoes": "Switches to the migrate flow (asks the owner first).",
+    "details": {
+      "branchId": "the code's branch"
+    },
+    "retryable": false
+  },
+  {
+    "code": "device.branch_already_linked",
+    "status": 409,
+    "endpoints": [
+      "devices/activate",
+      "cloud/migrate"
+    ],
+    "meaning": "The code's branch already has an active main till.",
+    "tillDoes": "Shows 'This shop is already linked to KIRKGATE-TILL1 - release it first (portal or old till)'.",
+    "details": {
+      "registerId": "01K5T0Q8C4000000000000R001",
+      "deviceName": "KIRKGATE-TILL1",
+      "lastSeenUtc": "2026-10-04T16:58:00Z"
+    },
+    "retryable": false
+  },
+  {
+    "code": "device.not_found",
+    "status": 404,
+    "endpoints": [
+      "devices/deactivate"
+    ],
+    "meaning": "registerId is not a register of this branch.",
+    "tillDoes": "Shows message.",
+    "details": null,
+    "retryable": false
+  },
+  {
+    "code": "device.not_main_till",
+    "status": 403,
+    "endpoints": [
+      "licence/validate",
+      "licence/redeem",
+      "devices/deactivate",
+      "cloud/migrate/complete"
+    ],
+    "meaning": "X-SSPOS-Register-Id is not the branch's main till (and the body does not report it as main).",
+    "tillDoes": "Logs; the call is repeated from the main till.",
+    "details": null,
+    "retryable": false
+  },
+  {
+    "code": "licence.seat_limit",
+    "status": 403,
+    "endpoints": [
+      "devices/activate",
+      "cloud/migrate",
+      "licence/activate"
+    ],
+    "meaning": "Activating would exceed maxRegisters. licence/activate: the branch already has maxRegisters tills bound (section 17.15.1 step 4a).",
+    "tillDoes": "Shows message; nothing is linked.",
+    "details": {
+      "maxRegisters": 2,
+      "registersInUse": 2
+    },
+    "retryable": false
+  },
+  {
+    "code": "licence.not_active",
+    "status": 403,
+    "endpoints": [
+      "devices/activate",
+      "cloud/migrate",
+      "licence/activate"
+    ],
+    "meaning": "The account's licence is revoked or suspended.",
+    "tillDoes": "Shows message and the support number.",
+    "details": {
+      "status": "suspended"
+    },
+    "retryable": false
+  },
+  {
+    "code": "key.not_found",
+    "status": 404,
+    "endpoints": [
+      "licence/redeem",
+      "licence/activate",
+      "licence/validate"
+    ],
+    "meaning": "Portal key unknown. On licence/validate (per till): no licence bound to that installId.",
+    "tillDoes": "Shows 'Key not recognised'.",
+    "details": null,
+    "retryable": false
+  },
+  {
+    "code": "key.already_redeemed",
+    "status": 409,
+    "endpoints": [
+      "licence/redeem"
+    ],
+    "meaning": "Portal key already used by another branch.",
+    "tillDoes": "Shows message.",
+    "details": {
+      "redeemedAtUtc": "2026-09-20T10:00:00Z"
+    },
+    "retryable": false
+  },
+  {
+    "code": "key.expired",
+    "status": 410,
+    "endpoints": [
+      "licence/redeem",
+      "licence/activate"
+    ],
+    "meaning": "Portal key not redeemed in time.",
+    "tillDoes": "Shows message.",
+    "details": null,
+    "retryable": false
+  },
+  {
+    "code": "key.not_for_this_branch",
+    "status": 403,
+    "endpoints": [
+      "licence/redeem"
+    ],
+    "meaning": "Key or token is for another company/branch.",
+    "tillDoes": "Shows message.",
+    "details": null,
+    "retryable": false
+  },
+  {
+    "code": "key.not_allowed",
+    "status": 403,
+    "endpoints": [
+      "licence/redeem"
+    ],
+    "meaning": "Portal policy refuses this key here (e.g. a local token on a cloud till).",
+    "tillDoes": "Keeps the current licence; shows message.",
+    "details": null,
+    "retryable": false
+  },
+  {
+    "code": "licence.format",
+    "status": 422,
+    "endpoints": [
+      "licence/redeem",
+      "devices/activate",
+      "cloud/migrate"
+    ],
+    "meaning": "Not SSPOS1.<payload>.<signature>, or payload not JSON.",
+    "tillDoes": "Shows 'Key damaged - paste it again'.",
+    "details": null,
+    "retryable": false
+  },
+  {
+    "code": "licence.bad_signature",
+    "status": 422,
+    "endpoints": [
+      "licence/redeem",
+      "devices/activate",
+      "cloud/migrate"
+    ],
+    "meaning": "Signature does not verify.",
+    "tillDoes": "Shows message.",
+    "details": null,
+    "retryable": false
+  },
+  {
+    "code": "licence.bad_signer_certificate",
+    "status": 422,
+    "endpoints": [
+      "licence/redeem",
+      "devices/activate",
+      "cloud/migrate"
+    ],
+    "meaning": "The token's signing key is not built into the till and its signerCert is not a valid approval: not SSPOSCERT1., approvedBy not in approverKids, the approver's signature fails, the certificate kid differs from the token kid, or the token was issued after the certificate's expiresAt (17.17).",
+    "tillDoes": "Shows 'made by a licence server SSPOS has not approved'. Also the till's own verdict on a token you return.",
+    "details": null,
+    "retryable": false
+  },
+  {
+    "code": "licence.unknown_key",
+    "status": 422,
+    "endpoints": [
+      "licence/redeem",
+      "devices/activate",
+      "cloud/migrate"
+    ],
+    "meaning": "kid not known to the portal.",
+    "tillDoes": "Shows message.",
+    "details": {
+      "kid": "gen-dealer-07"
+    },
+    "retryable": false
+  },
+  {
+    "code": "licence.expired",
+    "status": 422,
+    "endpoints": [
+      "licence/redeem",
+      "cloud/migrate"
+    ],
+    "meaning": "Local token past expiresAt (for migrate: nothing to carry over; the request may still succeed without it).",
+    "tillDoes": "Shows message.",
+    "details": null,
+    "retryable": false
+  },
+  {
+    "code": "licence.wrong_shop",
+    "status": 422,
+    "endpoints": [
+      "licence/redeem",
+      "cloud/migrate"
+    ],
+    "meaning": "Local token's installCode is not this install's.",
+    "tillDoes": "Shows message.",
+    "details": null,
+    "retryable": false
+  },
+  {
+    "code": "licence.unsupported_version",
+    "status": 422,
+    "endpoints": [
+      "licence/redeem",
+      "devices/activate",
+      "cloud/migrate"
+    ],
+    "meaning": "Token v is newer than the portal understands.",
+    "tillDoes": "Shows message.",
+    "details": null,
+    "retryable": false
+  },
+  {
+    "code": "licence.wrong_branch",
+    "status": 422,
+    "endpoints": [
+      "licence/redeem"
+    ],
+    "meaning": "Portal token for another company/branch.",
+    "tillDoes": "Shows message.",
+    "details": null,
+    "retryable": false
+  },
+  {
+    "code": "migrate.already_migrated",
+    "status": 409,
+    "endpoints": [
+      "cloud/migrate"
+    ],
+    "meaning": "These company/branch ids already belong to another portal account.",
+    "tillDoes": "Shows message and support number.",
+    "details": null,
+    "retryable": false
+  },
+  {
+    "code": "migrate.upload_not_found",
+    "status": 404,
+    "endpoints": [
+      "sync/push (initial)",
+      "cloud/migrate/complete"
+    ],
+    "meaning": "Unknown or expired uploadId.",
+    "tillDoes": "Calls cloud/migrate again (same code, same install) to get a fresh upload.",
+    "details": null,
+    "retryable": false
+  },
+  {
+    "code": "migrate.upload_closed",
+    "status": 409,
+    "endpoints": [
+      "sync/push (initial)"
+    ],
+    "meaning": "Upload already completed.",
+    "tillDoes": "Stops the initial upload; resumes normal push.",
+    "details": null,
+    "retryable": false
+  },
+  {
+    "code": "key.already_used",
+    "status": 409,
+    "endpoints": [
+      "licence/activate"
+    ],
+    "meaning": "The key is bound to another installId. The same installId gets 200 instead.",
+    "tillDoes": "Shows the message (put the other PC's deviceName in it); nothing changes.",
+    "details": {
+      "deviceName": "TILL-2",
+      "installCode": "BK7Q-2MXD",
+      "activatedAtUtc": "2026-09-20T10:00:00Z"
+    },
+    "retryable": false
+  },
+  {
+    "code": "key.used_on_another_install",
+    "status": 409,
+    "endpoints": [
+      "licence/redeem"
+    ],
+    "meaning": "A local key (keyType token) whose licenceId the portal first recorded from another installCode (open local key copied to a second PC). The same installCode again gets 200 recorded.",
+    "tillDoes": "Stores the key's hash as withdrawn and locks after the sale in progress: 'This key is already used on another PC - contact your dealer'. Only a new key unlocks.",
+    "details": {
+      "licenceId": "01K5M1GR8T000000000000Y004",
+      "installCode": "Q3EG-1RNC",
+      "firstSeenUtc": "2026-09-28T11:02:14Z"
+    },
+    "retryable": false
+  },
+  {
+    "code": "sync_key.not_found",
+    "status": 404,
+    "endpoints": [
+      "cloud/migrate"
+    ],
+    "meaning": "Optional name for an unknown sync key typed at Connect (the till treats activation.code_not_found, key.not_found and auth.invalid_key the same way).",
+    "tillDoes": "Shows 'The portal does not know this sync key. Check it was copied in full from your online dashboard account.' Nothing is saved.",
+    "details": null,
+    "retryable": false
+  },
+  {
+    "code": "sync_key.expired",
+    "status": 410,
+    "endpoints": [
+      "cloud/migrate"
+    ],
+    "meaning": "Optional name for an expired sync key (as activation.code_expired).",
+    "tillDoes": "Shows 'This sync key has expired. Make a new one on your online dashboard account, then press Connect again.' Nothing is saved.",
+    "details": null,
+    "retryable": false
+  },
+  {
+    "code": "sync_key.used",
+    "status": 409,
+    "endpoints": [
+      "cloud/migrate"
+    ],
+    "meaning": "Optional name for a sync key already linked to another shop (as activation.code_used / device.branch_already_linked).",
+    "tillDoes": "Shows 'This sync key is already in use by another shop. Each shop has its own sync key.' Nothing is saved.",
+    "details": null,
+    "retryable": false
+  }
+]

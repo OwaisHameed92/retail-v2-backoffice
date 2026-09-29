@@ -12,7 +12,7 @@ use App\Domain\Sync\Enums\IdMapAction;
 use App\Domain\Sync\Models\IdMapping;
 
 /**
- * Records a till's own ids (`existingIds`) against ours on `licence/activate` (module 2.1, contract v1.3.3
+ * Records a till's own ids (`existingIds`) against ours on `licence/activate` (module 2.1, contract v1.4.1
  * §17.3 step 3, ANSWERS §1). The till never re-keys; we map and translate at the edge (IdTranslator).
  *
  * - Company: the first till company id of a customer is **adopted**; a different one later (a second branch's main

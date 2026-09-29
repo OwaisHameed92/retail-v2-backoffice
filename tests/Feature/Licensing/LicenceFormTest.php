@@ -62,7 +62,7 @@ test('the token carries the full company block and the branch settings', functio
         'features' => ['promotions', 'multi_branch', 'second_screen'],
         'limits' => ['branches' => 10],
         'validFrom' => '2026-10-01T00:00:00Z',
-        'expiresAt' => '2027-10-08T00:00:00Z', // 1 year + the plan's 7 paid grace days
+        'expiresAt' => '2027-10-01T00:00:00Z', // 1 year; never plus our grace days (v1.4.1 §17.2)
     ])->and($token->payload['company'])->toBe([
         'businessType' => 'Newsagent',
         'address' => '12 Kirkgate, Leeds',

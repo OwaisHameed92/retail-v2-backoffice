@@ -13,7 +13,7 @@ use App\Domain\TillData\Sync\HubVersions;
 use Illuminate\Support\Facades\DB;
 
 /**
- * `GET /api/v1/sync/pull?since={version}&max={n}` (module 2.5, contract v1.3.3 §4, §5, §8, §10, §11, §19.2,
+ * `GET /api/v1/sync/pull?since={version}&max={n}` (module 2.5, contract v1.4.1 §4, §5, §8, §10, §11, §19.2,
  * schemas/pull-reply.schema.json): the portal's changes the calling branch has not applied yet.
  *
  * 1. Stamps the company's unstamped hub-owned rows (HubVersions::stampPending): rows accepted from a till since the

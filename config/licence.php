@@ -5,7 +5,7 @@
 | Licensing (modules 1.3 licences, 1.4 token signing, 1.5 licence API)
 |--------------------------------------------------------------------------
 |
-| Contract v1.3.1 (docs/contracts/portal-api-v1.3.3/docs/web-portal-api.md §17.2, §17.15, §17.17): SSPOS1 tokens
+| Contract v1.4.1 (docs/contracts/portal-api-v1.4.1/docs/web-portal-api.md §17.2, §17.15, §17.17): SSPOS1 tokens
 | signed by SsposTokenSigner with `token`, `approvers`, `trusted_keys` and `allow_uncertified` below; the per-till
 | licence API (`licence/activate`, `licence/validate`, `devices/deactivate`) reads `api`. Feature names are the
 | till's own (App\Domain\Plans\Enums\Feature values, module 2.1).
@@ -76,8 +76,9 @@ return [
         'next_check_seconds' => (int) env('LICENCE_NEXT_CHECK_SECONDS', 86400),
         'next_check_locked_seconds' => (int) env('LICENCE_NEXT_CHECK_LOCKED_SECONDS', 3600),
 
-        // Tills below this X-SSPOS-App-Version get 426 app.update_required (null = any version).
-        'minimum_app_version' => env('LICENCE_MINIMUM_APP_VERSION'),
+        // Oldest supported till version, sent as `minimumAppVersion` in validate replies (semver; tills send 0.1.x).
+        // Informational only: licence/* never answers 426 (ANSWERS-2026-09-29 §3). Raise only when the owner says so.
+        'minimum_app_version' => env('LICENCE_MINIMUM_APP_VERSION', '0.1.0'),
 
         // Idempotency-Key replies are kept this long (§17.11 rule 5: at least 24 hours).
         'idempotency_hours' => 24,

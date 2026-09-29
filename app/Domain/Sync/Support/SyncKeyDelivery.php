@@ -14,7 +14,7 @@ use App\Domain\Tenancy\Models\Branch;
 
 /**
  * Whether a `licence/activate` or `licence/validate` reply carries the branch's sync key as `apiKey` (+ `hubUrl`),
- * contract v1.3.3 §17.3 step 3 "one code for the dashboard", ANSWERS §2 (module 2.1).
+ * contract v1.4.1 §17.3 step 3 "one code for the dashboard", ANSWERS §2 (module 2.1).
  *
  * Only to the **main till** of an active branch, only while the licence trades and has `cloud_sync`. Plain keys
  * are never stored, so sending a key always means issuing a new one (the old one keeps 7 days' grace):

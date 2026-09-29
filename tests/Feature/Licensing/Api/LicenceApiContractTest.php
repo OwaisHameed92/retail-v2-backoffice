@@ -125,9 +125,6 @@ test('our error replies validate against error-reply.schema.json', function () {
     }
     $errors['too many'] = $this->activateTill(self::OTHER_KEY, self::OTHER_INSTALL)->assertStatus(429);
 
-    config(['licence.api.minimum_app_version' => '9.0.0']);
-    $errors['update'] = $this->activateTill()->assertStatus(426);
-
     foreach ($errors as $name => $reply) {
         expect($this->schemaErrors($reply, 'error-reply.schema.json'))->toBe([], $name);
     }

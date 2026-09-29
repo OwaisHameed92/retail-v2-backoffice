@@ -20,7 +20,7 @@ final class SsposDocs
 
     public static function dir(): string
     {
-        return base_path('docs/contracts/portal-api-v1.3.3/docs/web-portal-api/licensing');
+        return base_path('docs/contracts/portal-api-v1.4.1/docs/web-portal-api/licensing');
     }
 
     /**

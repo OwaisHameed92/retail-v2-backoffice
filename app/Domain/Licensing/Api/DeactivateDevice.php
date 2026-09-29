@@ -12,18 +12,21 @@ use App\Domain\Licensing\Models\LicenceDevice;
 use App\Domain\Licensing\Support\InstallRelease;
 use App\Domain\Shared\Exceptions\ApiException;
 use App\Domain\Shared\Support\ApiDate;
+use App\Domain\Sync\Actions\RevokeTillSyncKeys;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 
 /**
- * `POST /api/v1/devices/deactivate` for a per-till licence (contract v1.3.1 §17.7, §17.15): the till gives its
+ * `POST /api/v1/devices/deactivate` for a per-till licence (contract v1.4.1 §17.7, §17.15): the till gives its
  * key back (till removed, moving PC), so the key can be activated elsewhere without staff doing Release.
  *
  * - The till is identified by its `installId` (body, else `X-SSPOS-Install-Id`) and `registerId` (the till's
  *   own id from `existingIds`, or our register id). No branch key: per-till licences have none.
  * - Idempotent by registerId: a till already released gets the same reply. Unknown → 404 device.not_found.
- * - Reply: `seat: "deactivated"`, the branch's seats in use and maxRegisters; `apiKeyRevoked: false` and no
- *   transfer code (those belong to the branch sync link, §17.4).
+ * - Reply: `seat: "deactivated"`, the branch's seats in use and maxRegisters; no transfer code. `apiKeyRevoked`:
+ *   true when this till (the branch's main till) had been sent the branch's sync key in a licence reply — that key
+ *   is revoked and rotated on the portal so a restored old PC cannot push (v1.4.1, ANSWERS-2026-09-29 §1,
+ *   RevokeTillSyncKeys); else false (the till forgets its link either way).
  */
 class DeactivateDevice
 {
@@ -31,6 +34,7 @@ class DeactivateDevice
         private readonly InstallRelease $release,
         private readonly DeviceHistory $devices,
         private readonly TillAudit $audit,
+        private readonly RevokeTillSyncKeys $syncKeys,
     ) {}
 
     /**
@@ -60,12 +64,14 @@ class DeactivateDevice
             return $bound;
         });
 
+        $apiKeyRevoked = $licence->branch !== null && $this->syncKeys->handle($licence->branch, $till->installId);
+
         return [
             'registerId' => $registerId,
             'seat' => 'deactivated',
             'seatsInUse' => LicenceToken::registersInUse($licence->branch_id),
             'maxRegisters' => LicenceToken::maxRegisters($licence->branch),
-            'apiKeyRevoked' => false,
+            'apiKeyRevoked' => $apiKeyRevoked,
             'transferCode' => null,
             'transferCodeExpiresAt' => null,
             'portalTimeUtc' => ApiDate::format($now),

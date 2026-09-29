@@ -28,6 +28,7 @@ beforeEach(function () {
 });
 
 test('an unchanged licence answers active with licenceToken null and records the check-in', function () {
+    config(['licence.api.expiring_days' => 3]);
     $this->travel(1)->days();
 
     $this->validateTill($this->licence->id, $this->token, overrides: [
@@ -73,17 +74,22 @@ test('a renewal sends a new full token with the new expiry', function () {
     $this->validateTill($this->licence->id, $token->token)->assertOk()->assertJsonPath('licenceToken', null);
 });
 
-test('status matrix: expiring trial, grace, expired', function () {
+test('status matrix: expiring trial, ended (our grace), expired — expiresAt never includes grace days', function () {
     $this->travelTo(CarbonImmutable::parse('2026-10-09 09:00:00', 'UTC'));
     $this->validateTill($this->licence->id, $this->token)->assertOk()
         ->assertJsonPath('status', 'expiring')
+        ->assertJsonPath('licence.expiresAt', '2026-10-12T09:00:00Z')
         ->assertJsonPath('messages.0.title', 'Trial ends soon')
-        ->assertJsonPath('messages.0.showUntilUtc', '2026-10-15T09:00:00Z');
+        ->assertJsonPath('messages.0.showUntilUtc', '2026-10-12T09:00:00Z');
 
+    // Past the trial's end, inside our 3 trial grace days: the till locks at expiresAt, so the status is expired
+    // and the message says renewal is pending (ANSWERS-2026-09-29 §2). Only onlineCheck.graceDays is offline slack.
     $this->travelTo(CarbonImmutable::parse('2026-10-13 09:00:00', 'UTC'));
     $this->validateTill($this->licence->id, $this->token)->assertOk()
-        ->assertJsonPath('status', 'expiring')
-        ->assertJsonPath('messages.0.id', 'grace-20261015');
+        ->assertJsonPath('status', 'expired')
+        ->assertJsonPath('licence.expiresAt', '2026-10-12T09:00:00Z')
+        ->assertJsonPath('messages.0.id', 'expired-20261012')
+        ->assertJsonPath('messages.0.text', fn (string $text) => str_contains($text, 'Renewal pending'));
 
     $this->travelTo(CarbonImmutable::parse('2026-10-15 09:00:01', 'UTC'));
     $this->validateTill($this->licence->id, 'SSPOS1.other.token')->assertOk()
@@ -157,7 +163,7 @@ test('the install id may come from the header only', function () {
     $body = $this->validateBody($this->licence->id, $this->token);
     unset($body['installId']);
 
-    $this->till('licence/validate', $body, $this->tillHeaders())->assertOk()->assertJsonPath('status', 'active');
+    $this->till('licence/validate', $body, $this->tillHeaders())->assertOk()->assertJsonPath('status', 'expiring');
 });
 
 test('bad bodies are 400 request.invalid', function () {

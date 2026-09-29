@@ -41,6 +41,7 @@ final readonly class EntityDefinition
      * @param  array<string, string>  $tillFields
      * @param  array<string, FieldDefinition>  $fields
      * @param  list<string>  $dropped  secret members never stored (not even in `extra` or a conflict payload)
+     * @param  list<string>|null  $keyedBy  keyed rows (§10.3): the payload fields the row's id is derived from
      */
     public function __construct(
         public string $entity,
@@ -57,6 +58,7 @@ final readonly class EntityDefinition
         public array $tillFields,
         public array $fields,
         public array $dropped = [],
+        public ?array $keyedBy = null,
     ) {
         $columns = ['id', 'company_id', ...$scopeColumns];
 
@@ -101,12 +103,19 @@ final readonly class EntityDefinition
             $data['tillFields'],
             $fields,
             $data['dropped'] ?? [],
+            $data['keyedBy'] ?? null,
         );
     }
 
     public function isHubOwned(): bool
     {
         return $this->ownership === 'hub';
+    }
+
+    /** Setting / RolePermission (contract §10.3): no ULID or row version of their own; keyed by payload fields. */
+    public function isKeyed(): bool
+    {
+        return $this->keyedBy !== null;
     }
 
     public function hasScopeColumn(string $column): bool

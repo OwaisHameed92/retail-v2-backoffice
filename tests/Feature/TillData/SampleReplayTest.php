@@ -33,7 +33,8 @@ beforeEach(function () {
 it('replays push-request.json and replies exactly like push-reply.json', function () {
     $result = TillFixtures::apply($this->company, $this->leeds, TillFixtures::sample('push-request.json'));
 
-    expect($result->toPushReply())->toBe(TillFixtures::sample('push-reply.json'))
+    expect(TillFixtures::ack($result))->toBe(TillFixtures::ack(TillFixtures::sample('push-reply.json')))
+        ->and($result->receivedAt)->toMatch('/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ$/')
         ->and($result->rejected)->toBe([])
         ->and($result->count(ChangeOutcome::Applied))->toBe(9);
 
@@ -108,9 +109,11 @@ it('replays push-request.json and replies exactly like push-reply.json', functio
 it('gives a second till\'s sale, sent by the main till, that till on every child row', function () {
     $result = TillFixtures::apply($this->company, $this->leeds, TillFixtures::sample('push-request.second-till.json'));
 
-    expect($result->toPushReply())->toBe(['acknowledgedSeq' => 18247, 'accepted' => 8]);
+    // v1.4.1 sample: the till's shift, two sales with lines, payments, VAT and stock, and a cash movement.
+    expect(TillFixtures::ack($result))->toBe(['acknowledgedSeq' => 18257, 'accepted' => 18])
+        ->and($result->rejected)->toBe([]);
 
-    foreach (['sales', 'sale_lines', 'sale_payments', 'sale_vats', 'stock_movements'] as $table) {
+    foreach (['shifts', 'sales', 'sale_lines', 'sale_payments', 'sale_vats', 'stock_movements', 'cash_movements'] as $table) {
         expect(DB::table($table)->distinct()->pluck('register_id')->all())->toBe([TillFixtures::TILL_2], $table)
             ->and(DB::table($table)->distinct()->pluck('branch_id')->all())->toBe([TillFixtures::LEEDS], $table);
     }
@@ -120,7 +123,7 @@ it('keys the second branch by its own branch and seq', function () {
     TillFixtures::apply($this->company, $this->leeds, TillFixtures::sample('push-request.json'));
     $result = TillFixtures::apply($this->company, $this->bradford, TillFixtures::sample('push-request.second-branch.json'));
 
-    expect($result->toPushReply())->toBe(['acknowledgedSeq' => 5127, 'accepted' => 8])
+    expect(TillFixtures::ack($result))->toBe(['acknowledgedSeq' => 5127, 'accepted' => 8])
         ->and(DB::table('sale_lines')->where('branch_id', TillFixtures::BRADFORD)->pluck('register_id')->unique()->all())->toBe([TillFixtures::BRADFORD_TILL])
         ->and(DB::table('sync_applied_changes')->where('branch_id', TillFixtures::BRADFORD)->count())->toBe(8)
         ->and(DB::table('sync_applied_changes')->where('branch_id', TillFixtures::LEEDS)->count())->toBe(9);
@@ -190,4 +193,7 @@ it('stores every sample entity with every field exactly as sent', function (stri
     if ($def->hasScopeColumn('branch_id')) {
         expect($row['branch_id'])->toBe(TillFixtures::LEEDS);
     }
-})->with(array_map(fn ($f) => basename($f, '.json'), glob(__DIR__.'/../../../'.TillFixtures::CONTRACT.'/samples/entities/*.json') ?: []));
+})->with(array_values(array_diff(
+    array_map(fn ($f) => basename($f, '.json'), glob(__DIR__.'/../../../'.TillFixtures::CONTRACT.'/samples/entities/*.json') ?: []),
+    ['Setting', 'RolePermission'], // keyed rows: no id of their own (KeyedRowsTest)
+)));

@@ -91,7 +91,7 @@ final class GenerateTillEntities
             $files["app/Domain/TillData/Enums/{$name}.php"] = $enums->write($name, $enum, in_array($name, $known, true));
         }
 
-        $files['app/Domain/TillData/EntityRegistry.php'] = (new RegistryWriter($contract))->write($entities);
+        $files['app/Domain/TillData/EntityRegistry.php'] = (new RegistryWriter($contract))->write($entities, $catalog->localEntities());
 
         return $files;
     }

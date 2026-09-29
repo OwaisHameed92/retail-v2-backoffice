@@ -26,8 +26,9 @@ use Illuminate\Support\Collection;
  * - `installCode`: the one the till sent. `maxRegisters`: the branch's tills allowed (module 1.11 licence
  *   settings). `features`: the licence's features (already the till's names), with `multi_branch`
  *   exactly when the company has multi-branch on; then `limits.branches` = its branches allowed.
- * - `validFrom` = the branch's start date, else first activation; `expiresAt` = the last day the till may trade,
- *   i.e. the end date plus our grace days (DECISIONS "Licence API v1.3.1"); `kind` trial until paid (full).
+ * - `validFrom` = the branch's start date, else first activation; `expiresAt` = the paid (or trial) end date with
+ *   no grace days added (DECISIONS "Contract v1.4.1"); `kind` trial until paid (full). The till's offline
+ *   allowance is `onlineCheck.graceDays`, not part of `expiresAt`.
  * - `company` block: business type, owner's name from the company; address, town, postcode from the branch when
  *   it has an address, else the company; phone, VAT number, receipt footer from the branch, else the company.
  */
@@ -70,10 +71,14 @@ final class LicenceToken
         );
     }
 
-    /** When the till must stop trading: grace end, else end date; a licence with no dates ends now. */
+    /**
+     * When the till must stop trading: the real paid (or trial) end date, never plus our grace days (contract v1.4.1
+     * §17.2, ANSWERS-2026-09-29 §2: the till shows it as "Your licence ends on …" and locks when it passes). To give
+     * a shop more time, staff move the end date. A licence with no dates ends now.
+     */
     public static function expiresAt(LicenceState $state, CarbonImmutable $now): CarbonImmutable
     {
-        return ($state->graceEndsAt ?? $state->endsAt ?? $now)->utc()->startOfSecond();
+        return ($state->endsAt ?? $now)->utc()->startOfSecond();
     }
 
     /**

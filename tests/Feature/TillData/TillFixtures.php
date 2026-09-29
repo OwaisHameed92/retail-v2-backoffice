@@ -7,6 +7,7 @@ use App\Domain\Tenancy\Models\Company;
 use App\Domain\Tenancy\Models\Register;
 use App\Domain\TillData\Actions\ApplySyncChanges;
 use App\Domain\TillData\Sync\Data\ApplyResult;
+use Illuminate\Support\Arr;
 
 /**
  * The contract samples' tenant (company C001; Leeds B001 with tills R001, R002; Bradford B002 with till R003) and
@@ -14,7 +15,7 @@ use App\Domain\TillData\Sync\Data\ApplyResult;
  */
 final class TillFixtures
 {
-    public const CONTRACT = 'docs/contracts/portal-api-v1.3.3/docs/web-portal-api';
+    public const CONTRACT = 'docs/contracts/portal-api-v1.4.1/docs/web-portal-api';
 
     public const COMPANY = '01K5T0Q8C4000000000000C001';
 
@@ -76,6 +77,16 @@ final class TillFixtures
             'key' => "{$entity}:{$payload['id']}:{$version}",
             ...$overrides,
         ];
+    }
+
+    /**
+     * The push reply without `receivedAt` (a clock time; tests check it on its own).
+     *
+     * @return array<string, mixed>
+     */
+    public static function ack(ApplyResult|array $result): array
+    {
+        return Arr::except($result instanceof ApplyResult ? $result->toPushReply() : $result, 'receivedAt');
     }
 
     /**

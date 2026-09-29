@@ -14,8 +14,9 @@ final class RegistryWriter
 
     /**
      * @param  array<string, EntitySpec>  $entities
+     * @param  list<string>  $local  entities that never leave the till (ownership `local`)
      */
-    public function write(array $entities): string
+    public function write(array $entities, array $local = []): string
     {
         $imports = ['App\\Domain\\TillData\\Registry\\EntityDefinition', 'RuntimeException'];
         $entries = [];
@@ -34,6 +35,8 @@ final class RegistryWriter
             ." * Field entries: column, type (string|text|longText|int|bigint|money|cost|quantity|percent|rate|bool|date|time|\n"
             ." * datetime|enum|json|secret), nullable, arg (varchar length or enum class).\n */\n"
             ."final class EntityRegistry\n{\n"
+            ."    /** Till tables that never sync (ownership `local`, contract §10): accepted in a push, never stored. */\n"
+            .'    public const LOCAL = '.Php::literal($local).";\n\n"
             ."    public const ENTITIES = [\n"
             .implode('', $entries)
             ."    ];\n\n"
@@ -44,6 +47,7 @@ final class RegistryWriter
             ."        if (! isset(self::ENTITIES[\$entity])) {\n"
             ."            throw new RuntimeException(\"Unknown till entity [{\$entity}].\");\n        }\n\n"
             ."        return self::\$definitions[\$entity] ??= EntityDefinition::fromArray(\$entity, self::ENTITIES[\$entity]);\n    }\n\n"
+            ."    public static function isLocal(string \$entity): bool\n    {\n        return in_array(\$entity, self::LOCAL, true);\n    }\n\n"
             ."    /**\n     * @return list<string>\n     */\n"
             ."    public static function names(): array\n    {\n        return array_keys(self::ENTITIES);\n    }\n"
             ."}\n";
@@ -87,6 +91,7 @@ final class RegistryWriter
             "'children' => ".Php::literal($children).',',
             "'derived' => ".Php::literal($entity->derived).',',
             "'dropped' => ".Php::literal($entity->dropped).',',
+            ...($entity->keyedBy === null ? [] : ["'keyedBy' => ".Php::literal($entity->keyedBy).',']),
             "'immutable' => ".$this->immutable($entity, $all).',',
             "'tillFields' => ".Php::literal($entity->tillFields).',',
             "'fields' => [",
