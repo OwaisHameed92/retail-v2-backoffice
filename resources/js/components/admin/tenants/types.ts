@@ -1,3 +1,4 @@
+import { type CloudMove, type LocalKeyRecord } from '@/components/admin/cloud-link/types';
 import { type ShopHealth, type TillHealth } from '@/components/till-health/types';
 import { type TenantBillingData } from '@/components/admin/billing/types';
 import { type BranchLicence, type BranchLimits, type LicenceOptions, type PlanOption, type TenantLicensing } from '@/components/admin/licences/types';
@@ -146,5 +147,7 @@ export interface TenantShowProps {
     /** Module 1.11: the licence form. */
     branchLimits: BranchLimits;
     licenceOptions: LicenceOptions;
+    /** Module 2.8: this business's moves to the cloud and reported local keys. */
+    cloudLink: { moves: CloudMove[]; keys: LocalKeyRecord[] };
     can: { manage: boolean; impersonate: boolean; manageLicences: boolean };
 }

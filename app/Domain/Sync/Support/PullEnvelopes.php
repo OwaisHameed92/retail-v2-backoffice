@@ -42,6 +42,21 @@ final class PullEnvelopes
     }
 
     /**
+     * A shop row that moved to another shop, for the shop it left (ANSWERS-2026-09-29-b A.3): `D`, envelope `branchId`
+     * = the old shop as the till knows it ("" when it was every shop's), no payload, `at` = when it moved. Tills 0.1.8
+     * and 0.1.9 both soft-delete their copy.
+     *
+     * @param  array<string, mixed>  $row
+     * @return array<string, mixed>
+     */
+    public function departure(EntityDefinition $def, array $row, int $version, string $fromBranch, string $at): array
+    {
+        $envelope = $this->envelope($def->entity, (string) $row['id'], 'D', $version, $row, $fromBranch === '' ? '' : $this->rows->till(IdKind::Branch, $fromBranch), []);
+
+        return [...$envelope, 'at' => PullPayload::dateTime($at), 'payload' => null];
+    }
+
+    /**
      * @param  array<string, mixed>  $row
      * @return array<string, mixed>|null
      */

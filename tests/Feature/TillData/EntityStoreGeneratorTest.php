@@ -118,22 +118,26 @@ it('writes additive migrations: applied releases are never rewritten, the curren
     $lock = json_decode((string) file_get_contents(base_path(MigrationPlanner::LOCK)), true);
     $produced = array_keys(app(GenerateTillEntities::class)->render(new SchemaCatalog(base_path())));
     $previous = $lock['releases'][1];
-    $current = $lock['releases'][2];
+    $v141 = $lock['releases'][2];
+    $current = $lock['releases'][3];
 
-    expect(array_column($lock['releases'], 'release'))->toBe(['v1.1', 'v1.3.1', 'v1.4.1'])
+    expect(array_column($lock['releases'], 'release'))->toBe(['v1.1', 'v1.3.1', 'v1.4.1', 'v1.4.1-b'])
         ->and($previous['migrations'])->toBe(['2026_10_02_100000_create_till_v1_3_1_tables.php', '2026_10_02_100001_add_till_v1_3_1_columns.php'])
         ->and($previous['tables']['products']['columns'])->toHaveKeys(['variant3_name', 'hub_hash', 'origin_branch_id', 'portal_received_at'])
-        ->and($current['migrations'])->toBe(['2026_10_06_100000_create_till_v1_4_1_tables.php', '2026_10_06_100001_add_till_v1_4_1_columns.php'])
-        ->and(array_keys($current['tables']))->toEqualCanonicalizing([
+        ->and($v141['migrations'])->toBe(['2026_10_06_100000_create_till_v1_4_1_tables.php', '2026_10_06_100001_add_till_v1_4_1_columns.php'])
+        ->and(array_keys($v141['tables']))->toEqualCanonicalizing([
             'branch_prices', 'purchase_returns', 'purchase_return_lines', 'till_settings', 'till_role_permissions',
             'purchase_orders', 'goods_receipt_lines', 'stock_transfers', 'supplier_invoices', 'till_sync_conflicts',
         ])
-        ->and($current['tables']['purchase_orders']['columns'])->toHaveKeys(['origin', 'branch_code', 'reference'])
+        ->and($v141['tables']['purchase_orders']['columns'])->toHaveKeys(['origin', 'branch_code', 'reference'])
         ->not->toHaveKeys(['is_from_head_office', 'has_receiving_started', 'supplier_id'])
-        ->and($current['tables']['goods_receipt_lines']['columns'])->toBe(['damaged_qty' => "decimal('damaged_qty', 14, 4)->nullable()"])
-        ->and($current['tables']['till_sync_conflicts']['columns'])->toBe(['hub_change' => "longText('hub_change')->nullable()"]);
+        ->and($v141['tables']['goods_receipt_lines']['columns'])->toBe(['damaged_qty' => "decimal('damaged_qty', 14, 4)->nullable()"])
+        ->and($v141['tables']['till_sync_conflicts']['columns'])->toBe(['hub_change' => "longText('hub_change')->nullable()"])
+        // ANSWERS-2026-09-29-b: PromotionRule.isGroupOffer arrives in its own additive migration.
+        ->and($current['migrations'])->toBe(['2026_10_10_100001_add_till_v1_4_1_b_columns.php'])
+        ->and($current['tables'])->toBe(['promotion_rules' => ['columns' => ['is_group_offer' => "boolean('is_group_offer')->nullable()"], 'indexes' => []]]);
 
-    foreach ([...$lock['releases'][0]['migrations'], ...$previous['migrations']] as $applied) {
+    foreach ([...$lock['releases'][0]['migrations'], ...$previous['migrations'], ...$v141['migrations']] as $applied) {
         expect(file_exists(database_path("migrations/{$applied}")))->toBeTrue()
             ->and($produced)->not->toContain("database/migrations/{$applied}");
     }

@@ -19,11 +19,9 @@ final class ContractSampleCoverage
 
     private const DEVICES_ACTIVATE = 'devices/activate is deprecated and never called by the till (contract §17.4, PHASES 2.1): not built';
 
-    private const REDEEM = ['pending' => '2.8 Local keys and migration: licence/redeem (§17.6, §17.16)', 'route' => 'POST api/v1/licence/redeem'];
+    private const REDEEM = 'Licensing/Api/RedeemLicenceTest.php';
 
-    private const MIGRATE = ['pending' => '2.8 Local keys and migration: cloud/migrate (§17.8)', 'route' => 'POST api/v1/cloud/migrate'];
-
-    private const MIGRATE_COMPLETE = ['pending' => '2.8 Local keys and migration: cloud/migrate/complete (§17.8)', 'route' => 'POST api/v1/cloud/migrate/complete'];
+    private const MIGRATE = 'Sync/CloudMigrationTest.php';
 
     /**
      * @return array<string, array{tests?: list<array{0: string, 1: string}>, pending?: string, route?: string, notApplicable?: string}>
@@ -76,7 +74,7 @@ final class ContractSampleCoverage
             'licensing/samples/activate-request.json' => ['notApplicable' => self::DEVICES_ACTIVATE],
             'licensing/samples/activate-request.replacement-pc.json' => ['notApplicable' => self::DEVICES_ACTIVATE],
             'licensing/samples/activate-reply.json' => ['notApplicable' => self::DEVICES_ACTIVATE],
-            'licensing/samples/error.activation-code-not-found.404.json' => ['notApplicable' => self::DEVICES_ACTIVATE.'; cloud/migrate is 2.8'],
+            'licensing/samples/error.activation-code-not-found.404.json' => ['tests' => [[self::MIGRATE, 'code errors']]],
             'licensing/samples/error.use-migrate.409.json' => ['notApplicable' => self::DEVICES_ACTIVATE],
             'licensing/samples/validate-request.json' => ['tests' => [[$licence, 'validate-request.json']]],
             'licensing/samples/validate-request.per-till.json' => ['tests' => [['Licensing/Api/LicenceApiContractTest.php', 'the request samples replay against the API'], [$licence, 'the validate-reply samples']]],
@@ -98,10 +96,10 @@ final class ContractSampleCoverage
             'licensing/samples/error.key-not-found.404.json' => ['tests' => [[$licence, 'the error samples we emit']]],
             'licensing/samples/error.seat-limit.403.json' => ['tests' => [[$licence, 'the error samples we emit']]],
             'licensing/samples/error.update-required.426.json' => ['tests' => [[$licence, 'the error samples we emit']]],
-            'licensing/samples/error.branch-already-linked.409.json' => self::MIGRATE,
-            'licensing/samples/error.key-already-redeemed.409.json' => self::REDEEM,
-            'licensing/samples/error.key-used-on-another-install.409.json' => self::REDEEM,
-            'licensing/samples/error.licence-bad-signature.422.json' => self::REDEEM,
+            'licensing/samples/error.branch-already-linked.409.json' => ['tests' => [[self::MIGRATE, 'code errors']]],
+            'licensing/samples/error.key-already-redeemed.409.json' => ['tests' => [[self::REDEEM, 'redeem-request.portal-key.json']]],
+            'licensing/samples/error.key-used-on-another-install.409.json' => ['tests' => [[self::REDEEM, 'redeem-request.local-report.json']]],
+            'licensing/samples/error.licence-bad-signature.422.json' => ['tests' => [[self::REDEEM, 'a token that is not genuine'], [self::MIGRATE, 'a till holding another business']]],
             'licensing/samples/licence-token.payload.full.json' => ['tests' => [['Licensing/Signing/SsposTokenTest.php', 'produces payloads that validate against licence-token-payload.schema.json']]],
             'licensing/samples/licence-token.payload.per-till.json' => ['tests' => [['Licensing/Signing/SsposTokenTest.php', 'reproduces the per-till and migrated sample tokens byte for byte']]],
             'licensing/samples/licence-token.payload.trial.json' => ['tests' => [['Licensing/Signing/SsposTokenTest.php', 'reproduces the contract worked example byte for byte']]],
@@ -110,19 +108,19 @@ final class ContractSampleCoverage
             'licensing/samples/licence-token.worked-example.json' => ['tests' => [['Licensing/Signing/SsposTokenTest.php', 'reproduces the contract worked example byte for byte']]],
             'licensing/samples/signer-certificate.worked-example.json' => ['tests' => [['Licensing/Signing/SignerCertificateTest.php', 'verifies the contract signer-certificate worked example']]],
             'licensing/samples/public-key-handover.json' => ['tests' => [['Licensing/Signing/SignerCertificateTest.php', 'prints the public-key hand-over exactly shaped like the contract sample']]],
-            'licensing/samples/push-request.initial.json' => ['tests' => [[$sync, 'push-request.initial.json']]],
-            'licensing/samples/migrate-request.json' => self::MIGRATE,
-            'licensing/samples/migrate-reply.adopted.json' => self::MIGRATE,
-            'licensing/samples/migrate-reply.aliased.json' => self::MIGRATE,
-            'licensing/samples/migrate-complete-request.json' => self::MIGRATE_COMPLETE,
-            'licensing/samples/migrate-complete-reply.json' => self::MIGRATE_COMPLETE,
-            'licensing/samples/migrate-complete-reply.incomplete.json' => self::MIGRATE_COMPLETE,
-            'licensing/samples/redeem-request.portal-key.json' => self::REDEEM,
-            'licensing/samples/redeem-request.local-token.json' => self::REDEEM,
-            'licensing/samples/redeem-request.local-report.json' => self::REDEEM,
-            'licensing/samples/redeem-reply.applied.json' => self::REDEEM,
-            'licensing/samples/redeem-reply.recorded.json' => self::REDEEM,
-            'licensing/samples/redeem-reply.local-report.json' => self::REDEEM,
+            'licensing/samples/push-request.initial.json' => ['tests' => [[$sync, 'push-request.initial.json'], [self::MIGRATE, 'initial upload']]],
+            'licensing/samples/migrate-request.json' => ['tests' => [[self::MIGRATE, 'migrate-request.json with the shop']]],
+            'licensing/samples/migrate-reply.adopted.json' => ['tests' => [[self::MIGRATE, 'migrate-request.json with the shop']]],
+            'licensing/samples/migrate-reply.aliased.json' => ['tests' => [[self::MIGRATE, 'a second branch of a business']]],
+            'licensing/samples/migrate-complete-request.json' => ['tests' => [[self::MIGRATE, 'migrate-complete-request.json replays']]],
+            'licensing/samples/migrate-complete-reply.json' => ['tests' => [[self::MIGRATE, 'initial upload']]],
+            'licensing/samples/migrate-complete-reply.incomplete.json' => ['tests' => [[self::MIGRATE, 'initial upload']]],
+            'licensing/samples/redeem-request.portal-key.json' => ['tests' => [[self::REDEEM, 'redeem-request.portal-key.json']]],
+            'licensing/samples/redeem-request.local-token.json' => ['tests' => [[self::REDEEM, 'redeem-request.local-token.json']]],
+            'licensing/samples/redeem-request.local-report.json' => ['tests' => [[self::REDEEM, 'redeem-request.local-report.json']]],
+            'licensing/samples/redeem-reply.applied.json' => ['tests' => [[self::REDEEM, 'redeem-request.portal-key.json']]],
+            'licensing/samples/redeem-reply.recorded.json' => ['tests' => [[self::REDEEM, 'redeem-request.local-token.json']]],
+            'licensing/samples/redeem-reply.local-report.json' => ['tests' => [[self::REDEEM, 'redeem-request.local-report.json']]],
         ];
     }
 

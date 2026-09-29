@@ -57,12 +57,13 @@ test('error-reply.422.json: a sale total with 3 decimal places as the first row 
 test('push-request.initial.json: a moving shop\'s history upload (initial mode, its own company id) is stored once', function () {
     $sample = TillFixtures::sample('../licensing/samples/push-request.initial.json');
     $tillCompany = $sample[0]['companyId'];
-    // cloud/migrate (module 2.8) will record the moving shop's own company id; here it is mapped by hand.
+    // cloud/migrate (module 2.8, tests/Feature/Sync/CloudMigrationTest.php) records the moving shop's own company id
+    // and opens the upload; here both are done by hand.
     IdMapping::withoutCompanyScope()->create([
         'kind' => IdKind::Company, 'till_id' => $tillCompany, 'portal_id' => $this->sync->company->id,
         'company_id' => $this->sync->company->id, 'branch_id' => $this->sync->leeds->id, 'action' => IdMapAction::Aliased,
     ]);
-    $headers = ['X-SSPOS-Company-Id' => $tillCompany, 'X-SSPOS-Sync-Mode' => 'initial', 'X-SSPOS-Upload-Id' => Ulid::new(), 'Idempotency-Key' => Ulid::new()];
+    $headers = ['X-SSPOS-Company-Id' => $tillCompany, 'X-SSPOS-Sync-Mode' => 'initial', 'X-SSPOS-Upload-Id' => $this->sync->openUpload(), 'Idempotency-Key' => Ulid::new()];
 
     $first = $this->sync->push($sample, $headers)->assertOk();
     $retry = $this->sync->push($sample, $headers)->assertOk()->assertHeader('Idempotency-Replayed', 'true');

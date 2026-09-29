@@ -1,4 +1,5 @@
 import { TenantBillingPanel } from '@/components/admin/billing/tenant-billing-panel';
+import { TenantCloudPanel } from '@/components/admin/cloud-link/tenant-cloud-panel';
 import { BranchLimitsDialog } from '@/components/admin/licences/branch-limits-dialog';
 import { TenantLicencesPanel } from '@/components/admin/licences/tenant-licences-panel';
 import { ActivityPanel } from '@/components/admin/tenants/activity-panel';
@@ -22,9 +23,9 @@ import { Head } from '@inertiajs/react';
 import { CalendarDays, MonitorSmartphone, Plus, SlidersHorizontal, Store, Users } from 'lucide-react';
 import { useState } from 'react';
 
-type TabValue = 'branches' | 'users' | 'activity' | 'licences' | 'billing';
+type TabValue = 'branches' | 'users' | 'activity' | 'licences' | 'cloud' | 'billing';
 
-const TAB_VALUES: TabValue[] = ['branches', 'users', 'activity', 'licences', 'billing'];
+const TAB_VALUES: TabValue[] = ['branches', 'users', 'activity', 'licences', 'cloud', 'billing'];
 
 function initialTab(canBill: boolean): TabValue {
     if (typeof window === 'undefined') {
@@ -49,6 +50,7 @@ export default function TenantShow({
     billing,
     branchLimits,
     licenceOptions,
+    cloudLink,
     can,
 }: TenantShowProps) {
     const [tab, setTab] = useState<TabValue>(() => initialTab(billing !== null));
@@ -78,6 +80,13 @@ export default function TenantShow({
                         {licensing.summary.missing} missing
                     </Badge>
                 ) : undefined,
+        },
+        // Module 2.8: moves to the cloud and reported dealer keys.
+        {
+            value: 'cloud',
+            label: 'Cloud link',
+            count: cloudLink.moves.length + cloudLink.keys.length || undefined,
+            badge: cloudLink.keys.some((key) => key.refusedCount > 0) ? <Badge variant="danger">Key on two PCs</Badge> : undefined,
         },
         // Billing is for owner and accounts only (billing.manage): no data, no tab.
         ...(billing ? [{ value: 'billing', label: 'Billing' } satisfies PageTab] : []),
@@ -203,6 +212,7 @@ export default function TenantShow({
                     )}
                     {tab === 'activity' && <ActivityPanel activity={activity} />}
                     {tab === 'licences' && <TenantLicencesPanel tenant={tenant} licensing={licensing} plans={plans} canManage={can.manageLicences} />}
+                    {tab === 'cloud' && <TenantCloudPanel moves={cloudLink.moves} keys={cloudLink.keys} canClear={can.manageLicences} />}
                     {tab === 'billing' && billing && <TenantBillingPanel tenant={tenant} billing={billing} />}
                 </div>
             </div>

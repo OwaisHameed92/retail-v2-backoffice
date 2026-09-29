@@ -1528,7 +1528,7 @@ components:
                 rejectedKey: null
                 details: null
     E409:
-      description: "Conflict. Codes: `request.in_progress` (*); `contract.unsupported` (*); `activation.code_used` (devices/activate, cloud/migrate); `activation.use_migrate` (devices/activate); `device.branch_already_linked` (devices/activate, cloud/migrate); `key.already_redeemed` (licence/redeem); `migrate.already_migrated` (cloud/migrate); `migrate.upload_closed` (sync/push (initial)); `key.already_used` (licence/activate); `key.used_on_another_install` (licence/redeem); `sync_key.used` (cloud/migrate). Full list: licensing/samples/error-codes.json."
+      description: "Conflict. Codes: `request.in_progress` (*); `contract.unsupported` (*); `activation.code_used` (devices/activate, cloud/migrate); `activation.use_migrate` (devices/activate); `device.branch_already_linked` (devices/activate, cloud/migrate); `key.already_redeemed` (licence/redeem); `migrate.already_migrated` (cloud/migrate); `migrate.upload_closed` (sync/push (initial)); `key.already_used` (licence/activate); `key.used_on_another_install` (licence/redeem); `licence.ids_conflict` (licence/activate, licence/validate); `sync_key.used` (cloud/migrate). Full list: licensing/samples/error-codes.json."
       headers:
         X-SSPOS-Contract:
           $ref: "#/components/headers/Contract"

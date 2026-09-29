@@ -2,6 +2,7 @@
 
 use App\Domain\Licensing\Enums\LicenceAlertType;
 use App\Domain\Licensing\Models\LicenceAlert;
+use App\Domain\Sync\Actions\RecordTillIds;
 use App\Domain\Sync\Enums\IdKind;
 use App\Domain\Sync\Models\IdMapping;
 use App\Domain\Sync\Support\IdTranslator;
@@ -13,6 +14,7 @@ use Illuminate\Support\Facades\Mail;
 use Tests\Feature\Licensing\Api\LicenceApiHelpers;
 use Tests\Feature\Licensing\LicensingTestHelpers;
 use Tests\Feature\Tenants\TenantTestHelpers;
+use Tests\Support\ContractReplyGuard;
 
 uses(TenantTestHelpers::class, LicensingTestHelpers::class, LicenceApiHelpers::class);
 
@@ -127,6 +129,7 @@ test('till ids already mapped to another business are refused with a clear error
         ->assertStatus(409)
         ->assertJsonPath('code', 'licence.ids_conflict')
         ->assertJsonPath('details.kind', 'company')
+        ->assertJsonPath('message', RecordTillIds::ANOTHER_BUSINESS)
         ->assertJsonMissingPath('licenceToken');
 
     $alert = LicenceAlert::withoutCompanyScope()->where('licence_id', $licenceB->id)->sole();
@@ -145,7 +148,8 @@ test('a PC holding one branch\'s data cannot take a key of another branch of the
     activateBradford($this, BFD_TILL_COMPANY, self::TILL_BRANCH)
         ->assertStatus(409)
         ->assertJsonPath('code', 'licence.ids_conflict')
-        ->assertJsonPath('details.kind', 'branch');
+        ->assertJsonPath('details.kind', 'branch')
+        ->assertJsonPath('message', RecordTillIds::ANOTHER_BRANCH);
 
     expect($licence->fresh()->device_id)->toBeNull()
         ->and(IdMapping::withoutCompanyScope()->where('till_id', BFD_TILL_COMPANY)->exists())->toBeFalse();
@@ -169,4 +173,20 @@ test('the translator keeps a refused tenancy row\'s own key and never uses anoth
 
     $other = Company::factory()->create();
     expect(IdTranslator::forCompany($other->id)->change($raw))->toBe($raw);
+});
+
+test('licence.ids_conflict is official (contract v1.4.1 answers b): 409 in error-codes.json for activate, en-GB owner messages of at most 500 characters', function () {
+    $codes = collect(json_decode((string) file_get_contents(base_path('docs/contracts/portal-api-v1.4.1/docs/web-portal-api/licensing/samples/error-codes.json')), true));
+    $entry = $codes->firstWhere('code', 'licence.ids_conflict');
+
+    expect($entry['status'])->toBe(409)
+        ->and($entry['endpoints'])->toContain('licence/activate')
+        ->and(ContractReplyGuard::PENDING_CODES)->not->toHaveKey('licence.ids_conflict');
+
+    foreach ([RecordTillIds::ANOTHER_BUSINESS, RecordTillIds::ANOTHER_BRANCH] as $message) {
+        expect(mb_strlen($message))->toBeLessThanOrEqual(500)
+            ->and($message)->toContain('Nothing has been changed', 'dealer')
+            ->not->toMatch('/[0-9A-HJKMNP-TV-Z]{26}/')
+            ->not->toContain('licence key cannot be used on it');
+    }
 });

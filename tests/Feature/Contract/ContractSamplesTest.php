@@ -4,6 +4,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Tests\Support\ContractReplyGuard;
 use Tests\Support\ContractSampleCoverage;
 use Tests\Support\ContractSchema;
 
@@ -89,7 +90,15 @@ test('every sample file is replayed by a named test, or is explicitly pending or
 test('a pending sample\'s endpoint is not routed yet: once it is, its samples must be replayed', function () {
     $pending = array_filter(ContractSampleCoverage::map(), fn (array $entry) => isset($entry['route']));
 
-    expect($pending)->not->toBeEmpty();
+    // Module 2.8 routed the last pending endpoints (licence/redeem, cloud/migrate, migrate/complete): every till route
+    // now has its reply schema in the guard, and no licensing sample is pending any more.
+    $tillRoutes = collect(Route::getRoutes()->getRoutes())
+        ->filter(fn ($route) => preg_match('#^api/v1/(sync|licence|devices|cloud)/#', $route->uri()) === 1)
+        ->map(fn ($route) => ($route->methods()[0]).' '.$route->uri())->values()->all();
+
+    expect($tillRoutes)->not->toBeEmpty()
+        ->and(array_diff($tillRoutes, array_keys(ContractReplyGuard::REPLY_SCHEMAS)))->toBe([])
+        ->and(array_filter(array_keys($pending), fn (string $sample) => str_starts_with($sample, 'licensing/')))->toBe([]);
 
     foreach ($pending as $sample => ['route' => $route]) {
         [$method, $uri] = explode(' ', $route);

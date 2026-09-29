@@ -114,7 +114,7 @@ final class HubVersions
                 $version = $this->assign($companyId, $def, $this->pending($companyId, $def, $chunk), $version);
             }
 
-            return $version;
+            return BranchDepartures::assign($companyId, $version);
         });
     }
 
@@ -126,7 +126,7 @@ final class HubVersions
     {
         $waiting = array_filter(self::feed(), fn (EntityDefinition $def) => $this->pendingQuery($companyId, $def)->exists());
 
-        if ($waiting === []) {
+        if ($waiting === [] && ! BranchDepartures::pending($companyId)) {
             return null;
         }
 
@@ -138,7 +138,7 @@ final class HubVersions
                 $version = $this->assign($companyId, $def, $ids, $version);
             }
 
-            return $version;
+            return BranchDepartures::assign($companyId, $version);   // shops a row moved away from (ANSWERS-b A.3)
         });
     }
 

@@ -2468,6 +2468,7 @@ final class EntityRegistry
                 'getQuantity' => ['column' => 'get_quantity', 'type' => 'int', 'nullable' => false, 'arg' => null],
                 'priceTiers' => ['column' => 'price_tiers', 'type' => 'longText', 'nullable' => true, 'arg' => null],
                 'minQuantity' => ['column' => 'min_quantity', 'type' => 'int', 'nullable' => false, 'arg' => null],
+                'isGroupOffer' => ['column' => 'is_group_offer', 'type' => 'bool', 'nullable' => false, 'arg' => null],
                 'priority' => ['column' => 'priority', 'type' => 'int', 'nullable' => false, 'arg' => null],
                 'allowStack' => ['column' => 'allow_stack', 'type' => 'bool', 'nullable' => false, 'arg' => null],
                 'isExclusive' => ['column' => 'is_exclusive', 'type' => 'bool', 'nullable' => false, 'arg' => null],

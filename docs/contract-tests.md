@@ -14,9 +14,9 @@ alone with `php artisan test tests/Feature/Contract`.
 | Error codes | `tests/Feature/Contract/ErrorCodesTest.php` | Static scan of `app/` (code only, comments stripped) for every code we throw or render; each must be in `error-codes.json`. Runtime: the reply guard. Framework errors on till URLs become contract codes. |
 | Secrets in logs | `tests/Feature/Contract/SecretsNeverLoggedTest.php` | A log spy (`MessageLogged`, every level, with exception traces) across activate (+ replay), wrong key, key on a second PC, validate, a key in a query string, deactivate, hello, push (rejected row, deny-listed setting, secret members), pull (gzip), a wrong and a revoked sync key: no licence key (any form), sync key, licence token or `Authorization` header in any line, and none of the secrets the till sent by mistake in a stored row. |
 
-Pending codes: `licence.ids_conflict` (409, module 2.1) — our code, not in `error-codes.json` yet; pending EPOS
-confirmation (`docs/DECISIONS.md`). `ContractReplyGuard::PENDING_CODES` is the only allow-list, and a test checks each
-entry is recorded as pending in `docs/DECISIONS.md`.
+Pending codes: none. `licence.ids_conflict` (409, module 2.1) is in `error-codes.json` since the contract v1.4.1
+answers (b) (2026-09-29). `ContractReplyGuard::PENDING_CODES` stays the only allow-list for a future code of ours, and
+a test checks each entry is recorded as pending in `docs/DECISIONS.md`.
 
 ## §19.4 test list → tests
 
@@ -57,11 +57,14 @@ under `tests/Feature/`.
 
 | Samples | Why |
 |---|---|
-| `licensing/samples/redeem-*`, `error.key-already-redeemed.409`, `error.key-used-on-another-install.409`, `error.licence-bad-signature.422` | `licence/redeem` is module 2.8 |
-| `licensing/samples/migrate-*`, `error.branch-already-linked.409` | `cloud/migrate` and `migrate/complete` are module 2.8 |
 | `samples/web-order.json` | §12 is a proposal; web orders are Phase 8 |
-| `licensing/samples/activate-*`, `error.activation-code-not-found.404`, `error.use-migrate.409` | `devices/activate` is deprecated and never called (§17.4) |
+| `licensing/samples/activate-*`, `error.use-migrate.409` | `devices/activate` is deprecated and never called (§17.4) |
 | `licensing/samples/validate-reply.seat-limit.json` | the branch model's `seatLimit`/`registers[]`; per-till licences refuse at `licence/activate` (`error.seat-limit.403`, replayed) |
 
 All of them are still validated against their schemas, and their tokens verified (`Licensing/Signing/SsposTokenTest`
 "verifies every sample token signed with a documentation key").
+
+Module 2.8 (2026-09-30) replays every `redeem-*` and `migrate-*` sample and their errors
+(`tests/Feature/Licensing/Api/RedeemLicenceTest.php`, `tests/Feature/Sync/CloudMigrationTest.php`;
+`error.activation-code-not-found.404` now comes from `cloud/migrate`). No licensing endpoint is pending; every till
+route has its reply schema in `ContractReplyGuard::REPLY_SCHEMAS` (a test checks it).

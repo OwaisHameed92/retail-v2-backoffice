@@ -10,7 +10,9 @@ use App\Http\Controllers\Auth\VerifyEmailController;
 use Illuminate\Support\Facades\Route;
 
 // No public self-registration: owner accounts are created by us when a trial is approved (module 1.6).
-Route::middleware('guest')->group(function () {
+// `guest:web`: only a signed-in customer is sent on (to /app, bootstrap/app.php); an admin session is another guard
+// and still sees the customer sign-in (never the old /login ⇄ / loop).
+Route::middleware('guest:web')->group(function () {
     Route::get('login', [AuthenticatedSessionController::class, 'create'])
         ->name('login');
 

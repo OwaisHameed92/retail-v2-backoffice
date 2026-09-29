@@ -40,7 +40,7 @@ final class EntityWriter
      */
     public function write(EntityDefinition $def, array $changes): array
     {
-        $state = $this->existing($def, $changes);
+        $state = $before = $this->existing($def, $changes);
         $outcomes = [];
         $pending = [];
         $tombstones = [];
@@ -111,6 +111,7 @@ final class EntityWriter
         }
 
         $this->upsert($def, array_values($pending));
+        BranchDepartures::fromPush($def, $this->context, $before, $pending);
 
         foreach ($tombstones as $id => $values) {
             DB::table($def->table)->where('id', $id)->update($values);
@@ -231,7 +232,7 @@ final class EntityWriter
         $columns = ['id', 'company_id', 'row_version', 'updated_at', 'portal_received_at'];
 
         if ($def->isHubOwned()) {
-            array_push($columns, 'hub_edited_at', 'deleted_at', ...EntityDefinition::HUB_COLUMNS);
+            array_push($columns, 'hub_edited_at', 'deleted_at', ...EntityDefinition::HUB_COLUMNS, ...(BranchDepartures::applies($def) ? ['branch_id'] : []));
         }
 
         $columns = $def->immutable !== null ? ['*'] : $columns;

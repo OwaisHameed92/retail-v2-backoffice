@@ -88,6 +88,7 @@ return [
             'activate_per_ip_per_hour' => 10,
             'validate_per_install_per_hour' => 60,
             'deactivate_per_install_per_hour' => 20,
+            'redeem_per_hour' => 10, // module 2.8: per branch (branch key) or per install (local key report)
             'wrong_keys_per_install' => 5,
             'wrong_keys_window_seconds' => 900,
         ],

@@ -22,7 +22,8 @@ use Illuminate\Support\Facades\DB;
  *    the branch (PullFeed, PullVisibility): hub-owned rows, settings and role permissions (§10.3), other branches'
  *    relayed transfers, receipts and ledger rows (§10.2), head-office orders drafted for this branch (§10.6) and
  *    portal edits of its Company / Branch (§6.1); company-wide or addressed to this branch, never a row whose
- *    current content this branch pushed. Oldest first.
+ *    current content this branch pushed; and a `D` for each shop row moved away from this branch (ANSWERS-b A.3).
+ *    Oldest first.
  * 3. Envelopes in the till's shape with the till's own ids (PullEnvelopes). `highestVersion` = the page's last
  *    version (`since` when nothing is new, as samples/pull-reply.empty.json); `hasMore` when rows are still waiting.
  * 4. Records the pull in `sync_branch_status`.
@@ -69,8 +70,15 @@ final class PullChanges
 
             $changes = [];
 
-            foreach ($page as [$entity, $id, $version]) {
+            foreach ($page as [$entity, $id, $version, $departure]) {
                 $row = $rows[$entity][$id] ?? null;
+
+                // A shop row moved away from this branch: a `D` (ANSWERS-2026-09-29-b A.3), whatever the row is now.
+                if ($row !== null && $departure !== null) {
+                    $changes[] = $envelopes->departure(EntityRegistry::get($entity), $row, $version, ...$departure);
+
+                    continue;
+                }
 
                 // Changed since the page was read (not possible inside the snapshot, kept for READ COMMITTED
                 // servers): its newer version comes in a later pull.
@@ -96,7 +104,7 @@ final class PullChanges
     }
 
     /**
-     * @param  list<array{0: string, 1: string, 2: int}>  $page
+     * @param  list<array{0: string, 1: string, 2: int, 3: array{0: string, 1: string}|null}>  $page
      * @return array<string, list<string>>
      */
     private function byEntity(array $page): array

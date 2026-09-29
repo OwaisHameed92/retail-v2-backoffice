@@ -63,8 +63,8 @@ test('every error code the portal emits to a till is in error-codes.json (static
     $all = array_unique(array_merge(...array_values($found)));
     $known = ContractReplyGuard::knownCodes();
 
-    // The scan really finds the codes (sync, licence, framework and the pending one).
-    expect($all)->toContain('auth.invalid_key', 'key.already_used', 'device.not_found', 'row.invalid', 'server.busy', 'request.idempotency_mismatch', 'licence.ids_conflict');
+    // The scan really finds the codes (sync, licence, framework, module 2.8).
+    expect($all)->toContain('auth.invalid_key', 'key.already_used', 'device.not_found', 'row.invalid', 'server.busy', 'request.idempotency_mismatch', 'licence.ids_conflict', 'key.used_on_another_install', 'migrate.upload_closed');
 
     foreach ($found as $file => $codes) {
         foreach ($codes as $code) {
@@ -95,13 +95,17 @@ test('a code we emit that the contract does not list yet is recorded as pending 
     foreach (array_keys(ContractReplyGuard::PENDING_CODES) as $code) {
         expect($decisions)->toMatch('/`'.preg_quote($code, '/').'`[^\n]*pending/i');
     }
+
+    // Contract v1.4.1 answers (b): licence.ids_conflict is in error-codes.json now, no longer ours alone.
+    expect(ContractReplyGuard::PENDING_CODES)->not->toHaveKey('licence.ids_conflict')
+        ->and($decisions)->not->toMatch('/`licence\.ids_conflict`[^\n]*pending EPOS/i');
 });
 
 test('framework errors on the till endpoints are contract codes: an unknown call or a wrong method is 400 request.invalid', function () {
     $headers = ['X-SSPOS-Contract' => '1'];
 
     foreach ([
-        ['POST', '/api/v1/licence/redeem'],        // module 2.8
+        ['POST', '/api/v1/licence/nothing-here'],
         ['POST', '/api/v1/devices/activate'],      // deprecated, never built
         ['GET', '/api/v1/licence/activate'],
         ['GET', '/api/v1/sync/nothing-here'],

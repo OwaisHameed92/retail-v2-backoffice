@@ -527,6 +527,18 @@
     "retryable": false
   },
   {
+    "code": "licence.ids_conflict",
+    "status": 409,
+    "endpoints": [
+      "licence/activate",
+      "licence/validate"
+    ],
+    "meaning": "The till sent company/branch ids (existingIds on activate, the X-SSPOS-Company-Id / X-SSPOS-Branch-Id headers on validate) that are already bound to another licence or shop. The portal alerts the admin. Portal v1.4.1.",
+    "tillDoes": "Changes nothing. Activate: shows message (or 'This till's shop details are already linked to another licence ... call your dealer'); nothing is saved. Validate: keeps trading on the token it holds (the grace keeps running) and shows a 'Licence details need checking' warning with message. Never locks the till by itself.",
+    "details": null,
+    "retryable": false
+  },
+  {
     "code": "sync_key.not_found",
     "status": 404,
     "endpoints": [

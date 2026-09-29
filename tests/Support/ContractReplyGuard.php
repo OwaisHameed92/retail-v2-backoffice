@@ -18,8 +18,13 @@ use stdClass;
  */
 final class ContractReplyGuard
 {
-    /** Our codes the contract does not list yet, pending EPOS confirmation (docs/DECISIONS.md), code => status. */
-    public const PENDING_CODES = ['licence.ids_conflict' => 409];
+    /**
+     * Our codes the contract does not list yet, pending EPOS confirmation (docs/DECISIONS.md), code => status. None
+     * since contract v1.4.1 answers (b) made `licence.ids_conflict` official.
+     *
+     * @var array<string, int>
+     */
+    public const PENDING_CODES = [];
 
     /** Till endpoints: [method path] => reply schema (`pull` = pull reply with entity payloads). */
     public const REPLY_SCHEMAS = [
@@ -29,6 +34,10 @@ final class ContractReplyGuard
         'POST api/v1/licence/activate' => 'licensing/schemas/licence-activate-reply.schema.json',
         'POST api/v1/licence/validate' => 'licensing/schemas/validate-reply.schema.json',
         'POST api/v1/devices/deactivate' => 'licensing/schemas/deactivate-reply.schema.json',
+        // Module 2.8.
+        'POST api/v1/licence/redeem' => 'licensing/schemas/redeem-reply.schema.json',
+        'POST api/v1/cloud/migrate' => 'licensing/schemas/migrate-reply.schema.json',
+        'POST api/v1/cloud/migrate/complete' => 'licensing/schemas/migrate-complete-reply.schema.json',
     ];
 
     /** @var list<array{what: string, status: int, body: string}> */

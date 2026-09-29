@@ -20,6 +20,7 @@ use Illuminate\Database\Query\Builder;
  * | CustomerTransaction         | every branch but its own                                                       |
  * | PurchaseOrder (+ lines)     | head-office orders drafted on the portal, to their shop, until the shop owns it |
  * | Company / Branch            | every branch / that branch (portal edits only)                                 |
+ * | a shop row that moved away  | a `D` to the shop it left (BranchDepartures, read by PullFeed)                 |
  */
 final class PullVisibility
 {

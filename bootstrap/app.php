@@ -52,6 +52,10 @@ return Application::configure(basePath: dirname(__DIR__))
 
         // Guests on /admin go to the admin login; everyone else to the tenant login.
         $middleware->redirectGuestsTo(fn (Request $request) => $request->is('admin', 'admin/*') ? route('admin.login') : route('login'));
+
+        // A signed-in customer on a guest page (sign-in, password reset) goes to their portal, never to `/`, which
+        // sends to the sign-in again (the /login ⇄ / loop).
+        $middleware->redirectUsersTo(fn () => route('app.dashboard'));
     })
     ->withExceptions(function (Exceptions $exceptions) {
         // api/* errors → {code, message, traceId, retryAfterSeconds, rejectedKey} (module 0.5).

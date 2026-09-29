@@ -91,6 +91,9 @@
       ],
       "pattern": "^-?(?:0|[1-9]\\d*)$"
     },
+    "isGroupOffer": {
+      "type": "boolean"
+    },
     "priority": {
       "type": [
         "string",
@@ -260,6 +263,7 @@
     "getQuantity",
     "priceTiers",
     "minQuantity",
+    "isGroupOffer",
     "priority",
     "allowStack",
     "isExclusive",

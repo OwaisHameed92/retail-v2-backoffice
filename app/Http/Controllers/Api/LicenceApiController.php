@@ -4,15 +4,18 @@ namespace App\Http\Controllers\Api;
 
 use App\Domain\Licensing\Api\ActivateLicence;
 use App\Domain\Licensing\Api\DeactivateDevice;
+use App\Domain\Licensing\Api\RedeemLicence;
 use App\Domain\Licensing\Api\ValidateLicence;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\ActivateLicenceRequest;
 use App\Http\Requests\Api\DeactivateDeviceRequest;
+use App\Http\Requests\Api\RedeemLicenceRequest;
 use App\Http\Requests\Api\ValidateLicenceRequest;
 use Illuminate\Http\JsonResponse;
 
 /**
- * Per-till licensing (contract v1.4.1 §17.15, §17.7). Thin: validate the body, call one Action, reply JSON.
+ * Per-till licensing (contract v1.4.1 §17.15, §17.7) and local key reports / redeemed keys (§17.6, module 2.8).
+ * Thin: validate the body, call one Action, reply JSON.
  * Errors are ApiExceptions rendered as `{code, message, traceId, retryAfterSeconds, rejectedKey, details?}`.
  */
 class LicenceApiController extends Controller
@@ -25,6 +28,12 @@ class LicenceApiController extends Controller
     public function validateLicence(ValidateLicenceRequest $request, ValidateLicence $validate): JsonResponse
     {
         return self::json($validate->handle((string) $request->validated('licenceId'), (string) $request->validated('tokenSha256'), $request->tillRequest()));
+    }
+
+    /** Module 2.8: a local key report, or a key typed at a linked till (§17.6). */
+    public function redeem(RedeemLicenceRequest $request, RedeemLicence $redeem): JsonResponse
+    {
+        return self::json($redeem->handle($request->key(), $request->tillRequest(), $request->bearerToken(), $request->tillIds()));
     }
 
     public function deactivate(DeactivateDeviceRequest $request, DeactivateDevice $deactivate): JsonResponse

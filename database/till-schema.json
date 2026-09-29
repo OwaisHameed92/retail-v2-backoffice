@@ -6078,6 +6078,20 @@
                     "indexes": []
                 }
             }
+        },
+        {
+            "release": "v1.4.1-b",
+            "migrations": [
+                "2026_10_10_100001_add_till_v1_4_1_b_columns.php"
+            ],
+            "tables": {
+                "promotion_rules": {
+                    "columns": {
+                        "is_group_offer": "boolean('is_group_offer')->nullable()"
+                    },
+                    "indexes": []
+                }
+            }
         }
     ]
 }

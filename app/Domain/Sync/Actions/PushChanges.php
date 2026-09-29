@@ -7,6 +7,7 @@ use App\Domain\Shared\Support\Ulid;
 use App\Domain\Sync\Data\PushInput;
 use App\Domain\Sync\Data\PushReply;
 use App\Domain\Sync\Data\SyncCaller;
+use App\Domain\Sync\Support\CloudUploads;
 use App\Domain\Sync\Support\PushBody;
 use App\Domain\Sync\Support\PushIdempotency;
 use App\Domain\Sync\Support\SyncApiErrors;
@@ -22,7 +23,8 @@ use Illuminate\Support\Facades\Log;
  *
  * 1. Body: gzip or plain JSON, ≤ 5,000 rows and 50 MB (PushBody; else 413 / 400).
  * 2. Mode: delta (default; seq = the branch's ChangeLog) or `initial` with `X-SSPOS-Upload-Id` (seq = the upload's
- *    own 1…N, kept apart in the ledger). Checking that the upload is open is module 2.8 (cloud/migrate).
+ *    own 1…N, kept apart in the ledger). Module 2.8: the upload must be this branch's (404 migrate.upload_not_found)
+ *    and still open (409 migrate.upload_closed); after each batch its progress is refreshed (CloudUploads).
  * 3. Per-branch lock: two pushes of one branch never interleave; a second one waits up to
  *    config('sync.push.lock_wait_seconds'), then 503 server.busy with retryAfterSeconds. The same Idempotency-Key
  *    while its first request still runs → 409 request.in_progress (§21.7).
@@ -47,11 +49,12 @@ final class PushChanges
     {
         try {
             $stream = $this->stream($input);
+            $upload = $stream === '' ? null : CloudUploads::forPush($caller, $stream);
             $idempotencyKey = $this->idempotencyKey($input->idempotencyKey);
             self::raiseMemoryLimit();
             ['changes' => $changes, 'fingerprint' => $fingerprint] = PushBody::decode($input->body, $input->encoding);
 
-            return $this->locked($caller, $idempotencyKey, function () use ($caller, $input, $stream, $idempotencyKey, $changes, $fingerprint) {
+            return $this->locked($caller, $idempotencyKey, function () use ($caller, $input, $stream, $upload, $idempotencyKey, $changes, $fingerprint) {
                 $fingerprint = hash('sha256', $stream.'|'.$fingerprint);
 
                 if (($replay = $this->idempotency->find($caller->branch->id, $idempotencyKey, $fingerprint)) !== null) {
@@ -60,6 +63,11 @@ final class PushChanges
 
                 $result = $this->apply->handle($caller->company, $caller->branch, $changes, $stream);
                 $this->status->pushed($caller, $stream, $result, $input->appVersion, $input->tillRegisterId);
+
+                if ($upload !== null) {
+                    CloudUploads::refresh($upload);
+                }
+
                 $reply = $this->reply($result, $changes, $input->traceId);
                 $this->idempotency->remember($caller->branch->id, $idempotencyKey, $fingerprint, $reply);
                 $this->log($caller, $result, $stream);

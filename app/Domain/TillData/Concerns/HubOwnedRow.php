@@ -4,6 +4,7 @@ namespace App\Domain\TillData\Concerns;
 
 use App\Domain\Shared\Support\Ulid;
 use App\Domain\TillData\EntityRegistry;
+use App\Domain\TillData\Sync\BranchDepartures;
 use App\Domain\TillData\Sync\HubVersions;
 use App\Domain\TillData\Sync\RowHash;
 use Carbon\CarbonImmutable;
@@ -39,7 +40,10 @@ trait HubOwnedRow
             }
         });
 
-        static::saved(fn (Model $model) => self::publishHubVersion($model));
+        static::saved(function (Model $model): void {
+            BranchDepartures::fromModel($model);   // moved to another shop: the old shop gets a `D` (ANSWERS-b A.3)
+            self::publishHubVersion($model);
+        });
 
         static::saving(function (Model $model): void {
             if ($model->exists && $model->isDirty('hub_version') && $model->getAttribute('hub_version') !== null) {

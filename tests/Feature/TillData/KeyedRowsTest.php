@@ -118,6 +118,18 @@ it('acknowledges rows of a `local` table (an older till\'s SyncState) without st
         ->and(DB::table('till_sync_states')->count())->toBe($before);
 });
 
+it('keeps SettingSyncPolicy::LOCAL_KEYS exactly the file\'s localOnlyKeys that no rule catches (drift either way fails)', function () {
+    $file = TillFixtures::sample('settings-local-only.json');
+    $missedByRules = array_values(array_filter($file['localOnlyKeys'], fn (string $key) => ! SettingSyncPolicy::caughtByRules($key)));
+    sort($missedByRules);
+
+    // ANSWERS-2026-09-29-b: five more till-only keys; cash.count_on_close and till.keypad_price_in_pence stay shared.
+    expect(SettingSyncPolicy::LOCAL_KEYS)->toBe($missedByRules)
+        ->toContain('receipt.print_switch', 'till.beep_on_add', 'till.beep_on_not_found', 'till.popup_keyboard', 'till_ease.simple_mode')
+        ->and(array_intersect(SettingSyncPolicy::LOCAL_KEYS, $file['sharedKeys']))->toBe([])
+        ->and($file['sharedKeys'])->toContain('cash.count_on_close', 'till.keypad_price_in_pence');
+});
+
 it('keeps SettingSyncPolicy equal to samples/settings-local-only.json', function () {
     $file = TillFixtures::sample('settings-local-only.json');
 

@@ -2,6 +2,7 @@
 
 namespace Tests\Support;
 
+use App\Domain\Sync\Support\PullPayload;
 use App\Domain\TillData\EntityRegistry;
 use Opis\JsonSchema\CompliantValidator;
 use Opis\JsonSchema\Errors\ErrorFormatter;
@@ -110,7 +111,8 @@ final class ContractSchema
     {
         if (! isset(self::$relaxed[$entity])) {
             $schema = json_decode((string) file_get_contents(self::dir("schemas/entities/{$entity}.schema.json")), false, 512, JSON_THROW_ON_ERROR);
-            $derived = EntityRegistry::has($entity) ? EntityRegistry::get($entity)->derived : [];
+            // Members the portal omits while blank (ANSWERS-2026-09-29-b A.1: a missing member keeps the till's value).
+            $derived = [...(EntityRegistry::has($entity) ? EntityRegistry::get($entity)->derived : []), ...(PullPayload::KEPT_WHEN_BLANK[$entity] ?? [])];
             unset($schema->{'$id'});
             $schema->required = array_values(array_diff($schema->required ?? [], $derived));
             self::$relaxed[$entity] = $schema;

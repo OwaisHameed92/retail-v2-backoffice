@@ -27,15 +27,20 @@ final class SettingSyncPolicy
 
     public const BOOKKEEPING_ENDINGS = ['_utc'];
 
-    /** `localOnlyKeys` of the contract file that no rule above catches. */
+    /**
+     * `localOnlyKeys` of the contract file that no rule above catches, sorted (ANSWERS-2026-09-29-b added
+     * receipt.print_switch, till.beep_on_add, till.beep_on_not_found, till.popup_keyboard, till_ease.simple_mode).
+     * A test keeps this list exactly equal to the file's keys the rules miss, so drift either way fails.
+     */
     public const LOCAL_KEYS = [
         'display.button_size', 'display.font_scale', 'display.fullscreen_kiosk', 'display.language',
         'display.layout_profile', 'display.start_with_windows', 'display.text_size', 'display.theme',
         'payments.offline_card_mode', 'payments.open_drawer_on_card', 'payments.open_drawer_on_cash',
-        'receipt.number_prefix', 'receipt.number_start', 'retention.clock_check_enabled',
+        'receipt.number_prefix', 'receipt.number_start', 'receipt.print_switch', 'retention.clock_check_enabled',
         'retention.clock_tolerance_minutes', 'till.audio_cues_enabled', 'till.audio_cues_set', 'till.audio_cues_volume',
-        'till.category_full_panel', 'till.category_tile_height', 'till.category_tile_width', 'till.keyboard_macros',
-        'till_ease.big_text', 'till_ease.layout_profile', 'till_ease.scan_feedback_enabled',
+        'till.beep_on_add', 'till.beep_on_not_found', 'till.category_full_panel', 'till.category_tile_height',
+        'till.category_tile_width', 'till.keyboard_macros', 'till.popup_keyboard', 'till_ease.big_text',
+        'till_ease.layout_profile', 'till_ease.scan_feedback_enabled', 'till_ease.simple_mode',
     ];
 
     public static function isLocalOnly(mixed $scope, mixed $key): bool
@@ -44,11 +49,13 @@ final class SettingSyncPolicy
             return true;
         }
 
-        $key = strtolower($key);
+        return in_array(strtolower($key), self::LOCAL_KEYS, true) || self::caughtByRules($key);
+    }
 
-        if (in_array($key, self::LOCAL_KEYS, true)) {
-            return true;
-        }
+    /** The key is local only by the file's rules alone (prefixes, secret words, endings), without LOCAL_KEYS. */
+    public static function caughtByRules(string $key): bool
+    {
+        $key = strtolower($key);
 
         foreach (self::LOCAL_PREFIXES as $prefix) {
             if (str_starts_with($key, $prefix)) {

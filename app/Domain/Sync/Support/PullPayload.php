@@ -15,12 +15,20 @@ use App\Domain\TillData\Registry\EntityDefinition;
  * till's own company, branch and register ids replace ours (IdTranslator::toTill, the company alias this branch
  * uses). Members a newer till sent that we keep in `extra` go back as they came, except secret-looking ones.
  *
- * Never written: secrets (`dropped` members such as `User.remoteApprovalSecret`, hashed `secret` members) and
- * derived members other than `isDeleted` / `domainEvents` (the till ignores derived members when reading).
+ * Never written: secrets (`dropped` members such as `User.remoteApprovalSecret`, hashed `secret` members),
+ * derived members other than `isDeleted` / `domainEvents` (the till ignores derived members when reading), and a
+ * blank `User.pinHash` / `User.rfid` (KEPT_WHEN_BLANK).
  */
 final class PullPayload
 {
     private const SCALES = ['money' => 2, 'cost' => 4, 'quantity' => 4, 'percent' => 4, 'rate' => 6];
+
+    /**
+     * Members never sent while blank (null or ""): the till keeps its own value when a member is missing
+     * (ANSWERS-2026-09-29-b A.1, §10.7). A blank `rfid` wiped the fob on tills up to 0.1.8; a blank `pinHash` never
+     * clears a PIN. The till's own values arrive by push; the portal only sends one it holds.
+     */
+    public const KEPT_WHEN_BLANK = ['User' => ['pinHash', 'rfid']];
 
     /** @var array<string, string> "kind:ourId" → the till's id */
     private array $ids = [];
@@ -79,6 +87,11 @@ final class PullPayload
 
             $value = self::value($field->type, $row[$field->column] ?? null);
 
+            // A row for every shop keeps its branch blank; the till's member is a string ("" = every shop).
+            if ($value === null && $name === 'branchId' && ! $field->nullable) {
+                $value = '';
+            }
+
             if (is_string($value) && $value !== '') {
                 $value = match (true) {
                     $name === 'companyId' => $this->till(IdKind::Company, $value),
@@ -108,12 +121,33 @@ final class PullPayload
             unset($payload[$secret]);
         }
 
+        foreach (self::KEPT_WHEN_BLANK[$def->entity] ?? [] as $member) {
+            if (($payload[$member] ?? null) === null || $payload[$member] === '') {
+                unset($payload[$member]);
+            }
+        }
+
         // §10.6: the till writes a head-office order's shop code itself and never reads `receivedQty` from a pull.
         return match ($def->entity) {
             'PurchaseOrder' => [...$payload, 'branchCode' => ''],
             'PurchaseOrderLine' => [...$payload, 'receivedQty' => 0],
+            'PromotionRule' => [...$payload, 'isGroupOffer' => self::isGroupOffer($payload)],
             default => $payload,
         };
+    }
+
+    /**
+     * ANSWERS-2026-09-29-b "Naya field": the till works `isGroupOffer` out itself (a discount once per whole group of
+     * `minQuantity` pieces): minQuantity ≥ 2, a % off / £ off / fixed price rule, not on the whole basket. Sent as
+     * the rule now reads, never a stale stored value.
+     *
+     * @param  array<string, mixed>  $payload
+     */
+    private static function isGroupOffer(array $payload): bool
+    {
+        return (int) ($payload['minQuantity'] ?? 0) >= 2
+            && in_array($payload['type'] ?? null, ['percentOff', 'fixedOff', 'fixedPrice'], true)
+            && ($payload['scope'] ?? null) !== 'basket';
     }
 
     /**

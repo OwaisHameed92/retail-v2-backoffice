@@ -36,6 +36,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property int $get_quantity
  * @property string|null $price_tiers
  * @property int $min_quantity
+ * @property bool $is_group_offer
  * @property int $priority
  * @property bool $allow_stack
  * @property bool $is_exclusive
@@ -96,6 +97,7 @@ final class PromotionRule extends Model
             'buy_quantity' => 'integer',
             'get_quantity' => 'integer',
             'min_quantity' => 'integer',
+            'is_group_offer' => 'boolean',
             'priority' => 'integer',
             'allow_stack' => 'boolean',
             'is_exclusive' => 'boolean',

@@ -267,7 +267,7 @@ test('tenant isolation: a branch key cannot write another branch or business', f
 });
 
 test('initial upload (X-SSPOS-Sync-Mode: initial): seqs 1…N are kept apart from the ChangeLog seqs', function () {
-    $upload = '01K6ZZZZZZ0000000000000001';
+    $upload = $this->sync->openUpload();   // module 2.8: cloud/migrate opens it
     $initial = array_map(fn (array $change, int $i) => [...$change, 'seq' => $i + 1], TillFixtures::sample('push-request.json'), array_keys(TillFixtures::sample('push-request.json')));
 
     $reply = $this->sync->push($initial, ['X-SSPOS-Sync-Mode' => 'initial', 'X-SSPOS-Upload-Id' => $upload])->assertOk();

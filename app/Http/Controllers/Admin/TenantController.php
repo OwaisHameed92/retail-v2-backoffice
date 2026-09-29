@@ -13,6 +13,7 @@ use App\Domain\Licensing\Support\DefaultPlan;
 use App\Domain\Shared\Models\AuditLog;
 use App\Domain\Shared\Support\TableQuery;
 use App\Domain\Sync\Data\SyncKeyData;
+use App\Domain\Sync\Queries\CloudLinkList;
 use App\Domain\Tenancy\Actions\UpdateCompany;
 use App\Domain\Tenancy\CurrentCompany;
 use App\Domain\Tenancy\Data\NewTenant;
@@ -166,6 +167,11 @@ class TenantController extends Controller
                     'sort' => null,
                     'direction' => 'desc',
                 ],
+            ],
+            // Module 2.8: this business's moves to the cloud and reported local keys.
+            'cloudLink' => [
+                'moves' => CloudLinkList::uploads(new Request, $company->id)['data'],
+                'keys' => CloudLinkList::localKeys(new Request, $company->id)['data'],
             ],
             'nations' => Nation::options(),
             'roles' => TenantData::roleOptions(),

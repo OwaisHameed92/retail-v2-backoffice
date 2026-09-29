@@ -3,9 +3,11 @@
 namespace Tests\Feature\Sync;
 
 use App\Domain\Sync\Actions\IssueSyncKey;
+use App\Domain\Sync\Enums\CloudUploadStatus;
 use App\Domain\Sync\Enums\IdKind;
 use App\Domain\Sync\Enums\IdMapAction;
 use App\Domain\Sync\Enums\SyncKeySource;
+use App\Domain\Sync\Models\CloudUpload;
 use App\Domain\Sync\Models\IdMapping;
 use App\Domain\Tenancy\Models\Branch;
 use App\Domain\Tenancy\Models\Company;
@@ -65,6 +67,20 @@ final class SyncApiFixtures
 
         $this->leedsKey = app(IssueSyncKey::class)->handle($this->leeds, SyncKeySource::Admin);
         $this->bradfordKey = app(IssueSyncKey::class)->handle($this->bradford, SyncKeySource::Admin);
+    }
+
+    /**
+     * Module 2.8: an open history upload for Leeds (or Bradford), as `cloud/migrate` opens it; returns its id.
+     */
+    public function openUpload(bool $bradford = false, string $installId = '01K5T0Q8C4000000000000H001'): string
+    {
+        $branch = $bradford ? $this->bradford : $this->leeds;
+
+        return CloudUpload::withoutCompanyScope()->create([
+            'company_id' => $this->company->id, 'branch_id' => $branch->id, 'install_id' => $installId,
+            'till_company_id' => TillFixtures::COMPANY, 'till_branch_id' => $bradford ? TillFixtures::BRADFORD : TillFixtures::LEEDS,
+            'status' => CloudUploadStatus::Open,
+        ])->id;
     }
 
     /**
