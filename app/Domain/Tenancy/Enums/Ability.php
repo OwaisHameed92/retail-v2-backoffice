@@ -42,4 +42,7 @@ enum Ability: string
 
     /** Edit the business's own details (legal name, VAT number…) sent to every till (module 4.7). Owner only. */
     case BusinessManage = 'business.manage';
+
+    /** Shifts, Z reports, cash office, card settlements, day locks and variance alerts, read only (module 5.4). Owner, manager, accountant. */
+    case CashView = 'cash.view';
 }

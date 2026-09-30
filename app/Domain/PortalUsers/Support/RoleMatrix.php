@@ -24,6 +24,7 @@ final class RoleMatrix
         'stock.view' => ['Catalogue', 'See stock'],
         'stock.manage' => ['Catalogue', 'Adjust stock'],
         'reports.view' => ['Money', 'See reports'],
+        'cash.view' => ['Money', 'See shifts, Z reports and cash office'],
         'billing.view' => ['Money', 'See billing and invoices'],
         'billing.manage' => ['Money', 'Set up the Direct Debit'],
         'settings.manage' => ['Business', 'Change shop settings'],

@@ -5,6 +5,7 @@
 // `company.can:<ability>` for anything role-restricted.
 
 use App\Http\Controllers\App\BillingController;
+use App\Http\Controllers\App\CashController;
 use App\Http\Controllers\App\CatalogueGroupController;
 use App\Http\Controllers\App\CustomerController;
 use App\Http\Controllers\App\DashboardController;
@@ -155,6 +156,19 @@ Route::middleware(['auth:web', 'verified', 'company'])->group(function () {
         Route::get('export', [SaleController::class, 'export'])->name('export')->middleware('throttle:10,1');
         Route::get('exports/{export}', [SaleController::class, 'download'])->name('exports.download')->whereUlid('export')->middleware('throttle:30,1');
         Route::get('{sale}', [SaleController::class, 'show'])->name('show')->whereAlphaNumeric('sale');
+    });
+
+    // Module 5.4: cash and Z, read only (the tills' rows, day locks included). cash.view; a one-shop user: their shop.
+    Route::prefix('cash')->name('cash.')->middleware('company.can:cash.view')->group(function () {
+        Route::get('/', [CashController::class, 'index'])->name('index');
+        Route::get('shifts/{shift}', [CashController::class, 'shift'])->name('shifts.show')->whereAlphaNumeric('shift');
+        Route::get('z', [CashController::class, 'zReports'])->name('z.index');
+        Route::get('z/{zReport}', [CashController::class, 'zReport'])->name('z.show')->whereAlphaNumeric('zReport');
+        Route::get('banking', [CashController::class, 'banking'])->name('banking');
+        Route::get('counts', [CashController::class, 'counts'])->name('counts');
+        Route::get('cards', [CashController::class, 'cards'])->name('cards');
+        Route::get('days', [CashController::class, 'days'])->name('days');
+        Route::get('alerts', [CashController::class, 'alerts'])->name('alerts');
     });
 
     // Module 4.7: shops and tills (licences read only, till health), shop and business details, "Ask for more tills".
