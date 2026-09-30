@@ -45,11 +45,13 @@ final class Attention
                     'label' => match (true) {
                         in_array($alert->type, [LicenceAlertType::SyncFailing, LicenceAlertType::SyncStalled], true) => 'Sync',
                         $alert->type->isAutomatic() => 'Till',
+                        $alert->type === LicenceAlertType::TillsRequested => 'Request',
                         default => 'Alert',
                     },
                     'tone' => match (true) {
                         in_array($alert->type, [LicenceAlertType::SyncFailing, LicenceAlertType::SyncStalled], true) => 'violet',
                         $alert->type->isAutomatic() => 'warning',
+                        $alert->type === LicenceAlertType::TillsRequested => 'info',
                         default => 'danger',
                     },
                     'text' => $alert->type->label().' · '.($rows->company($alert->company_id)->name ?? 'Unknown business'),

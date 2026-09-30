@@ -89,7 +89,8 @@ export type LicenceAlertType =
     | 'syncFailing'
     | 'syncStalled'
     | 'appVersionOutdated'
-    | 'clockSkew';
+    | 'clockSkew'
+    | 'tillsRequested';
 
 /** LicenceAlertData::forLicence: alerts raised by the till API (module 1.5). No keys, only device id endings. */
 export interface LicenceAlert {

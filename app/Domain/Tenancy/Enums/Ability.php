@@ -33,4 +33,13 @@ enum Ability: string
 
     /** The business's suppliers, sent to every till (module 4.5). Owner and manager. */
     case SuppliersManage = 'suppliers.manage';
+
+    /** Shops and tills: shop details, read-only licences, till health, requests sent (module 4.7). Owner, manager, accountant. */
+    case ShopsView = 'shops.view';
+
+    /** Edit a shop's details and ask for more tills (module 4.7). Owner and manager (a one-shop manager: their shop). */
+    case ShopsManage = 'shops.manage';
+
+    /** Edit the business's own details (legal name, VAT number…) sent to every till (module 4.7). Owner only. */
+    case BusinessManage = 'business.manage';
 }

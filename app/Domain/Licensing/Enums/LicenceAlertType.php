@@ -34,6 +34,9 @@ enum LicenceAlertType: string
     /** Module 2.7: the till's clock is off by more than the allowed skew. */
     case ClockSkew = 'clockSkew';
 
+    /** Module 4.7: the business asked for more tills or another shop from its portal. Staff resolve it by hand. */
+    case TillsRequested = 'tillsRequested';
+
     public function label(): string
     {
         return match ($this) {
@@ -46,6 +49,7 @@ enum LicenceAlertType: string
             self::SyncStalled => 'Sync stalled',
             self::AppVersionOutdated => 'Old app version',
             self::ClockSkew => 'Till clock is wrong',
+            self::TillsRequested => 'More tills requested',
         };
     }
 
@@ -68,6 +72,7 @@ enum LicenceAlertType: string
             self::SyncStalled => 'The main till is online but has stopped syncing, or its waiting rows keep growing. Check cloud sync is switched on and the sync key is current. Clears itself when sync resumes.',
             self::AppVersionOutdated => 'The till runs an SSPOS version older than the minimum we support. Ask the shop to update. Clears itself when the till reports a newer version.',
             self::ClockSkew => 'The till\'s clock differs from ours by more than the allowed skew, which can lock the till or put sales on the wrong day. Ask the shop to set Windows time to automatic. Clears itself when the clock is right.',
+            self::TillsRequested => 'The business asked for more tills or another shop from its portal (they cannot add them themselves). Call them to agree the price, raise "Tills allowed" or add the shop on the tenant page, then mark this resolved.',
         };
     }
 }
