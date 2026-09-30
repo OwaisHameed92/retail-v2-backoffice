@@ -42,6 +42,7 @@ use App\Http\Controllers\Admin\TenantRegisterController;
 use App\Http\Controllers\Admin\TenantStatusController;
 use App\Http\Controllers\Admin\TenantUserController;
 use App\Http\Controllers\Admin\TillHealthController;
+use App\Http\Controllers\Admin\TradingController;
 use App\Http\Middleware\AdminIsActive;
 use App\Http\Middleware\BlockAdminWhileImpersonating;
 use App\Http\Middleware\ShareAdminInertiaData;
@@ -58,6 +59,8 @@ Route::middleware(['auth:admin', AdminIsActive::class, BlockAdminWhileImpersonat
     Route::post('logout', [LoginController::class, 'destroy'])->name('logout');
 
     Route::get('/', DashboardController::class)->name('dashboard');
+    // Module 3.2: the dashboard's Trading tab (shop sales across businesses). Owner, support and accounts.
+    Route::get('trading', TradingController::class)->name('trading')->middleware('can:'.AdminRole::TRADING_VIEW);
 
     // Top-bar search (module 1.3): tenants and licences, JSON. GET for names and key endings; POST (body) is the only way to look up a full licence key.
     Route::match(['get', 'post'], 'search', AdminSearchController::class)->name('search')->middleware(['can:'.AdminRole::TENANTS_VIEW, 'throttle:120,1']);

@@ -1,3 +1,4 @@
+import { DashboardTabs } from '@/components/admin/dashboard/dashboard-tabs';
 import { RecentTenantsCard } from '@/components/admin/dashboard/recent-tenants-card';
 import { TillHealthTile } from '@/components/admin/dashboard/till-health-tile';
 import { dashboardRangeLabel, dashboardRanges, RevenueCard } from '@/components/admin/dashboard/revenue-card';
@@ -175,6 +176,8 @@ export default function AdminDashboard({
                     </>
                 }
             />
+
+            <DashboardTabs active="overview" />
 
             <KpiGrid>
                 {kpis.map((kpi) => {

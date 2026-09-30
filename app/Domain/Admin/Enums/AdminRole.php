@@ -15,6 +15,7 @@ namespace App\Domain\Admin\Enums;
  * | licences.manage   |  yes  |       |   yes   |          |
  * | billing.manage    |  yes  |       |         |   yes    |
  * | leads.manage      |  yes  |  yes  |         |          |
+ * | trading.view      |  yes  |       |   yes   |   yes    |
  *
  * The owner can do everything. Unknown abilities are denied for every role except owner.
  */
@@ -37,6 +38,9 @@ enum AdminRole: string
 
     public const LEADS_MANAGE = 'leads.manage';
 
+    /** Module 3.2: customers' shop sales (the admin trading dashboard). Not for sales staff. */
+    public const TRADING_VIEW = 'trading.view';
+
     /**
      * Abilities granted to each non-owner role. The owner implicitly has all abilities.
      *
@@ -44,8 +48,8 @@ enum AdminRole: string
      */
     private const ABILITIES = [
         'sales' => [self::TENANTS_VIEW, self::TENANTS_MANAGE, self::LEADS_MANAGE],
-        'support' => [self::TENANTS_VIEW, self::TENANTS_MANAGE, self::LICENCES_MANAGE],
-        'accounts' => [self::TENANTS_VIEW, self::BILLING_MANAGE],
+        'support' => [self::TENANTS_VIEW, self::TENANTS_MANAGE, self::LICENCES_MANAGE, self::TRADING_VIEW],
+        'accounts' => [self::TENANTS_VIEW, self::BILLING_MANAGE, self::TRADING_VIEW],
     ];
 
     public function can(string $ability): bool
@@ -81,6 +85,7 @@ enum AdminRole: string
             self::LICENCES_MANAGE,
             self::BILLING_MANAGE,
             self::LEADS_MANAGE,
+            self::TRADING_VIEW,
         ];
     }
 

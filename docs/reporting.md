@@ -86,6 +86,7 @@ app(TenderReport::class)->byPaymentType($scope);
 app(VatReport::class)->byRate($scope);
 app(ProductReport::class)->top($scope, 10, 'net'); ->byDepartment($scope); ->byCategory($scope);
 app(StaffReport::class)->byUser($scope);
+app(AdminTradingReport::class)->topCompanies($adminScope, 10); ->topBranches($adminScope, 10); ->activity($adminScope);  // 3.2, admin only
 ```
 
 Every method returns readonly Data objects (`app/Domain/Reporting/Data`) with money as fixed-scale strings. Averages
@@ -97,3 +98,14 @@ in `branchIds` by the caller (4.1).
 Not here (read from the raw tables, DASHBOARD.md): stock on hand and low stock (§2.6, "now"), Z reports, shifts and
 cash variance (§2.4–2.5), tills online (§2.8). The optional cross-check against the till's own `SalesDaily` /
 `TenderDaily` (§4.8) is not built yet.
+
+## Demo sales (module 3.2)
+
+```bash
+php artisan demo:sales [--company=<id or exact name>] [--days=60] [--fresh]   # never in production
+```
+
+Fills the demo tenants (Khan Mini Mart, Patel News and Booze) with till-shaped sales through `ApplySyncChanges` (ledger
+stream `demo-sales`), then rebuilds their `rpt_*` rows. Repeatable (same ids and seqs per shop and date); `--fresh`
+first removes only the rows of the `demo-sales` stream. Code: `Reporting\Actions\GenerateDemoSales`,
+`Reporting\Demo\*`.

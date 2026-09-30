@@ -10,7 +10,7 @@ Each module is one agent task. Modules in the same wave can run in parallel. Sta
 included) pass, the UI follows `docs/BRAND.md`, and `composer check`, `npm run lint`, `npx tsc --noEmit` and
 `npm run build` are green.
 
-Totals: **64 modules · 30 done · 34 todo** (2026-09-30, counted from the tables of phases 0–7; 2.9 split into A and
+Totals: **64 modules · 31 done · 33 todo** (2026-09-30, counted from the tables of phases 0–7; 2.9 split into A and
 B; Phase 8's five later items are not modules yet).
 
 ---
@@ -65,14 +65,14 @@ Contract: v1.4.1 §1–16, §19, §21 (duplicate/echo/conflict rules + test list
 
 Waves: 2.6 → 2.7 → 2.8.
 
-## Phase 3: Reporting and dashboards — 1/3
+## Phase 3: Reporting and dashboards — 2/3
 
 Contract: v1.4.1 `docs/web-portal-api/DASHBOARD.md` (formulas; we build them on **MySQL 8**, not PostgreSQL).
 
 | # | Module | What | Status |
 |---|---|---|---|
 | 3.1 | Reporting tables | `rpt_*` tables updated idempotently as rows arrive; trading day in Europe/London; refunds subtracted. Built (`docs/reporting.md`): `rpt_sales_daily`, `_hourly`, `rpt_tender_daily`, `rpt_product_daily`, `rpt_vat_daily`, `rpt_staff_daily` per company/shop/till/trading day (DASHBOARD.md §4, MySQL 8 + SQLite); `sales.trading_day`/`trading_hour` stamped at ingest (PHP, DST-safe); the apply path marks touched shop-days dirty (old and new day) and a per-business job deletes + rebuilds them from raw rows (tokens, unique, no overlap) + minutely sweep; `reports:rebuild`, `reports:check [--fix]`, `reports:process-dirty`; read side `ReportScope` (tenant / admin) + `SalesReport`, `TenderReport`, `VatReport`, `ProductReport`, `StaffReport` → Data objects; tests: §6 worked example, idempotency, DST, refunds, voids, isolation, incremental == rebuild, fixed query count | done |
-| 3.2 | Admin dashboard: trading | Every Admin-panel tile and chart across all businesses, per business and shop | todo |
+| 3.2 | Admin dashboard: trading | Every Admin-panel tile and chart across all businesses, per business and shop. Built: **Trading** tab of the admin dashboard (`/admin/trading`, new `trading.view`: owner, support, accounts): presets today/yesterday/7/30 days/this/last month/custom, compare previous period/last week/last year/none (Today up to the same hour), drill-down business → shop in the URL; KPI tiles with change and sparklines (sales inc VAT, net, transactions, average basket, VAT, takings, refunds, discounts, voids, gross profit), sales by day or hour against the compare window, hourly pattern, tender mix, VAT by rate, top businesses and shops / shops / tills, top products; "Updated N min ago"; deferred prop + skeleton, empty states, light/dark, phone; reads `rpt_*` only (~14 grouped queries, fixed count, 60 s cache). `php artisan demo:sales` (real push path, deterministic, `--fresh`, refused in production) | done |
 | 3.3 | Business dashboard | Today / week / month, per shop and total, "last updated N minutes ago" | todo |
 
 ## Phase 4: Business panel (customer portal) — 0/10
