@@ -13,16 +13,19 @@ export interface BranchOption {
 export interface BranchSharedData extends SharedData {
     branches: BranchOption[];
     currentBranchId: string | null;
+    /** A user limited to one shop (module 3.3): the switcher shows it and cannot change. */
+    branchLocked?: boolean;
 }
 
 const ALL = 'all';
 
 /**
  * Top-bar branch filter: "All branches" or one active branch of the current company. The choice is kept in
- * the session (`current_branch_id`) and shared as `currentBranchId`; pages filter their data by it.
+ * the session (`current_branch_id`) and shared as `currentBranchId`; pages filter their data by it. A user limited to
+ * one shop (`branchLocked`) sees only that shop.
  */
 export function AppBranchSwitcher() {
-    const { branches, currentBranchId } = usePage<BranchSharedData>().props;
+    const { branches, currentBranchId, branchLocked } = usePage<BranchSharedData>().props;
     const [busy, setBusy] = useState(false);
     const value = currentBranchId ?? ALL;
 
@@ -38,14 +41,14 @@ export function AppBranchSwitcher() {
     };
 
     return (
-        <Select value={value} onValueChange={change} disabled={busy || !branches || branches.length === 0}>
+        <Select value={value} onValueChange={change} disabled={busy || branchLocked || !branches || branches.length === 0}>
             <SelectTrigger className="h-9 w-[160px]" aria-label="Branch">
                 <Store className="text-muted-foreground size-4" aria-hidden />
                 <SelectValue />
             </SelectTrigger>
             <SelectContent>
-                <SelectItem value={ALL}>All branches</SelectItem>
-                {branches && branches.length > 0 && <SelectSeparator />}
+                {!branchLocked && <SelectItem value={ALL}>All branches</SelectItem>}
+                {!branchLocked && branches && branches.length > 0 && <SelectSeparator />}
                 {branches?.map((branch) => (
                     <SelectItem key={branch.id} value={branch.id}>
                         {branch.name}

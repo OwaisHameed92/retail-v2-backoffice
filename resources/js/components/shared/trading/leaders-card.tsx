@@ -1,9 +1,10 @@
-import { money, number, share } from '@/components/admin/trading/format';
+import { money, number, share } from '@/components/shared/trading/format';
 import { EmptyState } from '@/components/shared/empty-state';
 import { InitialsAvatar } from '@/components/shared/entity-cell';
 import { SectionCard } from '@/components/shared/section-card';
 import { cn } from '@/lib/utils';
 import { ChevronRight, type LucideIcon } from 'lucide-react';
+import { type ReactNode } from 'react';
 
 export interface LeaderItem {
     id: string;
@@ -28,15 +29,19 @@ interface LeadersCardProps {
     emptyTitle: string;
     emptyBody: string;
     avatar?: 'square' | 'circle' | 'none';
+    /** Header controls on the right (e.g. a SegmentedControl). */
+    actions?: ReactNode;
+    /** Shown under the list, e.g. a note on the figures. */
+    footer?: ReactNode;
 }
 
 /**
  * A ranked list (top businesses, top shops, tills, top products): rank, name with a subline, a share bar of the
  * total, the value and a detail line. Items with `onSelect` drill down. One layout for desktop and phone.
  */
-export function LeadersCard({ title, description, icon, items, total, emptyTitle, emptyBody, avatar = 'square' }: LeadersCardProps) {
+export function LeadersCard({ title, description, icon, items, total, emptyTitle, emptyBody, avatar = 'square', actions, footer }: LeadersCardProps) {
     return (
-        <SectionCard title={title} description={description} flush className="min-w-0">
+        <SectionCard title={title} description={description} actions={actions} footer={footer} flush className="min-w-0">
             {items.length === 0 ? (
                 <EmptyState icon={icon} title={emptyTitle} body={emptyBody} size="sm" />
             ) : (
@@ -46,7 +51,7 @@ export function LeadersCard({ title, description, icon, items, total, emptyTitle
                         const body = (
                             <>
                                 <span className="text-muted-foreground w-5 shrink-0 text-right text-xs tabular-nums">{index + 1}</span>
-                                {avatar !== "none" && <InitialsAvatar name={item.name} shape={avatar} size="sm" className="hidden sm:inline-flex" />}
+                                {avatar !== 'none' && <InitialsAvatar name={item.name} shape={avatar} size="sm" className="hidden sm:inline-flex" />}
                                 <span className="min-w-0 flex-1">
                                     <span className="block truncate text-sm font-medium">{item.name}</span>
                                     {item.subline && <span className="text-muted-foreground block truncate text-xs">{item.subline}</span>}

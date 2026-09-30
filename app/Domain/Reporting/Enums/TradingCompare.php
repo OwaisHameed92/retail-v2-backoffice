@@ -1,9 +1,11 @@
 <?php
 
-namespace App\Domain\Admin\Enums;
+namespace App\Domain\Reporting\Enums;
+
+use App\Domain\Reporting\Data\ReportScope;
 
 /**
- * "Compare to" of the admin trading dashboard (DASHBOARD.md §2.9). Default: the previous period.
+ * "Compare to" of the trading dashboards (admin 3.2, business 3.3; DASHBOARD.md §2.9). Default: the previous period.
  */
 enum TradingCompare: string
 {
@@ -19,6 +21,17 @@ enum TradingCompare: string
             self::SameLastWeek => 'Same period last week',
             self::SameLastYear => 'Same period last year',
             self::None => 'No comparison',
+        };
+    }
+
+    /** The compare window of a scope (§2.9); null for "No comparison". */
+    public function window(ReportScope $scope): ?ReportScope
+    {
+        return match ($this) {
+            self::PreviousPeriod => $scope->previousPeriod(),
+            self::SameLastWeek => $scope->sameLastWeek(),
+            self::SameLastYear => $scope->sameLastYear(),
+            self::None => null,
         };
     }
 

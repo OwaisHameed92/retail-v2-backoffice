@@ -1,5 +1,5 @@
-import { money, number, share } from '@/components/admin/trading/format';
-import { type TenderRow, type VatRow } from '@/components/admin/trading/types';
+import { money, number, share } from '@/components/shared/trading/format';
+import { type TenderRow, type VatRow } from '@/components/shared/trading/types';
 import { EmptyState } from '@/components/shared/empty-state';
 import { SectionCard } from '@/components/shared/section-card';
 import { toneVar, type ChartTone } from '@/components/shared/trend-chart';

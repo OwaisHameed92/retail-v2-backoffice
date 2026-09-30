@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Domain\Admin\Enums\TradingCompare;
-use App\Domain\Admin\Enums\TradingPeriod;
 use App\Domain\Admin\Queries\Trading\TradingContext;
 use App\Domain\Admin\Queries\Trading\TradingDashboard;
+use App\Domain\Reporting\Enums\TradingCompare;
+use App\Domain\Reporting\Enums\TradingPeriod;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\TradingDashboardRequest;
 use Inertia\Inertia;

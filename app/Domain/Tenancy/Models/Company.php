@@ -120,7 +120,7 @@ class Company extends Model
         return $this->belongsToMany(User::class)
             ->using(CompanyMembership::class)
             ->as('membership')
-            ->withPivot(['role', 'is_active'])
+            ->withPivot(['role', 'is_active', 'branch_id'])
             ->withTimestamps();
     }
 

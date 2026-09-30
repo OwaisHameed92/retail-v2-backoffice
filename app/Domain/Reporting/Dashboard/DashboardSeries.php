@@ -1,16 +1,15 @@
 <?php
 
-namespace App\Domain\Admin\Queries\Trading;
+namespace App\Domain\Reporting\Dashboard;
 
-use App\Domain\Admin\Data\TradingFilters;
 use App\Domain\Reporting\Queries\SalesReport;
 
 /**
- * The chart series of the admin trading dashboard (DASHBOARD.md §2.3 "Sales by day", "Sales by hour"), each point
+ * The chart series of the trading dashboards (admin 3.2, business 3.3) (DASHBOARD.md §2.3 "Sales by day", "Sales by hour"), each point
  * beside the same point of the compare window: day n against the compare window's day n, hour against hour.
  * Money stays a decimal string; the page turns it into a number only to draw.
  */
-final class TradingSeries
+final class DashboardSeries
 {
     public function __construct(private readonly SalesReport $sales) {}
 
@@ -19,7 +18,7 @@ final class TradingSeries
      *
      * @return list<array<string, mixed>>|null
      */
-    public function daily(TradingFilters $filters): ?array
+    public function daily(SalesWindow $filters): ?array
     {
         if ($filters->singleDay()) {
             return null;
@@ -53,10 +52,10 @@ final class TradingSeries
      *
      * @return list<array<string, mixed>>
      */
-    public function hourly(TradingFilters $filters): array
+    public function hourly(SalesWindow $filters): array
     {
         $compare = $filters->compareScope();
-        $current = $this->sales->byHour($filters->scope(), $filters->isToday() ? $filters->hour : null);
+        $current = $this->sales->byHour($filters->scope(), $filters->isToday() ? $filters->currentHour() : null);
         $previous = $compare === null ? [] : $this->sales->byHour($compare);
         $byHour = [];
 

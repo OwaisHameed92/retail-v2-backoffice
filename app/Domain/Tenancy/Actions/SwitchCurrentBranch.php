@@ -23,6 +23,11 @@ class SwitchCurrentBranch
     public function handle(?string $branchId, Session $session): ?Branch
     {
         $this->currentCompany->require();
+        $restricted = $this->currentCompany->restrictedBranchId();
+
+        if ($restricted !== null && $branchId !== $restricted) {
+            throw ValidationException::withMessages(['branch_id' => 'You can only see your own shop.']);
+        }
 
         if ($branchId === null || $branchId === '') {
             $session->forget(self::SESSION_KEY);

@@ -1,10 +1,10 @@
-import { type Option, type TradingCompare, type TradingContext, type TradingFilters, type TradingPeriod } from '@/components/admin/trading/types';
 import { BusinessPicker } from '@/components/admin/licences/licence-filters';
+import { type Option, type TradingCompare, type TradingContext, type TradingFilters, type TradingPeriod } from '@/components/admin/trading/types';
+import { CompareSelect, CustomRangeForm, PeriodSelect } from '@/components/shared/trading/period-controls';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Building2, CalendarDays, ChevronDown, GitCompareArrows, Store, X } from 'lucide-react';
-import { type FormEvent, useEffect, useState } from 'react';
+import { Building2, ChevronDown, Store, X } from 'lucide-react';
+import { useState } from 'react';
 
 /** Query parameters of `admin.trading`; defaults (today, previous period) are left out of the URL. */
 export type TradingQuery = Partial<Record<'period' | 'from' | 'to' | 'compare' | 'company' | 'branch', string>>;
@@ -47,21 +47,7 @@ interface TradingFiltersBarProps {
  */
 export function TradingFiltersBar({ filters, context, periods, compares, onChange }: TradingFiltersBarProps) {
     const [picking, setPicking] = useState(false);
-    const [from, setFrom] = useState(filters.from);
-    const [to, setTo] = useState(filters.to);
     const custom = filters.period === 'custom';
-
-    useEffect(() => {
-        setFrom(filters.from);
-        setTo(filters.to);
-    }, [filters.from, filters.to]);
-
-    const applyCustom = (event: FormEvent) => {
-        event.preventDefault();
-        if (from && to) {
-            onChange(queryOf(filters, { period: 'custom', from, to }));
-        }
-    };
 
     const choosePeriod = (period: TradingPeriod) => {
         onChange(queryOf(filters, { period, from: filters.from, to: filters.to }));
@@ -70,33 +56,8 @@ export function TradingFiltersBar({ filters, context, periods, compares, onChang
     return (
         <div className="flex flex-col gap-3">
             <div className="flex flex-wrap items-center gap-2">
-                <Select value={filters.period} onValueChange={(value) => choosePeriod(value as TradingPeriod)}>
-                    <SelectTrigger className="bg-card h-9 w-full sm:w-44" aria-label="Date range">
-                        <CalendarDays className="text-muted-foreground size-4" aria-hidden />
-                        <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                        {periods.map((period) => (
-                            <SelectItem key={period.value} value={period.value}>
-                                {period.label}
-                            </SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
-
-                <Select value={filters.compare} onValueChange={(value) => onChange(queryOf(filters, { compare: value as TradingCompare }))}>
-                    <SelectTrigger className="bg-card h-9 w-full sm:w-56" aria-label="Compare to">
-                        <GitCompareArrows className="text-muted-foreground size-4" aria-hidden />
-                        <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                        {compares.map((compare) => (
-                            <SelectItem key={compare.value} value={compare.value}>
-                                {compare.label}
-                            </SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
+                <PeriodSelect value={filters.period} periods={periods} onChange={choosePeriod} />
+                <CompareSelect value={filters.compare} compares={compares} onChange={(compare) => onChange(queryOf(filters, { compare }))} />
 
                 <div className="flex w-full items-center gap-1 sm:w-auto">
                     <Button variant="outline" className="h-9 min-w-0 flex-1 justify-start sm:max-w-64 sm:flex-none" onClick={() => setPicking(true)}>
@@ -139,22 +100,7 @@ export function TradingFiltersBar({ filters, context, periods, compares, onChang
                 )}
             </div>
 
-            {custom && (
-                <form onSubmit={applyCustom} className="flex flex-wrap items-end gap-2" aria-label="Custom date range">
-                    <label className="grid gap-1 text-xs font-medium">
-                        <span className="text-muted-foreground">From</span>
-                        <Input type="date" value={from} max={to || filters.today} onChange={(e) => setFrom(e.target.value)} className="h-9 w-40" required />
-                    </label>
-                    <label className="grid gap-1 text-xs font-medium">
-                        <span className="text-muted-foreground">To</span>
-                        <Input type="date" value={to} min={from} max={filters.today} onChange={(e) => setTo(e.target.value)} className="h-9 w-40" required />
-                    </label>
-                    <Button type="submit" variant="outline" className="h-9" disabled={!from || !to || (from === filters.from && to === filters.to)}>
-                        Apply
-                    </Button>
-                    <p className="text-muted-foreground w-full text-xs sm:w-auto">Up to 366 days, ending today at the latest.</p>
-                </form>
-            )}
+            {custom && <CustomRangeForm filters={filters} onApply={(from, to) => onChange(queryOf(filters, { period: 'custom', from, to }))} />}
 
             <BusinessPicker
                 open={picking}

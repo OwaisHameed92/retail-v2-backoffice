@@ -1,5 +1,5 @@
-import { changeDelta, money, moneyShort, number } from '@/components/admin/trading/format';
-import { type TradingData } from '@/components/admin/trading/types';
+import { changeDelta, money, moneyShort, number } from '@/components/shared/trading/format';
+import { type SalesDashboardData } from '@/components/shared/trading/types';
 import { KpiCard, KpiGrid } from '@/components/shared/kpi-card';
 import { StatCard } from '@/components/shared/stat-card';
 import { Banknote, Percent, PoundSterling, Receipt, ReceiptText, RotateCcw, ShoppingBasket, Tags, TrendingUp, XCircle } from 'lucide-react';
@@ -18,11 +18,13 @@ function previousFooter(previous: string | null, label: string, format: (v: stri
  * basket, each with its change and a sparkline; then the secondary figures (VAT, takings, refunds, discounts,
  * voids, gross profit). Refunds and voids are good when they go down.
  */
-export function TradingKpis({ data }: { data: TradingData }) {
+export function TradingKpis({ data }: { data: SalesDashboardData }) {
     const { headline, totals, changes } = data.kpis;
     const versus = data.range.compareLabel + (data.range.isToday && data.range.compareFrom ? ` to ${String(data.range.hour + 1).padStart(2, '0')}:00` : '');
     const label = data.range.compareFrom ? versus : '';
     const empty = totals.transactions === 0 && totals.refundCount === 0;
+    // The range ends today: the sparkline's last point (today, or the hour now) is "so far", not a drop.
+    const partial = data.range.to === data.range.today;
 
     return (
         <div className="flex flex-col gap-4">
@@ -35,6 +37,7 @@ export function TradingKpis({ data }: { data: TradingData }) {
                     emptyText="No sales in this period"
                     delta={changeDelta(headline.gross.change, label)}
                     series={headline.gross.series}
+                    seriesPartial={partial}
                     footer={previousFooter(headline.gross.previous, label, moneyShort)}
                 />
                 <KpiCard
@@ -45,6 +48,7 @@ export function TradingKpis({ data }: { data: TradingData }) {
                     emptyText="No sales in this period"
                     delta={changeDelta(headline.net.change, label)}
                     series={headline.net.series}
+                    seriesPartial={partial}
                     footer={previousFooter(headline.net.previous, label, moneyShort)}
                 />
                 <KpiCard
@@ -55,6 +59,7 @@ export function TradingKpis({ data }: { data: TradingData }) {
                     emptyText="No sales in this period"
                     delta={changeDelta(headline.transactions.change, label)}
                     series={headline.transactions.series}
+                    seriesPartial={partial}
                     footer={previousFooter(headline.transactions.previous, label, number)}
                 />
                 <KpiCard
@@ -65,6 +70,7 @@ export function TradingKpis({ data }: { data: TradingData }) {
                     emptyText="No transactions yet"
                     delta={changeDelta(headline.averageBasket.change, label)}
                     series={headline.averageBasket.series}
+                    seriesPartial={partial}
                     footer={headline.averageBasket.secondary ? `${money(headline.averageBasket.secondary)} inc VAT` : undefined}
                 />
             </KpiGrid>
@@ -105,7 +111,7 @@ export function TradingKpis({ data }: { data: TradingData }) {
                 />
                 <StatCard
                     label="Gross profit"
-                    value={totals.grossProfit === null ? "—" : moneyShort(totals.grossProfit)}
+                    value={totals.grossProfit === null ? '—' : moneyShort(totals.grossProfit)}
                     icon={ReceiptText}
                     tone="success"
                     hint={

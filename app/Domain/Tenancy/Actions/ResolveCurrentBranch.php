@@ -8,7 +8,9 @@ use Illuminate\Contracts\Session\Session;
 
 /**
  * The branch chosen in the tenant top-bar switcher, or null for "All branches". A stale choice (another
- * company's branch, an inactive or deleted branch) is dropped. Later modules filter their data by this.
+ * company's branch, an inactive or deleted branch) is dropped. Later modules filter their data by this. A user
+ * limited to one shop always gets that shop (null only when it no longer exists: callers that show shop data must
+ * still use CurrentCompany::restrictedBranchId(), which never widens).
  *
  *     $branch = app(ResolveCurrentBranch::class)->handle($request->session());
  *     $sales->when($branch, fn ($q) => $q->where('branch_id', $branch->id));
@@ -19,6 +21,13 @@ class ResolveCurrentBranch
 
     public function handle(Session $session): ?Branch
     {
+        // A branch-scoped user (module 3.3) is always on their own shop, whatever the session says.
+        $restricted = $this->currentCompany->restrictedBranchId();
+
+        if ($restricted !== null) {
+            return Branch::query()->find($restricted);
+        }
+
         $branchId = $session->get(SwitchCurrentBranch::SESSION_KEY);
 
         if (! is_string($branchId) || ! $this->currentCompany->has()) {

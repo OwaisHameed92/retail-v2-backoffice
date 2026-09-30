@@ -1,6 +1,6 @@
-import { CompareChart, type ComparePoint } from '@/components/admin/trading/compare-chart';
-import { changeDelta, hourLabel, money, moneyAxis, moneyShort, number, shortDay, weekday } from '@/components/admin/trading/format';
-import { type TradingData } from '@/components/admin/trading/types';
+import { CompareChart, type ComparePoint } from '@/components/shared/trading/compare-chart';
+import { changeDelta, hourLabel, money, moneyAxis, moneyShort, number, shortDay, weekday } from '@/components/shared/trading/format';
+import { type SalesDashboardData } from '@/components/shared/trading/types';
 import { ChartCard, SegmentedControl, StatPill } from '@/components/shared/chart-card';
 import { EmptyState } from '@/components/shared/empty-state';
 import { BarChart3, Clock } from 'lucide-react';
@@ -30,7 +30,7 @@ function NoSales({ body }: { body: string }) {
  * "Sales by day" over the range (or "Sales by hour" for a single day), current against the compare window, with a
  * Net / Inc VAT / Transactions switch and the headline change beside it (DASHBOARD.md §2.3).
  */
-export function SalesTrendCard({ data }: { data: TradingData }) {
+export function SalesTrendCard({ data }: { data: SalesDashboardData }) {
     const [metric, setMetric] = useState<Metric>('net');
     const byDay = data.daily !== null;
     const compareName = data.range.compareFrom ? 'Compare' : undefined;
@@ -41,6 +41,7 @@ export function SalesTrendCard({ data }: { data: TradingData }) {
               current: numeric(p[metric]),
               compare: numeric(metric === 'net' ? p.compareNet : metric === 'gross' ? p.compareGross : p.compareTransactions),
               compareTitle: p.compareDay ? weekday(p.compareDay) : null,
+              partial: p.day === data.range.today,
           }))
         : data.hourly
               .filter((p) => p.hour >= firstHour(data) && p.hour <= lastHour(data))
@@ -49,10 +50,12 @@ export function SalesTrendCard({ data }: { data: TradingData }) {
                   title: `${hourLabel(p.hour)}–${hourLabel((p.hour + 1) % 24)}`,
                   current: numeric(metric === 'transactions' ? p.transactions : metric === 'net' ? p.net : p.gross),
                   compare: metric === 'gross' ? null : numeric(metric === 'net' ? p.compareNet : p.compareTransactions),
+                  partial: data.range.isToday && p.hour === data.range.hour,
               }));
     const headline = data.kpis.headline[metric === 'transactions' ? 'transactions' : metric];
     const delta = changeDelta(headline.change, data.range.compareLabel);
     const empty = data.kpis.totals.transactions === 0 && data.kpis.totals.refundCount === 0;
+    const partial = points.some((p) => p.partial && p.current !== null);
 
     return (
         <ChartCard
@@ -71,11 +74,25 @@ export function SalesTrendCard({ data }: { data: TradingData }) {
                 ) : undefined
             }
             footer={
-                compareName && !empty ? (
-                    <span className="inline-flex items-center gap-2">
-                        <span className="border-muted-foreground inline-block w-5 border-t-2 border-dashed" aria-hidden />
-                        Dashed line: {data.range.compareLabel.replace(/^vs /, '')}
-                        {data.range.isToday ? ' (whole day)' : ''}
+                !empty && (compareName || partial) ? (
+                    <span className="flex flex-wrap items-center gap-x-4 gap-y-1">
+                        {compareName && (
+                            <span className="inline-flex items-center gap-2">
+                                <span className="border-muted-foreground inline-block w-5 border-t-2 border-dashed" aria-hidden />
+                                {data.range.compareLabel.replace(/^vs /, '').replace(/^./, (c) => c.toUpperCase())}
+                                {data.range.isToday ? ' (whole day)' : ''}
+                            </span>
+                        )}
+                        {partial && (
+                            <span className="inline-flex items-center gap-2">
+                                {byDay ? (
+                                    <span className="border-primary inline-block size-2.5 rounded-full border-2" aria-hidden />
+                                ) : (
+                                    <span className="border-primary bg-primary/35 inline-block h-2.5 w-3 rounded-sm border border-dashed" aria-hidden />
+                                )}
+                                {byDay ? 'Today so far' : 'This hour so far'}
+                            </span>
+                        )}
                     </span>
                 ) : undefined
             }
@@ -97,13 +114,13 @@ export function SalesTrendCard({ data }: { data: TradingData }) {
 }
 
 /** First and last hour with trade in either window (so a shop open 07–22 is not squeezed into 24 bars). */
-function firstHour(data: TradingData): number {
+function firstHour(data: SalesDashboardData): number {
     const hours = data.hourly.filter((p) => Number(p.transactions ?? 0) > 0 || Number(p.compareTransactions ?? 0) > 0).map((p) => p.hour);
 
     return hours.length ? Math.min(...hours) : 0;
 }
 
-function lastHour(data: TradingData): number {
+function lastHour(data: SalesDashboardData): number {
     const hours = data.hourly.filter((p) => Number(p.transactions ?? 0) > 0 || Number(p.compareTransactions ?? 0) > 0).map((p) => p.hour);
 
     return hours.length ? Math.max(...hours) : 23;
@@ -113,7 +130,7 @@ function lastHour(data: TradingData): number {
  * The hourly pattern over a multi-day range: average net sales per trading day in each local hour, with the busiest
  * hour called out.
  */
-export function HourlyPatternCard({ data }: { data: TradingData }) {
+export function HourlyPatternCard({ data }: { data: SalesDashboardData }) {
     const days = Math.max(1, data.range.days);
     const points: ComparePoint[] = data.hourly
         .filter((p) => p.hour >= firstHour(data) && p.hour <= lastHour(data))

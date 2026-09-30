@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Relations\Pivot;
  * @property string $company_id
  * @property int $user_id
  * @property CompanyRole $role
+ * @property string|null $branch_id one shop only (module 3.3; null = every shop)
  * @property bool $is_active
  */
 class CompanyMembership extends Pivot

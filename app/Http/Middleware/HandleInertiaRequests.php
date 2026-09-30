@@ -72,6 +72,8 @@ class HandleInertiaRequests extends Middleware
             // Module 1.2: branch switcher, "login as customer" banner and flash toasts.
             'branches' => fn () => $this->branches(),
             'currentBranchId' => fn () => $this->currentBranchId($request),
+            // Module 3.3: a user limited to one shop cannot switch to another (or to "All branches").
+            'branchLocked' => fn () => app(CurrentCompany::class)->restrictedBranchId() !== null,
             'impersonation' => fn () => $this->impersonation($request),
             // Module 1.13: "Set up your Direct Debit — N days left" across the portal until a mandate exists.
             'billingNotice' => fn () => $this->billingNotice(),
@@ -83,18 +85,22 @@ class HandleInertiaRequests extends Middleware
     }
 
     /**
-     * Active branches of the current company for the top-bar switcher. Only once the `company` middleware has
+     * Active branches of the current company for the top-bar switcher (only their own for a one-shop user). Only once the `company` middleware has
      * let the request through (never on the "on hold" page or outside the tenant area).
      *
      * @return list<array{id: string, code: string, name: string}>
      */
     private function branches(): array
     {
-        if (! app(CurrentCompany::class)->has()) {
+        $tenancy = app(CurrentCompany::class);
+
+        if (! $tenancy->has()) {
             return [];
         }
 
-        return Branch::query()->active()->orderBy('name')->get(['id', 'code', 'name'])
+        return Branch::query()->active()
+            ->when($tenancy->restrictedBranchId() !== null, fn ($query) => $query->whereKey($tenancy->restrictedBranchId()))
+            ->orderBy('name')->get(['id', 'code', 'name'])
             ->map(fn (Branch $branch) => ['id' => $branch->id, 'code' => $branch->code, 'name' => $branch->name])
             ->values()
             ->all();

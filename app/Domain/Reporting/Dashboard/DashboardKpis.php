@@ -1,19 +1,18 @@
 <?php
 
-namespace App\Domain\Admin\Queries\Trading;
+namespace App\Domain\Reporting\Dashboard;
 
-use App\Domain\Admin\Data\TradingFilters;
 use App\Domain\Reporting\Data\HourSales;
 use App\Domain\Reporting\Data\SalesTotals;
 use App\Domain\Reporting\Queries\SalesReport;
 use App\Domain\Shared\Support\Money;
 
 /**
- * The KPI tiles of the admin trading dashboard (DASHBOARD.md §2.2, summed over the chosen businesses) with their
- * change against the compare window (§2.9). For Today the headline tiles compare up to the same local hour, read
+ * The KPI tiles of the trading dashboards (admin 3.2, business 3.3; DASHBOARD.md §2.2) with their change against
+ * the compare window (§2.9). For Today the headline tiles compare up to the same local hour, read
  * from `rpt_sales_hourly`; the other tiles then show no change (a half day against a whole day always looks bad).
  */
-final class TradingKpis
+final class DashboardKpis
 {
     public function __construct(private readonly SalesReport $sales) {}
 
@@ -23,14 +22,14 @@ final class TradingKpis
      * @param  list<int>  $txnSeries
      * @return array<string, mixed>
      */
-    public function build(TradingFilters $filters, array $netSeries, array $grossSeries, array $txnSeries): array
+    public function build(SalesWindow $filters, array $netSeries, array $grossSeries, array $txnSeries): array
     {
         $scope = $filters->scope();
         $compareScope = $filters->compareScope();
         $current = $this->sales->totals($scope);
         $previous = $compareScope === null ? null : $this->sales->totals($compareScope);
         $before = $filters->isToday() && $compareScope !== null
-            ? self::fromHour($this->sales->upToHour($compareScope, $filters->hour))
+            ? self::fromHour($this->sales->upToHour($compareScope, $filters->currentHour()))
             : $previous;
 
         $averages = [];

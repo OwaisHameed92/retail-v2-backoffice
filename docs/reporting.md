@@ -92,8 +92,8 @@ app(AdminTradingReport::class)->topCompanies($adminScope, 10); ->topBranches($ad
 Every method returns readonly Data objects (`app/Domain/Reporting/Data`) with money as fixed-scale strings. Averages
 and gross profit are null when the screen should show "—" (no transactions / no costs). Names are joined at read
 time (shop, till "code – name", payment type, product, department, category, till user) with a fallback. The rpt
-models (`RptSalesDaily`…) use `BelongsToCompany` and refuse saves. The shop manager's one-shop restriction is passed
-in `branchIds` by the caller (4.1).
+models (`RptSalesDaily`…) use `BelongsToCompany` and refuse saves. The shop manager's one-shop restriction
+(`CurrentCompany::restrictedBranchId()`, module 3.3) is passed in `branchIds` by the caller.
 
 Not here (read from the raw tables, DASHBOARD.md): stock on hand and low stock (§2.6, "now"), Z reports, shifts and
 cash variance (§2.4–2.5), tills online (§2.8). The optional cross-check against the till's own `SalesDaily` /

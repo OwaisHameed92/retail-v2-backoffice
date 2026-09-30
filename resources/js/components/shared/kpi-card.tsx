@@ -18,6 +18,8 @@ interface KpiCardProps {
     delta?: StatDelta;
     /** Values oldest first for the sparkline. Omit or pass fewer than 2 for no chart. */
     series?: number[];
+    /** The last sparkline value is still filling up (today so far): drawn dashed, not as a drop. */
+    seriesPartial?: boolean;
     /** Footer line, e.g. "£11,540 last month". */
     footer?: ReactNode;
     /** "…" menu slot (a DropdownMenu). */
@@ -58,6 +60,7 @@ export function KpiCard({
     value,
     delta,
     series,
+    seriesPartial = false,
     footer,
     menu,
     emptyText = 'No data yet',
@@ -99,7 +102,7 @@ export function KpiCard({
 
             <div className="-mx-1 flex h-14 items-end">
                 {hasChart ? (
-                    <AreaSparkline values={series} tone={tone} />
+                    <AreaSparkline values={series} tone={tone} partialLast={seriesPartial} />
                 ) : (
                     <div className="border-border mx-1 w-full border-b border-dashed" aria-hidden />
                 )}

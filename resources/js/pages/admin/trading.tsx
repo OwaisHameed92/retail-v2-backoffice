@@ -1,12 +1,12 @@
 import { DashboardTabs } from '@/components/admin/dashboard/dashboard-tabs';
-import { dayRange, number, share } from '@/components/admin/trading/format';
-import { Freshness } from '@/components/admin/trading/freshness';
-import { LeadersCard, salesDetail, type LeaderItem } from '@/components/admin/trading/leaders-card';
-import { HourlyPatternCard, SalesTrendCard } from '@/components/admin/trading/sales-charts';
-import { TenderMixCard, VatCard } from '@/components/admin/trading/tender-vat-cards';
+import { dayRange, number, share } from '@/components/shared/trading/format';
+import { Freshness } from '@/components/shared/trading/freshness';
+import { LeadersCard, salesDetail, type LeaderItem } from '@/components/shared/trading/leaders-card';
+import { HourlyPatternCard, SalesTrendCard } from '@/components/shared/trading/sales-charts';
+import { TenderMixCard, VatCard } from '@/components/shared/trading/tender-vat-cards';
 import { queryOf, TradingFiltersBar, type TradingQuery } from '@/components/admin/trading/trading-filters';
-import { TradingKpis } from '@/components/admin/trading/trading-kpis';
-import { TradingSkeleton } from '@/components/admin/trading/trading-skeleton';
+import { TradingKpis } from '@/components/shared/trading/trading-kpis';
+import { TradingSkeleton } from '@/components/shared/trading/trading-skeleton';
 import { type TradingData, type TradingPageProps } from '@/components/admin/trading/types';
 import { PageHeader, type PageCrumb } from '@/components/shared/page-header';
 import AdminLayout from '@/layouts/admin-layout';
@@ -168,7 +168,7 @@ export default function AdminTrading(props: TradingPageProps) {
                         )}
                     </>
                 }
-                actions={<Freshness data={trading} loading={loading} />}
+                actions={<Freshness info={trading?.activity} generatedAt={trading?.generatedAt} loading={loading} />}
                 tabs={<DashboardTabs active="trading" />}
             />
 

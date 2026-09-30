@@ -91,7 +91,7 @@ class EnsureCompanyMember
             return $this->onHold($request, $user, $company);
         }
 
-        $this->currentCompany->set($company, $company->membership?->role);
+        $this->currentCompany->set($company, $company->membership?->role, $company->membership?->branch_id);
 
         return $next($request);
     }

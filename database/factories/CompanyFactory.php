@@ -86,10 +86,10 @@ class CompanyFactory extends Factory
     /**
      * Attach a user as a member once the company is created.
      */
-    public function withMember(User $user, CompanyRole $role = CompanyRole::Owner, bool $active = true): static
+    public function withMember(User $user, CompanyRole $role = CompanyRole::Owner, bool $active = true, ?string $branchId = null): static
     {
-        return $this->afterCreating(function (Company $company) use ($user, $role, $active) {
-            $company->users()->attach($user->id, ['role' => $role->value, 'is_active' => $active]);
+        return $this->afterCreating(function (Company $company) use ($user, $role, $active, $branchId) {
+            $company->users()->attach($user->id, ['role' => $role->value, 'is_active' => $active, 'branch_id' => $branchId]);
         });
     }
 }

@@ -1,8 +1,7 @@
 <?php
 
-namespace App\Domain\Admin\Data;
+namespace App\Domain\Reporting\Dashboard;
 
-use App\Domain\Reporting\Dashboard\SalesWindow;
 use App\Domain\Reporting\Data\ReportScope;
 use App\Domain\Reporting\Enums\TradingCompare;
 use App\Domain\Reporting\Enums\TradingPeriod;
@@ -11,46 +10,51 @@ use App\Domain\Reporting\Support\TradingRange;
 use Carbon\CarbonImmutable;
 
 /**
- * What the admin trading dashboard shows (module 3.2): trading days `from … to` (Europe/London dates), the compare
- * window, and the drill-down (every business, one business, or one shop of it). Built only from the admin request
- * (`TradingDashboardRequest`); the scopes are admin scopes, never tenant ones.
- *
- * A custom range is clamped by {@see TradingRange}.
+ * What the business dashboard shows (module 3.3, DASHBOARD.md §2.1): trading days `from … to`, the compare window,
+ * and the shop (all shops, or one) and till (all, or one of that shop). Always a **tenant** scope of the current
+ * company; the shop is resolved by {@see BusinessContext} (a one-shop user is fixed to their shop), never taken
+ * raw from the request.
  */
-final readonly class TradingFilters implements SalesWindow
+final readonly class BusinessDashboardFilters implements SalesWindow
 {
-    public const MAX_DAYS = TradingRange::MAX_DAYS;
-
     private function __construct(
+        public string $companyId,
         public TradingPeriod $period,
         public CarbonImmutable $from,
         public CarbonImmutable $to,
         public TradingCompare $compare,
-        public ?string $companyId,
         public ?string $branchId,
+        public ?string $registerId,
         public CarbonImmutable $today,
         public int $hour,
     ) {}
 
     public static function resolve(
+        string $companyId,
         TradingPeriod $period,
         ?string $from,
         ?string $to,
         TradingCompare $compare,
-        ?string $companyId = null,
         ?string $branchId = null,
+        ?string $registerId = null,
         ?CarbonImmutable $now = null,
     ): self {
         $now ??= CarbonImmutable::now();
         $today = TradingRange::today($now);
         [$period, $start, $end] = TradingRange::resolve($period, $from, $to, $today);
 
-        return new self($period, $start, $end, $compare, $companyId, $companyId === null ? null : $branchId, $today, TradingDay::currentHour($now));
+        return new self($companyId, $period, $start, $end, $compare, $branchId, $branchId === null ? null : $registerId, $today, TradingDay::currentHour($now));
     }
 
     public function scope(): ReportScope
     {
-        return ReportScope::admin($this->companyId, $this->from, $this->to, $this->branchId === null ? null : [$this->branchId]);
+        return ReportScope::tenant($this->from, $this->to, $this->branchIds(), $this->registerId === null ? null : [$this->registerId]);
+    }
+
+    /** The chosen shop's scope without the till filter (its tills leaderboard). */
+    public function shopScope(): ReportScope
+    {
+        return ReportScope::tenant($this->from, $this->to, $this->branchIds());
     }
 
     public function compareScope(): ?ReportScope
@@ -58,7 +62,6 @@ final readonly class TradingFilters implements SalesWindow
         return $this->compare->window($this->scope());
     }
 
-    /** A range of just today: compare up to the same hour (§2.9), charts by hour. */
     public function isToday(): bool
     {
         return $this->from->equalTo($this->today) && $this->to->equalTo($this->today);
@@ -74,16 +77,25 @@ final readonly class TradingFilters implements SalesWindow
         return $this->hour;
     }
 
+    /** 'business' (every shop), 'shop' (one shop, every till) or 'till'. */
     public function level(): string
     {
-        return $this->branchId !== null ? 'shop' : ($this->companyId !== null ? 'business' : 'all');
+        return $this->registerId !== null ? 'till' : ($this->branchId !== null ? 'shop' : 'business');
+    }
+
+    /**
+     * @return list<string>|null
+     */
+    public function branchIds(): ?array
+    {
+        return $this->branchId === null ? null : [$this->branchId];
     }
 
     public function cacheKey(): string
     {
-        return 'admin-trading:v1:'.sha1(implode('|', [
-            $this->from->toDateString(), $this->to->toDateString(), $this->compare->value, $this->companyId ?? '', $this->branchId ?? '',
-            $this->isToday() ? (string) $this->hour : '',
+        return 'business-dashboard:v1:'.sha1(implode('|', [
+            $this->companyId, $this->from->toDateString(), $this->to->toDateString(), $this->compare->value,
+            $this->branchId ?? '', $this->registerId ?? '', $this->isToday() ? (string) $this->hour : '',
         ]));
     }
 
@@ -97,8 +109,8 @@ final readonly class TradingFilters implements SalesWindow
             'from' => $this->from->toDateString(),
             'to' => $this->to->toDateString(),
             'compare' => $this->compare->value,
-            'company' => $this->companyId,
             'branch' => $this->branchId,
+            'till' => $this->registerId,
             'today' => $this->today->toDateString(),
         ];
     }

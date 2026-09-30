@@ -1,17 +1,19 @@
 <?php
 
-namespace App\Domain\Admin\Enums;
+namespace App\Domain\Reporting\Enums;
 
 use Carbon\CarbonImmutable;
+use Carbon\CarbonInterface;
 
 /**
- * Date range presets of the admin trading dashboard (module 3.2, DASHBOARD.md §2.1), in trading days
- * (Europe/London dates). `custom` takes `from` / `to` from the request.
+ * Date range presets of the trading dashboards (admin 3.2, business 3.3; DASHBOARD.md §2.1), in trading days
+ * (Europe/London dates). "This week" is Monday to today (§1.3). `custom` takes `from` / `to` from the request.
  */
 enum TradingPeriod: string
 {
     case Today = 'today';
     case Yesterday = 'yesterday';
+    case ThisWeek = 'thisWeek';
     case Last7Days = 'last7Days';
     case Last30Days = 'last30Days';
     case ThisMonth = 'thisMonth';
@@ -23,6 +25,7 @@ enum TradingPeriod: string
         return match ($this) {
             self::Today => 'Today',
             self::Yesterday => 'Yesterday',
+            self::ThisWeek => 'This week',
             self::Last7Days => 'Last 7 days',
             self::Last30Days => 'Last 30 days',
             self::ThisMonth => 'This month',
@@ -43,6 +46,7 @@ enum TradingPeriod: string
         return match ($this) {
             self::Today => [$today, $today],
             self::Yesterday => [$today->subDay(), $today->subDay()],
+            self::ThisWeek => [$today->startOfWeek(CarbonInterface::MONDAY), $today],
             self::Last7Days => [$today->subDays(6), $today],
             self::Last30Days => [$today->subDays(29), $today],
             self::ThisMonth => [$today->startOfMonth(), $today],

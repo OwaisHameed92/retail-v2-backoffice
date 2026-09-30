@@ -3,6 +3,8 @@
 namespace App\Domain\Admin\Queries\Trading;
 
 use App\Domain\Admin\Data\TradingFilters;
+use App\Domain\Reporting\Dashboard\DashboardKpis;
+use App\Domain\Reporting\Dashboard\DashboardSeries;
 use App\Domain\Reporting\Data\GroupSales;
 use App\Domain\Reporting\Data\LeaderSales;
 use App\Domain\Reporting\Data\ProductSales;
@@ -39,8 +41,8 @@ final class TradingDashboard
         private readonly VatReport $vat,
         private readonly ProductReport $products,
         private readonly AdminTradingReport $admin,
-        private readonly TradingKpis $kpis,
-        private readonly TradingSeries $series,
+        private readonly DashboardKpis $kpis,
+        private readonly DashboardSeries $series,
     ) {}
 
     /**
@@ -61,7 +63,7 @@ final class TradingDashboard
         $compare = $filters->compareScope();
         $daily = $this->series->daily($filters);
         $hourly = $this->series->hourly($filters);
-        $spark = TradingSeries::sparklines($daily, $hourly);
+        $spark = DashboardSeries::sparklines($daily, $hourly);
         $activity = $this->admin->activity($scope);
 
         return [
@@ -72,6 +74,7 @@ final class TradingDashboard
                 'to' => $scope->to->toDateString(),
                 'days' => $scope->days(),
                 'isToday' => $filters->isToday(),
+                'today' => $filters->today->toDateString(),
                 'hour' => $filters->hour,
                 'compareFrom' => $compare?->from->toDateString(),
                 'compareTo' => $compare?->to->toDateString(),

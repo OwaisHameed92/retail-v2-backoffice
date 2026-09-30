@@ -1,6 +1,6 @@
 import { cn } from '@/lib/utils';
 import { useId } from 'react';
-import { Area, AreaChart, Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { Area, AreaChart, Bar, BarChart, CartesianGrid, ComposedChart, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 
 /** Colour tones shared by KPI cards, sparklines and charts. Each maps to a token in app.css. */
 export type ChartTone = 'primary' | 'success' | 'info' | 'violet' | 'warning' | 'danger';
@@ -32,20 +32,31 @@ interface AreaSparklineProps {
     className?: string;
     /** Accessible summary, e.g. "Revenue over the last 12 weeks, rising". Omit to hide from screen readers. */
     label?: string;
+    /** The last value is still filling up (today so far): drawn as a dashed segment to a hollow dot, not a drop. */
+    partialLast?: boolean;
 }
 
-/** Recharts sparkline with a soft area fill, for KpiCard. Fills its box (default full width × 56px). */
-export function AreaSparkline({ values, tone = 'primary', className, label }: AreaSparklineProps) {
+/**
+ * Recharts sparkline with a soft area fill, for KpiCard. Fills its box (default full width × 56px). Monotone curve
+ * (never overshoots the data); with `partialLast` the last point is shown as "so far".
+ */
+export function AreaSparkline({ values, tone = 'primary', className, label, partialLast = false }: AreaSparklineProps) {
     const id = useId().replace(/:/g, '');
     if (values.length < 2) {
         return null;
     }
-    const data = values.map((value, index) => ({ index, value }));
+    const last = values.length - 1;
+    const split = partialLast && values.length >= 3;
+    const data = values.map((value, index) => ({
+        index,
+        value: split && index === last ? null : value,
+        soFar: split && index >= last - 1 ? value : null,
+    }));
 
     return (
         <div className={cn('h-14 w-full', className)} role={label ? 'img' : undefined} aria-label={label} aria-hidden={label ? undefined : true}>
             <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={data} margin={{ top: 4, right: 2, bottom: 0, left: 2 }}>
+                <ComposedChart data={data} margin={{ top: 5, right: 5, bottom: 1, left: 2 }}>
                     <defs>
                         <linearGradient id={`spark-${id}`} x1="0" x2="0" y1="0" y2="1">
                             <stop offset="0%" stopColor={toneVar[tone]} stopOpacity={0.22} />
@@ -54,7 +65,7 @@ export function AreaSparkline({ values, tone = 'primary', className, label }: Ar
                     </defs>
                     <YAxis hide domain={['dataMin', 'dataMax']} />
                     <Area
-                        type="monotone"
+                        type="monotoneX"
                         dataKey="value"
                         stroke={toneVar[tone]}
                         strokeWidth={2}
@@ -62,7 +73,24 @@ export function AreaSparkline({ values, tone = 'primary', className, label }: Ar
                         isAnimationActive={false}
                         dot={false}
                     />
-                </AreaChart>
+                    {split && (
+                        <Line
+                            type="monotoneX"
+                            dataKey="soFar"
+                            stroke={toneVar[tone]}
+                            strokeWidth={2}
+                            strokeDasharray="4 3"
+                            isAnimationActive={false}
+                            dot={(props: { cx?: number; cy?: number; index?: number }) =>
+                                props.index === last && props.cx !== undefined && props.cy !== undefined ? (
+                                    <circle key="so-far" cx={props.cx} cy={props.cy} r={3} fill="var(--card)" stroke={toneVar[tone]} strokeWidth={2} />
+                                ) : (
+                                    <g key={`dot-${props.index}`} />
+                                )
+                            }
+                        />
+                    )}
+                </ComposedChart>
             </ResponsiveContainer>
         </div>
     );
@@ -148,7 +176,7 @@ export function TrendChart({ data, variant = 'line', tone = 'primary', format = 
                         <YAxis {...axis} width={48} tickFormatter={format} />
                         {tooltip}
                         <Area
-                            type="linear"
+                            type="monotoneX"
                             dataKey="value"
                             name={seriesName}
                             stroke={toneVar[tone]}

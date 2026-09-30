@@ -2,10 +2,10 @@
 
 use App\Domain\Admin\Data\TradingFilters;
 use App\Domain\Admin\Enums\AdminRole;
-use App\Domain\Admin\Enums\TradingCompare;
-use App\Domain\Admin\Enums\TradingPeriod;
 use App\Domain\Admin\Models\Admin;
 use App\Domain\Admin\Queries\Trading\TradingDashboard;
+use App\Domain\Reporting\Enums\TradingCompare;
+use App\Domain\Reporting\Enums\TradingPeriod;
 use App\Domain\Reporting\ReportTables;
 use App\Domain\Tenancy\Models\Branch;
 use App\Domain\Tenancy\Models\Company;
@@ -82,7 +82,7 @@ test('the page paints the filters first and loads the figures as a deferred prop
             ->where('context.company.name', 'Kirkgate Convenience')
             ->where('context.branch.name', 'Leeds')
             ->has('context.branches', 2)
-            ->has('periods', 7)
+            ->has('periods', 8)
             ->missing('trading')
             ->loadDeferredProps(fn (Assert $reload) => $reload
                 ->where('trading.level', 'shop')

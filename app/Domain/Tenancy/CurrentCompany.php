@@ -23,16 +23,32 @@ class CurrentCompany
 
     private ?CompanyRole $role = null;
 
-    public function set(Company $company, ?CompanyRole $role = null): void
+    private ?string $branchId = null;
+
+    /**
+     * @param  string|null  $branchId  the one shop the user is limited to (membership `branch_id`), null = every shop
+     */
+    public function set(Company $company, ?CompanyRole $role = null, ?string $branchId = null): void
     {
         $this->company = $company;
         $this->role = $role;
+        $this->branchId = $branchId;
     }
 
     public function forget(): void
     {
         $this->company = null;
         $this->role = null;
+        $this->branchId = null;
+    }
+
+    /**
+     * The one shop the signed-in user may see (a branch-scoped shop manager, module 3.3), or null for every shop.
+     * Screens that show shop data must pass it on (e.g. ReportScope `branchIds`); it may name a closed shop.
+     */
+    public function restrictedBranchId(): ?string
+    {
+        return $this->company === null ? null : $this->branchId;
     }
 
     public function has(): bool
@@ -98,6 +114,7 @@ class CurrentCompany
     {
         $previousCompany = $this->company;
         $previousRole = $this->role;
+        $previousBranch = $this->branchId;
 
         $this->set($company, $role);
 
@@ -106,6 +123,7 @@ class CurrentCompany
         } finally {
             $this->company = $previousCompany;
             $this->role = $previousRole;
+            $this->branchId = $previousBranch;
         }
     }
 }

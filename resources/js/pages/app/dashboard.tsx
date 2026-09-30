@@ -1,53 +1,86 @@
+import { BusinessBody, NoSalesYet } from '@/components/app/dashboard/business-body';
+import { BusinessFiltersBar, type BusinessQuery } from '@/components/app/dashboard/business-filters';
+import { type BusinessDashboardProps } from '@/components/app/dashboard/types';
 import { EmptyState } from '@/components/shared/empty-state';
 import { PageHeader } from '@/components/shared/page-header';
 import { SectionCard } from '@/components/shared/section-card';
-import { StatCard, StatGrid } from '@/components/shared/stat-card';
+import { dayRange } from '@/components/shared/trading/format';
+import { Freshness } from '@/components/shared/trading/freshness';
+import { TradingSkeleton } from '@/components/shared/trading/trading-skeleton';
 import { ShopsStatusCard } from '@/components/till-health/shops-status-card';
-import { type ShopsStatus } from '@/components/till-health/types';
 import AppLayout from '@/layouts/app-layout';
+import { cn } from '@/lib/utils';
 import { type BreadcrumbItem, type SharedData } from '@/types';
-import { Head, usePage } from '@inertiajs/react';
-import { PoundSterling, Receipt, RefreshCw, ShoppingBasket, TrendingUp } from 'lucide-react';
+import { Deferred, Head, router, usePage } from '@inertiajs/react';
+import { LockKeyhole } from 'lucide-react';
+import { useState } from 'react';
 
 const breadcrumbs: BreadcrumbItem[] = [{ title: 'Dashboard', href: '/app' }];
 
-const stats = [
-    { label: 'Sales', icon: PoundSterling },
-    { label: 'Transactions', icon: Receipt },
-    { label: 'Avg basket', icon: ShoppingBasket },
-    { label: 'Gross profit', icon: TrendingUp },
-];
+const RELOAD = ['filters', 'context', 'status', 'sales'];
 
-export default function Dashboard({ status }: { status: ShopsStatus | null }) {
+/**
+ * The tenant dashboard: how the business (or one shop, or one till) is trading (module 3.3, `reports.view`), and
+ * its shops and tills (module 2.7). Figures load as a deferred prop behind a skeleton.
+ */
+export default function Dashboard(props: BusinessDashboardProps) {
+    const { status, canSales, filters, context, periods, compares, sales } = props;
     const { company } = usePage<SharedData>().props;
+    const [loading, setLoading] = useState(false);
+
+    const go = (query: BusinessQuery) =>
+        router.get(route('app.dashboard'), query, {
+            only: RELOAD,
+            preserveState: true,
+            preserveScroll: true,
+            replace: true,
+            onStart: () => setLoading(true),
+            onFinish: () => setLoading(false),
+        });
+
+    const switchShop = (id: string) =>
+        router.post(route('app.branch.switch'), { branch_id: id }, { preserveScroll: true, onStart: () => setLoading(true), onFinish: () => setLoading(false) });
+
+    const where = context.till ? `till ${context.till.label} at ${context.branch?.name}` : (context.branch?.name ?? `all shops of ${company?.name ?? 'your business'}`);
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Dashboard" />
 
-            <PageHeader title="Dashboard" description={`How ${company?.name ?? 'your business'} is trading today, across all branches.`} />
+            <PageHeader
+                title="Dashboard"
+                description={canSales ? `How ${where} traded, ${dayRange(filters.from, filters.to)}.` : `Shops and tills of ${company?.name ?? 'your business'}.`}
+                actions={canSales ? <Freshness info={sales?.freshness} generatedAt={sales?.generatedAt} loading={loading} /> : undefined}
+            />
 
-            <StatGrid>
-                {stats.map((stat) => (
-                    <StatCard
-                        key={stat.label}
-                        label={stat.label}
-                        value={<span aria-label={`${stat.label}: no data yet`}>—</span>}
-                        hint="Waiting for the first sync"
-                        icon={stat.icon}
+            {canSales ? (
+                <>
+                    <BusinessFiltersBar filters={filters} context={context} periods={periods} compares={compares} onChange={go} onLoading={setLoading} />
+
+                    <div className={cn('transition-opacity', loading && 'pointer-events-none opacity-60')} aria-busy={loading}>
+                        <Deferred data="sales" fallback={<TradingSkeleton />}>
+                            {!sales ? (
+                                <TradingSkeleton />
+                            ) : sales.freshness.hasData ? (
+                                <BusinessBody data={sales} status={status} onShop={switchShop} />
+                            ) : (
+                                <NoSalesYet shop={context.branch?.name ?? null} />
+                            )}
+                        </Deferred>
+                    </div>
+                </>
+            ) : (
+                <SectionCard>
+                    <EmptyState
+                        icon={LockKeyhole}
+                        title="Sales figures are not part of your role"
+                        body="Owners, managers and accountants see sales, takings and VAT here. Ask the business owner if you need them."
+                        size="sm"
                     />
-                ))}
-            </StatGrid>
+                </SectionCard>
+            )}
 
             {status && <ShopsStatusCard status={status} />}
-
-            <SectionCard title="Sales today" description="Takings by hour, per branch." className="flex-1">
-                <EmptyState
-                    icon={RefreshCw}
-                    title="Nothing to show yet"
-                    body="Your dashboard fills up once your tills start syncing. Sales, baskets and profit appear here within a minute of each sale."
-                />
-            </SectionCard>
         </AppLayout>
     );
 }
