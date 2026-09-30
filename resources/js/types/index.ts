@@ -55,7 +55,10 @@ export type Ability =
     | 'news.view'
     | 'news.manage'
     | 'compliance.view'
-    | 'compliance.manage';
+    | 'compliance.manage'
+    | 'calendar.manage'
+    | 'pharmacy.view'
+    | 'parcels.view';
 
 /** The company the user is working in (shared by HandleInertiaRequests). */
 export interface CurrentCompany {

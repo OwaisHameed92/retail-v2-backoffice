@@ -72,4 +72,13 @@ enum Ability: string
 
     /** Raise, edit and close product recalls sent to every till (module 5.7). Owner and a manager of every shop. */
     case ComplianceManage = 'compliance.manage';
+
+    /** Shops' opening hours (sent to the tills), special days and seasonal events with last year's sales (module 5.9). Owner, manager. */
+    case CalendarManage = 'calendar.manage';
+
+    /** Dispensing records and medicine classes (module 5.10); editing classes also needs catalogue.manage. Owner, manager, accountant. */
+    case PharmacyView = 'pharmacy.view';
+
+    /** Parcel activity and carriers, read only (module 5.10). Owner, manager. */
+    case ParcelsView = 'parcels.view';
 }

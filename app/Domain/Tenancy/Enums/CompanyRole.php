@@ -59,6 +59,9 @@ enum CompanyRole: string
                 Ability::NewsManage,
                 Ability::ComplianceView,
                 Ability::ComplianceManage,
+                Ability::CalendarManage,
+                Ability::PharmacyView,
+                Ability::ParcelsView,
             ],
             self::Accountant => [
                 Ability::DashboardView,
@@ -74,6 +77,7 @@ enum CompanyRole: string
                 Ability::AccountsView,
                 Ability::NewsView,
                 Ability::ComplianceView,
+                Ability::PharmacyView,
             ],
             self::Staff => [
                 Ability::DashboardView,

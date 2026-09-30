@@ -36,7 +36,7 @@ return [
         'title' => 'Shop details and opening hours',
         'description' => 'Printed on receipts and labels, and used by the till\'s routines. Name and address are on the Shops page.',
         'settings' => [
-            'shop.trading_hours' => ['label' => 'Opening hours', 'type' => 'multiline', 'max' => 1000, 'help' => 'As your till shows them. Keep the format your till uses (see the current value); a day-by-day editor is coming.'],
+            'shop.trading_hours' => ['label' => 'Opening hours', 'type' => 'multiline', 'max' => 1000, 'help' => 'As your till shows them. Easier to set day by day on the Calendar page, which fills this in for each shop.'],
             'shop.phone' => ['label' => 'Phone', 'type' => 'text', 'max' => 30, 'help' => 'The number customers call.'],
             'shop.email' => ['label' => 'Email', 'type' => 'text', 'max' => 120, 'help' => 'Shown on receipts and emails to customers.'],
             'shop.website' => ['label' => 'Website', 'type' => 'text', 'max' => 120, 'help' => 'For example www.yourshop.co.uk.'],
