@@ -331,3 +331,10 @@ Tokens live only in `resources/css/app.css` (v2 palette, light + dark): `chrome`
 - `components/app/users/`: `types.ts` (matches `PortalUsers\Data\PortalUsersPage::for()`, `EVERY_SHOP`, `formatDate`), `AccessDialog` (invite, or change role + shop; the shop picker is disabled for owners), `MembersPanel` (client search + role/status filters, table / phone cards, row actions locked for yourself and the last owner), `InvitationsPanel` (resend / cancel), `RoleMatrix` (read-only, from `CompanyRole::abilities()` via `PortalUsers\Support\RoleMatrix`).
 - `pages/auth/accept-invitation.tsx`: the emailed link's states (`register`, `signIn`, `join`, `wrongAccount`, `expired`, `revoked`, `accepted`, `invalid`), from `PortalUsers\Data\InvitationLinkState`.
 - Backend: `PortalUsers\Support\MemberAccess` (locked membership row, one-shop rule, "not yourself"), `InvitationMailer` (rotate token + signed 7-day link + `PortalInvitationMail`), `CompanyInvitation::findForLink()` (the only cross-company lookup, token-checked).
+
+## Added by module 4.2 (products and catalogue, tenant portal)
+
+- `components/app/products/fields.tsx`: `MoneyInput` (`places={2|4}`), `NumberField` (suffix), `OptionSelect` (with an
+  optional "none" choice), `CheckRow` (checkbox card that reveals child fields when ticked), `formatMoney`, `marginPercent`.
+- Backend: `Catalogue\Actions\SaveProduct` is the one way to write a product (form, CSV import, later AI tools); it keeps
+  ids, writes only `ProductFields::EDITABLE`, and returns `SavedProduct` (created / changed keys).

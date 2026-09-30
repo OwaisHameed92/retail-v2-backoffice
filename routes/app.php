@@ -5,10 +5,13 @@
 // `company.can:<ability>` for anything role-restricted.
 
 use App\Http\Controllers\App\BillingController;
+use App\Http\Controllers\App\CatalogueGroupController;
 use App\Http\Controllers\App\DashboardController;
 use App\Http\Controllers\App\InvitationAcceptController;
 use App\Http\Controllers\App\PortalInvitationController;
 use App\Http\Controllers\App\PortalUserController;
+use App\Http\Controllers\App\ProductController;
+use App\Http\Controllers\App\ProductImportController;
 use App\Http\Controllers\App\SwitchBranchController;
 use App\Http\Controllers\App\SwitchCompanyController;
 use App\Http\Controllers\App\SyncConflictController;
@@ -48,6 +51,34 @@ Route::middleware(['auth:web', 'verified', 'company'])->group(function () {
         Route::post('invitations', [PortalInvitationController::class, 'store'])->name('invitations.store')->middleware('throttle:30,1');
         Route::post('invitations/{invitation}/resend', [PortalInvitationController::class, 'resend'])->name('invitations.resend')->whereUlid('invitation')->middleware('throttle:10,1');
         Route::delete('invitations/{invitation}', [PortalInvitationController::class, 'destroy'])->name('invitations.destroy')->whereUlid('invitation');
+    });
+
+    // Module 4.2: products, barcodes, units, departments and categories, CSV import. Read: catalogue.view; edit: catalogue.manage.
+    Route::prefix('products')->name('products.')->group(function () {
+        Route::middleware('company.can:catalogue.view')->group(function () {
+            Route::get('/', [ProductController::class, 'index'])->name('index');
+            Route::get('categories', [CatalogueGroupController::class, 'index'])->name('groups');
+        });
+        Route::middleware(['company.can:catalogue.manage', 'throttle:120,1'])->group(function () {
+            Route::get('create', [ProductController::class, 'create'])->name('create');
+            Route::post('/', [ProductController::class, 'store'])->name('store');
+            Route::put('{product}', [ProductController::class, 'update'])->name('update')->whereUlid('product');
+            Route::post('{product}/archive', [ProductController::class, 'archive'])->name('archive')->whereUlid('product');
+            Route::post('{product}/restore', [ProductController::class, 'restore'])->name('restore')->whereUlid('product');
+            Route::post('departments', [CatalogueGroupController::class, 'storeDepartment'])->name('departments.store');
+            Route::put('departments/{department}', [CatalogueGroupController::class, 'updateDepartment'])->name('departments.update')->whereUlid('department');
+            Route::delete('departments/{department}', [CatalogueGroupController::class, 'destroyDepartment'])->name('departments.destroy')->whereUlid('department');
+            Route::post('categories', [CatalogueGroupController::class, 'storeCategory'])->name('categories.store');
+            Route::put('categories/{category}', [CatalogueGroupController::class, 'updateCategory'])->name('categories.update')->whereUlid('category');
+            Route::delete('categories/{category}', [CatalogueGroupController::class, 'destroyCategory'])->name('categories.destroy')->whereUlid('category');
+            Route::get('imports', [ProductImportController::class, 'index'])->name('imports.index');
+            Route::get('imports/template', [ProductImportController::class, 'template'])->name('imports.template');
+            Route::post('imports', [ProductImportController::class, 'store'])->name('imports.store');
+            Route::get('imports/{import}', [ProductImportController::class, 'show'])->name('imports.show')->whereUlid('import');
+            Route::post('imports/{import}/preview', [ProductImportController::class, 'preview'])->name('imports.preview')->whereUlid('import');
+            Route::post('imports/{import}/apply', [ProductImportController::class, 'apply'])->name('imports.apply')->whereUlid('import');
+        });
+        Route::get('{product}', [ProductController::class, 'show'])->name('show')->whereUlid('product')->middleware('company.can:catalogue.view');
     });
 });
 

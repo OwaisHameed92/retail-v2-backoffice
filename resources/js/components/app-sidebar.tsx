@@ -29,6 +29,9 @@ function tenantNav(path: string, abilities: string[]): ShellNavGroup[] {
     const billing = abilities.includes('billing.view')
         ? [{ title: 'Billing', icon: CreditCard, href: '/app/billing', active: path.startsWith('/app/billing') }]
         : [];
+    const products = abilities.includes('catalogue.view')
+        ? [{ title: 'Products', icon: Package, href: '/app/products', active: path.startsWith('/app/products') }]
+        : [];
     const sync = abilities.includes('sync.manage')
         ? [{ title: 'Sync conflicts', icon: GitCompareArrows, href: '/app/sync/conflicts', active: path.startsWith('/app/sync') }]
         : [];
@@ -49,7 +52,7 @@ function tenantNav(path: string, abilities: string[]): ShellNavGroup[] {
         {
             label: 'Catalogue',
             items: [
-                { title: 'Products', icon: Package, soon: true },
+                ...products,
                 { title: 'Stock', icon: Boxes, soon: true },
                 { title: 'Purchasing', icon: Truck, soon: true },
             ],
