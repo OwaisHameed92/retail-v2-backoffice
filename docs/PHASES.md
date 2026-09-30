@@ -10,7 +10,7 @@ Each module is one agent task. Modules in the same wave can run in parallel. Sta
 included) pass, the UI follows `docs/BRAND.md`, and `composer check`, `npm run lint`, `npx tsc --noEmit` and
 `npm run build` are green.
 
-Totals: **64 modules · 48 done · 16 todo** (2026-09-30, counted from the tables of phases 0–7; 2.9 split into A and
+Totals: **64 modules · 52 done · 12 todo** (2026-09-30, counted from the tables of phases 0–7; 2.9 split into A and
 B; Phase 8's five later items are not modules yet).
 
 ---
@@ -92,7 +92,7 @@ Contract: v1.4.1 §18.4. Roles: business owner, **shop manager** (one branch onl
 | 4.9 | Shop settings (receipt text, opening hours; per §18.6) | done |
 | 4.10 | My subscription and invoices | done |
 
-## Phase 5: Operations — 6/10
+## Phase 5: Operations — 10/10 (complete)
 
 | # | Module | Status |
 |---|---|---|
@@ -102,10 +102,10 @@ Contract: v1.4.1 §18.4. Roles: business owner, **shop manager** (one branch onl
 | 5.4 | Cash and Z (shifts, Z reports, cash office, card settlement, day lock) | done |
 | 5.5 | Accounts and VAT (expenses, VAT return, journals, fixed assets) | done |
 | 5.6 | Staff (clock events, rota, timesheets, wages) | done |
-| 5.7 | Compliance (age refusals, incidents, training, diary checks, licences, recalls) | todo |
-| 5.8 | Newspapers (titles, deliveries, returns, vouchers) | todo |
-| 5.9 | Seasonal events and opening hours | todo |
-| 5.10 | Pharmacy and parcels (dispensing, medicine classes, parcel carriers) | todo |
+| 5.7 | Compliance (age refusals, incidents, training, diary checks, licences, recalls) | done |
+| 5.8 | Newspapers (titles, deliveries, returns, vouchers) | done |
+| 5.9 | Seasonal events and opening hours | done |
+| 5.10 | Pharmacy and parcels (dispensing, medicine classes, parcel carriers) | done |
 
 ## Phase 6: AI — 1/7
 
