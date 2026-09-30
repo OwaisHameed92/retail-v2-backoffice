@@ -37,6 +37,9 @@ enum LicenceAlertType: string
     /** Module 4.7: the business asked for more tills or another shop from its portal. Staff resolve it by hand. */
     case TillsRequested = 'tillsRequested';
 
+    /** Module 4.10: the business asked to cancel its subscription or change its bank account. Staff resolve it by hand. */
+    case SubscriptionRequested = 'subscriptionRequested';
+
     public function label(): string
     {
         return match ($this) {
@@ -50,6 +53,7 @@ enum LicenceAlertType: string
             self::AppVersionOutdated => 'Old app version',
             self::ClockSkew => 'Till clock is wrong',
             self::TillsRequested => 'More tills requested',
+            self::SubscriptionRequested => 'Subscription request',
         };
     }
 
@@ -73,6 +77,7 @@ enum LicenceAlertType: string
             self::AppVersionOutdated => 'The till runs an SSPOS version older than the minimum we support. Ask the shop to update. Clears itself when the till reports a newer version.',
             self::ClockSkew => 'The till\'s clock differs from ours by more than the allowed skew, which can lock the till or put sales on the wrong day. Ask the shop to set Windows time to automatic. Clears itself when the clock is right.',
             self::TillsRequested => 'The business asked for more tills or another shop from its portal (they cannot add them themselves). Call them to agree the price, raise "Tills allowed" or add the shop on the tenant page, then mark this resolved.',
+            self::SubscriptionRequested => 'The business asked from its portal to cancel its subscription or to change the bank account its Direct Debit uses (they cannot do either themselves). Call them, act on the tenant\'s Billing tab, then mark this resolved.',
         };
     }
 }

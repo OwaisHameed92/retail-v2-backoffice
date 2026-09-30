@@ -72,7 +72,18 @@ export const TENDER_FLAGS = [
 
 export type TenderFlag = (typeof TENDER_FLAGS)[number];
 
-export type PaymentTypeRow = { id: string; name: string; position: number; kind: string } & Record<TenderFlag, boolean>;
+export type PaymentTypeRow = {
+    id: string;
+    name: string;
+    position: number;
+    kind: string;
+    /** Rows this line stands for: the tills make some types once per shop (grouped by name). */
+    shops: number;
+    /** The shops' rows differ; a change is made to each. */
+    mixed: boolean;
+    /** The till's own "Order deposit" / "Loyalty points": the name stays and it cannot be removed. */
+    system: boolean;
+} & Record<TenderFlag, boolean>;
 
 export interface PaymentTypeIndexProps {
     paymentTypes: Paginated<PaymentTypeRow>;

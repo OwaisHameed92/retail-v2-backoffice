@@ -59,11 +59,23 @@ export function PaymentTypeDialog({ row, open, onOpenChange }: { row: PaymentTyp
             processing={processing}
             onSubmit={submit}
         >
+            {row && row.shops > 1 && (
+                <p className="bg-muted text-muted-foreground rounded-md px-3 py-2 text-sm">
+                    Each of your {row.shops} shops' tills has its own {row.name}. What you change here is changed in every shop
+                    {row.mixed ? '; settings you leave alone stay as each shop has them.' : '.'}
+                </p>
+            )}
             <div className="grid gap-4 sm:grid-cols-[1fr_7rem]">
-                <FormField id="pt-name" label="Name on the button" error={errors.name}>
+                <FormField
+                    id="pt-name"
+                    label="Name on the button"
+                    error={errors.name}
+                    help={row?.system ? 'Made by the tills themselves, so the name stays as it is.' : undefined}
+                >
                     <Input
                         id="pt-name"
                         value={data.name}
+                        disabled={row?.system}
                         maxLength={40}
                         onChange={(e) => setData('name', e.target.value)}
                         aria-invalid={errors.name ? true : undefined}

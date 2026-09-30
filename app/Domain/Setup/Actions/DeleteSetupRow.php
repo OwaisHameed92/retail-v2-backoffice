@@ -3,6 +3,7 @@
 namespace App\Domain\Setup\Actions;
 
 use App\Domain\Setup\Support\KeepCashTender;
+use App\Domain\Setup\Support\PaymentTypeGroup;
 use App\Domain\Shared\Actions\RecordAudit;
 use App\Domain\Tenancy\CurrentCompany;
 use App\Domain\Tenancy\Models\Company;
@@ -14,7 +15,8 @@ use InvalidArgumentException;
 
 /**
  * Removes a supplier, payment type or reason (module 4.5): a soft delete, so every till gets a `D` at its next pull
- * and past sales, orders and cash-ups keep pointing at it. The last active cash payment type cannot be removed.
+ * and past sales, orders and cash-ups keep pointing at it. The last active cash payment type cannot be removed; a
+ * payment type goes with its same-named rows of every shop, and the till's own ones are never removed.
  *
  *     app(DeleteSetupRow::class)->handle($company, Supplier::class, $supplierId);
  */
@@ -38,13 +40,34 @@ final class DeleteSetupRow
 
         $this->tenancy->runAs($company, function () use ($class, $id): void {
             $row = $class::query()->findOrFail($id);
+            $rows = $row instanceof PaymentType ? $this->paymentTypeGroup($row) : [$row];
 
-            if ($row instanceof PaymentType && $row->is_cash && $row->is_active) {
-                KeepCashTender::check($row);
+            foreach ($rows as $each) {
+                $each->delete();
+                $this->audit->handle(self::AUDIT[$class].'.deleted', $each, ['name' => $each instanceof Reason ? $each->text : $each->name]);
             }
-
-            $row->delete();
-            $this->audit->handle(self::AUDIT[$class].'.deleted', $row, ['name' => $row instanceof Reason ? $row->text : $row->name]);
         });
+    }
+
+    /**
+     * A payment type goes with its same-named rows of the other shops (PaymentTypeGroup); the till's own types stay.
+     *
+     * @return list<PaymentType>
+     *
+     * @throws ValidationException
+     */
+    private function paymentTypeGroup(PaymentType $type): array
+    {
+        if (PaymentTypeGroup::isTillSystem($type->name)) {
+            throw ValidationException::withMessages(['status' => "Each shop's till needs {$type->name}, so it cannot be removed. Untick \"Show when taking payment\" to hide it instead."]);
+        }
+
+        $group = PaymentTypeGroup::members($type);
+
+        if ($group->contains(fn (PaymentType $t) => $t->is_cash && $t->is_active)) {
+            KeepCashTender::check($type, 'status', $group->pluck('id')->all());
+        }
+
+        return $group->values()->all();
     }
 }

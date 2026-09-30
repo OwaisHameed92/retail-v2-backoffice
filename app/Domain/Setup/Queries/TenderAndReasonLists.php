@@ -2,6 +2,8 @@
 
 namespace App\Domain\Setup\Queries;
 
+use App\Domain\Setup\Actions\SavePaymentType;
+use App\Domain\Setup\Support\PaymentTypeGroup;
 use App\Domain\Shared\Support\TableQuery;
 use App\Domain\Tenancy\CurrentCompany;
 use App\Domain\TillData\Enums\ReasonType;
@@ -16,22 +18,36 @@ use Illuminate\Support\Str;
  */
 final class TenderAndReasonLists
 {
-    /** @return array<string, mixed> */
+    /**
+     * One line per name (PaymentTypeGroup): the tills make some types once per shop. `shops` says how many rows the
+     * line stands for, `mixed` that they differ (a change is made to each), `system` that it is the till's own.
+     *
+     * @return array<string, mixed>
+     */
     public static function paymentTypes(Request $request): array
     {
         $table = TableQuery::from($request)->searchable(['name'])->sortable(['position', 'name'])->defaultSort('position');
+        $groups = PaymentType::query()->orderBy('id')->get()->groupBy(fn (PaymentType $t) => PaymentTypeGroup::key($t->name));
+        $flags = fn (PaymentType $row): array => $row->only(['position', ...SavePaymentType::FLAGS]);
 
         return [
-            'counts' => ['all' => PaymentType::query()->count(), 'active' => PaymentType::query()->where('is_active', true)->count()],
+            'counts' => ['all' => $groups->count(), 'active' => $groups->filter(fn ($group) => (bool) $group->first()?->is_active)->count()],
             'canEdit' => self::canEdit(),
-            'paymentTypes' => $table->paginate(PaymentType::query(), fn (PaymentType $t) => [
-                'id' => $t->id, 'name' => $t->name, 'position' => (int) $t->position, 'kind' => self::tenderKind($t),
-                'is_cash' => (bool) $t->is_cash, 'is_card' => (bool) $t->is_card, 'is_voucher' => (bool) $t->is_voucher,
-                'is_points' => (bool) $t->is_points, 'is_account' => (bool) $t->is_account, 'is_drs_refund' => (bool) $t->is_drs_refund,
-                'opens_drawer' => (bool) $t->opens_drawer, 'show_on_payment' => (bool) $t->show_on_payment,
-                'show_on_refund' => (bool) $t->show_on_refund, 'show_on_customer_payment' => (bool) $t->show_on_customer_payment,
-                'is_active' => (bool) $t->is_active,
-            ]),
+            'paymentTypes' => $table->paginate(PaymentTypeGroup::leaders(), function (PaymentType $t) use ($groups, $flags): array {
+                $group = $groups->get(PaymentTypeGroup::key($t->name)) ?? collect([$t]);
+
+                return [
+                    'id' => $t->id, 'name' => $t->name, 'position' => (int) $t->position, 'kind' => self::tenderKind($t),
+                    'is_cash' => (bool) $t->is_cash, 'is_card' => (bool) $t->is_card, 'is_voucher' => (bool) $t->is_voucher,
+                    'is_points' => (bool) $t->is_points, 'is_account' => (bool) $t->is_account, 'is_drs_refund' => (bool) $t->is_drs_refund,
+                    'opens_drawer' => (bool) $t->opens_drawer, 'show_on_payment' => (bool) $t->show_on_payment,
+                    'show_on_refund' => (bool) $t->show_on_refund, 'show_on_customer_payment' => (bool) $t->show_on_customer_payment,
+                    'is_active' => (bool) $t->is_active,
+                    'shops' => $group->count(),
+                    'mixed' => $group->contains(fn (PaymentType $row) => $flags($row) !== $flags($t)),
+                    'system' => PaymentTypeGroup::isTillSystem($t->name),
+                ];
+            }),
         ];
     }
 

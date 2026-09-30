@@ -16,6 +16,7 @@ use App\Http\Controllers\App\ProductController;
 use App\Http\Controllers\App\ProductImportController;
 use App\Http\Controllers\App\PromotionController;
 use App\Http\Controllers\App\ShopController;
+use App\Http\Controllers\App\ShopSettingsController;
 use App\Http\Controllers\App\StaffController;
 use App\Http\Controllers\App\SupplierController;
 use App\Http\Controllers\App\SwitchBranchController;
@@ -36,6 +37,8 @@ Route::middleware(['auth:web', 'verified', 'company'])->group(function () {
         Route::middleware('company.can:billing.manage')->group(function () {
             Route::post('direct-debit', [BillingController::class, 'startDirectDebit'])->name('.direct-debit')->middleware('throttle:10,1');
             Route::get('direct-debit/return', [BillingController::class, 'directDebitReturn'])->name('.direct-debit.return');
+            // Module 4.10: ask Switch & Save to cancel or to change the bank account (an admin alert; nothing changes here).
+            Route::post('requests', [BillingController::class, 'request'])->name('.requests.store')->middleware('throttle:10,1');
         });
         Route::get('invoices/{invoice}/pdf', [BillingController::class, 'invoicePdf'])->name('.invoices.pdf')->whereUlid('invoice')->middleware('throttle:60,1');
     });
@@ -107,6 +110,11 @@ Route::middleware(['auth:web', 'verified', 'company'])->group(function () {
         Route::post('reasons', [TillListController::class, 'storeReason'])->name('reasons.store')->middleware('throttle:60,1');
         Route::put('reasons/{reason}', [TillListController::class, 'updateReason'])->name('reasons.update')->whereUlid('reason')->middleware('throttle:60,1');
         Route::delete('reasons/{reason}', [TillListController::class, 'destroyReason'])->name('reasons.destroy')->whereUlid('reason')->middleware('throttle:60,1');
+    });
+    // Module 4.9: till settings for every shop or one shop (§10.3). A one-shop user: their own shop only.
+    Route::prefix('settings')->name('settings.')->middleware('company.can:settings.manage')->group(function () {
+        Route::get('/', [ShopSettingsController::class, 'index'])->name('index');
+        Route::put('/', [ShopSettingsController::class, 'update'])->name('update')->middleware('throttle:60,1');
     });
     Route::prefix('staff')->name('staff.')->middleware('company.can:staff.manage')->group(function () {
         Route::get('/', [StaffController::class, 'index'])->name('index');

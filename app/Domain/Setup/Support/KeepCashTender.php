@@ -12,11 +12,13 @@ use Illuminate\Validation\ValidationException;
 final class KeepCashTender
 {
     /**
+     * @param  list<string>  $group  the other rows changed with it (the same type in each shop, PaymentTypeGroup)
+     *
      * @throws ValidationException
      */
-    public static function check(PaymentType $type, string $field = 'status'): void
+    public static function check(PaymentType $type, string $field = 'status', array $group = []): void
     {
-        $others = PaymentType::query()->whereKeyNot($type->id)->where('is_cash', true)->where('is_active', true)->exists();
+        $others = PaymentType::query()->whereKeyNot([$type->id, ...$group])->where('is_cash', true)->where('is_active', true)->exists();
 
         if (! $others) {
             throw ValidationException::withMessages([$field => "{$type->name} is the only active cash payment type. The tills need one to take cash."]);

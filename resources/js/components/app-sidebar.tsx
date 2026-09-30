@@ -31,7 +31,7 @@ import {
  */
 function tenantNav(path: string, abilities: string[]): ShellNavGroup[] {
     const billing = abilities.includes('billing.view')
-        ? [{ title: 'Billing', icon: CreditCard, href: '/app/billing', active: path.startsWith('/app/billing') }]
+        ? [{ title: 'My subscription', icon: CreditCard, href: '/app/billing', active: path.startsWith('/app/billing') }]
         : [];
     const products = abilities.includes('catalogue.view')
         ? [{ title: 'Products', icon: Package, href: '/app/products', active: path.startsWith('/app/products') }]
@@ -68,6 +68,8 @@ function tenantNav(path: string, abilities: string[]): ShellNavGroup[] {
                   href: '/app/payment-types',
                   active: path.startsWith('/app/payment-types') || path.startsWith('/app/reasons'),
               },
+              // Module 4.9: till settings for every shop or one shop.
+              { title: 'Till settings', icon: Settings, href: '/app/settings', active: path.startsWith('/app/settings') },
           ]
         : [];
     // Module 4.7: shops, tills and licences (read only), business details, "Ask for more tills".
@@ -100,7 +102,7 @@ function tenantNav(path: string, abilities: string[]): ShellNavGroup[] {
             ],
         },
         { label: 'Team', items: [...users, staff] },
-        { label: 'Settings', items: [...shops, ...tillLists, ...sync, ...billing, { title: 'Business settings', icon: Settings, soon: true }] },
+        { label: 'Settings', items: [...shops, ...tillLists, ...sync, ...billing] },
     ];
 }
 

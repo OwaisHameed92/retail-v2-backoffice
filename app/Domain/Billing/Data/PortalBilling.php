@@ -17,7 +17,7 @@ use App\Domain\Tenancy\Models\Company;
 use Carbon\CarbonImmutable;
 
 /**
- * The tenant portal Billing page (module 1.13, `billing.view`): plan and pricing, what was paid upfront, the Direct
+ * The tenant portal My subscription page (modules 1.13 and 4.10, `billing.view`): plan and pricing, what was paid upfront, the Direct
  * Debit (mandate, next collection, deadline) and the invoices. Invoices are read under the tenant scope
  * (CurrentCompany is set by the `company` middleware), so another company's rows never show.
  */
@@ -61,6 +61,9 @@ final class PortalBilling
             ],
             'directDebit' => self::directDebit($company, $account, $now, $canManage),
             'invoices' => self::invoices(),
+            // Module 4.10: account, payments, collections, setup fee and requests; only the owner sends requests.
+            ...PortalSubscription::for($company, $account, $amount['tills']),
+            'canRequest' => $canManage && ! $company->isCancelled(),
         ];
     }
 

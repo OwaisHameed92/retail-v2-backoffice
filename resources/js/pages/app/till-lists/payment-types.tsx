@@ -44,7 +44,16 @@ export default function PaymentTypes({ paymentTypes, counts, canEdit }: PaymentT
                 id: 'name',
                 header: 'Payment type',
                 enableSorting: true,
-                cell: ({ row }) => <EntityCell name={row.original.name} subline={row.original.kind} shape="square" icon={CreditCard} />,
+                cell: ({ row }) => (
+                    <EntityCell
+                        name={row.original.name}
+                        subline={[row.original.kind, row.original.system && "Till's own", row.original.shops > 1 && `One per shop (${row.original.shops})`]
+                            .filter(Boolean)
+                            .join(' · ')}
+                        shape="square"
+                        icon={CreditCard}
+                    />
+                ),
                 meta: { mobile: 'title' },
             },
             { id: 'where', header: 'Shown for', cell: ({ row }) => where(row.original) },
@@ -67,7 +76,9 @@ export default function PaymentTypes({ paymentTypes, counts, canEdit }: PaymentT
                             label={`Actions for ${row.original.name}`}
                             actions={[
                                 { label: 'Edit', icon: Pencil, onSelect: () => open(row.original) },
-                                { label: 'Remove', icon: Trash2, destructive: true, onSelect: () => setRemoving(row.original) },
+                                ...(row.original.system
+                                    ? []
+                                    : [{ label: 'Remove', icon: Trash2, destructive: true, onSelect: () => setRemoving(row.original) }]),
                             ]}
                         />
                     ) : null,
@@ -121,7 +132,7 @@ export default function PaymentTypes({ paymentTypes, counts, canEdit }: PaymentT
                 open={removing !== null}
                 onOpenChange={(o) => !o && setRemoving(null)}
                 title={`Remove ${removing?.name ?? 'this payment type'}?`}
-                description="It disappears from every till's pay screen at the next sync. Past sales keep it. To hide it for now, mark it inactive instead."
+                description={`It disappears from every till's pay screen at the next sync${removing && removing.shops > 1 ? `, in all ${removing.shops} shops` : ''}. Past sales keep it. To hide it for now, mark it inactive instead.`}
                 confirmLabel="Remove payment type"
                 destructive
                 onConfirm={() =>
