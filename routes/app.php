@@ -31,6 +31,7 @@ use App\Http\Controllers\App\SwitchBranchController;
 use App\Http\Controllers\App\SwitchCompanyController;
 use App\Http\Controllers\App\SyncConflictController;
 use App\Http\Controllers\App\TillListController;
+use App\Http\Controllers\App\TransferController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth:web', 'verified', 'company'])->group(function () {
@@ -217,6 +218,16 @@ Route::middleware(['auth:web', 'verified', 'company'])->group(function () {
             ->whereIn('kind', ['orders', 'deliveries', 'invoices', 'credit-notes', 'returns', 'payments', 'rebates']);
         Route::get('{kind}/{document}', [PurchasingController::class, 'document'])->name('documents.show')
             ->whereIn('kind', ['deliveries', 'invoices', 'credit-notes', 'returns'])->whereUlid('document');
+    });
+
+    // Module 5.3: stock transfers between shops, read only (the shops own them; ownership.json has no portal draft for
+    // them): transfers.view; a one-shop user sees transfers from or to their shop only. CSVs are throttled.
+    Route::prefix('transfers')->name('transfers.')->middleware('company.can:transfers.view')->group(function () {
+        Route::get('/', [TransferController::class, 'index'])->name('index');
+        Route::get('export', [TransferController::class, 'export'])->name('export')->middleware('throttle:30,1');
+        Route::get('discrepancies', [TransferController::class, 'discrepancies'])->name('discrepancies');
+        Route::get('discrepancies/export', [TransferController::class, 'discrepanciesExport'])->name('discrepancies.export')->middleware('throttle:30,1');
+        Route::get('{transfer}', [TransferController::class, 'show'])->name('show')->whereUlid('transfer');
     });
 
     // Module 4.7: shops and tills (licences read only, till health), shop and business details, "Ask for more tills".

@@ -53,6 +53,7 @@ enum CompanyRole: string
                 Ability::PurchasingView,
                 Ability::PurchasingManage,
                 Ability::StaffView,
+                Ability::TransfersView,
             ],
             self::Accountant => [
                 Ability::DashboardView,
@@ -64,6 +65,7 @@ enum CompanyRole: string
                 Ability::CashView,
                 Ability::PurchasingView,
                 Ability::StaffView,
+                Ability::TransfersView,
             ],
             self::Staff => [
                 Ability::DashboardView,

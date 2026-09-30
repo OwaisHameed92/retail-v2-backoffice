@@ -54,4 +54,7 @@ enum Ability: string
 
     /** Clock events, timesheets, payroll CSV and the rota, read only (module 5.6). Owner, manager, accountant. */
     case StaffView = 'staff.view';
+
+    /** Stock transfers between shops, their relay to the receiving till and discrepancies, read only (module 5.3). Owner, manager, accountant. */
+    case TransfersView = 'transfers.view';
 }
