@@ -35,6 +35,7 @@ final class ReportTables
             'decimals' => [
                 'gross' => 2, 'net' => 2, 'vat' => 2, 'refund_gross' => 2, 'refund_net' => 2, 'discount' => 2,
                 'promo' => 2, 'coupon' => 2, 'cost' => 4, 'container_deposits' => 2, 'takings' => 2, 'void_total' => 2,
+                'staff_discount' => 2, 'order_deposits' => 2, 'charity' => 2,
             ],
             'counts' => ['txn_count', 'refund_count', 'void_count'],
             'labels' => [],

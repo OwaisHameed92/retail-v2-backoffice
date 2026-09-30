@@ -8,6 +8,7 @@ use App\Domain\Shared\Support\Money;
  * The KPI tiles of DASHBOARD.md §2.2 for a scope. Money as fixed-scale strings (pounds), never floats. Refund
  * values are shown positive; every other figure is already net of refunds. `grossProfit` is null when no line had a
  * cost (§1.2: most shops enter none — hide the tile). Averages are null when there were no transactions ("—").
+ * `orderDeposits` and `charity` are not in any sales figure (till 0.1.15); they are in `takings` (money taken).
  */
 final readonly class SalesTotals
 {
@@ -27,6 +28,9 @@ final readonly class SalesTotals
         public string $takings,
         public int $voidCount,
         public string $voidTotal,
+        public string $staffDiscount = '0.00',
+        public string $orderDeposits = '0.00',
+        public string $charity = '0.00',
     ) {}
 
     /**
@@ -39,6 +43,7 @@ final readonly class SalesTotals
             (int) $sums['refund_count'], (string) $sums['refund_gross'], (string) $sums['refund_net'],
             (string) $sums['discount'], (string) $sums['promo'], (string) $sums['coupon'], (string) $sums['cost'],
             (string) $sums['container_deposits'], (string) $sums['takings'], (int) $sums['void_count'], (string) $sums['void_total'],
+            (string) $sums['staff_discount'], (string) $sums['order_deposits'], (string) $sums['charity'],
         );
     }
 
@@ -53,10 +58,10 @@ final readonly class SalesTotals
         return self::average($this->gross, $this->transactions);
     }
 
-    /** Manual and staff discounts: line discount minus the promotion and coupon shares. */
+    /** Manual discounts: line discount minus the promotion, coupon and staff-purchase shares (`discountSource`). */
     public function manualDiscount(): string
     {
-        return Money::sub(Money::sub($this->discount, $this->promo), $this->coupon);
+        return Money::sub(Money::sub(Money::sub($this->discount, $this->promo), $this->coupon), $this->staffDiscount);
     }
 
     public function grossProfit(): ?string

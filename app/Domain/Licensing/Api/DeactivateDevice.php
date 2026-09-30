@@ -83,7 +83,8 @@ class DeactivateDevice
     }
 
     /**
-     * The main till's next step, en-GB (ANSWERS-2026-09-30-portal point 6). Stable id: a repeat gives the same reply.
+     * The main till's next step, en-GB (ANSWERS-2026-09-30-portal point 6; sample deactivate-reply.main-till.same-key.json,
+     * till 0.1.15). Stable id: a repeat gives the same reply.
      *
      * @return array<string, mixed>
      */
@@ -93,7 +94,7 @@ class DeactivateDevice
             'id' => 'released-'.$licence->id,
             'level' => 'info',
             'title' => 'Till released',
-            'text' => 'To use this till on a new PC, install SSPOS there, restore your backup, then enter the same licence key under Settings → Licence. No transfer code is needed.',
+            'text' => 'Activate this same licence key on the new PC (Settings → Licence → Enter key). Restore your backup there first. No transfer code is needed.',
             'showFromUtc' => null,
             'showUntilUtc' => null,
             'dismissible' => false,

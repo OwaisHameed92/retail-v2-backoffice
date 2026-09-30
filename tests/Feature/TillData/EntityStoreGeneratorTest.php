@@ -119,9 +119,10 @@ it('writes additive migrations: applied releases are never rewritten, the curren
     $produced = array_keys(app(GenerateTillEntities::class)->render(new SchemaCatalog(base_path())));
     $previous = $lock['releases'][1];
     $v141 = $lock['releases'][2];
-    $current = $lock['releases'][3];
+    $v141b = $lock['releases'][3];
+    $current = $lock['releases'][4];
 
-    expect(array_column($lock['releases'], 'release'))->toBe(['v1.1', 'v1.3.1', 'v1.4.1', 'v1.4.1-b'])
+    expect(array_column($lock['releases'], 'release'))->toBe(['v1.1', 'v1.3.1', 'v1.4.1', 'v1.4.1-b', '0.1.15'])
         ->and($previous['migrations'])->toBe(['2026_10_02_100000_create_till_v1_3_1_tables.php', '2026_10_02_100001_add_till_v1_3_1_columns.php'])
         ->and($previous['tables']['products']['columns'])->toHaveKeys(['variant3_name', 'hub_hash', 'origin_branch_id', 'portal_received_at'])
         ->and($v141['migrations'])->toBe(['2026_10_06_100000_create_till_v1_4_1_tables.php', '2026_10_06_100001_add_till_v1_4_1_columns.php'])
@@ -134,10 +135,16 @@ it('writes additive migrations: applied releases are never rewritten, the curren
         ->and($v141['tables']['goods_receipt_lines']['columns'])->toBe(['damaged_qty' => "decimal('damaged_qty', 14, 4)->nullable()"])
         ->and($v141['tables']['till_sync_conflicts']['columns'])->toBe(['hub_change' => "longText('hub_change')->nullable()"])
         // ANSWERS-2026-09-29-b: PromotionRule.isGroupOffer arrives in its own additive migration.
-        ->and($current['migrations'])->toBe(['2026_10_10_100001_add_till_v1_4_1_b_columns.php'])
-        ->and($current['tables'])->toBe(['promotion_rules' => ['columns' => ['is_group_offer' => "boolean('is_group_offer')->nullable()"], 'indexes' => []]]);
+        ->and($v141b['migrations'])->toBe(['2026_10_10_100001_add_till_v1_4_1_b_columns.php'])
+        ->and($v141b['tables'])->toBe(['promotion_rules' => ['columns' => ['is_group_offer' => "boolean('is_group_offer')->nullable()"], 'indexes' => []]])
+        // Till 0.1.15 pack: ClockEvent.registerId and StoreCreditVoucher.note, in their own additive migration.
+        ->and($current['migrations'])->toBe(['2026_10_25_100001_add_till_0_1_15_columns.php'])
+        ->and($current['tables'])->toBe([
+            'clock_events' => ['columns' => ['register_id' => "string('register_id', 64)->nullable()"], 'indexes' => []],
+            'store_credit_vouchers' => ['columns' => ['note' => "text('note')->nullable()"], 'indexes' => []],
+        ]);
 
-    foreach ([...$lock['releases'][0]['migrations'], ...$previous['migrations'], ...$v141['migrations']] as $applied) {
+    foreach ([...$lock['releases'][0]['migrations'], ...$previous['migrations'], ...$v141['migrations'], ...$v141b['migrations']] as $applied) {
         expect(file_exists(database_path("migrations/{$applied}")))->toBeTrue()
             ->and($produced)->not->toContain("database/migrations/{$applied}");
     }

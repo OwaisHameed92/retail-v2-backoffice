@@ -203,7 +203,13 @@ test('ANSWERS-2026-09-30-portal points 4 and 5: a portal licence key not yet act
 
     ($this->migrate)(['activationCode' => self::KEY, 'localLicenceToken' => null])->assertStatus(409)
         ->assertJsonPath('code', 'migrate.activate_first')
-        ->assertJsonPath('message', 'Enter this licence key under Settings → Licence first.');
+        ->assertJsonPath('message', "Activate this till's licence key first (Settings → Licence → Enter key), then press Connect again with the same key.")
+        ->assertJsonPath('details', null);
+    // error.migrate-activate-first.409.json (till 0.1.15 pack): the same members; the key is not spent (no wrong-code hit).
+    $sample = SsposDocs::sample('error.migrate-activate-first.409.json');
+    $reply = ($this->migrate)(['activationCode' => self::KEY, 'localLicenceToken' => null])->assertStatus(409);
+    expect(array_keys($reply->json()))->toEqualCanonicalizing(array_keys($sample))
+        ->and($reply->json('code'))->toBe($sample['code']);
 
     $this->activateTill(install: self::OTHER_INSTALL, code: self::OTHER_CODE)->assertOk();
     ($this->migrate)(['activationCode' => self::KEY, 'localLicenceToken' => null])->assertStatus(409)->assertJsonPath('code', 'activation.code_used');

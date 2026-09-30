@@ -10,7 +10,7 @@ Contract v1.4.1: `docs/contracts/portal-api-v1.4.1/docs/web-portal-api.md` §5�
 |---|---|---|
 | Overrides | `app/Domain/TillData/definitions.php` | hand |
 | Generator | `app/Domain/TillData/Generator/*`, `php artisan till:entities:generate` | hand |
-| Migrations, additive per release | v1.1: `2026_09_27_1100NN_create_till_<group>_tables.php`; v1.3.1: `2026_10_02_10000{0,1}_…_v1_3_1_…`; v1.4.1: `2026_10_06_100000_create_till_v1_4_1_tables.php`, `2026_10_06_100001_add_till_v1_4_1_columns.php` (+ hand `2026_10_06_100002_add_v1_4_1_sync_columns.php`) | generated |
+| Migrations, additive per release | v1.1: `2026_09_27_1100NN_create_till_<group>_tables.php`; v1.3.1: `2026_10_02_10000{0,1}_…_v1_3_1_…`; v1.4.1: `2026_10_06_100000_create_till_v1_4_1_tables.php`, `2026_10_06_100001_add_till_v1_4_1_columns.php` (+ hand `2026_10_06_100002_add_v1_4_1_sync_columns.php`); v1.4.1-b: `2026_10_10_100001_…`; till 0.1.15 pack (release `0.1.15`): `2026_10_25_100001_add_till_0_1_15_columns.php` (`ClockEvent.register_id`, `StoreCreditVoucher.note`) | generated |
 | Schema lock | `database/till-schema.json`: what each release's migrations made | generated |
 | Models (141) | `app/Domain/TillData/Models/*.php` | generated |
 | Enums (88) | `app/Domain/TillData/Enums/*.php` | generated |

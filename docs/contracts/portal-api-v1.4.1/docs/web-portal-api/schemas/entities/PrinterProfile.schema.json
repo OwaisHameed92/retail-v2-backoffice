@@ -27,7 +27,8 @@
         "windows",
         "serial",
         "tcp",
-        "file"
+        "file",
+        "usb"
       ]
     },
     "address": {

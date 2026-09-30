@@ -33,12 +33,12 @@ final class MigrationErrors
     }
 
     /**
-     * A portal licence key not yet activated on any PC (ANSWERS-2026-09-30-portal point 4; code proposed by EPOS,
-     * pending in error-codes.json). Never `activation.code_used`: nobody is using it.
+     * A portal licence key not yet activated on any PC (ANSWERS-2026-09-30-portal point 4; official since the till
+     * 0.1.15 pack, error-codes.json). Never `activation.code_used`: nobody is using it, and the key is not spent.
      */
     public static function activateFirst(): ApiException
     {
-        return new ApiException('migrate.activate_first', 'Enter this licence key under Settings → Licence first.', 409);
+        return new ApiException('migrate.activate_first', "Activate this till's licence key first (Settings → Licence → Enter key), then press Connect again with the same key.", 409);
     }
 
     public static function branchAlreadyLinked(string $branchName, CloudUpload $upload, ?string $tillRegisterId): ApiException

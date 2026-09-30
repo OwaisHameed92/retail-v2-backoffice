@@ -14,4 +14,5 @@ enum PrinterProfileTransport: string
     case Serial = 'serial';
     case Tcp = 'tcp';
     case File = 'file';
+    case Usb = 'usb';
 }

@@ -90,6 +90,8 @@ final class ContractSampleCoverage
             'licensing/samples/deactivate-reply.json' => ['tests' => [[$licence, 'deactivate-request.json']]],
             'licensing/samples/deactivate-request.main-till.json' => ['tests' => [[$licence, 'deactivate-request.main-till.json']]],
             'licensing/samples/deactivate-reply.main-till.json' => ['tests' => [[$licence, 'deactivate-request.main-till.json']]],
+            'licensing/samples/deactivate-reply.main-till.same-key.json' => ['tests' => [[$licence, 'deactivate-reply.main-till.same-key.json']]],
+            'licensing/samples/error.migrate-activate-first.409.json' => ['tests' => [[self::MIGRATE, 'ANSWERS-2026-09-30-portal points 4 and 5']]],
             'licensing/samples/error-codes.json' => ['tests' => [['Contract/ErrorCodesTest.php', 'every error code the portal emits']]],
             'licensing/samples/error.activation-too-many-attempts.429.json' => ['tests' => [[$licence, 'the error samples we emit']]],
             'licensing/samples/error.key-already-used.409.json' => ['tests' => [[$licence, 'the error samples we emit']]],

@@ -34,6 +34,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property CarbonImmutable|null $expires_at
  * @property bool $is_active
  * @property CarbonImmutable|null $cancelled_at
+ * @property string $note
  * @property int $row_version
  * @property CarbonImmutable|null $created_at
  * @property CarbonImmutable|null $updated_at

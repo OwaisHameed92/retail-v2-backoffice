@@ -69,7 +69,7 @@ test('ANSWERS-2026-09-30-portal point 6: the main till gets no transfer code, ap
     expect($reply->json())->toMatchArray(['apiKeyRevoked' => true, 'transferCode' => null, 'transferCodeExpiresAt' => null])
         ->and($reply->json('messages'))->toHaveCount(1)
         ->and($reply->json('messages.0'))->toMatchArray(['level' => 'info', 'title' => 'Till released', 'dismissible' => false])
-        ->and($reply->json('messages.0.text'))->toContain('same licence key under Settings → Licence')
+        ->and($reply->json('messages.0.text'))->toContain('Activate this same licence key on the new PC')
         ->and($this->deactivateTill()->assertOk()->json())->toBe($reply->json());   // idempotent
 
     $moved = $this->activateTill(install: self::OTHER_INSTALL, code: self::OTHER_CODE)->assertOk();

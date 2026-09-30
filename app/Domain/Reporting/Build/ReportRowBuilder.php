@@ -10,9 +10,13 @@ use App\Domain\Shared\Support\Money;
  * Turns SaleFacts' grouped rows into the rows of every `rpt_*` table for one shop's trading days (DASHBOARD.md
  * §4.2–4.6). Pure: nothing is written. Sums are whole units added with bcmath; refunds are already negative in the
  * raw rows, so everything is a signed sum and only the "refunds" columns are negated to show them positive (§1.5).
+ * Order deposits and charity round-ups are not sales (till 0.1.15): taken off every SaleVat figure, summed on their own.
  */
 final class ReportRowBuilder
 {
+    /** Tables whose all-zero rows are left out (an order deposit or charity line cancels its SaleVat row). */
+    private const DROP_WHEN_EMPTY = [ReportTables::SALES_HOURLY, ReportTables::VAT_DAILY];
+
     /** @var array<string, array<string, array<string, mixed>>> table => row key => row (decimals in units) */
     private array $rows = [];
 
@@ -38,6 +42,10 @@ final class ReportRowBuilder
 
         foreach ($facts->lines() as $row) {
             $builder->line($row);
+        }
+
+        foreach ($facts->nonSaleLines() as $row) {
+            $builder->nonSale($row);
         }
 
         foreach ($facts->staffReturns() as $row) {
@@ -104,7 +112,7 @@ final class ReportRowBuilder
 
         $this->add(ReportTables::SALES_DAILY, $day, ['register_id' => $register], $returned
             ? ['refund_gross' => Units::neg($goods), 'refund_net' => Units::neg($net), 'cost' => $cost]
-            : ['discount' => Units::of($r->discount), 'promo' => Units::of($r->promo), 'coupon' => Units::of($r->coupon), 'cost' => $cost]);
+            : ['discount' => Units::of($r->discount), 'promo' => Units::of($r->promo), 'coupon' => Units::of($r->coupon), 'staff_discount' => Units::of($r->staff), 'cost' => $cost]);
 
         $product = ['gross' => $goods, 'net' => $net, 'vat' => $vat, 'cost' => $cost];
         $product += $returned
@@ -113,6 +121,27 @@ final class ReportRowBuilder
         $name = mb_substr((string) ($r->name ?? ''), 0, 255);
 
         $this->add(ReportTables::PRODUCT_DAILY, $day, ['register_id' => $register, 'product_id' => self::id($r->product_id)], $product, [], ['last_name' => $name], (string) $r->latest.'|'.$name);
+    }
+
+    /** An order-deposit or charity line group: out of the SaleVat figures it is part of, into its own column. */
+    private function nonSale(object $r): void
+    {
+        $day = self::day($r);
+        $register = self::id($r->register_id);
+        $gross = Units::of($r->goods);
+        $vat = Units::of($r->vat);
+        $net = Units::sub($gross, $vat);
+        $less = ['gross' => Units::neg($gross), 'net' => Units::neg($net)];
+        $own = $r->kind === 'deposit' ? 'order_deposits' : 'charity';
+
+        $this->add(ReportTables::SALES_DAILY, $day, ['register_id' => $register], [...$less, 'vat' => Units::neg($vat), $own => $gross]);
+        $this->add(ReportTables::STAFF_DAILY, $day, ['register_id' => $register, 'user_id' => self::id($r->user_id)], $less);
+        $this->add(ReportTables::SALES_HOURLY, $day, ['register_id' => $register, 'hour' => (int) $r->trading_hour], $less);
+        $this->add(ReportTables::VAT_DAILY, $day, [
+            'register_id' => $register,
+            'vat_rate_id' => self::id($r->vat_rate_id),
+            'percentage' => Money::normalise($r->vat_percentage ?? 0, 4),
+        ], [...$less, 'vat' => Units::neg($vat)]);
     }
 
     private function payment(object $r): void
@@ -186,6 +215,10 @@ final class ReportRowBuilder
             ksort($rows);
 
             foreach ($rows as $row) {
+                if (in_array($table, self::DROP_WHEN_EMPTY, true) && self::isEmpty($row, $def)) {
+                    continue; // e.g. the VAT rate or hour of a deposit-only sale: nothing left once the deposit is out
+                }
+
                 foreach ($def['decimals'] as $column => $scale) {
                     $row[$column] = Units::decimal((string) $row[$column], $scale);
                 }
@@ -202,6 +235,21 @@ final class ReportRowBuilder
         }
 
         return $out;
+    }
+
+    /**
+     * @param  array<string, mixed>  $row
+     * @param  array{decimals: array<string, int>, counts: list<string>}  $def
+     */
+    private static function isEmpty(array $row, array $def): bool
+    {
+        foreach ([...array_keys($def['decimals']), ...$def['counts']] as $column) {
+            if ((string) $row[$column] !== '0') {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private static function day(object $row): string

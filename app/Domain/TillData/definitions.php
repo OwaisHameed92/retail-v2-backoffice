@@ -31,7 +31,7 @@ return [
      * missing columns and indexes. database/till-schema.json records what each release's migrations made (v1.1:
      * the ten 2026_09_27_1100NN group migrations). For the next contract: new name and a later prefix.
      */
-    'release' => ['name' => 'v1.4.1-b', 'migrationPrefix' => '2026_10_10_1000'],
+    'release' => ['name' => '0.1.15', 'migrationPrefix' => '2026_10_25_1000'],
 
     /* Entity groups: the order tables are created in. Every schema entity must be in exactly one group. */
     'groups' => [

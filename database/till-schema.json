@@ -6092,6 +6092,26 @@
                     "indexes": []
                 }
             }
+        },
+        {
+            "release": "0.1.15",
+            "migrations": [
+                "2026_10_25_100001_add_till_0_1_15_columns.php"
+            ],
+            "tables": {
+                "clock_events": {
+                    "columns": {
+                        "register_id": "string('register_id', 64)->nullable()"
+                    },
+                    "indexes": []
+                },
+                "store_credit_vouchers": {
+                    "columns": {
+                        "note": "text('note')->nullable()"
+                    },
+                    "indexes": []
+                }
+            }
         }
     ]
 }

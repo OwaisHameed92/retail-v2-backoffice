@@ -15,7 +15,8 @@
         "redeem",
         "reload",
         "expire",
-        "cancel"
+        "cancel",
+        "refund"
       ]
     },
     "amount": {

@@ -497,6 +497,26 @@ paths:
                         showUntilUtc: "2026-10-11T17:00:00Z"
                         dismissible: false
                         link: null
+                mainTillSameKey:
+                  summary: Released, no transfer code - the same key goes on the new PC (per-till, 2026-09-30)
+                  value:
+                    registerId: "01K5T0Q8C4000000000000R001"
+                    seat: deactivated
+                    seatsInUse: 0
+                    maxRegisters: 3
+                    apiKeyRevoked: true
+                    transferCode: null
+                    transferCodeExpiresAt: null
+                    portalTimeUtc: "2026-10-04T17:00:01Z"
+                    messages:
+                      - id: "01K5T0Q8C4000000000000M007"
+                        level: info
+                        title: Till released
+                        text: Activate this same licence key on the new PC (Settings - Licence - Enter key). Restore your backup there first.
+                        showFromUtc: null
+                        showUntilUtc: null
+                        dismissible: false
+                        link: null
         "400":
           $ref: "#/components/responses/E400"
         "401":
@@ -1528,7 +1548,7 @@ components:
                 rejectedKey: null
                 details: null
     E409:
-      description: "Conflict. Codes: `request.in_progress` (*); `contract.unsupported` (*); `activation.code_used` (devices/activate, cloud/migrate); `activation.use_migrate` (devices/activate); `device.branch_already_linked` (devices/activate, cloud/migrate); `key.already_redeemed` (licence/redeem); `migrate.already_migrated` (cloud/migrate); `migrate.upload_closed` (sync/push (initial)); `key.already_used` (licence/activate); `key.used_on_another_install` (licence/redeem); `licence.ids_conflict` (licence/activate, licence/validate); `sync_key.used` (cloud/migrate). Full list: licensing/samples/error-codes.json."
+      description: "Conflict. Codes: `request.in_progress` (*); `contract.unsupported` (*); `activation.code_used` (devices/activate, cloud/migrate); `activation.use_migrate` (devices/activate); `device.branch_already_linked` (devices/activate, cloud/migrate); `key.already_redeemed` (licence/redeem); `migrate.already_migrated` (cloud/migrate); `migrate.activate_first` (cloud/migrate); `migrate.upload_closed` (sync/push (initial)); `key.already_used` (licence/activate); `key.used_on_another_install` (licence/redeem); `licence.ids_conflict` (licence/activate, licence/validate); `sync_key.used` (cloud/migrate). Full list: licensing/samples/error-codes.json."
       headers:
         X-SSPOS-Contract:
           $ref: "#/components/headers/Contract"
@@ -1582,6 +1602,15 @@ components:
                   licenceId: "01K5M1GR8T000000000000Y004"
                   installCode: "Q3EG-1RNC"
                   firstSeenUtc: "2026-09-28T11:02:14Z"
+            migrate-activate-first:
+              summary: error.migrate-activate-first.409
+              value:
+                code: migrate.activate_first
+                message: "Activate this till's licence key first (Settings - Licence - Enter key), then press Connect again with the same sync key."
+                traceId: req-5d20c4
+                retryAfterSeconds: null
+                rejectedKey: null
+                details: null
             use-migrate:
               summary: error.use-migrate.409
               value:

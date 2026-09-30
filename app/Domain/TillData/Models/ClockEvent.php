@@ -26,6 +26,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property ClockEventType|null $type
  * @property CarbonImmutable $at
  * @property string $note
+ * @property string|null $register_id
  * @property int $row_version
  * @property CarbonImmutable|null $created_at
  * @property CarbonImmutable|null $updated_at

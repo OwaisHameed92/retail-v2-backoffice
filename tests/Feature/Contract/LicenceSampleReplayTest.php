@@ -135,6 +135,27 @@ test('deactivate-request.main-till.json: the main till that holds the branch syn
     expect($reply->json())->toMatchArray(['registerId' => $request['registerId'], 'seat' => 'deactivated', 'apiKeyRevoked' => true, 'transferCode' => null]);
 });
 
+test('deactivate-reply.main-till.same-key.json: the main till is released with no transfer code, the next step in messages[], and the same key activates on a new PC', function () {
+    $this->licence->forceFill(['features' => ['cloud_sync']])->save();
+    $request = SsposDocs::sample('deactivate-request.main-till.json');
+    $activate = [...$this->activateBody(install: $request['installId']), 'existingIds' => ['companyId' => self::TILL_COMPANY, 'branchId' => self::TILL_BRANCH, 'registerId' => $request['registerId']]];
+    $this->till('licence/activate', $activate, $this->tillHeaders($request['installId']))->assertOk();
+
+    $reply = $this->till('devices/deactivate', $request, $this->tillHeaders($request['installId']))->assertOk();
+    $sample = SsposDocs::sample('deactivate-reply.main-till.same-key.json');
+
+    ($this->sameMembers)($reply, 'deactivate-reply.main-till.same-key.json');
+    expect($reply->json())->toMatchArray(['seat' => $sample['seat'], 'apiKeyRevoked' => true, 'transferCode' => null, 'transferCodeExpiresAt' => null])
+        ->and($reply->json('messages'))->toHaveCount(1)
+        ->and(array_keys($reply->json('messages.0')))->toEqualCanonicalizing(array_keys($sample['messages'][0]))
+        ->and($reply->json('messages.0'))->toMatchArray(['level' => 'info', 'title' => $sample['messages'][0]['title'], 'dismissible' => false])
+        ->and($reply->json('messages.0.text'))->toStartWith('Activate this same licence key on the new PC');
+
+    // The key's binding to the old install is released: the new PC's licence/activate gets 200, not key.already_used.
+    $this->activateTill(install: self::OTHER_INSTALL, code: self::OTHER_CODE)->assertOk();
+    expect($this->licence->fresh()->device_id)->toBe(self::OTHER_INSTALL);
+});
+
 test('the error samples we emit: same HTTP status, code and details members', function () {
     config(['licence.api.rate_limits.activate_per_ip_per_hour' => 100]);
     $branch = $this->branchOf($this->company);

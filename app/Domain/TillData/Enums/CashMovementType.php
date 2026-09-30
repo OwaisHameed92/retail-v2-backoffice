@@ -25,4 +25,6 @@ enum CashMovementType: string
     case ChangeOrderReceived = 'changeOrderReceived';
     case CashReconciliationVariance = 'cashReconciliationVariance';
     case SafeBankDrop = 'safeBankDrop';
+    case VoucherSale = 'voucherSale';
+    case AccountPayment = 'accountPayment';
 }

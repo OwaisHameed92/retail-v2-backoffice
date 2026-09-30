@@ -31,7 +31,7 @@
           "type": "null"
         }
       ],
-      "description": "When the main till released itself: a one-time activation code for the replacement PC."
+      "description": "Per-till licences (the portal's choice, 2026-09-30): null — the same licence key is activated again on the new PC and messages[] says so; the till shows that text and never treats null as an error. A one-time code is still accepted (branch model): the till shows it once with Copy."
     },
     "transferCodeExpiresAt": {
       "$ref": "common.schema.json#/$defs/utcOrNull"
@@ -40,7 +40,8 @@
       "$ref": "common.schema.json#/$defs/utc"
     },
     "messages": {
-      "$ref": "common.schema.json#/$defs/messages"
+      "$ref": "common.schema.json#/$defs/messages",
+      "description": "When transferCode is null, put the next step here (e.g. \"Activate this same licence key on the new PC\"): the till shows it straight after Deactivate. None sent: the till says to enter the same licence key on the new PC."
     }
   },
   "required": [

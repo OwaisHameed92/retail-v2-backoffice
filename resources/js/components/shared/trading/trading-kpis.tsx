@@ -1,5 +1,5 @@
 import { changeDelta, money, moneyShort, number } from '@/components/shared/trading/format';
-import { type SalesDashboardData } from '@/components/shared/trading/types';
+import { type SalesDashboardData, type SalesTotals } from '@/components/shared/trading/types';
 import { KpiCard, KpiGrid } from '@/components/shared/kpi-card';
 import { StatCard } from '@/components/shared/stat-card';
 import { Banknote, Percent, PoundSterling, Receipt, ReceiptText, RotateCcw, ShoppingBasket, Tags, TrendingUp, XCircle } from 'lucide-react';
@@ -11,6 +11,24 @@ function previousFooter(previous: string | null, label: string, format: (v: stri
     }
 
     return `${format(previous)} ${label.replace(/^vs /, '')}`;
+}
+
+/** What the takings include that is not a sale: container deposits, order deposits, charity round-ups. */
+function takingsHint(totals: SalesTotals): string {
+    const parts = [
+        ['container deposits', totals.containerDeposits],
+        ['order deposits', totals.orderDeposits],
+        ['charity', totals.charity],
+    ].filter(([, value]) => Number(value) !== 0);
+
+    return parts.length === 0 ? 'Payments less change and cashback' : `Incl. ${parts.map(([name, value]) => `${name} ${money(value)}`).join(', ')}`;
+}
+
+/** Promotions always; staff-purchase discounts (kept apart from manual ones) when there were any. */
+function discountHint(totals: SalesTotals): string {
+    const promotions = `Promotions ${money(totals.promo)}`;
+
+    return Number(totals.staffDiscount) !== 0 ? `${promotions} · Staff ${money(totals.staffDiscount)}` : promotions;
 }
 
 /**
@@ -83,7 +101,7 @@ export function TradingKpis({ data }: { data: SalesDashboardData }) {
                     icon={Banknote}
                     tone="success"
                     delta={changeDelta(changes?.takings, label)}
-                    hint={Number(totals.containerDeposits) !== 0 ? `of which deposits ${money(totals.containerDeposits)}` : 'Payments less change and cashback'}
+                    hint={takingsHint(totals)}
                 />
                 <StatCard
                     label="Refunds"
@@ -99,7 +117,7 @@ export function TradingKpis({ data }: { data: SalesDashboardData }) {
                     icon={Tags}
                     tone="primary"
                     delta={changeDelta(changes?.discount, label, 'down')}
-                    hint={`Promotions ${money(totals.promo)}`}
+                    hint={discountHint(totals)}
                 />
                 <StatCard
                     label="Voided baskets"

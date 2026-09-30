@@ -67,6 +67,9 @@
       ],
       "format": "date-time"
     },
+    "note": {
+      "type": "string"
+    },
     "isActivated": {
       "type": "boolean"
     },
@@ -153,6 +156,7 @@
     "expiresAt",
     "isActive",
     "cancelledAt",
+    "note",
     "isActivated",
     "hasBalance",
     "branchId",

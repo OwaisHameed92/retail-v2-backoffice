@@ -474,6 +474,17 @@
     "retryable": false
   },
   {
+    "code": "migrate.activate_first",
+    "status": 409,
+    "endpoints": [
+      "cloud/migrate"
+    ],
+    "meaning": "This install has no licence activated on the portal yet (portal, 2026-09-30). The till must call licence/activate with its licence key first, then cloud/migrate again with the same sync key. The sync key is not spent.",
+    "tillDoes": "Connect: saves nothing and shows 'Activate this till's licence first: go to Settings - Licence - Enter key and enter the licence key from your e-mail. When it is accepted, press Connect again with the same sync key.' Background move (a key typed with no internet): keeps the key, backs off and tries again; Sync status says to enter the licence key first. Never locks the till.",
+    "details": null,
+    "retryable": false
+  },
+  {
     "code": "migrate.upload_not_found",
     "status": 404,
     "endpoints": [

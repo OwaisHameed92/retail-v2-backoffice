@@ -16,6 +16,12 @@ use Illuminate\Support\Facades\DB;
  * Counted sale (§1.4): status `completed`, `completed_at` set, type sale / refund / exchange / deposit, not deleted.
  * Children join their sale (§1.6) and skip their own deleted rows. Returned line (§1.5): a line of a refund, or a
  * line with qty < 0 on an exchange. Payments: `approved` and `recovered` only (`reversed` was never money taken).
+ *
+ * Not sales (till 0.1.15, PORTAL-CHANGES-0.1.15 items 5 and 9): an order deposit (line `ORDER-DEPOSIT`, held on account
+ * 2240 until the order is collected, when the goods are sold) and a charity round-up (line `CHARITY-ROUNDUP` or
+ * `isCharityRoundUp`, held on 2250). Their lines are kept out of `lines()` and `staffReturns()` and come back from
+ * `nonSaleLines()`, which the builder takes off the SaleVat figures and reports on their own. A `deposit` sale is not
+ * a transaction.
  */
 final readonly class SaleFacts
 {
@@ -28,6 +34,17 @@ final readonly class SaleFacts
     private const RETURNED_LINE = "(s.type = 'refund' OR (s.type = 'exchange' AND l.qty < 0))";
 
     private const REFUND_PAYMENT = "(s.type = 'refund' OR (s.type = 'exchange' AND p.amount < 0))";
+
+    public const ORDER_DEPOSIT = 'ORDER-DEPOSIT';
+
+    public const CHARITY_ROUND_UP = 'CHARITY-ROUNDUP';
+
+    /** What a line is: `goods` (a sale), `deposit` or `charity` (not sales). Null-safe: a line with no product is goods. */
+    private const LINE_KIND = "CASE WHEN l.product_id = '".self::ORDER_DEPOSIT."' THEN 'deposit'"
+        ." WHEN l.product_id = '".self::CHARITY_ROUND_UP."' OR l.is_charity_round_up = 1 THEN 'charity' ELSE 'goods' END";
+
+    /** The manual-style share of a line's discount (lineDiscount already includes the promotion and coupon shares). */
+    private const OWN_DISCOUNT = 'l.line_discount - COALESCE(l.promotion_discount, 0) - COALESCE(l.coupon_discount, 0)';
 
     /**
      * @param  list<string>  $days  trading days "Y-m-d"
@@ -45,7 +62,7 @@ final readonly class SaleFacts
             ->groupBy('s.trading_day', 's.register_id', 's.user_id', 's.trading_hour')
             ->select([
                 's.trading_day', 's.register_id', 's.user_id', 's.trading_hour',
-                Units::countIf(self::COUNTED." AND s.type <> 'refund'", 'txn_count'),
+                Units::countIf(self::COUNTED." AND s.type NOT IN ('refund', 'deposit')", 'txn_count'),
                 Units::countIf(self::COUNTED." AND s.type = 'refund'", 'refund_count'),
                 Units::countIf(self::VOIDED, 'void_count'),
                 Units::sumIf(self::COUNTED, 's.total', 2, 'takings'),
@@ -95,8 +112,28 @@ final readonly class SaleFacts
                 Units::sum('l.line_discount', 2, 'discount'),
                 Units::sum('l.promotion_discount', 2, 'promo'),
                 Units::sum('l.coupon_discount', 2, 'coupon'),
+                Units::sumIf("l.discount_source = 'staff'", self::OWN_DISCOUNT, 2, 'staff'),
                 Units::sum('l.cost_at_sale', 4, 'cost'),
                 DB::raw('MAX(s.completed_at) as latest'),
+            ])->get()->all();
+    }
+
+    /**
+     * Order-deposit and charity round-up lines per till, cashier, hour, VAT rate and kind: taken off the SaleVat
+     * figures (they are in the sale's SaleVat rows) and summed on their own.
+     *
+     * @return list<object>
+     */
+    public function nonSaleLines(): array
+    {
+        return $this->lineQuery(goods: false)
+            ->groupBy('s.trading_day', 's.register_id', 's.user_id', 's.trading_hour', 'l.vat_rate_id', 'l.vat_percentage')
+            ->groupByRaw(self::LINE_KIND)
+            ->select([
+                's.trading_day', 's.register_id', 's.user_id', 's.trading_hour', 'l.vat_rate_id', 'l.vat_percentage',
+                DB::raw(self::LINE_KIND.' as kind'),
+                Units::sum('l.goods_total', 2, 'goods'),
+                Units::sum('l.vat_amount', 2, 'vat'),
             ])->get()->all();
     }
 
@@ -158,10 +195,12 @@ final readonly class SaleFacts
         return $this->base()->where('s.status', 'completed')->whereNotNull('s.completed_at');
     }
 
-    private function lineQuery(): Builder
+    /** Lines of counted sales: goods only (default), or only the order-deposit and charity lines. */
+    private function lineQuery(bool $goods = true): Builder
     {
         return $this->counted()
             ->join('sale_lines as l', fn (JoinClause $j) => $j->on('l.sale_id', '=', 's.id')->on('l.company_id', '=', 's.company_id'))
-            ->whereNull('l.deleted_at');
+            ->whereNull('l.deleted_at')
+            ->whereRaw(self::LINE_KIND.($goods ? " = 'goods'" : " <> 'goods'"));
     }
 }

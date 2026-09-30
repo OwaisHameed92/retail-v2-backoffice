@@ -49,6 +49,9 @@ export interface SalesTotals {
     takings: string;
     voidCount: number;
     voidTotal: string;
+    staffDiscount: string;
+    orderDeposits: string;
+    charity: string;
     averageBasketExVat: string | null;
     averageBasketIncVat: string | null;
     manualDiscount: string;

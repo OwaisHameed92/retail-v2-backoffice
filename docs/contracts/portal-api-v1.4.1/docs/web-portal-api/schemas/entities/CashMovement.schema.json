@@ -27,7 +27,9 @@
         "pettyCashIn",
         "changeOrderReceived",
         "cashReconciliationVariance",
-        "safeBankDrop"
+        "safeBankDrop",
+        "voucherSale",
+        "accountPayment"
       ]
     },
     "amount": {

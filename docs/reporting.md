@@ -15,16 +15,19 @@ Money `decimal(12,2)`, quantities and costs `decimal(14,4)`, signed (refunds net
 
 | Table | Key | Columns (formula over counted sales of the shop, till and day) |
 |---|---|---|
-| `rpt_sales_daily` | till | `gross`/`net`/`vat` = Σ SaleVat; `txn_count` (type ≠ refund), `refund_count`; `refund_gross`/`refund_net` = −Σ returned lines' goodsTotal / (goodsTotal − vatAmount); `discount`/`promo`/`coupon` = Σ non-returned lines; `cost` = Σ costAtSale (all lines); `container_deposits` = Σ Sale.depositTotal; `takings` = Σ Sale.total; `void_count`/`void_total` (voided baskets) |
+| `rpt_sales_daily` | till | `gross`/`net`/`vat` = Σ SaleVat less order-deposit and charity lines; `txn_count` (type ≠ refund, deposit), `refund_count`; `refund_gross`/`refund_net` = −Σ returned lines' goodsTotal / (goodsTotal − vatAmount); `discount`/`promo`/`coupon` = Σ non-returned lines; `cost` = Σ costAtSale (all lines); `staff_discount` = Σ non-returned lines with `discountSource` staff (lineDiscount − promo − coupon); `container_deposits` = Σ Sale.depositTotal; `order_deposits` / `charity` = Σ goodsTotal of `ORDER-DEPOSIT` / `CHARITY-ROUNDUP` lines; `takings` = Σ Sale.total; `void_count`/`void_total` (voided baskets) |
 | `rpt_sales_hourly` | till, local `hour` | `net`, `gross` (SaleVat), `txn_count` |
-| `rpt_tender_daily` | till, `payment_type_id` | `amount` = Σ (amount − cashback − changeGiven), `count`, `refunds` = −Σ of refund payments and negative exchange payments; newest `payment_type_name`. Approved and recovered payments only |
+| `rpt_tender_daily` | till, `payment_type_id` | `amount` = Σ (amount − cashback − changeGiven), `count`, `refunds` = −Σ of refund payments and negative exchange payments; newest `payment_type_name`. Approved and recovered payments only. Read: one line per name (payment types are made per shop) |
 | `rpt_product_daily` | till, `product_id` | `qty`/`refund_qty` (baseQty, sold / returned), `gross`/`net`/`vat` (all lines, signed), `refund_net`, `discount`, `promo`, `cost`, `last_name` (newest line name). Department / category joined when read |
 | `rpt_vat_daily` | till, `vat_rate_id`, `percentage` | `code`, `net`, `vat`, `gross` |
 | `rpt_staff_daily` | till, `user_id` | `gross`, `net`, `txn_count`, `refund_count`, `refund_gross`, `void_count` |
 | `rpt_dirty_days` | company, shop, day | `token` (new on every mark), `marked_at` |
 
 **Counted sale** (§1.4): `status = completed`, `completed_at` set, type `sale|refund|exchange|deposit`, not deleted.
-Training, quotes, open and held baskets never count. **Returned line**: a line of a refund, or qty < 0 on an exchange.
+Training, quotes, open and held baskets never count.
+**Not sales** (till 0.1.15): order-deposit lines (`productId` `ORDER-DEPOSIT`, held on 2240 until collection sells the goods)
+and charity round-ups (`CHARITY-ROUNDUP` or `isCharityRoundUp`, held on 2250) are taken off every SaleVat figure and
+kept out of product, refund and staff figures; they are summed on their own and stay in takings. All-zero hourly and VAT rows are dropped. **Returned line**: a line of a refund, or qty < 0 on an exchange.
 **Refunds** are their own sales with negative amounts: every figure is a signed sum; only the refund columns are
 negated to show them positive, and a refund lands on its own day.
 
@@ -54,7 +57,7 @@ hours of the October change are hour 1. `config/reporting.php` `timezone` (`REPO
 4. `reports:process-dirty` (every minute) re-queues businesses whose days waited more than 2 minutes (lost or
    failed job).
 
-A rebuild is 5 grouped queries (`SaleFacts`, sums in whole pence so SQLite REAL never drifts) plus one delete and
+A rebuild is 6 grouped queries (`SaleFacts`, sums in whole pence so SQLite REAL never drifts) plus one delete and
 one bulk insert per table, whatever the number of sales (a test proves the query count is fixed). Replays,
 duplicates, out-of-order children, an open → completed sale, an edit of a completed sale (kept out as an immutable
 conflict), a soft delete and late refunds cannot double-count: a day is always recomputed from the raw rows.

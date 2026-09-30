@@ -16,4 +16,5 @@ enum VoucherTransactionType: string
     case Reload = 'reload';
     case Expire = 'expire';
     case Cancel = 'cancel';
+    case Refund = 'refund';
 }
