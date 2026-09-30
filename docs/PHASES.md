@@ -10,7 +10,7 @@ Each module is one agent task. Modules in the same wave can run in parallel. Sta
 included) pass, the UI follows `docs/BRAND.md`, and `composer check`, `npm run lint`, `npx tsc --noEmit` and
 `npm run build` are green.
 
-Totals: **64 modules · 38 done · 26 todo** (2026-09-30, counted from the tables of phases 0–7; 2.9 split into A and
+Totals: **64 modules · 42 done · 22 todo** (2026-09-30, counted from the tables of phases 0–7; 2.9 split into A and
 B; Phase 8's five later items are not modules yet).
 
 ---
@@ -75,7 +75,7 @@ Contract: v1.4.1 `docs/web-portal-api/DASHBOARD.md` (formulas; we build them on 
 | 3.2 | Admin dashboard: trading | Every Admin-panel tile and chart across all businesses, per business and shop. Built: **Trading** tab of the admin dashboard (`/admin/trading`, new `trading.view`: owner, support, accounts): presets today/yesterday/7/30 days/this/last month/custom, compare previous period/last week/last year/none (Today up to the same hour), drill-down business → shop in the URL; KPI tiles with change and sparklines (sales inc VAT, net, transactions, average basket, VAT, takings, refunds, discounts, voids, gross profit), sales by day or hour against the compare window, hourly pattern, tender mix, VAT by rate, top businesses and shops / shops / tills, top products; "Updated N min ago"; deferred prop + skeleton, empty states, light/dark, phone; reads `rpt_*` only (~14 grouped queries, fixed count, 60 s cache). `php artisan demo:sales` (real push path, deterministic, `--fresh`, refused in production) | done |
 | 3.3 | Business dashboard | Today / week / month, per shop and total, "last updated N minutes ago". Built: tenant `/app` (`reports.view`: owner, manager, accountant; staff see Shops and tills only) with every Business-panel tile and chart of DASHBOARD.md §2 (KPIs with compare and sparklines, cash variance, low stock, tills online, orders ready, sales by day/hour, hourly pattern, tender mix, VAT, sales by shop or till, top products, departments/categories, staff); presets today/yesterday/this week/7 and 30 days/this/last month/custom; shop = portal switcher, till in the URL; one-shop users (`company_user.branch_id`) fixed to their shop; per-shop "Updated N min ago"; empty state before the first sync; deferred + skeleton, light/dark, phone. Shared with 3.2 (`Reporting\Dashboard`, `components/shared/trading`); charts draw today as "so far" | done |
 
-## Phase 4: Business panel (customer portal) — 6/10
+## Phase 4: Business panel (customer portal) — 10/10 (complete)
 
 Contract: v1.4.1 §18.4. Roles: business owner, **shop manager** (one branch only).
 
@@ -86,11 +86,11 @@ Contract: v1.4.1 §18.4. Roles: business owner, **shop manager** (one branch onl
 | 4.3 | Prices and promotions (incl. per-shop price screen, `BranchPrice`) | done |
 | 4.4 | Customers (ledger-based balance and points, statements, consent) | done |
 | 4.5 | Suppliers, payment types, reasons, staff users/PINs | done |
-| 4.6 | Sales and receipts (refunds, voids) | todo |
+| 4.6 | Sales and receipts (refunds, voids) | done |
 | 4.7 | Shops and tills (licence read-only, till status, "Ask for more tills") | done |
-| 4.8 | Reports (sales, refunds, VAT, stock, Z) | todo |
-| 4.9 | Shop settings (receipt text, opening hours; per §18.6) | todo |
-| 4.10 | My subscription and invoices | todo |
+| 4.8 | Reports (sales, refunds, VAT, stock, Z) | done |
+| 4.9 | Shop settings (receipt text, opening hours; per §18.6) | done |
+| 4.10 | My subscription and invoices | done |
 
 ## Phase 5: Operations — 0/10
 

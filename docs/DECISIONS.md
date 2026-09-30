@@ -674,3 +674,13 @@ still v1 (`X-SSPOS-Contract: 1`); the pack was copied over the contract folder (
 | Staff discount | `SaleLine.discountSource: "staff"` → `rpt_sales_daily.staff_discount` (its line discount less promotion and coupon shares); `manualDiscount()` excludes it; Discounts tile hint shows it |
 | Informational | Refund journals (old entries not re-posted), `4030`/`4040`, 5p rounding `6100`, points expiry, DRS, voucher by card, new audit actions, setting defaults: nothing to do (we build no figures from `JournalLine` and have no till audit view). New `Account` 2240/2250 and `PaymentType` rows are stored by id as always |
 | Follow-up (not done) | Module 4.5: the payment types screen lists one row per shop for the per-shop "Order deposit" / "Loyalty points", and `SavePaymentType`'s unique-name check refuses saving one of two same-named rows. Needs a group-by-name list. The pack's `web-portal-api.md` also drops three 2026-09-29 clarifications we still follow (§3 `X-SSPOS-App-Version: 0.1.x`, §17.2 "never add graceDays", §19.3 `baseVersion` without echo) and adds `rfid` keep-if-empty (§10.7) and `licence.ids_conflict` (§17.12) |
+
+## Phase 4 wave 3 (modules 4.6, 4.8, 4.9, 4.10, 2026-09-30)
+
+| Topic | Decision |
+|---|---|
+| Sales list (4.6) | Read-only (till-owned). Keyset "Newer / Older" paging and a capped count ("10,000+"), never OFFSET or a full COUNT(*). CSV streamed up to 5,000 sales, queued above. A receipt search with letters or a dash looks across all dates; a plain number searches sale numbers within the chosen dates. Lines voided on the till are matched to a sale by till and time (their audit rows carry the cart id). |
+| Reports (4.8) | Ten reports, each with date + shop filters, compare, CSV and print. Default range: last 7 days. Sales figures from `rpt_*` only; stock from `branch_products`; shifts/Z from their tables (indexed). |
+| Till settings (4.9) | Our own curated catalogue of 75 shared keys in 10 sections (a test checks it against the deny-list). A blank value removes the shop's own setting. `shop.trading_hours` is free text until the EPOS team gives its format. |
+| My subscription (4.10) | The owner can ask to cancel or change bank account: a `subscriptionRequested` admin alert + staff email; nothing is cancelled by the owner. A new mandate does not move the existing subscription, so bank changes go through staff. |
+| Payment types (0.1.15 fix) | Grouped by name company-wide; a save updates each shop's copy with only the changed fields. The till's own "Order deposit" and "Loyalty points" can't be renamed or removed. |
