@@ -37,6 +37,9 @@ interface BusinessFiltersBarProps {
     compares: Option<TradingCompare>[];
     onChange: (query: BusinessQuery) => void;
     onLoading: (loading: boolean) => void;
+    /** Hide the date range (a report of "now", e.g. stock) or the compare select (reports that do not compare). */
+    showDates?: boolean;
+    showCompare?: boolean;
 }
 
 const ALL = 'all';
@@ -46,7 +49,7 @@ const ALL = 'all';
  * portal's branch switcher (changing it here changes it everywhere); a one-shop user sees their shop, locked. The
  * till (one of the chosen shop's) and the dates are in the URL, so a view can be shared.
  */
-export function BusinessFiltersBar({ filters, context, periods, compares, onChange, onLoading }: BusinessFiltersBarProps) {
+export function BusinessFiltersBar({ filters, context, periods, compares, onChange, onLoading, showDates = true, showCompare = true }: BusinessFiltersBarProps) {
     const { branches } = usePage<BranchSharedData>().props;
 
     const chooseShop = (value: string) => {
@@ -60,8 +63,10 @@ export function BusinessFiltersBar({ filters, context, periods, compares, onChan
     return (
         <div className="flex flex-col gap-3">
             <div className="flex flex-wrap items-center gap-2">
-                <PeriodSelect value={filters.period} periods={periods} onChange={(period) => onChange(businessQuery(filters, { period }))} />
-                <CompareSelect value={filters.compare} compares={compares} onChange={(compare) => onChange(businessQuery(filters, { compare }))} />
+                {showDates && <PeriodSelect value={filters.period} periods={periods} onChange={(period) => onChange(businessQuery(filters, { period }))} />}
+                {showDates && showCompare && (
+                    <CompareSelect value={filters.compare} compares={compares} onChange={(compare) => onChange(businessQuery(filters, { compare }))} />
+                )}
 
                 {context.restricted ? (
                     <span className="bg-card text-foreground inline-flex h-9 w-full items-center gap-2 rounded-md border px-3 text-sm sm:w-auto" title="Your account is limited to this shop">
@@ -107,7 +112,7 @@ export function BusinessFiltersBar({ filters, context, periods, compares, onChan
                 )}
             </div>
 
-            {filters.period === 'custom' && <CustomRangeForm filters={filters} onApply={(from, to) => onChange(businessQuery(filters, { period: 'custom', from, to }))} />}
+            {showDates && filters.period === 'custom' && <CustomRangeForm filters={filters} onApply={(from, to) => onChange(businessQuery(filters, { period: 'custom', from, to }))} />}
         </div>
     );
 }

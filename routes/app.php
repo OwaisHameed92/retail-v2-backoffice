@@ -15,6 +15,7 @@ use App\Http\Controllers\App\PriceController;
 use App\Http\Controllers\App\ProductController;
 use App\Http\Controllers\App\ProductImportController;
 use App\Http\Controllers\App\PromotionController;
+use App\Http\Controllers\App\ReportController;
 use App\Http\Controllers\App\ShopController;
 use App\Http\Controllers\App\StaffController;
 use App\Http\Controllers\App\SupplierController;
@@ -174,6 +175,15 @@ Route::middleware(['auth:web', 'verified', 'company'])->group(function () {
             Route::post('{promotion}/end', [PromotionController::class, 'end'])->name('end')->whereUlid('promotion');
         });
         Route::get('{promotion}', [PromotionController::class, 'edit'])->name('edit')->whereUlid('promotion')->middleware('company.can:catalogue.view');
+    });
+
+    // Module 4.8: reports (sales, products, refunds, discounts, VAT, payments, staff, hours, stock, shifts and Z), each
+    // on screen, as CSV and printable. reports.view; a one-shop user sees only their shop (BusinessContext).
+    Route::prefix('reports')->name('reports.')->middleware('company.can:reports.view')->group(function () {
+        Route::get('/', [ReportController::class, 'index'])->name('index');
+        Route::get('{report}', [ReportController::class, 'show'])->name('show');
+        Route::get('{report}/export', [ReportController::class, 'export'])->name('export')->middleware('throttle:30,1');
+        Route::get('{report}/print', [ReportController::class, 'print'])->name('print')->middleware('throttle:60,1');
     });
 });
 

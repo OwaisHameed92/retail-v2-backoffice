@@ -345,3 +345,9 @@ Tokens live only in `resources/css/app.css` (v2 palette, light + dark): `chrome`
   price), status tone maps. `pricing-tabs.tsx`, `set-price-dialog.tsx`, `every-shop-dialog.tsx`, `price-history.tsx`.
 - Backend: `Pricing\Actions\SetShopPrice` / `EndShopPrice` / `CancelScheduledPrice` / `SetEveryShopPrice`,
   `Pricing\Support\ShopPrices` (live winner per shop, row status), `Promotions\Actions\SavePromotion` / `EndPromotion`.
+
+## Added by module 4.8 (reports, tenant portal)
+
+- `components/app/reports/`: `types.ts` (matches `ReportResult::toArray()`, `ReportTable`, `Figures::of()`, `ReportController` props), `format.tsx` (`cellText`, `Cell` by column type — money, signedMoney red when short, qty, count, percent, datetime in London, status badge, alert flag; `reportQuery`, `reportUrl`), `ReportTableCard` (totals footer, paging), `ReportSummary` (StatCards with change vs compare), `SeriesChartCard` (bars with the compare window's bars), `HeatmapCard` (weekday × hour). Pages `app/reports/{index,show,print}` (print: no layout, A4 landscape print CSS).
+- `BusinessFiltersBar` takes `showDates` / `showCompare` (default true) for reports of "now" or without compare.
+- Backend: `Reporting\Reports\` — `ReportKind` (the reports, labels, views), `ReportOptions` (dashboard window + grouping, tab, page, export), `ReportBuilder` builders in `Builders/`, queries `SalesBreakdown`, `ProductBreakdown`, `StockLevels`, `ShiftLedger`, `ReportCsv`, `ReportHeading`; action `Reporting\Actions\BuildReport`. `OperationsReport::thresholdSql()` is public (the stock report uses the tile's rule).
