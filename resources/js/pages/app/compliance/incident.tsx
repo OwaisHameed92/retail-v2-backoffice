@@ -21,7 +21,7 @@ export default function ComplianceIncident({ incident }: IncidentProps) {
                 description={[incident.shop, formatDateTime(incident.occurredAt)].filter(Boolean).join(' · ')}
             />
 
-            <div className="grid gap-4 lg:grid-cols-3 lg:items-start">
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-3 lg:items-start">
                 <SectionCard className="lg:col-span-2" title="What happened">
                     <p className="text-sm leading-6 whitespace-pre-line">{incident.description ?? 'No description was recorded.'}</p>
                 </SectionCard>

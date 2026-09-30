@@ -56,7 +56,7 @@ export default function SaleShow(props: SaleShowProps) {
                 </Alert>
             )}
 
-            <div className="grid gap-4 lg:grid-cols-3 lg:items-start">
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-3 lg:items-start">
                 <div className="grid gap-4 lg:col-span-2">
                     <ReceiptLines lines={props.lines} totals={totals} vat={props.vat} canViewProducts={props.canViewProducts} voided={voided} />
                     <ActivityCard events={props.events} />

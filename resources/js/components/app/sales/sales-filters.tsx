@@ -176,7 +176,7 @@ function MoreFilters({ filters, update }: { filters: SaleFiltersState; update: (
     };
 
     return (
-        <form onSubmit={submit} className="bg-subtle grid gap-3 rounded-lg border p-3 sm:grid-cols-[repeat(3,minmax(0,1fr))_auto] sm:items-end">
+        <form onSubmit={submit} className="bg-subtle grid grid-cols-1 gap-3 rounded-lg border p-3 sm:grid-cols-[repeat(3,minmax(0,1fr))_auto] sm:items-end">
             <div className="grid gap-1.5">
                 <Label htmlFor="sales-min">Amount from (£)</Label>
                 <Input id="sales-min" inputMode="decimal" placeholder="0.00" value={min} onChange={(e) => setMin(e.target.value)} />

@@ -94,7 +94,7 @@ export function PlanForm({
         <form onSubmit={onSubmit} className="grid gap-6">
             <FormCard>
                 <FormSection title="Plan details" description="How the plan appears to our team and, if public, on the pricing page.">
-                    <div className="grid gap-5 sm:grid-cols-2">
+                    <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
                         <Field id="name" label="Name" error={errors.name} help="For example Standard or Pro.">
                             <Input
                                 id="name"
@@ -144,7 +144,7 @@ export function PlanForm({
                     title="Pricing"
                     description="Price per till or per branch and the one-off setup fee, in pounds (GBP). A business can have its own pricing on its Billing tab."
                 >
-                    <div className="grid gap-5 sm:grid-cols-2">
+                    <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
                         <Field
                             id="pricing_mode"
                             label="Charge"
@@ -231,7 +231,7 @@ export function PlanForm({
                 </FormSection>
 
                 <FormSection title="Trial and grace" description="How long a new customer can try the till, and how long we wait before locking it.">
-                    <div className="grid gap-5 sm:grid-cols-3">
+                    <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
                         <Field
                             id="trial_days"
                             label="Free trial"

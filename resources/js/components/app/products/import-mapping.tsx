@@ -39,7 +39,7 @@ export function ImportMapping({ detail, fields }: { detail: ImportDetail; fields
                         const help = fields.find((f) => f.value === field)?.help;
 
                         return (
-                            <li key={column} className="grid gap-2 px-5 py-3 sm:grid-cols-[minmax(0,1fr)_16rem] sm:items-center">
+                            <li key={column} className="grid grid-cols-1 gap-2 px-5 py-3 sm:grid-cols-[minmax(0,1fr)_16rem] sm:items-center">
                                 <div className="min-w-0">
                                     <p className="truncate text-sm font-medium">{header || `Column ${column + 1}`}</p>
                                     {help && <p className="text-muted-foreground text-[13px]">{help}</p>}

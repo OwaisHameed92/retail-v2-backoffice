@@ -120,7 +120,7 @@ export function GroupDialog({ target, options, onClose }: { target: GroupTarget;
                         )}
                     </FormGrid>
 
-                    <div className="grid gap-3 sm:grid-cols-2">
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                         <CheckRow id="group-active" checked={data.is_active} onChange={(v) => setData('is_active', v)} label="Active" />
                         <CheckRow id="group-till" checked={data.is_visible_on_till} onChange={(v) => setData('is_visible_on_till', v)} label="Shown on the till" />
                         {isDepartment && <CheckRow id="group-report" checked={data.show_in_report} onChange={(v) => setData('show_in_report', v)} label="Shown in reports" />}

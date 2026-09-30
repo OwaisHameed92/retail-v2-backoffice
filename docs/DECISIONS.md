@@ -709,3 +709,14 @@ still v1 (`X-SSPOS-Contract: 1`); the pack was copied over the contract folder (
 | Newspapers (5.8) | Titles are hub-owned: create, edit, move (via `BranchDepartures`), archive; every-shop titles only by the owner or an every-shop manager. Deliveries, returns, credits and vouchers read-only. Sales = copies sold × the title's current cover price; VAT from the linked product. The contract has no delivery rounds, customer news accounts or title VAT — **ask EPOS**. |
 | Opening hours (5.9) | Weekly hours live in a portal table and are written to the tills as the `shop.trading_hours` setting ("Mon 07:00-22:00 … Sun Closed") — **format to confirm with EPOS**. Special days (`BranchHoursOverride`) and seasonal events are branch-owned, read-only. Till health uses the shop's hours and closed days instead of 08:00–20:00. Last year's event = the same shop's same-named event within 60 days a year earlier, else the same dates. |
 | Pharmacy and parcels (5.10) | Dispensing read-only, patients never shown; medicine classes hub-owned and editable (also needs `catalogue.manage`); parcels and carriers read-only. No plan feature covers them, so the business type decides: Pharmacy type or any dispensing data shows pharmacy; parcels are hidden only for Salon, ClothingFootwear and CashAndCarry unless a till has carriers or parcels. |
+
+## Phase 7 (module 7.1 UI polish, 2026-10-01)
+
+| Topic | Decision |
+|---|---|
+| Filters | One filter location per page: a filters bar directly under the `PageHeader` (or the `DataTable` toolbar for lists). No global filters in the layout: the old top-of-canvas branch switcher and the unwired date range are gone. The session "current shop" stays: the dashboard and reports change it from their Shop select, and list pages default their shop filter to it. |
+| Breadcrumbs | The `PageHeader` owns the trail: `back` for one level, `breadcrumbs` for deeper pages. Layout `breadcrumbs` props stay for compatibility but no page passes both. |
+| Tenant sidebar | Groups: (Dashboard, Reports), Selling, Catalogue, Stock & purchasing, Money, Team, Compliance, and Settings pinned at the bottom. Compliance and Settings start collapsed; the open/closed choice is remembered per browser; a group with the current page is always open. Items the user's role cannot open are hidden (never "Soon"). |
+| "Soon" | Only for real future features: tenant "Ask anything" (6.2), Help centre / Contact support, admin Devices, Sync & jobs, EPOS versions (phase 8), Audit log, Settings. Admin "Customers" was removed (Leads + Tenants are the customer list). |
+| Tables | Muted sentence-case column headers, sortable or not. Numbers right-aligned, tabular. Phones get card lists (DataTable) or horizontal scroll inside the card (plain `Table`), never page scroll. |
+| Error pages | 403/404/500/503 render the branded `error` page when debug is off; `api/*` and JSON callers keep JSON; 419 goes back with "The page expired. Try again." |

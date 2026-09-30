@@ -44,7 +44,7 @@ export function InvoiceDocument({ doc }: { doc: InvoiceDocumentData }) {
                     </div>
                 </header>
 
-                <section className="grid gap-6 text-sm sm:grid-cols-3">
+                <section className="grid grid-cols-1 gap-6 text-sm sm:grid-cols-3">
                     <div className="min-w-0">
                         <Label>From</Label>
                         <p className="font-semibold">{doc.seller.legalName}</p>

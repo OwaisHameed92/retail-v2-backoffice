@@ -167,7 +167,7 @@ export default function LicenceShow({ licence, timeline, activity, alerts, plans
                 />
             </div>
 
-            <div className="grid items-start gap-6 lg:grid-cols-3">
+            <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-3">
                 <div className="grid gap-6 lg:col-span-2">
                     <SectionCard title="Details">
                         <dl className="-my-2.5 divide-y">

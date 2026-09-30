@@ -126,7 +126,7 @@ export default function TransferShow({ transfer, receipt, lines, totals, relay }
                 </Alert>
             )}
 
-            <div className="grid gap-4 lg:grid-cols-3 lg:items-start">
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-3 lg:items-start">
                 <SectionCard
                     title="Lines"
                     description={

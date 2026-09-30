@@ -109,7 +109,7 @@ function RegisterDialogBody({ onOpenChange, tenantId, branch, register }: Regist
                     </DialogDescription>
                 </DialogHeader>
 
-                <div className="grid gap-5 sm:grid-cols-[1fr_8rem]">
+                <div className="grid grid-cols-1 gap-5 sm:grid-cols-[1fr_8rem]">
                     <Field
                         id="register-name"
                         label="Name"

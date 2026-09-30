@@ -76,7 +76,7 @@ export function ReasonDialog({
                     aria-invalid={errors.text ? true : undefined}
                 />
             </FormField>
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <FormField id="reason-position" label="Order in the list" optional error={errors.position}>
                     <Input id="reason-position" type="number" min={0} value={data.position} onChange={(e) => setData('position', e.target.value)} />
                 </FormField>

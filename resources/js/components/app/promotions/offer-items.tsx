@@ -28,7 +28,7 @@ export function OfferItems({ data, set, errors, options, disabled }: OfferSectio
             {errors.items && <p className="text-destructive text-sm">{errors.items}</p>}
             <div className="grid gap-3">
                 {data.items.map((item, i) => (
-                    <div key={item.id ?? `new-${i}`} className="grid items-end gap-2 rounded-lg border p-3 sm:grid-cols-[8rem_1fr_5rem_5rem_auto_auto]">
+                    <div key={item.id ?? `new-${i}`} className="grid grid-cols-1 items-end gap-2 rounded-lg border p-3 sm:grid-cols-[8rem_1fr_5rem_5rem_auto_auto]">
                         <OptionSelect id={`items-${i}-scope`} value={item.scope} options={KINDS} onChange={(v) => update(i, { scope: v as PromotionItemValues['scope'], target_id: '' })} />
                         <div className="grid gap-1">
                             <OptionSelect id={`items-${i}-target`} value={item.target_id} options={targets(item.scope)} invalid={!!errors[`items.${i}.target_id`]} onChange={(v) => update(i, { target_id: v })} />

@@ -87,7 +87,7 @@ export default function ProductImports({ imports, fields }: { imports: ImportRow
                 </SectionCard>
 
                 <SectionCard title="Columns you can import" description="Any order, any column names: you match them on the next step. Empty cells keep what the product already has.">
-                    <dl className="grid gap-x-8 gap-y-3 sm:grid-cols-2">
+                    <dl className="grid grid-cols-1 gap-x-8 gap-y-3 sm:grid-cols-2">
                         {fields.map((field) => (
                             <div key={field.value}>
                                 <dt className="text-sm font-medium">{field.label}</dt>

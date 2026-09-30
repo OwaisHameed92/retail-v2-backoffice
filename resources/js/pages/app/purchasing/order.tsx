@@ -111,7 +111,7 @@ export default function PurchaseOrderShow({ order, totals, lines, deliveries, in
                 )
             )}
 
-            <div className="grid gap-4 lg:grid-cols-3 lg:items-start">
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-3 lg:items-start">
                 <SectionCard
                     title="Lines"
                     description={`${qty(totals.received)} of ${qty(totals.ordered)} units received`}

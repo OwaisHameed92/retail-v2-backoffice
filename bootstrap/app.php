@@ -5,6 +5,7 @@ use App\Http\Middleware\AssignTraceId;
 use App\Http\Middleware\EnsureCompanyAbility;
 use App\Http\Middleware\EnsureCompanyMember;
 use App\Http\Middleware\HandleInertiaRequests;
+use App\Http\Support\InertiaErrorPages;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -66,4 +67,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         // Till staff PINs and fob codes (module 4.5) are never kept in the session either.
         $exceptions->dontFlash(['pin', 'pin_confirmation', 'rfid']);
+
+        // Branded 403/404/500/503 pages for the portal and admin; JSON callers untouched (module 7.1).
+        InertiaErrorPages::register($exceptions);
     })->create();

@@ -1,6 +1,6 @@
 import { InitialsAvatar } from '@/components/shared/entity-cell';
 import { ShellSidebar } from '@/components/shell/sidebar-brand';
-import { type ShellNavGroup } from '@/components/shell/sidebar-nav';
+import { type ShellNavGroup, type ShellNavItem } from '@/components/shell/sidebar-nav';
 import { type SharedData } from '@/types';
 import { usePage } from '@inertiajs/react';
 import {
@@ -8,9 +8,9 @@ import {
     Banknote,
     BarChart3,
     BookOpen,
-    ClipboardCheck,
     Boxes,
     CalendarDays,
+    ClipboardCheck,
     Clock,
     CreditCard,
     Factory,
@@ -32,127 +32,135 @@ import {
     Users,
 } from 'lucide-react';
 
+interface TenantNavItem extends ShellNavItem {
+    /** Ability (shared `abilities` prop) the user needs; items the user cannot open are hidden, never shown as "Soon". */
+    ability?: string;
+}
+
+interface TenantNavGroup extends Omit<ShellNavGroup, 'items'> {
+    items: TenantNavItem[];
+}
+
+const starts = (path: string, prefix: string) => path === prefix || path.startsWith(`${prefix}/`);
+
 /**
- * Tenant portal navigation, grouped by job. Items without an `href` are modules not built yet ("Soon").
- * When a module ships, give its item an `href` and an `active` test.
+ * Tenant portal navigation, grouped by job (module 7.1): Selling, Catalogue, Stock & purchasing, Money, Team and
+ * Compliance scroll; Settings is pinned near the bottom. Rarely used groups start collapsed; a group holding the
+ * current page is always open. Items need their ability; empty groups disappear.
  */
-function tenantNav(path: string, abilities: string[]): ShellNavGroup[] {
-    const billing = abilities.includes('billing.view')
-        ? [{ title: 'My subscription', icon: CreditCard, href: '/app/billing', active: path.startsWith('/app/billing') }]
-        : [];
-    const products = abilities.includes('catalogue.view')
-        ? [{ title: 'Products', icon: Package, href: '/app/products', active: path.startsWith('/app/products') }]
-        : [];
-    // Module 4.6: sales and receipts (read only).
-    const sales = abilities.includes('sales.view')
-        ? [{ title: 'Sales', icon: Receipt, href: '/app/sales', active: path.startsWith('/app/sales') }]
-        : [];
-    // Module 4.4: customers, their account ledger, statements and marketing consent.
-    const customers = abilities.includes('customers.view')
-        ? [{ title: 'Customers', icon: Users, href: '/app/customers', active: path.startsWith('/app/customers') }]
-        : [];
-    // Module 4.3: shop prices and offers (read with catalogue.view).
-    const prices = abilities.includes('catalogue.view')
-        ? [{ title: 'Prices', icon: PoundSterling, href: '/app/prices', active: path.startsWith('/app/prices') }]
-        : [];
-    const promotions = abilities.includes('catalogue.view')
-        ? { title: 'Promotions', icon: Tag, href: '/app/promotions', active: path.startsWith('/app/promotions') }
-        : { title: 'Promotions', icon: Tag, soon: true };
-    const sync = abilities.includes('sync.manage')
-        ? [{ title: 'Sync conflicts', icon: GitCompareArrows, href: '/app/sync/conflicts', active: path.startsWith('/app/sync') }]
-        : [];
-    const users = abilities.includes('users.manage')
-        ? [{ title: 'Portal users', icon: ShieldCheck, href: '/app/users', active: path.startsWith('/app/users') }]
-        : [];
-    // Module 4.5: suppliers, till staff and roles, payment types and reasons.
-    const suppliers = abilities.includes('suppliers.manage')
-        ? [{ title: 'Suppliers', icon: Factory, href: '/app/suppliers', active: path.startsWith('/app/suppliers') }]
-        : [];
-    const staff = abilities.includes('staff.manage')
-        ? { title: 'Staff', icon: UserCog, href: '/app/staff', active: path.startsWith('/app/staff') && !path.startsWith('/app/staff/time') }
-        : { title: 'Staff', icon: UserCog, soon: true };
-    // Module 5.6: staff time (clock events, timesheets, rota), read only (staff.view).
-    const staffTime = abilities.includes('staff.view')
-        ? [{ title: 'Staff time', icon: Clock, href: '/app/staff/time', active: path.startsWith('/app/staff/time') }]
-        : [];
-    const tillLists = abilities.includes('settings.manage')
-        ? [
-              {
-                  title: 'Payment types',
-                  icon: ListChecks,
-                  href: '/app/payment-types',
-                  active: path.startsWith('/app/payment-types') || path.startsWith('/app/reasons'),
-              },
-              // Module 4.9: till settings for every shop or one shop.
-              { title: 'Till settings', icon: Settings, href: '/app/settings', active: path.startsWith('/app/settings') },
-          ]
-        : [];
-    // Module 5.1: stock on hand, movements, stock takes, valuation, dates and wastage (stock.view).
-    const stock = abilities.includes('stock.view')
-        ? [{ title: 'Stock', icon: Boxes, href: '/app/stock', active: path.startsWith('/app/stock') }]
-        : [];
-    // Module 5.2: purchasing (orders, deliveries, supplier invoices, statements; head-office orders).
-    const purchasing = abilities.includes('purchasing.view')
-        ? [{ title: 'Purchasing', icon: Truck, href: '/app/purchasing/orders', active: path.startsWith('/app/purchasing') }]
-        : [];
-    // Module 5.3: stock transfers between shops (transfers.view).
-    const transfers = abilities.includes('transfers.view')
-        ? [{ title: 'Transfers', icon: ArrowLeftRight, href: '/app/transfers', active: path.startsWith('/app/transfers') }]
-        : [];
-    // Module 5.8: newspapers and magazines (news.view).
-    const news = abilities.includes('news.view')
-        ? [{ title: 'Newspapers', icon: Newspaper, href: '/app/news', active: path.startsWith('/app/news') }]
-        : [];
-    // Module 4.8: reports (reports.view).
-    const reports = abilities.includes('reports.view')
-        ? [{ title: 'Reports', icon: BarChart3, href: '/app/reports', active: path.startsWith('/app/reports') }]
-        : [];
-    // Module 5.4: cash and Z (cash.view).
-    const cash = abilities.includes('cash.view')
-        ? [{ title: 'Cash and Z', icon: Banknote, href: '/app/cash', active: path.startsWith('/app/cash') }]
-        : [];
-    // Module 5.5: accounts and VAT (accounts.view).
-    const accounts = abilities.includes('accounts.view')
-        ? [{ title: 'Accounts', icon: BookOpen, href: '/app/accounts', active: path.startsWith('/app/accounts') }]
-        : [];
-    // Module 5.7: compliance (compliance.view).
-    const compliance = abilities.includes('compliance.view')
-        ? [{ title: 'Compliance', icon: ClipboardCheck, href: '/app/compliance', active: path.startsWith('/app/compliance') }]
-        : [];
-    // Module 4.7: shops, tills and licences (read only), business details, "Ask for more tills".
-    const shops = abilities.includes('shops.view')
-        ? [{ title: 'Shops and tills', icon: Store, href: '/app/shops', active: path.startsWith('/app/shops') }]
-        : [];
-
-    // Module 5.9: opening hours, special days and seasonal events (calendar.manage). Module 5.10: pharmacy and parcels,
-    // only for businesses that use them (the server leaves the ability out otherwise).
-    const calendar = abilities.includes('calendar.manage')
-        ? [{ title: 'Calendar', icon: CalendarDays, href: '/app/calendar', active: path.startsWith('/app/calendar') }]
-        : [];
-    const pharmacy = abilities.includes('pharmacy.view')
-        ? [{ title: 'Pharmacy', icon: Pill, href: '/app/pharmacy', active: path.startsWith('/app/pharmacy') }]
-        : [];
-    const parcels = abilities.includes('parcels.view')
-        ? [{ title: 'Parcels', icon: PackageOpen, href: '/app/parcels', active: path.startsWith('/app/parcels') }]
-        : [];
-
-    return [
-        { items: [{ title: 'Dashboard', icon: LayoutGrid, href: '/app', active: path === '/app' }] },
+function tenantNav(path: string, abilities: string[]): { groups: ShellNavGroup[]; pinned: ShellNavGroup[] } {
+    const staffTime = starts(path, '/app/staff/time');
+    const all: TenantNavGroup[] = [
+        {
+            items: [
+                { title: 'Dashboard', icon: LayoutGrid, href: '/app', active: path === '/app' },
+                { title: 'Reports', icon: BarChart3, href: '/app/reports', active: starts(path, '/app/reports'), ability: 'reports.view' },
+            ],
+        },
         {
             label: 'Selling',
-            items: [...sales, ...customers, promotions, ...calendar, ...pharmacy, ...parcels],
+            collapsible: 'open',
+            items: [
+                { title: 'Sales', icon: Receipt, href: '/app/sales', active: starts(path, '/app/sales'), ability: 'sales.view' },
+                { title: 'Customers', icon: Users, href: '/app/customers', active: starts(path, '/app/customers'), ability: 'customers.view' },
+                { title: 'Promotions', icon: Tag, href: '/app/promotions', active: starts(path, '/app/promotions'), ability: 'catalogue.view' },
+                { title: 'Newspapers', icon: Newspaper, href: '/app/news', active: starts(path, '/app/news'), ability: 'news.view' },
+                { title: 'Pharmacy', icon: Pill, href: '/app/pharmacy', active: starts(path, '/app/pharmacy'), ability: 'pharmacy.view' },
+                { title: 'Parcels', icon: PackageOpen, href: '/app/parcels', active: starts(path, '/app/parcels'), ability: 'parcels.view' },
+            ],
         },
         {
             label: 'Catalogue',
-            items: [...products, ...prices, ...stock, ...transfers, ...purchasing, ...news, ...suppliers],
+            collapsible: 'open',
+            items: [
+                { title: 'Products', icon: Package, href: '/app/products', active: starts(path, '/app/products'), ability: 'catalogue.view' },
+                { title: 'Prices', icon: PoundSterling, href: '/app/prices', active: starts(path, '/app/prices'), ability: 'catalogue.view' },
+                { title: 'Suppliers', icon: Factory, href: '/app/suppliers', active: starts(path, '/app/suppliers'), ability: 'suppliers.manage' },
+            ],
+        },
+        {
+            label: 'Stock & purchasing',
+            collapsible: 'open',
+            items: [
+                { title: 'Stock', icon: Boxes, href: '/app/stock', active: starts(path, '/app/stock'), ability: 'stock.view' },
+                {
+                    title: 'Purchasing',
+                    icon: Truck,
+                    href: '/app/purchasing/orders',
+                    active: starts(path, '/app/purchasing'),
+                    ability: 'purchasing.view',
+                },
+                {
+                    title: 'Transfers',
+                    icon: ArrowLeftRight,
+                    href: '/app/transfers',
+                    active: starts(path, '/app/transfers'),
+                    ability: 'transfers.view',
+                },
+            ],
         },
         {
             label: 'Money',
-            items: [...cash, ...accounts, ...reports],
+            collapsible: 'open',
+            items: [
+                { title: 'Cash and Z', icon: Banknote, href: '/app/cash', active: starts(path, '/app/cash'), ability: 'cash.view' },
+                { title: 'Accounts', icon: BookOpen, href: '/app/accounts', active: starts(path, '/app/accounts'), ability: 'accounts.view' },
+            ],
         },
-        { label: 'Team', items: [...users, staff, ...staffTime, ...compliance] },
-        { label: 'Settings', items: [...shops, ...tillLists, ...sync, ...billing] },
+        {
+            label: 'Team',
+            collapsible: 'open',
+            items: [
+                { title: 'Staff', icon: UserCog, href: '/app/staff', active: starts(path, '/app/staff') && !staffTime, ability: 'staff.manage' },
+                { title: 'Staff time', icon: Clock, href: '/app/staff/time', active: staffTime, ability: 'staff.view' },
+                { title: 'Portal users', icon: ShieldCheck, href: '/app/users', active: starts(path, '/app/users'), ability: 'users.manage' },
+            ],
+        },
+        {
+            label: 'Compliance',
+            collapsible: 'closed',
+            items: [
+                {
+                    title: 'Compliance',
+                    icon: ClipboardCheck,
+                    href: '/app/compliance',
+                    active: starts(path, '/app/compliance'),
+                    ability: 'compliance.view',
+                },
+            ],
+        },
+        {
+            label: 'Settings',
+            collapsible: 'closed',
+            items: [
+                { title: 'Shops and tills', icon: Store, href: '/app/shops', active: starts(path, '/app/shops'), ability: 'shops.view' },
+                { title: 'Till settings', icon: Settings, href: '/app/settings', active: starts(path, '/app/settings'), ability: 'settings.manage' },
+                {
+                    title: 'Payment types',
+                    icon: ListChecks,
+                    href: '/app/payment-types',
+                    active: starts(path, '/app/payment-types') || starts(path, '/app/reasons'),
+                    ability: 'settings.manage',
+                },
+                { title: 'Calendar', icon: CalendarDays, href: '/app/calendar', active: starts(path, '/app/calendar'), ability: 'calendar.manage' },
+                {
+                    title: 'Sync conflicts',
+                    icon: GitCompareArrows,
+                    href: '/app/sync/conflicts',
+                    active: starts(path, '/app/sync'),
+                    ability: 'sync.manage',
+                },
+                { title: 'My subscription', icon: CreditCard, href: '/app/billing', active: starts(path, '/app/billing'), ability: 'billing.view' },
+            ],
+        },
     ];
+
+    const visible = all.map((group) => ({ ...group, items: group.items.filter((item) => !item.ability || abilities.includes(item.ability)) }));
+
+    return {
+        groups: visible.filter((group) => group.label !== 'Settings'),
+        pinned: visible.filter((group) => group.label === 'Settings'),
+    };
 }
 
 /** Business name at the top of the sidebar (a tile with initials when collapsed). */
@@ -174,13 +182,7 @@ function WorkspaceHeader({ name }: { name: string }) {
 export function AppSidebar() {
     const { company, abilities } = usePage<SharedData>().props;
     const path = usePage().url.split('?')[0];
-    const groups = tenantNav(path, abilities ?? []);
+    const { groups, pinned } = tenantNav(path, abilities ?? []);
 
-    return (
-        <ShellSidebar
-            header={company ? <WorkspaceHeader name={company.name} /> : undefined}
-            groups={groups.filter((group) => group.label !== 'Settings')}
-            pinned={groups.filter((group) => group.label === 'Settings')}
-        />
-    );
+    return <ShellSidebar header={company ? <WorkspaceHeader name={company.name} /> : undefined} groups={groups} pinned={pinned} />;
 }

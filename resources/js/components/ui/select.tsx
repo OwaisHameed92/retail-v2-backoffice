@@ -19,7 +19,7 @@ const SelectTrigger = React.forwardRef<
         ref={ref}
         className={cn(
             fieldClasses,
-            'flex h-10 items-center justify-between gap-2 px-3 py-2 text-left data-[placeholder]:text-muted-foreground [&>span]:line-clamp-1 [&>svg]:shrink-0',
+            'flex h-10 items-center justify-between gap-2 px-3 py-2 text-left data-[placeholder]:text-muted-foreground [&>span]:line-clamp-1 [&>span]:flex-1 [&>svg]:shrink-0',
             className,
         )}
         {...props}

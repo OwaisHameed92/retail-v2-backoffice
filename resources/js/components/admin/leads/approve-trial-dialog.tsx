@@ -193,7 +193,7 @@ export function ApproveTrialDialog({ lead, approval, open, onOpenChange }: Appro
                     {shops.map((shop, index) => (
                         <li
                             key={index}
-                            className="grid gap-2 rounded-lg border p-3 sm:grid-cols-[minmax(0,1fr)_6rem_9.5rem_8.5rem_2.25rem] sm:items-start sm:border-0 sm:p-0"
+                            className="grid grid-cols-1 gap-2 rounded-lg border p-3 sm:grid-cols-[minmax(0,1fr)_6rem_9.5rem_8.5rem_2.25rem] sm:items-start sm:border-0 sm:p-0"
                         >
                             <FormField
                                 id={`shop-${index}-name`}

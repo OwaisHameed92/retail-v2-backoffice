@@ -3,7 +3,6 @@ import {
     Activity,
     Building2,
     CloudUpload,
-    Contact,
     FileText,
     Inbox,
     KeyRound,
@@ -43,7 +42,6 @@ export const adminPinnedGroups: readonly AdminNavGroup[] = ['Settings'];
 /** Sidebar items, in order within their group. Later modules add a `route` when their pages exist ("Soon" until then). */
 export const adminNavItems: AdminNavItem[] = [
     { title: 'Dashboard', icon: LayoutDashboard, route: 'admin.dashboard', activePattern: ['admin.dashboard', 'admin.trading'] },
-    { title: 'Customers', icon: Contact, group: 'Customers' },
     {
         title: 'Leads',
         icon: Inbox,

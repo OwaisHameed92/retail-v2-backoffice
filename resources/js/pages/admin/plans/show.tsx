@@ -99,7 +99,7 @@ export default function ShowPlan({ plan, features, activity }: ShowPlanProps) {
                 />
             </StatGrid>
 
-            <div className="grid items-start gap-6 lg:grid-cols-3">
+            <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-3">
                 <SectionCard
                     className="lg:col-span-2"
                     title="Features"
@@ -113,7 +113,7 @@ export default function ShowPlan({ plan, features, activity }: ShowPlanProps) {
                     {included.length === 0 ? (
                         <p className="text-muted-foreground text-sm">This plan has no extra features. Tills on it get the core till only.</p>
                     ) : (
-                        <ul className="grid gap-3 sm:grid-cols-2">
+                        <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                             {included.map((feature) => (
                                 <li key={feature.value} className="flex gap-3">
                                     <span className="bg-success-soft text-success-foreground ring-success/20 mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full ring-1">

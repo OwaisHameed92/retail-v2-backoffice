@@ -73,7 +73,7 @@ export default function AccountsVat(props: VatProps) {
                 </Select>
             </AccountsFilters>
 
-            <div className="grid gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
                 <SectionCard
                     title={`${formatDay(quarter.from)} to ${formatDay(quarter.to)}`}
                     description={position === 'reclaim' ? 'HMRC owes you the box 5 amount.' : 'You owe HMRC the box 5 amount.'}

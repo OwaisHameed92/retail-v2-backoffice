@@ -1,4 +1,4 @@
-import { toneCircle, type ChartTone } from '@/components/shared/trend-chart';
+import { toneCircle, toneVar, type ChartTone } from '@/components/shared/trend-chart';
 import { Card } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { ArrowDown, ArrowUp, type LucideIcon } from 'lucide-react';
@@ -71,6 +71,48 @@ export function StatPill({
             </p>
             {label && <p className="text-muted-foreground text-[11px]">{label}</p>}
         </div>
+    );
+}
+
+export interface ChartLegendItem {
+    label: ReactNode;
+    /** Series colour; `muted` for a compare series. */
+    tone?: ChartTone | 'muted';
+    /** solid dot (default), dashed line (compare), hollow dot (today so far), bar, pale dashed bar (this hour so far). */
+    marker?: 'dot' | 'dashed' | 'hollow' | 'bar' | 'bar-partial';
+}
+
+/**
+ * The one chart legend: small markers + labels under a chart (inside a ChartCard `footer`). Use the same tone as the
+ * series; compare series are `muted` + `dashed`, a partial point is `hollow` (area) or `bar-partial` (bars).
+ */
+export function ChartLegend({ items, className }: { items: ChartLegendItem[]; className?: string }) {
+    return (
+        <ul className={cn('text-muted-foreground flex flex-wrap items-center gap-x-4 gap-y-1 text-xs', className)}>
+            {items.map((item, index) => {
+                const colour = item.tone === 'muted' ? 'var(--muted-foreground)' : toneVar[item.tone ?? 'primary'];
+                const marker = item.marker ?? 'dot';
+
+                return (
+                    <li key={index} className="inline-flex items-center gap-2">
+                        {marker === 'dot' && <span className="size-2.5 rounded-full" style={{ background: colour }} aria-hidden />}
+                        {marker === 'hollow' && <span className="size-2.5 rounded-full border-2" style={{ borderColor: colour }} aria-hidden />}
+                        {marker === 'dashed' && (
+                            <span className="inline-block w-5 border-t-2 border-dashed" style={{ borderColor: colour }} aria-hidden />
+                        )}
+                        {marker === 'bar' && <span className="h-2.5 w-3 rounded-sm" style={{ background: colour }} aria-hidden />}
+                        {marker === 'bar-partial' && (
+                            <span
+                                className="h-2.5 w-3 rounded-sm border border-dashed"
+                                style={{ borderColor: colour, background: `color-mix(in oklab, ${colour} 35%, transparent)` }}
+                                aria-hidden
+                            />
+                        )}
+                        {item.label}
+                    </li>
+                );
+            })}
+        </ul>
     );
 }
 

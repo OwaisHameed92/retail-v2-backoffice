@@ -1,4 +1,4 @@
-import { toneVar, type ChartTone } from '@/components/shared/trend-chart';
+import { ChartTooltipBox, toneVar, type ChartTone } from '@/components/shared/trend-chart';
 import { cn } from '@/lib/utils';
 import { useId } from 'react';
 import { Area, Bar, CartesianGrid, Cell, ComposedChart, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
@@ -40,12 +40,14 @@ function CompareTooltip({
     format,
     currentName,
     compareName,
+    tone = 'primary',
 }: {
     active?: boolean;
     payload?: { payload?: PlotPoint }[];
     format: (value: number) => string;
     currentName: string;
     compareName?: string;
+    tone?: ChartTone;
 }) {
     const point = payload?.[0]?.payload;
     if (!active || !point) {
@@ -53,21 +55,26 @@ function CompareTooltip({
     }
 
     return (
-        <div className="bg-popover text-popover-foreground shadow-overlay grid gap-1 rounded-lg border px-3 py-2 text-xs">
-            <p className="text-muted-foreground">{point.title}</p>
-            <p className="flex items-center gap-2 font-semibold tabular-nums">
-                <span className={cn('size-2 rounded-full', point.partial ? 'border-primary border-2' : 'bg-primary')} aria-hidden />
-                {currentName}
-                {point.partial ? ' so far' : ''}: {point.current === null ? '—' : format(point.current)}
-            </p>
-            {compareName && point.compare !== null && (
-                <p className="text-muted-foreground flex items-center gap-2 tabular-nums">
-                    <span className="bg-muted-foreground/60 size-2 rounded-full" aria-hidden />
-                    {compareName}
-                    {point.compareTitle ? ` (${point.compareTitle})` : ''}: {format(point.compare)}
-                </p>
-            )}
-        </div>
+        <ChartTooltipBox
+            title={point.title}
+            rows={[
+                {
+                    label: `${currentName}${point.partial ? ' so far' : ''}`,
+                    value: point.current === null ? '—' : format(point.current),
+                    tone,
+                    hollow: point.partial,
+                },
+                ...(compareName && point.compare !== null
+                    ? [
+                          {
+                              label: `${compareName}${point.compareTitle ? ` (${point.compareTitle})` : ''}`,
+                              value: format(point.compare),
+                              tone: 'muted' as const,
+                          },
+                      ]
+                    : []),
+            ]}
+        />
     );
 }
 
@@ -115,7 +122,14 @@ export function CompareChart({ data, variant, tone = 'primary', format, axisForm
                         cursor={
                             variant === 'bar' ? { fill: 'var(--muted)', opacity: 0.6 } : { stroke: 'var(--border-strong)', strokeDasharray: '3 3' }
                         }
-                        content={<CompareTooltip format={format} currentName={currentName} compareName={showCompare ? compareName : undefined} />}
+                        content={
+                            <CompareTooltip
+                                format={format}
+                                currentName={currentName}
+                                compareName={showCompare ? compareName : undefined}
+                                tone={tone}
+                            />
+                        }
                     />
                     {variant === 'bar' && (
                         <Bar dataKey="current" fill={colour} radius={[4, 4, 0, 0]} maxBarSize={28} isAnimationActive={false}>

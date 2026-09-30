@@ -1,5 +1,5 @@
 import { cn } from '@/lib/utils';
-import { useId } from 'react';
+import { useId, type ReactNode } from 'react';
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, ComposedChart, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 
 /** Colour tones shared by KPI cards, sparklines and charts. Each maps to a token in app.css. */
@@ -13,6 +13,46 @@ export const toneVar: Record<ChartTone, string> = {
     warning: 'var(--warning)',
     danger: 'var(--danger)',
 };
+
+/**
+ * The one chart tooltip box (every Recharts `content`): popover surface, muted heading, tabular rows. Rows take a
+ * tone (series colour dot), `hollow` for a "so far" point.
+ */
+export function ChartTooltipBox({
+    title,
+    rows,
+}: {
+    title?: ReactNode;
+    rows: { label: ReactNode; value: ReactNode; tone?: ChartTone | 'muted'; hollow?: boolean; strong?: boolean }[];
+}) {
+    return (
+        <div className="bg-popover text-popover-foreground shadow-overlay grid gap-1 rounded-lg border px-3 py-2 text-xs">
+            {title && <p className="text-muted-foreground">{title}</p>}
+            {rows.map((row, index) => {
+                const colour = row.tone === 'muted' ? 'var(--muted-foreground)' : row.tone ? toneVar[row.tone] : undefined;
+
+                return (
+                    <p
+                        key={index}
+                        className={cn(
+                            'flex items-center gap-2 tabular-nums',
+                            row.strong !== false && index === 0 ? 'font-semibold' : 'text-muted-foreground',
+                        )}
+                    >
+                        {colour && (
+                            <span
+                                className={cn('size-2 shrink-0 rounded-full', row.hollow && 'border-2')}
+                                style={row.hollow ? { borderColor: colour } : { background: colour }}
+                                aria-hidden
+                            />
+                        )}
+                        {row.label}: {row.value}
+                    </p>
+                );
+            })}
+        </div>
+    );
+}
 
 /** Soft icon circle per tone (KPI cards, overview tiles, chart titles). */
 export const toneCircle: Record<ChartTone | 'neutral', string> = {
@@ -83,7 +123,15 @@ export function AreaSparkline({ values, tone = 'primary', className, label, part
                             isAnimationActive={false}
                             dot={(props: { cx?: number; cy?: number; index?: number }) =>
                                 props.index === last && props.cx !== undefined && props.cy !== undefined ? (
-                                    <circle key="so-far" cx={props.cx} cy={props.cy} r={3} fill="var(--card)" stroke={toneVar[tone]} strokeWidth={2} />
+                                    <circle
+                                        key="so-far"
+                                        cx={props.cx}
+                                        cy={props.cy}
+                                        r={3}
+                                        fill="var(--card)"
+                                        stroke={toneVar[tone]}
+                                        strokeWidth={2}
+                                    />
                                 ) : (
                                     <g key={`dot-${props.index}`} />
                                 )
@@ -131,14 +179,7 @@ function TrendTooltip({
         return null;
     }
 
-    return (
-        <div className="bg-popover text-popover-foreground shadow-overlay rounded-lg border px-3 py-2 text-xs">
-            <p className="text-muted-foreground mb-0.5">{label}</p>
-            <p className="font-semibold tabular-nums">
-                {seriesName}: {format(Number(payload[0].value ?? 0))}
-            </p>
-        </div>
-    );
+    return <ChartTooltipBox title={label} rows={[{ label: seriesName, value: format(Number(payload[0].value ?? 0)) }]} />;
 }
 
 /** Single-series trend chart for ChartCard: recessive grid and axes, one tone, hover tooltip. */

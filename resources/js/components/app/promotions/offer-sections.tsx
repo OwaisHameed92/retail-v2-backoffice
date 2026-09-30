@@ -149,7 +149,7 @@ export function WhenSection({ data, set, errors, options, restricted }: OfferSec
                     <NumberField id="max_redemptions_total" inputMode="numeric" value={data.max_redemptions_total} onChange={(e) => set('max_redemptions_total', e.target.value)} />
                 </FormField>
             </FormGrid>
-            <div className="grid gap-2 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                 <CheckField id="allow_stack" label="Can combine with other offers" checked={data.allow_stack} onChange={(v) => set('allow_stack', v)} />
                 <CheckField id="is_exclusive" label="Exclusive" help="No other offer on the same items." checked={data.is_exclusive} onChange={(v) => set('is_exclusive', v)} />
                 <CheckField id="is_hfss_safe" label="Allowed on HFSS food" help="Only if it is not a volume offer on less healthy food." checked={data.is_hfss_safe} onChange={(v) => set('is_hfss_safe', v)} />

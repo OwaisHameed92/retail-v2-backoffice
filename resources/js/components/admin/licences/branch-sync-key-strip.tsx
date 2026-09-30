@@ -87,7 +87,7 @@ function SyncKeyRevealDialog({ generated, onClose }: { generated: GeneratedKey |
                         On {generated?.branchName}’s main till: Settings → System → Network → Cloud sync → type the key → Connect.
                     </DialogDescription>
                 </DialogHeader>
-                <div className="bg-muted/50 grid gap-2 rounded-lg border p-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center sm:gap-4">
+                <div className="bg-muted/50 grid grid-cols-1 gap-2 rounded-lg border p-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center sm:gap-4">
                     <p
                         className="text-foreground font-mono text-base font-semibold tracking-wider break-all select-all"
                         aria-label={generated ? `Sync key ${generated.key.split('').join(' ')}` : undefined}

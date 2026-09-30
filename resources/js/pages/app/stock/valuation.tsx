@@ -113,7 +113,7 @@ export default function StockValuation({ totals, byShop, byDepartment, top, filt
                         {totals.basis.none > 0 ? `, ${number(totals.basis.none)} not valued (no layers and no cost price)` : ''}.
                     </p>
 
-                    <div className="grid gap-4 lg:grid-cols-2 lg:items-start">
+                    <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 lg:items-start">
                         <Groups title="By shop" label="Shop" rows={byShop} total={totals.fifoValue} />
                         <Groups title="By department" label="Department" rows={byDepartment} total={totals.fifoValue} />
                     </div>

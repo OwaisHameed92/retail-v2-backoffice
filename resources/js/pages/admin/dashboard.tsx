@@ -202,7 +202,7 @@ export default function AdminDashboard({
                 })}
             </KpiGrid>
 
-            <div className="grid gap-4 xl:grid-cols-12">
+            <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
                 <div className="flex min-w-0 flex-col gap-4 xl:col-span-7">
                     <RevenueCard chart={revenue} range={range} loading={loadingRange} onRangeChange={changeRange} />
                     <RecentTenantsCard tenants={dashboard.recentTenants} viewAllHref={can('tenants.view') ? route('admin.tenants.index') : undefined} />
@@ -220,7 +220,7 @@ export default function AdminDashboard({
                             <Building2 className="text-primary size-5" aria-hidden />
                             <h2 className="text-foreground flex-1 text-base font-semibold tracking-tight">Business overview</h2>
                         </div>
-                        <div className="grid gap-3 sm:grid-cols-2">
+                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                             <OverviewTile
                                 label="Total tenants"
                                 icon={Building2}

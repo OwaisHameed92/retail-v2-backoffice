@@ -1,8 +1,9 @@
-import { SidebarGroup, SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { SidebarGroup, SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from '@/components/ui/sidebar';
 import { cn } from '@/lib/utils';
 import { Link } from '@inertiajs/react';
-import { type LucideIcon } from 'lucide-react';
-import { type ReactNode } from 'react';
+import { ChevronDown, type LucideIcon } from 'lucide-react';
+import { useEffect, useState, type ReactNode } from 'react';
 
 export interface ShellNavItem {
     title: string;
@@ -23,6 +24,29 @@ export interface ShellNavGroup {
     /** Small uppercase label. Omit for the first (overview) group. */
     label?: string;
     items: ShellNavItem[];
+    /**
+     * The label becomes a toggle that shows or hides the group. `false` (default) keeps it always open; `'open'` or
+     * `'closed'` is the first-visit state. A group holding the current page is always open; the choice is remembered.
+     */
+    collapsible?: false | 'open' | 'closed';
+}
+
+const STORAGE_KEY = 'sidebar:groups';
+
+function readStored(): Record<string, boolean> {
+    try {
+        return JSON.parse(window.localStorage.getItem(STORAGE_KEY) ?? '{}') as Record<string, boolean>;
+    } catch {
+        return {};
+    }
+}
+
+function store(label: string, open: boolean) {
+    try {
+        window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...readStored(), [label]: open }));
+    } catch {
+        // Private mode or blocked storage: the group still toggles for this page.
+    }
 }
 
 function SoonTag() {
@@ -56,47 +80,101 @@ function ItemExtras({ item }: { item: ShellNavItem }) {
     );
 }
 
+function NavItems({ items }: { items: ShellNavItem[] }) {
+    return (
+        <SidebarMenu className="gap-0.5">
+            {items.map((item) => (
+                <SidebarMenuItem key={item.title}>
+                    {item.href && !item.soon ? (
+                        <SidebarMenuButton asChild isActive={!!item.active} tooltip={item.title}>
+                            <Link href={item.href} prefetch aria-current={item.active ? 'page' : undefined}>
+                                <item.icon />
+                                <span className="truncate">{item.title}</span>
+                                <ItemExtras item={item} />
+                            </Link>
+                        </SidebarMenuButton>
+                    ) : (
+                        <SidebarMenuButton
+                            type="button"
+                            aria-disabled="true"
+                            tooltip={`${item.title} (soon)`}
+                            className="text-sidebar-muted/80 hover:text-sidebar-muted/80 cursor-default font-normal hover:bg-transparent active:bg-transparent [&>svg]:opacity-60"
+                        >
+                            <item.icon />
+                            <span className="truncate">{item.title}</span>
+                            <SoonTag />
+                        </SidebarMenuButton>
+                    )}
+                </SidebarMenuItem>
+            ))}
+        </SidebarMenu>
+    );
+}
+
+function CollapsibleGroup({ group, className }: { group: ShellNavGroup & { label: string }; className?: string }) {
+    const { state, isMobile } = useSidebar();
+    const hasActive = group.items.some((item) => item.active);
+    const [open, setOpen] = useState(group.collapsible !== 'closed');
+
+    // The remembered choice is read after mount so server and client render the same first frame.
+    useEffect(() => {
+        const stored = readStored()[group.label];
+        if (stored !== undefined) {
+            setOpen(stored);
+        }
+    }, [group.label]);
+    // Icon-only sidebar: labels are hidden, so every item stays reachable.
+    const iconOnly = state === 'collapsed' && !isMobile;
+    const shown = open || hasActive || iconOnly;
+
+    const toggle = (next: boolean) => {
+        setOpen(next);
+        store(group.label, next);
+    };
+
+    return (
+        <Collapsible open={shown} onOpenChange={toggle} asChild>
+            <SidebarGroup className={cn('px-3 py-1.5', className)}>
+                <SidebarGroupLabel asChild className="h-7 px-2.5">
+                    <CollapsibleTrigger
+                        disabled={hasActive}
+                        tabIndex={iconOnly ? -1 : undefined}
+                        className="hover:text-sidebar-accent-foreground w-full cursor-pointer justify-between transition-colors disabled:cursor-default"
+                    >
+                        {group.label}
+                        {!hasActive && (
+                            <ChevronDown className={cn('size-3.5! transition-transform duration-200', !shown && '-rotate-90')} aria-hidden />
+                        )}
+                    </CollapsibleTrigger>
+                </SidebarGroupLabel>
+                <CollapsibleContent>
+                    <NavItems items={group.items} />
+                </CollapsibleContent>
+            </SidebarGroup>
+        </Collapsible>
+    );
+}
+
 /**
  * Grouped navigation for the dark sidebar, shared by the admin and business layouts: small uppercase muted
- * group labels, chrome-active current item, count pills, live dots, muted "Soon" items that are not links.
- * Collapses to icons with tooltips.
+ * group labels (optionally collapsible), chrome-active current item, count pills, live dots, muted "Soon" items that
+ * are not links. Empty groups are hidden. Collapses to icons with tooltips.
  */
 export function SidebarNav({ groups, className }: { groups: ShellNavGroup[]; className?: string }) {
     return (
         <>
             {groups
                 .filter((group) => group.items.length > 0)
-                .map((group, index) => (
-                    <SidebarGroup key={group.label ?? `group-${index}`} className={cn('px-3 py-2', className)}>
-                        {group.label && <SidebarGroupLabel className="h-6 px-2.5">{group.label}</SidebarGroupLabel>}
-                        <SidebarMenu className="gap-0.5">
-                            {group.items.map((item) => (
-                                <SidebarMenuItem key={item.title}>
-                                    {item.href && !item.soon ? (
-                                        <SidebarMenuButton asChild isActive={!!item.active} tooltip={item.title}>
-                                            <Link href={item.href} prefetch aria-current={item.active ? 'page' : undefined}>
-                                                <item.icon />
-                                                <span className="truncate">{item.title}</span>
-                                                <ItemExtras item={item} />
-                                            </Link>
-                                        </SidebarMenuButton>
-                                    ) : (
-                                        <SidebarMenuButton
-                                            type="button"
-                                            aria-disabled="true"
-                                            tooltip={`${item.title} (soon)`}
-                                            className="text-sidebar-muted/80 hover:text-sidebar-muted/80 cursor-default font-normal hover:bg-transparent active:bg-transparent [&>svg]:opacity-60"
-                                        >
-                                            <item.icon />
-                                            <span className="truncate">{item.title}</span>
-                                            <SoonTag />
-                                        </SidebarMenuButton>
-                                    )}
-                                </SidebarMenuItem>
-                            ))}
-                        </SidebarMenu>
-                    </SidebarGroup>
-                ))}
+                .map((group, index) =>
+                    group.label && group.collapsible ? (
+                        <CollapsibleGroup key={group.label} group={{ ...group, label: group.label }} className={className} />
+                    ) : (
+                        <SidebarGroup key={group.label ?? `group-${index}`} className={cn('px-3 py-1.5', className)}>
+                            {group.label && <SidebarGroupLabel className="h-7 px-2.5">{group.label}</SidebarGroupLabel>}
+                            <NavItems items={group.items} />
+                        </SidebarGroup>
+                    ),
+                )}
         </>
     );
 }

@@ -33,7 +33,7 @@ export default function CashZReport({ report }: ZReportProps) {
                 }
             />
 
-            <div className="grid gap-4 lg:grid-cols-3 lg:items-start">
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-3 lg:items-start">
                 <SectionCard
                     className="lg:col-span-2"
                     title="Totals by payment type"

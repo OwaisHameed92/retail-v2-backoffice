@@ -17,7 +17,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '@/components/ui/select';
 import AppLayout from '@/layouts/app-layout';
 import { cn } from '@/lib/utils';
-import { type BreadcrumbItem, type SharedData } from '@/types';
+import { type SharedData } from '@/types';
 import { Head, router, usePage } from '@inertiajs/react';
 import { Boxes, Download, FileBarChart, Info, Printer } from 'lucide-react';
 import { useState } from 'react';
@@ -32,11 +32,6 @@ export default function ReportShow(props: ReportShowProps) {
     const { report, reports, filters, context, periods, compares, groupings, result, freshness } = props;
     const { company } = usePage<SharedData>().props;
     const [loading, setLoading] = useState(false);
-
-    const breadcrumbs: BreadcrumbItem[] = [
-        { title: 'Reports', href: route('app.reports.index') },
-        { title: report.label, href: route('app.reports.show', report.value) },
-    ];
 
     const visit = (next: Partial<ReportFilters>, keepPage = false) =>
         router.get(route('app.reports.show', report.value), reportQuery(filters, { ...next, page: keepPage ? (next.page ?? filters.page) : 1 }), {
@@ -59,12 +54,15 @@ export default function ReportShow(props: ReportShowProps) {
         });
 
     const query = reportQuery(filters);
-    const where = context.till ? `${context.till.label} at ${context.branch?.name}` : (context.branch?.name ?? `All shops of ${company?.name ?? 'your business'}`);
-    const versus = report.compares && filters.compare !== 'none' ? (compares.find((c) => c.value === filters.compare)?.label.toLowerCase() ?? '') : '';
+    const where = context.till
+        ? `${context.till.label} at ${context.branch?.name}`
+        : (context.branch?.name ?? `All shops of ${company?.name ?? 'your business'}`);
+    const versus =
+        report.compares && filters.compare !== 'none' ? (compares.find((c) => c.value === filters.compare)?.label.toLowerCase() ?? '') : '';
     const sections = [...new Set(reports.map((r) => r.section))];
 
     return (
-        <AppLayout breadcrumbs={breadcrumbs}>
+        <AppLayout>
             <Head title={report.label} />
 
             <PageHeader
@@ -92,7 +90,10 @@ export default function ReportShow(props: ReportShowProps) {
 
             <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
-                    <Select value={report.value} onValueChange={(value) => router.get(reportUrl('app.reports.show', value, { ...query, view: undefined, page: undefined }))}>
+                    <Select
+                        value={report.value}
+                        onValueChange={(value) => router.get(reportUrl('app.reports.show', value, { ...query, view: undefined, page: undefined }))}
+                    >
                         <SelectTrigger className="bg-card h-9 w-full sm:w-60" aria-label="Report">
                             <FileBarChart className="text-muted-foreground size-4" aria-hidden />
                             <SelectValue />
@@ -124,12 +125,23 @@ export default function ReportShow(props: ReportShowProps) {
                     />
                 </div>
                 {report.groups && (
-                    <SegmentedControl<ReportGrouping> label="Group by" value={filters.group} onChange={(group) => visit({ group })} options={groupings} className="shrink-0 self-start whitespace-nowrap" />
+                    <SegmentedControl<ReportGrouping>
+                        label="Group by"
+                        value={filters.group}
+                        onChange={(group) => visit({ group })}
+                        options={groupings}
+                        className="shrink-0 self-start whitespace-nowrap"
+                    />
                 )}
             </div>
 
             {report.views.length > 0 && (
-                <PageTabs label={`${report.label} views`} tabs={report.views.map((v) => ({ label: v.label, value: v.value }))} value={filters.view} onChange={(view) => visit({ view })} />
+                <PageTabs
+                    label={`${report.label} views`}
+                    tabs={report.views.map((v) => ({ label: v.label, value: v.value }))}
+                    value={filters.view}
+                    onChange={(view) => visit({ view })}
+                />
             )}
 
             <div className={cn('flex flex-col gap-6 transition-opacity', loading && 'pointer-events-none opacity-60')} aria-busy={loading}>
@@ -152,7 +164,12 @@ export default function ReportShow(props: ReportShowProps) {
 
                         <ReportSummary figures={result.summary} versus={versus ? `vs ${versus}` : ''} />
 
-                        {result.chart?.type === 'series' && result.chart.points.length > 1 && <SeriesChartCard chart={result.chart} compareLabel={versus ? (compares.find((c) => c.value === filters.compare)?.label ?? null) : null} />}
+                        {result.chart?.type === 'series' && result.chart.points.length > 1 && (
+                            <SeriesChartCard
+                                chart={result.chart}
+                                compareLabel={versus ? (compares.find((c) => c.value === filters.compare)?.label ?? null) : null}
+                            />
+                        )}
                         {result.chart?.type === 'heatmap' && <HeatmapCard chart={result.chart} />}
 
                         {result.tables.map((table) => (

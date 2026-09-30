@@ -41,7 +41,7 @@ export function ApproveLicenceSection({ shops, onTillsAllowed, values, setValue,
                 </CollapsibleTrigger>
             </div>
             <CollapsibleContent className="grid gap-5 pt-2">
-                <div className="grid gap-3 sm:grid-cols-2">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                     {shops.map((shop, index) => (
                         <FormField
                             key={index}

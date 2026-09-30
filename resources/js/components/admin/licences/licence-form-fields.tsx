@@ -86,7 +86,7 @@ export function LicenceFormFields({
 
             <fieldset className="grid gap-2">
                 <legend className="mb-2 text-sm font-medium">Licence</legend>
-                <div className="grid gap-3 sm:grid-cols-2">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                     {options.kinds.map((kind) => (
                         <label
                             key={kind.value}
@@ -115,7 +115,7 @@ export function LicenceFormFields({
                 {errors.kind && <p className="text-danger-foreground text-[13px]">{errors.kind}</p>}
             </fieldset>
 
-            <div className="grid gap-5 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
                 <FormField
                     id={id('length')}
                     label="Length"
@@ -194,7 +194,7 @@ export function LicenceFormFields({
                         </Button>
                     </div>
                 </div>
-                <ul className="grid gap-2 sm:grid-cols-2">
+                <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                     {options.features.map((feature) => (
                         <li key={feature.value}>
                             <label

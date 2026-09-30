@@ -1,8 +1,8 @@
+import { ChartCard, ChartLegend, SegmentedControl, StatPill } from '@/components/shared/chart-card';
+import { EmptyState } from '@/components/shared/empty-state';
 import { CompareChart, type ComparePoint } from '@/components/shared/trading/compare-chart';
 import { changeDelta, hourLabel, money, moneyAxis, moneyShort, number, shortDay, weekday } from '@/components/shared/trading/format';
 import { type SalesDashboardData } from '@/components/shared/trading/types';
-import { ChartCard, SegmentedControl, StatPill } from '@/components/shared/chart-card';
-import { EmptyState } from '@/components/shared/empty-state';
 import { BarChart3, Clock } from 'lucide-react';
 import { useState } from 'react';
 
@@ -75,25 +75,28 @@ export function SalesTrendCard({ data }: { data: SalesDashboardData }) {
             }
             footer={
                 !empty && (compareName || partial) ? (
-                    <span className="flex flex-wrap items-center gap-x-4 gap-y-1">
-                        {compareName && (
-                            <span className="inline-flex items-center gap-2">
-                                <span className="border-muted-foreground inline-block w-5 border-t-2 border-dashed" aria-hidden />
-                                {data.range.compareLabel.replace(/^vs /, '').replace(/^./, (c) => c.toUpperCase())}
-                                {data.range.isToday ? ' (whole day)' : ''}
-                            </span>
-                        )}
-                        {partial && (
-                            <span className="inline-flex items-center gap-2">
-                                {byDay ? (
-                                    <span className="border-primary inline-block size-2.5 rounded-full border-2" aria-hidden />
-                                ) : (
-                                    <span className="border-primary bg-primary/35 inline-block h-2.5 w-3 rounded-sm border border-dashed" aria-hidden />
-                                )}
-                                {byDay ? 'Today so far' : 'This hour so far'}
-                            </span>
-                        )}
-                    </span>
+                    <ChartLegend
+                        items={[
+                            { label: metricName[metric], marker: byDay ? 'dot' : 'bar' },
+                            ...(compareName
+                                ? [
+                                      {
+                                          label: `${data.range.compareLabel.replace(/^vs /, '').replace(/^./, (c) => c.toUpperCase())}${data.range.isToday ? ' (whole day)' : ''}`,
+                                          tone: 'muted' as const,
+                                          marker: 'dashed' as const,
+                                      },
+                                  ]
+                                : []),
+                            ...(partial
+                                ? [
+                                      {
+                                          label: byDay ? 'Today so far' : 'This hour so far',
+                                          marker: byDay ? ('hollow' as const) : ('bar-partial' as const),
+                                      },
+                                  ]
+                                : []),
+                        ]}
+                    />
                 ) : undefined
             }
         >
@@ -152,8 +155,8 @@ export function HourlyPatternCard({ data }: { data: SalesDashboardData }) {
             footer={
                 !empty && busiest ? (
                     <span>
-                        Busiest hour {hourLabel(busiest.hour)}–{hourLabel((busiest.hour + 1) % 24)}: {moneyShort(Number(busiest.net ?? 0) / days)} a day,{' '}
-                        {number(Math.round(Number(busiest.transactions ?? 0) / days))} transactions
+                        Busiest hour {hourLabel(busiest.hour)}–{hourLabel((busiest.hour + 1) % 24)}: {moneyShort(Number(busiest.net ?? 0) / days)} a
+                        day, {number(Math.round(Number(busiest.transactions ?? 0) / days))} transactions
                     </span>
                 ) : undefined
             }

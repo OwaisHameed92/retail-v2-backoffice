@@ -39,7 +39,7 @@ export function StockSection({ data, setData, errors, options }: SectionProps) {
                     <Input id="bin_location" maxLength={40} value={data.bin_location} onChange={(e) => setData('bin_location', e.target.value)} />
                 </FormField>
             </FormGrid>
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <CheckRow id="is_weighed" checked={data.is_weighed} onChange={(v) => setData('is_weighed', v)} label="Weighed at the till" help="The scale sets the quantity." />
                 <CheckRow id="is_open_price" checked={data.is_open_price} onChange={(v) => setData('is_open_price', v)} label="Price entered at the till" help="The cashier keys the price in." />
                 <CheckRow id="tracks_expiry_dates" checked={data.tracks_expiry_dates} onChange={(v) => setData('tracks_expiry_dates', v)} label="Track expiry dates" help="Goods-in asks for best-before dates." />
@@ -90,7 +90,7 @@ export function UnitEditor({ data, setData, errors, options }: SectionProps) {
 
                 return (
                     <div key={row.id ?? `new-${index}`} className="grid gap-3 rounded-lg border p-3.5">
-                        <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_7rem_8rem_8rem_auto] sm:items-end">
+                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-[minmax(0,1fr)_7rem_8rem_8rem_auto] sm:items-end">
                             <FormField id={`units-${index}-unit`} label="Unit" error={e('unit_id')}>
                                 <OptionSelect id={`units-${index}-unit`} value={row.unit_id} options={units} invalid={!!e('unit_id')} onChange={(v) => update(index, { unit_id: v })} />
                             </FormField>

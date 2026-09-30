@@ -3,7 +3,7 @@ import * as React from 'react';
 import { cn } from '@/lib/utils';
 
 /**
- * Table primitives. Compact 48px rows, small uppercase muted headers on a subtle fill, hairline dividers,
+ * Table primitives. Compact 48px rows, small sentence-case muted headers on a subtle fill (sortable ones too), hairline dividers,
  * hover tint. Put the table inside a Card (or use DataTable, which does it for you).
  */
 const Table = React.forwardRef<HTMLTableElement, React.HTMLAttributes<HTMLTableElement> & { containerClassName?: string }>(

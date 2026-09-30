@@ -21,7 +21,7 @@ async function copyText(text: string): Promise<boolean> {
 
 function KeyRow({ item, copied, onCopy }: { item: IssuedKey; copied: boolean; onCopy: () => void }) {
     return (
-        <li className="bg-muted/50 grid gap-2 rounded-lg border p-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center sm:gap-4">
+        <li className="bg-muted/50 grid grid-cols-1 gap-2 rounded-lg border p-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center sm:gap-4">
             <div className="min-w-0">
                 <p className="text-sm font-medium">
                     {item.tillName ?? 'Till'}

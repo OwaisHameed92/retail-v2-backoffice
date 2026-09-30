@@ -47,7 +47,7 @@ export default function EmailTemplates({ templates, selected }: EmailTemplatesPr
                 tabs={<EmailTabs />}
             />
 
-            <div className="grid gap-6 lg:grid-cols-[18rem_1fr]">
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-[18rem_1fr]">
                 {/* Phones: a select. Desktop: a list. */}
                 <div className="lg:hidden">
                     <Select value={current.key} onValueChange={select}>
@@ -105,7 +105,7 @@ export default function EmailTemplates({ templates, selected }: EmailTemplatesPr
                         </Button>
                     </div>
 
-                    <dl className="bg-subtle grid gap-2 rounded-lg border p-3 text-sm sm:grid-cols-[5rem_1fr]">
+                    <dl className="bg-subtle grid grid-cols-1 gap-2 rounded-lg border p-3 text-sm sm:grid-cols-[5rem_1fr]">
                         <dt className="text-muted-foreground">Subject</dt>
                         <dd className="min-w-0 font-medium break-words">{current.subject}</dd>
                         <dt className="text-muted-foreground">Test to</dt>

@@ -206,7 +206,7 @@ function PaymentForm({
                     {errors.method && <p className="text-danger-foreground text-[13px]">{errors.method}</p>}
                 </fieldset>
 
-                <div className="grid gap-4 sm:grid-cols-2">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <Field id="payment-amount" label="Amount" error={errors.amount}>
                         <div className="relative">
                             <span className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-sm">£</span>
@@ -241,7 +241,7 @@ function PaymentForm({
                 {ordered.length > 0 && (
                     <fieldset className="grid gap-2">
                         <legend className="mb-2 text-sm font-medium">Put it towards</legend>
-                        <div className="grid gap-2 sm:grid-cols-2">
+                        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                             {(['auto', 'manual'] as const).map((mode) => (
                                 <label
                                     key={mode}

@@ -234,7 +234,7 @@ export default function StaffTimesheets({ timesheets, summary, wageBands, filter
                     />
                 }
             />
-            <div className="grid gap-6 lg:grid-cols-2">
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
                 <SectionCard
                     title="How wages are estimated"
                     description="An estimate for payroll, not a payslip."

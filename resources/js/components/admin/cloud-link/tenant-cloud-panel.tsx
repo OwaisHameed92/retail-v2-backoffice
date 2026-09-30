@@ -27,7 +27,7 @@ export function TenantCloudPanel({ moves, keys, canClear }: TenantCloudPanelProp
                 ) : (
                     <ul className="divide-y">
                         {moves.map((move) => (
-                            <li key={move.id} className="grid gap-3 px-5 py-4 sm:grid-cols-[1fr_auto] sm:items-center sm:px-6">
+                            <li key={move.id} className="grid grid-cols-1 gap-3 px-5 py-4 sm:grid-cols-[1fr_auto] sm:items-center sm:px-6">
                                 <div className="grid gap-1">
                                     <div className="flex flex-wrap items-center gap-2">
                                         <span className="font-medium">{move.branch.name ?? 'Unknown shop'}</span>
@@ -57,7 +57,7 @@ export function TenantCloudPanel({ moves, keys, canClear }: TenantCloudPanelProp
                 ) : (
                     <ul className="divide-y">
                         {keys.map((key) => (
-                            <li key={key.id} className="grid gap-2 px-5 py-4 sm:grid-cols-[1fr_auto] sm:items-center sm:px-6">
+                            <li key={key.id} className="grid grid-cols-1 gap-2 px-5 py-4 sm:grid-cols-[1fr_auto] sm:items-center sm:px-6">
                                 <div className="grid gap-1">
                                     <div className="flex flex-wrap items-center gap-2">
                                         <span className="font-mono text-sm">{key.installCode}</span>

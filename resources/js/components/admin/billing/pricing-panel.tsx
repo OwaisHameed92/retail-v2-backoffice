@@ -52,7 +52,7 @@ export function PricingPanel({ company, directDebit, canManage }: PricingPanelPr
                 ) : undefined
             }
         >
-            <div className="grid gap-3 sm:grid-cols-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                 <Tile label="Pricing">
                     <span className="inline-flex flex-wrap items-center gap-2 font-medium">
                         {pricing.modeLabel}

@@ -53,7 +53,7 @@ export default function ComplianceRecall({ recall, stock, matchesBatches, suppli
                 }
             />
 
-            <div className="grid gap-4 lg:grid-cols-3 lg:items-start">
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-3 lg:items-start">
                 <div className="grid gap-4 lg:col-span-2">
                     <SectionCard title="Why it is recalled">
                         <p className="text-sm leading-6 whitespace-pre-line">{recall.reason ?? 'No reason given.'}</p>

@@ -13,7 +13,7 @@ export function RoleMatrix({ roles, rows }: { roles: RoleOption[]; rows: MatrixR
 
     return (
         <div className="grid gap-6">
-            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
                 {roles.map((role) => (
                     <div key={role.value} className="bg-card shadow-card rounded-xl border p-4">
                         <p className="text-sm font-semibold">{role.label}</p>

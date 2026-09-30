@@ -27,7 +27,7 @@ function TradingBody({ data, props, go }: { data: TradingData; props: TradingPag
         <div className="flex flex-col gap-4">
             <TradingKpis data={data} />
 
-            <div className="grid gap-4 xl:grid-cols-12">
+            <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
                 <div className="min-w-0 xl:col-span-8">
                     <SalesTrendCard data={data} />
                 </div>
@@ -36,7 +36,7 @@ function TradingBody({ data, props, go }: { data: TradingData; props: TradingPag
                 </div>
             </div>
 
-            <div className="grid gap-4 xl:grid-cols-12">
+            <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
                 {data.daily !== null && (
                     <div className="min-w-0 xl:col-span-7">
                         <HourlyPatternCard data={data} />
@@ -47,7 +47,7 @@ function TradingBody({ data, props, go }: { data: TradingData; props: TradingPag
                 </div>
             </div>
 
-            <div className="grid items-start gap-4 lg:grid-cols-2">
+            <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-2">
                 {businesses && (
                     <LeadersCard
                         title="Top businesses"

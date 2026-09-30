@@ -367,3 +367,12 @@ Tokens live only in `resources/css/app.css` (v2 palette, light + dark): `chrome`
 
 - `components/app/purchasing/`: `types.ts` (matches `Purchasing\Queries\PurchasingPage`, `OrderDetail`, `DocumentDetail`, `OrderForm`, `SupplierStatement`), `format.tsx` (`PurchasingStatus` + `PURCHASING_TONES` for every purchasing status, `PurchasingTabs`, `qty`, `cost` (4 dp), `documentHref`), `columns.tsx` (list columns per kind), `parts.tsx` (`ProductCell`, `Totals`, `LinkedCard`), `order-lines.tsx` (`LinesEditor`, `CatalogueCard`).
 - Backend: `Purchasing\Queries\Lists\DocumentRows` (one list: filters, search incl. supplier name, stats; one class per kind), `Purchasing\Support\HeadOfficeOrders` (who owns an order, `reference` fallback), `ReorderSuggestion`, actions `SaveHeadOfficeOrder` / `ChangeHeadOfficeOrderStatus` (both through `TillData\Actions\DraftHeadOfficeOrder`).
+
+## Added by module 7.1 (UI polish) — patterns
+
+- **Page anatomy**: `PageHeader` (title, one-line description, actions right; `back` one level deep, `breadcrumbs` deeper; section `tabs`) → one filters bar → content cards (`SectionCard`, `ChartCard`, `DataTable`). Never add filters to the layout; never pass layout breadcrumbs and a header trail together.
+- **Filters bar**: pass filters to `DataTable filters={…}`; a filter component's root should be `flex w-full flex-col gap-2 sm:w-auto sm:flex-1 sm:flex-row sm:flex-wrap sm:items-center` so it sits beside the search and still works standalone (see `CashFilters`, `StockFilters`, `AccountsFilters`). Controls are `h-9`; a one-shop user sees a locked shop pill.
+- **Sidebar**: `ShellNavGroup.collapsible` (`'open'` / `'closed'` first-visit state, remembered in `localStorage`, forced open when it holds the current page and in icon mode). Tenant items carry an `ability` and are hidden without it (`components/app-sidebar.tsx`).
+- **Charts**: `ChartLegend` (`chart-card.tsx`; markers `dot`, `dashed` compare, `hollow` today so far, `bar`, `bar-partial`) in a `ChartCard` `footer`; `ChartTooltipBox` (`trend-chart.tsx`) for every Recharts tooltip. Colours only via `ChartTone` / `toneVar`; compare series `muted`.
+- **Tables**: headers are sentence case (sortable ones too). Select values are left-aligned after a leading icon.
+- **Errors**: `pages/error.tsx` + `App\Http\Support\InertiaErrorPages` (403/404/500/503 when debug is off; JSON callers untouched; 419 → back with a toast).

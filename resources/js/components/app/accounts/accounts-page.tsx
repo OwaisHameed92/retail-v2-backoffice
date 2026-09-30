@@ -93,7 +93,7 @@ export function AccountsFilters({ filters, options, update, asAt = false, dates 
     const reset = { page: undefined };
 
     return (
-        <div className="flex w-full flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-1 sm:flex-row sm:flex-wrap sm:items-center">
             {dates && !asAt && (
                 <>
                     <Select
@@ -144,7 +144,9 @@ export function AccountsFilters({ filters, options, update, asAt = false, dates 
                         className="h-9 w-full sm:w-38"
                         aria-label="Balance sheet date"
                         value={filters.to}
-                        onChange={(e) => e.target.value && update({ to: e.target.value, from: e.target.value < filters.from ? e.target.value : filters.from })}
+                        onChange={(e) =>
+                            e.target.value && update({ to: e.target.value, from: e.target.value < filters.from ? e.target.value : filters.from })
+                        }
                     />
                 </div>
             )}
@@ -211,9 +213,7 @@ export function RefundFixNotice({ summary, fix, update }: { summary: RefundFixSu
     return (
         <Alert variant="warning">
             <TriangleAlert />
-            <AlertTitle>
-                {summary.entries === 1 ? '1 refund was' : `${summary.entries} refunds were`} posted before the refund fix
-            </AlertTitle>
+            <AlertTitle>{summary.entries === 1 ? '1 refund was' : `${summary.entries} refunds were`} posted before the refund fix</AlertTitle>
             <AlertDescription>
                 <p>
                     Till versions before 0.1.15 journalled a refund like a sale, so sales, VAT and cash went up instead of down (

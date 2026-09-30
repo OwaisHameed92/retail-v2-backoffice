@@ -77,13 +77,13 @@ export default function Profile({ mustVerifyEmail, status }: { mustVerifyEmail: 
 
                         {mustVerifyEmail && auth.user.email_verified_at === null && (
                             <div>
-                                <p className="mt-2 text-sm text-neutral-800">
+                                <p className="text-foreground mt-2 text-sm">
                                     Your email address is unverified.
                                     <Link
                                         href={route('verification.send')}
                                         method="post"
                                         as="button"
-                                        className="rounded-md text-sm text-neutral-600 underline hover:text-neutral-900 focus:ring-2 focus:ring-offset-2 focus:outline-hidden"
+                                        className="text-muted-foreground hover:text-foreground focus-visible:ring-ring/50 rounded-md text-sm underline focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-hidden"
                                     >
                                         Click here to re-send the verification email.
                                     </Link>
@@ -107,7 +107,7 @@ export default function Profile({ mustVerifyEmail, status }: { mustVerifyEmail: 
                                 leave="transition ease-in-out"
                                 leaveTo="opacity-0"
                             >
-                                <p className="text-sm text-neutral-600">Saved</p>
+                                <p className="text-muted-foreground text-sm">Saved</p>
                             </Transition>
                         </div>
                     </form>

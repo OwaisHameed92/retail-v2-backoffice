@@ -140,7 +140,7 @@ export default function Trial({ endpoint, turnstileSiteKey, businessTypes, maxSh
                         </Alert>
                     )}
 
-                    <div className="grid gap-5 sm:grid-cols-2">
+                    <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
                         <FormField id="businessName" label="Business name" error={errors.businessName} className="sm:col-span-2">
                             {input('businessName', { autoComplete: 'organization', required: true, autoFocus: true, placeholder: 'Khan Mini Mart' })}
                         </FormField>

@@ -19,7 +19,7 @@ function ShopCard({ shop, defaults, canApplyToEveryShop }: { shop: ShopHours; de
             }
             actions={<HoursDialog shop={shop} defaults={defaults} canApplyToEveryShop={canApplyToEveryShop} />}
         >
-            <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+            <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
                 {shop.days ? (
                     <dl className="divide-border grid divide-y text-sm">
                         {shop.days.map((day) => (

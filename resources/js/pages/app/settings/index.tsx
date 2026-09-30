@@ -77,7 +77,7 @@ function SettingsForm({ shop, shops, canEveryShop, sections, values, inherited, 
                 </AlertDescription>
             </Alert>
 
-            <div className="grid gap-6 lg:grid-cols-[13rem_minmax(0,1fr)]">
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-[13rem_minmax(0,1fr)]">
                 <nav aria-label="Setting sections" className="hidden lg:block">
                     <ul className="sticky top-20 grid gap-0.5 text-sm">
                         {sections.map((section) => (

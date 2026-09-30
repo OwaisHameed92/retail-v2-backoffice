@@ -155,7 +155,7 @@ export default function CreateTenant({ nations, maxTills, plans, defaultPlanId, 
     };
 
     return (
-        <AdminLayout breadcrumbs={[{ title: 'Customers' }, { title: 'Tenants', href: route('admin.tenants.index') }, { title: 'Add tenant' }]}>
+        <AdminLayout>
             <Head title="Add tenant" />
 
             <PageHeader
@@ -185,7 +185,7 @@ export default function CreateTenant({ nations, maxTills, plans, defaultPlanId, 
                     </FormSection>
 
                     <FormSection title="Account" description="How the customer starts with us.">
-                        <fieldset className="grid gap-3 sm:col-span-2 sm:grid-cols-2">
+                        <fieldset className="grid grid-cols-1 gap-3 sm:col-span-2 sm:grid-cols-2">
                             <legend className="sr-only">Account status</legend>
                             {statusOptions.map((option) => (
                                 <label

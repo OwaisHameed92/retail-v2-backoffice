@@ -73,7 +73,7 @@ export default function CashShift({ shift, tenders, movements, movementTotals, s
                 <StatCard label="Sales in this shift" value={number(shift.salesCount)} hint={money(shift.salesTotal)} icon={Receipt} tone="primary" />
             </StatGrid>
 
-            <div className="grid gap-4 lg:grid-cols-3 lg:items-start">
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-3 lg:items-start">
                 <div className="grid gap-4 lg:col-span-2">
                     <TendersCard tenders={tenders} />
                     <CountsCard stages={stages} />

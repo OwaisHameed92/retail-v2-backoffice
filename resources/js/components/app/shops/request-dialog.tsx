@@ -80,7 +80,7 @@ function RequestDialogBody({ onOpenChange, options, shopId }: RequestDialogProps
                     </FormField>
                 )}
 
-                <div className="grid gap-4 sm:grid-cols-[1fr_8rem]">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-[1fr_8rem]">
                     {newShop ? (
                         <FormField id="new_shop_name" label="Where is the new shop?" error={errors.new_shop_name} help="A name or the town is enough.">
                             <Input

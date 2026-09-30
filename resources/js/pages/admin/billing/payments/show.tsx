@@ -41,7 +41,7 @@ export default function PaymentShow({ payment, activity }: PaymentShowProps) {
                 }
             />
 
-            <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
+            <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
                 <div className="grid gap-6">
                     <SectionCard
                         title="Paid towards"

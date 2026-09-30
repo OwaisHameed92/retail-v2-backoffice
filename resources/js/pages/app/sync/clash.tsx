@@ -37,7 +37,7 @@ export default function SyncClash({ clash, hubChange, fields }: ClashDetailProps
                 </AlertDescription>
             </Alert>
 
-            <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
                 <FieldComparisonCard
                     fields={fields}
                     title="Portal now and the change the till kept aside"

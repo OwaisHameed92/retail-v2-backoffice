@@ -18,7 +18,7 @@ const reset = { after: undefined, before: undefined, page: undefined };
 /** The shop (locked for a one-shop user), then department, supplier, movement kind and dates where the screen has them. */
 export function StockFilters({ filters, options, update, show = {} }: Props) {
     return (
-        <div className="flex w-full flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-1 sm:flex-row sm:flex-wrap sm:items-center">
             {filters.shopLocked ? (
                 <StatusPill tone="neutral" className="h-9 gap-1.5 px-3">
                     <Lock className="size-3.5" />

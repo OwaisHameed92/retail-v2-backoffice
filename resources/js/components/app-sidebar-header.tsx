@@ -1,30 +1,11 @@
-import { AppBranchSwitcher } from '@/components/app-branch-switcher';
 import { AccountTrigger, HelpMenu, NotificationsMenu, SearchTrigger, Topbar, TopbarBrand } from '@/components/shell/topbar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { UserMenuContent } from '@/components/user-menu-content';
 import { type SharedData } from '@/types';
 import { usePage } from '@inertiajs/react';
-import { CalendarDays, Sparkles } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
 
-function DateRange() {
-    // Not wired up yet: report pages will read the range once they exist.
-    return (
-        <Select defaultValue="today">
-            <SelectTrigger className="h-9 w-[132px]" aria-label="Date range">
-                <CalendarDays className="text-muted-foreground size-4" aria-hidden />
-                <SelectValue />
-            </SelectTrigger>
-            <SelectContent align="end">
-                <SelectItem value="today">Today</SelectItem>
-                <SelectItem value="week">This week</SelectItem>
-                <SelectItem value="month">This month</SelectItem>
-            </SelectContent>
-        </Select>
-    );
-}
-
-/** Business portal top bar (dark chrome): logo, "Ask anything" (soon), help, notifications, account menu. */
+/** Business portal top bar (dark chrome): logo, "Ask anything" (the portal assistant, module 6.2: "Soon"), help, notifications, account menu. */
 export function AppSidebarHeader() {
     const { auth, companyRole } = usePage<SharedData>().props;
 
@@ -50,15 +31,5 @@ export function AppSidebarHeader() {
                 </>
             }
         />
-    );
-}
-
-/** Branch and date filters at the top of the page, right-aligned (kept off the dark top bar). */
-export function AppFilterBar() {
-    return (
-        <div className="flex flex-wrap items-center justify-end gap-2">
-            <AppBranchSwitcher />
-            <DateRange />
-        </div>
     );
 }

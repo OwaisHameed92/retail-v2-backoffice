@@ -64,7 +64,7 @@ function UserDialogBody({ onOpenChange, tenantId, tenantName, roles, member }: U
                 </DialogHeader>
 
                 {!editing && (
-                    <div className="grid gap-5 sm:grid-cols-2">
+                    <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
                         <Field id="user-name" label="Name" error={errors.name}>
                             <Input
                                 id="user-name"

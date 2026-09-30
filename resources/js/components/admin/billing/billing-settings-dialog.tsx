@@ -88,7 +88,7 @@ function SettingsBody({ onOpenChange, company, billing }: BillingSettingsDialogP
                     <Textarea id="billing-address" rows={3} maxLength={1000} value={data.billing_address} onChange={(event) => setData('billing_address', event.target.value)} placeholder={company.address ?? ''} />
                 </Field>
 
-                <div className="grid gap-4 sm:grid-cols-2">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <Field id="billing-cycle" label="Billing cycle" error={errors.cycle}>
                         <Select value={data.cycle} onValueChange={(value) => setData('cycle', value as BillingCycle)}>
                             <SelectTrigger id="billing-cycle">

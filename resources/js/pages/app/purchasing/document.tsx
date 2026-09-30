@@ -89,7 +89,7 @@ export default function PurchasingDocument({ kind, document, facts, columns, lin
                 <AlertDescription>Kept at the shop: this is its till's record, so it is read only here.</AlertDescription>
             </Alert>
 
-            <div className="grid gap-4 lg:grid-cols-3 lg:items-start">
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-3 lg:items-start">
                 <SectionCard title="Lines" flush className="lg:col-span-2">
                     {lines.length === 0 ? (
                         <EmptyState icon={ListX} title="No lines" body="The shop recorded this without product lines." className="py-8" />

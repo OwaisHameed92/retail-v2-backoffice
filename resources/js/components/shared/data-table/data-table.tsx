@@ -231,7 +231,7 @@ export function DataTable<TData, TValue = unknown>({
                                                         type="button"
                                                         onClick={header.column.getToggleSortingHandler()}
                                                         className={cn(
-                                                            'hover:text-foreground focus-visible:ring-ring/40 -mx-1 inline-flex items-center gap-1 rounded px-1 py-0.5 uppercase transition-colors outline-none focus-visible:ring-2',
+                                                            'hover:text-foreground focus-visible:ring-ring/40 -mx-1 inline-flex items-center gap-1 rounded px-1 py-0.5 transition-colors outline-none focus-visible:ring-2',
                                                             sorted && 'text-foreground',
                                                             align === 'right' && 'flex-row-reverse',
                                                         )}

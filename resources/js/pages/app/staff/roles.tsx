@@ -78,7 +78,7 @@ export default function TillRoles({ roles, selected, groups, canEdit }: RoleEdit
                     bordered
                 />
             ) : (
-                <div className="grid gap-6 lg:grid-cols-[16rem_minmax(0,1fr)]">
+                <div className="grid grid-cols-1 gap-6 lg:grid-cols-[16rem_minmax(0,1fr)]">
                     <RoleList roles={roles} selected={role.id} />
                     <div className="grid content-start gap-6">
                         <SectionCard
@@ -96,7 +96,7 @@ export default function TillRoles({ roles, selected, groups, canEdit }: RoleEdit
                                         <legend className="text-muted-foreground mb-2 text-xs font-semibold tracking-wide uppercase">
                                             {group.label}
                                         </legend>
-                                        <div className="grid gap-4 md:grid-cols-2">
+                                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                                             {group.permissions.map((p) => (
                                                 <CheckField
                                                     key={p.key}

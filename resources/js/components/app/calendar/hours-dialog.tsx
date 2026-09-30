@@ -78,7 +78,7 @@ export function HoursDialog({ shop, defaults, canApplyToEveryShop }: HoursDialog
                             const closesError = errors[`days.${weekday}.closes`] ?? errors[`days.${i}.closes`];
 
                             return (
-                                <div key={NAMES[i]} className="grid gap-2 px-3 py-2.5 sm:grid-cols-[8rem_1fr] sm:items-center">
+                                <div key={NAMES[i]} className="grid grid-cols-1 gap-2 px-3 py-2.5 sm:grid-cols-[8rem_1fr] sm:items-center">
                                     <div className="flex items-center gap-2">
                                         <Checkbox
                                             id={`open-${weekday}`}

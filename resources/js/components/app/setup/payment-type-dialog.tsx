@@ -65,7 +65,7 @@ export function PaymentTypeDialog({ row, open, onOpenChange }: { row: PaymentTyp
                     {row.mixed ? '; settings you leave alone stay as each shop has them.' : '.'}
                 </p>
             )}
-            <div className="grid gap-4 sm:grid-cols-[1fr_7rem]">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-[1fr_7rem]">
                 <FormField
                     id="pt-name"
                     label="Name on the button"
@@ -87,7 +87,7 @@ export function PaymentTypeDialog({ row, open, onOpenChange }: { row: PaymentTyp
             </div>
             <fieldset className="grid gap-3">
                 <legend className="mb-2 text-sm font-semibold">What it is</legend>
-                <div className="grid gap-3 sm:grid-cols-2">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                     {KIND.map(({ flag, label, help }) => (
                         <CheckField key={flag} id={`pt-${flag}`} label={label} help={help} checked={data[flag]} onChange={(v) => setData(flag, v)} />
                     ))}

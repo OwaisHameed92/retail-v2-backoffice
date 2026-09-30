@@ -109,7 +109,7 @@ export default function LeadShow({ lead, notes, duplicates, approval, options, d
             <StatusAlerts lead={lead} canViewTenant={can.viewTenant} />
             <DuplicatesAlert matches={duplicates} canViewTenants={can.viewTenant} />
 
-            <div className="grid items-start gap-6 lg:grid-cols-3">
+            <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-3">
                 <div className="grid gap-6 lg:col-start-3 lg:row-start-1">
                     <SectionCard title="Contact">
                         <DescriptionList

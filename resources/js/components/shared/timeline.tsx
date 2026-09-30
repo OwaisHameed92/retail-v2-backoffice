@@ -85,7 +85,7 @@ export function TimelineChanges({ changes }: { changes: TimelineChange[] }) {
     return (
         <dl className="bg-subtle grid gap-1.5 rounded-lg border px-3 py-2.5 text-[13px]">
             {changes.map((change) => (
-                <div key={change.label} className="grid gap-x-3 sm:grid-cols-[10rem_minmax(0,1fr)]">
+                <div key={change.label} className="grid grid-cols-1 gap-x-3 sm:grid-cols-[10rem_minmax(0,1fr)]">
                     <dt className="text-muted-foreground">{change.label}</dt>
                     <dd className="min-w-0 break-words">
                         {change.from !== null && change.from !== undefined && (

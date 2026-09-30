@@ -93,7 +93,7 @@ export default function TenantShow({
     ];
 
     return (
-        <AdminLayout breadcrumbs={[{ title: 'Customers' }, { title: 'Tenants', href: route('admin.tenants.index') }, { title: tenant.name }]}>
+        <AdminLayout>
             <Head title={tenant.name} />
 
             <PageHeader

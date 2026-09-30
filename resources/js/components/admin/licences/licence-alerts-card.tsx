@@ -46,7 +46,7 @@ function AlertFacts({ alert }: { alert: LicenceAlert }) {
     }
 
     return (
-        <dl className="text-muted-foreground mt-2 grid gap-x-4 gap-y-1 text-xs sm:grid-cols-2">
+        <dl className="text-muted-foreground mt-2 grid grid-cols-1 gap-x-4 gap-y-1 text-xs sm:grid-cols-2">
             {facts.map((fact) => (
                 <div key={fact.label} className="flex min-w-0 gap-1.5">
                     <dt className="shrink-0">{fact.label}:</dt>

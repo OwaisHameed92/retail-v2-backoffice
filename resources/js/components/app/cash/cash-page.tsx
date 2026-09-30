@@ -63,7 +63,7 @@ export function CashFilters({ filters, options, update, showTill = true, childre
     const reset = { page: undefined };
 
     return (
-        <div className="flex w-full flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-1 sm:flex-row sm:flex-wrap sm:items-center">
             <Select
                 value={preset?.value ?? 'custom'}
                 onValueChange={(value) => {

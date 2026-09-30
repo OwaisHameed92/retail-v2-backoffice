@@ -77,7 +77,7 @@ export default function StaffForm({ member, options, canEdit }: StaffFormProps) 
                 </Alert>
             )}
 
-            <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_22rem]">
+            <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_22rem]">
                 <form onSubmit={submit} className="grid max-w-4xl gap-6" noValidate>
                     <FormCard>
                         <FormSection title="Who they are" description="Their name as it shows on the till's sign-in screen, and what they may do.">
@@ -151,7 +151,7 @@ export default function StaffForm({ member, options, canEdit }: StaffFormProps) 
                                 title="Shops"
                                 description="Where they usually work, for your staff list. Every till still lets them sign in."
                             >
-                                <div className="grid gap-3 sm:grid-cols-2">
+                                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                                     {options.branches.map((b) => (
                                         <CheckField
                                             key={b.value}
@@ -199,7 +199,7 @@ export default function StaffForm({ member, options, canEdit }: StaffFormProps) 
                         </FormSection>
 
                         <FormSection title="On the till" description="How the till treats them once they sign in.">
-                            <div className="grid gap-4 sm:grid-cols-2">
+                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                                 {FLAGS.map((f) => (
                                     <CheckField
                                         key={f.key}

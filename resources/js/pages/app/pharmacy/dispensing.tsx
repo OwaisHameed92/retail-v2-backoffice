@@ -90,7 +90,7 @@ export default function PharmacyDispensing(props: DispensingProps) {
                 <StatCard label="Private" value={number(summary.private)} hint={`${money(summary.privateCharges)} charged`} icon={BadgeCheck} tone="neutral" />
             </StatGrid>
 
-            <div className="grid gap-6 lg:grid-cols-2">
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
                 <SectionCard title="Exemptions" description="Why exempt prescriptions were free." flush>
                     {exemptions.length === 0 ? (
                         <EmptyState size="sm" title="No exempt prescriptions" body="None in these dates." />

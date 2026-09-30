@@ -71,7 +71,7 @@ export default function StockProduct({ product, lines, totals, layers, batches, 
                 />
             </StatGrid>
 
-            <div className="grid gap-4 lg:grid-cols-3 lg:items-start">
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-3 lg:items-start">
                 <div className="grid gap-4 lg:col-span-2">
                     <ShopLines lines={lines} />
                     <SectionCard

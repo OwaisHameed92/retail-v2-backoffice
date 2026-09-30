@@ -47,7 +47,7 @@ export default function ReportsIndex({ reports, filters, context }: ReportIndexP
                     <h2 id={`reports-${section}`} className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
                         {section}
                     </h2>
-                    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
                         {reports
                             .filter((r) => r.section === section)
                             .map((r) => {

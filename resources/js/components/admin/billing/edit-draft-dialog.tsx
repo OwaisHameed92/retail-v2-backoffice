@@ -92,7 +92,7 @@ function EditBody({ onOpenChange, invoice }: EditDraftDialogProps) {
                         const pence = linePence(line.quantity, line.unit_price);
 
                         return (
-                            <div key={line.id ?? `new-${index}`} className="grid gap-2 rounded-lg border p-3 md:grid-cols-[minmax(0,1fr)_5.5rem_7.5rem_6rem_2.25rem] md:items-start md:border-0 md:p-0">
+                            <div key={line.id ?? `new-${index}`} className="grid grid-cols-1 gap-2 rounded-lg border p-3 md:grid-cols-[minmax(0,1fr)_5.5rem_7.5rem_6rem_2.25rem] md:items-start md:border-0 md:p-0">
                                 <div className="grid gap-1">
                                     <div className="relative">
                                         {line.hasLicence && (

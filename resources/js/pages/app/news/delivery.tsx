@@ -59,7 +59,7 @@ export default function NewsDeliveryShow({ delivery, lines, totals }: DeliverySh
                 />
             </StatGrid>
 
-            <div className="grid gap-4 lg:grid-cols-3 lg:items-start">
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-3 lg:items-start">
                 <SectionCard title="Titles" flush className="lg:col-span-2">
                     {lines.length === 0 ? (
                         <EmptyState icon={ListX} title="No titles" body="The shop recorded this delivery without lines." className="py-8" />

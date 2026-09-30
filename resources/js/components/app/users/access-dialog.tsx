@@ -72,7 +72,7 @@ function AccessDialogBody({ onOpenChange, roles, branches, validDays, member }: 
                 </DialogHeader>
 
                 {!editing && (
-                    <div className="grid gap-5 sm:grid-cols-2">
+                    <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
                         <FormField id="invite-name" label="Name" error={errors.name}>
                             <Input
                                 id="invite-name"

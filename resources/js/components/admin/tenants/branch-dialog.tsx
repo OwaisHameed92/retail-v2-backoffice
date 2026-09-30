@@ -105,7 +105,7 @@ function BranchDialogBody({ onOpenChange, tenantId, branch, nations, maxTills }:
                     </DialogDescription>
                 </DialogHeader>
 
-                <div className="grid gap-5 sm:grid-cols-2">
+                <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
                     <BranchFields
                         data={data}
                         setField={(key, value) => setData(key, value as never)}

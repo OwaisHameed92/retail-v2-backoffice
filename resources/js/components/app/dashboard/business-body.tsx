@@ -30,7 +30,7 @@ export function BusinessBody({ data, status, onShop }: { data: BusinessData; sta
             <TradingKpis data={data} />
             <OperationsTiles operations={data.operations} status={status} />
 
-            <div className="grid gap-4 xl:grid-cols-12">
+            <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
                 <div className="min-w-0 xl:col-span-8">
                     <SalesTrendCard data={data} />
                 </div>
@@ -39,7 +39,7 @@ export function BusinessBody({ data, status, onShop }: { data: BusinessData; sta
                 </div>
             </div>
 
-            <div className="grid gap-4 xl:grid-cols-12">
+            <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
                 {data.daily !== null && (
                     <div className="min-w-0 xl:col-span-7">
                         <HourlyPatternCard data={data} />
@@ -50,7 +50,7 @@ export function BusinessBody({ data, status, onShop }: { data: BusinessData; sta
                 </div>
             </div>
 
-            <div className="grid items-start gap-4 lg:grid-cols-2">
+            <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-2">
                 <ShopsOrTillsCard data={data} onShop={onShop} />
                 <TopProductsCard data={data} />
                 <DepartmentsCard data={data} />

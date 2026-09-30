@@ -20,7 +20,7 @@ export function RulesSection({ data, setData, errors, options }: SectionProps) {
                     <Input id="max_qty_reason" maxLength={120} placeholder="e.g. Paracetamol: 2 packs per customer" value={data.max_qty_reason} onChange={(e) => setData('max_qty_reason', e.target.value)} />
                 </FormField>
             )}
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <CheckRow id="is_alcohol" checked={data.is_alcohol} onChange={(v) => setData('is_alcohol', v)} label="Alcohol" help="Licensing hours and alcohol duty reports.">
                     <FormGrid>
                         <FormField id="abv_percent" label="Strength (ABV)" optional error={errors.abv_percent}>

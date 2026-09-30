@@ -1,8 +1,8 @@
-import { money, number, share } from '@/components/shared/trading/format';
-import { type TenderRow, type VatRow } from '@/components/shared/trading/types';
 import { EmptyState } from '@/components/shared/empty-state';
 import { SectionCard } from '@/components/shared/section-card';
-import { toneVar, type ChartTone } from '@/components/shared/trend-chart';
+import { money, number, share } from '@/components/shared/trading/format';
+import { type TenderRow, type VatRow } from '@/components/shared/trading/types';
+import { ChartTooltipBox, toneVar, type ChartTone } from '@/components/shared/trend-chart';
 import { CreditCard, Percent } from 'lucide-react';
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts';
 
@@ -37,8 +37,24 @@ export function TenderMixCard({ tenders }: { tenders: TenderRow[] }) {
                                     ))}
                                 </Pie>
                                 <Tooltip
-                                    formatter={(value: number) => money(value)}
-                                    contentStyle={{ background: 'var(--popover)', border: '1px solid var(--border)', borderRadius: 8, fontSize: 12 }}
+                                    content={({ active, payload }) =>
+                                        active && payload?.[0] ? (
+                                            <ChartTooltipBox
+                                                rows={[
+                                                    {
+                                                        label: String(payload[0].name ?? ''),
+                                                        value: money(Number(payload[0].value ?? 0)),
+                                                        tone: tones[
+                                                            Math.max(
+                                                                0,
+                                                                tenders.findIndex((t) => t.name === payload[0].name),
+                                                            ) % tones.length
+                                                        ],
+                                                    },
+                                                ]}
+                                            />
+                                        ) : null
+                                    }
                                 />
                             </PieChart>
                         </ResponsiveContainer>
@@ -50,7 +66,11 @@ export function TenderMixCard({ tenders }: { tenders: TenderRow[] }) {
                     <ul className="w-full min-w-0 flex-1 divide-y text-sm">
                         {tenders.map((t, i) => (
                             <li key={t.paymentTypeId} className="flex items-center gap-3 py-2">
-                                <span className="size-2.5 shrink-0 rounded-full" style={{ background: toneVar[tones[i % tones.length]] }} aria-hidden />
+                                <span
+                                    className="size-2.5 shrink-0 rounded-full"
+                                    style={{ background: toneVar[tones[i % tones.length]] }}
+                                    aria-hidden
+                                />
                                 <span className="min-w-0 flex-1">
                                     <span className="block truncate font-medium">{t.name}</span>
                                     <span className="text-muted-foreground block text-xs tabular-nums">
@@ -96,7 +116,9 @@ export function VatCard({ rows }: { rows: VatRow[] }) {
                                 <tr key={`${r.vatRateId}-${r.percentage}`}>
                                     <td className="px-5 py-2.5 sm:px-6">
                                         <span className="font-medium">{r.code || '—'}</span>
-                                        <span className="text-muted-foreground ml-2 tabular-nums">{Number(r.percentage).toLocaleString('en-GB')}%</span>
+                                        <span className="text-muted-foreground ml-2 tabular-nums">
+                                            {Number(r.percentage).toLocaleString('en-GB')}%
+                                        </span>
                                     </td>
                                     <td className="px-3 py-2.5 text-right tabular-nums">{money(r.net)}</td>
                                     <td className="px-5 py-2.5 text-right tabular-nums sm:px-3">{money(r.vat)}</td>

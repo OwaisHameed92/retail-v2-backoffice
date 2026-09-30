@@ -47,7 +47,9 @@ function InvoiceList({ rows, amount = 'balance' }: { rows: InvoiceRow[]; amount?
                     <div className="hidden sm:block">
                         <DueDate row={row} />
                     </div>
-                    <div className="w-24 shrink-0 text-right text-sm font-semibold tabular-nums">{amount === 'balance' ? row.balance : row.total}</div>
+                    <div className="w-24 shrink-0 text-right text-sm font-semibold tabular-nums">
+                        {amount === 'balance' ? row.balance : row.total}
+                    </div>
                 </li>
             ))}
         </ul>
@@ -133,7 +135,7 @@ export default function BillingOverview({ stats, overdue, dueSoon, drafts, recen
                     />
                 </SectionCard>
             ) : (
-                <div className="grid items-start gap-6 xl:grid-cols-2">
+                <div className="grid grid-cols-1 items-start gap-6 xl:grid-cols-2">
                     <SectionCard
                         title={
                             <span className="inline-flex items-center gap-2">
@@ -143,10 +145,23 @@ export default function BillingOverview({ stats, overdue, dueSoon, drafts, recen
                         }
                         description={`Customers are suspended ${settings.suspendAfterDays} days after the due date. A payment lifts it straight away.`}
                         flush
-                        footer={stats.overdue.count > overdue.length ? <ViewAll href={route('admin.billing.invoices.index', { status: 'overdue' })} label={`View all ${stats.overdue.count}`} /> : undefined}
+                        footer={
+                            stats.overdue.count > overdue.length ? (
+                                <ViewAll
+                                    href={route('admin.billing.invoices.index', { status: 'overdue' })}
+                                    label={`View all ${stats.overdue.count}`}
+                                />
+                            ) : undefined
+                        }
                     >
                         {overdue.length === 0 ? (
-                            <EmptyState icon={CircleCheck} tone="success" size="sm" title="Nothing overdue" body="Every issued invoice is within its payment terms." />
+                            <EmptyState
+                                icon={CircleCheck}
+                                tone="success"
+                                size="sm"
+                                title="Nothing overdue"
+                                body="Every issued invoice is within its payment terms."
+                            />
                         ) : (
                             <InvoiceList rows={overdue} />
                         )}
@@ -156,10 +171,19 @@ export default function BillingOverview({ stats, overdue, dueSoon, drafts, recen
                         title="Due in the next 7 days"
                         description="Worth a reminder call before the due date."
                         flush
-                        footer={stats.dueThisWeek.count > dueSoon.length ? <ViewAll href={route('admin.billing.invoices.index', { status: 'open' })} label="View unpaid invoices" /> : undefined}
+                        footer={
+                            stats.dueThisWeek.count > dueSoon.length ? (
+                                <ViewAll href={route('admin.billing.invoices.index', { status: 'open' })} label="View unpaid invoices" />
+                            ) : undefined
+                        }
                     >
                         {dueSoon.length === 0 ? (
-                            <EmptyState icon={CalendarClock} size="sm" title="Nothing due this week" body="Invoices due in the next 7 days appear here." />
+                            <EmptyState
+                                icon={CalendarClock}
+                                size="sm"
+                                title="Nothing due this week"
+                                body="Invoices due in the next 7 days appear here."
+                            />
                         ) : (
                             <InvoiceList rows={dueSoon} />
                         )}
@@ -178,7 +202,11 @@ export default function BillingOverview({ stats, overdue, dueSoon, drafts, recen
                                 : `The billing run drafts invoices ${settings.generateDaysBefore} days before tills run out. Check and issue them.`
                         }
                         flush
-                        footer={stats.drafts.count > drafts.length ? <ViewAll href={route('admin.billing.invoices.index', { status: 'draft' })} label={`View all ${stats.drafts.count}`} /> : undefined}
+                        footer={
+                            stats.drafts.count > drafts.length ? (
+                                <ViewAll href={route('admin.billing.invoices.index', { status: 'draft' })} label={`View all ${stats.drafts.count}`} />
+                            ) : undefined
+                        }
                     >
                         {drafts.length === 0 ? (
                             <EmptyState icon={FilePen} size="sm" title="No drafts" body="Everything is issued." />
@@ -189,12 +217,21 @@ export default function BillingOverview({ stats, overdue, dueSoon, drafts, recen
 
                     <SectionCard
                         title="Recent payments"
-                        description={stats.creditHeld !== '£0.00' ? `${stats.creditHeld} is held as customer credit.` : 'Cash, bank transfers and other payments recorded by staff.'}
+                        description={
+                            stats.creditHeld !== '£0.00'
+                                ? `${stats.creditHeld} is held as customer credit.`
+                                : 'Cash, bank transfers and other payments recorded by staff.'
+                        }
                         flush
                         footer={<ViewAll href={route('admin.billing.payments.index')} label="All payments" />}
                     >
                         {recentPayments.length === 0 ? (
-                            <EmptyState icon={Banknote} size="sm" title="No payments yet" body="Record a payment from an invoice or a tenant’s Billing tab." />
+                            <EmptyState
+                                icon={Banknote}
+                                size="sm"
+                                title="No payments yet"
+                                body="Record a payment from an invoice or a tenant’s Billing tab."
+                            />
                         ) : (
                             <ul className="divide-y">
                                 {recentPayments.map((payment) => (
@@ -206,10 +243,13 @@ export default function BillingOverview({ stats, overdue, dueSoon, drafts, recen
                                             <div className="min-w-0 flex-1 leading-tight">
                                                 <div className="truncate text-sm font-medium">{payment.company.name}</div>
                                                 <div className="text-muted-foreground mt-0.5 truncate text-xs">
-                                                    {payment.methodLabel} · {formatDate(payment.receivedAt)} · <span className="font-mono">{payment.number}</span>
+                                                    {payment.methodLabel} · {formatDate(payment.receivedAt)} ·{' '}
+                                                    <span className="font-mono">{payment.number}</span>
                                                 </div>
                                             </div>
-                                            <div className="text-success-foreground shrink-0 text-sm font-semibold tabular-nums">{payment.amount}</div>
+                                            <div className="text-success-foreground shrink-0 text-sm font-semibold tabular-nums">
+                                                {payment.amount}
+                                            </div>
                                         </Link>
                                     </li>
                                 ))}
@@ -233,13 +273,19 @@ export default function BillingOverview({ stats, overdue, dueSoon, drafts, recen
                     <ul className="divide-y">
                         {suspended.map((company) => (
                             <li key={company.companyId} className="flex flex-wrap items-center justify-between gap-3 px-5 py-3 text-sm sm:px-6">
-                                <Link href={route('admin.tenants.show', { company: company.companyId, tab: 'billing' })} className="font-medium hover:underline">
+                                <Link
+                                    href={route('admin.tenants.show', { company: company.companyId, tab: 'billing' })}
+                                    className="font-medium hover:underline"
+                                >
                                     {company.name}
                                 </Link>
                                 <span className="text-muted-foreground inline-flex items-center gap-3">
                                     Since {formatDate(company.since)}
                                     {company.invoiceId && (
-                                        <Link href={route('admin.billing.invoices.show', company.invoiceId)} className="text-primary inline-flex items-center gap-1 hover:underline">
+                                        <Link
+                                            href={route('admin.billing.invoices.show', company.invoiceId)}
+                                            className="text-primary inline-flex items-center gap-1 hover:underline"
+                                        >
                                             <FileClock className="size-3.5" aria-hidden />
                                             Invoice
                                         </Link>

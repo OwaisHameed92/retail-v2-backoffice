@@ -119,11 +119,11 @@ Contract: v1.4.1 §18.4. Roles: business owner, **shop manager** (one branch onl
 | 6.6 | Anomaly alerts | todo |
 | 6.7 | Admin AI | todo |
 
-## Phase 7: Finish and go-live — 0/6
+## Phase 7: Finish and go-live — 1/6
 
 | # | Module | Status |
 |---|---|---|
-| 7.1 | Apply design system v2 to the business panel and remaining screens | todo |
+| 7.1 | Apply design system v2 to the business panel and remaining screens | Pass 1 done: one filter location per page (global branch/date bar removed), tenant sidebar regrouped with collapsible groups and ability-hidden items, one breadcrumb trail (PageHeader), sentence-case table headers, shared `ChartLegend` / `ChartTooltipBox`, branded 403/404/500/503 pages, left-aligned select values, token-only colours in account settings, admin "Customers" Soon item removed. Later pass: per-page spacing/density review, account settings forms onto `FormCard`, admin detail tabs on phones | done |
 | 7.2 | Gap analysis (competitors, UK compliance, legacy parity; `docs/research/`) | todo |
 | 7.3 | Security review | todo |
 | 7.4 | Deploy (MySQL server, HTTPS, queues, scheduler, backups, signing key generated on the server) | todo |

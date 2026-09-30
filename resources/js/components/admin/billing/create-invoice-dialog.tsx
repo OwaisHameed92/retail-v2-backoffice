@@ -110,7 +110,7 @@ function CreateInvoiceBody({ onOpenChange, company, periodStart, cycle, cycles }
                     </DialogDescription>
                 </DialogHeader>
 
-                <div className="grid gap-4 sm:grid-cols-2">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <Field id="invoice-start" label="Period starts" error={errors.period_start} hint={preview ? `Runs to ${formatDay(preview.periodEnd)}.` : undefined}>
                         <Input
                             id="invoice-start"

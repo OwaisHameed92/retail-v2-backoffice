@@ -78,7 +78,7 @@ export function UpfrontPaymentFields({ value, onChange, errors, options, planFee
             )}
 
             {shown && (
-                <div className="grid gap-4 sm:grid-cols-2">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <Field
                         id={`${idPrefix}-amount`}
                         label="Setup fee (before VAT)"
