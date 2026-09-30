@@ -637,3 +637,15 @@ Package `docs/contracts/portal-api-v1.4.1/` (START-HERE "What changed", `ANSWERS
 | Speed | Sales only from `rpt_*` through the 3.1 read side (tenant scope); non-sales tiles from `branch_products`, `shifts`/`shift_tenders`, `customer_orders` (one grouped query each, `OperationsReport`). ~20 queries, cached 60 s per company + filters. KPIs and series are shared with 3.2 (`Reporting\Dashboard\DashboardKpis`, `DashboardSeries` over the `SalesWindow` interface) |
 | Freshness | "Updated N min ago" = newest last push of the shops in view; tooltip per shop (state from last contact: live ≤ 2 min, recent ≤ 15, stale → "recent figures may be incomplete") — `ShopFreshness`, read fresh each load. No figures on any day for these shops → empty state explaining the till must be linked and syncing |
 | Charts (3.2 and 3.3) | Curves are `monotoneX` (never overshoot between points). A range ending today draws today "so far": dashed segment to a hollow dot on area charts and KPI sparklines, a pale dashed-outline bar for the current hour; the legend says "Today so far" / "This hour so far". Recharts 2 does not look inside fragments: each series is its own child |
+
+## Phase 4 wave 1 (modules 4.1, 4.2, 4.5, 2026-09-30)
+
+Built in parallel worktrees and merged. Worktree agents must copy `vendor` (a symlink makes Composer load main's `app/`).
+
+| Topic | Decision |
+|---|---|
+| Invitations (4.1) | Only a SHA-256 hash of the invite token is stored; a resend rotates it. Signed link, 7 days. An existing account must sign in to accept. Owners always see every shop. The last owner can never be demoted, deactivated or removed. |
+| Product edits (4.2) | `SaveProduct` is the one write path (form, CSV, later AI). A portal edit raises `rowVersion` by one; a save that changes nothing writes nothing. Archive = `isActive` false + `archivedAt` (no soft delete); departments/categories delete only when empty. |
+| CSV import (4.2) | A row finds its product by barcode, then code; empty cells keep the current value; missing departments/categories are created; applied queued in 250-row chunks with a result report. |
+| Till staff PIN (4.5) | `pinHash` uses the ASP.NET Identity v3 layout (PBKDF2-SHA256, 10k iterations). **Pending EPOS confirmation.** The portal cannot remove a fob (done on the till). Staff shop assignment is portal-only (`till_user_branches`), since `User` has no shop. |
+| One-shop users (4.5) | Suppliers, payment types, reasons, staff and till roles are read-only for one-shop users (`CompanyWideWriteRequest`). |
