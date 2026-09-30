@@ -325,3 +325,10 @@ Tokens live only in `resources/css/app.css` (v2 palette, light + dark): `chrome`
 - `components/app/dashboard/`: `types.ts` (matches `BusinessDashboard::compute()` + `ShopFreshness::for()`, `BusinessDashboardFilters::toArray()`, `BusinessContext::for()`), `BusinessFiltersBar` + `businessQuery()` (shop select = the portal switcher, locked for a one-shop user; till select), `OperationsTiles` (cash variance, low stock, tills online, orders to collect), `ShopsOrTillsCard`, `TopProductsCard`, `DepartmentsCard` (departments / categories), `StaffCard`, `BusinessBody`, `NoSalesYet`.
 - `AppBranchSwitcher` honours the shared `branchLocked` prop (one-shop user).
 - Backend: `Reporting\Dashboard\` — `SalesWindow` (interface), `DashboardKpis`, `DashboardSeries` (shared with 3.2), `BusinessDashboard` (`for()` cached 60 s, `compute()`), `BusinessDashboardFilters`, `BusinessContext`, `ShopFreshness`; `Reporting\Queries\OperationsReport` (`lowStock`, `cashVariance`, `ordersReady`; tenant scope); `Reporting\Enums\TradingPeriod` / `TradingCompare` (moved from Admin; `TradingCompare::window($scope)`); `Reporting\Support\TradingRange`. Tenancy: `CurrentCompany::restrictedBranchId()` (membership `branch_id`).
+
+## Added by module 4.2 (products and catalogue, tenant portal)
+
+- `components/app/products/fields.tsx`: `MoneyInput` (`places={2|4}`), `NumberField` (suffix), `OptionSelect` (with an
+  optional "none" choice), `CheckRow` (checkbox card that reveals child fields when ticked), `formatMoney`, `marginPercent`.
+- Backend: `Catalogue\Actions\SaveProduct` is the one way to write a product (form, CSV import, later AI tools); it keeps
+  ids, writes only `ProductFields::EDITABLE`, and returns `SavedProduct` (created / changed keys).
