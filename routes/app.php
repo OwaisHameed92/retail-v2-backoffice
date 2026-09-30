@@ -23,6 +23,7 @@ use App\Http\Controllers\App\SaleController;
 use App\Http\Controllers\App\ShopController;
 use App\Http\Controllers\App\ShopSettingsController;
 use App\Http\Controllers\App\StaffController;
+use App\Http\Controllers\App\StaffTimeController;
 use App\Http\Controllers\App\StockController;
 use App\Http\Controllers\App\StockTakeController;
 use App\Http\Controllers\App\SupplierController;
@@ -122,6 +123,13 @@ Route::middleware(['auth:web', 'verified', 'company'])->group(function () {
     Route::prefix('settings')->name('settings.')->middleware('company.can:settings.manage')->group(function () {
         Route::get('/', [ShopSettingsController::class, 'index'])->name('index');
         Route::put('/', [ShopSettingsController::class, 'update'])->name('update')->middleware('throttle:60,1');
+    });
+    // Module 5.6: staff time, read only (clock events, timesheets and payroll CSV, rota). staff.view; one-shop: their shop.
+    Route::prefix('staff/time')->name('staff.time.')->middleware('company.can:staff.view')->group(function () {
+        Route::get('/', [StaffTimeController::class, 'clock'])->name('clock');
+        Route::get('timesheets', [StaffTimeController::class, 'timesheets'])->name('timesheets');
+        Route::get('timesheets/export', [StaffTimeController::class, 'export'])->name('export')->middleware('throttle:20,1');
+        Route::get('rota', [StaffTimeController::class, 'rota'])->name('rota');
     });
     Route::prefix('staff')->name('staff.')->middleware('company.can:staff.manage')->group(function () {
         Route::get('/', [StaffController::class, 'index'])->name('index');

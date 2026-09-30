@@ -8,6 +8,7 @@ import {
     BarChart3,
     BookOpen,
     Boxes,
+    Clock,
     CreditCard,
     Factory,
     GitCompareArrows,
@@ -62,8 +63,12 @@ function tenantNav(path: string, abilities: string[]): ShellNavGroup[] {
         ? [{ title: 'Suppliers', icon: Factory, href: '/app/suppliers', active: path.startsWith('/app/suppliers') }]
         : [];
     const staff = abilities.includes('staff.manage')
-        ? { title: 'Staff', icon: UserCog, href: '/app/staff', active: path.startsWith('/app/staff') }
+        ? { title: 'Staff', icon: UserCog, href: '/app/staff', active: path.startsWith('/app/staff') && !path.startsWith('/app/staff/time') }
         : { title: 'Staff', icon: UserCog, soon: true };
+    // Module 5.6: staff time (clock events, timesheets, rota), read only (staff.view).
+    const staffTime = abilities.includes('staff.view')
+        ? [{ title: 'Staff time', icon: Clock, href: '/app/staff/time', active: path.startsWith('/app/staff/time') }]
+        : [];
     const tillLists = abilities.includes('settings.manage')
         ? [
               {
@@ -111,7 +116,7 @@ function tenantNav(path: string, abilities: string[]): ShellNavGroup[] {
             label: 'Money',
             items: [...cash, { title: 'Accounts', icon: BookOpen, soon: true }, ...reports],
         },
-        { label: 'Team', items: [...users, staff] },
+        { label: 'Team', items: [...users, staff, ...staffTime] },
         { label: 'Settings', items: [...shops, ...tillLists, ...sync, ...billing] },
     ];
 }

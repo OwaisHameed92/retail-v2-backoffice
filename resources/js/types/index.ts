@@ -47,6 +47,7 @@ export type Ability =
     | 'staff.manage'
     | 'suppliers.manage'
     | 'cash.view'
+    | 'staff.view'
     | 'purchasing.view'
     | 'purchasing.manage';
 

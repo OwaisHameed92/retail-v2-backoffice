@@ -51,4 +51,7 @@ enum Ability: string
 
     /** Draft, send and cancel head-office orders for a shop (module 5.2). Owner and a manager of every shop. */
     case PurchasingManage = 'purchasing.manage';
+
+    /** Clock events, timesheets, payroll CSV and the rota, read only (module 5.6). Owner, manager, accountant. */
+    case StaffView = 'staff.view';
 }
