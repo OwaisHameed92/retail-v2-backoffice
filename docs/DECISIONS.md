@@ -684,3 +684,11 @@ still v1 (`X-SSPOS-Contract: 1`); the pack was copied over the contract folder (
 | Till settings (4.9) | Our own curated catalogue of 75 shared keys in 10 sections (a test checks it against the deny-list). A blank value removes the shop's own setting. `shop.trading_hours` is free text until the EPOS team gives its format. |
 | My subscription (4.10) | The owner can ask to cancel or change bank account: a `subscriptionRequested` admin alert + staff email; nothing is cancelled by the owner. A new mandate does not move the existing subscription, so bank changes go through staff. |
 | Payment types (0.1.15 fix) | Grouped by name company-wide; a save updates each shop's copy with only the changed fields. The till's own "Order deposit" and "Loyalty points" can't be renamed or removed. |
+
+## Phase 5 wave 4 (modules 5.1, 5.2, 5.4, 2026-09-30)
+
+| Topic | Decision |
+|---|---|
+| Stock (5.1) | FIFO value from the till's `FifoStockLayer` rows (newest layers cover what is on hand; the rest at `Product.costPrice`). Stock takes and branch min/max are branch-owned, read-only. The only portal write is Product min/max/reorder qty via the hub path, audited. Accountants get `stock.view`. |
+| Purchasing (5.2) | Shop documents are read-only; orders show `reference` (numbers are not unique across shops). Head-office orders: draft, send, cancel via `DraftHeadOfficeOrder` (owner / every-shop manager, `purchasing.manage`), with suggested cases from shop stock. VAT % from the server's VAT rate. Supplier statements leave out draft invoices and reversed payments. Rebate agreements read-only. Accountants get `purchasing.view`. |
+| Cash and Z (5.4) | All read-only (till-owned, day locks included); the 4.8 shifts/Z report is linked, not copied. Variance alert amount: the shop's `cash.variance_alert_over` setting, else £5, or typed in; till-flagged shifts always listed. Card check: closed-shift card takings vs settled amounts, per till per day. `cash.view`: owner, manager, accountant. |

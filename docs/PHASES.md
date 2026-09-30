@@ -10,7 +10,7 @@ Each module is one agent task. Modules in the same wave can run in parallel. Sta
 included) pass, the UI follows `docs/BRAND.md`, and `composer check`, `npm run lint`, `npx tsc --noEmit` and
 `npm run build` are green.
 
-Totals: **64 modules · 42 done · 22 todo** (2026-09-30, counted from the tables of phases 0–7; 2.9 split into A and
+Totals: **64 modules · 45 done · 19 todo** (2026-09-30, counted from the tables of phases 0–7; 2.9 split into A and
 B; Phase 8's five later items are not modules yet).
 
 ---
@@ -92,14 +92,14 @@ Contract: v1.4.1 §18.4. Roles: business owner, **shop manager** (one branch onl
 | 4.9 | Shop settings (receipt text, opening hours; per §18.6) | done |
 | 4.10 | My subscription and invoices | done |
 
-## Phase 5: Operations — 0/10
+## Phase 5: Operations — 3/10
 
 | # | Module | Status |
 |---|---|---|
-| 5.1 | Stock (on hand, movements, stock takes, FIFO valuation, expiry) | todo |
-| 5.2 | Purchasing (POs, GRNs, supplier invoices, credit notes, purchase returns, payments, rebates); portal-created PO relayed in pull (§10.6) | todo |
+| 5.1 | Stock (on hand, movements, stock takes, FIFO valuation, expiry) | done |
+| 5.2 | Purchasing (POs, GRNs, supplier invoices, credit notes, purchase returns, payments, rebates); portal-created PO relayed in pull (§10.6) | done |
 | 5.3 | Branch stock transfers (screens; the relay is built in 2.9B) | todo |
-| 5.4 | Cash and Z (shifts, Z reports, cash office, card settlement, day lock) | todo |
+| 5.4 | Cash and Z (shifts, Z reports, cash office, card settlement, day lock) | done |
 | 5.5 | Accounts and VAT (expenses, VAT return, journals, fixed assets) | todo |
 | 5.6 | Staff (clock events, rota, timesheets, wages) | todo |
 | 5.7 | Compliance (age refusals, incidents, training, diary checks, licences, recalls) | todo |
