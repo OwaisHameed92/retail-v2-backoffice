@@ -224,6 +224,8 @@ TillSum::many($anyQuery, ['total' => 2, 'qty' => 4]);   // exact sums in the dat
 $sale->saleLines; $line->sale; $row->branch; $row->register;
 ```
 
+Dashboards and reports read the `rpt_*` summaries, not these rows: see `docs/reporting.md` (module 3.1).
+
 ## Regenerating
 
 ```bash

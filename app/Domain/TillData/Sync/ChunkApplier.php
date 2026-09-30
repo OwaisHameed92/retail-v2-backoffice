@@ -2,6 +2,7 @@
 
 namespace App\Domain\TillData\Sync;
 
+use App\Domain\Reporting\Sync\ReportDayTracker;
 use App\Domain\TillData\Actions\RecomputeCustomerBalances;
 use App\Domain\TillData\EntityRegistry;
 use App\Domain\TillData\Registry\EntityDefinition;
@@ -15,14 +16,18 @@ use Illuminate\Support\Facades\Log;
 /**
  * Applies one chunk of mapped changes in one transaction: ledger dedupe, child scope resolution, tenancy rows,
  * one EntityWriter pass per entity (parents before children), child backfill, customer balances from the ledger,
- * ledger and conflict rows.
+ * reporting days (module 3.1: sale trading days stamped, touched shop-days marked dirty), ledger and conflict rows.
  *
  * If the database refuses the chunk (a constraint, a value MySQL will not take), the chunk is rolled back and
  * retried one change at a time, so only the failing change is rejected (`store.failed`) and the rest apply.
  */
 final class ChunkApplier
 {
-    public function __construct(private readonly ChangeLedger $ledger, private readonly RecomputeCustomerBalances $balances) {}
+    public function __construct(
+        private readonly ChangeLedger $ledger,
+        private readonly RecomputeCustomerBalances $balances,
+        private readonly ReportDayTracker $reportDays,
+    ) {}
 
     /**
      * @param  list<MappedChange>  $chunk  seq order
@@ -95,6 +100,7 @@ final class ChunkApplier
         }
 
         ksort($groups);
+        $reportBefore = $this->reportDays->before($context, $todo);
         $writer = new EntityWriter($context, $conflicts);
 
         foreach ($groups as $entities) {
@@ -110,6 +116,7 @@ final class ChunkApplier
 
         // §10.1: a customer's balance and points are the sum of their ledger, never a till's cached figures.
         $this->balances->afterPush($context->companyId, $todo);
+        $this->reportDays->after($context, $todo, $outcomes, $reportBefore);
 
         $accepted = [];
 

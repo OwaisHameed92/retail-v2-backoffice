@@ -10,7 +10,7 @@ Each module is one agent task. Modules in the same wave can run in parallel. Sta
 included) pass, the UI follows `docs/BRAND.md`, and `composer check`, `npm run lint`, `npx tsc --noEmit` and
 `npm run build` are green.
 
-Totals: **64 modules · 29 done · 35 todo** (2026-09-30, counted from the tables of phases 0–7; 2.9 split into A and
+Totals: **64 modules · 30 done · 34 todo** (2026-09-30, counted from the tables of phases 0–7; 2.9 split into A and
 B; Phase 8's five later items are not modules yet).
 
 ---
@@ -65,13 +65,13 @@ Contract: v1.4.1 §1–16, §19, §21 (duplicate/echo/conflict rules + test list
 
 Waves: 2.6 → 2.7 → 2.8.
 
-## Phase 3: Reporting and dashboards — 0/3
+## Phase 3: Reporting and dashboards — 1/3
 
 Contract: v1.4.1 `docs/web-portal-api/DASHBOARD.md` (formulas; we build them on **MySQL 8**, not PostgreSQL).
 
 | # | Module | What | Status |
 |---|---|---|---|
-| 3.1 | Reporting tables | `rpt_*` tables updated idempotently as rows arrive; trading day in Europe/London; refunds subtracted | todo |
+| 3.1 | Reporting tables | `rpt_*` tables updated idempotently as rows arrive; trading day in Europe/London; refunds subtracted. Built (`docs/reporting.md`): `rpt_sales_daily`, `_hourly`, `rpt_tender_daily`, `rpt_product_daily`, `rpt_vat_daily`, `rpt_staff_daily` per company/shop/till/trading day (DASHBOARD.md §4, MySQL 8 + SQLite); `sales.trading_day`/`trading_hour` stamped at ingest (PHP, DST-safe); the apply path marks touched shop-days dirty (old and new day) and a per-business job deletes + rebuilds them from raw rows (tokens, unique, no overlap) + minutely sweep; `reports:rebuild`, `reports:check [--fix]`, `reports:process-dirty`; read side `ReportScope` (tenant / admin) + `SalesReport`, `TenderReport`, `VatReport`, `ProductReport`, `StaffReport` → Data objects; tests: §6 worked example, idempotency, DST, refunds, voids, isolation, incremental == rebuild, fixed query count | done |
 | 3.2 | Admin dashboard: trading | Every Admin-panel tile and chart across all businesses, per business and shop | todo |
 | 3.3 | Business dashboard | Today / week / month, per shop and total, "last updated N minutes ago" | todo |
 

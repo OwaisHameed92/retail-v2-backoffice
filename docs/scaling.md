@@ -25,11 +25,18 @@ Groundwork only (module 2.1); the work itself is module 7.6. Nothing below chang
   for 6 years: archive, never delete.
 - Reports older than the hot window read `rpt_*` summaries, not the raw rows.
 
-## `rpt_*` tables
+## `rpt_*` tables (built in module 3.1, docs/reporting.md)
 
-- Pre-aggregated per company, branch, trading day (Europe/London, computed at ingest): sales, tenders, VAT,
-  hourly sales, stock value. Written by the applier's after-commit jobs, idempotent (upsert by key).
-- Dashboards (Phase 3) read only `rpt_*`; they are small, so they stay on the main server even after sharding.
+- Pre-aggregated per company, shop, till and trading day (Europe/London, stamped on `sales` at ingest): sales,
+  hourly, tenders, products, VAT, staff. Rebuilt a whole shop-day at a time from the raw rows by a queued job per
+  business (dirty days marked in the push transaction), so they can always be dropped and rebuilt
+  (`reports:rebuild`, chunked per shop and 7 days).
+- **Partitioning hooks:** every `rpt_*` primary key is `(company_id, branch_id, trading_day, register_id, …)` —
+  it already contains `trading_day`, so monthly RANGE partitions need no key change. `sales` has
+  `(company_id, branch_id, trading_day)`; partitioning the raw sale tables by month on `trading_day` (children would
+  need it copied or partition by `created_at`) is 7.6 work. `rpt_dirty_days` stays small (rows removed on rebuild).
+- Dashboards (Phase 3) read only `rpt_*`; they are small, so they stay on the main server even after sharding
+  (the rebuild job must then read the raw rows on the company's connection and write `rpt_*` on the main one).
 
 ## Sharding (later, when one server is not enough)
 

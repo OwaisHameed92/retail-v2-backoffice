@@ -34,5 +34,8 @@ Schedule::command('model:prune', ['--model' => [AiConversation::class, AiPending
 // Till health (module 2.7): online/offline, versions, sync and clock per till; raises and clears health alerts.
 Schedule::command('till-health:refresh')->everyFiveMinutes()->onOneServer()->withoutOverlapping(10);
 
+// Reporting tables (module 3.1): re-queue shop-days whose rebuild job was lost or failed (pushes queue their own).
+Schedule::command('reports:process-dirty')->everyMinute()->onOneServer()->withoutOverlapping(10);
+
 // Admin dashboard (module 1.9): a heartbeat so System health can show the scheduler is running.
 Schedule::call(fn () => SchedulerHeartbeat::beat())->everyMinute()->name('scheduler:heartbeat')->onOneServer();

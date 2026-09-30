@@ -2,6 +2,7 @@
 
 namespace App\Domain\TillData\Actions;
 
+use App\Domain\Reporting\Sync\ReportDayTracker;
 use App\Domain\Sync\Support\IdTranslator;
 use App\Domain\Tenancy\Models\Branch;
 use App\Domain\Tenancy\Models\Company;
@@ -128,6 +129,8 @@ final class ApplySyncChanges
 
         $this->warnUnknownEnums($mapped, $context);
         NeverStored::log($items, $outcomes, $context);
+        // Module 3.1: rebuild the shop-days this batch touched, off the request, after the commit.
+        ReportDayTracker::dispatch($context->companyId, $mapped, $outcomes);
         $receivedAt = $this->ledger->receivedAt($context, NeverStored::storedSeqs($items, $outcomes), NeverStored::acceptedSeqs($items, $outcomes));
 
         return $this->result($order, $items, $outcomes, $started, $receivedAt);
