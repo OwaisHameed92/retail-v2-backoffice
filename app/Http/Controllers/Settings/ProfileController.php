@@ -2,8 +2,12 @@
 
 namespace App\Http\Controllers\Settings;
 
+use App\Domain\PortalUsers\Actions\DeleteOwnAccount;
+use App\Domain\PortalUsers\Actions\UpdateOwnProfile;
+use App\Domain\Tenancy\CurrentCompany;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Settings\ProfileUpdateRequest;
+use Illuminate\Auth\SessionGuard;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -27,15 +31,9 @@ class ProfileController extends Controller
     /**
      * Update the user's profile settings.
      */
-    public function update(ProfileUpdateRequest $request): RedirectResponse
+    public function update(ProfileUpdateRequest $request, UpdateOwnProfile $update, CurrentCompany $tenancy): RedirectResponse
     {
-        $request->user()->fill($request->validated());
-
-        if ($request->user()->isDirty('email')) {
-            $request->user()->email_verified_at = null;
-        }
-
-        $request->user()->save();
+        $update->handle($request->user(), (string) $request->validated('name'), (string) $request->validated('email'), $tenancy->id());
 
         return to_route('profile.edit');
     }
@@ -43,17 +41,18 @@ class ProfileController extends Controller
     /**
      * Delete the user's account.
      */
-    public function destroy(Request $request): RedirectResponse
+    public function destroy(Request $request, DeleteOwnAccount $delete): RedirectResponse
     {
         $request->validate([
             'password' => ['required', 'current_password'],
         ]);
 
-        $user = $request->user();
+        // Refused (with a message on `password`) while they are a business's last owner (module 4.1).
+        $delete->handle($request->user());
 
-        Auth::logout();
-
-        $user->delete();
+        // Not logout(): it would save the deleted user again to cycle its remember token.
+        $guard = Auth::guard('web');
+        $guard instanceof SessionGuard ? $guard->logoutCurrentDevice() : $guard->logout();
 
         $request->session()->invalidate();
         $request->session()->regenerateToken();

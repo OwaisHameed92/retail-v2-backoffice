@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Settings;
 
+use App\Domain\Tenancy\Enums\CompanyRole;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -63,7 +64,8 @@ class ProfileUpdateTest extends TestCase
 
     public function test_user_can_delete_their_account()
     {
-        $user = User::factory()->withCompany()->create();
+        // A manager: a business's last owner cannot delete their account (module 4.1, tests/Feature/PortalUsers/OwnAccountTest.php).
+        $user = User::factory()->withCompany(role: CompanyRole::Manager)->create();
 
         $response = $this
             ->actingAs($user)

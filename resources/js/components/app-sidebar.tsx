@@ -14,6 +14,7 @@ import {
     Package,
     Receipt,
     Settings,
+    ShieldCheck,
     Tag,
     Truck,
     UserCog,
@@ -30,6 +31,9 @@ function tenantNav(path: string, abilities: string[]): ShellNavGroup[] {
         : [];
     const sync = abilities.includes('sync.manage')
         ? [{ title: 'Sync conflicts', icon: GitCompareArrows, href: '/app/sync/conflicts', active: path.startsWith('/app/sync') }]
+        : [];
+    const users = abilities.includes('users.manage')
+        ? [{ title: 'Portal users', icon: ShieldCheck, href: '/app/users', active: path.startsWith('/app/users') }]
         : [];
 
     return [
@@ -58,7 +62,7 @@ function tenantNav(path: string, abilities: string[]): ShellNavGroup[] {
                 { title: 'Reports', icon: BarChart3, soon: true },
             ],
         },
-        { label: 'Team', items: [{ title: 'Staff', icon: UserCog, soon: true }] },
+        { label: 'Team', items: [...users, { title: 'Till staff', icon: UserCog, soon: true }] },
         { label: 'Settings', items: [...sync, ...billing, { title: 'Business settings', icon: Settings, soon: true }] },
     ];
 }

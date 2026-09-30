@@ -13,6 +13,7 @@ use App\Domain\Mail\Mailables\InvoiceMail;
 use App\Domain\Mail\Mailables\LeadRejectedMail;
 use App\Domain\Mail\Mailables\LicenceKeyMail;
 use App\Domain\Mail\Mailables\LicenceRenewedMail;
+use App\Domain\Mail\Mailables\PortalInvitationMail;
 use App\Domain\Mail\Mailables\SetPasswordMail;
 use App\Domain\Mail\Mailables\TrialEndedMail;
 use App\Domain\Mail\Mailables\TrialReminderMail;
@@ -27,6 +28,7 @@ final class EmailTemplates
     public const MAILABLES = [
         WelcomeTenantMail::class,
         SetPasswordMail::class,
+        PortalInvitationMail::class,
         LicenceKeyMail::class,
         TrialReminderMail::class,
         TrialEndedMail::class,
