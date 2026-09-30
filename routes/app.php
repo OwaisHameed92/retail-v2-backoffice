@@ -4,6 +4,7 @@
 // (see bootstrap/app.php). Every route here must sit behind `auth`, `verified` and `company`; add
 // `company.can:<ability>` for anything role-restricted.
 
+use App\Http\Controllers\App\AccountsController;
 use App\Http\Controllers\App\BillingController;
 use App\Http\Controllers\App\CashController;
 use App\Http\Controllers\App\CatalogueGroupController;
@@ -182,6 +183,22 @@ Route::middleware(['auth:web', 'verified', 'company'])->group(function () {
         Route::get('cards', [CashController::class, 'cards'])->name('cards');
         Route::get('days', [CashController::class, 'days'])->name('days');
         Route::get('alerts', [CashController::class, 'alerts'])->name('alerts');
+    });
+
+    // Module 5.5: accounts and VAT, read only (the tills' accounts, journals, expenses, VAT returns, fixed assets).
+    // accounts.view; a one-shop user: their shop.
+    Route::prefix('accounts')->name('accounts.')->middleware('company.can:accounts.view')->group(function () {
+        Route::get('/', [AccountsController::class, 'index'])->name('index');
+        Route::get('journals', [AccountsController::class, 'journals'])->name('journals.index');
+        Route::get('journals/{entry}', [AccountsController::class, 'journal'])->name('journals.show')->whereAlphaNumeric('entry');
+        Route::get('trial-balance', [AccountsController::class, 'trialBalance'])->name('trial-balance');
+        Route::get('profit-and-loss', [AccountsController::class, 'profitAndLoss'])->name('profit-and-loss');
+        Route::get('balance-sheet', [AccountsController::class, 'balanceSheet'])->name('balance-sheet');
+        Route::get('expenses', [AccountsController::class, 'expenses'])->name('expenses');
+        Route::get('vat', [AccountsController::class, 'vat'])->name('vat');
+        Route::get('vat/print', [AccountsController::class, 'vatPrint'])->name('vat.print');
+        Route::get('vat/csv', [AccountsController::class, 'vatCsv'])->name('vat.csv')->middleware('throttle:30,1');
+        Route::get('fixed-assets', [AccountsController::class, 'fixedAssets'])->name('fixed-assets');
     });
 
     // Module 5.1: stock (the tills' rows, read only): on hand, movements, stock takes, valuation, dates and wastage.

@@ -57,4 +57,7 @@ enum Ability: string
 
     /** Stock transfers between shops, their relay to the receiving till and discrepancies, read only (module 5.3). Owner, manager, accountant. */
     case TransfersView = 'transfers.view';
+
+    /** Chart of accounts, journals, trial balance, P&L, balance sheet, expenses, VAT return helper, fixed assets; read only (module 5.5). Owner, manager, accountant. */
+    case AccountsView = 'accounts.view';
 }
