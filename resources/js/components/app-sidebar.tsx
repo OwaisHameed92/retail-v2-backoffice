@@ -17,6 +17,7 @@ import {
     Receipt,
     Settings,
     ShieldCheck,
+    Store,
     Tag,
     Truck,
     UserCog,
@@ -61,6 +62,10 @@ function tenantNav(path: string, abilities: string[]): ShellNavGroup[] {
               },
           ]
         : [];
+    // Module 4.7: shops, tills and licences (read only), business details, "Ask for more tills".
+    const shops = abilities.includes('shops.view')
+        ? [{ title: 'Shops and tills', icon: Store, href: '/app/shops', active: path.startsWith('/app/shops') }]
+        : [];
 
     return [
         { items: [{ title: 'Dashboard', icon: LayoutGrid, href: '/app', active: path === '/app' }] },
@@ -81,7 +86,7 @@ function tenantNav(path: string, abilities: string[]): ShellNavGroup[] {
             ],
         },
         { label: 'Team', items: [...users, staff] },
-        { label: 'Settings', items: [...tillLists, ...sync, ...billing, { title: 'Business settings', icon: Settings, soon: true }] },
+        { label: 'Settings', items: [...shops, ...tillLists, ...sync, ...billing, { title: 'Business settings', icon: Settings, soon: true }] },
     ];
 }
 

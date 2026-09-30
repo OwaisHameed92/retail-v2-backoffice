@@ -5,6 +5,7 @@ namespace App\Domain\Mail\Support;
 use App\Domain\Mail\Mailables\AccountReactivatedMail;
 use App\Domain\Mail\Mailables\AccountSuspendedMail;
 use App\Domain\Mail\Mailables\AdminNewLeadMail;
+use App\Domain\Mail\Mailables\AdminTillRequestMail;
 use App\Domain\Mail\Mailables\BrandedMailable;
 use App\Domain\Mail\Mailables\CustomerStatementMail;
 use App\Domain\Mail\Mailables\DirectDebitCancelledMail;
@@ -43,6 +44,7 @@ final class EmailTemplates
         AdminNewLeadMail::class,
         LeadRejectedMail::class,
         CustomerStatementMail::class,
+        AdminTillRequestMail::class,
     ];
 
     /**

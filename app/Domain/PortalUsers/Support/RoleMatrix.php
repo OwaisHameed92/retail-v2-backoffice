@@ -29,6 +29,9 @@ final class RoleMatrix
         'settings.manage' => ['Business', 'Change shop settings'],
         'sync.manage' => ['Business', 'Settle sync conflicts'],
         'users.manage' => ['Business', 'Invite and manage portal users'],
+        'shops.view' => ['Business', 'See shops, tills and licences'],
+        'shops.manage' => ['Business', 'Edit shop details and ask for more tills'],
+        'business.manage' => ['Business', 'Edit the business details'],
     ];
 
     /** One line per role for pickers and the matrix header. */

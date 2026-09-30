@@ -13,6 +13,7 @@ use App\Http\Controllers\App\PortalInvitationController;
 use App\Http\Controllers\App\PortalUserController;
 use App\Http\Controllers\App\ProductController;
 use App\Http\Controllers\App\ProductImportController;
+use App\Http\Controllers\App\ShopController;
 use App\Http\Controllers\App\StaffController;
 use App\Http\Controllers\App\SupplierController;
 use App\Http\Controllers\App\SwitchBranchController;
@@ -133,6 +134,17 @@ Route::middleware(['auth:web', 'verified', 'company'])->group(function () {
             Route::get('{customer}/statement', [CustomerController::class, 'statement'])->name('statement')->whereUlid('customer');
             Route::get('{customer}/statement/pdf', [CustomerController::class, 'statementPdf'])->name('statement.pdf')->whereUlid('customer')->middleware('throttle:30,1');
         });
+    });
+
+    // Module 4.7: shops and tills (licences read only, till health), shop and business details, "Ask for more tills".
+    // Read: shops.view; shop edits and requests: shops.manage; business details: business.manage (owner).
+    Route::prefix('shops')->name('shops.')->middleware('company.can:shops.view')->group(function () {
+        Route::get('/', [ShopController::class, 'index'])->name('index');
+        Route::get('business', [ShopController::class, 'business'])->name('business');
+        Route::put('business', [ShopController::class, 'updateBusiness'])->name('business.update')->middleware(['company.can:business.manage', 'throttle:30,1']);
+        Route::post('requests', [ShopController::class, 'request'])->name('requests.store')->middleware(['company.can:shops.manage', 'throttle:10,1']);
+        Route::get('{branch}', [ShopController::class, 'show'])->name('show')->whereUlid('branch');
+        Route::put('{branch}', [ShopController::class, 'update'])->name('update')->whereUlid('branch')->middleware(['company.can:shops.manage', 'throttle:30,1']);
     });
 });
 
