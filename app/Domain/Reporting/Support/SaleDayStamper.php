@@ -2,6 +2,7 @@
 
 namespace App\Domain\Reporting\Support;
 
+use App\Domain\TillData\Sync\CompanyRows;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -27,10 +28,9 @@ final class SaleDayStamper
     {
         $result = [];
 
+        // By primary key, company checked on the rows (CompanyRows): O(ids), whatever the business's history.
         foreach (array_chunk(array_values(array_unique($ids)), self::CHUNK) as $chunk) {
-            $rows = DB::table('sales')->where('company_id', $companyId)->whereIn('id', $chunk)
-                ->get(['id', 'branch_id', 'status', 'completed_at', 'updated_at', 'created_at', 'trading_day', 'trading_hour']);
-            $result += $this->write($rows->all());
+            $result += $this->write(CompanyRows::whereIn('sales', $companyId, 'id', $chunk, ['id', 'branch_id', 'status', 'completed_at', 'updated_at', 'created_at', 'trading_day', 'trading_hour']));
         }
 
         return $result;

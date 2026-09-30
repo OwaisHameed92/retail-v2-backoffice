@@ -137,9 +137,15 @@ final readonly class SaleFacts
             ])->get()->all();
     }
 
+    /**
+     * Always from the shop-day index: without it SQLite (no ANALYZE statistics) drove the child joins from the
+     * business's whole `sale_lines` / `sale_vats` / `sale_payments` through a `(company_id, …)` index, so every rebuild
+     * read every child row the business had. MySQL gets the same index as FORCE INDEX (its own choice anyway).
+     */
     private function base(): Builder
     {
         return DB::table('sales as s')
+            ->forceIndex('sales_company_branch_trading_day_index')
             ->where('s.company_id', $this->companyId)
             ->where('s.branch_id', $this->branchId)
             ->whereIn('s.trading_day', $this->days)

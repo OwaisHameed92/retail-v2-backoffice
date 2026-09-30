@@ -6,11 +6,11 @@ use App\Domain\Reporting\Jobs\ProcessDirtyReportDaysJob;
 use App\Domain\Reporting\Support\DirtyDays;
 use App\Domain\Reporting\Support\SaleDayStamper;
 use App\Domain\TillData\EntityRegistry;
+use App\Domain\TillData\Sync\CompanyRows;
 use App\Domain\TillData\Sync\Data\MappedChange;
 use App\Domain\TillData\Sync\Data\Rejection;
 use App\Domain\TillData\Sync\Enums\ChangeOutcome;
 use App\Domain\TillData\Sync\SyncContext;
-use Illuminate\Support\Facades\DB;
 
 /**
  * The reporting hook in the sync apply path (module 3.1, DASHBOARD.md §1.1 step 4 and §4.8):
@@ -119,11 +119,9 @@ final class ReportDayTracker
         }
 
         foreach ($lookups as $entity => $childIds) {
-            foreach (array_chunk($childIds, 500) as $chunk) {
-                foreach (DB::table(EntityRegistry::get($entity)->table)->where('company_id', $context->companyId)->whereIn('id', $chunk)->pluck('sale_id') as $saleId) {
-                    if (is_string($saleId) && $saleId !== '') {
-                        $ids[$saleId] = true;
-                    }
+            foreach (CompanyRows::whereIn(EntityRegistry::get($entity)->table, $context->companyId, 'id', $childIds, ['sale_id']) as $row) {
+                if (is_string($row->sale_id) && $row->sale_id !== '') {
+                    $ids[$row->sale_id] = true;
                 }
             }
         }
@@ -139,13 +137,11 @@ final class ReportDayTracker
     {
         $stored = [];
 
-        foreach (array_chunk($ids, 500) as $chunk) {
-            foreach (DB::table('sales')->where('company_id', $companyId)->whereIn('id', $chunk)->get(['id', 'branch_id', 'trading_day']) as $row) {
-                $stored[(string) $row->id] = [
-                    'branch' => $row->branch_id === null ? null : (string) $row->branch_id,
-                    'day' => $row->trading_day === null ? null : substr((string) $row->trading_day, 0, 10),
-                ];
-            }
+        foreach (CompanyRows::whereIn('sales', $companyId, 'id', $ids, ['id', 'branch_id', 'trading_day']) as $row) {
+            $stored[(string) $row->id] = [
+                'branch' => $row->branch_id === null ? null : (string) $row->branch_id,
+                'day' => $row->trading_day === null ? null : substr((string) $row->trading_day, 0, 10),
+            ];
         }
 
         return $stored;

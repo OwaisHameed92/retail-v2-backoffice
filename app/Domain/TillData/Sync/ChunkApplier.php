@@ -137,6 +137,9 @@ final class ChunkApplier
     /**
      * Children stored before their parent got no till; now that the parent is here, copy its register_id.
      *
+     * O(parents written): the children are found through their indexed parent column only (CompanyRows: with
+     * `company_id` in the WHERE, SQLite walked every child row of the business), then updated by primary key.
+     *
      * @param  list<string>  $parentIds
      */
     private function backfillChildren(EntityDefinition $parent, array $parentIds, SyncContext $context): void
@@ -152,8 +155,13 @@ final class ChunkApplier
                 continue;
             }
 
-            $query = DB::table($child->table);
-            $grammar = $query->getGrammar();
+            $orphans = CompanyRows::ids($child->table, $context->companyId, $child->parent['column'], $parentIds, fn ($query) => $query->whereNull('register_id'));
+
+            if ($orphans === []) {
+                continue;
+            }
+
+            $grammar = DB::table($child->table)->getGrammar();
             $subquery = sprintf(
                 '(select %s from %s where %s = %s)',
                 $grammar->wrap($parent->table.'.register_id'),
@@ -162,12 +170,8 @@ final class ChunkApplier
                 $grammar->wrap($child->table.'.'.$child->parent['column']),
             );
 
-            foreach (array_chunk($parentIds, 500) as $ids) {
-                DB::table($child->table)
-                    ->where('company_id', $context->companyId)
-                    ->whereIn($child->parent['column'], $ids)
-                    ->whereNull('register_id')
-                    ->update(['register_id' => DB::raw($subquery)]);
+            foreach (array_chunk($orphans, CompanyRows::CHUNK) as $ids) {
+                DB::table($child->table)->whereIn('id', $ids)->whereNull('register_id')->update(['register_id' => DB::raw($subquery)]);
             }
         }
     }

@@ -613,3 +613,13 @@ Package `docs/contracts/portal-api-v1.4.1/` (START-HERE "What changed", `ANSWERS
 | Speed | Reads only `rpt_*` through the 3.1 read side (`SalesReport`, `TenderReport`, `VatReport`, `ProductReport`, new admin-only `AdminTradingReport` for top businesses/shops, activity and freshness): about 14 grouped queries whatever the number of businesses (a test proves the count does not grow), cached 60 s per filter set (`admin-trading:v1:*`; no per-admin data in it). The figures are an Inertia **deferred** prop: filters and tabs paint first with a skeleton |
 | Freshness | "Updated N min ago" = newest `sync_branch_status.last_push_at` of the scope (else the newest `rpt_*` rebuild): green ≤ 2 min, amber ≤ 15, grey after; the tooltip adds the rebuild time, the cache and shop-days still in `rpt_dirty_days` |
 | Demo data | `php artisan demo:sales {--company=} {--days=60} {--fresh}`: till-shaped sales for the demo tenants (Khan Mini Mart, Patel News and Booze; or one business by id or exact name) stored through the **real push path** (`ApplySyncChanges`, ledger stream `demo-sales`), then `RebuildReports` for the range. Deterministic (ids and seqs from shop and date), so a rerun stores nothing twice and only adds new hours/days; `--fresh` deletes only rows the `demo-sales` ledger stream holds (a till's own rows are never touched). UK convenience catalogue (35 products, VAT S/R/Z), opening hours 07–22 (Sun 09–18), weekday and hourly footfall, multi-buys, carrier bags, cash with change or card (some cashback), ~1.2% refunds, ~0.8% voids, three cashiers per shop. **Refused when APP_ENV=production** (command and Action). About 5 minutes for 60 days of 3 shops on SQLite |
+
+## Push path at scale (2026-09-30)
+
+| Topic | Decision |
+|---|---|
+| Lookups by key | Push-path reads by id or parent column go through `CompanyRows` (key-only WHERE, `company_id` checked on the rows read, updates by primary key), never `company_id = ? AND key IN (…)`, which SQLite plans as a read of the whole business. A push is O(rows in it), whatever the business's history (docs/scaling.md "Push path") |
+| Backfill | `ChunkApplier::backfillChildren()` behaviour unchanged (children stored before their parent, still without a till, get the parent's stored `register_id`); it now finds them through the indexed parent column and updates them by id. No new index or migration was needed |
+| Rebuild | `SaleFacts` forces `sales_company_branch_trading_day_index` (SQLite `INDEXED BY`, MySQL `FORCE INDEX`) so a shop-day rebuild reads that day's sales and their children only |
+| Guard | `PushScaleTest` compares statements and bindings of the same push on a new and a busy business and fails on any plan that reads a big till table by `company_id` alone |
+

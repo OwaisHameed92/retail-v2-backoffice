@@ -3,6 +3,7 @@
 namespace App\Domain\TillData\Actions;
 
 use App\Domain\TillData\Queries\TillSum;
+use App\Domain\TillData\Sync\CompanyRows;
 use App\Domain\TillData\Sync\Data\MappedChange;
 use Illuminate\Support\Facades\DB;
 
@@ -41,7 +42,7 @@ final class RecomputeCustomerBalances
                 ->get()
                 ->keyBy('customer_id');
 
-            $current = DB::table('customers')->where('company_id', $companyId)->whereIn('id', $chunk)->get(['id', 'balance', 'points']);
+            $current = CompanyRows::whereIn('customers', $companyId, 'id', $chunk, ['id', 'balance', 'points']);
 
             foreach ($current as $customer) {
                 $sum = $sums[$customer->id] ?? null;
@@ -79,9 +80,8 @@ final class RecomputeCustomerBalances
             }
         }
 
-        foreach (array_chunk($ledgerIds, self::CHUNK) as $chunk) {
-            array_push($customers, ...DB::table('customer_transactions')->where('company_id', $companyId)->whereIn('id', $chunk)
-                ->whereNotNull('customer_id')->pluck('customer_id')->map(fn ($id) => (string) $id)->all());
+        foreach (CompanyRows::whereIn('customer_transactions', $companyId, 'id', $ledgerIds, ['customer_id'], fn ($query) => $query->whereNotNull('customer_id')) as $row) {
+            $customers[] = (string) $row->customer_id;
         }
 
         if ($customers !== []) {

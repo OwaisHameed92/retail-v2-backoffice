@@ -75,8 +75,11 @@ final class ConflictRecorder
         // §19.3: the stored row wins by default, so send it down again (next pull): the shop whose change was kept out
         // gets it, tills that already hold it treat identical content as applied.
         foreach ($requeue as $entity => $ids) {
-            DB::table(EntityRegistry::get($entity)->table)->where('company_id', $this->context->companyId)
-                ->whereIn('id', array_keys($ids))->update(['hub_version' => null]);
+            $table = EntityRegistry::get($entity)->table;
+
+            foreach (array_chunk(CompanyRows::ids($table, $this->context->companyId, 'id', array_map('strval', array_keys($ids))), CompanyRows::CHUNK) as $chunk) {
+                DB::table($table)->whereIn('id', $chunk)->update(['hub_version' => null]);
+            }
         }
 
         $this->rows = [];
