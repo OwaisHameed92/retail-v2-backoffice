@@ -45,6 +45,8 @@ enum CompanyRole: string
                 Ability::ReportsView,
                 Ability::SettingsManage,
                 Ability::SyncManage,
+                Ability::StaffManage,
+                Ability::SuppliersManage,
             ],
             self::Accountant => [
                 Ability::DashboardView,
