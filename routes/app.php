@@ -21,6 +21,8 @@ use App\Http\Controllers\App\SaleController;
 use App\Http\Controllers\App\ShopController;
 use App\Http\Controllers\App\ShopSettingsController;
 use App\Http\Controllers\App\StaffController;
+use App\Http\Controllers\App\StockController;
+use App\Http\Controllers\App\StockTakeController;
 use App\Http\Controllers\App\SupplierController;
 use App\Http\Controllers\App\SwitchBranchController;
 use App\Http\Controllers\App\SwitchCompanyController;
@@ -169,6 +171,20 @@ Route::middleware(['auth:web', 'verified', 'company'])->group(function () {
         Route::get('cards', [CashController::class, 'cards'])->name('cards');
         Route::get('days', [CashController::class, 'days'])->name('days');
         Route::get('alerts', [CashController::class, 'alerts'])->name('alerts');
+    });
+
+    // Module 5.1: stock (the tills' rows, read only): on hand, movements, stock takes, valuation, dates and wastage.
+    // stock.view; a product's own stock levels (Product is hub-owned): stock.manage. A one-shop user sees only their shop.
+    Route::prefix('stock')->name('stock.')->middleware('company.can:stock.view')->group(function () {
+        Route::get('/', [StockController::class, 'index'])->name('index');
+        Route::get('movements', [StockController::class, 'movements'])->name('movements');
+        Route::get('valuation', [StockController::class, 'valuation'])->name('valuation');
+        Route::get('expiry', [StockController::class, 'expiry'])->name('expiry');
+        Route::get('takes', [StockTakeController::class, 'index'])->name('takes.index');
+        Route::get('takes/{take}', [StockTakeController::class, 'show'])->name('takes.show')->whereAlphaNumeric('take');
+        Route::get('products/{product}', [StockController::class, 'product'])->name('products.show')->whereAlphaNumeric('product');
+        Route::put('products/{product}/levels', [StockController::class, 'updateLevels'])->name('products.levels')->whereAlphaNumeric('product')
+            ->middleware(['company.can:stock.manage', 'throttle:60,1']);
     });
 
     // Module 4.7: shops and tills (licences read only, till health), shop and business details, "Ask for more tills".

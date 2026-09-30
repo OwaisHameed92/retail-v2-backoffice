@@ -76,6 +76,10 @@ function tenantNav(path: string, abilities: string[]): ShellNavGroup[] {
               { title: 'Till settings', icon: Settings, href: '/app/settings', active: path.startsWith('/app/settings') },
           ]
         : [];
+    // Module 5.1: stock on hand, movements, stock takes, valuation, dates and wastage (stock.view).
+    const stock = abilities.includes('stock.view')
+        ? [{ title: 'Stock', icon: Boxes, href: '/app/stock', active: path.startsWith('/app/stock') }]
+        : [];
     // Module 4.8: reports (reports.view).
     const reports = abilities.includes('reports.view')
         ? [{ title: 'Reports', icon: BarChart3, href: '/app/reports', active: path.startsWith('/app/reports') }]
@@ -97,13 +101,7 @@ function tenantNav(path: string, abilities: string[]): ShellNavGroup[] {
         },
         {
             label: 'Catalogue',
-            items: [
-                ...products,
-                ...prices,
-                { title: 'Stock', icon: Boxes, soon: true },
-                { title: 'Purchasing', icon: Truck, soon: true },
-                ...suppliers,
-            ],
+            items: [...products, ...prices, ...stock, { title: 'Purchasing', icon: Truck, soon: true }, ...suppliers],
         },
         {
             label: 'Money',

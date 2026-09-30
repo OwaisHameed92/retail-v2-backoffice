@@ -54,6 +54,7 @@ enum CompanyRole: string
             self::Accountant => [
                 Ability::DashboardView,
                 Ability::SalesView,
+                Ability::StockView,
                 Ability::ReportsView,
                 Ability::BillingView,
                 Ability::ShopsView,
