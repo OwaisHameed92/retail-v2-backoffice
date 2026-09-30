@@ -60,4 +60,10 @@ enum Ability: string
 
     /** Chart of accounts, journals, trial balance, P&L, balance sheet, expenses, VAT return helper, fixed assets; read only (module 5.5). Owner, manager, accountant. */
     case AccountsView = 'accounts.view';
+
+    /** Age checks and refusals, incidents, training, diary checks, licences held, recalls and the exceptions report (module 5.7). Owner, manager, accountant. */
+    case ComplianceView = 'compliance.view';
+
+    /** Raise, edit and close product recalls sent to every till (module 5.7). Owner and a manager of every shop. */
+    case ComplianceManage = 'compliance.manage';
 }

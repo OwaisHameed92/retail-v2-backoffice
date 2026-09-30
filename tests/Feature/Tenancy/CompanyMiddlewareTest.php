@@ -65,7 +65,7 @@ class CompanyMiddlewareTest extends TestCase
                 ->where('company.name', 'Alpha Stores')
                 ->where('company.status', 'active')
                 ->where('companyRole', 'accountant')
-                ->where('abilities', ['dashboard.view', 'sales.view', 'stock.view', 'reports.view', 'billing.view', 'shops.view', 'cash.view', 'purchasing.view', 'staff.view', 'transfers.view', 'accounts.view'])
+                ->where('abilities', ['dashboard.view', 'sales.view', 'stock.view', 'reports.view', 'billing.view', 'shops.view', 'cash.view', 'purchasing.view', 'staff.view', 'transfers.view', 'accounts.view', 'compliance.view'])
                 ->has('companies', 1));
     }
 
