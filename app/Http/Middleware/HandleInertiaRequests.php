@@ -5,6 +5,7 @@ namespace App\Http\Middleware;
 use App\Domain\Admin\Models\Admin;
 use App\Domain\Billing\Support\BillingAccounts;
 use App\Domain\Billing\Support\MandateDeadline;
+use App\Domain\Pharmacy\Support\ServiceModules;
 use App\Domain\Tenancy\Actions\ResolveCurrentBranch;
 use App\Domain\Tenancy\Actions\ResolveCurrentCompany;
 use App\Domain\Tenancy\Actions\SwitchCurrentCompany;
@@ -65,10 +66,11 @@ class HandleInertiaRequests extends Middleware
             'company' => fn () => $this->currentCompany($request)?->only(['id', 'name', 'status']),
             'companies' => fn () => $this->companies($request),
             'companyRole' => fn () => $this->currentCompany($request)?->membership?->role->value,
-            'abilities' => fn () => array_map(
+            // Module 5.10: pharmacy and parcels leave the menu for businesses that do not use them.
+            'abilities' => fn () => ServiceModules::visibleAbilities($this->currentCompany($request), array_map(
                 fn (Ability $ability) => $ability->value,
                 $this->currentCompany($request)?->membership?->role->abilities() ?? [],
-            ),
+            )),
             // Module 1.2: branch switcher, "login as customer" banner and flash toasts.
             'branches' => fn () => $this->branches(),
             'currentBranchId' => fn () => $this->currentBranchId($request),

@@ -60,4 +60,13 @@ enum Ability: string
 
     /** Chart of accounts, journals, trial balance, P&L, balance sheet, expenses, VAT return helper, fixed assets; read only (module 5.5). Owner, manager, accountant. */
     case AccountsView = 'accounts.view';
+
+    /** Shops' opening hours (sent to the tills), special days and seasonal events with last year's sales (module 5.9). Owner, manager. */
+    case CalendarManage = 'calendar.manage';
+
+    /** Dispensing records and medicine classes (module 5.10); editing classes also needs catalogue.manage. Owner, manager, accountant. */
+    case PharmacyView = 'pharmacy.view';
+
+    /** Parcel activity and carriers, read only (module 5.10). Owner, manager. */
+    case ParcelsView = 'parcels.view';
 }

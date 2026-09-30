@@ -2,6 +2,7 @@
 
 namespace App\Domain\TillHealth\Actions;
 
+use App\Domain\Calendar\Queries\ShopHours;
 use App\Domain\Licensing\Enums\LicenceAlertType;
 use App\Domain\Licensing\Enums\LicenceStatus;
 use App\Domain\Licensing\Models\LicenceAlert;
@@ -18,7 +19,8 @@ use Illuminate\Support\Facades\Log;
  * Raises and clears the Till health alerts (module 2.7) with the licence alert mechanism: one open
  * `licence_alerts` row per licence and problem (TillOffline, SyncFailing, SyncStalled, AppVersionOutdated,
  * ClockSkew). Only tills that should be trading are watched (licence trial/active/grace, business not suspended
- * or cancelled). "Till offline" is raised only during trading hours, after `alert_offline_hours` trading hours of
+ * or cancelled). "Till offline" is raised only during the shop's trading hours (its opening hours and special days,
+ * module 5.9; else the default), after `alert_offline_hours` trading hours of
  * silence; once open it stays until the till is back. Every other open health alert of the chunk whose problem
  * is gone is resolved (no `resolved_by`: the system cleared it). In-app only: no alert email exists yet.
  */
@@ -42,7 +44,7 @@ class SyncTillHealthAlerts
             $branches[$branch->branchId] = $branch;
         }
 
-        $trading = new TradingHours($thresholds);
+        $trading = $this->tradingHours($health['tills'], $now, $thresholds);
         $wanted = [];
 
         foreach ($health['tills'] as $row) {
@@ -53,7 +55,7 @@ class SyncTillHealthAlerts
             foreach ($row->problems as $problem) {
                 $key = $row->till->licenceId.'|'.$problem->alertType()->value;
 
-                if ($problem === HealthProblem::Offline && ! $open->has($key) && ! $this->offlineLongEnough($row, $trading, $now, $thresholds)) {
+                if ($problem === HealthProblem::Offline && ! $open->has($key) && ! $this->offlineLongEnough($row, $trading($row->till->branchId), $now, $thresholds)) {
                     continue;
                 }
 
@@ -81,6 +83,22 @@ class SyncTillHealthAlerts
         }
 
         return ['raised' => $raised, 'resolved' => count($gone)];
+    }
+
+    /**
+     * Each shop's trading hours (module 5.9: its opening hours and the till's special days; else the default).
+     *
+     * @param  list<TillHealthRow>  $tills
+     * @return callable(string|null): TradingHours
+     */
+    private function tradingHours(array $tills, CarbonImmutable $now, HealthThresholds $thresholds): callable
+    {
+        $default = new TradingHours($thresholds);
+        $branchIds = array_values(array_filter(array_map(fn (TillHealthRow $row) => $row->till->branchId, $tills)));
+        $hours = ShopHours::forBranches($branchIds, $now->subDays(16), $now->addDay(), TradingHours::defaultHours($thresholds));
+        $byBranch = array_map(fn ($week) => new TradingHours($thresholds, $week), $hours);
+
+        return fn (?string $branchId) => $byBranch[(string) $branchId] ?? $default;
     }
 
     private function watched(TillHealthRow $row): bool

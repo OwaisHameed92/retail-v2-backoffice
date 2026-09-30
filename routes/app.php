@@ -6,12 +6,15 @@
 
 use App\Http\Controllers\App\AccountsController;
 use App\Http\Controllers\App\BillingController;
+use App\Http\Controllers\App\CalendarController;
 use App\Http\Controllers\App\CashController;
 use App\Http\Controllers\App\CatalogueGroupController;
 use App\Http\Controllers\App\CustomerController;
 use App\Http\Controllers\App\DashboardController;
 use App\Http\Controllers\App\HeadOfficeOrderController;
 use App\Http\Controllers\App\InvitationAcceptController;
+use App\Http\Controllers\App\ParcelController;
+use App\Http\Controllers\App\PharmacyController;
 use App\Http\Controllers\App\PortalInvitationController;
 use App\Http\Controllers\App\PortalUserController;
 use App\Http\Controllers\App\PriceController;
@@ -284,6 +287,28 @@ Route::middleware(['auth:web', 'verified', 'company'])->group(function () {
         });
         Route::get('{promotion}', [PromotionController::class, 'edit'])->name('edit')->whereUlid('promotion')->middleware('company.can:catalogue.view');
     });
+
+    // Module 5.9: opening hours (portal-kept, sent as the shop.trading_hours setting, used by Till health), the tills'
+    // special days and seasonal events (read only) and an event against last year. calendar.manage; one-shop: own shop.
+    Route::prefix('calendar')->name('calendar.')->middleware('company.can:calendar.manage')->group(function () {
+        Route::get('/', [CalendarController::class, 'hours'])->name('hours');
+        Route::put('hours/{branch}', [CalendarController::class, 'updateHours'])->name('hours.update')->whereUlid('branch')->middleware('throttle:30,1');
+        Route::get('special-days', [CalendarController::class, 'specialDays'])->name('special-days');
+        Route::get('events', [CalendarController::class, 'events'])->name('events');
+        Route::get('events/{event}', [CalendarController::class, 'event'])->name('events.show')->whereAlphaNumeric('event');
+    });
+
+    // Module 5.10: pharmacy (dispensing read only; medicine classes are hub-owned: catalogue.manage, not one-shop) and
+    // parcels (read only). Businesses that do not use them get 404 (ServiceModules).
+    Route::prefix('pharmacy')->name('pharmacy.')->middleware('company.can:pharmacy.view')->group(function () {
+        Route::get('/', [PharmacyController::class, 'dispensing'])->name('dispensing');
+        Route::get('medicines', [PharmacyController::class, 'medicines'])->name('medicines');
+        Route::middleware(['company.can:catalogue.manage', 'throttle:60,1'])->group(function () {
+            Route::put('medicines/{product}', [PharmacyController::class, 'saveMedicine'])->name('medicines.save')->whereAlphaNumeric('product');
+            Route::delete('medicines/{product}', [PharmacyController::class, 'removeMedicine'])->name('medicines.remove')->whereAlphaNumeric('product');
+        });
+    });
+    Route::get('parcels', [ParcelController::class, 'index'])->name('parcels.index')->middleware('company.can:parcels.view');
 
     // Module 4.8: reports (sales, products, refunds, discounts, VAT, payments, staff, hours, stock, shifts and Z), each
     // on screen, as CSV and printable. reports.view; a one-shop user sees only their shop (BusinessContext).

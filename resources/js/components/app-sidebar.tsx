@@ -9,6 +9,7 @@ import {
     BarChart3,
     BookOpen,
     Boxes,
+    CalendarDays,
     Clock,
     CreditCard,
     Factory,
@@ -16,6 +17,8 @@ import {
     LayoutGrid,
     ListChecks,
     Package,
+    PackageOpen,
+    Pill,
     PoundSterling,
     Receipt,
     Settings,
@@ -111,11 +114,23 @@ function tenantNav(path: string, abilities: string[]): ShellNavGroup[] {
         ? [{ title: 'Shops and tills', icon: Store, href: '/app/shops', active: path.startsWith('/app/shops') }]
         : [];
 
+    // Module 5.9: opening hours, special days and seasonal events (calendar.manage). Module 5.10: pharmacy and parcels,
+    // only for businesses that use them (the server leaves the ability out otherwise).
+    const calendar = abilities.includes('calendar.manage')
+        ? [{ title: 'Calendar', icon: CalendarDays, href: '/app/calendar', active: path.startsWith('/app/calendar') }]
+        : [];
+    const pharmacy = abilities.includes('pharmacy.view')
+        ? [{ title: 'Pharmacy', icon: Pill, href: '/app/pharmacy', active: path.startsWith('/app/pharmacy') }]
+        : [];
+    const parcels = abilities.includes('parcels.view')
+        ? [{ title: 'Parcels', icon: PackageOpen, href: '/app/parcels', active: path.startsWith('/app/parcels') }]
+        : [];
+
     return [
         { items: [{ title: 'Dashboard', icon: LayoutGrid, href: '/app', active: path === '/app' }] },
         {
             label: 'Selling',
-            items: [...sales, ...customers, promotions],
+            items: [...sales, ...customers, promotions, ...calendar, ...pharmacy, ...parcels],
         },
         {
             label: 'Catalogue',
