@@ -66,4 +66,10 @@ enum Ability: string
 
     /** Create, edit and archive news titles (module 5.8). Owner and manager; a one-shop manager only for their own shop. */
     case NewsManage = 'news.manage';
+
+    /** Age checks and refusals, incidents, training, diary checks, licences held, recalls and the exceptions report (module 5.7). Owner, manager, accountant. */
+    case ComplianceView = 'compliance.view';
+
+    /** Raise, edit and close product recalls sent to every till (module 5.7). Owner and a manager of every shop. */
+    case ComplianceManage = 'compliance.manage';
 }

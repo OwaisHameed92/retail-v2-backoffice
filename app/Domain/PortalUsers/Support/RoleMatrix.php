@@ -36,6 +36,8 @@ final class RoleMatrix
         'shops.view' => ['Business', 'See shops, tills and licences'],
         'shops.manage' => ['Business', 'Edit shop details and ask for more tills'],
         'business.manage' => ['Business', 'Edit the business details'],
+        'compliance.view' => ['Business', 'See age checks, incidents, training, diary checks, licences and recalls'],
+        'compliance.manage' => ['Business', 'Raise and close product recalls'],
     ];
 
     /** One line per role for pickers and the matrix header. */

@@ -8,6 +8,7 @@ use App\Http\Controllers\App\AccountsController;
 use App\Http\Controllers\App\BillingController;
 use App\Http\Controllers\App\CashController;
 use App\Http\Controllers\App\CatalogueGroupController;
+use App\Http\Controllers\App\ComplianceController;
 use App\Http\Controllers\App\CustomerController;
 use App\Http\Controllers\App\DashboardController;
 use App\Http\Controllers\App\HeadOfficeOrderController;
@@ -19,6 +20,7 @@ use App\Http\Controllers\App\PortalUserController;
 use App\Http\Controllers\App\PriceController;
 use App\Http\Controllers\App\ProductController;
 use App\Http\Controllers\App\ProductImportController;
+use App\Http\Controllers\App\ProductRecallController;
 use App\Http\Controllers\App\PromotionController;
 use App\Http\Controllers\App\PurchasingController;
 use App\Http\Controllers\App\ReportController;
@@ -265,6 +267,26 @@ Route::middleware(['auth:web', 'verified', 'company'])->group(function () {
         Route::get('summary', [NewsController::class, 'summary'])->name('summary');
         Route::get('deliveries/{delivery}', [NewsController::class, 'delivery'])->name('deliveries.show')->whereUlid('delivery');
         Route::get('{kind}', [NewsController::class, 'index'])->name('index')->whereIn('kind', ['titles', 'deliveries', 'returns', 'vouchers']);
+    });
+
+    // Module 5.7: compliance. Read only (the tills' rows) except product recalls, hub-owned: raised, edited and closed
+    // with compliance.manage and every shop. compliance.view; a one-shop user sees their shop only.
+    Route::prefix('compliance')->name('compliance.')->middleware('company.can:compliance.view')->group(function () {
+        Route::get('/', [ComplianceController::class, 'index'])->name('index');
+        Route::get('age-checks', [ComplianceController::class, 'ageChecks'])->name('age-checks');
+        Route::get('incidents', [ComplianceController::class, 'incidents'])->name('incidents');
+        Route::get('incidents/{incident}', [ComplianceController::class, 'incident'])->name('incidents.show')->whereAlphaNumeric('incident');
+        Route::get('training', [ComplianceController::class, 'training'])->name('training');
+        Route::get('diary', [ComplianceController::class, 'diary'])->name('diary');
+        Route::get('licences', [ComplianceController::class, 'licences'])->name('licences');
+        Route::get('exceptions', [ComplianceController::class, 'exceptions'])->name('exceptions');
+        Route::get('recalls', [ComplianceController::class, 'recalls'])->name('recalls');
+        Route::get('recalls/{recall}', [ComplianceController::class, 'recall'])->name('recalls.show')->whereAlphaNumeric('recall');
+        Route::middleware(['company.can:compliance.manage', 'throttle:30,1'])->group(function () {
+            Route::post('recalls', [ProductRecallController::class, 'store'])->name('recalls.store');
+            Route::put('recalls/{recall}', [ProductRecallController::class, 'update'])->name('recalls.update')->whereAlphaNumeric('recall');
+            Route::put('recalls/{recall}/status', [ProductRecallController::class, 'status'])->name('recalls.status')->whereAlphaNumeric('recall');
+        });
     });
 
     // Module 4.7: shops and tills (licences read only, till health), shop and business details, "Ask for more tills".

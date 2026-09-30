@@ -8,6 +8,7 @@ import {
     Banknote,
     BarChart3,
     BookOpen,
+    ClipboardCheck,
     Boxes,
     Clock,
     CreditCard,
@@ -111,6 +112,10 @@ function tenantNav(path: string, abilities: string[]): ShellNavGroup[] {
     const accounts = abilities.includes('accounts.view')
         ? [{ title: 'Accounts', icon: BookOpen, href: '/app/accounts', active: path.startsWith('/app/accounts') }]
         : [];
+    // Module 5.7: compliance (compliance.view).
+    const compliance = abilities.includes('compliance.view')
+        ? [{ title: 'Compliance', icon: ClipboardCheck, href: '/app/compliance', active: path.startsWith('/app/compliance') }]
+        : [];
     // Module 4.7: shops, tills and licences (read only), business details, "Ask for more tills".
     const shops = abilities.includes('shops.view')
         ? [{ title: 'Shops and tills', icon: Store, href: '/app/shops', active: path.startsWith('/app/shops') }]
@@ -130,7 +135,7 @@ function tenantNav(path: string, abilities: string[]): ShellNavGroup[] {
             label: 'Money',
             items: [...cash, ...accounts, ...reports],
         },
-        { label: 'Team', items: [...users, staff, ...staffTime] },
+        { label: 'Team', items: [...users, staff, ...staffTime, ...compliance] },
         { label: 'Settings', items: [...shops, ...tillLists, ...sync, ...billing] },
     ];
 }
