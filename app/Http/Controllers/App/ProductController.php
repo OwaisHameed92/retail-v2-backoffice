@@ -13,6 +13,7 @@ use App\Domain\Tenancy\Enums\Ability;
 use App\Domain\TillData\Models\Product;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\App\SaveProductRequest;
+use App\Http\Requests\App\Setup\CompanyWideWriteRequest;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -32,11 +33,11 @@ class ProductController extends Controller
         return Inertia::render('app/products/index', [
             ...ProductList::for($request),
             'options' => CatalogueOptions::all(),
-            'canManage' => $this->tenancy->can(Ability::CatalogueManage),
+            'canManage' => $this->canManage(),
         ]);
     }
 
-    public function create(): Response
+    public function create(CompanyWideWriteRequest $request): Response
     {
         return Inertia::render('app/products/form', [...ProductForm::for(null), 'canManage' => true]);
     }
@@ -53,7 +54,7 @@ class ProductController extends Controller
     {
         return Inertia::render('app/products/form', [
             ...ProductForm::for(Product::query()->findOrFail($product)),
-            'canManage' => $this->tenancy->can(Ability::CatalogueManage),
+            'canManage' => $this->canManage(),
         ]);
     }
 
@@ -64,17 +65,23 @@ class ProductController extends Controller
         return back()->with('success', $saved->changed === [] ? 'Nothing to save: no changes.' : 'Product saved. Your tills get the change at their next sync.');
     }
 
-    public function archive(string $product, ArchiveProduct $archive): RedirectResponse
+    public function archive(CompanyWideWriteRequest $request, string $product, ArchiveProduct $archive): RedirectResponse
     {
         $model = $archive->handle(Product::query()->findOrFail($product));
 
         return back()->with('success', "{$model->name} archived. Tills stop offering it at their next sync.");
     }
 
-    public function restore(string $product, RestoreProduct $restore): RedirectResponse
+    public function restore(CompanyWideWriteRequest $request, string $product, RestoreProduct $restore): RedirectResponse
     {
         $model = $restore->handle(Product::query()->findOrFail($product));
 
         return back()->with('success', "{$model->name} is active again.");
+    }
+
+    /** Catalogue changes reach every shop: a one-shop user may look only (module 4.3 owner decision). */
+    private function canManage(): bool
+    {
+        return $this->tenancy->can(Ability::CatalogueManage) && $this->tenancy->restrictedBranchId() === null;
     }
 }

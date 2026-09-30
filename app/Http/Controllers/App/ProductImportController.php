@@ -10,6 +10,7 @@ use App\Domain\Catalogue\Models\ProductImport;
 use App\Domain\Catalogue\Queries\ImportDetail;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\App\ProductImportRequest;
+use App\Http\Requests\App\Setup\CompanyWideWriteRequest;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
@@ -22,7 +23,7 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
  */
 class ProductImportController extends Controller
 {
-    public function index(): Response
+    public function index(CompanyWideWriteRequest $request): Response
     {
         return Inertia::render('app/products/imports/index', ['imports' => ImportDetail::recent(), 'fields' => ImportColumns::options()]);
     }
@@ -34,7 +35,7 @@ class ProductImportController extends Controller
         return redirect()->route('app.products.imports.show', $import->id);
     }
 
-    public function show(string $import): Response
+    public function show(CompanyWideWriteRequest $request, string $import): Response
     {
         return Inertia::render('app/products/imports/show', ImportDetail::show(ProductImport::query()->findOrFail($import)));
     }
@@ -46,7 +47,7 @@ class ProductImportController extends Controller
         return back();
     }
 
-    public function apply(string $import, QueueProductImport $queue): RedirectResponse
+    public function apply(CompanyWideWriteRequest $request, string $import, QueueProductImport $queue): RedirectResponse
     {
         try {
             $queue->handle(ProductImport::query()->findOrFail($import));
@@ -58,7 +59,7 @@ class ProductImportController extends Controller
     }
 
     /** The CSV headings the import understands, as a starting file. */
-    public function template(): StreamedResponse
+    public function template(CompanyWideWriteRequest $request): StreamedResponse
     {
         return response()->streamDownload(function () {
             $out = fopen('php://output', 'w');
