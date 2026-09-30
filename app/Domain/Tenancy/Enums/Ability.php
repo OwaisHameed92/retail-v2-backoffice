@@ -42,4 +42,10 @@ enum Ability: string
 
     /** Edit the business's own details (legal name, VAT number…) sent to every till (module 4.7). Owner only. */
     case BusinessManage = 'business.manage';
+
+    /** Purchase orders, deliveries, supplier invoices, credits, returns, payments and statements (module 5.2). Owner, manager, accountant. */
+    case PurchasingView = 'purchasing.view';
+
+    /** Draft, send and cancel head-office orders for a shop (module 5.2). Owner and a manager of every shop. */
+    case PurchasingManage = 'purchasing.manage';
 }

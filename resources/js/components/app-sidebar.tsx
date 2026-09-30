@@ -76,6 +76,10 @@ function tenantNav(path: string, abilities: string[]): ShellNavGroup[] {
               { title: 'Till settings', icon: Settings, href: '/app/settings', active: path.startsWith('/app/settings') },
           ]
         : [];
+    // Module 5.2: purchasing (orders, deliveries, supplier invoices, statements; head-office orders).
+    const purchasing = abilities.includes('purchasing.view')
+        ? [{ title: 'Purchasing', icon: Truck, href: '/app/purchasing/orders', active: path.startsWith('/app/purchasing') }]
+        : [];
     // Module 4.8: reports (reports.view).
     const reports = abilities.includes('reports.view')
         ? [{ title: 'Reports', icon: BarChart3, href: '/app/reports', active: path.startsWith('/app/reports') }]
@@ -93,21 +97,11 @@ function tenantNav(path: string, abilities: string[]): ShellNavGroup[] {
         },
         {
             label: 'Catalogue',
-            items: [
-                ...products,
-                ...prices,
-                { title: 'Stock', icon: Boxes, soon: true },
-                { title: 'Purchasing', icon: Truck, soon: true },
-                ...suppliers,
-            ],
+            items: [...products, ...prices, { title: 'Stock', icon: Boxes, soon: true }, ...purchasing, ...suppliers],
         },
         {
             label: 'Money',
-            items: [
-                { title: 'Cash and Z', icon: Banknote, soon: true },
-                { title: 'Accounts', icon: BookOpen, soon: true },
-                ...reports,
-            ],
+            items: [{ title: 'Cash and Z', icon: Banknote, soon: true }, { title: 'Accounts', icon: BookOpen, soon: true }, ...reports],
         },
         { label: 'Team', items: [...users, staff] },
         { label: 'Settings', items: [...shops, ...tillLists, ...sync, ...billing] },
