@@ -3,19 +3,14 @@
 namespace App\Http\Requests\App;
 
 use App\Domain\Catalogue\Import\ImportColumns;
-use Illuminate\Foundation\Http\FormRequest;
+use App\Http\Requests\App\Setup\CompanyWideWriteRequest;
 
 /**
  * Product CSV import (module 4.2): the upload (a CSV up to 20 MB) or the column mapping (field → column index).
  * Route: `company.can:catalogue.manage`.
  */
-class ProductImportRequest extends FormRequest
+class ProductImportRequest extends CompanyWideWriteRequest
 {
-    public function authorize(): bool
-    {
-        return true;
-    }
-
     /**
      * @return array<string, mixed>
      */

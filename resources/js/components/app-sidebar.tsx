@@ -22,6 +22,7 @@ import {
     Truck,
     UserCog,
     Users,
+    PoundSterling,
 } from 'lucide-react';
 
 /**
@@ -39,6 +40,13 @@ function tenantNav(path: string, abilities: string[]): ShellNavGroup[] {
     const customers = abilities.includes('customers.view')
         ? [{ title: 'Customers', icon: Users, href: '/app/customers', active: path.startsWith('/app/customers') }]
         : [];
+    // Module 4.3: shop prices and offers (read with catalogue.view).
+    const prices = abilities.includes('catalogue.view')
+        ? [{ title: 'Prices', icon: PoundSterling, href: '/app/prices', active: path.startsWith('/app/prices') }]
+        : [];
+    const promotions = abilities.includes('catalogue.view')
+        ? { title: 'Promotions', icon: Tag, href: '/app/promotions', active: path.startsWith('/app/promotions') }
+        : { title: 'Promotions', icon: Tag, soon: true };
     const sync = abilities.includes('sync.manage')
         ? [{ title: 'Sync conflicts', icon: GitCompareArrows, href: '/app/sync/conflicts', active: path.startsWith('/app/sync') }]
         : [];
@@ -71,11 +79,17 @@ function tenantNav(path: string, abilities: string[]): ShellNavGroup[] {
         { items: [{ title: 'Dashboard', icon: LayoutGrid, href: '/app', active: path === '/app' }] },
         {
             label: 'Selling',
-            items: [{ title: 'Sales', icon: Receipt, soon: true }, ...customers, { title: 'Promotions', icon: Tag, soon: true }],
+            items: [{ title: 'Sales', icon: Receipt, soon: true }, ...customers, promotions],
         },
         {
             label: 'Catalogue',
-            items: [...products, { title: 'Stock', icon: Boxes, soon: true }, { title: 'Purchasing', icon: Truck, soon: true }, ...suppliers],
+            items: [
+                ...products,
+                ...prices,
+                { title: 'Stock', icon: Boxes, soon: true },
+                { title: 'Purchasing', icon: Truck, soon: true },
+                ...suppliers,
+            ],
         },
         {
             label: 'Money',

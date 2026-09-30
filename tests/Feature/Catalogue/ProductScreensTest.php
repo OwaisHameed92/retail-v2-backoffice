@@ -50,18 +50,31 @@ test('accountants get 403 everywhere; staff may look but not change anything', f
     expect(DB::table('products')->count())->toBe(1)->and(DB::table('products')->value('sell_price'))->toEqual('1.45');
 });
 
-test('a one-shop manager edits the catalogue as the role allows (catalogue.manage)', function () {
+test('a one-shop manager may look at the catalogue but not change it (it reaches every shop)', function () {
     $shop = Branch::factory()->forCompany($this->company)->create();
     $manager = $this->memberOf($this->company, CompanyRole::Manager);
     DB::table('company_user')->where('user_id', $manager->id)->update(['branch_id' => $shop->id]);
 
-    $this->actingAs($manager)->get('/app/products')->assertOk()->assertInertia(fn (AssertableInertia $p) => $p->where('canManage', true));
-    $this->actingAs($manager)->put("/app/products/{$this->productId}", CatalogueFixtures::form($this->ids, [
-        'sell_price' => '1.50', 'barcodes' => [['id' => DB::table('product_barcodes')->value('id'), 'barcode' => '5010044000701', 'pack_qty' => 1, 'is_primary' => true]],
-    ]))->assertSessionHasNoErrors();
+    $this->actingAs($manager)->get('/app/products')->assertOk()->assertInertia(fn (AssertableInertia $p) => $p->where('canManage', false));
+    $this->actingAs($manager)->get("/app/products/{$this->productId}")->assertOk()->assertInertia(fn (AssertableInertia $p) => $p->where('canManage', false));
+    $this->actingAs($manager)->get('/app/products/categories')->assertOk()->assertInertia(fn (AssertableInertia $p) => $p->where('canManage', false));
 
-    expect(DB::table('products')->value('sell_price'))->toEqual('1.5')
-        ->and(DB::table('branch_prices')->count())->toBe(0);
+    $this->actingAs($manager)->get('/app/products/create')->assertForbidden();
+    $this->actingAs($manager)->post('/app/products', CatalogueFixtures::form($this->ids, ['sku' => 'NEW', 'barcodes' => []]))->assertForbidden();
+    $this->actingAs($manager)->put("/app/products/{$this->productId}", CatalogueFixtures::form($this->ids, ['sell_price' => '1.50']))->assertForbidden();
+    $this->actingAs($manager)->post("/app/products/{$this->productId}/archive")->assertForbidden();
+    $this->actingAs($manager)->post("/app/products/{$this->productId}/restore")->assertForbidden();
+    $this->actingAs($manager)->post('/app/products/departments', ['name' => 'X'])->assertForbidden();
+    $this->actingAs($manager)->put("/app/products/departments/{$this->ids['department']}", ['name' => 'Mine'])->assertForbidden();
+    $this->actingAs($manager)->delete("/app/products/departments/{$this->ids['department']}")->assertForbidden();
+    $this->actingAs($manager)->post('/app/products/categories', ['name' => 'X'])->assertForbidden();
+    $this->actingAs($manager)->delete("/app/products/categories/{$this->ids['sub']}")->assertForbidden();
+    $this->actingAs($manager)->get('/app/products/imports')->assertForbidden();
+    $this->actingAs($manager)->get('/app/products/imports/template')->assertForbidden();
+    $this->actingAs($manager)->post('/app/products/imports', [])->assertForbidden();
+
+    expect(DB::table('products')->count())->toBe(1)->and(DB::table('products')->value('sell_price'))->toEqual('1.45')
+        ->and(DB::table('departments')->whereNull('deleted_at')->count())->toBe(1);
 });
 
 test('another business\'s products, departments and categories are not found and cannot be changed', function () {

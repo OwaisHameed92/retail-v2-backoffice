@@ -12,6 +12,7 @@ use App\Domain\TillData\Models\Category;
 use App\Domain\TillData\Models\Department;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\App\SaveCatalogueGroupRequest;
+use App\Http\Requests\App\Setup\CompanyWideWriteRequest;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
@@ -25,7 +26,7 @@ class CatalogueGroupController extends Controller
 {
     public function index(CurrentCompany $tenancy): Response
     {
-        return Inertia::render('app/products/categories', [...CategoryTree::get(), 'canManage' => $tenancy->can(Ability::CatalogueManage)]);
+        return Inertia::render('app/products/categories', [...CategoryTree::get(), 'canManage' => $tenancy->can(Ability::CatalogueManage) && $tenancy->restrictedBranchId() === null]);
     }
 
     public function storeDepartment(SaveCatalogueGroupRequest $request, SaveDepartment $save): RedirectResponse
@@ -42,7 +43,7 @@ class CatalogueGroupController extends Controller
         return back()->with('success', "Department {$model->name} saved.");
     }
 
-    public function destroyDepartment(string $department, DeleteCatalogueGroup $delete): RedirectResponse
+    public function destroyDepartment(CompanyWideWriteRequest $request, string $department, DeleteCatalogueGroup $delete): RedirectResponse
     {
         return $this->delete(Department::query()->findOrFail($department), $delete);
     }
@@ -61,7 +62,7 @@ class CatalogueGroupController extends Controller
         return back()->with('success', "Category {$model->name} saved.");
     }
 
-    public function destroyCategory(string $category, DeleteCatalogueGroup $delete): RedirectResponse
+    public function destroyCategory(CompanyWideWriteRequest $request, string $category, DeleteCatalogueGroup $delete): RedirectResponse
     {
         return $this->delete(Category::query()->findOrFail($category), $delete);
     }

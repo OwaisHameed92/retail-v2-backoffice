@@ -338,3 +338,10 @@ Tokens live only in `resources/css/app.css` (v2 palette, light + dark): `chrome`
   optional "none" choice), `CheckRow` (checkbox card that reveals child fields when ticked), `formatMoney`, `marginPercent`.
 - Backend: `Catalogue\Actions\SaveProduct` is the one way to write a product (form, CSV import, later AI tools); it keeps
   ids, writes only `ProductFields::EDITABLE`, and returns `SavedProduct` (created / changed keys).
+
+## Added by module 4.3 (prices and promotions, tenant portal)
+
+- `components/app/pricing/format.ts`: `formatDateTime` (London), `formatDay` (`Y-m-d`), `pounds`, `difference` (vs business
+  price), status tone maps. `pricing-tabs.tsx`, `set-price-dialog.tsx`, `every-shop-dialog.tsx`, `price-history.tsx`.
+- Backend: `Pricing\Actions\SetShopPrice` / `EndShopPrice` / `CancelScheduledPrice` / `SetEveryShopPrice`,
+  `Pricing\Support\ShopPrices` (live winner per shop, row status), `Promotions\Actions\SavePromotion` / `EndPromotion`.

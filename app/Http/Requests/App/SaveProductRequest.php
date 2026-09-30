@@ -6,7 +6,7 @@ use App\Domain\Catalogue\Support\ProductFields;
 use App\Domain\TillData\Enums\AgeRule;
 use App\Domain\TillData\Enums\NegativeStockPolicy;
 use App\Domain\TillData\Enums\UnitType;
-use Illuminate\Foundation\Http\FormRequest;
+use App\Http\Requests\App\Setup\CompanyWideWriteRequest;
 use Illuminate\Support\Arr;
 use Illuminate\Validation\Rule;
 
@@ -15,16 +15,11 @@ use Illuminate\Validation\Rule;
  * business's data (department, category, VAT rate, units, barcodes on other products). Money in pounds: prices 2
  * decimal places, costs and quantities 4. Text limits are the columns' (255), as tills may send longer values than the form suggests.
  */
-class SaveProductRequest extends FormRequest
+class SaveProductRequest extends CompanyWideWriteRequest
 {
     private const MONEY = 'regex:/^\d{1,8}(\.\d{1,2})?$/';
 
     private const COST = 'regex:/^\d{1,8}(\.\d{1,4})?$/';
-
-    public function authorize(): bool
-    {
-        return true;
-    }
 
     protected function prepareForValidation(): void
     {

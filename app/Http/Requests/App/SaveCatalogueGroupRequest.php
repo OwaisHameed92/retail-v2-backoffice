@@ -4,20 +4,15 @@ namespace App\Http\Requests\App;
 
 use App\Domain\TillData\Enums\AgeRule;
 use App\Domain\TillData\Enums\NegativeStockPolicy;
-use Illuminate\Foundation\Http\FormRequest;
+use App\Http\Requests\App\Setup\CompanyWideWriteRequest;
 use Illuminate\Validation\Rule;
 
 /**
  * A department or category (module 4.2). Route: `company.can:catalogue.manage`. Category-only members are ignored for
  * a department; SaveDepartment / SaveCategory check names and links against the business's data.
  */
-class SaveCatalogueGroupRequest extends FormRequest
+class SaveCatalogueGroupRequest extends CompanyWideWriteRequest
 {
-    public function authorize(): bool
-    {
-        return true;
-    }
-
     /**
      * @return array<string, mixed>
      */

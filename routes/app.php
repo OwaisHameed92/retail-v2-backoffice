@@ -11,8 +11,10 @@ use App\Http\Controllers\App\DashboardController;
 use App\Http\Controllers\App\InvitationAcceptController;
 use App\Http\Controllers\App\PortalInvitationController;
 use App\Http\Controllers\App\PortalUserController;
+use App\Http\Controllers\App\PriceController;
 use App\Http\Controllers\App\ProductController;
 use App\Http\Controllers\App\ProductImportController;
+use App\Http\Controllers\App\PromotionController;
 use App\Http\Controllers\App\ShopController;
 use App\Http\Controllers\App\StaffController;
 use App\Http\Controllers\App\SupplierController;
@@ -145,6 +147,33 @@ Route::middleware(['auth:web', 'verified', 'company'])->group(function () {
         Route::post('requests', [ShopController::class, 'request'])->name('requests.store')->middleware(['company.can:shops.manage', 'throttle:10,1']);
         Route::get('{branch}', [ShopController::class, 'show'])->name('show')->whereUlid('branch');
         Route::put('{branch}', [ShopController::class, 'update'])->name('update')->whereUlid('branch')->middleware(['company.can:shops.manage', 'throttle:30,1']);
+    });
+
+    // Module 4.3: shop prices (a new BranchPrice row per change; "every shop" = the business price), the tills' price
+    // change batches (read-only) and offers. Read: catalogue.view; change: prices.manage / promotions.manage. A one-shop
+    // user changes only their own shop's prices and offers (the form requests).
+    Route::prefix('prices')->name('prices.')->group(function () {
+        Route::middleware('company.can:catalogue.view')->group(function () {
+            Route::get('/', [PriceController::class, 'index'])->name('index');
+            Route::get('changes', [PriceController::class, 'changes'])->name('changes');
+            Route::get('{product}', [PriceController::class, 'show'])->name('show')->whereUlid('product');
+        });
+        Route::middleware(['company.can:prices.manage', 'throttle:120,1'])->group(function () {
+            Route::post('{product}/shop', [PriceController::class, 'setShop'])->name('shop.store')->whereUlid('product');
+            Route::post('{product}/shop/end', [PriceController::class, 'endShop'])->name('shop.end')->whereUlid('product');
+            Route::post('{product}/every-shop', [PriceController::class, 'everyShop'])->name('every-shop')->whereUlid('product');
+            Route::post('rows/{row}/cancel', [PriceController::class, 'cancel'])->name('rows.cancel')->whereUlid('row');
+        });
+    });
+    Route::prefix('promotions')->name('promotions.')->group(function () {
+        Route::get('/', [PromotionController::class, 'index'])->name('index')->middleware('company.can:catalogue.view');
+        Route::middleware(['company.can:promotions.manage', 'throttle:120,1'])->group(function () {
+            Route::get('create', [PromotionController::class, 'create'])->name('create');
+            Route::post('/', [PromotionController::class, 'store'])->name('store');
+            Route::put('{promotion}', [PromotionController::class, 'update'])->name('update')->whereUlid('promotion');
+            Route::post('{promotion}/end', [PromotionController::class, 'end'])->name('end')->whereUlid('promotion');
+        });
+        Route::get('{promotion}', [PromotionController::class, 'edit'])->name('edit')->whereUlid('promotion')->middleware('company.can:catalogue.view');
     });
 });
 
