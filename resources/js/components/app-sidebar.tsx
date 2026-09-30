@@ -92,6 +92,10 @@ function tenantNav(path: string, abilities: string[]): ShellNavGroup[] {
     const cash = abilities.includes('cash.view')
         ? [{ title: 'Cash and Z', icon: Banknote, href: '/app/cash', active: path.startsWith('/app/cash') }]
         : [];
+    // Module 5.5: accounts and VAT (accounts.view).
+    const accounts = abilities.includes('accounts.view')
+        ? [{ title: 'Accounts', icon: BookOpen, href: '/app/accounts', active: path.startsWith('/app/accounts') }]
+        : [];
     // Module 4.7: shops, tills and licences (read only), business details, "Ask for more tills".
     const shops = abilities.includes('shops.view')
         ? [{ title: 'Shops and tills', icon: Store, href: '/app/shops', active: path.startsWith('/app/shops') }]
@@ -109,7 +113,7 @@ function tenantNav(path: string, abilities: string[]): ShellNavGroup[] {
         },
         {
             label: 'Money',
-            items: [...cash, { title: 'Accounts', icon: BookOpen, soon: true }, ...reports],
+            items: [...cash, ...accounts, ...reports],
         },
         { label: 'Team', items: [...users, staff] },
         { label: 'Settings', items: [...shops, ...tillLists, ...sync, ...billing] },

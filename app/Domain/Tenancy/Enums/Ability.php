@@ -51,4 +51,7 @@ enum Ability: string
 
     /** Draft, send and cancel head-office orders for a shop (module 5.2). Owner and a manager of every shop. */
     case PurchasingManage = 'purchasing.manage';
+
+    /** Chart of accounts, journals, trial balance, P&L, balance sheet, expenses, VAT return helper, fixed assets; read only (module 5.5). Owner, manager, accountant. */
+    case AccountsView = 'accounts.view';
 }
