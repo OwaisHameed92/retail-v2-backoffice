@@ -41,6 +41,8 @@ export interface DataTableProps<TData, TValue = unknown> {
     mobile?: 'cards' | 'table';
     /** Custom phone card; defaults to one built from the columns. */
     renderMobileCard?: (row: TData) => MobileCardContent;
+    /** Replaces the page-number pagination in the card footer, e.g. keyset "Newer / Older" paging for huge lists. */
+    footer?: ReactNode;
     className?: string;
 }
 
@@ -119,6 +121,7 @@ export function DataTable<TData, TValue = unknown>({
     loading: loadingProp = false,
     mobile = 'cards',
     renderMobileCard,
+    footer,
     className,
 }: DataTableProps<TData, TValue>) {
     const query = useTableQuery({ only });
@@ -345,7 +348,8 @@ export function DataTable<TData, TValue = unknown>({
                     </div>
                 )}
 
-                {meta.total > 0 && (
+                {footer ? <div className="bg-subtle border-t px-4 py-2.5">{footer}</div> : null}
+                {!footer && meta.total > 0 && (
                     <DataTablePagination
                         className="bg-subtle border-t px-4 py-2.5"
                         meta={meta}

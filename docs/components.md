@@ -345,3 +345,9 @@ Tokens live only in `resources/css/app.css` (v2 palette, light + dark): `chrome`
   price), status tone maps. `pricing-tabs.tsx`, `set-price-dialog.tsx`, `every-shop-dialog.tsx`, `price-history.tsx`.
 - Backend: `Pricing\Actions\SetShopPrice` / `EndShopPrice` / `CancelScheduledPrice` / `SetEveryShopPrice`,
   `Pricing\Support\ShopPrices` (live winner per shop, row status), `Promotions\Actions\SavePromotion` / `EndPromotion`.
+
+## Added by module 4.6 (sales and receipts, tenant portal)
+
+- `DataTable` `footer` prop: replaces the page-number pagination in the card footer (keyset "Newer / Older" paging for huge lists).
+- `components/app/sales/`: `types.ts` (matches `Sales\Queries\SaleList::for()` / `SaleReceipt::for()`), `format.tsx` (`saleKind`, `SaleKindPill`, `Amount` with a real minus sign, `DISCOUNT_SOURCE`, `LINE_FLAGS`, `actionLabel`), `SalesFilters` (date presets, shop / till / staff / tender, "More filters" for amount and customer), `ExportMenu` (CSV now or queued, recent exports, polls while one is building), `ReceiptLines`, `PaymentsCard`, `DetailsCard`, `LinkedCard`, `ActivityCard`.
+- Backend: `Sales\Data\SaleFilters` (lenient query parsing, one-shop pin), `Sales\Queries\SaleSearch` (filters, keyset `page()` on (trading_day, id), `countUpTo()` capped count, `chunk()`), `Sales\Support\SaleNames` (batch id → name lookups), `Sales\Support\SalesCsv`, `Sales\Actions\QueueSalesExport` / `BuildSalesExport` + `BuildSalesExportJob` (`sales_exports`, private `local` disk, 7 days, owner-only download).

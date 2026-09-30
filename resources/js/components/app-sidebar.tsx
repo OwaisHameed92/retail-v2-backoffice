@@ -14,6 +14,7 @@ import {
     LayoutGrid,
     ListChecks,
     Package,
+    PoundSterling,
     Receipt,
     Settings,
     ShieldCheck,
@@ -22,7 +23,6 @@ import {
     Truck,
     UserCog,
     Users,
-    PoundSterling,
 } from 'lucide-react';
 
 /**
@@ -35,6 +35,10 @@ function tenantNav(path: string, abilities: string[]): ShellNavGroup[] {
         : [];
     const products = abilities.includes('catalogue.view')
         ? [{ title: 'Products', icon: Package, href: '/app/products', active: path.startsWith('/app/products') }]
+        : [];
+    // Module 4.6: sales and receipts (read only).
+    const sales = abilities.includes('sales.view')
+        ? [{ title: 'Sales', icon: Receipt, href: '/app/sales', active: path.startsWith('/app/sales') }]
         : [];
     // Module 4.4: customers, their account ledger, statements and marketing consent.
     const customers = abilities.includes('customers.view')
@@ -79,7 +83,7 @@ function tenantNav(path: string, abilities: string[]): ShellNavGroup[] {
         { items: [{ title: 'Dashboard', icon: LayoutGrid, href: '/app', active: path === '/app' }] },
         {
             label: 'Selling',
-            items: [{ title: 'Sales', icon: Receipt, soon: true }, ...customers, promotions],
+            items: [...sales, ...customers, promotions],
         },
         {
             label: 'Catalogue',
