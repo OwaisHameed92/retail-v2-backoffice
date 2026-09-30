@@ -34,6 +34,10 @@ function tenantNav(path: string, abilities: string[]): ShellNavGroup[] {
     const products = abilities.includes('catalogue.view')
         ? [{ title: 'Products', icon: Package, href: '/app/products', active: path.startsWith('/app/products') }]
         : [];
+    // Module 4.4: customers, their account ledger, statements and marketing consent.
+    const customers = abilities.includes('customers.view')
+        ? [{ title: 'Customers', icon: Users, href: '/app/customers', active: path.startsWith('/app/customers') }]
+        : [];
     const sync = abilities.includes('sync.manage')
         ? [{ title: 'Sync conflicts', icon: GitCompareArrows, href: '/app/sync/conflicts', active: path.startsWith('/app/sync') }]
         : [];
@@ -62,20 +66,11 @@ function tenantNav(path: string, abilities: string[]): ShellNavGroup[] {
         { items: [{ title: 'Dashboard', icon: LayoutGrid, href: '/app', active: path === '/app' }] },
         {
             label: 'Selling',
-            items: [
-                { title: 'Sales', icon: Receipt, soon: true },
-                { title: 'Customers', icon: Users, soon: true },
-                { title: 'Promotions', icon: Tag, soon: true },
-            ],
+            items: [{ title: 'Sales', icon: Receipt, soon: true }, ...customers, { title: 'Promotions', icon: Tag, soon: true }],
         },
         {
             label: 'Catalogue',
-            items: [
-                ...products,
-                { title: 'Stock', icon: Boxes, soon: true },
-                { title: 'Purchasing', icon: Truck, soon: true },
-                ...suppliers,
-            ],
+            items: [...products, { title: 'Stock', icon: Boxes, soon: true }, { title: 'Purchasing', icon: Truck, soon: true }, ...suppliers],
         },
         {
             label: 'Money',

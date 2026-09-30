@@ -6,6 +6,7 @@ use App\Domain\Mail\Mailables\AccountReactivatedMail;
 use App\Domain\Mail\Mailables\AccountSuspendedMail;
 use App\Domain\Mail\Mailables\AdminNewLeadMail;
 use App\Domain\Mail\Mailables\BrandedMailable;
+use App\Domain\Mail\Mailables\CustomerStatementMail;
 use App\Domain\Mail\Mailables\DirectDebitCancelledMail;
 use App\Domain\Mail\Mailables\DirectDebitFailedMail;
 use App\Domain\Mail\Mailables\DirectDebitSetupMail;
@@ -41,6 +42,7 @@ final class EmailTemplates
         AccountReactivatedMail::class,
         AdminNewLeadMail::class,
         LeadRejectedMail::class,
+        CustomerStatementMail::class,
     ];
 
     /**

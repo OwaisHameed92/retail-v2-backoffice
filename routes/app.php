@@ -6,6 +6,7 @@
 
 use App\Http\Controllers\App\BillingController;
 use App\Http\Controllers\App\CatalogueGroupController;
+use App\Http\Controllers\App\CustomerController;
 use App\Http\Controllers\App\DashboardController;
 use App\Http\Controllers\App\InvitationAcceptController;
 use App\Http\Controllers\App\PortalInvitationController;
@@ -115,6 +116,23 @@ Route::middleware(['auth:web', 'verified', 'company'])->group(function () {
         Route::put('{staff}/pin', [StaffController::class, 'pin'])->name('pin')->whereUlid('staff')->middleware('throttle:10,1');
         Route::put('{staff}/fob', [StaffController::class, 'fob'])->name('fob')->whereUlid('staff')->middleware('throttle:30,1');
         Route::delete('{staff}', [StaffController::class, 'destroy'])->name('destroy')->whereUlid('staff')->middleware('throttle:60,1');
+    });
+
+    // Module 4.4: customers, their ledger across shops, statements (screen, PDF, email) and marketing consent. Read:
+    // customers.view; add / edit details: customers.manage (a one-shop user may look only, CustomerRequest).
+    Route::prefix('customers')->name('customers.')->group(function () {
+        Route::middleware('company.can:customers.manage')->group(function () {
+            Route::get('create', [CustomerController::class, 'create'])->name('create');
+            Route::post('/', [CustomerController::class, 'store'])->name('store')->middleware('throttle:60,1');
+            Route::put('{customer}', [CustomerController::class, 'update'])->name('update')->whereUlid('customer')->middleware('throttle:60,1');
+            Route::post('{customer}/statement/email', [CustomerController::class, 'emailStatement'])->name('statement.email')->whereUlid('customer')->middleware('throttle:10,1');
+        });
+        Route::middleware('company.can:customers.view')->group(function () {
+            Route::get('/', [CustomerController::class, 'index'])->name('index');
+            Route::get('{customer}', [CustomerController::class, 'show'])->name('show')->whereUlid('customer');
+            Route::get('{customer}/statement', [CustomerController::class, 'statement'])->name('statement')->whereUlid('customer');
+            Route::get('{customer}/statement/pdf', [CustomerController::class, 'statementPdf'])->name('statement.pdf')->whereUlid('customer')->middleware('throttle:30,1');
+        });
     });
 });
 
