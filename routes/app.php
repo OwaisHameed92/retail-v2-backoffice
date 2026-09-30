@@ -9,6 +9,7 @@ use App\Http\Controllers\App\CashController;
 use App\Http\Controllers\App\CatalogueGroupController;
 use App\Http\Controllers\App\CustomerController;
 use App\Http\Controllers\App\DashboardController;
+use App\Http\Controllers\App\HeadOfficeOrderController;
 use App\Http\Controllers\App\InvitationAcceptController;
 use App\Http\Controllers\App\PortalInvitationController;
 use App\Http\Controllers\App\PortalUserController;
@@ -16,6 +17,7 @@ use App\Http\Controllers\App\PriceController;
 use App\Http\Controllers\App\ProductController;
 use App\Http\Controllers\App\ProductImportController;
 use App\Http\Controllers\App\PromotionController;
+use App\Http\Controllers\App\PurchasingController;
 use App\Http\Controllers\App\ReportController;
 use App\Http\Controllers\App\SaleController;
 use App\Http\Controllers\App\ShopController;
@@ -185,6 +187,28 @@ Route::middleware(['auth:web', 'verified', 'company'])->group(function () {
         Route::get('products/{product}', [StockController::class, 'product'])->name('products.show')->whereAlphaNumeric('product');
         Route::put('products/{product}/levels', [StockController::class, 'updateLevels'])->name('products.levels')->whereAlphaNumeric('product')
             ->middleware(['company.can:stock.manage', 'throttle:60,1']);
+    });
+
+    // Module 5.2: purchasing, read only (the shops' orders, deliveries, invoices, credits, returns, payments, rebates,
+    // supplier statements): purchasing.view; a one-shop user sees only their shop. Head-office orders for a shop:
+    // purchasing.manage and every shop (HeadOfficeOrderRequest).
+    Route::prefix('purchasing')->name('purchasing.')->middleware('company.can:purchasing.view')->group(function () {
+        Route::middleware('company.can:purchasing.manage')->group(function () {
+            Route::get('orders/create', [HeadOfficeOrderController::class, 'create'])->name('orders.create');
+            Route::post('orders', [HeadOfficeOrderController::class, 'store'])->name('orders.store')->middleware('throttle:60,1');
+            Route::get('orders/{order}/edit', [HeadOfficeOrderController::class, 'edit'])->name('orders.edit')->whereUlid('order');
+            Route::put('orders/{order}', [HeadOfficeOrderController::class, 'update'])->name('orders.update')->whereUlid('order')->middleware('throttle:60,1');
+            Route::post('orders/{order}/send', [HeadOfficeOrderController::class, 'send'])->name('orders.send')->whereUlid('order')->middleware('throttle:60,1');
+            Route::post('orders/{order}/cancel', [HeadOfficeOrderController::class, 'cancel'])->name('orders.cancel')->whereUlid('order')->middleware('throttle:60,1');
+        });
+        Route::get('/', [PurchasingController::class, 'home'])->name('home');
+        Route::get('orders/{order}', [PurchasingController::class, 'order'])->name('orders.show')->whereUlid('order');
+        Route::get('statements', [PurchasingController::class, 'statements'])->name('statements.index');
+        Route::get('statements/{supplier}', [PurchasingController::class, 'statement'])->name('statements.show')->whereUlid('supplier');
+        Route::get('{kind}', [PurchasingController::class, 'index'])->name('index')
+            ->whereIn('kind', ['orders', 'deliveries', 'invoices', 'credit-notes', 'returns', 'payments', 'rebates']);
+        Route::get('{kind}/{document}', [PurchasingController::class, 'document'])->name('documents.show')
+            ->whereIn('kind', ['deliveries', 'invoices', 'credit-notes', 'returns'])->whereUlid('document');
     });
 
     // Module 4.7: shops and tills (licences read only, till health), shop and business details, "Ask for more tills".

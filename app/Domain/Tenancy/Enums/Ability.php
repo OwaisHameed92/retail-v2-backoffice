@@ -45,4 +45,10 @@ enum Ability: string
 
     /** Shifts, Z reports, cash office, card settlements, day locks and variance alerts, read only (module 5.4). Owner, manager, accountant. */
     case CashView = 'cash.view';
+
+    /** Purchase orders, deliveries, supplier invoices, credits, returns, payments and statements (module 5.2). Owner, manager, accountant. */
+    case PurchasingView = 'purchasing.view';
+
+    /** Draft, send and cancel head-office orders for a shop (module 5.2). Owner and a manager of every shop. */
+    case PurchasingManage = 'purchasing.manage';
 }

@@ -23,6 +23,8 @@ final class RoleMatrix
         'prices.manage' => ['Catalogue', 'Change prices'],
         'stock.view' => ['Catalogue', 'See stock'],
         'stock.manage' => ['Catalogue', 'Adjust stock'],
+        'purchasing.view' => ['Catalogue', 'See orders, deliveries, supplier invoices and statements'],
+        'purchasing.manage' => ['Catalogue', 'Draft and send head-office orders'],
         'reports.view' => ['Money', 'See reports'],
         'cash.view' => ['Money', 'See shifts, Z reports and cash office'],
         'billing.view' => ['Money', 'See billing and invoices'],
