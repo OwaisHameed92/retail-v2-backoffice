@@ -27,4 +27,10 @@ enum Ability: string
 
     /** Set up or change how the business pays (Direct Debit). Owner only. */
     case BillingManage = 'billing.manage';
+
+    /** Till staff, their PINs and fobs, and what each till role may do (module 4.5). Owner and manager. */
+    case StaffManage = 'staff.manage';
+
+    /** The business's suppliers, sent to every till (module 4.5). Owner and manager. */
+    case SuppliersManage = 'suppliers.manage';
 }

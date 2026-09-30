@@ -63,4 +63,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         // Licence keys sent back by the "Email this key" dialog must never be flashed to the session (module 1.3).
         $exceptions->dontFlash(['licences', 'licence_key', 'licenceKey']);
+
+        // Till staff PINs and fob codes (module 4.5) are never kept in the session either.
+        $exceptions->dontFlash(['pin', 'pin_confirmation', 'rfid']);
     })->create();

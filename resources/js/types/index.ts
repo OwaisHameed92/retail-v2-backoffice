@@ -43,7 +43,9 @@ export type Ability =
     | 'users.manage'
     | 'billing.view'
     | 'billing.manage'
-    | 'sync.manage';
+    | 'sync.manage'
+    | 'staff.manage'
+    | 'suppliers.manage';
 
 /** The company the user is working in (shared by HandleInertiaRequests). */
 export interface CurrentCompany {

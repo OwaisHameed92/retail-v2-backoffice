@@ -9,8 +9,10 @@ import {
     BookOpen,
     Boxes,
     CreditCard,
+    Factory,
     GitCompareArrows,
     LayoutGrid,
+    ListChecks,
     Package,
     Receipt,
     Settings,
@@ -31,6 +33,23 @@ function tenantNav(path: string, abilities: string[]): ShellNavGroup[] {
     const sync = abilities.includes('sync.manage')
         ? [{ title: 'Sync conflicts', icon: GitCompareArrows, href: '/app/sync/conflicts', active: path.startsWith('/app/sync') }]
         : [];
+    // Module 4.5: suppliers, till staff and roles, payment types and reasons.
+    const suppliers = abilities.includes('suppliers.manage')
+        ? [{ title: 'Suppliers', icon: Factory, href: '/app/suppliers', active: path.startsWith('/app/suppliers') }]
+        : [];
+    const staff = abilities.includes('staff.manage')
+        ? { title: 'Staff', icon: UserCog, href: '/app/staff', active: path.startsWith('/app/staff') }
+        : { title: 'Staff', icon: UserCog, soon: true };
+    const tillLists = abilities.includes('settings.manage')
+        ? [
+              {
+                  title: 'Payment types',
+                  icon: ListChecks,
+                  href: '/app/payment-types',
+                  active: path.startsWith('/app/payment-types') || path.startsWith('/app/reasons'),
+              },
+          ]
+        : [];
 
     return [
         { items: [{ title: 'Dashboard', icon: LayoutGrid, href: '/app', active: path === '/app' }] },
@@ -48,6 +67,7 @@ function tenantNav(path: string, abilities: string[]): ShellNavGroup[] {
                 { title: 'Products', icon: Package, soon: true },
                 { title: 'Stock', icon: Boxes, soon: true },
                 { title: 'Purchasing', icon: Truck, soon: true },
+                ...suppliers,
             ],
         },
         {
@@ -58,8 +78,8 @@ function tenantNav(path: string, abilities: string[]): ShellNavGroup[] {
                 { title: 'Reports', icon: BarChart3, soon: true },
             ],
         },
-        { label: 'Team', items: [{ title: 'Staff', icon: UserCog, soon: true }] },
-        { label: 'Settings', items: [...sync, ...billing, { title: 'Business settings', icon: Settings, soon: true }] },
+        { label: 'Team', items: [staff] },
+        { label: 'Settings', items: [...tillLists, ...sync, ...billing, { title: 'Business settings', icon: Settings, soon: true }] },
     ];
 }
 
