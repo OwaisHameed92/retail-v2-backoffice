@@ -118,7 +118,7 @@ final class OperationsReport
      *
      * @return array{0: string, 1: list<string>}
      */
-    private function thresholdSql(string $companyId): array
+    public function thresholdSql(string $companyId): array
     {
         $settings = DB::table('till_settings')->where('company_id', $companyId)->where('setting_key', self::THRESHOLD_KEY)
             ->whereNull('deleted_at')->whereIn('scope', ['company', 'branch'])->get(['scope', 'scope_id', 'value']);
