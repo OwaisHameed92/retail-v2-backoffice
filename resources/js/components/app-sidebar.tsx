@@ -4,6 +4,7 @@ import { type ShellNavGroup } from '@/components/shell/sidebar-nav';
 import { type SharedData } from '@/types';
 import { usePage } from '@inertiajs/react';
 import {
+    ArrowLeftRight,
     Banknote,
     BarChart3,
     BookOpen,
@@ -84,6 +85,10 @@ function tenantNav(path: string, abilities: string[]): ShellNavGroup[] {
     const purchasing = abilities.includes('purchasing.view')
         ? [{ title: 'Purchasing', icon: Truck, href: '/app/purchasing/orders', active: path.startsWith('/app/purchasing') }]
         : [];
+    // Module 5.3: stock transfers between shops (transfers.view).
+    const transfers = abilities.includes('transfers.view')
+        ? [{ title: 'Transfers', icon: ArrowLeftRight, href: '/app/transfers', active: path.startsWith('/app/transfers') }]
+        : [];
     // Module 4.8: reports (reports.view).
     const reports = abilities.includes('reports.view')
         ? [{ title: 'Reports', icon: BarChart3, href: '/app/reports', active: path.startsWith('/app/reports') }]
@@ -105,7 +110,7 @@ function tenantNav(path: string, abilities: string[]): ShellNavGroup[] {
         },
         {
             label: 'Catalogue',
-            items: [...products, ...prices, ...stock, ...purchasing, ...suppliers],
+            items: [...products, ...prices, ...stock, ...transfers, ...purchasing, ...suppliers],
         },
         {
             label: 'Money',
