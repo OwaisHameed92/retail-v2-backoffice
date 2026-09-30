@@ -15,6 +15,7 @@ use App\Http\Controllers\App\PriceController;
 use App\Http\Controllers\App\ProductController;
 use App\Http\Controllers\App\ProductImportController;
 use App\Http\Controllers\App\PromotionController;
+use App\Http\Controllers\App\SaleController;
 use App\Http\Controllers\App\ShopController;
 use App\Http\Controllers\App\ShopSettingsController;
 use App\Http\Controllers\App\StaffController;
@@ -144,6 +145,15 @@ Route::middleware(['auth:web', 'verified', 'company'])->group(function () {
             Route::get('{customer}/statement', [CustomerController::class, 'statement'])->name('statement')->whereUlid('customer');
             Route::get('{customer}/statement/pdf', [CustomerController::class, 'statementPdf'])->name('statement.pdf')->whereUlid('customer')->middleware('throttle:30,1');
         });
+    });
+
+    // Module 4.6: sales and receipts, read only (the tills' rows); CSV export streamed, or queued when large. sales.view;
+    // a one-shop user sees only their shop.
+    Route::prefix('sales')->name('sales.')->middleware('company.can:sales.view')->group(function () {
+        Route::get('/', [SaleController::class, 'index'])->name('index');
+        Route::get('export', [SaleController::class, 'export'])->name('export')->middleware('throttle:10,1');
+        Route::get('exports/{export}', [SaleController::class, 'download'])->name('exports.download')->whereUlid('export')->middleware('throttle:30,1');
+        Route::get('{sale}', [SaleController::class, 'show'])->name('show')->whereAlphaNumeric('sale');
     });
 
     // Module 4.7: shops and tills (licences read only, till health), shop and business details, "Ask for more tills".
