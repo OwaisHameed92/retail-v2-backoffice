@@ -24,8 +24,9 @@ use SensitiveParameter;
  *
  * Unknown → 404 activation.code_not_found; a revoked or long-replaced sync key, or a withdrawn licence key → 410
  * activation.code_expired (both count as wrong codes: 5 per install per 15 minutes, then 429
- * activation.too_many_attempts); a licence key on another PC → 409 activation.code_used; a closed shop, a suspended or
- * cancelled business, a licence key not yet activated here or without the dashboard → 403 licence.not_active.
+ * activation.too_many_attempts); a licence key on another PC → 409 activation.code_used; a licence key not yet
+ * activated on any PC → 409 migrate.activate_first (ANSWERS-2026-09-30-portal point 4); a closed shop, a suspended or
+ * cancelled business, a licence key without the dashboard → 403 licence.not_active.
  */
 final class MigrationCredential
 {
@@ -101,7 +102,7 @@ final class MigrationCredential
         }
 
         if (! $licence->isBound()) {
-            throw LicenceApiErrors::notActive($licence->status->value, 'Enter this licence key under Settings > Licence first, then connect.');
+            throw MigrationErrors::activateFirst();
         }
 
         if (! $licence->features->contains(Feature::CloudSync)) {

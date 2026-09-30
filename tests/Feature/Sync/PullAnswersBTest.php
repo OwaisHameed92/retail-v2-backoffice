@@ -100,16 +100,21 @@ test('A.3: a shop offline through two moves still gets its D; a row that comes b
         ->toBe(collect([$this->sync->bradford->id, $york->id])->sort()->values()->all());
 });
 
-test('A.3: every shop\'s row made one shop\'s: the other shops get a D with envelope branchId ""', function () {
+test('A.3 / 2026-09-30 point 2: every shop\'s row made one shop\'s: each other shop gets a D with its own branchId, no payload', function () {
     ($this->newsTitle)(null);
     $since = (int) $this->sync->pull(0, bradford: true)->json('highestVersion');
 
     ($this->move)($this->sync->leeds->id);
-    $bradford = ($this->forTitle)($this->sync->pull($since, bradford: true));
+    $reply = $this->sync->pull($since, bradford: true)->assertOk();
+    ($this->valid)($reply);
+    $bradford = ($this->forTitle)($reply);
+    $leeds = ($this->forTitle)($this->sync->pull(0));
 
     expect($bradford)->toHaveCount(1)
-        ->and($bradford[0])->toMatchArray(['op' => 'D', 'branchId' => '', 'payload' => null])
-        ->and(($this->forTitle)($this->sync->pull(0))[0]['op'])->toBe('U');
+        ->and($bradford[0])->toMatchArray(['op' => 'D', 'branchId' => TillFixtures::BRADFORD, 'payload' => null])
+        ->and($leeds)->toHaveCount(1)
+        ->and($leeds[0])->toMatchArray(['op' => 'U', 'branchId' => TillFixtures::LEEDS])
+        ->and($leeds[0]['payload']['branchId'])->toBe(TillFixtures::LEEDS);
 
     // Every shop's again: no D left for anyone, Bradford gets the row back.
     ($this->move)(null);

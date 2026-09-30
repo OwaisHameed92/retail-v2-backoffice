@@ -11,6 +11,7 @@ use Illuminate\Validation\ValidationException;
 use Tests\Feature\Sync\PullTestHelpers as Pull;
 use Tests\Feature\Sync\SyncApiFixtures;
 use Tests\Feature\TillData\TillFixtures;
+use Tests\Support\ContractSchema;
 
 /** Module 2.9B: settings and role permissions in the pull (contract v1.4.1 §10.3, §10.7, §19.4 test 13). */
 beforeEach(function () {
@@ -130,4 +131,26 @@ test('a setting is kept to its own business: another business\'s shop cannot be 
 
     app(SaveTillSetting::class)->handle($other, SettingScope::Company, null, 'receipt.footer_text', 'Theirs');
     expect(Pull::changes($this->sync->pull(2)))->toBe([]);
+});
+
+test('ANSWERS-2026-09-30-portal point 1: a Setting or RolePermission D always carries its full payload', function () {
+    ($this->save)(SettingScope::Branch, 'till.refund_needs_manager', 'true', $this->sync->leeds);
+    app(SetRolePermission::class)->handle($this->company, $this->role->id, 'sale.refund', true);
+    $this->travel(1)->minutes();
+    ($this->save)(SettingScope::Branch, 'till.refund_needs_manager', null, $this->sync->leeds);
+    app(SetRolePermission::class)->handle($this->company, $this->role->id, 'sale.refund', false);
+
+    $reply = $this->sync->pull(4)->assertOk();
+    ($this->valid)($reply);
+    $deletes = collect(Pull::changes($reply))->keyBy('entity');
+
+    expect($deletes->pluck('op', 'entity')->all())->toBe(['Setting' => 'D', 'RolePermission' => 'D'])
+        ->and($deletes['Setting']['payload'])->toMatchArray(['scope' => 'branch', 'scopeId' => TillFixtures::LEEDS, 'key' => 'till.refund_needs_manager'])
+        ->and($deletes['Setting']['branchId'])->toBe(TillFixtures::LEEDS)
+        ->and($deletes['RolePermission']['payload'])->toBe(['roleId' => '01K5T0Q8C4000000000000G002', 'permissionKey' => 'sale.refund']);
+
+    // The contract guard (every till reply in every test) refuses a keyed D without one.
+    $bare = json_decode((string) $reply->getContent(), true);
+    $bare['changes'][0]['payload'] = null;
+    expect(ContractSchema::pullErrors($bare))->toContain('changes[0]: '.$bare['changes'][0]['entity'].' D without a payload');
 });

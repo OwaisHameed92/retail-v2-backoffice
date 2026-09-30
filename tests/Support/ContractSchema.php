@@ -64,6 +64,12 @@ final class ContractSchema
 
         foreach ($reply instanceof stdClass && is_array($reply->changes ?? null) ? $reply->changes : [] as $i => $change) {
             $errors = [...$errors, ...self::changeErrors($change, "changes[{$i}]", derivedOptional: true)];
+
+            // ANSWERS-2026-09-30-portal point 1: a keyed row always carries its payload, `D` included (the till
+            // finds its row by the payload's keys).
+            if ($change instanceof stdClass && in_array($change->entity ?? null, ['Setting', 'RolePermission'], true) && ! (($change->payload ?? null) instanceof stdClass)) {
+                $errors[] = "changes[{$i}]: {$change->entity} ".($change->op ?? '?').' without a payload';
+            }
         }
 
         return $errors;

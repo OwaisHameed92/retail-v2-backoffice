@@ -197,3 +197,16 @@ test('a portal licence key with the dashboard works as the code (a local shop th
     CloudUpload::withoutCompanyScope()->delete();
     ($this->migrate)(['activationCode' => self::KEY, 'localLicenceToken' => null])->assertForbidden()->assertJsonPath('code', 'licence.not_active');
 });
+
+test('ANSWERS-2026-09-30-portal points 4 and 5: a portal licence key not yet activated → 409 migrate.activate_first; on another PC → 409 activation.code_used', function () {
+    $this->licence->forceFill(['features' => ['cloud_sync']])->save();
+
+    ($this->migrate)(['activationCode' => self::KEY, 'localLicenceToken' => null])->assertStatus(409)
+        ->assertJsonPath('code', 'migrate.activate_first')
+        ->assertJsonPath('message', 'Enter this licence key under Settings → Licence first.');
+
+    $this->activateTill(install: self::OTHER_INSTALL, code: self::OTHER_CODE)->assertOk();
+    ($this->migrate)(['activationCode' => self::KEY, 'localLicenceToken' => null])->assertStatus(409)->assertJsonPath('code', 'activation.code_used');
+
+    expect(CloudUpload::withoutCompanyScope()->count())->toBe(0);
+});

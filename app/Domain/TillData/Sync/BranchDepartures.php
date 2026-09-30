@@ -18,7 +18,8 @@ use Illuminate\Support\Facades\DB;
  * feed row (HubVersions), so a shop that was offline through several moves still gets its `D`. A row that comes back
  * to a shop (or becomes company-wide again) clears that shop's departure: the normal feed sends it again. The shop
  * that made the move (a till push) gets nothing; it moved the row itself. A move from "every shop" (`branch_id`
- * blank) to one shop sends the `D` (envelope `branchId` "") to every other shop.
+ * blank) to one shop sends a `D` to every other shop, each with its OWN envelope `branchId` and no payload, never the
+ * new shop's id, or the other tills would skip it and keep the every-shop row (ANSWERS-2026-09-30-portal point 2).
  */
 final class BranchDepartures
 {

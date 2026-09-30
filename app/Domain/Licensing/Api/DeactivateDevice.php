@@ -23,10 +23,13 @@ use Illuminate\Support\Facades\DB;
  * - The till is identified by its `installId` (body, else `X-SSPOS-Install-Id`) and `registerId` (the till's
  *   own id from `existingIds`, or our register id). No branch key: per-till licences have none.
  * - Idempotent by registerId: a till already released gets the same reply. Unknown → 404 device.not_found.
- * - Reply: `seat: "deactivated"`, the branch's seats in use and maxRegisters; no transfer code. `apiKeyRevoked`:
- *   true when this till (the branch's main till) had been sent the branch's sync key in a licence reply — that key
- *   is revoked and rotated on the portal so a restored old PC cannot push (v1.4.1, ANSWERS-2026-09-29 §1,
- *   RevokeTillSyncKeys); else false (the till forgets its link either way).
+ * - Reply: `seat: "deactivated"`, the branch's seats in use and maxRegisters. `apiKeyRevoked`: true when this till
+ *   (the branch's main till) had been sent the branch's sync key in a licence reply — that key is revoked and rotated
+ *   on the portal so a restored old PC cannot push (v1.4.1, ANSWERS-2026-09-29 §1, RevokeTillSyncKeys); else false
+ *   (the till forgets its link either way).
+ * - No transfer code, main till included (ANSWERS-2026-09-30-portal point 6, option b): §17.7's code is redeemed
+ *   only by `devices/activate`, which is never built; the same licence key activates on the new PC instead
+ *   (licence/activate), and the main till's `messages[]` tells the owner so.
  */
 class DeactivateDevice
 {
@@ -75,7 +78,26 @@ class DeactivateDevice
             'transferCode' => null,
             'transferCodeExpiresAt' => null,
             'portalTimeUtc' => ApiDate::format($now),
-            'messages' => [],
+            'messages' => $apiKeyRevoked ? [self::nextStep($licence)] : [],
+        ];
+    }
+
+    /**
+     * The main till's next step, en-GB (ANSWERS-2026-09-30-portal point 6). Stable id: a repeat gives the same reply.
+     *
+     * @return array<string, mixed>
+     */
+    private static function nextStep(Licence $licence): array
+    {
+        return [
+            'id' => 'released-'.$licence->id,
+            'level' => 'info',
+            'title' => 'Till released',
+            'text' => 'To use this till on a new PC, install SSPOS there, restore your backup, then enter the same licence key under Settings → Licence. No transfer code is needed.',
+            'showFromUtc' => null,
+            'showUntilUtc' => null,
+            'dismissible' => false,
+            'link' => null,
         ];
     }
 

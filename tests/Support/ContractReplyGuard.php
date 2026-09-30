@@ -19,12 +19,13 @@ use stdClass;
 final class ContractReplyGuard
 {
     /**
-     * Our codes the contract does not list yet, pending EPOS confirmation (docs/DECISIONS.md), code => status. None
-     * since contract v1.4.1 answers (b) made `licence.ids_conflict` official.
+     * Our codes the contract does not list yet, pending EPOS confirmation (docs/DECISIONS.md), code => status.
+     * `migrate.activate_first`: proposed by EPOS 2026-09-30 (ANSWERS-2026-09-30-portal point 4), to be added to
+     * error-codes.json.
      *
      * @var array<string, int>
      */
-    public const PENDING_CODES = [];
+    public const PENDING_CODES = ['migrate.activate_first' => 409];
 
     /** Till endpoints: [method path] => reply schema (`pull` = pull reply with entity payloads). */
     public const REPLY_SCHEMAS = [
