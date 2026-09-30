@@ -649,3 +649,13 @@ Built in parallel worktrees and merged. Worktree agents must copy `vendor` (a sy
 | CSV import (4.2) | A row finds its product by barcode, then code; empty cells keep the current value; missing departments/categories are created; applied queued in 250-row chunks with a result report. |
 | Till staff PIN (4.5) | `pinHash` uses the ASP.NET Identity v3 layout (PBKDF2-SHA256, 10k iterations). **Pending EPOS confirmation.** The portal cannot remove a fob (done on the till). Staff shop assignment is portal-only (`till_user_branches`), since `User` has no shop. |
 | One-shop users (4.5) | Suppliers, payment types, reasons, staff and till roles are read-only for one-shop users (`CompanyWideWriteRequest`). |
+
+## Phase 4 wave 2 (modules 4.3, 4.4, 4.7, 2026-09-30)
+
+| Topic | Decision |
+|---|---|
+| One-shop managers (owner, 2026-09-30) | Company-wide data (products, departments, categories, suppliers, staff, customers' details, business details) is read-only for a one-shop user. They may set **their own shop's** prices and shop-only offers, edit their own shop's details, and nothing else company-wide. They cannot ask for another shop. |
+| Shop prices (4.3) | Every change is a new `BranchPrice` row. The portal may end a price set at a till (only its end date changes), as SHOP-OR-EVERY-SHOP.md says. Cancelling a scheduled price sets its end to its start (no delete). "Every shop" = `Product.sellPrice` + the ticked shops' own prices ended. |
+| Offers (4.3) | `isGroupOffer` is derived, never user-set. Quantity-price tiers and day-of-week rules are not creatable on the portal until the contract defines their format; new offers run every day. Price change batches are shop-owned, read-only. |
+| Customers (4.4) | The portal never writes ledger rows; adjustments and payments on account stay on the till (§10.1 rule 7). Consent is shop-owned and read-only; no row = no consent. The list uses the portal-recomputed balance; the customer page and statements sum the ledger. Only managers and owners email statements. |
+| Shops and tills (4.7) | Abilities `shops.view` (owner, manager, accountant), `shops.manage` (owner, manager), `business.manage` (owner). Tills show the key's last 4 only. "Ask for more tills / another shop" = licence alert `tillsRequested` (repeats count up) + staff email; nothing is issued automatically. |
