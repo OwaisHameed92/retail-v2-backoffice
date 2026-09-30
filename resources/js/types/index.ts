@@ -51,7 +51,9 @@ export type Ability =
     | 'purchasing.view'
     | 'purchasing.manage'
     | 'transfers.view'
-    | 'accounts.view';
+    | 'accounts.view'
+    | 'news.view'
+    | 'news.manage';
 
 /** The company the user is working in (shared by HandleInertiaRequests). */
 export interface CurrentCompany {

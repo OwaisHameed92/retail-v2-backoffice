@@ -15,6 +15,7 @@ import {
     GitCompareArrows,
     LayoutGrid,
     ListChecks,
+    Newspaper,
     Package,
     PoundSterling,
     Receipt,
@@ -94,6 +95,10 @@ function tenantNav(path: string, abilities: string[]): ShellNavGroup[] {
     const transfers = abilities.includes('transfers.view')
         ? [{ title: 'Transfers', icon: ArrowLeftRight, href: '/app/transfers', active: path.startsWith('/app/transfers') }]
         : [];
+    // Module 5.8: newspapers and magazines (news.view).
+    const news = abilities.includes('news.view')
+        ? [{ title: 'Newspapers', icon: Newspaper, href: '/app/news', active: path.startsWith('/app/news') }]
+        : [];
     // Module 4.8: reports (reports.view).
     const reports = abilities.includes('reports.view')
         ? [{ title: 'Reports', icon: BarChart3, href: '/app/reports', active: path.startsWith('/app/reports') }]
@@ -119,7 +124,7 @@ function tenantNav(path: string, abilities: string[]): ShellNavGroup[] {
         },
         {
             label: 'Catalogue',
-            items: [...products, ...prices, ...stock, ...transfers, ...purchasing, ...suppliers],
+            items: [...products, ...prices, ...stock, ...transfers, ...purchasing, ...news, ...suppliers],
         },
         {
             label: 'Money',

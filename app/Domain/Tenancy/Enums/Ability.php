@@ -60,4 +60,10 @@ enum Ability: string
 
     /** Chart of accounts, journals, trial balance, P&L, balance sheet, expenses, VAT return helper, fixed assets; read only (module 5.5). Owner, manager, accountant. */
     case AccountsView = 'accounts.view';
+
+    /** News titles, deliveries, returns and credits, vouchers and the weekly news summary, read (module 5.8). Owner, manager, accountant. */
+    case NewsView = 'news.view';
+
+    /** Create, edit and archive news titles (module 5.8). Owner and manager; a one-shop manager only for their own shop. */
+    case NewsManage = 'news.manage';
 }

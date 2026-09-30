@@ -12,6 +12,8 @@ use App\Http\Controllers\App\CustomerController;
 use App\Http\Controllers\App\DashboardController;
 use App\Http\Controllers\App\HeadOfficeOrderController;
 use App\Http\Controllers\App\InvitationAcceptController;
+use App\Http\Controllers\App\NewsController;
+use App\Http\Controllers\App\NewsTitleController;
 use App\Http\Controllers\App\PortalInvitationController;
 use App\Http\Controllers\App\PortalUserController;
 use App\Http\Controllers\App\PriceController;
@@ -245,6 +247,24 @@ Route::middleware(['auth:web', 'verified', 'company'])->group(function () {
         Route::get('discrepancies', [TransferController::class, 'discrepancies'])->name('discrepancies');
         Route::get('discrepancies/export', [TransferController::class, 'discrepanciesExport'])->name('discrepancies.export')->middleware('throttle:30,1');
         Route::get('{transfer}', [TransferController::class, 'show'])->name('show')->whereUlid('transfer');
+    });
+
+    // Module 5.8: newspapers and magazines. Read: news.view (titles, the shops' deliveries, returns and credits,
+    // vouchers, weekly summary); a one-shop user sees only their shop. Titles: news.manage; a title for every shop
+    // needs a user of every shop (NewsTitleRequest).
+    Route::prefix('news')->name('news.')->middleware('company.can:news.view')->group(function () {
+        Route::middleware('company.can:news.manage')->group(function () {
+            Route::get('titles/create', [NewsTitleController::class, 'create'])->name('titles.create');
+            Route::post('titles', [NewsTitleController::class, 'store'])->name('titles.store')->middleware('throttle:60,1');
+            Route::get('titles/{title}/edit', [NewsTitleController::class, 'edit'])->name('titles.edit')->whereUlid('title');
+            Route::put('titles/{title}', [NewsTitleController::class, 'update'])->name('titles.update')->whereUlid('title')->middleware('throttle:60,1');
+            Route::post('titles/{title}/archive', [NewsTitleController::class, 'archive'])->name('titles.archive')->whereUlid('title')->middleware('throttle:60,1');
+            Route::post('titles/{title}/restore', [NewsTitleController::class, 'restore'])->name('titles.restore')->whereUlid('title')->middleware('throttle:60,1');
+        });
+        Route::get('/', [NewsController::class, 'home'])->name('home');
+        Route::get('summary', [NewsController::class, 'summary'])->name('summary');
+        Route::get('deliveries/{delivery}', [NewsController::class, 'delivery'])->name('deliveries.show')->whereUlid('delivery');
+        Route::get('{kind}', [NewsController::class, 'index'])->name('index')->whereIn('kind', ['titles', 'deliveries', 'returns', 'vouchers']);
     });
 
     // Module 4.7: shops and tills (licences read only, till health), shop and business details, "Ask for more tills".
