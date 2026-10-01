@@ -23,6 +23,7 @@ beforeEach(function () {
     $this->company = $this->tenant('Khan Mini Mart', ownerEmail: 'owner@khan.test');
     $this->owner = $this->ownerOf($this->company);
     Auth::guard('admin')->login($this->adminUser);
+    $this->passTwoFactorFor($this->adminUser, 'admin');
 });
 
 function startImpersonating(object $test, ?User $user = null): void
@@ -92,7 +93,8 @@ test('stop without an impersonation just goes to the dashboard', function () {
 });
 
 test('accounts staff cannot log in as a customer', function () {
-    Auth::guard('admin')->login($this->admin(AdminRole::Accounts));
+    Auth::guard('admin')->login($accounts = $this->admin(AdminRole::Accounts));
+    $this->passTwoFactorFor($accounts, 'admin');
 
     $this->post("/admin/tenants/{$this->company->id}/impersonate", ['user_id' => $this->owner->id])->assertForbidden();
     expect(Auth::guard('web')->check())->toBeFalse();

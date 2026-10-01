@@ -17,7 +17,10 @@ final class Impersonation
     public const SESSION_KEY = 'impersonation';
 
     /** Account screens a support admin must not change on the customer's behalf. */
-    public const BLOCKED_ROUTES = ['profile.update', 'profile.destroy', 'password.update'];
+    public const BLOCKED_ROUTES = [
+        'profile.update', 'profile.destroy', 'password.update',
+        'security.two-factor.destroy', 'security.recovery-codes', 'security.company',
+    ];
 
     /**
      * @return array{admin_id: string, user_id: int, company_id: string, started_at: string}|null

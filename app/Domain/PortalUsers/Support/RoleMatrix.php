@@ -38,6 +38,7 @@ final class RoleMatrix
         'business.manage' => ['Business', 'Edit the business details'],
         'compliance.view' => ['Business', 'See age checks, incidents, training, diary checks, licences and recalls'],
         'compliance.manage' => ['Business', 'Raise and close product recalls'],
+        'audit.view' => ['Business', 'See the activity log'],
     ];
 
     /** One line per role for pickers and the matrix header. */

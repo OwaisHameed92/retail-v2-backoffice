@@ -35,4 +35,10 @@ class AdminPolicy
     {
         return $actor->hasAbility(AdminRole::ADMINS_MANAGE);
     }
+
+    /** Reset another admin's two-factor sign-in (owners). */
+    public function resetTwoFactor(Admin $actor, Admin $admin): bool
+    {
+        return $actor->hasAbility(AdminRole::ADMINS_MANAGE) && ! $actor->is($admin);
+    }
 }

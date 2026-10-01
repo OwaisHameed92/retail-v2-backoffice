@@ -1,10 +1,11 @@
 <?php
 
 // Tenant portal area. Loaded under the /app prefix, `app.` name prefix and the "web" middleware group
-// (see bootstrap/app.php). Every route here must sit behind `auth`, `verified` and `company`; add
+// (see bootstrap/app.php). Every route here must sit behind `auth`, `verified`, `company` and `two-factor:web`; add
 // `company.can:<ability>` for anything role-restricted.
 
 use App\Http\Controllers\App\AccountsController;
+use App\Http\Controllers\App\ActivityController;
 use App\Http\Controllers\App\BillingController;
 use App\Http\Controllers\App\CalendarController;
 use App\Http\Controllers\App\CashController;
@@ -42,8 +43,12 @@ use App\Http\Controllers\App\TillListController;
 use App\Http\Controllers\App\TransferController;
 use Illuminate\Support\Facades\Route;
 
-Route::middleware(['auth:web', 'verified', 'company'])->group(function () {
+Route::middleware(['auth:web', 'verified', 'company', 'two-factor:web'])->group(function () {
     Route::get('/', DashboardController::class)->name('dashboard');
+
+    // The business's own activity log (audit.view: owner by default), on screen and as CSV.
+    Route::get('activity', [ActivityController::class, 'index'])->name('activity.index')->middleware('company.can:audit.view');
+    Route::get('activity/export', [ActivityController::class, 'export'])->name('activity.export')->middleware(['company.can:audit.view', 'throttle:10,1']);
 
     Route::post('company/switch', SwitchCompanyController::class)->name('company.switch');
     Route::post('branch/switch', SwitchBranchController::class)->name('branch.switch');

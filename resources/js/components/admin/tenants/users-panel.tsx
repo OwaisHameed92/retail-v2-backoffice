@@ -13,7 +13,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { type CompanyRole } from '@/types';
 import { router } from '@inertiajs/react';
-import { LogIn, Mail, MoreHorizontal, Plus, UserCog, UserMinus, Users } from 'lucide-react';
+import { LogIn, Mail, MoreHorizontal, Plus, ShieldCheck, ShieldOff, UserCog, UserMinus, Users } from 'lucide-react';
 import { useState } from 'react';
 
 interface UsersPanelProps {
@@ -24,7 +24,7 @@ interface UsersPanelProps {
     canImpersonate: boolean;
 }
 
-type Pending = { kind: 'remove' | 'link'; member: TenantMember } | null;
+type Pending = { kind: 'remove' | 'link' | 'twoFactor'; member: TenantMember } | null;
 
 export function UsersPanel({ tenant, members, roles, canManage, canImpersonate }: UsersPanelProps) {
     const [dialog, setDialog] = useState<{ open: boolean; member: TenantMember | null }>({ open: false, member: null });
@@ -87,6 +87,15 @@ export function UsersPanel({ tenant, members, roles, canManage, canImpersonate }
                                             <div className="flex flex-wrap items-center gap-2">
                                                 <Badge variant={member.isOwner ? 'info' : 'neutral'}>{member.roleLabel}</Badge>
                                                 {!member.isActive && <StatusBadge status="inactive" />}
+                                                {member.twoFactorEnabled && (
+                                                    <span
+                                                        className="text-success inline-flex items-center gap-1 text-xs font-medium"
+                                                        title="Signs in with an authenticator app"
+                                                    >
+                                                        <ShieldCheck className="size-3.5" aria-hidden />
+                                                        Two-factor
+                                                    </span>
+                                                )}
                                             </div>
                                         </TableCell>
                                         <TableCell className="text-muted-foreground hidden md:table-cell">{formatDate(member.joinedAt)}</TableCell>
@@ -123,6 +132,12 @@ export function UsersPanel({ tenant, members, roles, canManage, canImpersonate }
                                                                     <Mail />
                                                                     Send set-password email
                                                                 </DropdownMenuItem>
+                                                                {member.twoFactorEnabled && (
+                                                                    <DropdownMenuItem onSelect={() => setPending({ kind: 'twoFactor', member })}>
+                                                                        <ShieldOff />
+                                                                        Reset two-factor
+                                                                    </DropdownMenuItem>
+                                                                )}
                                                                 <DropdownMenuSeparator />
                                                                 <DropdownMenuItem
                                                                     disabled={lastOwner}
@@ -159,18 +174,28 @@ export function UsersPanel({ tenant, members, roles, canManage, canImpersonate }
                 <ConfirmDialog
                     open
                     onOpenChange={(open) => !open && setPending(null)}
-                    title={pending.kind === 'remove' ? `Remove ${pending.member.name}?` : `Email ${pending.member.name} a set-password link?`}
+                    title={
+                        pending.kind === 'remove'
+                            ? `Remove ${pending.member.name}?`
+                            : pending.kind === 'twoFactor'
+                              ? `Reset two-factor sign-in for ${pending.member.name}?`
+                              : `Email ${pending.member.name} a set-password link?`
+                    }
                     description={
                         pending.kind === 'remove'
                             ? `${pending.member.email} can no longer log in to the ${tenant.name} portal. Their account stays if they belong to another business.`
-                            : `We send ${pending.member.email} a link to choose a new password. Their current password keeps working until they do.`
+                            : pending.kind === 'twoFactor'
+                              ? `Only do this after checking who you are talking to. Their authenticator app and recovery codes stop working; they sign in with their password and set it up again if ${tenant.name} requires it. This is recorded in the audit log.`
+                              : `We send ${pending.member.email} a link to choose a new password. Their current password keeps working until they do.`
                     }
-                    confirmLabel={pending.kind === 'remove' ? 'Remove access' : 'Send email'}
-                    destructive={pending.kind === 'remove'}
+                    confirmLabel={pending.kind === 'remove' ? 'Remove access' : pending.kind === 'twoFactor' ? 'Reset two-factor' : 'Send email'}
+                    destructive={pending.kind !== 'link'}
                     onConfirm={() =>
                         pending.kind === 'remove'
                             ? send('delete', route('admin.tenants.users.destroy', [tenant.id, pending.member.id]))
-                            : send('post', route('admin.tenants.users.password-link', [tenant.id, pending.member.id]))
+                            : pending.kind === 'twoFactor'
+                              ? send('post', route('admin.tenants.users.two-factor.reset', [tenant.id, pending.member.id]))
+                              : send('post', route('admin.tenants.users.password-link', [tenant.id, pending.member.id]))
                     }
                 />
             )}

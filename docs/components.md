@@ -381,3 +381,11 @@ Tokens live only in `resources/css/app.css` (v2 palette, light + dark): `chrome`
 - **Tables**: headers are sentence case (sortable ones too). Select values are left-aligned after a leading icon.
 - **Errors**: `pages/error.tsx` + `App\Http\Support\InertiaErrorPages` (403/404/500/503 when debug is off; JSON callers untouched; 419 → back with a toast).
 - **Hero page headers (pass 3)**: `PageHeader` renders a slim hero band (`bg-brand-wash` + `BrandWaves`, like the dashboard `WelcomeBanner`): breadcrumbs/back, a white tile with the page icon in green, title + status, one-line description, actions right (wrapping under on phones); `tabs` sit under the band. The icon defaults to the page's sidebar nav icon via `usePageIcon()` / `pageIconFor(path)` (`components/shell/page-icon.ts`: admin by route name from `admin-nav.ts`, tenant by URL from `components/app-nav.ts`, `/settings` → profile icon); pass `icon` to override, `media` (avatar) replaces the tile on detail pages. Tenant nav items now live in `components/app-nav.ts` (`tenantNavGroups`, `tenantNav`, `currentTenantNavItem`). Dashboards keep `WelcomeBanner`; content cards and tables stay white.
+
+## Added by two-factor sign-in and audit screens (7.1b)
+
+- `RequireTwoFactor` middleware, alias `two-factor:<guard>`: put `two-factor:web` after `company` on any new portal route group (routes/app.php and routes/settings.php already have it).
+- Tests: `actingAs()` marks the session as past two-factor (`Tests\TestCase::be`); call `$this->withoutTwoFactorPass()` first to test the real step, or `passTwoFactorFor($user, 'admin')` after `Auth::guard()->login()`.
+- `components/shared/two-factor/`: `RecoveryCodesPanel` (one-time codes with copy/download/acknowledge), `RegenerateCodesDialog` (password → new codes from a JSON url), `TwoFactorStatus`, `CodeInput`.
+- `components/shared/audit/`: `AuditLogView` (DataTable + filters + keyset pager + `AuditDrawer` with the before/after diff), `exportHref()`. Backend: `App\Domain\Audit\Queries\AuditLogList::for($request, AuditFilters::fromRequest(...), $companyId)` and `AuditCsv::download()`.
+

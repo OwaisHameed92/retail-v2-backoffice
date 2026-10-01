@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Domain\Admin\Models\Admin;
+use App\Domain\Security\Actions\ResetPortalUserTwoFactor;
 use App\Domain\Tenancy\Actions\AddCompanyUser;
 use App\Domain\Tenancy\Actions\ChangeCompanyUserRole;
 use App\Domain\Tenancy\Actions\RemoveCompanyUser;
@@ -12,6 +14,7 @@ use App\Http\Requests\Admin\StoreTenantUserRequest;
 use App\Http\Requests\Admin\UpdateTenantUserRequest;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 
 /**
  * Portal users of a tenant (admin). Users are looked up among the company's members only.
@@ -47,6 +50,18 @@ class TenantUserController extends Controller
         $sendLink->handle($member, $company);
 
         return back()->with('success', "We emailed {$member->email} a link to set their password.");
+    }
+
+    /** Lost phone and recovery codes: the user signs in with their password again (module 7: two-factor). */
+    public function resetTwoFactor(Request $request, Company $company, int $user, ResetPortalUserTwoFactor $reset): RedirectResponse
+    {
+        $member = self::find($company, $user);
+        $admin = $request->user('admin');
+        abort_unless($admin instanceof Admin, 403);
+
+        $reset->handle($member, $company, $admin);
+
+        return back()->with('success', "Two-factor sign-in reset for {$member->name}.");
     }
 
     public static function find(Company $company, int $userId): User

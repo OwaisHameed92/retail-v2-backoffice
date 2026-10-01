@@ -4,8 +4,11 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use App\Domain\Mail\Support\PasswordLinkMail;
+use App\Domain\Security\Concerns\HasTwoFactor;
+use App\Domain\Security\Contracts\TwoFactorUser;
 use App\Domain\Tenancy\Models\Company;
 use App\Domain\Tenancy\Models\CompanyMembership;
+use Carbon\CarbonInterface;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -13,10 +16,19 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use SensitiveParameter;
 
-class User extends Authenticatable
+/**
+ * @property int $id
+ * @property string $name
+ * @property string $email
+ * @property string|null $two_factor_secret
+ * @property list<string>|null $two_factor_recovery_codes
+ * @property CarbonInterface|null $two_factor_confirmed_at
+ * @property int|null $two_factor_last_step
+ */
+class User extends Authenticatable implements TwoFactorUser
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable;
+    use HasFactory, HasTwoFactor, Notifiable;
 
     /**
      * The attributes that are mass assignable.

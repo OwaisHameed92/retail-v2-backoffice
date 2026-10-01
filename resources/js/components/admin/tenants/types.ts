@@ -112,6 +112,8 @@ export interface TenantMember {
     isActive: boolean;
     isOwner: boolean;
     joinedAt: string | null;
+    /** Uses an authenticator app to sign in (support can reset it). */
+    twoFactorEnabled: boolean;
 }
 
 export interface TenantActivityRow {

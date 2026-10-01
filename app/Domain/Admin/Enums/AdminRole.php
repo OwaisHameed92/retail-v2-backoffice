@@ -16,6 +16,7 @@ namespace App\Domain\Admin\Enums;
  * | billing.manage    |  yes  |       |         |   yes    |
  * | leads.manage      |  yes  |  yes  |         |          |
  * | trading.view      |  yes  |       |   yes   |   yes    |
+ * | audit.view        |  yes  |       |   yes   |          |
  *
  * The owner can do everything. Unknown abilities are denied for every role except owner.
  */
@@ -41,6 +42,9 @@ enum AdminRole: string
     /** Module 3.2: customers' shop sales (the admin trading dashboard). Not for sales staff. */
     public const TRADING_VIEW = 'trading.view';
 
+    /** The audit log across every business (/admin/audit-log). Owner and support. */
+    public const AUDIT_VIEW = 'audit.view';
+
     /**
      * Abilities granted to each non-owner role. The owner implicitly has all abilities.
      *
@@ -48,7 +52,7 @@ enum AdminRole: string
      */
     private const ABILITIES = [
         'sales' => [self::TENANTS_VIEW, self::TENANTS_MANAGE, self::LEADS_MANAGE],
-        'support' => [self::TENANTS_VIEW, self::TENANTS_MANAGE, self::LICENCES_MANAGE, self::TRADING_VIEW],
+        'support' => [self::TENANTS_VIEW, self::TENANTS_MANAGE, self::LICENCES_MANAGE, self::TRADING_VIEW, self::AUDIT_VIEW],
         'accounts' => [self::TENANTS_VIEW, self::BILLING_MANAGE, self::TRADING_VIEW],
     ];
 
@@ -86,6 +90,7 @@ enum AdminRole: string
             self::BILLING_MANAGE,
             self::LEADS_MANAGE,
             self::TRADING_VIEW,
+            self::AUDIT_VIEW,
         ];
     }
 
