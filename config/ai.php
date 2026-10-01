@@ -73,7 +73,8 @@ return [
     */
     'features' => [
         'assistant' => ['model' => 'default', 'effort' => 'medium', 'max_tokens' => 16000],
-        'morningSummary' => ['model' => 'fast', 'effort' => null, 'max_tokens' => 4000],
+        // Morning summary (6.3): AI_MORNING_SUMMARY_TIER=default to use AI_MODEL instead of the fast (Haiku) tier.
+        'morningSummary' => ['model' => env('AI_MORNING_SUMMARY_TIER', 'fast'), 'effort' => null, 'max_tokens' => 4000],
         'reorderSuggestions' => ['model' => 'default', 'effort' => 'medium', 'max_tokens' => 16000],
         'invoiceImport' => ['model' => 'default', 'effort' => 'medium', 'max_tokens' => 16000],
         'anomalyAlerts' => ['model' => 'fast', 'effort' => null, 'max_tokens' => 4000],

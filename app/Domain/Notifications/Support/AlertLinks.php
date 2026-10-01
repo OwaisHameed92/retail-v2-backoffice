@@ -50,6 +50,7 @@ final class AlertLinks
             AlertType::CashVariance => self::portal('/app/cash/alerts', $shop),
             AlertType::Compliance => self::portal('/app/compliance', $shop),
             AlertType::SyncConflicts => self::portal('/app/sync/conflicts'),
+            AlertType::MorningSummary => self::portal('/app'),
         };
     }
 }

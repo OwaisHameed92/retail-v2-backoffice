@@ -3,6 +3,7 @@
 use App\Domain\Ai\Models\AiConversation;
 use App\Domain\Ai\Models\AiPendingAction;
 use App\Domain\Ai\Models\AiUsage;
+use App\Domain\Ai\MorningSummary\Models\MorningSummary;
 use App\Domain\Mail\Models\EmailLog;
 use App\Domain\Notifications\Models\AlertNotification;
 use App\Domain\Shared\Support\SchedulerHeartbeat;
@@ -39,6 +40,8 @@ Schedule::command('till-health:refresh')->everyFiveMinutes()->onOneServer()->wit
 // bell entries after 90 days.
 Schedule::command('alerts:check')->cron('2-59/5 * * * *')->onOneServer()->withoutOverlapping(10);
 Schedule::command('alerts:digest')->dailyAt('07:00')->timezone('Europe/London')->onOneServer()->withoutOverlapping(60);
+// Morning summary (module 6.3): the stored summaries and their AI narratives after `ai.retention_days`.
+Schedule::command('model:prune', ['--model' => [MorningSummary::class]])->dailyAt('02:40')->onOneServer();
 Schedule::command('model:prune', ['--model' => [AlertNotification::class]])->dailyAt('03:15')->onOneServer();
 
 // Reporting tables (module 3.1): re-queue shop-days whose rebuild job was lost or failed (pushes queue their own).

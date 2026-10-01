@@ -1,6 +1,7 @@
 import { BusinessBody, NoSalesYet } from '@/components/app/dashboard/business-body';
 import { BusinessFiltersBar, type BusinessQuery } from '@/components/app/dashboard/business-filters';
 import { type BusinessDashboardProps } from '@/components/app/dashboard/types';
+import { YesterdayCard, YesterdaySkeleton } from '@/components/app/dashboard/yesterday-card';
 import { EmptyState } from '@/components/shared/empty-state';
 import { SectionCard } from '@/components/shared/section-card';
 import { dayRange } from '@/components/shared/trading/format';
@@ -24,7 +25,7 @@ const RELOAD = ['filters', 'context', 'status', 'sales'];
  * its shops and tills (module 2.7). Figures load as a deferred prop behind a skeleton.
  */
 export default function Dashboard(props: BusinessDashboardProps) {
-    const { status, canSales, filters, context, periods, compares, sales } = props;
+    const { status, canSales, filters, context, periods, compares, sales, yesterday } = props;
     const { auth, company } = usePage<SharedData>().props;
     const [loading, setLoading] = useState(false);
 
@@ -55,6 +56,10 @@ export default function Dashboard(props: BusinessDashboardProps) {
 
             {canSales ? (
                 <>
+                    <Deferred data="yesterday" fallback={<YesterdaySkeleton />}>
+                        <>{yesterday && <YesterdayCard data={yesterday} />}</>
+                    </Deferred>
+
                     <BusinessFiltersBar filters={filters} context={context} periods={periods} compares={compares} onChange={go} onLoading={setLoading} />
 
                     <div className={cn('transition-opacity', loading && 'pointer-events-none opacity-60')} aria-busy={loading}>

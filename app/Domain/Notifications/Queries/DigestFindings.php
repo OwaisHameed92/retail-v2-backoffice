@@ -51,6 +51,7 @@ final class DigestFindings
                     AlertType::CashVariance => CashDigest::for($shops, $yesterday),
                     AlertType::Compliance => ComplianceDigest::for($shops, $now),
                     AlertType::SyncConflicts => $this->conflicts($company->id, $shops),
+                    AlertType::MorningSummary => [], // its own facts (module 6.3, MorningFacts)
                 };
             }
 

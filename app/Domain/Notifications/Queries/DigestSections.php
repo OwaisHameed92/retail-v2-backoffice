@@ -98,6 +98,8 @@ final class DigestSections
                 ($c['portal'] ?? 0) > 0 ? MailFormat::count($c['portal'], 'change').' from the shops waiting for your decision' : null,
                 ($c['shop'] ?? 0) > 0 ? MailFormat::count($c['shop'], 'clash', 'clashes').' waiting at the tills' : null,
             ]),
+            // Not a digest section: the morning summary has its own block in the same email (module 6.3).
+            AlertType::MorningSummary => '',
         };
     }
 }

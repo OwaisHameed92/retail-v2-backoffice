@@ -2,6 +2,9 @@
 
 namespace App\Domain\Notifications\Actions;
 
+use App\Domain\Ai\MorningSummary\Actions\BuildMorningSummary;
+use App\Domain\Ai\MorningSummary\Data\CompanyFacts;
+use App\Domain\Ai\MorningSummary\Queries\MorningFacts;
 use App\Domain\Mail\Data\OwnerDigestData;
 use App\Domain\Mail\Mailables\OwnerDigestMail;
 use App\Domain\Mail\Support\MailFormat;
@@ -24,10 +27,17 @@ use Illuminate\Support\Facades\Mail;
  * The daily alert digest (module 7.8), run by `alerts:digest` at 07:00 London. For every business that is trading
  * (not suspended or cancelled) and every member with at least one type on "daily digest": one queued email and one
  * bell entry when there is something to say, never twice for the same London day (an `alert_dispatches` row).
+ *
+ * The morning summary (module 6.3) rides in the same email for users who have it on: one email per user per morning.
+ * Its facts are computed once per business, only when someone wants it.
  */
 class SendDigests
 {
-    public function __construct(private readonly DigestFindings $findings) {}
+    public function __construct(
+        private readonly DigestFindings $findings,
+        private readonly MorningFacts $morningFacts,
+        private readonly BuildMorningSummary $morningSummary,
+    ) {}
 
     /**
      * @param  list<string>|null  $companyIds  Only these businesses; null = all.
@@ -79,11 +89,17 @@ class SendDigests
         }));
         $findings = $this->findings->for($company, $types, $now);
         $totals['companies']++;
+        $facts = null;
 
         foreach ($recipients as $recipient) {
             $sections = DigestSections::for($recipient, $company->id, $findings);
+            $summary = null;
 
-            if ($sections === []) {
+            if ($recipient->delivery(AlertType::MorningSummary) === AlertDelivery::Digest) {
+                $summary = $this->summary($company, $facts, $recipient, $now);
+            }
+
+            if ($sections === [] && $summary === null) {
                 $totals['empty']++;
 
                 continue;
@@ -97,17 +113,40 @@ class SendDigests
                 settingsUrl: AlertLinks::settings(),
                 unsubscribeUrl: AlertLinks::unsubscribe($company->id, $recipient->userId, AlertLinks::DIGEST),
                 companyId: $company->id,
+                summary: $summary,
             )));
 
             AlertInbox::add($company->id, $recipient->userId, AlertLinks::DIGEST, 'info',
-                'Daily summary: '.MailFormat::count(count($sections), 'thing').' to check',
-                implode(' · ', array_column($sections, 'title')), $sections[0]['url']);
+                $summary !== null
+                    ? 'Morning summary: '.MailFormat::money($summary['total']['sales']).' sales yesterday'.($sections !== [] ? ', '.MailFormat::count(count($sections), 'thing').' to check' : '')
+                    : 'Daily summary: '.MailFormat::count(count($sections), 'thing').' to check',
+                $sections !== [] ? implode(' · ', array_column($sections, 'title')) : 'How '.$summary['scope'].' traded on '.$summary['dayLabel'],
+                $summary['url'] ?? $sections[0]['url']);
 
             AlertDispatch::withoutCompanyScope()->create([
                 'company_id' => $company->id, 'user_id' => $recipient->userId, 'alert_type' => AlertLinks::DIGEST,
                 'subject_key' => 'digest|'.$day, 'state' => AlertDispatch::SENT, 'notified_at' => $now,
             ]);
             $totals['sent']++;
+        }
+    }
+
+    /**
+     * The user's morning summary, or null when there is nothing to say. The business's facts are computed on first
+     * use. Never stops the digest going out.
+     *
+     * @return array<string, mixed>|null
+     */
+    private function summary(Company $company, ?CompanyFacts &$facts, Recipient $recipient, CarbonImmutable $now): ?array
+    {
+        try {
+            $facts ??= $this->morningFacts->for($company, $now);
+
+            return $this->morningSummary->handle($company, $facts, $recipient);
+        } catch (\Throwable $e) {
+            report($e);
+
+            return null;
         }
     }
 }

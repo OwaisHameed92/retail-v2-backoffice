@@ -10,7 +10,8 @@ use App\Domain\Tenancy\Enums\CompanyRole;
  * What a business owner can be told about by email and in the bell (module 7.8). camelCase values.
  *
  * Urgent types (till offline, sync failing) come from the Till health alerts (module 2.7, `licence_alerts`) and may be
- * emailed straight away; the others only go in the daily digest. Each type needs the role ability of the screen it
+ * emailed straight away; the others only go in the daily digest. The morning summary (module 6.3) is a part of the
+ * same 07:00 email: on ("daily digest") or off. Each type needs the role ability of the screen it
  * links to; staff get nothing unless they turn it on themselves.
  */
 enum AlertType: string
@@ -21,6 +22,7 @@ enum AlertType: string
     case CashVariance = 'cashVariance';
     case Compliance = 'compliance';
     case SyncConflicts = 'syncConflicts';
+    case MorningSummary = 'morningSummary';
 
     public function label(): string
     {
@@ -31,6 +33,7 @@ enum AlertType: string
             self::CashVariance => 'Cash variances',
             self::Compliance => 'Compliance expiries and recalls',
             self::SyncConflicts => 'Sync conflicts waiting',
+            self::MorningSummary => 'Morning summary',
         };
     }
 
@@ -43,6 +46,7 @@ enum AlertType: string
             self::CashVariance => 'Yesterday\'s till, safe or banking differences over your alert amount.',
             self::Compliance => 'Staff training and licences expired or expiring within 14 days, and open product recalls.',
             self::SyncConflicts => 'Changes from a shop that the portal kept out and that need a decision.',
+            self::MorningSummary => 'Yesterday\'s sales against last week and last year, top movers, unusual refunds or discounts and fast sellers running low, with a short written summary.',
         };
     }
 
@@ -61,6 +65,7 @@ enum AlertType: string
             self::CashVariance => Ability::CashView,
             self::Compliance => Ability::ComplianceView,
             self::SyncConflicts => Ability::SyncManage,
+            self::MorningSummary => Ability::ReportsView,
         };
     }
 

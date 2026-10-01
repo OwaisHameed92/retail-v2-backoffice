@@ -1,4 +1,5 @@
 import { type FreshnessInfo, type GroupRow, type Option, type PeriodFilters, type ProductRow, type SalesDashboardData, type TradingCompare, type TradingPeriod } from '@/components/shared/trading/types';
+import { type YesterdayGlance } from '@/components/app/dashboard/yesterday-card';
 import { type ShopsStatus } from '@/components/till-health/types';
 
 /** `BusinessDashboardFilters::toArray()`. */
@@ -65,4 +66,6 @@ export interface BusinessDashboardProps {
     periods: Option<TradingPeriod>[];
     compares: Option<TradingCompare>[];
     sales?: BusinessData | null;
+    /** Module 6.3: the morning summary card; null when there is no news (deferred). */
+    yesterday?: YesterdayGlance | null;
 }
