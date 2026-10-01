@@ -1,11 +1,10 @@
-import InputError from '@/components/input-error';
+import { AuthSubmit, IconInput, PasswordInput } from '@/components/auth/auth-fields';
+import { FormField } from '@/components/shared/form-section';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import AuthLayout from '@/layouts/auth-layout';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
-import { LoaderCircle } from 'lucide-react';
+import { LoaderCircle, Mail, UserRound } from 'lucide-react';
 import { type FormEventHandler, useState } from 'react';
 
 type LinkState = 'invalid' | 'expired' | 'revoked' | 'accepted' | 'register' | 'signIn' | 'join' | 'wrongAccount';
@@ -49,7 +48,7 @@ export default function AcceptInvitation(props: AcceptInvitationProps) {
         return (
             <AuthLayout title={closedCopy.title} description={closedCopy.body(props)}>
                 <Head title={closedCopy.title} />
-                <Button asChild size="lg" className="w-full">
+                <Button asChild size="lg" className="h-11 w-full text-[15px] font-semibold">
                     <Link href={route('login')}>Go to sign in</Link>
                 </Button>
             </AuthLayout>
@@ -76,7 +75,7 @@ export default function AcceptInvitation(props: AcceptInvitationProps) {
                         You already have a Switch &amp; Save account with <span className="text-foreground font-medium">{props.email}</span>. Sign in
                         and you come straight back here to accept.
                     </p>
-                    <Button asChild size="lg" className="w-full">
+                    <Button asChild size="lg" className="h-11 w-full text-[15px] font-semibold">
                         <Link href={route('login')}>Sign in to accept</Link>
                     </Button>
                 </div>
@@ -95,50 +94,44 @@ function RegisterForm({ email, name, url }: AcceptInvitationProps) {
     };
 
     return (
-        <form onSubmit={submit} className="grid gap-6" noValidate>
-            <div className="grid gap-2">
-                <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" value={email ?? ''} readOnly autoComplete="username" />
-            </div>
-            <div className="grid gap-2">
-                <Label htmlFor="name">Your name</Label>
-                <Input
+        <form onSubmit={submit} className="grid gap-5" noValidate>
+            <FormField id="email" label="Email">
+                <IconInput id="email" icon={Mail} type="email" value={email ?? ''} readOnly autoComplete="username" className="bg-muted/60" />
+            </FormField>
+            <FormField id="name" label="Your name" error={errors.name}>
+                <IconInput
                     id="name"
+                    icon={UserRound}
                     value={data.name}
                     autoComplete="name"
                     maxLength={255}
                     onChange={(e) => setData('name', e.target.value)}
-                    aria-invalid={!!errors.name}
+                    aria-invalid={!!errors.name || undefined}
+                    aria-describedby={errors.name ? 'name-error' : undefined}
                 />
-                <InputError message={errors.name} />
-            </div>
-            <div className="grid gap-2">
-                <Label htmlFor="password">Choose a password</Label>
-                <Input
+            </FormField>
+            <FormField id="password" label="Choose a password" error={errors.password}>
+                <PasswordInput
                     id="password"
-                    type="password"
                     autoFocus
                     autoComplete="new-password"
                     value={data.password}
                     onChange={(e) => setData('password', e.target.value)}
-                    aria-invalid={!!errors.password}
+                    aria-invalid={!!errors.password || undefined}
+                    aria-describedby={errors.password ? 'password-error' : undefined}
                 />
-                <InputError message={errors.password} />
-            </div>
-            <div className="grid gap-2">
-                <Label htmlFor="password_confirmation">Confirm password</Label>
-                <Input
+            </FormField>
+            <FormField id="password_confirmation" label="Confirm password">
+                <PasswordInput
                     id="password_confirmation"
-                    type="password"
                     autoComplete="new-password"
                     value={data.password_confirmation}
                     onChange={(e) => setData('password_confirmation', e.target.value)}
                 />
-            </div>
-            <Button type="submit" size="lg" className="w-full" disabled={processing}>
-                {processing && <LoaderCircle className="size-4 animate-spin" />}
+            </FormField>
+            <AuthSubmit processing={processing} className="mt-1">
                 Accept and create account
-            </Button>
+            </AuthSubmit>
         </form>
     );
 }
@@ -153,8 +146,9 @@ function JoinButton({ url, email }: { url: string; email: string }) {
             </p>
             <Button
                 size="lg"
-                className="w-full"
+                className="h-11 w-full text-[15px] font-semibold"
                 disabled={processing}
+                aria-busy={processing || undefined}
                 onClick={() => router.post(url, {}, { onStart: () => setProcessing(true), onFinish: () => setProcessing(false) })}
             >
                 {processing && <LoaderCircle className="size-4 animate-spin" />}
@@ -175,8 +169,9 @@ function WrongAccount({ url, email, signedInAs }: { url: string; email: string; 
             </p>
             <Button
                 size="lg"
-                className="w-full"
+                className="h-11 w-full text-[15px] font-semibold"
                 disabled={processing}
+                aria-busy={processing || undefined}
                 onClick={() => router.delete(url, { onStart: () => setProcessing(true), onFinish: () => setProcessing(false) })}
             >
                 {processing && <LoaderCircle className="size-4 animate-spin" />}

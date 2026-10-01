@@ -1,10 +1,9 @@
-// Components
 import { Head, useForm } from '@inertiajs/react';
-import { LoaderCircle } from 'lucide-react';
+import { MailCheck, Send } from 'lucide-react';
 import { FormEventHandler } from 'react';
 
+import { AuthDivider, AuthNotice, AuthSubmit } from '@/components/auth/auth-fields';
 import TextLink from '@/components/text-link';
-import { Button } from '@/components/ui/button';
 import AuthLayout from '@/layouts/auth-layout';
 
 export default function VerifyEmail({ status }: { status?: string }) {
@@ -17,25 +16,31 @@ export default function VerifyEmail({ status }: { status?: string }) {
     };
 
     return (
-        <AuthLayout title="Verify email" description="Check your inbox and click the link we just sent to confirm your email address.">
+        <AuthLayout title="Verify your email" description="Check your inbox and click the link we just sent to confirm your email address.">
             <Head title="Email verification" />
 
             {status === 'verification-link-sent' && (
-                <div className="bg-success-soft text-success-foreground border-success/25 mb-6 rounded-xl border p-3 text-sm">
-                    A new verification link has been sent to the email address you provided during registration.
-                </div>
+                <AuthNotice>A new verification link has been sent to the email address you provided during registration.</AuthNotice>
             )}
 
-            <form onSubmit={submit} className="space-y-6 text-center">
-                <Button disabled={processing} variant="secondary">
-                    {processing && <LoaderCircle className="size-4 animate-spin" />}
-                    Resend verification email
-                </Button>
+            <div className="bg-primary-soft text-accent-foreground mb-6 flex items-start gap-3 rounded-xl p-4 text-sm leading-6">
+                <MailCheck className="mt-0.5 size-5 shrink-0" aria-hidden />
+                <p>Not there? Check your spam or junk folder, or send the link again.</p>
+            </div>
 
-                <TextLink href={route('logout')} method="post" className="mx-auto block text-sm">
+            <form onSubmit={submit}>
+                <AuthSubmit processing={processing} icon={Send}>
+                    Resend verification email
+                </AuthSubmit>
+            </form>
+
+            <AuthDivider className="mt-8 mb-6" />
+
+            <p className="text-center text-sm">
+                <TextLink href={route('logout')} method="post" as="button" className="font-semibold">
                     Log out
                 </TextLink>
-            </form>
+            </p>
         </AuthLayout>
     );
 }

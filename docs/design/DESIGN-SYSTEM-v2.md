@@ -16,7 +16,11 @@
 > - **Primary** green `#097A4C` (white text 5.4:1); `muted-foreground` `#5D6B7E` (AA on the canvas and on cards).
 > - **Dashboard hero**: `WelcomeBanner` = `bg-brand-wash` mint gradient + waves + sun icon tile. Admin dashboard adds
 >   "Recent activity" and the "Business overview" status strip (real counts only). Charts stay monotone (never overshoot).
-> - Auth pages: light mint brand panel with the full logo.
+> - Sign-in screens (2026-10-01, "Enterprise sign-in"): left = deep brand panel (`bg-auth-panel`, navy → brand blue →
+>   teal; staff console `bg-auth-panel-staff`, darker navy) with a fine grid, headline, a floating product preview built
+>   from real UI cards (sample figures, aria-hidden, scales to the free height) and a trust row; right = elevated white
+>   card (`shadow-auth`, 20px radius) on the dotted canvas with the full logo at its top (the only logo on phones).
+>   Shared fields in `components/auth/auth-fields.tsx` (`IconInput`, `PasswordInput`, `AuthSubmit`, `AuthDivider`).
 
 **Final reference: `docs/design/admin-dashboard-reference-2.webp`** (owner: "haan yahi final karo"). The earlier
 `admin-dashboard-reference.webp` is kept only for comparison. This supersedes the colour rules in `docs/BRAND.md` and

@@ -1,11 +1,10 @@
+import { AuthSubmit } from '@/components/auth/auth-fields';
 import { FormField } from '@/components/shared/form-section';
 import { CodeInput } from '@/components/shared/two-factor/code-input';
-import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import AuthLayout from '@/layouts/auth-layout';
 import { Head, Link, useForm } from '@inertiajs/react';
-import { LoaderCircle } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
 
 interface TwoFactorChallengeProps {
@@ -69,12 +68,15 @@ export default function TwoFactorChallenge({ staff, email, verifyUrl, logoutUrl,
                     </Label>
                 </div>
 
-                <Button type="submit" size="lg" className="w-full" disabled={processing || data.code.trim() === ''}>
-                    {processing && <LoaderCircle className="size-4 animate-spin" />}
+                <AuthSubmit processing={processing} disabled={data.code.trim() === ''}>
                     Verify and sign in
-                </Button>
+                </AuthSubmit>
 
-                <button type="button" onClick={toggle} className="text-primary text-sm font-medium hover:underline">
+                <button
+                    type="button"
+                    onClick={toggle}
+                    className="text-primary focus-visible:ring-ring/40 rounded text-sm font-medium outline-none hover:underline focus-visible:ring-[3px]"
+                >
                     {recovery ? 'Use a code from my app instead' : 'Lost your phone? Use a recovery code'}
                 </button>
             </form>
