@@ -144,7 +144,7 @@ export interface PromotionIndexProps {
 
 export type PromotionItemValues = {
     id: string | null;
-    scope: 'product' | 'category' | 'department';
+    scope: 'product' | 'category' | 'department' | 'style';
     target_id: string;
     group_no: string;
     quantity: string;
@@ -177,7 +177,13 @@ export type PromotionValues = {
     time_to: string;
     is_active: boolean;
     items: PromotionItemValues[];
+    /** quantityPrice tiers; sent to the server as the till's string "2=5.00;3=7.00". */
+    price_tiers: PriceTierValues[];
+    /** Days it runs (all seven = every day). */
+    days: string[];
 };
+
+export type PriceTierValues = { quantity: string; price: string };
 
 export interface PromotionFormProps {
     promotion:
@@ -190,7 +196,7 @@ export interface PromotionFormProps {
               updatedAt: string | null;
           })
         | null;
-    options: { types: Option[]; products: Option[]; categories: Option[]; departments: Option[]; shops: Option[] };
+    options: { types: Option[]; products: Option[]; categories: Option[]; departments: Option[]; styles: Option[]; shops: Option[] };
     restrictedShop: string | null;
     canEdit: boolean;
     today: string;

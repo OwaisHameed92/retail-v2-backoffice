@@ -5,6 +5,7 @@ namespace App\Domain\Sync\Support;
 use App\Domain\Shared\Support\ApiDate;
 use App\Domain\Shared\Support\Money;
 use App\Domain\Shared\Support\Redactor;
+use App\Domain\Staff\Support\TillPinHasher;
 use App\Domain\Sync\Enums\IdKind;
 use App\Domain\TillData\Registry\EntityDefinition;
 
@@ -16,8 +17,9 @@ use App\Domain\TillData\Registry\EntityDefinition;
  * uses). Members a newer till sent that we keep in `extra` go back as they came, except secret-looking ones.
  *
  * Never written: secrets (`dropped` members such as `User.remoteApprovalSecret`, hashed `secret` members),
- * derived members other than `isDeleted` / `domainEvents` (the till ignores derived members when reading), and a
- * blank `User.pinHash` / `User.rfid` (KEPT_WHEN_BLANK).
+ * derived members other than `isDeleted` / `domainEvents` (the till ignores derived members when reading), a
+ * blank `User.pinHash` / `User.rfid` (KEPT_WHEN_BLANK), and a `User.pinHash` this till already has or cannot read
+ * (sendsPin: only to set or change a PIN, in the till's `pbkdf2$…` format, ANSWERS-2026-10-01 §1).
  */
 final class PullPayload
 {
@@ -33,7 +35,8 @@ final class PullPayload
     /** @var array<string, string> "kind:ourId" → the till's id */
     private array $ids = [];
 
-    public function __construct(private readonly IdTranslator $translator, private readonly string $branchId) {}
+    /** @param  int  $since  the pulling till's cursor: a PIN versioned at or below it is already on the till */
+    public function __construct(private readonly IdTranslator $translator, private readonly string $branchId, private readonly int $since = 0) {}
 
     /**
      * @param  array<string, mixed>  $row  the stored row (any driver)
@@ -121,6 +124,10 @@ final class PullPayload
             unset($payload[$secret]);
         }
 
+        if ($def->entity === 'User' && ! $this->sendsPin($row)) {
+            unset($payload['pinHash']);
+        }
+
         foreach (self::KEPT_WHEN_BLANK[$def->entity] ?? [] as $member) {
             if (($payload[$member] ?? null) === null || $payload[$member] === '') {
                 unset($payload[$member]);
@@ -148,6 +155,21 @@ final class PullPayload
         return (int) ($payload['minQuantity'] ?? 0) >= 2
             && in_array($payload['type'] ?? null, ['percentOff', 'fixedOff', 'fixedPrice'], true)
             && ($payload['scope'] ?? null) !== 'basket';
+    }
+
+    /**
+     * §10.7: `pinHash` only to set or change a PIN — the hash changed after this till's cursor (HubVersions versions
+     * it) — and only in the till's format; an Identity v3 hash from an older portal is "PIN needs resetting".
+     *
+     * @param  array<string, mixed>  $row
+     */
+    private function sendsPin(array $row): bool
+    {
+        $hash = $row['pin_hash'] ?? null;
+
+        return is_string($hash) && TillPinHasher::isTillFormat($hash)
+            && ($row['pin_hash_versioned'] ?? null) === $hash
+            && (int) ($row['pin_hash_version'] ?? 0) > $this->since;
     }
 
     /**

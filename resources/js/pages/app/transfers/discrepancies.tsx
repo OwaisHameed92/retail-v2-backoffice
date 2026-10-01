@@ -3,6 +3,7 @@ import {
     cost,
     filterQuery,
     formatDateTime,
+    lossClass,
     money,
     qty,
     signedMoney,
@@ -38,7 +39,7 @@ export default function TransferDiscrepancies(props: DiscrepancyProps) {
 
             <PageHeader
                 title="Stock transfers"
-                description="Where what arrived at a shop differs from what was sent, valued at the cost it was sent at."
+                description="Where what arrived at a shop differs from what was sent. Differences are the receiving till's own figures: per line received − sent (minus = short), and per receipt the value lost in transit (sent − received at cost)."
                 actions={
                     <Button variant="outline" asChild>
                         <a href={route('app.transfers.discrepancies.export', query)}>
@@ -85,10 +86,10 @@ export default function TransferDiscrepancies(props: DiscrepancyProps) {
                     icon={MinusCircle}
                 />
                 <StatCard
-                    label="Net difference at cost"
-                    value={signedMoney(summary.varianceValue)}
-                    hint="Received value less sent value"
-                    tone={Number(summary.varianceValue) < 0 ? 'danger' : 'neutral'}
+                    label="Lost in transit at cost"
+                    value={money(summary.varianceCost)}
+                    hint="Sent less received, as the receiving tills report it"
+                    tone={Number(summary.varianceCost) > 0 ? 'danger' : 'neutral'}
                     icon={PlusCircle}
                 />
             </StatGrid>
@@ -113,7 +114,7 @@ export default function TransferDiscrepancies(props: DiscrepancyProps) {
                                     <TableHead className="text-right">Short</TableHead>
                                     <TableHead className="text-right">Over</TableHead>
                                     <TableHead className="text-right">Sent at cost</TableHead>
-                                    <TableHead className="text-right">Difference at cost</TableHead>
+                                    <TableHead className="text-right">Lost in transit</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -133,9 +134,7 @@ export default function TransferDiscrepancies(props: DiscrepancyProps) {
                                         </TableCell>
                                         <TableCell className={varianceClass(r.over) + ' text-right'}>{qty(r.over)}</TableCell>
                                         <TableCell className="text-right tabular-nums">{money(r.sentValue)}</TableCell>
-                                        <TableCell className={varianceClass(r.varianceValue) + ' text-right'}>
-                                            {signedMoney(r.varianceValue)}
-                                        </TableCell>
+                                        <TableCell className={lossClass(r.varianceCost) + ' text-right'}>{money(r.varianceCost)}</TableCell>
                                     </TableRow>
                                 ))}
                             </TableBody>
@@ -165,7 +164,7 @@ export default function TransferDiscrepancies(props: DiscrepancyProps) {
                                         <TableHead>Product</TableHead>
                                         <TableHead className="text-right">Sent</TableHead>
                                         <TableHead className="text-right">Received</TableHead>
-                                        <TableHead className="text-right">Difference</TableHead>
+                                        <TableHead className="text-right">Received − sent</TableHead>
                                         <TableHead className="text-right">Unit cost</TableHead>
                                         <TableHead className="text-right">At cost</TableHead>
                                     </TableRow>

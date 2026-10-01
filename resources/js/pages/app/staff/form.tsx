@@ -169,7 +169,7 @@ export default function StaffForm({ member, options, canEdit }: StaffFormProps) 
 
                         <FormSection title="Pay and hours" description="Used by the till's timesheets and wage reports.">
                             <FormGrid>
-                                <FormField id="rate_per_hour" label="Hourly rate (£)" optional error={errors.rate_per_hour}>
+                                <FormField id="rate_per_hour" label="Hourly rate (£)" optional help="Used for the wage estimate on Timesheets." error={errors.rate_per_hour}>
                                     <Input
                                         id="rate_per_hour"
                                         inputMode="decimal"
@@ -183,7 +183,7 @@ export default function StaffForm({ member, options, canEdit }: StaffFormProps) 
                                     id="max_shift_hours"
                                     label="Longest shift (hours)"
                                     optional
-                                    help="0 for no limit."
+                                    help="The till warns when a shift runs longer. 0 for no warning."
                                     error={errors.max_shift_hours}
                                 >
                                     <Input

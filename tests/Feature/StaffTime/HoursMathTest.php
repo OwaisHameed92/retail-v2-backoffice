@@ -92,27 +92,34 @@ test('rounding to the nearest step, halves up', function () {
         ->and(HoursMath::roundMinutes(455, 10))->toBe(460);
 });
 
-test('weekly overtime goes to the shifts that cross the threshold, per person and week', function () {
+test('overtime is the till\'s rule: over 8 hours in a London day, given to the shifts that cross it', function () {
     $events = [];
     foreach (['21', '22', '23', '24', '25'] as $i => $day) {
         $shop = $i === 4 ? 'SHOP-B' : 'SHOP-A';
         $events[] = clockAt('in', "2026-09-$day 08:00", 'U1', $shop);
         $events[] = clockAt('out', "2026-09-$day 17:00", 'U1', $shop);
     }
-    $events[] = clockAt('in', '2026-09-28 08:00', 'U1');
-    $events[] = clockAt('out', '2026-09-28 20:00', 'U1');
+    $events[] = clockAt('in', '2026-09-28 06:00', 'U1');
+    $events[] = clockAt('out', '2026-09-28 12:00', 'U1');
+    $events[] = clockAt('in', '2026-09-28 13:00', 'U1', 'SHOP-B');
+    $events[] = clockAt('out', '2026-09-28 17:00', 'U1', 'SHOP-B');
+    $events[] = clockAt('in', '2026-09-29 09:00', 'U1');
+    $events[] = clockAt('out', '2026-09-29 17:00', 'U1');
 
     $shifts = pairAt($events);
     HoursMath::round($shifts, 0);
-    HoursMath::overtime($shifts, 40 * 60);
+    HoursMath::overtime($shifts);
 
-    expect(array_map(fn (WorkedShift $s) => $s->overtimeMinutes, $shifts))->toBe([0, 0, 0, 0, 300, 0]);
+    // 9 h days: 1 h each; 6 h + 4 h on one day: the second shift crosses 8 h; exactly 8 h is not overtime.
+    expect(array_map(fn (WorkedShift $s) => $s->overtimeMinutes, $shifts))->toBe([60, 60, 60, 60, 60, 0, 120, 0])
+        ->and(HoursMath::DAILY_OVERTIME_MINUTES)->toBe(480);
+});
 
-    HoursMath::overtime($shifts, 30 * 60);
-    expect(array_map(fn (WorkedShift $s) => $s->overtimeMinutes, $shifts))->toBe([0, 0, 0, 360, 540, 0]);
-
-    HoursMath::overtime($shifts, null);
-    expect(array_sum(array_map(fn (WorkedShift $s) => $s->overtimeMinutes, $shifts)))->toBe(0);
+test('holiday is estimated as 12.07% of the minutes worked', function () {
+    expect(HoursMath::holidayMinutes(1050))->toBe(127)
+        ->and(HoursMath::holidayMinutes(480))->toBe(58)
+        ->and(HoursMath::holidayMinutes(0))->toBe(0)
+        ->and(HoursMath::holidayMinutes(6000))->toBe(724);
 });
 
 test('rota hours: day, overnight, both clock changes, and unreadable times', function () {

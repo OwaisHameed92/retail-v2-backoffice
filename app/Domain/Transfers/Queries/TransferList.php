@@ -122,7 +122,7 @@ final class TransferList
                 'receivedAt' => is_string($at) ? self::utc($at) : null,
                 'lines' => (int) ($lines[$t->id] ?? $t->line_count),
                 'value' => Money::normalise($t->dispatched_cost ?? 0),
-                'varianceValue' => $f['varianceValue'] ?? null,
+                'varianceCost' => $f['varianceCost'] ?? null,   // the till's: sent − received, positive = lost
                 'discrepancies' => $f['discrepancies'] ?? 0,
             ];
         }, $items);
@@ -142,14 +142,14 @@ final class TransferList
         $moving = ($counts['dispatched'] ?? 0) + ($counts['inTransit'] ?? 0);
         $movingValue = Money::normalise($scoped()->whereRaw('('.TransferState::stateSql().") in ('dispatched', 'inTransit')")->sum('dispatched_cost') ?: 0);
         $figures = TransferFigures::perTransfer(null, (string) app(CurrentCompany::class)->id(), fn ($q) => $q->whereIn('rl.transfer_id', $scoped()->select('stock_transfers.id')->toBase()));
-        $variance = Money::sum(array_column($figures, 'varianceValue'));
+        $lost = Money::sum(array_column($figures, 'varianceCost'));
         $withDiscrepancy = count(array_filter($figures, fn ($f) => $f['discrepancies'] > 0));
 
         return [
             self::stat('On the way', (string) $moving, 'count', 'primary', self::pounds($movingValue).' at cost'),
             self::stat('Not pulled yet', (string) $waiting, 'count', $waiting > 0 ? 'warning' : 'neutral', "Dispatched, not yet on the receiving shop's till"),
             self::stat('Received', (string) (($counts['received'] ?? 0) + ($counts['partlyReceived'] ?? 0)), 'count', 'success', ($counts['partlyReceived'] ?? 0).' partly received'),
-            self::stat('Discrepancy at cost', $variance, 'money', Money::isNegative($variance) ? 'danger' : 'neutral', $withDiscrepancy.' '.($withDiscrepancy === 1 ? 'transfer' : 'transfers').' with differences'),
+            self::stat('Lost in transit at cost', $lost, 'money', Money::compare($lost, '0') > 0 ? 'danger' : 'neutral', $withDiscrepancy.' '.($withDiscrepancy === 1 ? 'transfer' : 'transfers').' with differences'),
         ];
     }
 

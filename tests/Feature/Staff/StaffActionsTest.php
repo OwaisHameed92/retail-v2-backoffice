@@ -33,14 +33,11 @@ beforeEach(function () {
     };
 });
 
-test('the PIN hash is PBKDF2 in the v3 layout, salted, and verifies only the right PIN', function () {
+test('the PIN hash is the till\'s pbkdf2 format, salted, and verifies only the right PIN', function () {
     $hasher = new TillPinHasher;
     $hash = $hasher->hash('4821');
-    $raw = base64_decode($hash, true);
 
-    expect(ord($raw[0]))->toBe(1)
-        ->and(unpack('Nprf/Niter/Nsalt', substr($raw, 1, 12)))->toBe(['prf' => 1, 'iter' => 10_000, 'salt' => 16])
-        ->and(strlen($raw))->toBe(13 + 16 + 32)
+    expect($hash)->toMatch('/^pbkdf2\$100000\$[A-Za-z0-9+\/]{22}==\$[A-Za-z0-9+\/]{43}=$/')
         ->and($hasher->verify('4821', $hash))->toBeTrue()
         ->and($hasher->verify('4822', $hash))->toBeFalse()
         ->and($hasher->hash('4821'))->not->toBe($hash)

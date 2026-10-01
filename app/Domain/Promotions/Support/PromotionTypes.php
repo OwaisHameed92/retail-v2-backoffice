@@ -6,8 +6,9 @@ use App\Domain\TillData\Enums\PromotionScope;
 use App\Domain\TillData\Enums\PromotionType;
 
 /**
- * What each offer type needs (module 4.3). The portal makes the types whose members the contract makes plain; a
- * `quantityPrice` rule (its `priceTiers` format is the till's own) is shown and can be ended, but only a till creates it.
+ * What each offer type needs (module 4.3, ANSWERS-2026-10-01 §2). Every type can be made on the portal: `multiBuy` (one
+ * tier: buyQuantity for dealPrice), `quantityPrice` (several tiers in `priceTiers`, PriceTiers), `mixMatch` (items of
+ * any product/category/department/style, groupNo 0) and `mealDeal` (one item from each group 1..n).
  * `isGroupOffer` is never set by a person: it is worked out from the rule, as the till does (PullPayload).
  */
 final class PromotionTypes
@@ -31,9 +32,15 @@ final class PromotionTypes
     public const ITEM_TYPES = ['mixMatch', 'mealDeal'];
 
     /** Types the portal may create or switch a rule to. */
-    public const PORTAL_TYPES = ['percentOff', 'fixedOff', 'fixedPrice', 'multiBuy', 'bogof', 'buyGet', 'mixMatch', 'mealDeal'];
+    public const PORTAL_TYPES = ['percentOff', 'fixedOff', 'fixedPrice', 'multiBuy', 'quantityPrice', 'bogof', 'buyGet', 'mixMatch', 'mealDeal'];
 
-    /** What a single-target offer may be on (the item types use `itemGroup`). */
+    /** What a PromotionItem may be (a style is a variant parent product: every size or colour of it). */
+    public const ITEM_SCOPES = ['product', 'category', 'department', 'style'];
+
+    /** The till's `DaysOfWeek` flags, in its order ("monday, tuesday, …"; all seven = "all"). */
+    public const DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+
+    /** What a single-target offer may be on (the item types use `itemGroup`; `quantityPrice` is on one product). */
     public const TARGET_SCOPES = ['product', 'category', 'department', 'basket'];
 
     public static function label(?PromotionType $type): string
@@ -71,5 +78,32 @@ final class PromotionTypes
     public static function isGroupOffer(string $type, string $scope, int $minQuantity): bool
     {
         return $minQuantity >= 2 && in_array($type, ['percentOff', 'fixedOff', 'fixedPrice'], true) && $scope !== 'basket';
+    }
+
+    /**
+     * The days as the till's flags string: the chosen days in the till's order, comma + space; none or all = "all".
+     * Takes a list of day names or the till's string ("saturday, sunday", "all", "none", "" = every day).
+     *
+     * @param  list<string>|string|null  $days
+     */
+    public static function days(array|string|null $days): string
+    {
+        $chosen = is_array($days) ? $days : preg_split('/\s*,\s*/', strtolower(trim((string) $days)), -1, PREG_SPLIT_NO_EMPTY);
+        $chosen = array_values(array_intersect(self::DAYS, array_map('strtolower', (array) $chosen)));
+
+        return $chosen === [] || count($chosen) === 7 ? 'all' : implode(', ', $chosen);
+    }
+
+    /**
+     * The days of a stored flags string as a list (every day for "all", "none" or blank).
+     *
+     * @return list<string>
+     */
+    public static function dayList(?string $days): array
+    {
+        $flags = preg_split('/\s*,\s*/', strtolower(trim((string) $days)), -1, PREG_SPLIT_NO_EMPTY) ?: [];
+        $list = array_values(array_intersect(self::DAYS, $flags));
+
+        return $list === [] ? self::DAYS : $list;
     }
 }

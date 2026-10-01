@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\App\Pricing;
 
+use App\Domain\Promotions\Support\PromotionTypes;
 use App\Domain\Tenancy\CurrentCompany;
 use App\Domain\TillData\Enums\PromotionScope;
 use App\Domain\TillData\Enums\PromotionType;
@@ -75,11 +76,14 @@ class PromotionRequest extends FormRequest
             'time_from' => ['nullable', 'date_format:H:i'],
             'time_to' => ['nullable', 'date_format:H:i'],
             'is_active' => ['boolean'],
+            'price_tiers' => ['nullable', 'string', 'max:400'],
+            'days' => ['nullable', 'array', 'max:7'],
+            'days.*' => ['string', Rule::in(PromotionTypes::DAYS)],
             'items' => ['nullable', 'array', 'max:200'],
             'items.*.id' => ['nullable', 'string', 'size:26'],
-            'items.*.scope' => ['required', Rule::in(['product', 'category', 'department'])],
+            'items.*.scope' => ['required', Rule::in(PromotionTypes::ITEM_SCOPES)],
             'items.*.target_id' => ['required', 'string', 'size:26'],
-            'items.*.group_no' => ['nullable', 'integer', 'min:1', 'max:9'],
+            'items.*.group_no' => ['nullable', 'integer', 'min:0', 'max:9'],
             'items.*.quantity' => ['nullable', 'integer', 'min:1', 'max:99'],
             'items.*.is_excluded' => ['boolean'],
         ];
@@ -108,7 +112,8 @@ class PromotionRequest extends FormRequest
         return [...$data, 'target_id' => (string) ($data['target_id'] ?? ''), 'branch_id' => $data['branch_id'] ?? null,
             'effective_to' => $data['effective_to'] ?? null, 'allow_stack' => (bool) ($data['allow_stack'] ?? false),
             'is_exclusive' => (bool) ($data['is_exclusive'] ?? false), 'requires_coupon' => (bool) ($data['requires_coupon'] ?? false),
-            'is_hfss_safe' => (bool) ($data['is_hfss_safe'] ?? false), 'is_active' => (bool) ($data['is_active'] ?? true)];
+            'is_hfss_safe' => (bool) ($data['is_hfss_safe'] ?? false), 'is_active' => (bool) ($data['is_active'] ?? true),
+            'days' => array_values((array) ($data['days'] ?? []))];
     }
 
     /**

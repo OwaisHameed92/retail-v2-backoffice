@@ -61,7 +61,7 @@ final class PullChanges
             $page = $this->feed->page($companyId, $caller->branch->id, $since, $max + 1);
             $hasMore = count($page) > $max;
             $page = array_slice($page, 0, $max);
-            $envelopes = new PullEnvelopes($caller->ids, $caller->branch->id);
+            $envelopes = new PullEnvelopes($caller->ids, $caller->branch->id, $since);
             $rows = [];
 
             foreach ($this->byEntity($page) as $entity => $ids) {

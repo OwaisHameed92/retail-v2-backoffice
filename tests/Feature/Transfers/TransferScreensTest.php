@@ -3,6 +3,7 @@
 use App\Domain\Tenancy\Enums\CompanyRole;
 use App\Domain\Tenancy\Models\Branch;
 use App\Domain\Tenancy\Models\Company;
+use Illuminate\Support\Facades\DB;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\Feature\Purchasing\PurchasingFixtures as F;
 use Tests\Feature\Sync\PullTestHelpers as Pull;
@@ -40,7 +41,8 @@ function transferRow(Company $company, Branch $from, Branch $to, string $referen
 }
 
 /**
- * The receiving shop's receipt: one received quantity per transfer line.
+ * The receiving shop's receipt: one received quantity per transfer line, with the till's figures as the till writes
+ * them (§10.2): line `qtyVariance` = received − sent, receipt `varianceCost` = sent cost − received cost.
  *
  * @param  array{id: string, lines: list<string>}  $transfer
  * @param  list<array{0: string, 1: string, 2: string}>  $lines  as sent
@@ -48,9 +50,13 @@ function transferRow(Company $company, Branch $from, Branch $to, string $referen
  */
 function receiptRow(Company $company, Branch $to, array $transfer, array $lines, array $received, string $at): void
 {
+    $varianceCost = '0';
+    foreach ($lines as $i => [, $qty, $unit]) {
+        $varianceCost = bcadd($varianceCost, bcmul(bcsub($qty, $received[$i], 4), $unit, 4), 4);
+    }
     $receipt = F::row('stock_transfer_receipts', $company, $to, [
         'transfer_id' => $transfer['id'], 'status' => 'received', 'received_at' => $at, 'received_by_user_id' => '',
-        'received_cost' => '0', 'variance_cost' => '0', 'note' => '',
+        'received_cost' => '0', 'variance_cost' => $varianceCost, 'note' => '',
     ]);
     foreach ($lines as $i => [$product, $qty, $unit]) {
         F::row('stock_transfer_receipt_lines', $company, $to, [
@@ -107,7 +113,7 @@ test('guests go to the login page; staff get 403; owner, manager and accountant 
     $this->actingAs($this->owner)->get('/app/transfers/01K5VB0000000000000NOPE001')->assertNotFound();
 });
 
-test('the list shows every transfer with where it is, the relay and its discrepancy at cost', function () {
+test('the list shows every transfer with where it is, the relay and the till\'s value lost in transit', function () {
     $props = ($this->props)('/app/transfers');
     $rows = collect($props['rows']['data'])->keyBy('reference');
 
@@ -118,18 +124,19 @@ test('the list shows every transfer with where it is, the relay and its discrepa
         'TR-LDS-00002' => ['requested', 'notRelayed'],
         'TR-LDS-00003' => ['received', 'received'],
     ])->and($rows['TR-LDS-00001'])->toMatchArray([
-        'from' => 'Leeds Kirkgate', 'to' => 'Bradford', 'lines' => 2, 'value' => '30.48', 'varianceValue' => '-3.12', 'discrepancies' => 1,
+        'from' => 'Leeds Kirkgate', 'to' => 'Bradford', 'lines' => 2, 'value' => '30.48', 'varianceCost' => '3.12', 'discrepancies' => 1,
         'receivedAt' => '2026-09-21T10:00:00Z', 'requestedAt' => '2026-09-20T08:00:00Z', 'direction' => null,
-    ])->and($rows['TR-LDS-00003']['varianceValue'])->toBe('0.98')
-        ->and($rows['TR-BRD-00001']['varianceValue'])->toBeNull();
+    ])->and($rows['TR-LDS-00003']['varianceCost'])->toBe('-0.98')
+        ->and($rows['TR-BRD-00001']['varianceCost'])->toBeNull();
 
     $stats = collect($props['stats'])->keyBy('label');
     expect($stats['On the way']['value'])->toBe('1')
         ->and($stats['On the way']['hint'])->toBe('£9.80 at cost')
         ->and($stats['Not pulled yet']['value'])->toBe('1')
         ->and($stats['Received']['value'])->toBe('2')
-        ->and($stats['Discrepancy at cost']['value'])->toBe('-2.14')
-        ->and($stats['Discrepancy at cost']['hint'])->toBe('2 transfers with differences');
+        ->and($stats['Lost in transit at cost']['value'])->toBe('2.14')
+        ->and($stats['Lost in transit at cost']['tone'])->toBe('danger')
+        ->and($stats['Lost in transit at cost']['hint'])->toBe('2 transfers with differences');
 
     // Filters: status, shop (from or to), flow, days (London), search; unknown values are ignored.
     expect(($this->refs)(($this->props)('/app/transfers?status=partlyReceived')))->toBe(['TR-LDS-00001'])
@@ -154,7 +161,7 @@ test('one transfer: sent against received line by line, discrepancies at cost', 
         ->and($lines->except('Coca-Cola 500ml')->first())->toMatchArray(['variance' => '0.0000', 'varianceValue' => '0.00', 'discrepancy' => false])
         ->and($props['totals'])->toBe([
             'sent' => '36.0000', 'received' => '32.0000', 'variance' => '-4.0000', 'sentValue' => '30.48', 'receivedValue' => '27.36',
-            'varianceValue' => '-3.12', 'discrepancies' => 1,
+            'varianceValue' => '-3.12', 'varianceCost' => '3.12', 'discrepancies' => 1,
         ])
         ->and($props['relay']['transfer'])->toBe('received');
 
@@ -215,9 +222,9 @@ test('the discrepancy report: per route and line by line, newest receipt first, 
     $props = ($this->props)('/app/transfers/discrepancies');
 
     expect($props['filters'])->toMatchArray(['from' => '2026-07-03', 'to' => '2026-09-30'])
-        ->and($props['summary'])->toBe(['transfers' => 2, 'discrepant' => 2, 'short' => '4.0000', 'over' => '1.0000', 'sentValue' => '36.36', 'varianceValue' => '-2.14'])
+        ->and($props['summary'])->toBe(['transfers' => 2, 'discrepant' => 2, 'short' => '4.0000', 'over' => '1.0000', 'sentValue' => '36.36', 'varianceCost' => '2.14'])
         ->and($props['routes'])->toHaveCount(1)
-        ->and($props['routes'][0])->toMatchArray(['from' => 'Leeds Kirkgate', 'to' => 'Bradford', 'transfers' => 2, 'varianceValue' => '-2.14'])
+        ->and($props['routes'][0])->toMatchArray(['from' => 'Leeds Kirkgate', 'to' => 'Bradford', 'transfers' => 2, 'varianceCost' => '2.14'])
         ->and(array_map(fn ($l) => [$l['reference'], $l['product']['name'], $l['variance'], $l['varianceValue']], $props['lines']))->toBe([
             ['TR-LDS-00003', 'Warburtons Toastie White Bread 800g', '1.0000', '0.98'],
             ['TR-LDS-00001', 'Coca-Cola 500ml', '-4.0000', '-3.12'],
@@ -225,7 +232,7 @@ test('the discrepancy report: per route and line by line, newest receipt first, 
         ->and($props['truncated'])->toBeFalse();
 
     $later = ($this->props)('/app/transfers/discrepancies?from=2026-09-22&to=2026-09-30');
-    expect($later['summary'])->toMatchArray(['transfers' => 1, 'short' => '0.0000', 'over' => '1.0000', 'varianceValue' => '0.98']);
+    expect($later['summary'])->toMatchArray(['transfers' => 1, 'short' => '0.0000', 'over' => '1.0000', 'varianceCost' => '-0.98']);
 
     $csv = $this->actingAs($this->owner)->get('/app/transfers/discrepancies/export')->assertOk()->streamedContent();
     $rows = array_map(str_getcsv(...), array_filter(explode("\n", trim($csv))));
@@ -240,7 +247,7 @@ test('the list CSV has every filtered transfer, times in London, and never a liv
 
     expect($rows)->toHaveCount(6)
         ->and($rows[0][0])->toBe('Reference')
-        ->and(collect($rows)->firstWhere(0, 'TR-LDS-00001'))->toContain('Partly received', 'Received', '2026-09-20 09:00', '30.48', '-3.12')
+        ->and(collect($rows)->firstWhere(0, 'TR-LDS-00001'))->toContain('Partly received', 'Received', '2026-09-20 09:00', '30.48', '3.12')
         ->and(collect($rows)->firstWhere(0, 'TR-LDS-00002'))->toContain('\'=HYPERLINK("http://x")');
 
     $only = $this->actingAs($this->owner)->get('/app/transfers/export?status=cancelled')->streamedContent();
@@ -280,4 +287,24 @@ test('tenant isolation: another business never sees these transfers, nor they it
     $this->actingAs($this->owner)->get("/app/transfers/{$theirs['id']}")->assertNotFound();
     $this->actingAs($otherOwner)->get("/app/transfers/{$this->t1['id']}")->assertNotFound();
     expect($this->actingAs($otherOwner)->get('/app/transfers/export')->streamedContent())->not->toContain('TR-LDS');
+});
+
+test('the till\'s qtyVariance (received − sent) and varianceCost (sent − received) are shown as sent, never recalculated', function () {
+    // ANSWERS-2026-10-01 §6: 10 sent, 8 arrived at £1.50 → line qtyVariance -2, receipt varianceCost 3.00.
+    $receipt = DB::table('stock_transfer_receipts')->where('transfer_id', $this->t1['id'])->value('id');
+    DB::table('stock_transfer_receipt_lines')->where('receipt_id', $receipt)->where('product_id', F::COLA)
+        ->update(['qty_dispatched' => '10', 'qty_received' => '8', 'qty_variance' => '-2', 'unit_cost' => '1.50']);
+    DB::table('stock_transfer_receipts')->where('id', $receipt)->update(['variance_cost' => '3.00']);
+
+    $props = ($this->props)("/app/transfers/{$this->t1['id']}");
+    expect(collect($props['lines'])->firstWhere('product.name', 'Coca-Cola 500ml'))->toMatchArray(['variance' => '-2.0000', 'varianceValue' => '-3.00', 'discrepancy' => true])
+        ->and($props['totals']['varianceCost'])->toBe('3.00');
+
+    // The till's own figures win even where they do not match the quantities.
+    DB::table('stock_transfer_receipt_lines')->where('receipt_id', $receipt)->where('product_id', F::COLA)->update(['qty_variance' => '-1']);
+    DB::table('stock_transfer_receipts')->where('id', $receipt)->update(['variance_cost' => '2.50']);
+    $props = ($this->props)("/app/transfers/{$this->t1['id']}");
+    expect(collect($props['lines'])->firstWhere('product.name', 'Coca-Cola 500ml')['variance'])->toBe('-1.0000')
+        ->and($props['totals']['varianceCost'])->toBe('2.50')
+        ->and(collect(($this->props)('/app/transfers')['rows']['data'])->firstWhere('reference', 'TR-LDS-00001')['varianceCost'])->toBe('2.50');
 });

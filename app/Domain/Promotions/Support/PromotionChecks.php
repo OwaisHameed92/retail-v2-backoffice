@@ -12,7 +12,8 @@ use Illuminate\Validation\ValidationException;
 /**
  * The business checks of an offer (module 4.3) that the form cannot make: the type is one the portal makes (or the
  * rule already had it), the values that type needs, the target and items exist in this business, the shop is this
- * business's, and the dates and times make sense. Throws a ValidationException keyed as the form names fields.
+ * business's, and the dates and times make sense (a window may run past midnight: `time_to` before `time_from`).
+ * Throws a ValidationException keyed as the form names fields.
  */
 final class PromotionChecks
 {
@@ -26,7 +27,7 @@ final class PromotionChecks
         $errors = [];
 
         if (! in_array($type, PromotionTypes::PORTAL_TYPES, true) && $rule?->type?->value !== $type) {
-            $errors['type'] = 'This kind of offer is set up on a till.';
+            $errors['type'] = 'Choose a type of offer.';
         }
 
         $errors += $this->values($type, $data);
@@ -47,8 +48,8 @@ final class PromotionChecks
 
         if (($data['time_from'] === null) !== ($data['time_to'] === null)) {
             $errors['time_to'] = 'Give both times, or neither for all day.';
-        } elseif ($data['time_from'] !== null && $data['time_to'] <= $data['time_from']) {
-            $errors['time_to'] = 'The end time must be after the start time.';
+        } elseif ($data['time_from'] !== null && $data['time_to'] === $data['time_from']) {
+            $errors['time_to'] = 'The end time must differ from the start time (leave both empty for all day).';
         }
 
         if ($data['requires_coupon'] && $data['coupon_code'] === '') {
@@ -84,6 +85,12 @@ final class PromotionChecks
         if (in_array('get_quantity', $uses, true) && $data['get_quantity'] < 1) {
             $errors['get_quantity'] = 'Enter how many the customer gets.';
         }
+        if ($type === 'quantityPrice' && ($error = PriceTiers::error($data['price_tiers'] ?? null)) !== null) {
+            $errors['price_tiers'] = $error;
+        }
+        if ($type === 'quantityPrice' && $data['scope'] !== 'product') {
+            $errors['scope'] = 'Price tiers are for one product.';
+        }
 
         return $errors;
     }
@@ -105,7 +112,7 @@ final class PromotionChecks
     }
 
     /**
-     * @param  list<array{scope: string, target_id: string, group_no?: int|string|null}>  $items
+     * @param  list<array{scope: string, target_id: string, group_no?: int|string|null, is_excluded?: bool|null}>  $items
      * @return array<string, string>
      */
     private function items(string $type, array $items): array
@@ -115,14 +122,32 @@ final class PromotionChecks
         }
 
         foreach ($items as $i => $item) {
+            if (! in_array($item['scope'], PromotionTypes::ITEM_SCOPES, true)) {
+                return ["items.{$i}.scope" => 'Choose a product, category, department or style.'];
+            }
             if (! $this->exists($item['scope'], $item['target_id'])) {
                 return ["items.{$i}.target_id" => 'Choose an item of this business.'];
             }
         }
 
-        $groups = array_unique(array_map(fn (array $item) => (int) ($item['group_no'] ?? 1), $items));
+        $included = array_values(array_filter($items, fn (array $item) => ! ($item['is_excluded'] ?? false)));
 
-        return $type === 'mealDeal' && count($groups) < 2 ? ['items' => 'A meal deal needs at least two groups (e.g. main, snack, drink).'] : [];
+        if ($included === []) {
+            return ['items' => 'Add at least one item that is in the offer (not only left-out ones).'];
+        }
+
+        if ($type !== 'mealDeal') {
+            return [];
+        }
+
+        $groups = array_values(array_unique(array_map(fn (array $item) => (int) ($item['group_no'] ?? 1), $included)));
+        sort($groups);
+
+        return match (true) {
+            count($groups) < 2 => ['items' => 'A meal deal needs at least two groups (e.g. main, snack, drink).'],
+            $groups !== range(1, count($groups)) => ['items' => 'Number the groups 1, 2, 3… with none missing.'],
+            default => [],
+        };
     }
 
     private function exists(string $scope, string $id): bool
@@ -131,6 +156,7 @@ final class PromotionChecks
             'product' => Product::query()->whereKey($id)->exists(),
             'category' => Category::query()->whereKey($id)->exists(),
             'department' => Department::query()->whereKey($id)->exists(),
+            'style' => Product::query()->whereKey($id)->where('is_variant_parent', true)->exists(),
             default => false,
         };
     }

@@ -14,7 +14,8 @@ use App\Domain\Transfers\Support\TransferFigures;
 use Illuminate\Database\Eloquent\Model;
 
 /**
- * One stock transfer (module 5.3), read only: what was sent against what arrived line by line (discrepancies at cost),
+ * One stock transfer (module 5.3), read only: what was sent against what arrived line by line (the till's
+ * `qtyVariance`, received − sent, and the receipt's `varianceCost`, sent − received, as sent: TransferFigures),
  * the receiving shop's receipt, and the relay: whether the receiving till has pulled the transfer, and whether the
  * sending till has pulled the receipt back (contract §10.2).
  */
@@ -84,6 +85,8 @@ final class TransferDetail
                 'sent' => $qty('sent'), 'received' => $receipt === null ? null : $qty('received'), 'variance' => $receipt === null ? null : $qty('variance'),
                 'sentValue' => $sum('sentValue'), 'receivedValue' => $receipt === null ? null : $sum('receivedValue'),
                 'varianceValue' => $receipt === null ? null : $sum('varianceValue'),
+                // The till's figure: sent cost − received cost, positive = lost in transit (§10.2). Never recalculated.
+                'varianceCost' => $receipt === null ? null : Money::normalise($receipt->variance_cost ?? 0),
                 'discrepancies' => count(array_filter($rows, fn (array $r) => $r['discrepancy'])),
             ],
             'relay' => self::relay($transfer, $lines->all(), $receipt, $received->all(), $shops),
@@ -97,7 +100,7 @@ final class TransferDetail
     private static function line(string $id, array $product, ?string $requested, ?string $sent, ?StockTransferReceiptLine $got, ?string $unitCost, bool $hasReceipt): array
     {
         $cost = $got->unit_cost ?? $unitCost ?? '0';
-        $f = TransferFigures::line($got->qty_dispatched ?? $sent, $got->qty_received ?? '0', $cost);
+        $f = TransferFigures::line($got->qty_dispatched ?? $sent, $got->qty_received ?? '0', $cost, $got?->qty_variance);
         // A line the receipt does not list (yet) is not compared: its receipt line may still be on its way.
         $compared = $hasReceipt && $got !== null;
 

@@ -4,6 +4,7 @@ namespace App\Domain\Calendar\Queries;
 
 use App\Domain\Calendar\Data\CalendarFilters;
 use App\Domain\Calendar\Models\ShopOpeningHour;
+use App\Domain\Calendar\Support\BusinessHoursLine;
 use App\Domain\Calendar\Support\WeeklyHours;
 use App\Domain\Tenancy\Models\Branch;
 use App\Domain\TillData\Models\BranchHoursOverride;
@@ -12,9 +13,9 @@ use App\Domain\TillHealth\Support\HealthThresholds;
 use Illuminate\Support\Collection;
 
 /**
- * The opening hours screen (module 5.9): each shop's week (portal-kept), the `shop.trading_hours` text its tills
- * have now (shop setting, else the every-shop one) and whether it still matches the week, and the next special days
- * the till holds. A one-shop user sees their shop only.
+ * The opening hours screen (module 5.9): each shop's week (portal-kept), the one `shop.trading_hours` line the tills
+ * show for the business (company scope, the first shop's week: BusinessHoursLine) and whether the tills still have
+ * it, and the next special days the till holds. A one-shop user sees their shop only.
  */
 final class OpeningHoursPage
 {
@@ -28,12 +29,13 @@ final class OpeningHoursPage
         $weeks = ShopOpeningHour::query()->whereIn('branch_id', $ids)->get()->groupBy('branch_id');
         $texts = TillSetting::query()->where('setting_key', 'shop.trading_hours')->where('scope', 'branch')->whereIn('scope_id', $ids)->pluck('value', 'scope_id');
         $everyShop = TillSetting::query()->where('setting_key', 'shop.trading_hours')->where('scope', 'company')->value('value');
+        $line = BusinessHoursLine::current();
         $special = BranchHoursOverride::query()->whereIn('branch_id', $ids)->where('date', '>=', $filters->today)
             ->orderBy('date')->get()->groupBy('branch_id');
         $thresholds = HealthThresholds::fromConfig();
 
         return [
-            'shops' => $shops->map(function (Branch $shop) use ($weeks, $texts, $everyShop, $special) {
+            'shops' => $shops->map(function (Branch $shop) use ($weeks, $texts, $everyShop, $special, $line) {
                 /** @var Collection<int, ShopOpeningHour>|null $rows */
                 $rows = $weeks->get($shop->id);
                 $week = $rows === null ? null : self::week($rows);
@@ -44,11 +46,12 @@ final class OpeningHoursPage
                     'name' => (string) $shop->name,
                     'days' => $week === null ? null : self::days($week),
                     'tillText' => $tillText,
-                    'tillTextMatches' => $week === null || $tillText === $week->text(),
+                    'tillTextMatches' => $week === null || $line['text'] === null || $tillText === $line['text'],
                     'specialDays' => ($special->get($shop->id) ?? collect())->take(4)->map(fn (BranchHoursOverride $o) => SpecialDays::row($o, null))->values()->all(),
                 ];
             })->values()->all(),
             'defaults' => ['opens' => $thresholds->tradingStart, 'closes' => $thresholds->tradingEnd],
+            'businessLine' => [...$line, 'max' => BusinessHoursLine::MAX],
             'filters' => $filters->toArray(),
         ];
     }

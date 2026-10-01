@@ -22,7 +22,7 @@ function SignIn({ row }: { row: StaffRow }) {
         <div className="flex flex-wrap gap-1.5">
             <StatusPill tone={row.hasPin ? 'success' : 'warning'} className="gap-1">
                 <KeyRound className="size-3" aria-hidden />
-                {row.hasPin ? 'PIN set' : 'No PIN'}
+                {row.hasPin ? 'PIN set' : row.pinNeedsReset ? 'PIN needs resetting' : 'No PIN'}
             </StatusPill>
             {row.hasFob && (
                 <StatusPill tone="info" className="gap-1">

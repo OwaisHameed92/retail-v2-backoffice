@@ -2,10 +2,15 @@
 
 use App\Domain\Calendar\Models\ShopOpeningHour;
 use App\Domain\Shared\Models\AuditLog;
+use App\Domain\ShopSettings\Actions\SaveShopSettings;
 use App\Domain\Tenancy\Enums\CompanyRole;
 use App\Domain\Tenancy\Models\Branch;
 use App\Domain\Tenancy\Models\Company;
+use App\Domain\TillData\Actions\SaveTillSetting;
+use App\Domain\TillData\Enums\SettingScope;
+use App\Domain\TillData\Models\TillSetting;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\Feature\Purchasing\PurchasingFixtures as F;
 use Tests\Feature\Sync\PullTestHelpers as Pull;
@@ -85,13 +90,15 @@ test('guests go to the login page; staff and accountants get 403; owners and man
     $this->actingAs($manager)->get("/app/calendar/events/{$this->eid}")->assertOk()->assertInertia(fn (Assert $page) => $page->component('app/calendar/event'));
 });
 
-test('saving a shop\'s week sends it to that shop\'s tills as shop.trading_hours in the pull; clearing sends a D', function () {
+test('saving a shop\'s week sends one company-scope shop.trading_hours line to every till; clearing sends a D', function () {
     $this->actingAs($this->owner)->put("/app/calendar/hours/{$this->leeds->id}", ['days' => calendarWeek()])->assertRedirect()->assertSessionHas('success');
 
     $sent = ($this->tradingHours)()->sole();
-    expect($sent['payload']['value'])->toBe("Mon 07:00-22:00\nTue 07:00-22:00\nWed 07:00-22:00\nThu 07:00-22:00\nFri 07:00-22:00\nSat 07:00-22:00\nSun Closed")
-        ->and($sent['payload']['scope'])->toBe('branch')
-        ->and(($this->tradingHours)(true))->toHaveCount(0)
+    $line = 'Mon 07:00-22:00, Tue 07:00-22:00, Wed 07:00-22:00, Thu 07:00-22:00, Fri 07:00-22:00, Sat 07:00-22:00, Sun Closed';
+    expect($sent['payload']['value'])->toBe($line)
+        ->and(strlen($line))->toBeLessThanOrEqual(200)
+        ->and($sent['payload']['scope'])->toBe('company')
+        ->and(($this->tradingHours)(true)->sole()['payload']['value'])->toBe($line)
         ->and(ShopOpeningHour::withoutCompanyScope()->where('branch_id', $this->leeds->id)->count())->toBe(7)
         ->and(AuditLog::query()->where('action', 'opening_hours.updated')->count())->toBe(1);
 
@@ -99,7 +106,8 @@ test('saving a shop\'s week sends it to that shop\'s tills as shop.trading_hours
     $leeds = collect($page['shops'])->firstWhere('id', $this->leeds->id);
     expect($leeds['tillTextMatches'])->toBeTrue()->and($leeds['days'][6])->toMatchArray(['name' => 'Sun', 'closed' => true])
         ->and($leeds['specialDays'][0])->toMatchArray(['date' => '2026-12-25', 'closed' => true, 'event' => 'Christmas'])
-        ->and(collect($page['shops'])->firstWhere('id', $this->bradford->id)['days'])->toBeNull();
+        ->and(collect($page['shops'])->firstWhere('id', $this->bradford->id)['days'])->toBeNull()
+        ->and($page['businessLine'])->toMatchArray(['text' => $line, 'shopId' => $this->leeds->id, 'differs' => false, 'max' => 200]);
 
     // The same week again changes nothing; clearing removes the setting.
     $this->actingAs($this->owner)->put("/app/calendar/hours/{$this->leeds->id}", ['days' => calendarWeek()])->assertSessionHas('success', 'Nothing changed.');
@@ -111,6 +119,31 @@ test('saving a shop\'s week sends it to that shop\'s tills as shop.trading_hours
     $this->actingAs($this->owner)->put("/app/calendar/hours/{$this->leeds->id}", ['days' => calendarWeek('06:00', '23:30', false), 'everyShop' => true]);
     expect(($this->tradingHours)(true)->sole()['payload']['value'])->toEndWith('Sun 06:00-23:30')
         ->and(ShopOpeningHour::withoutCompanyScope()->count())->toBe(14);
+});
+
+test('when shops\' weeks differ the tills get the first shop\'s line and the page says so; older per-shop values are removed', function () {
+    app(SaveTillSetting::class)->handle($this->company, SettingScope::Branch, $this->bradford, 'shop.trading_hours', "Mon 09:00-17:00\nTue 09:00-17:00");
+    DB::table('branches')->where('id', $this->bradford->id)->update(['created_at' => '2020-01-01 00:00:00']);
+
+    $this->actingAs($this->owner)->put("/app/calendar/hours/{$this->leeds->id}", ['days' => calendarWeek()])->assertSessionHas('success');
+    $this->actingAs($this->owner)->put("/app/calendar/hours/{$this->bradford->id}", ['days' => calendarWeek('08:00', '20:00', false)])->assertSessionHas('success');
+
+    $page = ($this->props)('/app/calendar');
+    expect($page['businessLine'])->toMatchArray(['shopId' => $this->bradford->id, 'differs' => true])
+        ->and($page['businessLine']['text'])->toStartWith('Mon 08:00-20:00')
+        ->and(TillSetting::withoutCompanyScope()->where('setting_key', 'shop.trading_hours')->get(['scope', 'value'])->map(fn ($s) => [$s->scope->value, $s->value])->all())
+        ->toBe([['company', $page['businessLine']['text']]]);
+});
+
+test('shop.trading_hours is one line for the business: at most 200 characters and never set per shop', function () {
+    $save = app(SaveShopSettings::class);
+
+    expect(fn () => $save->handle($this->company, null, ['shop.trading_hours' => str_repeat('x', 201)]))->toThrow(ValidationException::class)
+        ->and(fn () => $save->handle($this->company, $this->leeds, ['shop.trading_hours' => 'Mon 09:00-17:00']))->toThrow(ValidationException::class)
+        ->and($save->handle($this->company, null, ['shop.trading_hours' => 'Mon 09:00-17:00']))->toBe(['shop.trading_hours']);
+
+    $sections = ($this->props)("/app/settings?shop={$this->leeds->id}")['sections'];
+    expect(collect($sections)->pluck('settings')->flatten(1)->pluck('key'))->not->toContain('shop.trading_hours');
 });
 
 test('bad times are refused with a message per day', function () {

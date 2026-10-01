@@ -26,7 +26,7 @@ final class WorkedShift
     /** Paid minutes after rounding (set by HoursMath::round). */
     public int $paidMinutes = 0;
 
-    /** Minutes of this shift beyond the weekly overtime threshold (set by HoursMath::overtime). */
+    /** Minutes of this shift beyond the till's 8 hours in the day (set by HoursMath::overtime). */
     public int $overtimeMinutes = 0;
 
     /**

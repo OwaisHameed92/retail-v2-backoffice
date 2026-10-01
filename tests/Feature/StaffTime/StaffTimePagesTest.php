@@ -132,18 +132,20 @@ test('a shift longer than the person\'s max shift hours is flagged', function ()
     expect($rows->firstWhere('day', '2026-09-26')['flags'])->toBe(['overMaxShift']);
 });
 
-test('timesheets add up per person, shop and week with rota hours, till approval, overtime and wage estimate', function () {
+test('timesheets add up per person, shop and week with rota hours, till approval, overtime, holiday and wage estimate', function () {
     $owner = C::member($this->company, CompanyRole::Owner);
-    $props = C::props($this->actingAs($owner)->get('/app/staff/time/timesheets?shop=all&overtime=16'));
+    $props = C::props($this->actingAs($owner)->get('/app/staff/time/timesheets?shop=all&overtime=16'));   // an old link: ignored
     $ali = collect($props['timesheets']['data'])->firstWhere('personId', ALI);
     $bea = collect($props['timesheets']['data'])->firstWhere('personId', BEA);
 
     expect($ali)->toMatchArray([
         'shop' => 'Leeds', 'weekStart' => '2026-09-21', 'shifts' => 3, 'workedMinutes' => 1050, 'paidMinutes' => 1050, 'breakMinutes' => 30,
-        'overtimeMinutes' => 90, 'plannedMinutes' => 690, 'differenceMinutes' => 360, 'missing' => 1, 'rate' => '12.00', 'wage' => '210.00',
-    ])->and($ali['approval'])->toMatchArray(['approvedBy' => '=Bea Jones', 'totalHours' => '17.50'])
+        'overtimeMinutes' => 0, 'plannedMinutes' => 690, 'differenceMinutes' => 360, 'missing' => 1, 'rate' => '12.00', 'wage' => '210.00',
+        'holidayMinutes' => 127,
+    ])->and($ali['approval'])->toMatchArray(['approvedBy' => '=Bea Jones', 'totalHours' => '17.50', 'overtimeHours' => '0.00'])
+        ->and($props['filters'])->not->toHaveKey('overtime')
         ->and($bea)->toMatchArray(['shop' => 'Bradford', 'paidMinutes' => 480, 'plannedMinutes' => 480, 'rate' => null, 'wage' => null, 'approval' => null])
-        ->and($props['summary'])->toMatchArray(['people' => 2, 'paidMinutes' => 1530, 'wages' => '210.00', 'withoutRate' => 1, 'missing' => 1]);
+        ->and($props['summary'])->toMatchArray(['people' => 2, 'paidMinutes' => 1530, 'wages' => '210.00', 'withoutRate' => 1, 'missing' => 1, 'overtimeMinutes' => 0, 'holidayMinutes' => 185]);
 
     $rounded = collect(C::props($this->actingAs($owner)->get('/app/staff/time/timesheets?shop=all&rounding=15&group=period'))['timesheets']['data']);
     expect($rounded->firstWhere('personId', ALI))->toMatchArray(['weekStart' => null, 'paidMinutes' => 1050, 'approval' => null]);
@@ -155,9 +157,9 @@ test('the payroll CSV has one line per timesheet row, plain decimals, formula-sa
     $csv = $response->streamedContent();
 
     expect($csv)->toContain('Staff,"Staff id",Shop,"Week starting"')
-        ->toContain('"Ali Khan",'.ALI.',Leeds,2026-09-21,3,17.50,17.50,0.50,1.50,11.50,12.00,210.00,1,17.50,0.00,2026-09-24')
-        ->toContain("\"'=Bea Jones\",".BEA.',Bradford,2026-09-21,1,8.00,8.00,0.00,0.00,8.00,,,0,')
-        ->toContain('After 16 hours a week')
+        ->toContain('"Ali Khan",'.ALI.',Leeds,2026-09-21,3,17.50,17.50,0.50,0.00,11.50,12.00,210.00,1,17.50,0.00,2026-09-24,2.12')
+        ->toContain("\"'=Bea Jones\",".BEA.',Bradford,2026-09-21,1,8.00,8.00,0.00,0.00,8.00,,,0,,,,0.97')
+        ->toContain('over 8 hours in a day')
         ->not->toContain('Other Person');
 });
 

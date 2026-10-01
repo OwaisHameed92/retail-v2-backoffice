@@ -27,7 +27,7 @@ beforeEach(function () {
 
 test('A.1: a blank rfid or pinHash is never sent (the till keeps its fob and PIN); a real one is', function () {
     Pull::portalCreate($this->company, 'User', Pull::payload('User', '01K5T0Q8C40000000000SR1001', ['pinHash' => '', 'rfid' => '']));
-    Pull::portalCreate($this->company, 'User', Pull::payload('User', '01K5T0Q8C40000000000SR1002', ['pinHash' => 'pbkdf2$abc', 'rfid' => '0004512345']));
+    Pull::portalCreate($this->company, 'User', Pull::payload('User', '01K5T0Q8C40000000000SR1002', ['pinHash' => 'pbkdf2$100000$AAECAwQFBgcICQoLDA0ODw==$hp5sg1DFvrCsw5n7qsO2DSIEM4lrJqZHc00NjxWG4fo=', 'rfid' => '0004512345']));
     Pull::portalCreate($this->company, 'User', Pull::payload('User', '01K5T0Q8C40000000000SR1003', ['pinHash' => '', 'rfid' => '']));
     DB::table('till_users')->where('id', '01K5T0Q8C40000000000SR1003')->update(['pin_hash' => null, 'rfid' => null]);
 
@@ -37,7 +37,7 @@ test('A.1: a blank rfid or pinHash is never sent (the till keeps its fob and PIN
 
     expect($payloads['01K5T0Q8C40000000000SR1001'])->not->toHaveKeys(['pinHash', 'rfid'])
         ->and($payloads['01K5T0Q8C40000000000SR1003'])->not->toHaveKeys(['pinHash', 'rfid'])
-        ->and($payloads['01K5T0Q8C40000000000SR1002'])->toMatchArray(['pinHash' => 'pbkdf2$abc', 'rfid' => '0004512345'])
+        ->and($payloads['01K5T0Q8C40000000000SR1002'])->toMatchArray(['pinHash' => 'pbkdf2$100000$AAECAwQFBgcICQoLDA0ODw==$hp5sg1DFvrCsw5n7qsO2DSIEM4lrJqZHc00NjxWG4fo=', 'rfid' => '0004512345'])
         ->and((string) $reply->getContent())->not->toContain('"rfid":null', '"rfid":""', '"pinHash":""', '"pinHash":null');
 });
 

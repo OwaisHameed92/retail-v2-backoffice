@@ -13,7 +13,6 @@ export interface TimeFiltersState {
     till: string | null;
     person: string | null;
     rounding: number;
-    overtime: string | null;
     group: 'week' | 'period';
     problems: boolean;
     shopLocked: boolean;
@@ -66,9 +65,12 @@ export interface TimesheetRow {
     workedMinutes: number;
     breakMinutes: number;
     paidMinutes: number;
+    /** Over 8 hours in a day (the till's rule), shown only. */
     overtimeMinutes: number;
     plannedMinutes: number;
     differenceMinutes: number;
+    /** 12.07% of the hours worked: an estimate, as the till's timesheet screen shows. */
+    holidayMinutes: number;
     missing: number;
     rate: string | null;
     wage: string | null;
@@ -92,6 +94,7 @@ export interface TimesheetsProps extends TimePageProps {
         workedMinutes: number;
         paidMinutes: number;
         overtimeMinutes: number;
+        holidayMinutes: number;
         plannedMinutes: number;
         missing: number;
         wages: string;

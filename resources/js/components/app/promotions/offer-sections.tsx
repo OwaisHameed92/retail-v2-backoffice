@@ -3,6 +3,7 @@ import { CheckField } from '@/components/app/setup/fields';
 import { type PromotionFormProps, type PromotionValues } from '@/components/app/pricing/types';
 import { FormField, FormGrid, FormSection } from '@/components/shared/form-section';
 import { Input } from '@/components/ui/input';
+import { DaysPicker, PriceTiersEditor, TYPE_HELP, TypePicker } from './offer-pickers';
 
 export interface OfferSectionProps {
     data: PromotionValues;
@@ -13,32 +14,30 @@ export interface OfferSectionProps {
 
 export const ITEM_TYPES = ['mixMatch', 'mealDeal'];
 
-const HELP: Record<string, string> = {
-    percentOff: 'A percentage off each item.',
-    fixedOff: 'An amount off each item.',
-    fixedPrice: 'The item sells at this price.',
-    multiBuy: 'A number of the same items for one price, e.g. 3 for £2.',
-    bogof: 'Buy some, get some free.',
-    buyGet: 'Buy some, get more at a discount (100% = free).',
-    mixMatch: 'Any of the chosen items, a number for one price.',
-    mealDeal: 'One item from each group for one price.',
-    quantityPrice: 'Price tiers set on a till.',
-};
-
 /** Type and what it gives (only the values the chosen type uses). */
 export function DealSection({ data, set, errors, options }: OfferSectionProps) {
     const uses = (...types: string[]) => types.includes(data.type);
 
     return (
-        <FormSection title="The deal" description={HELP[data.type] ?? 'What the customer gets.'}>
-            <FormGrid>
-                <FormField id="name" label="Name" help="Shown on the till and the receipt." error={errors.name}>
-                    <Input id="name" maxLength={255} value={data.name} aria-invalid={!!errors.name} onChange={(e) => set('name', e.target.value)} />
-                </FormField>
-                <FormField id="type" label="Type" error={errors.type}>
-                    <OptionSelect id="type" value={data.type} options={options.types} invalid={!!errors.type} onChange={(value) => set('type', value)} />
-                </FormField>
-            </FormGrid>
+        <FormSection title="The deal" description={TYPE_HELP[data.type] ?? 'What the customer gets.'}>
+            <FormField id="name" label="Name" help="Shown on the till and the receipt." error={errors.name}>
+                <Input id="name" maxLength={255} value={data.name} aria-invalid={!!errors.name} onChange={(e) => set('name', e.target.value)} />
+            </FormField>
+            <FormField id="type" label="Type of offer" error={errors.type}>
+                <TypePicker
+                    value={data.type}
+                    options={options.types}
+                    invalid={!!errors.type}
+                    onChange={(value) => {
+                        set('type', value);
+                        if (value === 'quantityPrice' && data.scope !== 'product') {
+                            set('scope', 'product');
+                            set('target_id', '');
+                        }
+                    }}
+                />
+            </FormField>
+            {uses('quantityPrice') && <PriceTiersEditor tiers={data.price_tiers} onChange={(tiers) => set('price_tiers', tiers)} error={errors.price_tiers} disabled={false} />}
             <FormGrid columns={3}>
                 {uses('multiBuy', 'bogof', 'buyGet', 'mixMatch') && (
                     <FormField id="buy_quantity" label="Buy" error={errors.buy_quantity}>
@@ -95,7 +94,13 @@ export function TargetSection({ data, set, errors, options }: OfferSectionProps)
                     <OptionSelect
                         id="scope"
                         value={data.scope}
-                        options={data.type === 'percentOff' || data.type === 'fixedOff' ? scopes : scopes.filter((s) => s.value !== 'basket')}
+                        options={
+                            data.type === 'quantityPrice'
+                                ? scopes.filter((s) => s.value === 'product')
+                                : data.type === 'percentOff' || data.type === 'fixedOff'
+                                  ? scopes
+                                  : scopes.filter((s) => s.value !== 'basket')
+                        }
                         onChange={(value) => {
                             set('scope', value);
                             set('target_id', '');
@@ -114,8 +119,10 @@ export function TargetSection({ data, set, errors, options }: OfferSectionProps)
 
 /** Shop, dates, times, limits and coupon. */
 export function WhenSection({ data, set, errors, options, restricted }: OfferSectionProps & { restricted: boolean }) {
+    const pastMidnight = data.time_from !== '' && data.time_to !== '' && data.time_to < data.time_from;
+
     return (
-        <FormSection title="Where and when" description="Dates are whole days; times are London time on each day.">
+        <FormSection title="Where and when" description="Dates are whole days; times are UK shop time on each chosen day.">
             <FormGrid>
                 <FormField id="branch_id" label="Shops" help={restricted ? 'You manage one shop.' : 'One shop, or every shop.'} error={errors.branch_id}>
                     <OptionSelect
@@ -136,10 +143,19 @@ export function WhenSection({ data, set, errors, options, restricted }: OfferSec
                 <FormField id="effective_to" label="Ends" optional help="Last day it runs." error={errors.effective_to}>
                     <Input id="effective_to" type="date" value={data.effective_to} aria-invalid={!!errors.effective_to} onChange={(e) => set('effective_to', e.target.value)} />
                 </FormField>
+                <FormField id="days" label="Days" help="Leave all off, or all on, for every day." error={errors.days} className="sm:col-span-2">
+                    <DaysPicker value={data.days} onChange={(days) => set('days', days)} />
+                </FormField>
                 <FormField id="time_from" label="From time" optional error={errors.time_from}>
                     <Input id="time_from" type="time" value={data.time_from} onChange={(e) => set('time_from', e.target.value)} />
                 </FormField>
-                <FormField id="time_to" label="To time" optional error={errors.time_to}>
+                <FormField
+                    id="time_to"
+                    label="To time"
+                    optional
+                    help={pastMidnight ? 'Runs past midnight. The days are checked on the calendar date, so tick the next day too (Fri 22:00–02:00 needs Fri and Sat).' : 'Before the start time = runs past midnight.'}
+                    error={errors.time_to}
+                >
                     <Input id="time_to" type="time" value={data.time_to} aria-invalid={!!errors.time_to} onChange={(e) => set('time_to', e.target.value)} />
                 </FormField>
                 <FormField id="max_redemptions_per_sale" label="Most per sale" optional error={errors.max_redemptions_per_sale}>

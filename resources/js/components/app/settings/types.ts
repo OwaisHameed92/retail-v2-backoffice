@@ -12,6 +12,8 @@ export interface SettingDefinition {
     unit?: string;
     /** The till's built-in default, only where the contract states it. */
     default?: string;
+    /** One value for the whole business: not offered per shop. */
+    everyShopOnly?: boolean;
 }
 
 export interface SettingSection {

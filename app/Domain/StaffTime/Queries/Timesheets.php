@@ -14,8 +14,10 @@ use Carbon\CarbonImmutable;
 
 /**
  * Timesheets (module 5.6): one row per person, shop and week (or the whole period) with hours worked, breaks,
- * rounded (paid) hours, overtime, rota hours planned, the till's own approval of the week and a wage estimate at the
- * person's hourly rate (User.ratePerHour; overtime at the same rate, the till has no overtime premium).
+ * rounded (paid) hours, overtime by the till's rule (over 8 hours in a day; shown only), rota hours planned, the
+ * till's own approval of the week (with its `overtimeHours`), a holiday estimate (12.07% of hours worked, as the
+ * till) and a wage estimate at the person's hourly rate (User.ratePerHour; overtime at the same rate, the till has
+ * no overtime premium). Holiday and absence bookings do not exist on the till yet.
  * Only complete shifts count; missing clock-outs are counted so a manager fixes them on the till first.
  */
 final class Timesheets
@@ -35,6 +37,7 @@ final class Timesheets
                 'workedMinutes' => array_sum(array_column($rows, 'workedMinutes')),
                 'paidMinutes' => array_sum(array_column($rows, 'paidMinutes')),
                 'overtimeMinutes' => array_sum(array_column($rows, 'overtimeMinutes')),
+                'holidayMinutes' => array_sum(array_column($rows, 'holidayMinutes')),
                 'plannedMinutes' => array_sum(array_column($rows, 'plannedMinutes')),
                 'missing' => array_sum(array_column($rows, 'missing')),
                 'wages' => Money::sum($wages),
@@ -111,6 +114,7 @@ final class Timesheets
                 'person' => $people[$row['personId']] ?? 'Unknown',
                 'shop' => CashLookup::name($shops, $row['shopId']),
                 'differenceMinutes' => $row['paidMinutes'] - $row['plannedMinutes'],
+                'holidayMinutes' => HoursMath::holidayMinutes($row['workedMinutes']),
                 'rate' => $rate,
                 'wage' => HoursMath::wage($row['paidMinutes'], $rate),
                 'approval' => $approval === null ? null : [

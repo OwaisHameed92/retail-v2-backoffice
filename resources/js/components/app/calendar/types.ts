@@ -45,6 +45,8 @@ export interface ShopHours {
 export interface HoursProps {
     shops: ShopHours[];
     defaults: { opens: string; closes: string };
+    /** The one `shop.trading_hours` line every till shows (the first shop's week); `differs` when shops' weeks differ. */
+    businessLine: { text: string | null; shopId: string | null; shopName: string | null; differs: boolean; max: number };
     filters: CalendarFilters;
 }
 

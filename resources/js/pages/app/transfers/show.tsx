@@ -116,12 +116,18 @@ export default function TransferShow({ transfer, receipt, lines, totals, relay }
                     </AlertDescription>
                 </Alert>
             )}
-            {totals.discrepancies > 0 && totals.varianceValue !== null && (
+            {totals.discrepancies > 0 && totals.varianceCost !== null && (
                 <Alert variant="destructive">
                     <AlertTriangle />
                     <AlertDescription>
                         {totals.discrepancies} {totals.discrepancies === 1 ? 'line' : 'lines'} arrived different from what was sent:{' '}
-                        {signedQty(totals.variance)} units, {signedMoney(totals.varianceValue)} at cost.
+                        {signedQty(totals.variance)} units received against sent.{' '}
+                        {Number(totals.varianceCost) > 0
+                            ? `${money(totals.varianceCost)} lost in transit at cost`
+                            : Number(totals.varianceCost) < 0
+                              ? `${money(String(-Number(totals.varianceCost)))} more arrived than was sent, at cost`
+                              : 'No difference at cost'}{' '}
+                        (the receiving till&apos;s figures).
                     </AlertDescription>
                 </Alert>
             )}
@@ -143,7 +149,9 @@ export default function TransferShow({ transfer, receipt, lines, totals, relay }
                                 <TableHead>Product</TableHead>
                                 <TableHead className="text-right">Sent</TableHead>
                                 <TableHead className="text-right">Received</TableHead>
-                                <TableHead className="text-right">Difference</TableHead>
+                                <TableHead className="text-right" title="Received − sent, as the till sends it">
+                                    Received − sent
+                                </TableHead>
                                 <TableHead className="text-right">Unit cost</TableHead>
                                 <TableHead className="text-right">Value sent</TableHead>
                                 <TableHead className="text-right">Difference at cost</TableHead>

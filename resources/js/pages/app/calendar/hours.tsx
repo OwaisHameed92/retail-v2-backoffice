@@ -14,7 +14,7 @@ function ShopCard({ shop, defaults, canApplyToEveryShop }: { shop: ShopHours; de
             title={shop.name}
             description={
                 shop.days
-                    ? 'Sent to this shop’s tills as their opening hours, and used for till alerts.'
+                    ? 'Used for this shop’s till alerts. The tills show one line of opening hours for the whole business.'
                     : `Not set. Till alerts use ${defaults.opens}–${defaults.closes} every day.`
             }
             actions={<HoursDialog shop={shop} defaults={defaults} canApplyToEveryShop={canApplyToEveryShop} />}
@@ -69,8 +69,8 @@ function ShopCard({ shop, defaults, canApplyToEveryShop }: { shop: ShopHours; de
                         <Alert variant="warning">
                             <TriangleAlert />
                             <AlertDescription>
-                                The till&apos;s opening hours text was changed on the till{shop.tillText ? ` (“${shop.tillText.split('\n')[0]}…”)` : ''}. Save
-                                the hours here again to send this week back.
+                                The tills&apos; opening hours line was changed on a till{shop.tillText ? ` (“${shop.tillText.slice(0, 60)}…”)` : ''}. Save
+                                the hours here again to send the line back.
                             </AlertDescription>
                         </Alert>
                     )}
@@ -81,7 +81,7 @@ function ShopCard({ shop, defaults, canApplyToEveryShop }: { shop: ShopHours; de
 }
 
 /** Module 5.9: each shop's weekly opening hours, sent to its tills and used by till health. */
-export default function CalendarHours({ shops, defaults, filters }: HoursProps) {
+export default function CalendarHours({ shops, defaults, businessLine, filters }: HoursProps) {
     return (
         <CalendarPageLayout
             tab="hours"
@@ -92,10 +92,25 @@ export default function CalendarHours({ shops, defaults, filters }: HoursProps) 
             <Alert variant="info">
                 <Info />
                 <AlertDescription>
-                    Opening hours go to each shop&apos;s tills as their &quot;Opening hours&quot; setting, and till alerts only count time when the shop
-                    is open. Special days (bank holidays, closures, late openings) are kept on each till and shown here.
+                    Till alerts only count time when each shop is open. The tills show one &quot;Opening hours&quot; line for the whole business on the
+                    customer screen (up to {businessLine.max} characters, shown as written)
+                    {businessLine.text ? (
+                        <>
+                            , taken from {businessLine.shopName}: <span className="font-medium">{businessLine.text}</span>
+                        </>
+                    ) : null}
+                    . Special days (bank holidays, closures, late openings) are kept on each till and shown here.
                 </AlertDescription>
             </Alert>
+            {businessLine.differs && (
+                <Alert variant="warning">
+                    <TriangleAlert />
+                    <AlertDescription>
+                        Your shops&apos; weekly hours differ, but tills show one line for the business, so every till shows {businessLine.shopName}&apos;s
+                        hours. Each shop&apos;s own week is still used for its till alerts.
+                    </AlertDescription>
+                </Alert>
+            )}
             {shops.length === 0 ? (
                 <EmptyState icon={Store} title="No shops yet" body="Shops appear here once they are set up." />
             ) : (

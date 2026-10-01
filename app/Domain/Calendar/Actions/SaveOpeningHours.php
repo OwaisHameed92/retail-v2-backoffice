@@ -3,20 +3,25 @@
 namespace App\Domain\Calendar\Actions;
 
 use App\Domain\Calendar\Models\ShopOpeningHour;
+use App\Domain\Calendar\Support\BusinessHoursLine;
 use App\Domain\Calendar\Support\WeeklyHours;
 use App\Domain\Shared\Actions\RecordAudit;
 use App\Domain\ShopSettings\Actions\SaveShopSettings;
 use App\Domain\Tenancy\CurrentCompany;
 use App\Domain\Tenancy\Models\Branch;
 use App\Domain\Tenancy\Models\Company;
+use App\Domain\TillData\Enums\SettingScope;
+use App\Domain\TillData\Models\TillSetting;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 /**
  * Sets a shop's weekly opening hours (module 5.9). The contract has no weekly-hours entity (ownership.json only has
- * the till's own `BranchHoursOverride` special days), so the week is kept on the portal and sent to the shop's tills
- * as the branch `shop.trading_hours` setting text (SaveShopSettings: pulled like any setting, audited). Till health
- * (2.7) uses these hours for "trading time". `null` clears the week: the setting is removed and the default applies.
+ * the till's own `BranchHoursOverride` special days), so the week is kept on the portal. The tills get one line for
+ * the business: `shop.trading_hours` is a company-scope Text setting of at most 200 characters, shown as written and
+ * not parsed (ANSWERS-2026-10-01 §3), so the first shop's week is written at company scope (BusinessHoursLine) and any
+ * older per-shop value is removed (SaveShopSettings: pulled like any setting, audited). Till health (2.7) uses each
+ * shop's own week for "trading time". `null` clears the week; with no week left the setting is removed.
  *
  * Nothing is written when nothing changed. Audited as `opening_hours.updated` with the old and new week text.
  *
@@ -63,13 +68,25 @@ final class SaveOpeningHours
                 }
             }
 
-            $this->settings->handle($company, $branch, ['shop.trading_hours' => $wanted?->text()]);
+            $this->writeBusinessLine($company);
             $this->audit->handle('opening_hours.updated', $branch, ['week' => $before?->text()], ['week' => $wanted?->text()], [
                 'branch_id' => $branch->id,
             ], companyId: $company->id);
 
             return true;
         }));
+    }
+
+    /** The company line from the first shop's week; per-shop values (written before 2026-10-01) are removed. */
+    private function writeBusinessLine(Company $company): void
+    {
+        $this->settings->handle($company, null, ['shop.trading_hours' => BusinessHoursLine::current()['text']]);
+
+        $perShop = TillSetting::query()->where('setting_key', 'shop.trading_hours')->where('scope', SettingScope::Branch->value)->pluck('scope_id');
+
+        foreach (Branch::query()->whereIn('id', $perShop)->get() as $shop) {
+            $this->settings->handle($company, $shop, ['shop.trading_hours' => null]);
+        }
     }
 
     /**

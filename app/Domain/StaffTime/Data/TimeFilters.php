@@ -15,8 +15,8 @@ use Illuminate\Http\Request;
  *   (any day of it; default this week) instead;
  * - `shop`: a shop id, `all`, or absent = the top-bar shop. A one-shop user always gets their own shop;
  * - `till`, `person`: ids; `problems`: `1` = only shifts with a missing clock or open break (clock events);
- * - `rounding`: 0, 5, 10 or 15 minutes per shift; `overtime`: weekly hours after which time is overtime (1–168,
- *   halves allowed; none by default: the till has no overtime rule); `group`: `week` (default) or `period`.
+ * - `rounding`: 0, 5, 10 or 15 minutes per shift; `group`: `week` (default) or `period`. Overtime is not a filter:
+ *   it is the till's fixed rule, over 8 hours in a day (HoursMath, ANSWERS-2026-10-01 §4).
  */
 final readonly class TimeFilters
 {
@@ -29,7 +29,6 @@ final readonly class TimeFilters
         public ?string $till = null,
         public ?string $person = null,
         public int $rounding = 0,
-        public ?string $overtime = null,
         public string $group = 'week',
         public bool $problems = false,
         public bool $shopLocked = false,
@@ -52,7 +51,6 @@ final readonly class TimeFilters
         $restricted = $tenancy->restrictedBranchId();
         $shop = $request->query('shop');
         $rounding = $request->query('rounding');
-        $overtime = $request->query('overtime');
 
         return new self(
             from: $from,
@@ -66,8 +64,6 @@ final readonly class TimeFilters
             till: self::isId($request->query('till')) ? (string) $request->query('till') : null,
             person: self::isId($request->query('person'), true) ? (string) $request->query('person') : null,
             rounding: is_string($rounding) && in_array((int) $rounding, HoursMath::ROUNDINGS, true) && ctype_digit($rounding) ? (int) $rounding : 0,
-            overtime: is_string($overtime) && preg_match('/^\d{1,3}(\.[05])?$/', trim($overtime)) === 1 && (float) $overtime >= 1 && (float) $overtime <= 168
-                ? rtrim(rtrim(trim($overtime), '0'), '.') : null,
             group: $request->query('group') === 'period' ? 'period' : 'week',
             problems: $request->query('problems') === '1',
             shopLocked: $restricted !== null,
@@ -85,13 +81,7 @@ final readonly class TimeFilters
     /** The same filters for other days (the rota's week). */
     public function withDays(string $from, string $to): self
     {
-        return new self($from, $to, $this->shop, $this->till, $this->person, $this->rounding, $this->overtime, $this->group, $this->problems, $this->shopLocked);
-    }
-
-    /** The overtime threshold in minutes, or null. */
-    public function overtimeMinutes(): ?int
-    {
-        return $this->overtime === null ? null : (int) round((float) $this->overtime * 60);
+        return new self($from, $to, $this->shop, $this->till, $this->person, $this->rounding, $this->group, $this->problems, $this->shopLocked);
     }
 
     /**
@@ -105,7 +95,7 @@ final readonly class TimeFilters
     }
 
     /**
-     * Whole London weeks around the chosen days ("Y-m-d" Monday, "Y-m-d" Sunday): overtime needs the full week.
+     * Whole London weeks around the chosen days ("Y-m-d" Monday, "Y-m-d" Sunday): weekly rows need the full week.
      *
      * @return array{0: string, 1: string}
      */
@@ -129,7 +119,7 @@ final readonly class TimeFilters
     {
         return [
             'from' => $this->from, 'to' => $this->to, 'shop' => $this->shop, 'till' => $this->till, 'person' => $this->person,
-            'rounding' => $this->rounding, 'overtime' => $this->overtime, 'group' => $this->group, 'problems' => $this->problems,
+            'rounding' => $this->rounding, 'group' => $this->group, 'problems' => $this->problems,
             'shopLocked' => $this->shopLocked,
         ];
     }

@@ -16,7 +16,8 @@ use Illuminate\Support\Facades\DB;
 /**
  * Transfer discrepancies across shops (module 5.3): for transfers received in a period (London days, by the receiving
  * shop's receipt, default the last 90 days), what was sent against what arrived, per route (from → to) and line by
- * line, valued at cost (TransferFigures). A one-shop user sees only transfers from or to their shop.
+ * line (TransferFigures: the till's `qtyVariance` per line and each receipt's `varianceCost`, as sent; routes worst
+ * first = the most lost in transit). A one-shop user sees only transfers from or to their shop.
  */
 final class DiscrepancyReport
 {
@@ -38,19 +39,19 @@ final class DiscrepancyReport
         $names = TransferList::shopNames();
         $routes = [];
         $lines = [];
-        $totals = ['transfers' => [], 'discrepant' => [], 'short' => '0.0000', 'over' => '0.0000', 'sentValue' => '0.00', 'varianceValue' => '0.00'];
+        $totals = ['transfers' => [], 'discrepant' => [], 'receipts' => [], 'short' => '0.0000', 'over' => '0.0000', 'sentValue' => '0.00', 'varianceCost' => '0.00'];
         $count = 0;
 
         foreach (self::query($filters)->cursor() as $row) {
-            $f = TransferFigures::line($row->qty_dispatched, $row->qty_received, $row->unit_cost);
+            $f = TransferFigures::line($row->qty_dispatched, $row->qty_received, $row->unit_cost, $row->qty_variance);
             $key = $row->from_branch_id.'>'.$row->to_branch_id;
             $route = $routes[$key] ?? [
                 'from' => $names[$row->from_branch_id] ?? 'Unknown shop', 'to' => $names[$row->to_branch_id] ?? 'Unknown shop',
-                'transfers' => [], 'discrepant' => [], 'short' => '0.0000', 'over' => '0.0000', 'sentValue' => '0.00', 'varianceValue' => '0.00',
+                'transfers' => [], 'discrepant' => [], 'receipts' => [], 'short' => '0.0000', 'over' => '0.0000', 'sentValue' => '0.00', 'varianceCost' => '0.00',
             ];
 
-            self::add($route, (string) $row->transfer_id, $f);
-            self::add($totals, (string) $row->transfer_id, $f);
+            self::add($route, $row, $f);
+            self::add($totals, $row, $f);
             $routes[$key] = $route;
 
             if (! Money::isZero($f['variance']) && $count++ < self::SCREEN_LINES) {
@@ -86,7 +87,7 @@ final class DiscrepancyReport
         $names = TransferList::shopNames();
 
         foreach (self::query($filters)->cursor() as $row) {
-            $f = TransferFigures::line($row->qty_dispatched, $row->qty_received, $row->unit_cost);
+            $f = TransferFigures::line($row->qty_dispatched, $row->qty_received, $row->unit_cost, $row->qty_variance);
 
             if (! Money::isZero($f['variance'])) {
                 yield self::lineRow($row, $f, $names);
@@ -107,7 +108,7 @@ final class DiscrepancyReport
             ->whereNull('rl.deleted_at')->whereNull('r.deleted_at')->whereNull('t.deleted_at')
             ->when($from !== null, fn (Builder $q) => $q->where('r.received_at', '>=', $from))
             ->when($to !== null, fn (Builder $q) => $q->where('r.received_at', '<', $to))
-            ->select(['rl.id', 'rl.transfer_id', 'rl.product_id', 'rl.qty_dispatched', 'rl.qty_received', 'rl.unit_cost', 'r.received_at',
+            ->select(['rl.id', 'rl.transfer_id', 'rl.receipt_id', 'rl.product_id', 'rl.qty_dispatched', 'rl.qty_received', 'rl.qty_variance', 'rl.unit_cost', 'r.received_at', 'r.variance_cost',
                 't.reference', 't.from_branch_id', 't.to_branch_id', 'tl.product_name'])
             ->orderByDesc('r.received_at')->orderBy('t.reference')->orderBy('rl.id');
 
@@ -144,16 +145,22 @@ final class DiscrepancyReport
     }
 
     /**
-     * Adds one receipt line to a total (the whole report or one route).
+     * Adds one receipt line to a total (the whole report or one route); the receipt's `varianceCost` (the till's, sent −
+     * received, positive = lost in transit) is added once per receipt, as sent.
      *
      * @param  array<string, mixed>  $bucket
      * @param  array{sent: string, received: string, variance: string, sentValue: string, receivedValue: string, varianceValue: string}  $f
      */
-    private static function add(array &$bucket, string $transferId, array $f): void
+    private static function add(array &$bucket, object $row, array $f): void
     {
+        $transferId = (string) $row->transfer_id;
         $bucket['transfers'][$transferId] = true;
         $bucket['sentValue'] = Money::add($bucket['sentValue'], $f['sentValue']);
-        $bucket['varianceValue'] = Money::add($bucket['varianceValue'], $f['varianceValue']);
+
+        if (! isset($bucket['receipts'][(string) $row->receipt_id])) {
+            $bucket['receipts'][(string) $row->receipt_id] = true;
+            $bucket['varianceCost'] = Money::add($bucket['varianceCost'], Money::normalise($row->variance_cost ?? 0));
+        }
 
         if (! Money::isZero($f['variance'])) {
             $bucket['discrepant'][$transferId] = true;
@@ -164,10 +171,12 @@ final class DiscrepancyReport
 
     /**
      * @param  array<string, mixed>  $b
-     * @return array{transfers: int, discrepant: int, short: string, over: string, sentValue: string, varianceValue: string}
+     * @return array{transfers: int, discrepant: int, short: string, over: string, sentValue: string, varianceCost: string}
      */
     private static function bucket(array $b): array
     {
+        unset($b['receipts']);
+
         return [...$b, 'transfers' => count($b['transfers']), 'discrepant' => count($b['discrepant'])];
     }
 
@@ -177,7 +186,7 @@ final class DiscrepancyReport
      */
     private static function worstFirst(array $routes): array
     {
-        uasort($routes, fn (array $a, array $b) => Money::compare($a['varianceValue'], $b['varianceValue']) ?: strcmp($a['from'].$a['to'], $b['from'].$b['to']));
+        uasort($routes, fn (array $a, array $b) => Money::compare($b['varianceCost'], $a['varianceCost']) ?: strcmp($a['from'].$a['to'], $b['from'].$b['to']));
 
         return $routes;
     }

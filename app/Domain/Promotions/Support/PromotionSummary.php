@@ -71,7 +71,7 @@ final class PromotionSummary
             'shop' => $r->branch_id === null ? null : ($shops[$r->branch_id] ?? 'Another shop'),
             'from' => $r->effective_from->toDateString(),
             'to' => $r->effective_to?->toDateString(),
-            'times' => $r->time_from !== null && $r->time_to !== null ? substr($r->time_from, 0, 5).'–'.substr($r->time_to, 0, 5) : null,
+            'times' => self::when($r->days, $r->time_from, $r->time_to),
             'status' => self::status($r, $today),
             'couponCode' => $r->requires_coupon ? $r->coupon_code : null,
             'redemptions' => $r->redemption_count,
@@ -102,9 +102,28 @@ final class PromotionSummary
             'bogof' => $r->buy_quantity <= 1 && $r->get_quantity <= 1 ? 'Buy one get one free' : "Buy {$r->buy_quantity} get {$r->get_quantity} free",
             'buyGet' => "Buy {$r->buy_quantity} get {$r->get_quantity} ".((float) $r->percent >= 100 ? 'free' : "{$percent} off"),
             'mealDeal' => "Meal deal {$money($r->deal_price)}",
-            'quantityPrice' => 'Price by quantity',
+            'quantityPrice' => PriceTiers::describe($r->price_tiers) ?: 'Price by quantity',
             default => 'Offer',
         };
+    }
+
+    /**
+     * "Mon, Tue · 17:00–19:00", "Fri, Sat · 22:00–02:00 (past midnight)", or null for every day, all day.
+     */
+    public static function when(?string $days, ?string $from, ?string $to): ?string
+    {
+        $list = PromotionTypes::dayList($days);
+        $parts = [];
+
+        if (count($list) < 7) {
+            $parts[] = implode(', ', array_map(fn (string $d) => ucfirst(substr($d, 0, 3)), $list));
+        }
+
+        if ($from !== null && $to !== null) {
+            $parts[] = substr($from, 0, 5).'–'.substr($to, 0, 5).($to < $from ? ' (past midnight)' : '');
+        }
+
+        return $parts === [] ? null : implode(' · ', $parts);
     }
 
     /** London today, for status. */

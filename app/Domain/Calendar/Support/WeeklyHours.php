@@ -71,8 +71,8 @@ final readonly class WeeklyHours
     }
 
     /**
-     * The week as the `shop.trading_hours` setting text: one line per day, "Mon 07:00-22:00" or "Sun Closed".
-     * The EPOS team has not given the setting's format yet (DECISIONS 4.9), so this is plain text people can read.
+     * The week as the `shop.trading_hours` setting text (ANSWERS-2026-10-01 §3: free text, not parsed by the till, at
+     * most 200 characters): one line, "Mon 07:00-22:00, Tue 07:00-22:00, … Sun Closed" (seven full days ≈ 117).
      */
     public function text(): string
     {
@@ -83,6 +83,6 @@ final readonly class WeeklyHours
             $lines[] = $name.' '.($day === null ? 'Closed' : $day['opens'].'-'.$day['closes']);
         }
 
-        return implode("\n", $lines);
+        return implode(', ', $lines);
     }
 }

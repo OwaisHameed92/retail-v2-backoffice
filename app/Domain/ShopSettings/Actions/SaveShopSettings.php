@@ -44,6 +44,12 @@ final class SaveShopSettings
         }
 
         $wanted = $this->normalise($values);
+
+        foreach ($wanted as $key => $value) {
+            if ($branch !== null && $value !== null && ((SettingCatalogue::find($key) ?? [])['everyShopOnly'] ?? false)) {
+                throw ValidationException::withMessages(["values.{$key}" => 'This setting is one for the whole business: set it for every shop.']);
+            }
+        }
         $scope = $branch === null ? SettingScope::Company : SettingScope::Branch;
         $scopeId = $branch === null ? $company->id : $branch->id;
 

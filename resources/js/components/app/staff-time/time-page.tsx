@@ -27,7 +27,6 @@ function keep(filters: TimeFiltersState): Record<string, string> {
         ...(filters.shopLocked ? {} : { shop: filters.shop ?? 'all' }),
         ...(filters.person ? { person: filters.person } : {}),
         ...(filters.rounding ? { rounding: String(filters.rounding) } : {}),
-        ...(filters.overtime ? { overtime: filters.overtime } : {}),
     };
 }
 

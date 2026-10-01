@@ -10,7 +10,7 @@ use Illuminate\Validation\ValidationException;
  * settings with a label, help text and a type. `normalise()` turns what a person typed into the text the till
  * stores (`true`/`false`, `20`, `2.50`), or refuses it. Deny-listed keys are never part of it (a test checks).
  *
- * @phpstan-type Definition array{label: string, help: string, type: string, min?: int|float, max?: int|float, unit?: string, default?: string}
+ * @phpstan-type Definition array{label: string, help: string, type: string, min?: int|float, max?: int|float, unit?: string, default?: string, everyShopOnly?: bool}
  * @phpstan-type Section array{title: string, description: string, settings: array<string, Definition>}
  */
 final class SettingCatalogue

@@ -11,14 +11,22 @@ use Carbon\CarbonImmutable;
  * Hours arithmetic of module 5.6. Minutes are whole numbers; hours leave as 2 dp decimal strings.
  *
  * - Rounding: each complete shift's worked minutes to the nearest N minutes (0 = exact); halves round up;
- * - Overtime: per person per London week (Monday to Sunday), paid minutes beyond the weekly threshold, given to the
- *   shifts that cross it in time order (so a per-shop split adds up);
+ * - Overtime: the till's fixed rule (ANSWERS-2026-10-01 §4): per person per London day, paid minutes over 8 hours,
+ *   given to the shifts that cross it in time order (so a per-shop split adds up). Shown only: the till has no
+ *   overtime premium, no weekly rule and no setting; the week's approved figure is `TimesheetApproval.overtimeHours`;
+ * - Holiday: an estimate of 12.07% of the hours worked, as the till's timesheet screen shows (not booked or synced);
  * - Rota: a planned shift's London wall-clock start and end (end at or before start = the next day) to real minutes,
  *   less its break. Converting through Europe/London makes clock-change nights 1 hour shorter or longer.
  */
 final class HoursMath
 {
     public const ROUNDINGS = [0, 5, 10, 15];
+
+    /** The till's overtime rule: over 8 hours in a day. */
+    public const DAILY_OVERTIME_MINUTES = 480;
+
+    /** The till's holiday accrual estimate: 12.07% of hours worked. */
+    public const HOLIDAY_RATE = '0.1207';
 
     public static function roundMinutes(int $minutes, int $step): int
     {
@@ -38,11 +46,11 @@ final class HoursMath
     }
 
     /**
-     * Set each shift's overtime minutes: paid minutes beyond $thresholdMinutes in the person's week (null = none).
+     * Set each shift's overtime minutes: paid minutes beyond the till's 8 hours in the person's London day.
      *
      * @param  list<WorkedShift>  $shifts  paid minutes already set
      */
-    public static function overtime(array $shifts, ?int $thresholdMinutes): void
+    public static function overtime(array $shifts, int $thresholdMinutes = self::DAILY_OVERTIME_MINUTES): void
     {
         $sorted = $shifts;
         usort($sorted, fn (WorkedShift $a, WorkedShift $b) => $a->startsAt()->getTimestamp() <=> $b->startsAt()->getTimestamp());
@@ -51,11 +59,11 @@ final class HoursMath
         foreach ($sorted as $shift) {
             $shift->overtimeMinutes = 0;
 
-            if ($thresholdMinutes === null || ! $shift->isComplete()) {
+            if (! $shift->isComplete()) {
                 continue;
             }
 
-            $key = $shift->userId.'|'.$shift->weekStart();
+            $key = $shift->userId.'|'.$shift->day();
             $before = $running[$key] ?? 0;
             $after = $before + $shift->paidMinutes;
             $running[$key] = $after;
@@ -97,6 +105,12 @@ final class HoursMath
     public static function hours(int $minutes): string
     {
         return Money::round(bcdiv((string) $minutes, '60', 6), 2);
+    }
+
+    /** Holiday earned, estimated as the till does: 12.07% of the minutes worked, to the nearest minute. */
+    public static function holidayMinutes(int $workedMinutes): int
+    {
+        return (int) round((float) bcmul((string) $workedMinutes, self::HOLIDAY_RATE, 4));
     }
 
     /** Estimated pay: minutes × hourly rate, 2 dp; null without a rate. */

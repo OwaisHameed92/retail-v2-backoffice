@@ -189,3 +189,20 @@ test('another business\'s titles are not found and never listed', function () {
     expect($this->actingAs($this->owner)->get('/app/news/titles')->viewData('page')['props']['rows']['data'])->toBe([])
         ->and(NewsTitle::query()->withoutGlobalScopes()->find($foreign->id)->is_active)->toBeTrue();
 });
+
+test('VAT comes from the linked product: a title without one is flagged "no VAT line on the till", the zero rate is suggested', function () {
+    ($this->create)(['name' => 'The Guardian'])->assertRedirect();
+    ($this->create)(['name' => 'The Times', 'linked_product_id' => F::COLA, 'linked_barcode' => ''])->assertRedirect();
+    ($this->create)(['name' => 'The Sun', 'linked_product_id' => F::WATER, 'linked_barcode' => ''])->assertRedirect();
+
+    $rows = collect($this->actingAs($this->owner)->get('/app/news/titles')->assertOk()->viewData('page')['props']['rows']['data'])->keyBy('name');
+    expect($rows['The Guardian'])->toMatchArray(['noVatLine' => true, 'vatNotZero' => false, 'vat' => null])
+        ->and($rows['The Times'])->toMatchArray(['noVatLine' => false, 'vatNotZero' => true])
+        ->and($rows['The Sun'])->toMatchArray(['noVatLine' => false, 'vatNotZero' => false]);
+
+    $times = NewsTitle::query()->withoutGlobalScopes()->where('name', 'The Times')->sole();
+    $this->actingAs($this->owner)->get("/app/news/titles/{$times->id}/edit")->assertOk()->assertInertia(fn (Assert $page) => $page
+        ->where('zeroVatRate.name', 'Zero')->where('linkedProduct.zeroRated', false));
+    $this->actingAs($this->owner)->get('/app/news/titles/create?q=Toastie')->assertInertia(fn (Assert $page) => $page
+        ->where('linkedProduct', null)->where('results.0.zeroRated', true));
+});

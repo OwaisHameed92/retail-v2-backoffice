@@ -90,6 +90,9 @@ final class TitleRows extends DocumentRows
                 'barcode' => $t->linked_barcode ?: null,
                 'product' => $product?->name,
                 'vat' => $product === null || $product->vat_name === null ? null : NewsTitleForm::vat((string) $product->vat_name, $product->percentage),
+                // ANSWERS-2026-10-01 §5: no linked product = no VAT line on the till; newspapers are zero-rated.
+                'noVatLine' => $product === null,
+                'vatNotZero' => $product !== null && $product->vat_name !== null && ! NewsTitleForm::isZero($product->percentage),
                 'qtyIn' => (int) ($stats->qty_in ?? 0),
                 'qtySold' => (int) ($stats->qty_sold ?? 0),
                 'canEdit' => NewsAccess::mayEdit($t),

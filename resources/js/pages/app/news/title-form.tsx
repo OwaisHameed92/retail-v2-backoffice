@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import AppLayout from '@/layouts/app-layout';
 import { Head, Link, router, useForm } from '@inertiajs/react';
-import { Info, Link2, Link2Off, PackageSearch, Save } from 'lucide-react';
+import { Info, Link2, Link2Off, PackageSearch, Save, TriangleAlert } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
 const EVERY_SHOP = '__every';
@@ -43,7 +43,27 @@ function ProductLine({ product, action }: { product: LinkedProduct; action: Reac
 }
 
 /** Add or change a news title (module 5.8). The tills of the shop(s) it is for get it at their next sync. */
-export default function NewsTitleForm({ title, defaultShopId, linkedProduct, search, results, frequencies, shops, suppliers, can }: TitleFormProps) {
+const zeroName = (rate: TitleFormProps['zeroVatRate']) => (rate ? `${rate.name} (0%, receipt letter ${rate.code})` : 'a 0% VAT rate');
+
+/** ANSWERS-2026-10-01 §5: no linked product = no VAT line on the till; UK newspapers are zero-rated. */
+function VatHint({ linked, zeroVatRate }: { linked: LinkedProduct | null; zeroVatRate: TitleFormProps['zeroVatRate'] }) {
+    if (linked && linked.zeroRated !== false) {
+        return null;
+    }
+
+    return (
+        <Alert variant="warning">
+            <TriangleAlert />
+            <AlertDescription>
+                {linked
+                    ? `${linked.name} is on ${linked.vat ?? 'a VAT rate above 0%'}. Newspapers are zero-rated in the UK: give the product ${zeroName(zeroVatRate)} on its product page.`
+                    : `No product linked, so the till makes no VAT line for this title. Link a product with ${zeroName(zeroVatRate)}: newspapers are zero-rated in the UK.`}
+            </AlertDescription>
+        </Alert>
+    );
+}
+
+export default function NewsTitleForm({ title, defaultShopId, linkedProduct, search, results, frequencies, zeroVatRate, shops, suppliers, can }: TitleFormProps) {
     const editing = title !== null;
     const form = useForm<FormData>({
         name: title?.name ?? '',
@@ -192,8 +212,12 @@ export default function NewsTitleForm({ title, defaultShopId, linkedProduct, sea
                         </FormGrid>
                     </FormSection>
 
-                    <FormSection title="Till product" description="Link the product the till scans for this title. Its VAT rate applies to the sale.">
+                    <FormSection
+                        title="Till product"
+                        description="Link the product the till scans for this title. A title has no VAT of its own: the till uses the linked product's VAT rate."
+                    >
                         <div className="grid gap-3">
+                            <VatHint linked={linked} zeroVatRate={zeroVatRate} />
                             {linked ? (
                                 <ProductLine
                                     product={linked}

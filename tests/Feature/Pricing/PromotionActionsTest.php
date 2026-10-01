@@ -97,7 +97,7 @@ test('checks what each type needs, the target, the shop, the dates, times and co
     'fixed off without amount' => [['type' => 'fixedOff'], 'amount_off'],
     'multi-buy of one' => [['type' => 'multiBuy', 'buy_quantity' => '1', 'deal_price' => '1'], 'buy_quantity'],
     'unknown product' => [['target_id' => '01K5T0Q8C4000000000000P999'], 'target_id'],
-    'till-only type' => [['type' => 'quantityPrice'], 'type'],
+    'price tiers missing' => [['type' => 'quantityPrice'], 'price_tiers'],
     'unknown shop' => [['branch_id' => '01K5T0Q8C4000000000000B999'], 'branch_id'],
     'ends before it starts' => [['effective_to' => '2026-09-30'], 'effective_to'],
     'one time only' => [['time_from' => '09:00'], 'time_to'],

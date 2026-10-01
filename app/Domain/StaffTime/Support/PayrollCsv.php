@@ -14,7 +14,7 @@ final class PayrollCsv
     public const COLUMNS = [
         'Staff', 'Staff id', 'Shop', 'Week starting', 'Shifts', 'Worked hours', 'Paid hours (rounded)', 'Break hours',
         'Overtime hours', 'Rota hours', 'Hourly rate', 'Wage estimate', 'Missing clock-outs', 'Till approved hours',
-        'Till approved overtime', 'Approved at',
+        'Till approved overtime', 'Approved at', 'Holiday estimate hours',
     ];
 
     /**
@@ -28,8 +28,8 @@ final class PayrollCsv
             ['Shop', self::text($shop)],
             ['Dates', $filters->from.' to '.$filters->to],
             ['Rounding', $filters->rounding === 0 ? 'Exact minutes' : 'Nearest '.$filters->rounding.' minutes per shift'],
-            ['Overtime', $filters->overtime === null ? 'None (no overtime rule chosen)' : 'After '.$filters->overtime.' hours a week'],
-            ['Note', 'Wage estimate = paid hours x the hourly rate set on the till (overtime at the same rate). Shifts with a missing clock-out are not counted.'],
+            ['Overtime', 'The till\'s rule: over 8 hours in a day (shown only, paid at the same rate)'],
+            ['Note', 'Wage estimate = paid hours x the hourly rate on the staff record (overtime at the same rate). Holiday estimate = 12.07% of hours worked. Shifts with a missing clock-out are not counted.'],
             [],
             self::COLUMNS,
         ];
@@ -44,6 +44,7 @@ final class PayrollCsv
                 HoursMath::hours((int) $r['overtimeMinutes']), HoursMath::hours((int) $r['plannedMinutes']),
                 (string) ($r['rate'] ?? ''), (string) ($r['wage'] ?? ''), (string) $r['missing'],
                 $approval['totalHours'] ?? '', $approval['overtimeHours'] ?? '', substr((string) ($approval['approvedAt'] ?? ''), 0, 10),
+                HoursMath::hours((int) $r['holidayMinutes']),
             ];
         }
 

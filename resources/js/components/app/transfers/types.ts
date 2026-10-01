@@ -38,7 +38,8 @@ export interface TransferRow {
     receivedAt: string | null;
     lines: number;
     value: string;
-    varianceValue: string | null;
+    /** The till's `StockTransferReceipt.varianceCost`: sent − received at cost, positive = lost in transit. */
+    varianceCost: string | null;
     discrepancies: number;
 }
 
@@ -92,7 +93,10 @@ export interface TransferShowProps {
         variance: string | null;
         sentValue: string;
         receivedValue: string | null;
+        /** Sum of the lines' difference at cost (received − sent). */
         varianceValue: string | null;
+        /** The till's receipt `varianceCost`: sent − received at cost, positive = lost in transit. As sent. */
+        varianceCost: string | null;
         discrepancies: number;
     };
     relay: {
@@ -112,7 +116,8 @@ export interface DiscrepancyTotals {
     short: string;
     over: string;
     sentValue: string;
-    varianceValue: string;
+    /** The receipts' `varianceCost` (the till's), summed: positive = lost in transit. */
+    varianceCost: string;
 }
 
 export interface DiscrepancyLine {

@@ -235,8 +235,26 @@ final class HubVersions
                 "UPDATE {$table} SET hub_version = CASE id {$cases} END WHERE {$company} = ? AND hub_version IS NULL AND id IN ({$in})",
                 [...$bindings, $companyId, ...$chunk],
             );
+
+            if ($def->entity === 'User') {
+                self::versionPinHashes($companyId, $chunk);
+            }
         }
 
         return $version;
+    }
+
+    /**
+     * §10.7: `User.pinHash` goes only to set or change a PIN. A user row whose PIN hash differs from the one last
+     * versioned records the row's new pull version as the PIN's (PullPayload sends the hash only to a till behind it).
+     *
+     * @param  list<string>  $ids
+     */
+    private static function versionPinHashes(string $companyId, array $ids): void
+    {
+        DB::table('till_users')->where('company_id', $companyId)->whereIn('id', $ids)
+            ->whereNotNull('pin_hash')->where('pin_hash', '!=', '')
+            ->where(fn ($q) => $q->whereNull('pin_hash_versioned')->orWhereColumn('pin_hash_versioned', '!=', 'pin_hash'))
+            ->update(['pin_hash_version' => DB::raw('hub_version'), 'pin_hash_versioned' => DB::raw('pin_hash')]);
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Domain\Promotions\Queries;
 
+use App\Domain\Promotions\Support\PriceTiers;
 use App\Domain\Promotions\Support\PromotionSummary;
 use App\Domain\Promotions\Support\PromotionTypes;
 use App\Domain\Tenancy\CurrentCompany;
@@ -17,7 +18,7 @@ use Carbon\CarbonImmutable;
 
 /**
  * Props for the offer form (module 4.3): the rule's values as strings (so nothing is rounded in the browser), its
- * items, and the choices (types, products, categories, departments, shops). A one-shop user may pick only their shop.
+ * items, price tiers as rows, days as a list, and the choices (types, products, categories, departments, styles, shops). A one-shop user may pick only their shop.
  */
 final class PromotionForm
 {
@@ -44,6 +45,7 @@ final class PromotionForm
                 'is_hfss_safe' => $rule->is_hfss_safe, 'effective_from' => $rule->effective_from->toDateString(),
                 'effective_to' => $rule->effective_to?->toDateString() ?? '', 'time_from' => $rule->time_from === null ? '' : substr($rule->time_from, 0, 5),
                 'time_to' => $rule->time_to === null ? '' : substr($rule->time_to, 0, 5), 'is_active' => $rule->is_active,
+                'price_tiers' => PriceTiers::rows($rule->price_tiers), 'days' => PromotionTypes::dayList($rule->days),
                 'items' => $items->map(fn (PromotionItem $i) => [
                     'id' => $i->id, 'scope' => $i->scope->value ?? 'product', 'target_id' => $i->target_id, 'group_no' => (string) $i->group_no,
                     'quantity' => (string) $i->quantity, 'is_excluded' => $i->is_excluded,
@@ -52,12 +54,14 @@ final class PromotionForm
                 'redemptions' => $rule->redemption_count, 'updatedAt' => $rule->updated_at?->toIso8601ZuluString(),
             ],
             'options' => [
-                'types' => array_map(fn (PromotionType $t) => ['value' => $t->value, 'label' => PromotionTypes::label($t)],
-                    array_values(array_filter(PromotionType::cases(), fn (PromotionType $t) => in_array($t->value, PromotionTypes::PORTAL_TYPES, true) || $rule?->type === $t))),
+                // Every type in the till's order of PORTAL_TYPES (ANSWERS-2026-10-01 §2: all are made on the portal).
+                'types' => array_map(fn (string $t) => ['value' => $t, 'label' => PromotionTypes::label(PromotionType::from($t))], PromotionTypes::PORTAL_TYPES),
                 'products' => Product::query()->where('is_active', true)->orderBy('name')->limit(2000)->get(['id', 'name', 'sku'])
                     ->map(fn (Product $p) => ['value' => $p->id, 'label' => (string) $p->name.($p->sku ? " · {$p->sku}" : '')])->all(),
                 'categories' => Category::query()->orderBy('name')->get(['id', 'name'])->map(fn ($c) => ['value' => $c->id, 'label' => (string) $c->name])->all(),
                 'departments' => Department::query()->orderBy('name')->get(['id', 'name'])->map(fn ($d) => ['value' => $d->id, 'label' => (string) $d->name])->all(),
+                'styles' => Product::query()->where('is_variant_parent', true)->orderBy('name')->limit(2000)->get(['id', 'name'])
+                    ->map(fn (Product $p) => ['value' => $p->id, 'label' => (string) $p->name])->all(),
                 'shops' => Branch::query()->when($restricted !== null, fn ($q) => $q->whereKey($restricted), fn ($q) => $q->where('is_active', true))
                     ->orderBy('name')->get(['id', 'name'])->map(fn ($b) => ['value' => $b->id, 'label' => $b->name])->all(),
             ],

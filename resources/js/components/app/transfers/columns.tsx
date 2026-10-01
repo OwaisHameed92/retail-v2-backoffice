@@ -1,7 +1,7 @@
 import { StatusPill } from '@/components/shared/status-badge';
 import { type ColumnDef } from '@tanstack/react-table';
 import { ArrowDownLeft, ArrowRight, ArrowUpRight } from 'lucide-react';
-import { formatDateTime, money, qty, RelayPill, signedMoney, TransferStatusBadge, varianceClass } from './format';
+import { formatDateTime, lossClass, money, qty, RelayPill, TransferStatusBadge } from './format';
 import { type TransferRow } from './types';
 
 type Column = ColumnDef<TransferRow>;
@@ -65,13 +65,13 @@ export function transferColumns(): Column[] {
         },
         {
             id: 'variance',
-            header: 'Discrepancy',
+            header: 'Lost in transit',
             cell: ({ row }) =>
-                row.original.varianceValue === null ? (
+                row.original.varianceCost === null ? (
                     dash
                 ) : (
                     <div className="grid justify-items-end leading-5">
-                        <span className={varianceClass(row.original.varianceValue)}>{signedMoney(row.original.varianceValue)}</span>
+                        <span className={lossClass(row.original.varianceCost)}>{money(row.original.varianceCost)}</span>
                         {row.original.discrepancies > 0 && (
                             <span className="text-muted-foreground text-xs">
                                 {qty(row.original.discrepancies)} {row.original.discrepancies === 1 ? 'line' : 'lines'}

@@ -22,9 +22,9 @@ final class PullEnvelopes
 {
     private readonly PullPayload $rows;
 
-    public function __construct(IdTranslator $translator, private readonly string $branchId)
+    public function __construct(IdTranslator $translator, private readonly string $branchId, int $since = 0)
     {
-        $this->rows = new PullPayload($translator, $branchId);
+        $this->rows = new PullPayload($translator, $branchId, $since);
     }
 
     /**

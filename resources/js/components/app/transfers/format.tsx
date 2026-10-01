@@ -84,6 +84,13 @@ export function varianceClass(value: string | null): string {
     return cn('tabular-nums', n < 0 ? 'text-danger-foreground font-medium' : n > 0 ? 'text-warning-foreground font-medium' : 'text-muted-foreground');
 }
 
+/** Colour of a value lost in transit (the till's varianceCost): positive = lost (red), negative = more arrived. */
+export function lossClass(value: string | null): string {
+    const n = Number(value ?? 0);
+
+    return cn('tabular-nums', n > 0 ? 'text-danger-foreground font-medium' : n < 0 ? 'text-warning-foreground font-medium' : 'text-muted-foreground');
+}
+
 /** The two transfer screens as link tabs. */
 export function TransferTabs({ current, query = {} }: { current: 'list' | 'discrepancies'; query?: Record<string, string> }) {
     return (

@@ -179,7 +179,7 @@ Licence server, then Hub address, then built-in; `sync/*` → Hub address, then 
 |---|---|
 | Protocol | HTTPS only (TLS 1.2+). The till refuses `http://` and invalid certificates (no pinning). |
 | Auth | `Authorization: Bearer <sync.hub_api_key>` (the branch's sync key) on every `sync/*` call and on `cloud/migrate/complete` (with the key the migrate reply issued); **none** on `cloud/migrate` (the sync key is the `activationCode` in the body); on `licence/*` and `devices/deactivate` only when the till holds a branch key (optional — 17.15). |
-| Identity headers | Sync and migration calls (`sync/*`, `cloud/migrate*`): `X-SSPOS-Company-Id`, `X-SSPOS-Branch-Id`, `X-SSPOS-Register-Id` (the sending till — the branch's main till), `X-SSPOS-Contract: 1`, `X-SSPOS-Store-Protocol: 3` (`1` before 2026-09-28, then `2`, now `3`; informational — accept any number), `X-SSPOS-App-Version: 3.x.y`; the migration calls add `X-SSPOS-Install-Id`. Licence and device calls (`licence/*`, `devices/deactivate`): the same without `X-SSPOS-Store-Protocol`, plus `X-SSPOS-Install-Id`. |
+| Identity headers | Sync and migration calls (`sync/*`, `cloud/migrate*`): `X-SSPOS-Company-Id`, `X-SSPOS-Branch-Id`, `X-SSPOS-Register-Id` (the sending till — the branch's main till), `X-SSPOS-Contract: 1`, `X-SSPOS-Store-Protocol: 3` (`1` before 2026-09-28, then `2`, now `3`; informational — accept any number), `X-SSPOS-App-Version: 0.1.x` (the build's semver); the migration calls add `X-SSPOS-Install-Id`. Licence and device calls (`licence/*`, `devices/deactivate`): the same without `X-SSPOS-Store-Protocol`, plus `X-SSPOS-Install-Id`. |
 | Idempotency | `Idempotency-Key` on every POST except a normal (delta) push — one key per logical request, repeated with the same body on every retry (§17.11 rule 5). |
 | Content type | `application/json; charset=utf-8` both ways |
 | Compression | Push body is **gzip** (`Content-Encoding: gzip`) — `SyncBatch.Pack` gzips it. The sync and migration calls send `Accept-Encoding: gzip`, so their replies may be gzip; licence calls do not — answer those uncompressed. |
@@ -540,6 +540,11 @@ journal rows, pushed as ordinary branch rows; relay the receipt back to the send
 Received, then Closed. A transfer can be received only once (the till's `StockTransferReceipt.transferId` is
 unique), so a relay applied twice can never book the goods twice.
 
+**Variance signs (2026-10-01) — the two fields run opposite ways.** `StockTransferReceiptLine.qtyVariance` =
+`qtyReceived − qtyDispatched` (negative = short, positive = over-delivered). `StockTransferReceipt.varianceCost`
+= `StockTransfer.dispatchedCost − receivedCost` (positive = value lost in transit). So a shortage of 2 × £1.50 is
+`qtyVariance: -2` on the line and `varianceCost: 3.00` on the receipt. Show them as they come; do not recompute.
+
 ### 10.3 Settings and role permissions (revision 1.4, 2026-09-28)
 
 `Setting` and `RolePermission` are portal-owned (`"hub"`) and now travel both ways (until 1.4 they never left
@@ -718,6 +723,12 @@ lines), `samples/entities/{Supplier,PurchaseOrder,PurchaseOrderLine}.json`; enum
 - **`pinHash` still travels** (PBKDF2, never the PIN) so the portal can create staff. A pulled `User` row whose
   `pinHash` is missing, `null` or empty **keeps the till's PIN** — send it only to set or change a PIN. The same
   for `rfid` (v1.4.1): missing, `null` or empty keeps the member of staff's fob; a fob is removed at the till.
+  **Format (2026-10-01):** `pbkdf2$<iterations>$<base64 salt>$<base64 subkey>` — PBKDF2-HMAC-SHA256 over the PIN's
+  UTF-8 bytes, write 100000 iterations, 16-byte random salt, 32-byte subkey, standard Base64 (with `=`), no pepper,
+  ≤ 200 chars. The till reads the iteration count and subkey length from the string. **Not** ASP.NET Identity v3
+  (`AQAAAA…` blobs are refused — the PIN would never work). Sample: PIN `1234` =
+  `pbkdf2$100000$AAECAwQFBgcICQoLDA0ODw==$hp5sg1DFvrCsw5n7qsO2DSIEM4lrJqZHc00NjxWG4fo=`
+  (`src/SSPOS.Infrastructure/Security/Pbkdf2PinHasher.cs`; the sample is pinned in `Pbkdf2PinHasherTests`).
 - **Settings:** the §10.3 deny-list (secrets, keys, device and licence settings, `sync.*`) never leaves the till
   and is never applied from a pull.
 - **Keys and codes on the wire** — the sync key, a licence key, an activation or sync code, a licence token — go
@@ -1005,7 +1016,7 @@ SSPOS1.<base64url(payload JSON)>.<base64url(Ed25519 signature over ASCII "SSPOS1
 | `installCode` | `XXXX-XXXX` | `portal` (per till, 17.15): the activating till's code. `local`: the install it was made for; **absent/empty = an open local key** (17.16) — the first till that accepts it binds it to itself. |
 | `maxRegisters` | integer ≥ 1 | Tills allowed in this branch, **main till included**. The same value in every till key of the branch. |
 | `features` | string[] | Open list of paid feature names (`^[a-z0-9]+([._-][a-z0-9]+)*$`; **the till knows exactly these 11** (`src/SSPOS.Application/Ports/Feature.cs`, 2026-09-28): `loyalty`, `promotions`, `purchasing`, `accounts`, `multi_branch`, `second_screen`, `label_printing`, `assist`, `cloud_sync`, `assist_invoice_scan`, `assist_questions` — an unknown name is ignored; compared exactly, so `multi-branch` is **not** `multi_branch`). `multi_branch` = the company may add branches. `full`: exactly these (absent/`[]` = none). `trial`: absent/`[]` = **every feature on**; a non-empty list = only those. |
-| `issuedAt`, `validFrom`, `expiresAt` | UTC date-time | `expiresAt` is **required** — there are no lifetime licences. `validFrom`…`expiresAt` is the length the admin chose (days, months, years). |
+| `issuedAt`, `validFrom`, `expiresAt` | UTC date-time | `expiresAt` is **required** — there are no lifetime licences. `validFrom`…`expiresAt` is the length the admin chose (days, months, years). **Never add `graceDays` to it** (2026-09-29): `graceDays` is only the offline allowance (days without a successful `validate`); the till trades until `expiresAt`, shows it as "ends on …" and locks the moment it passes. |
 | `onlineCheck` | object | Cloud: `{ "required": true, "intervalHours": 24, "graceDays": 14 }`. Absent or `required:false` = no online check (local). The policy travels in the token, so you can change it per customer without a till release. |
 | `limits` | object | Open map of **whole numbers**, e.g. `{ "users": 10, "branches": 2 }`. Values must be integers (a decimal or null makes the token unreadable on the till). Unknown limit = ignored; missing = unlimited, **except `branches`** = how many branches the company may run, **1 when absent** (`src/SSPOS.Domain/Licensing/LicenceLimits.cs`). Tills are not a limit — they are `maxRegisters`. |
 | `notes` | string | Free text for the licence screen (≤ 200). |
@@ -2195,6 +2206,13 @@ only by `seq` and `version`.
     versions the shop edited: decide on your side whether to accept or overwrite a pushed portal-owned row (§10)
     and send your winning version down either way — a row you send down while the shop's edit is still unsent
     becomes the till's clash above.
+  - **The till learns the version of its own accepted edit without an echo (2026-09-29).** §19.2 still holds: do
+    not send a branch its own row back. When `baseVersion` arrives, compare it with the version the row had
+    **before this branch's last accepted edit of it** (keep `origin_branch` and `prev_version` per row): a push
+    whose `baseVersion` is the current version, or whose row was last written by the same branch with
+    `baseVersion` ≥ that `prev_version`, is not a conflict. (An identical row sent back would be a no-op on the
+    till that also records your version — but if the shop edited it again meanwhile it becomes a false clash, so
+    do not echo.)
 - **Deletes are soft** (`deletedAt`, section 5) and follow the same version rules, so a late update can
   never bring a deleted row back.
 

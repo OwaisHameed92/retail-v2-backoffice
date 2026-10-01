@@ -85,3 +85,27 @@ Release 0.1.15 (2026-09-30, in 0.1.15 — v0.1.14..v0.1.15). No endpoint, envelo
 - **Setting defaults** (only matter where no row exists): `till.ask_reason_void` false (was true), `till.key_click_sound`
   false (was true), `till.cart_product_count_mode` "Units" (was "Lines"). No new setting keys; `SettingSyncPolicy` and `SyncOwnershipMap`
   unchanged.
+
+Audit coverage (2026-09-30): new `AuditLog.action` values, no schema/ownership change — cash `PaidOut`, `PaidIn`,
+`SafeDrop`, `SpotCount`, `ShiftClosed`; cash office `PettyCash`, `BankingCollected`, `BankingConfirmed`,
+`FloatSentToRegister`, `ChangeOrderReceived`, `CashOfficeReconciled`; `LoyaltyPointsAdjusted`; `DataExported`
+(`entityName` "DataExport", `entityId` = register id, file name in `afterJson`); catalogue `ProductCreated`,
+`ProductUpdated` (changed fields only), `BarcodeAdded`, `BarcodeRemoved` (`entityName` "ProductBarcode"); till
+`PriceOverride` and `ManualDiscount` (`entityName` "Sale", one row per line, plus one per manual basket discount).
+
+Printer profiles (2026-09-30): no schema change. `PrinterProfile.codePage` now defaults to 437 (was 1252), and migration
+`PrinterNamesAndPoundCodePage` moves existing ESC/POS profiles on 1252 to 437 and renames device-named profiles
+("EPSON TM-T20III", "… (USB, no driver)", "… (serial)") to "Printer N"; each changed row is re-pushed with a new version.
+
+Audit coverage (2026-09-30, part 2): new `AuditLog.action` values, no schema/ownership change — `ShiftOpened`
+(`entityName` "Shift", `afterJson` Float, Till, Mode); compliance `LicenceAdded` ("ComplianceLicence"), `TrainingRecorded`
+("TrainingRecord", trainee `UserId` in `afterJson`), `IncidentReported` ("IncidentReport"). Diary checks, temperature
+readings and age refusals are not audited (they keep their own logs).
+
+Shared barcodes (2026-09-30): `ProductBarcode.barcode` is no longer unique across live rows — the owner may put one code on several products on purpose (the till asks which one at the scan). Portal: do not assume one product per barcode; a push may carry the same `barcode` on two `productId`s. New till error code `sale.barcode_shared` (local only, not pushed). No schema field added.
+
+Offer choice (2026-09-30): `HeldOrder.cartJson` may carry a new optional `ChosenOffers` object (productId → promotionRuleId) — the offer the cashier picked when several fitted. Absent on older held sales; the portal can ignore it. Two new branch settings `promotions.ask_which_offer` and `promotions.one_more_hint` (bool, default false). No schema field added.
+
+Label layout ask (2026-10-01): new branch setting `labels.ask_layout` (bool, default true, local only — listed in `samples/settings-local-only.json`). Off = labels print on `labels.default_layout` without asking; with `labels.quantity_prompt` off too, no print box opens. No schema field added.
+
+Portal answers (2026-10-01, `ANSWERS-2026-10-01.md`): wording only, nothing on the wire changed — `User.pinHash` format written down (§10.7: `pbkdf2$100000$<b64 salt>$<b64 subkey>`, PBKDF2-HMAC-SHA256, not Identity v3) and transfer variance signs (§10.2: `qtyVariance` = received − sent, `varianceCost` = sent − received).

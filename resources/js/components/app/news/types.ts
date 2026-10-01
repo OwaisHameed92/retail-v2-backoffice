@@ -44,6 +44,8 @@ export interface LinkedProduct {
     barcode: string | null;
     price: string | null;
     vat: string | null;
+    /** The product's VAT rate is 0% (null: no VAT rate). */
+    zeroRated: boolean | null;
 }
 
 export interface TitleFormProps extends NewsShared {
@@ -64,6 +66,8 @@ export interface TitleFormProps extends NewsShared {
     search: string | null;
     results: LinkedProduct[];
     frequencies: string[];
+    /** The business's zero-rated VAT rate, suggested for newspapers. */
+    zeroVatRate: { name: string; code: string } | null;
 }
 
 export interface DeliveryLine {

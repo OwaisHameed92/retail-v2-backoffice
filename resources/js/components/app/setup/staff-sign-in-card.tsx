@@ -22,7 +22,9 @@ export function StaffSignInCard({ member, canEdit }: { member: StaffMember; canE
                             <KeyRound className="text-muted-foreground size-4" aria-hidden />
                             <div>
                                 <p className="text-sm font-medium">PIN</p>
-                                <StatusPill tone={member.hasPin ? 'success' : 'warning'}>{member.hasPin ? 'Set' : 'Not set'}</StatusPill>
+                                <StatusPill tone={member.hasPin ? 'success' : 'warning'}>
+                                    {member.hasPin ? 'Set' : member.pinNeedsReset ? 'Needs resetting' : 'Not set'}
+                                </StatusPill>
                             </div>
                         </div>
                         {canEdit && (
@@ -45,6 +47,11 @@ export function StaffSignInCard({ member, canEdit }: { member: StaffMember; canE
                             </Button>
                         )}
                     </div>
+                    {member.pinNeedsReset && (
+                        <p className="text-muted-foreground text-xs leading-5">
+                            This PIN was saved in a format the tills cannot read, so it was never sent. Set a new PIN to sign in on the tills.
+                        </p>
+                    )}
                     {member.hasFob && (
                         <p className="text-muted-foreground text-xs leading-5">
                             To take a fob away, remove it on a till. If a fob is lost, give a new one or make them inactive: the old fob stops working

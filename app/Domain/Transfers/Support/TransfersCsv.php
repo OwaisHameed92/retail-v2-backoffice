@@ -17,9 +17,9 @@ use Illuminate\Database\Eloquent\Builder;
 final class TransfersCsv
 {
     public const LIST_HEADERS = ['Reference', 'From', 'To', 'Status', 'Receiving till', 'Return', 'Raised', 'Dispatched', 'Received', 'Lines',
-        'Value at cost', 'Discrepancy at cost', 'Lines with discrepancies', 'Note', 'Transfer id'];
+        'Value at cost', 'Lost in transit at cost (sent - received)', 'Lines with discrepancies', 'Note', 'Transfer id'];
 
-    public const DISCREPANCY_HEADERS = ['Received', 'Reference', 'From', 'To', 'Product', 'Sent', 'Received qty', 'Difference', 'Unit cost',
+    public const DISCREPANCY_HEADERS = ['Received', 'Reference', 'From', 'To', 'Product', 'Sent', 'Received qty', 'Difference (received - sent)', 'Unit cost',
         'Sent value', 'Received value', 'Difference at cost', 'Transfer id'];
 
     private const CHUNK = 200;
@@ -42,7 +42,7 @@ final class TransfersCsv
                     fputcsv($out, array_map(self::text(...), [
                         $row['reference'], $row['from'], $row['to'], self::STATUS[$row['status']] ?? $row['status'], self::RELAY[$row['relay']] ?? $row['relay'],
                         $row['isReturn'] ? 'Yes' : 'No', self::day($row['requestedAt']), self::day($row['dispatchedAt']), self::day($row['receivedAt']),
-                        $row['lines'], $row['value'], $row['varianceValue'] ?? '', $row['discrepancies'], $notes[$row['id']] ?? '', $row['id'],
+                        $row['lines'], $row['value'], $row['varianceCost'] ?? '', $row['discrepancies'], $notes[$row['id']] ?? '', $row['id'],
                     ]), escape: '');
                 }
             });

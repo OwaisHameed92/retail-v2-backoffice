@@ -115,6 +115,8 @@ export interface StaffRow {
     role: string | null;
     isActive: boolean;
     hasPin: boolean;
+    /** A PIN hash from an older portal that the till cannot read: the PIN must be set again. */
+    pinNeedsReset: boolean;
     hasFob: boolean;
     branches: string[];
     ratePerHour: string | null;
@@ -148,6 +150,8 @@ export type StaffFormData = {
 export interface StaffMember extends Omit<StaffFormData, 'pin' | 'pin_confirmation'> {
     id: string;
     hasPin: boolean;
+    /** A PIN hash from an older portal that the till cannot read: the PIN must be set again. */
+    pinNeedsReset: boolean;
     hasFob: boolean;
     updatedAt: string | null;
 }

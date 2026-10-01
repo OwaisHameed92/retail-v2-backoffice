@@ -2,6 +2,7 @@
 
 namespace App\Domain\Promotions\Actions;
 
+use App\Domain\Promotions\Support\PriceTiers;
 use App\Domain\Promotions\Support\PromotionChecks;
 use App\Domain\Promotions\Support\PromotionTypes;
 use App\Domain\Shared\Actions\RecordAudit;
@@ -17,15 +18,18 @@ use Illuminate\Support\Facades\DB;
  * Creates or edits an offer (PromotionRule, module 4.3) with its items. Hub-owned: saves go through the models, so
  * every till gets the rule in its next pull (the till keeps only its own shop's and every-shop rules: `branch_id`
  * null = every shop). A rule and its items keep their ULIDs. `is_group_offer` is worked out, never taken from input;
- * members the form does not show (member value, price tiers, redemptions so far, customer group, days) keep their
- * value; the form's members are all saved (one left out takes its default). An edit raises `row_version` by one; nothing is written when nothing changed.
+ * members the form does not show (member value, redemptions so far, customer group) keep their value, except a
+ * `quantityPrice` rule's member value, always 0 (ANSWERS-2026-10-01 §2a); the form's members are all saved (one left
+ * out takes its default). `days` is the till's flags string ("monday, tuesday", "all"), times "HH:mm:ss" UK local (a
+ * `timeTo` before `timeFrom` runs past midnight), `priceTiers` "2=5.00;3=7.00" (PriceTiers). A mix-and-match's items
+ * are group 0, a meal deal's 1..n. An edit raises `row_version` by one; nothing is written when nothing changed.
  */
 final class SavePromotion
 {
     public const FIELDS = [
         'name', 'type', 'scope', 'target_id', 'percent', 'amount_off', 'deal_price', 'buy_quantity', 'get_quantity', 'min_quantity',
         'priority', 'allow_stack', 'is_exclusive', 'max_redemptions_per_sale', 'max_redemptions_total', 'requires_coupon', 'coupon_code',
-        'branch_id', 'is_hfss_safe', 'effective_from', 'effective_to', 'time_from', 'time_to', 'is_active',
+        'branch_id', 'is_hfss_safe', 'effective_from', 'effective_to', 'time_from', 'time_to', 'is_active', 'price_tiers', 'days',
     ];
 
     /** The whole form is saved: a member left out takes this value. */
@@ -33,12 +37,13 @@ final class SavePromotion
         'scope' => 'product', 'target_id' => '', 'branch_id' => null, 'effective_to' => null, 'time_from' => null, 'time_to' => null,
         'requires_coupon' => false, 'coupon_code' => '', 'allow_stack' => false, 'is_exclusive' => false, 'is_hfss_safe' => false,
         'is_active' => true, 'max_redemptions_per_sale' => null, 'max_redemptions_total' => null, 'priority' => 0, 'min_quantity' => 1,
+        'price_tiers' => null, 'days' => 'all',
     ];
 
     public function __construct(private readonly PromotionChecks $checks, private readonly RecordAudit $audit) {}
 
     /**
-     * @param  array<string, mixed>  $data  FIELDS (dates `Y-m-d`, times `H:i`, money in pounds)
+     * @param  array<string, mixed>  $data  FIELDS (dates `Y-m-d`, times `H:i`, money in pounds, days a list or the till's string)
      * @param  list<array{id?: string|null, scope: string, target_id: string, group_no?: int|string|null, quantity?: int|string|null, is_excluded?: bool|null}>  $items
      */
     public function handle(?PromotionRule $rule, array $data, array $items = []): PromotionRule
@@ -51,7 +56,7 @@ final class SavePromotion
         return DB::transaction(function () use ($rule, $data, $items, $created, $itemType) {
             $rule ??= (new PromotionRule)->forceFill([
                 'member_value' => '0', 'price_tiers' => null, 'redemption_count' => 0, 'customer_group_id' => null,
-                'seasonal_event_id' => '', 'days' => '',
+                'seasonal_event_id' => '',
             ]);
             $wasItemType = in_array($rule->type?->value, PromotionTypes::ITEM_TYPES, true);
             $before = $created ? null : Arr::only($rule->attributesToArray(), self::FIELDS);
@@ -67,7 +72,7 @@ final class SavePromotion
                 $rule->save();
             }
 
-            $itemsChanged = $itemType ? $this->syncItems($rule, $items) : ($wasItemType && $this->syncItems($rule, []));
+            $itemsChanged = $itemType ? $this->syncItems($rule, $items, $data['type']) : ($wasItemType && $this->syncItems($rule, [], $data['type']));
 
             if ($created || $dirty !== [] || $itemsChanged) {
                 $this->audit->handle($created ? 'promotion.created' : 'promotion.updated', $rule,
@@ -102,8 +107,16 @@ final class SavePromotion
 
         $data['name'] = trim((string) $data['name']);
         $data['coupon_code'] = trim((string) ($data['coupon_code'] ?? ''));
-        $data['min_quantity'] = max(1, (int) ($data['min_quantity'] ?? 1));
+        // Only a % / £ off or fixed price uses a minimum (a group offer from 2); the other types send 0, as the till's example.
+        $data['min_quantity'] = in_array($data['type'], ['percentOff', 'fixedOff', 'fixedPrice'], true) ? max(1, (int) ($data['min_quantity'] ?? 1)) : 0;
         $data['priority'] = (int) ($data['priority'] ?? 0);
+        $data['days'] = PromotionTypes::days($data['days'] ?? null);
+        $tiers = trim((string) ($data['price_tiers'] ?? ''));
+        $data['price_tiers'] = $data['type'] !== 'quantityPrice' ? null : (PriceTiers::error($tiers) === null ? PriceTiers::normalise($tiers) : $tiers);
+
+        if ($data['type'] === 'quantityPrice') {
+            $data['member_value'] = '0';   // ignored by the till for this type (ANSWERS-2026-10-01 §2a)
+        }
 
         foreach (['time_from', 'time_to'] as $time) {
             $data[$time] = ($data[$time] ?? null) ? substr((string) $data[$time], 0, 5).':00' : null;
@@ -130,7 +143,7 @@ final class SavePromotion
      *
      * @param  list<array{id?: string|null, scope: string, target_id: string, group_no?: int|string|null, quantity?: int|string|null, is_excluded?: bool|null}>  $items
      */
-    private function syncItems(PromotionRule $rule, array $items): bool
+    private function syncItems(PromotionRule $rule, array $items, string $type): bool
     {
         $existing = PromotionItem::query()->where('promotion_rule_id', $rule->id)->get()->keyBy('id');
         $kept = [];
@@ -140,7 +153,7 @@ final class SavePromotion
             $item = isset($input['id']) && $existing->has($input['id']) ? $existing->get($input['id']) : new PromotionItem;
             $item->forceFill([
                 'promotion_rule_id' => $rule->id, 'scope' => $input['scope'], 'target_id' => $input['target_id'],
-                'group_no' => max(1, (int) ($input['group_no'] ?? 1)), 'quantity' => max(1, (int) ($input['quantity'] ?? 1)),
+                'group_no' => $type === 'mealDeal' ? max(1, (int) ($input['group_no'] ?? 1)) : 0, 'quantity' => max(1, (int) ($input['quantity'] ?? 1)),
                 'is_excluded' => (bool) ($input['is_excluded'] ?? false),
             ]);
             $item->attribute_filter ??= null;

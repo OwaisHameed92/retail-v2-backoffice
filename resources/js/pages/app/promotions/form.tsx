@@ -1,6 +1,7 @@
 import { OFFER_TONES } from '@/components/app/pricing/format';
 import { type PromotionFormProps, type PromotionValues } from '@/components/app/pricing/types';
 import { OfferItems } from '@/components/app/promotions/offer-items';
+import { DAYS, tiersString } from '@/components/app/promotions/offer-pickers';
 import { DealSection, ITEM_TYPES, TargetSection, WhenSection } from '@/components/app/promotions/offer-sections';
 import { CheckField } from '@/components/app/setup/fields';
 import { ConfirmDialog } from '@/components/shared/confirm-dialog';
@@ -41,6 +42,11 @@ const blank = (today: string, shop: string | null): PromotionValues => ({
     time_to: '',
     is_active: true,
     items: [],
+    price_tiers: [
+        { quantity: '2', price: '' },
+        { quantity: '3', price: '' },
+    ],
+    days: DAYS.map((d) => d.value),
 });
 
 export default function PromotionFormPage({ promotion, options, restrictedShop, canEdit, today }: PromotionFormProps) {
@@ -52,7 +58,12 @@ export default function PromotionFormPage({ promotion, options, restrictedShop, 
 
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
-        transform((values) => ({ ...values, branch_id: values.branch_id || null, items: ITEM_TYPES.includes(values.type) ? values.items : [] }));
+        transform((values) => ({
+            ...values,
+            branch_id: values.branch_id || null,
+            items: ITEM_TYPES.includes(values.type) ? values.items : [],
+            price_tiers: values.type === 'quantityPrice' ? tiersString(values.price_tiers) : null,
+        }));
         if (promotion) {
             put(route('app.promotions.update', promotion.id), { preserveScroll: true });
         } else {

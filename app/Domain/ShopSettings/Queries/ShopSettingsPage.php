@@ -37,7 +37,7 @@ final class ShopSettingsPage
             'shop' => $shop === null ? null : ['id' => $shop->id, 'name' => $shop->name, 'code' => $shop->code],
             'shops' => $shops->map(fn (Branch $b) => ['id' => $b->id, 'name' => $b->name, 'code' => $b->code])->values()->all(),
             'canEveryShop' => $restrictedBranchId === null,
-            'sections' => self::sections(),
+            'sections' => self::sections($shop !== null),
             'values' => (object) ($shop === null ? $business : $own)->all(),
             'inherited' => (object) ($shop === null ? [] : self::inherited($catalogue, $business)),
             'overrides' => (object) ($shop === null ? self::overrides($rows, $shops) : []),
@@ -47,13 +47,16 @@ final class ShopSettingsPage
     /**
      * @return list<array<string, mixed>>
      */
-    private static function sections(): array
+    private static function sections(bool $forShop): array
     {
         $sections = [];
 
         foreach (SettingCatalogue::sections() as $id => $section) {
             $settings = [];
             foreach ($section['settings'] as $key => $definition) {
+                if ($forShop && ($definition['everyShopOnly'] ?? false)) {
+                    continue; // One value for the whole business (e.g. shop.trading_hours): set under every shop.
+                }
                 $settings[] = ['key' => $key, ...$definition];
             }
             $sections[] = ['id' => $id, 'title' => $section['title'], 'description' => $section['description'], 'settings' => $settings];

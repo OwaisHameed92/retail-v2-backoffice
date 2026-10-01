@@ -6,7 +6,8 @@
  * keeps it that way. Values are stored as text exactly as the till keeps them: `true`/`false`, `20`, `2.50`.
  *
  * Per setting: label, help, type (bool, int, money, percent, decimal, text, multiline), optional min/max (numbers),
- * max (characters for text), unit ("minutes", "days"…) and default (only the till's defaults the contract states).
+ * max (characters for text), unit ("minutes", "days"…), default (only the till's defaults the contract states) and
+ * everyShopOnly (a company-scope setting the till reads for the whole business: never set per shop).
  */
 
 return [
@@ -36,7 +37,7 @@ return [
         'title' => 'Shop details and opening hours',
         'description' => 'Printed on receipts and labels, and used by the till\'s routines. Name and address are on the Shops page.',
         'settings' => [
-            'shop.trading_hours' => ['label' => 'Opening hours', 'type' => 'multiline', 'max' => 1000, 'help' => 'As your till shows them. Easier to set day by day on the Calendar page, which fills this in for each shop.'],
+            'shop.trading_hours' => ['label' => 'Opening hours', 'type' => 'text', 'max' => 200, 'everyShopOnly' => true, 'help' => 'One line for the whole business, shown as written on the customer screen. Easier to set day by day on the Calendar page, which fills this in.'],
             'shop.phone' => ['label' => 'Phone', 'type' => 'text', 'max' => 30, 'help' => 'The number customers call.'],
             'shop.email' => ['label' => 'Email', 'type' => 'text', 'max' => 120, 'help' => 'Shown on receipts and emails to customers.'],
             'shop.website' => ['label' => 'Website', 'type' => 'text', 'max' => 120, 'help' => 'For example www.yourshop.co.uk.'],

@@ -115,3 +115,16 @@ test('suppliers, payment types and reasons reach every till, with their edits an
         ->and($changes->firstWhere('entityId', $reason->id)['payload'])->toMatchArray(['text' => 'Damaged or faulty', 'isActive' => false])
         ->and($changes->firstWhere('entityId', $supplier->id)['op'])->toBe('D');
 });
+
+test('the hourly rate and longest shift set on the portal reach every till (User is portal-owned, ANSWERS-2026-10-01 §4)', function () {
+    $member = Staff::member($this->company, 'Aisha Patel', '4821', overrides: ['rate_per_hour' => '12.21', 'max_shift_hours' => '9.5']);
+
+    foreach ([false, true] as $bradford) {
+        $user = collect(Pull::changes($this->sync->pull(0, bradford: $bradford)))->firstWhere('entityId', $member->id);
+        expect($user['payload'])->toMatchArray(['ratePerHour' => 12.21, 'maxShiftHours' => 9.5]);
+    }
+
+    $this->travel(1)->minutes();
+    app(SaveStaffMember::class)->handle($this->company, $member->id, ['name' => 'Aisha Patel', 'role_id' => Staff::CASHIER, 'rate_per_hour' => '12.60', 'max_shift_hours' => '0']);
+    expect(collect(($this->rows)('User'))->firstWhere('entityId', $member->id)['payload'])->toMatchArray(['ratePerHour' => 12.6, 'maxShiftHours' => 0]);
+});

@@ -5,6 +5,7 @@ namespace App\Domain\Staff\Queries;
 use App\Domain\Shared\Support\TableQuery;
 use App\Domain\Staff\Models\StaffBranch;
 use App\Domain\Staff\Support\TillPermissionCatalogue;
+use App\Domain\Staff\Support\TillPinHasher;
 use App\Domain\Tenancy\CurrentCompany;
 use App\Domain\Tenancy\Models\Branch;
 use App\Domain\TillData\Models\TillRole;
@@ -38,7 +39,7 @@ final class StaffScreens
 
         $page['data'] = array_map(fn (TillUser $u) => [
             'id' => $u->id, 'name' => $u->name, 'role' => $roleNames[$u->role_id] ?? null, 'isActive' => (bool) $u->is_active,
-            'hasPin' => ($u->pin_hash ?? '') !== '', 'hasFob' => ($u->rfid ?? '') !== '',
+            'hasPin' => TillPinHasher::isTillFormat($u->pin_hash), 'pinNeedsReset' => TillPinHasher::needsReset($u->pin_hash), 'hasFob' => ($u->rfid ?? '') !== '',
             'branches' => array_values(array_filter(array_map(fn ($b) => $branchNames[$b->branch_id] ?? null, ($shops[$u->id] ?? collect())->all()))),
             'ratePerHour' => $u->rate_per_hour, 'updatedAt' => $u->updated_at?->toIso8601ZuluString(),
         ], $page['data']);
@@ -68,7 +69,7 @@ final class StaffScreens
                 'is_personal_licence_holder' => (bool) $u->is_personal_licence_holder, 'big_text_mode' => (bool) $u->big_text_mode,
                 'simple_mode_override' => $u->simple_mode_override === null ? 'role' : ($u->simple_mode_override ? 'on' : 'off'),
                 'branch_ids' => StaffBranch::query()->where('till_user_id', $u->id)->pluck('branch_id')->all(),
-                'hasPin' => ($u->pin_hash ?? '') !== '', 'hasFob' => ($u->rfid ?? '') !== '',
+                'hasPin' => TillPinHasher::isTillFormat($u->pin_hash), 'pinNeedsReset' => TillPinHasher::needsReset($u->pin_hash), 'hasFob' => ($u->rfid ?? '') !== '',
                 'updatedAt' => $u->updated_at?->toIso8601ZuluString(),
             ],
             'options' => [

@@ -15,7 +15,7 @@ use Carbon\CarbonImmutable;
  * Reads the tills' clock events and rota rows for module 5.6, in the current company's scope (BelongsToCompany) and
  * the filters' shop (a one-shop user is pinned there) and person.
  *
- * Shifts are built over whole London weeks (overtime needs the full week), with a day either side so an overnight
+ * Shifts are built over whole London weeks (weekly rows need the full week), with a day either side so an overnight
  * shift pairs across the edge; callers keep the days they show with `$filters->includes($shift->day())`.
  */
 final class TimeSource
@@ -48,7 +48,7 @@ final class TimeSource
         ));
 
         HoursMath::round($shifts, $filters->rounding);
-        HoursMath::overtime($shifts, $filters->overtimeMinutes());
+        HoursMath::overtime($shifts);
 
         return $shifts;
     }

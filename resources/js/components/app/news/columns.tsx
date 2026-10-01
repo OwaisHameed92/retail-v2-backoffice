@@ -84,11 +84,13 @@ export function newsColumns(kind: NewsKind, showShop: boolean, manage: boolean, 
                                 <span className="text-muted-foreground truncate text-xs">
                                     {[text(row.original.barcode), text(row.original.vat)].filter(Boolean).join(' · ')}
                                 </span>
+                                {row.original.vatNotZero === true && <span className="text-warning-foreground text-xs">Not zero-rated</span>}
                             </div>
-                        ) : text(row.original.barcode) ? (
-                            <span className="font-mono text-xs">{row.original.barcode as string}</span>
                         ) : (
-                            dash
+                            <div className="grid justify-items-start gap-1 leading-5">
+                                {text(row.original.barcode) && <span className="font-mono text-xs">{row.original.barcode as string}</span>}
+                                <StatusPill tone="warning">No product: no VAT line on the till</StatusPill>
+                            </div>
                         ),
                 },
                 amount('cover_price', 'Cover price', 'coverPrice', true),

@@ -20,7 +20,8 @@ const count = new Intl.NumberFormat('en-GB');
 const COPY: Record<NewsKind, { icon: LucideIcon; description: string; search: string; empty: string }> = {
     titles: {
         icon: Newspaper,
-        description: 'The papers and magazines your tills sell, for every shop or one shop, with their wholesaler and cover price.',
+        description:
+            'The papers and magazines your tills sell, for every shop or one shop, with their wholesaler and cover price. Delivery rounds and customer news accounts are not in the till yet.',
         search: 'Search by title, publisher or barcode',
         empty: 'Add the papers and magazines you sell. Each shop’s tills get them at their next sync.',
     },
