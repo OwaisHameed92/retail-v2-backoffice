@@ -40,7 +40,7 @@ class LicenceApiController extends Controller
     {
         $note = $request->validated('note');
 
-        return self::json($deactivate->handle((string) $request->validated('registerId'), $request->tillRequest(), (string) $request->validated('reason'), is_string($note) ? $note : null));
+        return self::json($deactivate->handle((string) $request->validated('registerId'), $request->tillRequest(), (string) $request->validated('reason'), is_string($note) ? $note : null, $request->bearerToken()));
     }
 
     /**

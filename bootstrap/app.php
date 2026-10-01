@@ -5,6 +5,7 @@ use App\Http\Middleware\AssignTraceId;
 use App\Http\Middleware\EnsureCompanyAbility;
 use App\Http\Middleware\EnsureCompanyMember;
 use App\Http\Middleware\HandleInertiaRequests;
+use App\Http\Middleware\SecurityHeaders;
 use App\Http\Support\InertiaErrorPages;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -32,9 +33,13 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->web(append: [
+            SecurityHeaders::class,
             HandleInertiaRequests::class,
             AddLinkHeadersForPreloadedAssets::class,
         ]);
+
+        // Proxies that may set X-Forwarded-*: config/trustedproxy.php (TRUSTED_PROXIES, security review M3), read by the
+        // framework's global TrustProxies middleware. Default: none.
 
         // Till APIs: trace id on every request (module 0.5).
         $middleware->api(append: [

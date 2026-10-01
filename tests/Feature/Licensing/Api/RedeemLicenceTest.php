@@ -125,7 +125,8 @@ test('a token at a linked till must be live and for this business and shop; a po
     ($this->report)($key(['companyId' => self::TILL_COMPANY, 'branchId' => '01K5M1GR8T000000000000B777']), $auth)->assertStatus(422)->assertJsonPath('code', 'licence.wrong_branch');
     ($this->report)($key(['companyId' => self::TILL_COMPANY, 'branchId' => self::TILL_BRANCH, 'licenceId' => '01K5M1GR8T000000000000Y006']), $auth)->assertOk();
 
-    $ours = (string) $this->validateTill($this->licence->id, null)->json('licenceToken');
+    $held = (string) $this->licence->fresh()?->token_sha256;
+    $ours = (string) $this->till('licence/validate', [...$this->validateBody($this->licence->id, null), 'tokenSha256' => $held, 'approverKids' => ['k00000000']])->json('licenceToken');
     ($this->report)([...$request, 'key' => $ours], $auth)->assertStatus(403)->assertJsonPath('code', 'key.not_allowed');
 });
 

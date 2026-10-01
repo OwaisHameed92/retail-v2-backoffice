@@ -51,8 +51,9 @@ test('an unchanged licence answers active with licenceToken null and records the
         ->and(AuditLog::query()->where('action', 'licence.lock_changed')->count())->toBe(0);
 });
 
-test('a new token when the till holds another token or does not accept our kid', function () {
-    $other = $this->validateTill($this->licence->id, 'SSPOS1.old.token')->assertOk()->json('licenceToken');
+test('a new token when the till does not accept our kid', function () {
+    $other = $this->validateTill($this->licence->id, $this->token, overrides: ['trustedKids' => [SsposDocs::APPROVER_KID], 'approverKids' => ['k00000000']])
+        ->assertOk()->json('licenceToken');
     expect($other)->toStartWith('SSPOS1.');
 
     // Our kid is not built in, but its certificate's approver is one of the till's approverKids: accepted.
@@ -99,7 +100,7 @@ test('status matrix: expiring trial, ended (our grace), expired — expiresAt ne
         ->assertJsonPath('messages.0.text', fn (string $text) => str_contains($text, 'Renewal pending'));
 
     $this->travelTo(CarbonImmutable::parse('2026-10-15 09:00:01', 'UTC'));
-    $this->validateTill($this->licence->id, 'SSPOS1.other.token')->assertOk()
+    $this->validateTill($this->licence->id, $this->token)->assertOk()
         ->assertJsonPath('status', 'expired')
         ->assertJsonPath('licenceToken', null)
         ->assertJsonPath('nextCheckAfterSeconds', 3600)

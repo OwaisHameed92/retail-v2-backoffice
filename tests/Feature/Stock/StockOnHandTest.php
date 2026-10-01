@@ -180,3 +180,12 @@ test('the product page: each shop line, totals and the product levels', function
         ->and($props['canManage'])->toBeTrue()
         ->and(($this->props)(S::member($this->company, CompanyRole::Staff), '/app/stock/products/'.$this->ids['apples'])['canManage'])->toBeFalse();
 });
+
+test('security review M2: a one-shop manager may not change a product\'s company-wide stock levels', function () {
+    $manager = S::member($this->company, CompanyRole::Manager, $this->bradford->id);
+
+    expect(($this->props)($manager, '/app/stock/products/'.$this->ids['apples'])['canManage'])->toBeFalse();
+    $this->actingAs($manager)->put('/app/stock/products/'.$this->ids['apples'].'/levels', ['min_stock_qty' => '3'])->assertForbidden();
+
+    expect(DB::table('products')->where('id', $this->ids['apples'])->value('min_stock_qty'))->toBeNull();
+});

@@ -169,7 +169,8 @@ return [
     |
     */
 
-    'secure' => env('SESSION_SECURE_COOKIE'),
+    // Security review M4: HTTPS-only cookies in production, or whenever APP_URL is https, unless set explicitly.
+    'secure' => env('SESSION_SECURE_COOKIE', env('APP_ENV') === 'production' || str_starts_with((string) env('APP_URL', ''), 'https://')),
 
     /*
     |--------------------------------------------------------------------------

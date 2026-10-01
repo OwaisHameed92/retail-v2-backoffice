@@ -4,6 +4,7 @@ namespace App\Domain\TillData\Queries;
 
 use App\Domain\Shared\Support\Redactor;
 use App\Domain\Sync\Support\PullPayload;
+use App\Domain\Tenancy\CurrentCompany;
 use App\Domain\Tenancy\Models\Branch;
 use App\Domain\TillData\EntityRegistry;
 use App\Domain\TillData\Models\TillSyncConflict;
@@ -34,7 +35,8 @@ final class SyncConflictDetail
         $def = EntityRegistry::has($conflict->entity) ? EntityRegistry::get($conflict->entity) : null;
         $stored = $def === null ? null : self::stored($def, $conflict->company_id, $conflict->entity_id);
         $names = Branch::query()->pluck('name', 'id')->all();
-        $open = $conflict->status === 'open';
+        // A one-shop manager may look but not settle (security review M1).
+        $open = $conflict->status === 'open' && app(CurrentCompany::class)->restrictedBranchId() === null;
 
         return [
             'conflict' => [

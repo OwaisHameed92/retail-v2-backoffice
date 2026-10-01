@@ -42,4 +42,12 @@ return [
     'blocked_app_versions' => array_values(array_filter(array_map('trim', explode(',', (string) env('SYNC_BLOCKED_APP_VERSIONS', ''))))),
     'rate_limit_per_minute' => max(12, (int) env('SYNC_RATE_LIMIT_PER_MINUTE', 240)),
 
+    // Security review M6: failed Bearer checks on sync/* and cloud/migrate/complete, counted before the key lookup.
+    // Over either limit within the window → 429 rate.limited (lockout) until the window passes.
+    'failed_auth' => [
+        'per_ip' => max(1, (int) env('SYNC_FAILED_AUTH_PER_IP', 30)),
+        'per_key' => max(1, (int) env('SYNC_FAILED_AUTH_PER_KEY', 10)),
+        'window_seconds' => max(60, (int) env('SYNC_FAILED_AUTH_WINDOW_SECONDS', 900)),
+    ],
+
 ];

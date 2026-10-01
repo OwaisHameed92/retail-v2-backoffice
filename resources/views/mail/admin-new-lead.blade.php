@@ -1,19 +1,20 @@
+{{-- Visitor-typed text is Markdown-escaped (MailFormat::plain, security review L3): it renders literally, never as a link. --}}
 <x-mail::message>
 # New trial request
 
-**{{ $data->contactName }}** from **{{ $data->businessName }}** has asked for a free trial.
+**{{ \App\Domain\Mail\Support\MailFormat::plain($data->contactName) }}** from **{{ \App\Domain\Mail\Support\MailFormat::plain($data->businessName) }}** has asked for a free trial.
 
 <x-mail::facts :rows="$facts" />
 @if ($data->possibleDuplicate)
 
 <x-mail::notice>
-**Possible duplicate:** {{ $data->possibleDuplicate }}. Check before contacting them.
+**Possible duplicate:** {{ \App\Domain\Mail\Support\MailFormat::plain($data->possibleDuplicate) }}. Check before contacting them.
 </x-mail::notice>
 @endif
 @if ($data->message)
 
 <x-mail::panel>
-{{ $data->message }}
+{{ \App\Domain\Mail\Support\MailFormat::plain($data->message) }}
 </x-mail::panel>
 @endif
 

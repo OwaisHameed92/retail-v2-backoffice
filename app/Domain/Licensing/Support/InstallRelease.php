@@ -38,6 +38,7 @@ final class InstallRelease
         $licence->install_code = null;
         $licence->bound_at = null;
         $licence->token_sha256 = null;
+        $licence->previous_token_sha256 = null;
         $licence->token_kid = null;
         $licence->token_fingerprint = null;
         $licence->lock_locked = null;

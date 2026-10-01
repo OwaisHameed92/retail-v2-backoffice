@@ -14,7 +14,7 @@
         <meta name="theme-color" content="#f5f8fa">
 
         {{-- Light is the default; apply a saved dark choice before first paint (see resources/js/hooks/use-appearance.tsx). --}}
-        <script>
+        <script nonce="{{ \Illuminate\Support\Facades\Vite::cspNonce() }}">
             (function () {
                 try {
                     var t = localStorage.getItem('theme');
@@ -25,7 +25,7 @@
             })();
         </script>
 
-        @routes
+        @routes(null, \Illuminate\Support\Facades\Vite::cspNonce())
         @viteReactRefresh
         @vite(['resources/js/app.tsx', "resources/js/pages/{$page['component']}.tsx"])
         @inertiaHead

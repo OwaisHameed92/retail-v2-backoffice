@@ -42,7 +42,25 @@ final class SaveStaffMember
      */
     public function handle(Company $company, ?string $memberId, array $data): TillUser
     {
-        return $this->tenancy->runAs($company, fn () => DB::transaction(function () use ($memberId, $data): TillUser {
+        return $this->tenancy->runAs($company, function () use ($memberId, $data): TillUser {
+            // Checked before the transaction, so a refused PIN's audit row (StaffGuards, L5) is kept.
+            if ($memberId === null) {
+                $this->guards->checkPin((string) ($data['pin'] ?? ''), null);
+            }
+
+            return $this->saveInTransaction($memberId, $data);
+        });
+    }
+
+    /**
+     * @param  array{name: string, role_id: string, rate_per_hour?: string|null, max_shift_hours?: string|null,
+     *     is_service_staff?: bool, allow_commission?: bool, is_personal_licence_holder?: bool,
+     *     simple_mode_override?: bool|null, big_text_mode?: bool, is_active?: bool, preferred_culture?: string|null,
+     *     branch_ids?: list<string>, pin?: string|null}  $data
+     */
+    private function saveInTransaction(?string $memberId, array $data): TillUser
+    {
+        return DB::transaction(function () use ($memberId, $data): TillUser {
             $member = $memberId === null ? new TillUser : TillUser::query()->findOrFail($memberId);
             $name = trim($data['name']);
             $role = TillRole::query()->find($data['role_id']);
@@ -70,7 +88,6 @@ final class SaveStaffMember
             if ($member->exists) {
                 $this->guards->keepAnOwner($member, $active && $this->guards->isOwnerRole($role->id), 'role_id');
             } else {
-                $this->guards->checkPin((string) ($data['pin'] ?? ''), null);
                 $member->forceFill(['pin_hash' => $this->hasher->hash((string) $data['pin']), 'rfid' => '']);
             }
 
@@ -96,7 +113,7 @@ final class SaveStaffMember
             $this->audit->handle($before === null ? 'staff.created' : 'staff.updated', $member, $before, $this->summary($member));
 
             return $member;
-        }));
+        });
     }
 
     /**

@@ -64,10 +64,24 @@ class EnsureCompanyMember
                 return redirect()->route('admin.login');
             }
 
+            if (Impersonation::expired($session)) {
+                $companyId = $this->stopImpersonating->handle($session, 'expired');
+
+                return redirect()->route('admin.tenants.show', $companyId)->with('error', 'Your customer view ended after '.config('security.impersonation_minutes').' minutes. Start it again if you still need it.');
+            }
+
             abort_if($request->routeIs(...Impersonation::BLOCKED_ROUTES), 403, 'Not available while viewing as a customer.');
         }
 
-        $company = $this->resolver->handle($user, $session->get(SwitchCurrentCompany::SESSION_KEY));
+        $pinned = $impersonating ? Impersonation::current($session)['company_id'] ?? null : null;
+        $company = $this->resolver->handle($user, $pinned ?? $session->get(SwitchCurrentCompany::SESSION_KEY));
+
+        // M5: a support session only ever shows the business it was started for.
+        if ($pinned !== null && $company !== null && $company->id !== $pinned) {
+            $this->stopImpersonating->handle($session, 'company changed');
+
+            return redirect()->route('admin.tenants.show', $pinned)->with('error', 'That business is no longer available to this user, so the customer view ended.');
+        }
 
         if ($company === null) {
             if ($impersonating) {

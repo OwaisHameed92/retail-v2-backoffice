@@ -17,7 +17,8 @@ use Inertia\Response;
 /**
  * The tenant portal's sync conflicts screen (module 2.9B): the shop changes the portal kept out, reviewed and settled
  * here (`company.can:sync.manage`: owner and manager), and the tills' own clashes, read only. Every query runs in the
- * current company's scope: another business's conflict is simply not found.
+ * current company's scope: another business's conflict is simply not found. A one-shop manager sees only their shop's
+ * rows and cannot settle any (settling `useTill` changes what every shop uses; security review M1).
  */
 class SyncConflictController extends Controller
 {
@@ -28,12 +29,12 @@ class SyncConflictController extends Controller
 
     public function show(string $conflict): Response
     {
-        return Inertia::render('app/sync/conflict', SyncConflictDetail::conflict(SyncConflict::query()->findOrFail($conflict)));
+        return Inertia::render('app/sync/conflict', SyncConflictDetail::conflict(SyncConflictList::visible(SyncConflict::query())->findOrFail($conflict)));
     }
 
     public function resolve(ResolveSyncConflictRequest $request, string $conflict, ResolveSyncConflict $resolve): RedirectResponse
     {
-        $model = SyncConflict::query()->findOrFail($conflict);
+        $model = SyncConflictList::visible(SyncConflict::query())->findOrFail($conflict);
         $resolved = $resolve->handle($model, $request->resolution(), $request->user(), $request->note());
 
         return redirect()->route('app.sync.conflicts.show', $resolved->id)->with('success', match ($request->resolution()->value) {
@@ -45,6 +46,6 @@ class SyncConflictController extends Controller
 
     public function clash(string $clash): Response
     {
-        return Inertia::render('app/sync/clash', SyncConflictDetail::clash(TillSyncConflict::query()->findOrFail($clash)));
+        return Inertia::render('app/sync/clash', SyncConflictDetail::clash(SyncConflictList::visible(TillSyncConflict::query())->findOrFail($clash)));
     }
 }

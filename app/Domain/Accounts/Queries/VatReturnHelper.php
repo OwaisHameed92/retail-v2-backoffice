@@ -9,6 +9,7 @@ use App\Domain\Reporting\Data\ReportScope;
 use App\Domain\Reporting\Data\VatRateTotals;
 use App\Domain\Reporting\Queries\VatReport;
 use App\Domain\Reporting\Support\Units;
+use App\Domain\Shared\Support\CsvText;
 use App\Domain\Shared\Support\Money;
 use App\Domain\TillData\Models\SupplierCreditNote;
 use App\Domain\TillData\Models\SupplierInvoice;
@@ -83,8 +84,8 @@ final class VatReturnHelper
     {
         $rows = [
             ['VAT return helper (not filed)'],
-            ['Business', $business],
-            ['Shop', $shop],
+            ['Business', CsvText::safe($business)],
+            ['Shop', CsvText::safe($shop)],
             ['Period', $vat['quarter']['from'].' to '.$vat['quarter']['to']],
             [],
             ['Box', 'Description', 'Amount (£)'],

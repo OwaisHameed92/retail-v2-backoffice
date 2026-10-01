@@ -50,7 +50,8 @@ class StockController extends Controller
         return Inertia::render('app/stock/product', [
             ...$query->for($model, $request->filters()),
             'filters' => $request->filters()->toArray(),
-            'canManage' => $this->tenancy->can(Ability::StockManage),
+            // The levels are company-wide: a one-shop manager may not change them (M2).
+            'canManage' => $this->tenancy->can(Ability::StockManage) && $this->tenancy->restrictedBranchId() === null,
         ]);
     }
 

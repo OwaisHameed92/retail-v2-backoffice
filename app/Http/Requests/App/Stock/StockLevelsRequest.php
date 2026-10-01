@@ -2,22 +2,18 @@
 
 namespace App\Http\Requests\App\Stock;
 
-use Illuminate\Foundation\Http\FormRequest;
+use App\Http\Requests\App\Setup\CompanyWideWriteRequest;
 
 /**
  * A product's stock levels (module 5.1): minimum (the low-stock point), most to hold and reorder quantity. Empty =
- * not set. The route checks `stock.manage`.
+ * not set. The route checks `stock.manage`. The levels are the product's, shared by every shop, so a one-shop
+ * manager gets 403 (security review M2).
  */
-class StockLevelsRequest extends FormRequest
+class StockLevelsRequest extends CompanyWideWriteRequest
 {
     public const FIELDS = ['min_stock_qty', 'max_stock_qty', 'reorder_qty'];
 
     private const QTY = 'regex:/^\d{1,8}(\.\d{1,4})?$/';
-
-    public function authorize(): bool
-    {
-        return true;
-    }
 
     /**
      * @return array<string, mixed>

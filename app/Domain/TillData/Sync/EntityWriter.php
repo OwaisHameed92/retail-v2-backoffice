@@ -9,6 +9,7 @@ use App\Domain\TillData\Sync\Data\Rejection;
 use App\Domain\TillData\Sync\Enums\ChangeOutcome;
 use App\Domain\TillData\Sync\Enums\ConflictKind;
 use Illuminate\Support\Facades\DB;
+use RuntimeException;
 
 /**
  * Applies one entity's changes of a chunk (seq order) with one read and bulk upserts:
@@ -114,7 +115,7 @@ final class EntityWriter
         BranchDepartures::fromPush($def, $this->context, $before, $pending);
 
         foreach ($tombstones as $id => $values) {
-            DB::table($def->table)->where('id', $id)->update($values);
+            DB::table($def->table)->where('id', $id)->where('company_id', $this->context->companyId)->update($values);
         }
 
         $this->written = array_keys($pending);
@@ -304,6 +305,14 @@ final class EntityWriter
      */
     private function upsert(EntityDefinition $def, array $rows): void
     {
-        BulkWriter::upsert($def->table, $def->columns, $rows, array_values(array_diff($def->columns, ['id'])));
+        // Security review L4: an upsert never moves a row to another company. Should another company have taken an
+        // id between existing() and here, the chunk is rolled back instead of overwriting its row.
+        BulkWriter::upsert($def->table, $def->columns, $rows, array_values(array_diff($def->columns, ['id', 'company_id'])));
+
+        foreach (array_chunk(array_column($rows, 'id'), 500) as $ids) {
+            if (DB::table($def->table)->whereIn('id', $ids)->where('company_id', '!=', $this->context->companyId)->exists()) {
+                throw new RuntimeException("A {$def->entity} id in this push belongs to another company.");
+            }
+        }
     }
 }

@@ -2,12 +2,14 @@
 
 namespace App\Domain\Licensing\Api\Support;
 
+use App\Domain\Licensing\Api\TillRequest;
 use App\Domain\Shared\Exceptions\ApiException;
 use Illuminate\Cache\RateLimiter;
 
 /**
  * `licence/activate` wrong-key limit (contract v1.4.1 §17.15.1, §17.12): 5 wrong keys per install per 15 minutes,
- * then 429 `activation.too_many_attempts` with `retryAfterSeconds`. Counted on a hash of the install id.
+ * then 429 `activation.too_many_attempts` with `retryAfterSeconds`. The install id is the caller's choice, so the
+ * caller's IP has a ceiling too (`wrong_keys_per_ip`, security review L1). Counted on hashes only.
  */
 final class WrongKeyLimiter
 {
@@ -16,27 +18,33 @@ final class WrongKeyLimiter
     /**
      * @throws ApiException activation.too_many_attempts
      */
-    public function ensureAllowed(string $installId): void
+    public function ensureAllowed(TillRequest $till): void
     {
-        $bucket = self::bucket($installId);
-
-        if ($this->limiter->tooManyAttempts($bucket, self::max())) {
-            throw LicenceApiErrors::tooManyAttempts($this->limiter->availableIn($bucket));
+        foreach (self::buckets($till) as [$bucket, $max]) {
+            if ($this->limiter->tooManyAttempts($bucket, $max)) {
+                throw LicenceApiErrors::tooManyAttempts($this->limiter->availableIn($bucket));
+            }
         }
     }
 
-    public function hit(string $installId): void
+    public function hit(TillRequest $till): void
     {
-        $this->limiter->hit(self::bucket($installId), max(60, (int) config('licence.api.rate_limits.wrong_keys_window_seconds', 900)));
+        foreach (self::buckets($till) as [$bucket]) {
+            $this->limiter->hit($bucket, max(60, (int) config('licence.api.rate_limits.wrong_keys_window_seconds', 900)));
+        }
     }
 
-    private static function max(): int
+    /**
+     * @return list<array{0: string, 1: int}>
+     */
+    private static function buckets(TillRequest $till): array
     {
-        return max(1, (int) config('licence.api.rate_limits.wrong_keys_per_install', 5));
-    }
+        $buckets = [['licence-api:wrong-key:'.hash('sha256', strtoupper($till->installId)), max(1, (int) config('licence.api.rate_limits.wrong_keys_per_install', 5))]];
 
-    private static function bucket(string $installId): string
-    {
-        return 'licence-api:wrong-key:'.hash('sha256', strtoupper($installId));
+        if ($till->ip !== null && $till->ip !== '') {
+            $buckets[] = ['licence-api:wrong-key-ip:'.hash('sha256', $till->ip), max(1, (int) config('licence.api.rate_limits.wrong_keys_per_ip', 20))];
+        }
+
+        return $buckets;
     }
 }

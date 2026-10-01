@@ -92,7 +92,7 @@ test('validate replies for every status validate against the schema', function (
     $token = $this->activateTill()->json('licenceToken');
     $replies = [];
 
-    $replies['new token'] = $this->validateTill($licence->id, 'SSPOS1.other.token');
+    $replies['new token'] = $this->validateTill($licence->id, $token, overrides: ['trustedKids' => [SsposDocs::APPROVER_KID], 'approverKids' => ['k00000000']]);
     $this->travelTo(CarbonImmutable::parse('2026-10-13 09:00:00', 'UTC'));
     $replies['grace'] = $this->validateTill($licence->id, $token);
     $this->travelTo(CarbonImmutable::parse('2026-10-16 09:00:00', 'UTC'));

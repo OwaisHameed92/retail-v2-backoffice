@@ -163,3 +163,25 @@ test('tenant isolation: another business\'s owner never sees or settles these co
 test('a user with no business is never let in', function () {
     $this->actingAs(User::factory()->create())->get('/app/sync/conflicts')->assertRedirect(route('login'));
 });
+
+test('security review M1: a one-shop manager sees only their shop\'s conflicts and clashes and cannot settle any', function () {
+    $manager = $this->memberOf($this->company, CompanyRole::Manager);
+    $this->company->users()->updateExistingPivot($manager->id, ['branch_id' => $this->sync->bradford->id]);
+
+    $this->actingAs($manager)->get('/app/sync/conflicts?branch='.$this->sync->leeds->id)->assertOk()->assertInertia(fn (AssertableInertia $page) => $page
+        ->where('counts', ['open' => 1, 'resolved' => 0, 'shopPending' => 1])
+        ->where('filters.branch', $this->sync->bradford->id)
+        ->has('conflicts.data', 1)
+        ->where('conflicts.data.0.id', $this->historic->id)
+        ->has('options.branches', 1));
+
+    // Leeds' conflict is not found; Bradford's shows without the settle options; nothing can be settled.
+    $this->actingAs($manager)->get("/app/sync/conflicts/{$this->hub->id}")->assertNotFound();
+    $this->actingAs($manager)->post("/app/sync/conflicts/{$this->hub->id}/resolve", ['resolution' => 'useTill'])->assertForbidden();
+    $this->actingAs($manager)->get("/app/sync/conflicts/{$this->historic->id}")->assertOk()
+        ->assertInertia(fn (AssertableInertia $page) => $page->where('resolutions', []));
+    $this->actingAs($manager)->post("/app/sync/conflicts/{$this->historic->id}/resolve", ['resolution' => 'acknowledged'])->assertForbidden();
+    $this->actingAs($manager)->get('/app/sync/clashes/01K5VB0000000000000SC00001')->assertOk();
+
+    expect($this->hub->fresh()->status)->toBe('open')->and($this->historic->fresh()->status)->toBe('open');
+});

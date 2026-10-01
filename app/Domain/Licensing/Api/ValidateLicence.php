@@ -28,6 +28,8 @@ use Illuminate\Support\Facades\DB;
  * - Module 2.1: the branch's main till with `cloud_sync` gets a (new) sync key as `apiKey` when it has none or
  *   an admin asked for a rotation (SyncKeyDelivery); else `apiKey: null`.
  * - An install that was released from the key (admin Release, devices/deactivate, reissued key) → `released`.
+ * - Security review H2: the bound install must present the hash of the token we issued it (current, or the one
+ *   before when our last reply was lost), else 404 key.not_found + a `tokenMismatch` alert, nothing recorded or sent.
  * - Anything else → 404 key.not_found (plus a `deviceMismatch` alert when the key is bound to another install).
  */
 class ValidateLicence
@@ -55,10 +57,18 @@ class ValidateLicence
             return $this->notBound($licence, $till, $now);
         }
 
+        // H2: nothing is recorded or sent (sync key included) unless the till holds the token we issued.
+        if (! LicenceToken::isHeld($licence, $tokenSha256)) {
+            $this->alerts->raise($licence, LicenceAlertType::TokenMismatch, $till, ['attempted' => 'validate']);
+            $this->devices->record($licence, $till, DeviceHistory::REJECTED, $now);
+
+            throw LicenceApiErrors::keyNotFound();
+        }
+
         return DB::transaction(function () use ($licence, $tokenSha256, $till, $now) {
             $licence = Licence::withoutCompanyScope()->lockForUpdate()->findOrFail($licence->id);
 
-            if ($licence->device_id !== $till->installId) {
+            if ($licence->device_id !== $till->installId || ! LicenceToken::isHeld($licence, $tokenSha256)) {
                 throw LicenceApiErrors::keyNotFound();
             }
 
@@ -68,7 +78,7 @@ class ValidateLicence
             $claims = $this->tokens->claims($licence, $state, $now);
             $status = TillStatus::of($state, $claims->expiresAt, $now);
             $token = TillStatus::trades($status) && $this->tokens->needsNew($licence, $claims, $tokenSha256, $till->trustedKids, $till->approverKids)
-                ? $this->tokens->issue($licence, $claims)
+                ? $this->tokens->issue($licence, $claims, $tokenSha256)
                 : null;
             $licence->save();
             $link = $this->syncKeys->forValidation($licence, $till, $claims, $status);

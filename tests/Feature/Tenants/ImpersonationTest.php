@@ -155,3 +155,34 @@ test('customers never get an impersonation banner', function () {
 
     $this->actingAs($this->owner)->get('/app')->assertInertia(fn ($page) => $page->where('impersonation', null));
 });
+
+test('security review M5: the customer view ends by itself after the configured minutes, and that is audited', function () {
+    config(['security.impersonation_minutes' => 30]);
+    startImpersonating($this);
+    $this->get('/app')->assertOk();
+
+    $this->travel(31)->minutes();
+    $this->get('/app')->assertRedirect(route('admin.tenants.show', $this->company->id));
+
+    expect(Impersonation::active(session()->driver()))->toBeFalse()
+        ->and(Auth::guard('web')->check())->toBeFalse()
+        ->and(Auth::guard('admin')->id())->toBe($this->adminUser->id)
+        ->and(AuditLog::query()->where('action', 'company.impersonation_ended')->sole()->meta['reason'])->toBe('expired');
+});
+
+test('security review M5: the customer view is pinned to its business; switching business is refused', function () {
+    $other = $this->tenant('Corner Shop', ownerEmail: 'boss@corner.test');
+    $other->users()->attach($this->owner->id, ['role' => CompanyRole::Owner->value, 'is_active' => true]);
+    startImpersonating($this);
+
+    $this->post(route('app.company.switch'), ['company_id' => $other->id])->assertForbidden();
+
+    // Even with the session pointing elsewhere, the portal shows the business the view was started for.
+    $this->withSession(['current_company_id' => $other->id])->get('/app')->assertOk()
+        ->assertInertia(fn ($page) => $page->where('company.id', $this->company->id));
+
+    // Once the user leaves that business, the view ends instead of showing their other one.
+    $this->company->users()->updateExistingPivot($this->owner->id, ['is_active' => false]);
+    $this->get('/app')->assertRedirect(route('admin.tenants.show', $this->company->id));
+    expect(Impersonation::active(session()->driver()))->toBeFalse();
+});

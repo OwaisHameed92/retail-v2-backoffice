@@ -9,7 +9,7 @@ use SensitiveParameter;
  * = 160 random bits, e.g. `SSK-7K2Q-9DMF-3XRA-P8T5-…`. It is typed on the till ("Connect") or arrives in a
  * licence reply, then travels as `Authorization: Bearer <key>`.
  *
- * Stored as an HMAC-SHA256 (APP_KEY) of the canonical form (upper case, no spaces or dashes) + the last 4
+ * Stored as an HMAC-SHA256 (APP_KEY; APP_PREVIOUS_KEYS still match) of the canonical form (upper case, no spaces or dashes) + the last 4
  * characters. The plain key is never stored, logged or put in a URL.
  */
 final class SyncKeySecret
@@ -47,6 +47,19 @@ final class SyncKeySecret
     public static function hash(#[SensitiveParameter] string $key): string
     {
         return hash_hmac('sha256', self::canonical($key), (string) config('app.key'));
+    }
+
+    /**
+     * The key's hash under APP_KEY and every APP_PREVIOUS_KEYS entry (security review L10), so stored keys survive an
+     * APP_KEY rotation. Look up with `whereIn('key_hash', SyncKeySecret::hashCandidates($key))`; the first is hash().
+     *
+     * @return list<string>
+     */
+    public static function hashCandidates(#[SensitiveParameter] string $key): array
+    {
+        $secrets = array_filter([config('app.key'), ...(array) config('app.previous_keys', [])], fn ($secret) => is_string($secret) && $secret !== '');
+
+        return array_values(array_unique(array_map(fn (string $secret) => hash_hmac('sha256', self::canonical($key), $secret), $secrets)));
     }
 
     public static function last4(#[SensitiveParameter] string $key): string

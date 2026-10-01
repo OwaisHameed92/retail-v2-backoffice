@@ -89,3 +89,28 @@ and `cloud/migrate/complete`.
 - `npm audit --omit=dev`: 15 (2 critical, 8 high), mostly build tooling (vite, rollup, shell-quote, form-data)
   listed under `dependencies`. `axios` (high) ships to the browser via Inertia.
 - *Fix:* `npm audit fix`, bump vite/Inertia, and move build tools to `devDependencies`.
+
+## Status (Fix A, 2026-10-01)
+
+| Finding | Status | What was done / why it remains |
+|---|---|---|
+| H1 Admin 2FA | remaining | Done separately (2FA / audit-log work), not part of Fix A. |
+| H2 validate | fixed | `licence/validate` answers only when `tokenSha256` is the hash of the token we issued that install (current, or the one before it when our reply was lost; `licences.previous_token_sha256`). Otherwise 404 `key.not_found`, a `tokenMismatch` alert, nothing recorded and no sync key sent. Tests: `tests/Feature/Security/TillProofTest.php`. |
+| H2 deactivate | fixed (partly by contract) | §17.7: "the branch key when the till holds one". A till we sent the branch's sync key must send a usable key of that branch as Bearer, else 401 `auth.invalid_key` + `deviceMismatch` alert. A second till holds no key and the request schema has no token hash or install code, so its ids remain the only proof: it is rate limited per install and per IP, audited (`licence.released`) and raises a `tillDeactivated` alert. Asked EPOS to add `tokenSha256` + `installCode` (DECISIONS). |
+| M1 sync conflicts | fixed | List, counts, show and clash views are limited to the one-shop manager's shop (company-wide conflicts hidden); resolving needs an every-shop user (`ResolveSyncConflictRequest` extends `CompanyWideWriteRequest`); the resolve options are hidden. |
+| M2 stock levels | fixed | `StockLevelsRequest` extends `CompanyWideWriteRequest`; `canManage` is false for one-shop managers. |
+| M3 proxies | fixed | `config/trustedproxy.php` reads `TRUSTED_PROXIES` (IPs/CIDRs, `cloudflare`, or `*`); default trusts none. |
+| M4 headers, cookies | fixed | `SecurityHeaders` on the web group: nonce CSP (Vite dev server allowed while hot), `frame-ancestors 'self'` + `X-Frame-Options: SAMEORIGIN`, `nosniff`, `Referrer-Policy`, `Permissions-Policy`, HSTS on HTTPS. Session cookie secure by default in production or with an https `APP_URL`; `SameSite=Lax`, HttpOnly. A `__Host-` cookie name was not adopted (it would sign every user out and breaks with `SESSION_DOMAIN`). |
+| M5 impersonation | fixed | Ends after `IMPERSONATION_MINUTES` (default 60), audited `company.impersonation_ended` with reason `expired`; pinned to the started business (switching refused, a different resolved business ends it). Start/stop were already audited. |
+| M6 sync throttle | fixed | `SyncAuthLimiter` in `AuthenticateSyncKey` (sync/* and `cloud/migrate/complete`): failures per IP (30) and per key hash (10) per 15 min, then 429 until the window passes. |
+| L1 | fixed | Per-IP ceiling for validate/redeem/deactivate (`per_ip_per_hour` 600) and for wrong keys (`wrong_keys_per_ip` 20). |
+| L2 | fixed | `CsvText::safe` (shared with `SalesCsv`) on the VAT CSV business and shop names. |
+| L3 | fixed | `MailFormat::plain` escapes Markdown in the visitor's name, business and message. |
+| L4 | fixed | `DeliveryRows` filters `purchase_orders` by `company_id`; `EntityWriter` never updates `company_id`, fails the chunk if an id belongs to another company after the upsert, and scopes tombstones by company. |
+| L5 | fixed | Message no longer names a colleague; every refusal is audited (`staff.pin_refused`, no PIN stored). Uniqueness stays: the till signs in by PIN. |
+| L6 | fixed | `Password::defaults()`: 10+ characters, `uncompromised()` in production; `throttle:6,1` on forgot, reset and confirm password. |
+| L7 | fixed | `local` disk `serve` is false. |
+| L8 | fixed | Turnstile reply must have action `trial` (`TURNSTILE_ACTION`) and a hostname of `APP_URL`, `PUBLIC_FORM_ORIGINS` or `TURNSTILE_HOSTNAMES`; the website widget needs `data-action="trial"`. |
+| L9 | accepted risk | Fob codes stay plain text: the contract sends the raw `rfid` both ways. Never in props, logs or the session. |
+| L10 | fixed | `SyncKeySecret::hashCandidates` checks `APP_PREVIOUS_KEYS`; a key found under an old APP_KEY is re-hashed with the current one. |
+| Dependencies | fixed | `npm audit fix` (lockfile, no major upgrades: vite 6.4, axios 1.20, rollup 4.63); build tools moved to `devDependencies`. `npm audit`: 0. Run `npm ci` to install. `composer audit`: clean. |

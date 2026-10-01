@@ -41,6 +41,10 @@ return [
         'site_key' => (string) env('TURNSTILE_SITE_KEY', ''),
         'secret' => (string) env('TURNSTILE_SECRET', ''),
         'verify_url' => 'https://challenges.cloudflare.com/turnstile/v0/siteverify',
+        // Security review L8: the token must come from our widget (`action`) on one of our sites (`hostname`).
+        // Empty hostnames = APP_URL's host and the PUBLIC_FORM_ORIGINS hosts. An empty action skips that check.
+        'action' => (string) env('TURNSTILE_ACTION', 'trial'),
+        'hostnames' => array_values(array_filter(array_map('trim', explode(',', (string) env('TURNSTILE_HOSTNAMES', ''))))),
     ],
 
     // GoCardless Direct Debit (module 1.12). Empty token = Direct Debit off (billing works as cash only). The

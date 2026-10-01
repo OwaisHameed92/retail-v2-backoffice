@@ -3,19 +3,15 @@
 namespace App\Http\Requests\App;
 
 use App\Domain\TillData\Sync\Enums\ConflictResolution;
-use Illuminate\Foundation\Http\FormRequest;
+use App\Http\Requests\App\Setup\CompanyWideWriteRequest;
 use Illuminate\Validation\Rule;
 
 /**
- * Settling a sync conflict on the tenant portal (module 2.9B). Route: `company.can:sync.manage`.
+ * Settling a sync conflict on the tenant portal (module 2.9B). Route: `company.can:sync.manage`. A one-shop manager
+ * gets 403: `useTill` overwrites a row every shop shares (security review M1).
  */
-class ResolveSyncConflictRequest extends FormRequest
+class ResolveSyncConflictRequest extends CompanyWideWriteRequest
 {
-    public function authorize(): bool
-    {
-        return true;
-    }
-
     /**
      * @return array<string, mixed>
      */

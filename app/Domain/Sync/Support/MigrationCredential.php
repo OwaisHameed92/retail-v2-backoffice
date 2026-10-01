@@ -42,13 +42,13 @@ final class MigrationCredential
      */
     public function resolve(#[SensitiveParameter] string $code, TillRequest $till): array
     {
-        $this->wrongCodes->ensureAllowed($till->installId);
+        $this->wrongCodes->ensureAllowed($till);
 
         try {
             $found = SyncKeySecret::looksValid($code) ? $this->syncKey($code) : $this->licenceKey($code, $till);
         } catch (ApiException $e) {
             if (in_array($e->errorCode, ['activation.code_not_found', 'activation.code_expired'], true)) {
-                $this->wrongCodes->hit($till->installId);
+                $this->wrongCodes->hit($till);
             }
 
             throw $e;
@@ -69,7 +69,7 @@ final class MigrationCredential
      */
     private function syncKey(#[SensitiveParameter] string $code): array
     {
-        $key = SyncKey::withoutCompanyScope()->where('key_hash', SyncKeySecret::hash($code))->first() ?? throw MigrationErrors::codeNotFound();
+        $key = SyncKey::withoutCompanyScope()->whereIn('key_hash', SyncKeySecret::hashCandidates($code))->first() ?? throw MigrationErrors::codeNotFound();
 
         if (! $key->isUsable(CarbonImmutable::now())) {
             throw MigrationErrors::codeExpired();

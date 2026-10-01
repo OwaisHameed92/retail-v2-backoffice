@@ -126,11 +126,11 @@ test('a till that reports no sync gets a key when the current one was typed or w
 
 test('hubUrl is sent with the key only when sync runs on another https host', function () {
     config(['sync.hub_url' => 'https://portal.test/']);
-    $this->activateTill()->assertOk()->assertJsonMissingPath('hubUrl');
+    $token = $this->activateTill()->assertOk()->assertJsonMissingPath('hubUrl')->json('licenceToken');
 
     app(RequestSyncKeyRotation::class)->handle($this->licence->branch);
     config(['sync.hub_url' => 'https://hub.sspos.test']);
-    $this->validateTill($this->licence->id, 'x')->assertOk()->assertJsonPath('hubUrl', 'https://hub.sspos.test');
+    $this->validateTill($this->licence->id, $token)->assertOk()->assertJsonPath('hubUrl', 'https://hub.sspos.test');
 });
 
 test('a replayed activate answers with the same key but the cache never holds it in plain text', function () {
@@ -151,7 +151,7 @@ test('deactivating the main till that was sent the branch key revokes and rotate
     $apiKey = (string) $this->activateTill()->assertOk()->json('apiKey');
     $sent = currentSyncKeyOf($this->licence);
 
-    $reply = $this->deactivateTill()->assertOk()->assertJsonPath('apiKeyRevoked', true)->assertJsonPath('seat', 'deactivated');
+    $reply = $this->deactivateTill(apiKey: $apiKey)->assertOk()->assertJsonPath('apiKeyRevoked', true)->assertJsonPath('seat', 'deactivated');
     expect($this->schemaErrors($reply, 'deactivate-reply.schema.json'))->toBe([])
         ->and($sent->fresh()->revoked_at)->not->toBeNull()
         ->and($sent->fresh()->isUsable(CarbonImmutable::now()))->toBeFalse()

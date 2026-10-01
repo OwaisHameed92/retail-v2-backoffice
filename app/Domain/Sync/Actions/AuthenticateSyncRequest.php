@@ -42,7 +42,7 @@ class AuthenticateSyncRequest
         }
 
         $now = CarbonImmutable::now();
-        $key = SyncKey::withoutCompanyScope()->where('key_hash', SyncKeySecret::hash($bearer))->first() ?? throw SyncApiErrors::invalidKey();
+        $key = SyncKey::withoutCompanyScope()->whereIn('key_hash', SyncKeySecret::hashCandidates($bearer))->first() ?? throw SyncApiErrors::invalidKey();
         $branch = Branch::withoutCompanyScope()->find($key->branch_id);
         $company = Company::query()->find($key->company_id);
 
@@ -63,6 +63,7 @@ class AuthenticateSyncRequest
         }
 
         $this->touch($key, $now);
+        self::rehash($key, $bearer);
 
         return new SyncCaller($company, $branch, $key->id, $this->register($ids, $branch, trim((string) $registerHeader)), $tillCompany, $tillBranch, $ids);
     }
@@ -76,6 +77,16 @@ class AuthenticateSyncRequest
         $id = $ids->toPortal(IdKind::Register, $header);
 
         return Register::withoutCompanyScope()->withTrashed()->where('branch_id', $branch->id)->whereKey($id)->exists() ? $id : null;
+    }
+
+    /** A key found under an APP_PREVIOUS_KEYS entry is stored again under the current APP_KEY (L10). */
+    private static function rehash(SyncKey $key, #[SensitiveParameter] string $bearer): void
+    {
+        $current = SyncKeySecret::hash($bearer);
+
+        if (! hash_equals($key->key_hash, $current)) {
+            SyncKey::withoutCompanyScope()->whereKey($key->id)->update(['key_hash' => $current]);
+        }
     }
 
     private function touch(SyncKey $key, CarbonImmutable $now): void

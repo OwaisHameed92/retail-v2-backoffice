@@ -3,6 +3,7 @@
 use App\Domain\Tenancy\Enums\CompanyRole;
 use App\Domain\Tenancy\Models\Branch;
 use App\Domain\Tenancy\Models\Company;
+use Illuminate\Support\Facades\DB;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\Feature\Purchasing\PurchasingFixtures as F;
 use Tests\Feature\Sync\SyncApiFixtures;
@@ -163,4 +164,14 @@ test('another business never sees these documents', function () {
     $this->actingAs($otherOwner)->get("/app/purchasing/returns/{$this->return}")->assertNotFound();
     $this->actingAs($otherOwner)->get('/app/purchasing/statements/'.F::SUPPLIER)->assertNotFound();
     $this->actingAs($otherOwner)->get('/app/purchasing/statements')->assertOk()->assertInertia(fn (Assert $page) => $page->where('balances', []));
+});
+
+test('security review L4: a delivery never shows another business\'s order, even when the till names its id', function () {
+    $other = Company::factory()->create();
+    $theirPo = F::row('purchase_orders', $other, Branch::factory()->forCompany($other)->create(), ['supplier_id' => F::SUPPLIER, 'number' => 9, 'status' => 'sent',
+        'origin' => 'branch', 'order_no' => 'PO-SECRET', 'branch_code' => 'XXX', 'reference' => 'PO-SECRET-9', 'net_total' => '1.00', 'vat_total' => '0.00', 'gross_total' => '1.00']);
+    DB::table('goods_receipts')->where('id', $this->grn)->update(['purchase_order_id' => $theirPo]);
+
+    $this->actingAs($this->owner)->get('/app/purchasing/deliveries')->assertOk()
+        ->assertInertia(fn (Assert $page) => $page->where('rows.data.0.reference', 'DN-7781')->where('rows.data.0.order', null));
 });

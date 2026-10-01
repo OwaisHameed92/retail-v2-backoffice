@@ -119,7 +119,7 @@ test('a filled honeypot gets a normal reply but creates nothing', function () {
 test('Turnstile is checked server-side when a secret is set', function () {
     config(['services.turnstile.secret' => 'secret-key']);
     Http::fake(['challenges.cloudflare.com/*' => Http::sequence()
-        ->push(['success' => true])
+        ->push(['success' => true, 'action' => 'trial', 'hostname' => parse_url((string) config('app.url'), PHP_URL_HOST)])
         ->push(['success' => false, 'error-codes' => ['invalid-input-response']])]);
 
     postTrial($this)->assertCreated();
@@ -231,4 +231,18 @@ test('the hosted /trial page renders for guests', function () {
             ->where('turnstileSiteKey', '0x4AAAAAAA-site')
             ->has('businessTypes', 10)
             ->where('businessTypes.0.value', 'ConvenienceOffLicence'));
+});
+
+test('security review L8: a passing Turnstile token must carry our action and one of our hostnames', function () {
+    config(['services.turnstile.secret' => 'secret-key', 'app.url' => 'https://portal.sspos.test', 'sspos.public_form_origins' => ['https://www.switchandsave.test']]);
+    Http::fake(['challenges.cloudflare.com/*' => Http::sequence()
+        ->push(['success' => true, 'action' => 'login', 'hostname' => 'portal.sspos.test'])
+        ->push(['success' => true, 'action' => 'trial', 'hostname' => 'evil.test'])
+        ->push(['success' => true, 'action' => 'trial', 'hostname' => 'www.switchandsave.test'])]);
+
+    postTrial($this)->assertStatus(422)->assertJsonPath('code', 'captcha.failed');
+    postTrial($this, ['email' => 'b@shop.test', 'phone' => '0113 496 0002'])->assertStatus(422)->assertJsonPath('code', 'captcha.failed');
+    postTrial($this, ['email' => 'c@shop.test', 'phone' => '0113 496 0003'])->assertCreated();
+
+    expect(Lead::query()->count())->toBe(1);
 });

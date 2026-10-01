@@ -21,6 +21,7 @@ use App\Domain\Tenancy\Events\TenantCreated;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Validation\Rules\Password;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -46,6 +47,10 @@ class AppServiceProvider extends ServiceProvider
 
             return null;
         });
+
+        // Customer passwords (security review L6): at least 10 characters, and never one known from a data breach
+        // (Have I Been Pwned, k-anonymity; checked in production only, so tests and local work stay offline).
+        Password::defaults(fn () => app()->isProduction() ? Password::min(10)->uncompromised() : Password::min(10));
 
         // Licences follow the tills (module 1.3). Synchronous: they run inside the tenancy actions' transactions.
         Event::listen(RegisterAdded::class, IssueLicenceForNewTill::class);

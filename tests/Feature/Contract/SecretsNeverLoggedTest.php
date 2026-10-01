@@ -62,9 +62,9 @@ test('§21.8: licence keys, sync keys, tokens and the Authorization header never
     $this->activateTill(install: self::OTHER_INSTALL, code: self::OTHER_CODE)->assertStatus(409);
     $this->till('licence/activate', ['licenceKey' => self::KEY])->assertStatus(400);
     $this->validateTill($licence->id, $token)->assertOk();
-    $this->validateTill($licence->id, 'SSPOS1.not.ours')->assertOk();
+    $this->validateTill($licence->id, 'SSPOS1.not.ours')->assertNotFound();
     $this->postJson('/api/v1/licence/validate?licenceKey='.self::KEY, [], $this->tillHeaders())->assertStatus(400);
-    $this->deactivateTill('01K5T0Q8C4000000000000R00F')->assertOk()->assertJsonPath('apiKeyRevoked', true);
+    $this->deactivateTill('01K5T0Q8C4000000000000R00F', apiKey: (string) $activated->json('apiKey'))->assertOk()->assertJsonPath('apiKeyRevoked', true);
     $this->validateTill($licence->id, $token)->assertOk()->assertJsonPath('status', 'released');
 
     // Sync calls of another business: hello, pushes (a rejected row, a deny-listed setting, a secret an older

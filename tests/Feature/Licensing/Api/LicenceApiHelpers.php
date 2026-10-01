@@ -160,9 +160,12 @@ trait LicenceApiHelpers
         return $this->till('licence/validate', $this->validateBody($licenceId, $token, $install, $overrides));
     }
 
-    public function deactivateTill(string $registerId = self::TILL_REGISTER, string $install = self::INSTALL): TestResponse
+    /** `$apiKey`: the branch sync key the till holds, sent as Bearer (§17.7; required from a till we sent it, H2). */
+    public function deactivateTill(string $registerId = self::TILL_REGISTER, string $install = self::INSTALL, ?string $apiKey = null): TestResponse
     {
-        return $this->till('devices/deactivate', ['registerId' => $registerId, 'installId' => $install, 'reason' => 'removed', 'note' => null]);
+        $headers = [...$this->tillHeaders($install), ...($apiKey !== null ? ['Authorization' => 'Bearer '.$apiKey] : [])];
+
+        return $this->till('devices/deactivate', ['registerId' => $registerId, 'installId' => $install, 'reason' => 'removed', 'note' => null], $headers);
     }
 
     public function verifyToken(TestResponse $response): VerifiedSsposToken

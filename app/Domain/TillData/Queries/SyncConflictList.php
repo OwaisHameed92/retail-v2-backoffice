@@ -3,6 +3,7 @@
 namespace App\Domain\TillData\Queries;
 
 use App\Domain\Shared\Support\TableQuery;
+use App\Domain\Tenancy\CurrentCompany;
 use App\Domain\Tenancy\Models\Branch;
 use App\Domain\TillData\Enums\SyncConflictResolution;
 use App\Domain\TillData\Models\TillSyncConflict;
@@ -10,6 +11,7 @@ use App\Domain\TillData\Sync\Enums\ConflictKind;
 use App\Domain\TillData\Sync\Enums\ConflictResolution;
 use App\Domain\TillData\Sync\Models\SyncConflict;
 use Carbon\CarbonImmutable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
@@ -32,22 +34,25 @@ final class SyncConflictList
     public static function for(Request $request): array
     {
         $tab = $request->query('tab') === 'shop' ? 'shop' : 'portal';
-        $branches = Branch::query()->orderBy('name')->get(['id', 'name']);
+        $restricted = app(CurrentCompany::class)->restrictedBranchId();
+        $branches = Branch::query()->when($restricted !== null, fn ($q) => $q->whereKey($restricted))->orderBy('name')->get(['id', 'name']);
         $names = $branches->pluck('name', 'id')->all();
-        $branch = self::option($request, 'branch', array_keys($names));
+        $branch = $restricted ?? self::option($request, 'branch', array_keys($names));
+        $conflicts = fn () => self::visible(SyncConflict::query());
+        $clashes = fn () => self::visible(TillSyncConflict::query());
 
         $props = [
             'tab' => $tab,
             'search' => TableQuery::from($request)->search(),
             'counts' => [
-                'open' => SyncConflict::query()->open()->count(),
-                'resolved' => SyncConflict::query()->where('status', 'resolved')->count(),
-                'shopPending' => TillSyncConflict::query()->where(fn ($q) => $q->whereNull('resolution')->orWhere('resolution', 'pending'))->count(),
+                'open' => $conflicts()->open()->count(),
+                'resolved' => $conflicts()->where('status', 'resolved')->count(),
+                'shopPending' => $clashes()->where(fn ($q) => $q->whereNull('resolution')->orWhere('resolution', 'pending'))->count(),
             ],
             'stats' => [
-                'hubRows' => SyncConflict::query()->open()->whereIn('kind', ['hubEditNewer', 'hubVersionNewer', 'branchEditNewer'])->count(),
-                'historic' => SyncConflict::query()->open()->whereIn('kind', ['immutableChange', 'tenancyDelete'])->count(),
-                'oldestOpenAt' => self::iso(SyncConflict::query()->open()->min('created_at')),
+                'hubRows' => $conflicts()->open()->whereIn('kind', ['hubEditNewer', 'hubVersionNewer', 'branchEditNewer'])->count(),
+                'historic' => $conflicts()->open()->whereIn('kind', ['immutableChange', 'tenancyDelete'])->count(),
+                'oldestOpenAt' => self::iso($conflicts()->open()->min('created_at')),
             ],
             'options' => [
                 'kinds' => array_map(fn (ConflictKind $k) => ['value' => $k->value, 'label' => $k->label()], ConflictKind::cases()),
@@ -58,7 +63,7 @@ final class SyncConflictList
 
         if ($tab === 'shop') {
             $resolution = self::option($request, 'resolution', ['all', ...array_column(SyncConflictResolution::cases(), 'value')]) ?? 'pending';
-            $query = TillSyncConflict::query()
+            $query = $clashes()
                 ->when($resolution === 'pending', fn ($q) => $q->where(fn ($w) => $w->whereNull('resolution')->orWhere('resolution', 'pending')))
                 ->when(! in_array($resolution, ['pending', 'all'], true), fn ($q) => $q->where('resolution', $resolution))
                 ->when($branch !== null, fn ($q) => $q->where('branch_id', $branch));
@@ -76,7 +81,7 @@ final class SyncConflictList
 
         $status = self::option($request, 'status', ['open', 'resolved', 'all']) ?? 'open';
         $kind = self::option($request, 'kind', array_column(ConflictKind::cases(), 'value'));
-        $query = SyncConflict::query()
+        $query = $conflicts()
             ->when($status !== 'all', fn ($q) => $q->where('status', $status))
             ->when($kind !== null, fn ($q) => $q->where('kind', $kind))
             ->when($branch !== null, fn ($q) => $q->where('branch_id', $branch));
@@ -84,6 +89,22 @@ final class SyncConflictList
         return [...$props, 'filters' => ['status' => $status, 'kind' => $kind, 'branch' => $branch], 'conflicts' => TableQuery::from($request)
             ->searchable(['entity', 'entity_id', 'detail'])->sortable(['created_at', 'entity', 'kind'])->defaultSort('created_at', 'desc')
             ->paginate($query, fn (SyncConflict $c) => self::row($c, $names))];
+    }
+
+    /**
+     * Security review M1: a one-shop manager (module 3.3) sees only their shop's conflicts and clashes, never the
+     * company-wide ones (no shop) or another shop's. Everyone else sees the whole company.
+     *
+     * @template TModel of SyncConflict|TillSyncConflict
+     *
+     * @param  Builder<TModel>  $query
+     * @return Builder<TModel>
+     */
+    public static function visible(Builder $query): Builder
+    {
+        $restricted = app(CurrentCompany::class)->restrictedBranchId();
+
+        return $query->when($restricted !== null, fn (Builder $q) => $q->where('branch_id', $restricted));
     }
 
     /**

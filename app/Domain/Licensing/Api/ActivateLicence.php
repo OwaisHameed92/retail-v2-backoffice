@@ -98,7 +98,7 @@ class ActivateLicence
      */
     private function find(#[SensitiveParameter] string $licenceKey, TillRequest $till): Licence
     {
-        $this->wrongKeys->ensureAllowed($till->installId);
+        $this->wrongKeys->ensureAllowed($till);
 
         try {
             $key = LicenceKey::tryParse($licenceKey) ?? throw LicenceApiErrors::keyNotFound();
@@ -115,7 +115,7 @@ class ActivateLicence
 
             return $licence;
         } catch (ApiException $e) {
-            $this->wrongKeys->hit($till->installId);
+            $this->wrongKeys->hit($till);
 
             throw $e;
         }

@@ -84,7 +84,7 @@ export interface TimelineEvent {
 }
 
 export type LicenceAlertType =
-    | 'sameKeyTwoDevices' | 'deviceMismatch' | 'reissuedKeyUsed' | 'tillIdsConflict'
+    | 'sameKeyTwoDevices' | 'deviceMismatch' | 'tokenMismatch' | 'tillDeactivated' | 'reissuedKeyUsed' | 'tillIdsConflict'
     | 'tillOffline'
     | 'syncFailing'
     | 'syncStalled'

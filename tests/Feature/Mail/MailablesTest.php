@@ -2,6 +2,7 @@
 
 use App\Domain\Mail\Data\AccountSuspendedData;
 use App\Domain\Mail\Data\LicenceRenewedData;
+use App\Domain\Mail\Data\NewLeadData;
 use App\Domain\Mail\Data\RenewedTillData;
 use App\Domain\Mail\Data\SetPasswordData;
 use App\Domain\Mail\Data\TillKeyData;
@@ -188,4 +189,27 @@ it('sends new lead alerts to the staff inbox with a link to leads', function () 
 
 it('replies to support on customer emails', function () {
     WelcomeTenantMail::sample()->assertHasReplyTo('help@switchandsave.test');
+});
+
+it('security review L3: a visitor\'s Markdown in the new-lead email renders as plain text, never a link', function () {
+    $mail = new AdminNewLeadMail(new NewLeadData(
+        contactName: '[Imran](https://evil.test/a)',
+        businessName: '**Urgent** <b>shop</b>',
+        email: 'imran@patelnews.co.uk',
+        phone: null,
+        shops: 1,
+        tills: 1,
+        receivedAt: now(),
+        message: "# Reset your password\n\n[Click here](https://evil.test/login) - it's quick. Thanks!",
+    ));
+    $html = $mail->render();
+
+    expect($html)->not->toContain('href="https://evil.test')
+        ->not->toContain('<strong>Urgent</strong>')
+        ->not->toContain('<b>shop</b>')
+        ->not->toContain('<h1>Reset your password</h1>')
+        ->not->toContain('\\[')
+        ->toContain('[Click here](https://evil.test/login)')
+        ->toContain('[Imran](https://evil.test/a)')
+        ->toContain('Thanks!');
 });

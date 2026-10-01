@@ -2,6 +2,8 @@
 
 namespace App\Domain\Staff\Support;
 
+use App\Domain\Shared\Actions\RecordAudit;
+use App\Domain\Tenancy\CurrentCompany;
 use App\Domain\TillData\Models\TillRole;
 use App\Domain\TillData\Models\TillUser;
 use Illuminate\Validation\ValidationException;
@@ -13,7 +15,11 @@ use Illuminate\Validation\ValidationException;
  */
 final class StaffGuards
 {
-    public function __construct(private readonly TillPinHasher $hasher) {}
+    public function __construct(
+        private readonly TillPinHasher $hasher,
+        private readonly RecordAudit $audit,
+        private readonly CurrentCompany $tenancy,
+    ) {}
 
     /**
      * @throws ValidationException
@@ -36,7 +42,11 @@ final class StaffGuards
 
         foreach ($hashes as $hash) {
             if ($this->hasher->verify($pin, is_string($hash) ? $hash : null)) {
-                throw ValidationException::withMessages([$field => 'Another staff member already uses this PIN. Choose a different one.']);
+                // Security review L5: the till needs unique PINs, but the reply does not say a colleague holds it, and
+                // every clash is audited (a manager trying PINs shows up in the audit log).
+                $this->audit->handle('staff.pin_refused', meta: array_filter(['member_id' => $exceptId, 'reason' => 'in_use']), companyId: $this->tenancy->id());
+
+                throw ValidationException::withMessages([$field => 'This PIN cannot be used. Choose a different one.']);
             }
         }
     }

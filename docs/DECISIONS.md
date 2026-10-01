@@ -729,3 +729,16 @@ still v1 (`X-SSPOS-Contract: 1`); the pack was copied over the contract folder (
 | Shell | White full-height sidebar with the full logo (`BrandLogo`) and the area label at the top; the 64px light top bar is sticky to the right of it (`ShellFrame`). The impersonation banner is fixed above both (`--shell-banner`). |
 | Help icon | The top-bar Help menu is the chat bubble ("Help and support"); no chat feature is implied. |
 | Admin dashboard | "Recent activity" = newest tenants created, invoices paid (billing access) and leads created (leads access), 5 shown. "Business overview" = tenants per status now (deleted left out) plus paid revenue over 12 weeks. Cache key bumped to `admin-dashboard:v3`. |
+
+## Phase 7 (module 7.3 security fixes, Fix A, 2026-10-01)
+
+| Topic | Decision |
+|---|---|
+| Validate proof | `licence/validate` must present the hash of the token we issued that install: the current one or the one before it (a lost reply). Anything else is 404 `key.not_found` with a `tokenMismatch` alert; nothing is recorded or sent. A till with no matching token (for example data from before tokens were tracked) must be released and the key activated again. |
+| Deactivate proof | §17.7 gives no token hash or install code. A till we sent the branch's sync key must send it as Bearer (401 otherwise). A second till is identified by `registerId` + `installId` only, so the endpoint is rate limited per install and per IP, audited and raises a `tillDeactivated` alert. **Ask EPOS:** add `tokenSha256` and `installCode` to `deactivate-request` (both already sent on validate) so every deactivate carries proof. |
+| Browser hardening | Nonce CSP, `frame-ancestors 'self'`, HSTS on HTTPS, secure cookies in production. Proxies are trusted only through `TRUSTED_PROXIES` (`cloudflare` keyword available). Admin customer view lasts `IMPERSONATION_MINUTES` (60) and stays on the business it started for. |
+| Sync key failures | Failed Bearers on `sync/*` and `cloud/migrate/complete` are limited per IP (30) and per key (10) per 15 minutes, then 429 until the window passes. |
+| Passwords | Customer passwords: at least 10 characters; breached passwords refused in production (Have I Been Pwned range API). |
+| Turnstile | The website widget must set `data-action="trial"`; tokens from other hosts than APP_URL / PUBLIC_FORM_ORIGINS / TURNSTILE_HOSTNAMES are refused. |
+| Staff PINs | PINs stay unique (the till signs in by PIN), but a clash says only "This PIN cannot be used" and is audited (`staff.pin_refused`). |
+| Fob codes | Accepted risk: stored as the till sends them (the contract syncs the raw `rfid`), never shown in props or logs. |

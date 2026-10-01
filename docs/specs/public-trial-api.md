@@ -28,7 +28,8 @@ origins, no trailing slash; our own `/trial` page is always allowed; server-to-s
 `TURNSTILE_SITE_KEY` (public, used by the widget on the website and `/trial`) and `TURNSTILE_SECRET` (server only).
 Without the secret the check is skipped in local/testing and every request fails with `captcha.failed` elsewhere.
 The website adds the widget with `<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer>`
-and `<div class="cf-turnstile" data-sitekey="…">`; the token arrives in the hidden `cf-turnstile-response` field.
+and `<div class="cf-turnstile" data-sitekey="…" data-action="trial">` (the portal refuses a token without action
+`trial` or from a host that is not ours: APP_URL, PUBLIC_FORM_ORIGINS or TURNSTILE_HOSTNAMES); the token arrives in the hidden `cf-turnstile-response` field.
 
 **Example** (plain JS on the website):
 

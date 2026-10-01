@@ -5,6 +5,7 @@ namespace App\Domain\Sales\Support;
 use App\Domain\Reporting\Support\TradingDay;
 use App\Domain\Sales\Queries\SaleList;
 use App\Domain\Sales\Queries\SaleSearch;
+use App\Domain\Shared\Support\CsvText;
 use App\Domain\Shared\Support\Money;
 use App\Domain\TillData\Models\Sale;
 use Carbon\CarbonImmutable;
@@ -80,8 +81,6 @@ final class SalesCsv
 
     private static function text(mixed $value): string
     {
-        $value = (string) $value;
-
-        return $value !== '' && in_array($value[0], ['=', '+', '-', '@', "\t", "\r"], true) ? "'".$value : $value;
+        return CsvText::safe($value);
     }
 }

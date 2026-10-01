@@ -33,7 +33,8 @@ return [
         'local' => [
             'driver' => 'local',
             'root' => storage_path('app/private'),
-            'serve' => true,
+            // Security review L7: no signed GET/PUT storage/{path} routes; nothing serves private files that way.
+            'serve' => false,
             'throw' => false,
         ],
 

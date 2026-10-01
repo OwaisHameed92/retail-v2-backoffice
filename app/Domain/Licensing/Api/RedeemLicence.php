@@ -132,7 +132,7 @@ class RedeemLicence
     private function portalKey(#[SensitiveParameter] string $key, TillRequest $till, SyncCaller $linked): array
     {
         try {
-            $this->wrongKeys->ensureAllowed($till->installId);
+            $this->wrongKeys->ensureAllowed($till);
         } catch (ApiException $e) {
             throw LicenceApiErrors::rateLimited($e->retryAfterSeconds ?? 900);
         }
@@ -140,7 +140,7 @@ class RedeemLicence
         try {
             $licence = $this->lookup->byKey(LicenceKey::tryParse($key) ?? throw LicenceApiErrors::keyNotFound(), $till);
         } catch (ApiException $e) {
-            $this->wrongKeys->hit($till->installId);
+            $this->wrongKeys->hit($till);
 
             throw $e;
         }

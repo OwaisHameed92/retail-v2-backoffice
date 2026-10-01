@@ -74,7 +74,7 @@ test('a PIN must be 4 to 8 digits, hard to guess and not a colleague\'s', functi
 })->with([
     ['12', '4 to 8 digits'], ['12a4', '4 to 8 digits'], ['123456789', '4 to 8 digits'],
     ['1111', 'harder to guess'], ['1234', 'harder to guess'], ['9876', 'harder to guess'],
-    ['7391', 'already uses this PIN'],
+    ['7391', 'This PIN cannot be used'],
 ]);
 
 test('names are unique, the role and shops must be the business\'s own', function () {
@@ -158,4 +158,16 @@ test('the role editor writes only the differences, lists only known keys and nev
 
     app(SaveRolePermissions::class)->handle($this->company, Staff::OWNER, ['sale.refund']);
     expect(($this->errors)(fn () => app(SaveRolePermissions::class)->handle($this->company, Staff::OWNER, [])))->toHaveKey('role');
+});
+
+test('security review L5: a PIN clash does not say a colleague holds it, and is audited', function () {
+    $member = Staff::member($this->company, 'Aisha Patel', '5820');
+
+    $errors = ($this->errors)(fn () => Staff::member($this->company, 'Bilal Ahmed', '7391'));
+    $changed = ($this->errors)(fn () => app(SetStaffPin::class)->handle($this->company, $member->id, '7391'));
+
+    expect($errors['pin'][0])->toBe('This PIN cannot be used. Choose a different one.')->not->toContain('staff member')
+        ->and($changed['pin'][0])->toBe('This PIN cannot be used. Choose a different one.')
+        ->and(AuditLog::query()->where('action', 'staff.pin_refused')->where('company_id', $this->company->id)->count())->toBe(2)
+        ->and(AuditLog::query()->where('action', 'staff.pin_refused')->whereNotNull('meta')->get()->pluck('meta')->toJson())->not->toContain('7391');
 });

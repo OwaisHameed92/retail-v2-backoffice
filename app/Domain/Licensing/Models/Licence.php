@@ -68,6 +68,7 @@ use Illuminate\Support\Collection;
  * @property bool|null $lock_locked
  * @property string|null $lock_reason
  * @property string|null $token_sha256
+ * @property string|null $previous_token_sha256 The token issued before token_sha256 (a lost reply, H2).
  * @property string|null $token_kid
  * @property string|null $token_fingerprint
  * @property string|null $last_ip
@@ -114,7 +115,7 @@ class Licence extends Model
     ];
 
     /** @var list<string> */
-    protected $hidden = ['key_hash', 'token_sha256', 'token_fingerprint'];
+    protected $hidden = ['key_hash', 'token_sha256', 'previous_token_sha256', 'token_fingerprint'];
 
     /** @var array<string, mixed> */
     protected $attributes = [

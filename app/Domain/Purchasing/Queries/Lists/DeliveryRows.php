@@ -48,7 +48,9 @@ final class DeliveryRows extends DocumentRows
         $ids = array_map(fn ($r) => $r->id, $rows);
         $damaged = DB::table('goods_receipt_lines')->whereIn('goods_receipt_id', $ids)->whereNull('deleted_at')
             ->groupBy('goods_receipt_id')->selectRaw('goods_receipt_id, count(*) as n, sum(coalesce(damaged_qty, 0)) as damaged')->get()->keyBy('goods_receipt_id');
-        $orders = DB::table('purchase_orders')->whereIn('id', array_filter(array_map(fn ($r) => $r->purchase_order_id, $rows)))
+        // Till-supplied ids: only this business's orders (security review L4).
+        $orders = DB::table('purchase_orders')->where('company_id', $rows[0]->company_id ?? null)
+            ->whereIn('id', array_filter(array_map(fn ($r) => $r->purchase_order_id, $rows)))
             ->get(['id', 'reference', 'order_no'])->keyBy('id');
 
         return array_map(function (GoodsReceipt $r) use ($names, $damaged, $orders) {

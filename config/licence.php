@@ -91,6 +91,11 @@ return [
             'redeem_per_hour' => 10, // module 2.8: per branch (branch key) or per install (local key report)
             'wrong_keys_per_install' => 5,
             'wrong_keys_window_seconds' => 900,
+            // Security review L1/H2: the buckets above are keyed on a caller-chosen install id, so an IP has a ceiling
+            // too (validate + redeem + deactivate together; a shop's tills share one IP), and deactivate its own.
+            'per_ip_per_hour' => (int) env('LICENCE_API_PER_IP_PER_HOUR', 600),
+            'deactivate_per_ip_per_hour' => (int) env('LICENCE_API_DEACTIVATE_PER_IP_PER_HOUR', 30),
+            'wrong_keys_per_ip' => (int) env('LICENCE_API_WRONG_KEYS_PER_IP', 20),
         ],
     ],
 

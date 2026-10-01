@@ -13,6 +13,12 @@ enum LicenceAlertType: string
     /** An install that is not the bound one validated the licence (contract §17.15.2). */
     case DeviceMismatch = 'deviceMismatch';
 
+    /** Security review H2: the bound install validated with a token we never issued it (its ids were copied?). */
+    case TokenMismatch = 'tokenMismatch';
+
+    /** Security review H2: a till was released by `devices/deactivate` (no proof beyond its ids for a second till). */
+    case TillDeactivated = 'tillDeactivated';
+
     /** The PC that was bound before a "Reissue key" still uses the old key. */
     case ReissuedKeyUsed = 'reissuedKeyUsed';
 
@@ -46,6 +52,8 @@ enum LicenceAlertType: string
             self::SameKeyTwoDevices => 'Same key on two PCs',
             self::DeviceMismatch => 'Check-in from another PC',
             self::ReissuedKeyUsed => 'Old key still in use',
+            self::TokenMismatch => 'Check-in with a wrong token',
+            self::TillDeactivated => 'Till deactivated itself',
             self::TillIdsConflict => 'Till data belongs elsewhere',
             self::TillOffline => 'Till offline',
             self::SyncFailing => 'Sync failing',
@@ -69,6 +77,8 @@ enum LicenceAlertType: string
         return match ($this) {
             self::SameKeyTwoDevices => 'Another PC tried to activate this key. If the customer moved to a new PC, use "Release"; if not, the key may have been shared: reissue it.',
             self::DeviceMismatch => 'A PC that is not the bound one is still checking in with this licence. It gets no new token and locks when it cannot validate for 14 days.',
+            self::TokenMismatch => 'The bound PC checked in without the licence token we gave it, so it was refused. Someone may have copied the till\'s ids. If the shop is locked out, use "Release" and activate the key again; otherwise reissue the key.',
+            self::TillDeactivated => 'The till asked to be released (Settings → Licence → Deactivate this till), so its key is free to activate on another PC. If the shop did not do this, reissue the key.',
             self::ReissuedKeyUsed => 'The till that had this licence still uses the key that was replaced. Give the owner the new key.',
             self::TillIdsConflict => 'The PC holds data of another business or branch, so the key was refused. Check the key was given to the right shop; a PC restored from another shop\'s backup needs that shop\'s key.',
             self::TillOffline => 'The till has not been in touch during trading hours. Ask the shop whether the PC is on and online. This alert clears itself when the till is back.',

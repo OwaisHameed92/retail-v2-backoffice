@@ -62,9 +62,10 @@ test('an unknown register or install is 404 device.not_found', function () {
 test('ANSWERS-2026-09-30-portal point 6: the main till gets no transfer code, apiKeyRevoked true, a next step, and the same key activates on a new PC', function () {
     $this->deactivateTill()->assertOk();
     $this->licence->forceFill(['features' => ['cloud_sync']])->save();
-    expect($this->activateTill()->assertOk()->json('apiKey'))->toStartWith('SSK-');
+    $apiKey = (string) $this->activateTill()->assertOk()->json('apiKey');
+    expect($apiKey)->toStartWith('SSK-');
 
-    $reply = $this->deactivateTill()->assertOk();
+    $reply = $this->deactivateTill(apiKey: $apiKey)->assertOk();
 
     expect($reply->json())->toMatchArray(['apiKeyRevoked' => true, 'transferCode' => null, 'transferCodeExpiresAt' => null])
         ->and($reply->json('messages'))->toHaveCount(1)

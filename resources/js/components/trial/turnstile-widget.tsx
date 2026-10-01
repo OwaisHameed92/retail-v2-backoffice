@@ -54,6 +54,8 @@ export function TurnstileWidget({ siteKey, onToken, resetKey }: { siteKey: strin
                 }
                 widgetId.current = window.turnstile.render(container.current, {
                     sitekey: siteKey,
+                    // Checked by the server (Turnstile.php, security review L8).
+                    action: 'trial',
                     theme: 'light',
                     callback: (token: string) => callback.current(token),
                     'expired-callback': () => callback.current(null),

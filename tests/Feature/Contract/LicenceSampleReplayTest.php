@@ -96,15 +96,14 @@ test('validate-reply.released.json: a till released from its key is told `releas
 });
 
 test('validate-request.json: the branch model\'s body (registers, diagnostics, lastSyncAt; install id in the header) is read too', function () {
-    $this->activateTill()->assertOk();
-    $body = [...SsposDocs::sample('validate-request.json'), 'licenceId' => $this->licence->id];
+    $token = (string) $this->activateTill()->assertOk()->json('licenceToken');
+    // The sample's tokenSha256 is another token's: the till sends the hash of the token it holds (H2).
+    $body = [...SsposDocs::sample('validate-request.json'), 'licenceId' => $this->licence->id, 'tokenSha256' => hash('sha256', $token)];
 
     $reply = $this->till('licence/validate', $body, $this->tillHeaders(self::INSTALL))->assertOk();
 
     expect($reply->json('status'))->toBe('expiring')
-        ->and($reply->json('licence.licenceId'))->toBe($this->licence->id)
-        // The sample's tokenSha256 is another token's: ours is sent again.
-        ->and($reply->json('licenceToken'))->toStartWith('SSPOS1.');
+        ->and($reply->json('licence.licenceId'))->toBe($this->licence->id);
 });
 
 test('deactivate-request.json: a secondary till gives its key back and gets deactivate-reply.json', function () {
@@ -126,9 +125,11 @@ test('deactivate-request.main-till.json: the main till that holds the branch syn
     $this->licence->forceFill(['features' => ['cloud_sync']])->save();
     $request = SsposDocs::sample('deactivate-request.main-till.json');
     $activate = [...$this->activateBody(install: $request['installId']), 'existingIds' => ['companyId' => self::TILL_COMPANY, 'branchId' => self::TILL_BRANCH, 'registerId' => $request['registerId']]];
-    expect($this->till('licence/activate', $activate, $this->tillHeaders($request['installId']))->assertOk()->json('apiKey'))->toStartWith('SSK-');
+    $apiKey = (string) $this->till('licence/activate', $activate, $this->tillHeaders($request['installId']))->assertOk()->json('apiKey');
+    expect($apiKey)->toStartWith('SSK-');
 
-    $reply = $this->till('devices/deactivate', $request, $this->tillHeaders($request['installId']))->assertOk();
+    // §17.7: the main till sends the branch key it holds as Bearer.
+    $reply = $this->till('devices/deactivate', $request, [...$this->tillHeaders($request['installId']), 'Authorization' => 'Bearer '.$apiKey])->assertOk();
 
     ($this->sameMembers)($reply, 'deactivate-reply.main-till.json');
     // Per-till keys move by activating the same key on the new PC (§17.15): no transfer code (that is cloud/migrate).
@@ -139,9 +140,9 @@ test('deactivate-reply.main-till.same-key.json: the main till is released with n
     $this->licence->forceFill(['features' => ['cloud_sync']])->save();
     $request = SsposDocs::sample('deactivate-request.main-till.json');
     $activate = [...$this->activateBody(install: $request['installId']), 'existingIds' => ['companyId' => self::TILL_COMPANY, 'branchId' => self::TILL_BRANCH, 'registerId' => $request['registerId']]];
-    $this->till('licence/activate', $activate, $this->tillHeaders($request['installId']))->assertOk();
+    $apiKey = (string) $this->till('licence/activate', $activate, $this->tillHeaders($request['installId']))->assertOk()->json('apiKey');
 
-    $reply = $this->till('devices/deactivate', $request, $this->tillHeaders($request['installId']))->assertOk();
+    $reply = $this->till('devices/deactivate', $request, [...$this->tillHeaders($request['installId']), 'Authorization' => 'Bearer '.$apiKey])->assertOk();
     $sample = SsposDocs::sample('deactivate-reply.main-till.same-key.json');
 
     ($this->sameMembers)($reply, 'deactivate-reply.main-till.same-key.json');

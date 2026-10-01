@@ -85,17 +85,42 @@ final class LicenceToken
     }
 
     /**
-     * Signs the token and remembers its hash, kid and claim fingerprint on the licence (the caller saves).
+     * Signs the token and remembers its hash, kid and claim fingerprint on the licence (the caller saves). The token
+     * the till holds (`$heldSha256`, a verified `licence/validate`), else our last one, stays valid as the previous
+     * token until the till shows it has the new one (H2: a lost reply never locks the till out).
      */
-    public function issue(Licence $licence, LicenceClaims $claims): string
+    public function issue(Licence $licence, LicenceClaims $claims, ?string $heldSha256 = null): string
     {
         $token = $this->signer->sign($claims);
+        $hash = hash('sha256', $token);
+        $previous = $heldSha256 !== null ? strtolower($heldSha256) : $licence->token_sha256;
 
-        $licence->token_sha256 = hash('sha256', $token);
+        if ($previous !== null && $previous !== $hash) {
+            $licence->previous_token_sha256 = $previous;
+        }
+
+        $licence->token_sha256 = $hash;
         $licence->token_kid = (string) SsposCodec::parse(SsposCodec::TOKEN_PREFIX, $token)['payload']['kid'];
         $licence->token_fingerprint = self::fingerprint($claims);
 
         return $token;
+    }
+
+    /**
+     * Security review H2 (contract v1.4.1 §17.15.2: a till is identified by `licenceId` + `tokenSha256` + `installId`):
+     * the till holds our current token, or the one before it (the reply carrying the current one never arrived).
+     * Constant-time compare; a licence without an issued token matches nothing.
+     */
+    public static function isHeld(Licence $licence, string $tokenSha256): bool
+    {
+        $presented = strtolower($tokenSha256);
+        $held = false;
+
+        foreach ([$licence->token_sha256, $licence->previous_token_sha256] as $issued) {
+            $held = ($issued !== null && hash_equals($issued, $presented)) || $held;
+        }
+
+        return $held;
     }
 
     /**
