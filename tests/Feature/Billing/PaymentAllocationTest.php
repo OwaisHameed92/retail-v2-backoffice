@@ -66,7 +66,7 @@ test('paying the exact balance pays the invoice', function () {
         ->and(PaymentAllocation::withoutCompanyScope()->where('invoice_id', $invoice->id)->pluck('amount')->all())->toBe(['40.00', '50.00']);
 
     $audit = AuditLog::query()->where('action', 'payment.recorded')->where('subject_id', $result->payment->id)->sole();
-    expect($audit->meta['allocations'])->toBe([['invoice' => 'INV-000001', 'amount' => '50.00']])
+    expect($audit->meta['allocations'])->toBeIgnoringKeyOrder([['invoice' => 'INV-000001', 'amount' => '50.00']])
         ->and($audit->meta['credit'])->toBe('0.00');
 });
 

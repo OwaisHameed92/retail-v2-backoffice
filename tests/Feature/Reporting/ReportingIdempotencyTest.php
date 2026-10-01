@@ -56,7 +56,7 @@ it('counts a sale once whose lines, VAT and payment arrive before or after it, i
     expect(ReportFixtures::daily(TillFixtures::LEEDS, TillFixtures::TILL_1, '2026-09-23'))->toMatchArray([
         'txn_count' => '1', 'gross' => '5.15', 'net' => '4.53', 'takings' => '5.15', 'cost' => '1.7600',
     ])
-        ->and(DB::table(ReportTables::TENDER_DAILY)->sum('count'))->toBe(1);
+        ->and((int) DB::table(ReportTables::TENDER_DAILY)->sum('count'))->toBe(1);
     expectIncrementalEqualsRebuild();
 });
 

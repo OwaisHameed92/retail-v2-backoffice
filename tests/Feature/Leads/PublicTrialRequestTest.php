@@ -72,7 +72,7 @@ test('a trial request creates a website lead with utm and ip, and alerts staff',
         ->and($lead->shops_count)->toBe(2)
         ->and($lead->tills_count)->toBe(3)
         ->and($lead->consent_marketing)->toBeTrue()
-        ->and($lead->utm)->toBe(['utm_source' => 'google', 'utm_medium' => 'cpc', 'utm_campaign' => 'autumn'])
+        ->and($lead->utm)->toBeIgnoringKeyOrder(['utm_source' => 'google', 'utm_medium' => 'cpc', 'utm_campaign' => 'autumn'])
         ->and($lead->ip)->toBe('203.0.113.9')
         ->and($lead->notes()->where('kind', LeadNoteKind::Created->value)->sole()->body)->toBe('Trial request received from the website');
 

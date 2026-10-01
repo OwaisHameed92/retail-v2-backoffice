@@ -49,6 +49,6 @@ test('the email log keeps the facts, never the key', function () {
     $log = EmailLog::query()->sole();
 
     expect($log->template)->toBe('licence-key')
-        ->and($log->meta)->toBe(['business' => 'Khan Mini Mart', 'tills' => 1, 'replaced' => false])
+        ->and($log->meta)->toBeIgnoringKeyOrder(['business' => 'Khan Mini Mart', 'tills' => 1, 'replaced' => false])
         ->and(json_encode(DB::table('email_logs')->get()))->not->toContain('P8T5');
 });

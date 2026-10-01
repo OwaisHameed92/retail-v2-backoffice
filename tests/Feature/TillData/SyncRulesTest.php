@@ -210,7 +210,7 @@ it('19.4 #8: two tills of one shop selling offline for an hour arrive exactly on
         ->and(DB::table('sales')->count())->toBe(80)
         ->and(DB::table('sales')->where('register_id', TillFixtures::TILL_1)->count())->toBe(40)
         ->and(DB::table('sales')->where('register_id', TillFixtures::TILL_2)->count())->toBe(40)
-        ->and(DB::table('sales')->distinct()->count(DB::raw("register_id || '-' || number")))->toBe(80);
+        ->and(DB::table('sales')->get(['register_id', 'number'])->map(fn ($s) => "{$s->register_id}-{$s->number}")->unique()->count())->toBe(80);
 });
 
 it('19.4 #9: pushes and pull replays killed a dozen times end with exactly the data of a clean run', function () {

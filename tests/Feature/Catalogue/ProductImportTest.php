@@ -43,7 +43,7 @@ beforeEach(function () {
 test('upload guesses the mapping; preview reads every row, finds problems and writes nothing', function () {
     $import = ($this->upload)($this->csv);
 
-    expect($import->mapping)->toBe(['barcode' => 0, 'sku' => 1, 'name' => 2, 'department' => 3, 'category' => 4, 'vat' => 5, 'sell_price' => 6, 'cost_price' => 7]);
+    expect($import->mapping)->toBeIgnoringKeyOrder(['barcode' => 0, 'sku' => 1, 'name' => 2, 'department' => 3, 'category' => 4, 'vat' => 5, 'sell_price' => 6, 'cost_price' => 7]);
 
     $this->actingAs($this->owner)->post("/app/products/imports/{$import->id}/preview", ['mapping' => $import->mapping])->assertSessionHasNoErrors();
     $import->refresh();

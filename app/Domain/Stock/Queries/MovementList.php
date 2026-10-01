@@ -49,7 +49,7 @@ final class MovementList
     {
         $products = Product::query()->whereIn('id', $rows->pluck('product_id')->unique()->all())->get(['id', 'name', 'sku'])->keyBy('id');
         $staff = TillUser::query()->whereIn('id', $rows->pluck('user_id')->filter()->unique()->all())->pluck('name', 'id');
-        $reasons = Reason::query()->whereIn('id', $rows->pluck('reason_id')->filter()->unique()->all())->pluck('name', 'id');
+        $reasons = Reason::query()->withTrashed()->whereIn('id', $rows->pluck('reason_id')->filter()->unique()->all())->pluck('text', 'id');
         $shops = StockNames::shops();
 
         return $rows->map(function (StockMovement $m) use ($products, $staff, $reasons, $shops) {

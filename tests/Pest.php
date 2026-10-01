@@ -34,6 +34,28 @@ expect()->extend('toBeOne', function () {
 });
 
 /*
+ * A JSON column read back: MySQL's JSON type stores object members in its own order (SQLite keeps the written one),
+ * so compare objects (string-keyed arrays) member by member, still strictly (types and list order count).
+ */
+expect()->extend('toBeIgnoringKeyOrder', function (array $expected) {
+    $sort = function (mixed $value) use (&$sort): mixed {
+        if (! is_array($value)) {
+            return $value;
+        }
+
+        $value = array_map($sort, $value);
+
+        if (! array_is_list($value)) {
+            ksort($value);
+        }
+
+        return $value;
+    };
+
+    return expect($sort($this->value))->toBe($sort($expected));
+});
+
+/*
 |--------------------------------------------------------------------------
 | Functions
 |--------------------------------------------------------------------------

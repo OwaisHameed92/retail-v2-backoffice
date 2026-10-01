@@ -65,7 +65,7 @@ it('logs a branded email as queued, then sent with its message id', function () 
         ->and($log->subject)->toBe('Welcome to Switch & Save – your licence keys')
         ->and($log->company_id)->toBe($company->id)
         ->and($log->sent_at)->toBeNull()
-        ->and($log->meta)->toBe(['business' => 'Khan Mini Mart', 'tills' => 2, 'branches' => 1, 'trial_days' => 7]);
+        ->and($log->meta)->toBeIgnoringKeyOrder(['business' => 'Khan Mini Mart', 'tills' => 2, 'branches' => 1, 'trial_days' => 7]);
 
     // Run the queued job for real (array mail transport).
     Queue::assertPushed(SendQueuedMailable::class, function (SendQueuedMailable $job) {

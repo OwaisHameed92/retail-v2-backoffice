@@ -9,6 +9,7 @@ use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
 use PHPUnit\Framework\AssertionFailedError;
 use Tests\Support\ContractReplyGuard;
+use Tests\Support\SqliteTestSchema;
 
 abstract class TestCase extends BaseTestCase
 {
@@ -17,6 +18,14 @@ abstract class TestCase extends BaseTestCase
 
     /** actingAs() also marks the session as past the two-factor step, unless a test turns it off. */
     private bool $passTwoFactor = true;
+
+    /** Test speed: SQLite `:memory:` loads a cached dump of the migrated database instead of migrating. */
+    protected function refreshApplication(): void
+    {
+        parent::refreshApplication();
+
+        SqliteTestSchema::prime($this->app, $this);
+    }
 
     protected function setUp(): void
     {

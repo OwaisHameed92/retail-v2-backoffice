@@ -14,6 +14,7 @@ use Symfony\Component\Process\Process;
 use Tests\Feature\Billing\BillingTestHelpers;
 use Tests\Feature\Licensing\LicensingTestHelpers;
 use Tests\Feature\Tenants\TenantTestHelpers;
+use Tests\Support\SqliteTestSchema;
 
 uses(TenantTestHelpers::class, LicensingTestHelpers::class, BillingTestHelpers::class);
 
@@ -157,6 +158,7 @@ test('parallel processes issuing drafts get INV-000001..N with no duplicates and
         'CACHE_STORE' => 'array',
         'SESSION_DRIVER' => 'array',
         'BCRYPT_ROUNDS' => '4',
+        'TEST_SQLITE_DUMP' => SqliteTestSchema::existingDump($this->app) ?? '',
     ];
 
     try {
