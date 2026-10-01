@@ -37,7 +37,6 @@ export default function ProductImportShow({ import: detail, fields }: { import: 
                     status={<StatusBadge status={detail.status} label={detail.statusLabel} tone={IMPORT_TONES[detail.status]} />}
                     description={`${number.format(detail.totalRows || 0)} rows · uploaded ${detail.createdAt ? relativeTime(detail.createdAt) : ''}${detail.by ? ` by ${detail.by}` : ''}`}
                     back={{ href: route('app.products.imports.index'), label: 'Imports' }}
-                    media={<FileSpreadsheet className="text-muted-foreground size-8" aria-hidden />}
                 />
 
                 {detail.status === 'uploaded' && <ImportMapping key={detail.previewedAt ?? 'new'} detail={detail} fields={fields} />}
@@ -46,8 +45,20 @@ export default function ProductImportShow({ import: detail, fields }: { import: 
                     <>
                         <StatGrid>
                             <StatCard label="Rows" value={number.format(detail.totalRows)} hint="In the file" icon={FileSpreadsheet} tone="neutral" />
-                            <StatCard label="New products" value={number.format(detail.preview.new)} hint="Will be added" icon={CirclePlus} tone="success" />
-                            <StatCard label="Updates" value={number.format(detail.preview.update)} hint="Found by barcode or code" icon={RefreshCw} tone="primary" />
+                            <StatCard
+                                label="New products"
+                                value={number.format(detail.preview.new)}
+                                hint="Will be added"
+                                icon={CirclePlus}
+                                tone="success"
+                            />
+                            <StatCard
+                                label="Updates"
+                                value={number.format(detail.preview.update)}
+                                hint="Found by barcode or code"
+                                icon={RefreshCw}
+                                tone="primary"
+                            />
                             <StatCard
                                 label="Rows with problems"
                                 value={number.format(detail.errorRows)}
@@ -71,7 +82,11 @@ export default function ProductImportShow({ import: detail, fields }: { import: 
                                 title={`Import ${number.format(detail.validRows)} rows?`}
                                 description={`${number.format(detail.preview.new)} new products are added and ${number.format(detail.preview.update)} are updated for every shop. ${detail.errorRows > 0 ? `${number.format(detail.errorRows)} rows with problems are left out.` : ''}`}
                                 confirmLabel="Start import"
-                                onConfirm={() => new Promise((resolve) => router.post(route('app.products.imports.apply', detail.id), {}, { preserveScroll: true, onFinish: resolve }))}
+                                onConfirm={() =>
+                                    new Promise((resolve) =>
+                                        router.post(route('app.products.imports.apply', detail.id), {}, { preserveScroll: true, onFinish: resolve }),
+                                    )
+                                }
                             />
                         </div>
 
@@ -83,7 +98,14 @@ export default function ProductImportShow({ import: detail, fields }: { import: 
                 {applying && (
                     <SectionCard title="Importing" description="This carries on if you leave the page.">
                         <div className="grid gap-2">
-                            <div className="bg-muted h-2 overflow-hidden rounded-full" role="progressbar" aria-valuenow={percent} aria-valuemin={0} aria-valuemax={100} aria-label="Import progress">
+                            <div
+                                className="bg-muted h-2 overflow-hidden rounded-full"
+                                role="progressbar"
+                                aria-valuenow={percent}
+                                aria-valuemin={0}
+                                aria-valuemax={100}
+                                aria-label="Import progress"
+                            >
                                 <div className="bg-primary h-full rounded-full transition-all" style={{ width: `${percent}%` }} />
                             </div>
                             <p className="text-muted-foreground text-sm tabular-nums">
@@ -100,7 +122,8 @@ export default function ProductImportShow({ import: detail, fields }: { import: 
                                 <CircleAlert />
                                 <AlertTitle>The import stopped</AlertTitle>
                                 <AlertDescription>
-                                    {number.format(detail.processedRows)} rows were handled before it stopped. Upload the file again to finish: rows already imported are not added twice.
+                                    {number.format(detail.processedRows)} rows were handled before it stopped. Upload the file again to finish: rows
+                                    already imported are not added twice.
                                 </AlertDescription>
                             </Alert>
                         ) : (
@@ -113,8 +136,20 @@ export default function ProductImportShow({ import: detail, fields }: { import: 
                         <StatGrid>
                             <StatCard label="Added" value={number.format(detail.created)} hint="New products" icon={CirclePlus} tone="success" />
                             <StatCard label="Updated" value={number.format(detail.updated)} hint="Changed products" icon={RefreshCw} tone="primary" />
-                            <StatCard label="Unchanged" value={number.format(detail.unchanged)} hint="Already up to date" icon={Package} tone="neutral" />
-                            <StatCard label="Not imported" value={number.format(detail.failed)} hint="See the list below" icon={CircleAlert} tone={detail.failed > 0 ? 'warning' : 'success'} />
+                            <StatCard
+                                label="Unchanged"
+                                value={number.format(detail.unchanged)}
+                                hint="Already up to date"
+                                icon={Package}
+                                tone="neutral"
+                            />
+                            <StatCard
+                                label="Not imported"
+                                value={number.format(detail.failed)}
+                                hint="See the list below"
+                                icon={CircleAlert}
+                                tone={detail.failed > 0 ? 'warning' : 'success'}
+                            />
                         </StatGrid>
                         <div className="flex flex-wrap justify-end gap-2">
                             <Button variant="outline" asChild>

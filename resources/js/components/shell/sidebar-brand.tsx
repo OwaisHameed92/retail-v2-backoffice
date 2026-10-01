@@ -15,7 +15,7 @@ export function SidebarLogo({ href, label }: { href: string; label: string }) {
             <Link
                 href={href}
                 prefetch
-                className="focus-visible:ring-sidebar-ring -mx-1 block rounded-lg px-1 py-1 outline-none focus-visible:ring-2 group-data-[collapsible=icon]:mx-0 group-data-[collapsible=icon]:p-0.5"
+                className="focus-visible:ring-sidebar-ring -mx-1 block rounded-lg px-1 py-1 outline-none group-data-[collapsible=icon]:mx-0 group-data-[collapsible=icon]:p-0.5 focus-visible:ring-2"
             >
                 <span className="block group-data-[collapsible=icon]:hidden">
                     <BrandLogo className="h-auto w-[196px]" alt="" />
@@ -25,23 +25,6 @@ export function SidebarLogo({ href, label }: { href: string; label: string }) {
             </Link>
             <p className="text-sidebar-muted pl-0.5 text-xs font-medium group-data-[collapsible=icon]:hidden">{label}</p>
         </SidebarHeader>
-    );
-}
-
-/** Bottom of the sidebar: a soft card with the mark, "Switch & Save" and the tagline. Just the mark when collapsed. */
-export function SidebarBrandFooter() {
-    return (
-        <div className="px-3 pt-2 pb-4 group-data-[collapsible=icon]:hidden">
-            <div className="bg-subtle border-sidebar-border flex items-center gap-2.5 rounded-xl border px-2.5 py-2.5 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:border-0 group-data-[collapsible=icon]:bg-transparent group-data-[collapsible=icon]:p-0">
-                <AppLogoIcon className="size-9 shrink-0" alt="" />
-                <div className="min-w-0 leading-tight group-data-[collapsible=icon]:hidden">
-                    <p className="truncate text-[15px] font-semibold tracking-[-0.01em]">
-                        <span className="text-sidebar-accent-foreground">Switch</span> <span className="text-sidebar-active-foreground">&amp; Save</span>
-                    </p>
-                    <p className="text-sidebar-muted text-[11px] leading-4">Smarter EPOS. Bigger growth.</p>
-                </div>
-            </div>
-        </div>
     );
 }
 
@@ -60,7 +43,7 @@ interface ShellSidebarProps {
 
 /**
  * The white full-height sidebar: the logo and area label at the top, grouped nav, pinned Settings near the bottom
- * and the brand card at the very bottom. Collapses to icons on desktop; a sheet on phones.
+ * (no footer card: the logo at the top is the brand). Collapses to icons on desktop (rail); a sheet on phones.
  */
 export function ShellSidebar({ homeHref, areaLabel, groups, pinned = [], header }: ShellSidebarProps) {
     return (
@@ -70,14 +53,13 @@ export function ShellSidebar({ homeHref, areaLabel, groups, pinned = [], header 
             <SidebarContent className="gap-0 py-2">
                 <SidebarNav groups={groups} />
             </SidebarContent>
-            <SidebarFooter className="gap-0 p-0">
-                {pinned.length > 0 && (
+            {pinned.length > 0 && (
+                <SidebarFooter className="gap-0 p-0 pb-3">
                     <div className="border-sidebar-border mx-3 border-t pt-1 group-data-[collapsible=icon]:mx-2">
                         <SidebarNav groups={pinned} className="px-0" />
                     </div>
-                )}
-                <SidebarBrandFooter />
-            </SidebarFooter>
+                </SidebarFooter>
+            )}
             <SidebarRail />
         </Sidebar>
     );

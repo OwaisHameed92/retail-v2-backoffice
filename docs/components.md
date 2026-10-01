@@ -270,7 +270,7 @@ Tokens live only in `resources/css/app.css` (v2 palette, light + dark): `chrome`
   phones), `TopbarDivider`, `TopbarBreadcrumbs` (rendered above the page content), `HelpMenu` (chat bubble),
   `NotificationsMenu` (`unread` dot — only from real data), `AccountTrigger` (green avatar + name + role).
 - `ShellSidebar` (`homeHref`, `areaLabel`, `groups`, `pinned`, `header`) — white sidebar: full logo + area label at
-  the top (`SidebarLogo`), Settings pinned, brand card at the bottom.
+  the top (`SidebarLogo`), Settings pinned at the bottom; no footer brand card (pass 3).
 - `BrandWaves` — decorative wave lines for `bg-chrome-frame` / `bg-brand-wash` surfaces (top bar, hero, auth panel).
   `SidebarNav` items accept `count` (green pill) and `live` (green dot) besides `badge`/`soon`.
 - Admin nav (`admin-nav.ts`): groups Overview/Customers/Billing/Operations/Communications/Settings;
@@ -380,3 +380,4 @@ Tokens live only in `resources/css/app.css` (v2 palette, light + dark): `chrome`
 - **Charts**: `ChartLegend` (`chart-card.tsx`; markers `dot`, `dashed` compare, `hollow` today so far, `bar`, `bar-partial`) in a `ChartCard` `footer`; `ChartTooltipBox` (`trend-chart.tsx`) for every Recharts tooltip. Colours only via `ChartTone` / `toneVar`; compare series `muted`.
 - **Tables**: headers are sentence case (sortable ones too). Select values are left-aligned after a leading icon.
 - **Errors**: `pages/error.tsx` + `App\Http\Support\InertiaErrorPages` (403/404/500/503 when debug is off; JSON callers untouched; 419 → back with a toast).
+- **Hero page headers (pass 3)**: `PageHeader` renders a slim hero band (`bg-brand-wash` + `BrandWaves`, like the dashboard `WelcomeBanner`): breadcrumbs/back, a white tile with the page icon in green, title + status, one-line description, actions right (wrapping under on phones); `tabs` sit under the band. The icon defaults to the page's sidebar nav icon via `usePageIcon()` / `pageIconFor(path)` (`components/shell/page-icon.ts`: admin by route name from `admin-nav.ts`, tenant by URL from `components/app-nav.ts`, `/settings` → profile icon); pass `icon` to override, `media` (avatar) replaces the tile on detail pages. Tenant nav items now live in `components/app-nav.ts` (`tenantNavGroups`, `tenantNav`, `currentTenantNavItem`). Dashboards keep `WelcomeBanner`; content cards and tables stay white.
