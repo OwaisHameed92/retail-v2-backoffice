@@ -809,3 +809,11 @@ still v1 (`X-SSPOS-Contract: 1`); the pack was copied over the contract folder (
 | Sign-in panel | Near-black navy with blurred blue/green aurora and grain (staff: cooler, less green), full white logo, gradient key phrase, straight dark-glass preview cards. Right side plain white, borderless form. |
 | Legal links | Not shown on the sign-in pages or in the portal footer for now. `/legal/*` routes and `LegalLinks` stay in code. |
 | Sale deletion | Code that deletes sales outside the push path (demo clean-up) calls `DirtyDays::markSales()` first; rebuild plans include queued dirty days, and the demo commands process any left over, so no `rpt_*` row outlives its sales. |
+
+## Wave 11: labels, starter catalogue, AI assistant (2026-10-01)
+
+| Topic | Decision |
+|---|---|
+| Shelf-edge labels | Portal-only (the contract's `ShelfLabel` is for electronic shelf labels; `labels.*` settings stay on the till). Queue per shop, one row per product+shop, filled on price/shop-price changes and live offer changes, plus a daily `labels:queue-offers`; manual add by product, barcode, department, supplier. PDFs for six A4 sheets and two rolls; UK unit price, EAN-13/Code128, offer line, PMP, deposit. `labels.print`: owner, manager. New products are not queued automatically. |
+| Master catalogue | Platform-wide, admin-owned (`catalogue.manage`: owner, support). The "starter set" is the demo catalogue — mostly made-up barcodes, not for production; real data must come from a licensed or open source (docs/master-catalogue.md). Tenants add from it through `SaveProduct`; barcode lookup prefills the product form; unknown barcodes pushed by tills go to an anonymous review queue (barcode, name, size only; per-business opt-out). |
+| AI assistant (6.2) | `ai.use`: owner, manager, accountant. 10 read tools on the report queries, company-scoped, one-shop pinned; answers link to the report. Writes only through preview-then-confirm (`draft_purchase_order`). Models `claude-sonnet-5` / `claude-haiku-4-5-20251001` (env). Pay rates and contact details are never sent to the model. Without ANTHROPIC_API_KEY the panel says "AI is not configured yet". |
