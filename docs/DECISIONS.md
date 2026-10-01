@@ -782,3 +782,12 @@ still v1 (`X-SSPOS-Contract: 1`); the pack was copied over the contract folder (
 | Staff time (§4) | `User.ratePerHour` and `maxShiftHours` are portal-owned and edited on the staff form (pulled); wages use the rate. Overtime is the till's fixed rule, over 8 hours in a London day, display only (no premium, no filter); the week's `TimesheetApproval.overtimeHours` is shown beside it. Holiday = 12.07% of worked hours, shown as an estimate (screen and payroll CSV). `WageRate` (NMW/NLW) read only. Holiday and absence bookings: not available yet (no till table). |
 | Newspapers (§5) | A title's VAT comes from its linked product; a title without one makes no VAT line on the till, so the list and form warn, and the form suggests the business's zero-rated rate (0%, code C first). Rounds and news accounts: not in the till yet, nothing sent. |
 | Transfers (§6) | Shown as the till sends them, never recalculated: line `qtyVariance` = received − sent (minus = short); receipt `varianceCost` = sent − received at cost (plus = lost in transit). Transfer, route and period money totals are the receipts' `varianceCost` summed ("Lost in transit"); a line's difference at cost is `qtyVariance` × unit cost. |
+
+## Enterprise sign-in screens (owner, 2026-10-01)
+
+| Topic | Decision |
+|---|---|
+| Look | Every signed-out page (`AuthSplitLayout`) uses a deep brand panel (navy → brand blue → teal; darker navy for the staff console) with a floating product preview and a trust row, and an elevated white card on the right. Replaces the light mint panel. Tokens `--auth-*`, `shadow-auth`, `shadow-float`, `animate-auth-rise` in `app.css`. |
+| Preview data | The preview cards show fixed sample figures (sales £4,812, 3 tills, 128 active tills...) and are `aria-hidden`; they are illustration, never live data. |
+| Footer links | Privacy, Terms and Help are plain text until legal/help pages exist (no dead links). The admin sign-in says to ask an owner for a password reset (no admin reset flow yet). |
+| Motion | Entrance animations run only under `motion-safe`. |

@@ -88,6 +88,26 @@
     --color-brand-blue: var(--brand-blue);
     --color-brand-green: var(--brand-green);
     --color-brand-panel: var(--brand-panel);
+    /* Text and hairlines on the deep auth brand panel (white in both themes). */
+    --color-auth-ink: var(--auth-ink);
+
+    /* Sign-in screens: the elevated form card and the floating product-preview cards. */
+    --shadow-auth: var(--elevation-auth);
+    --shadow-float: var(--elevation-float);
+
+    /* Gentle entrance for the sign-in screens; use with motion-safe: so reduced motion shows everything at once. */
+    --animate-auth-rise: auth-rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+
+    @keyframes auth-rise {
+        from {
+            opacity: 0;
+            transform: translateY(14px);
+        }
+        to {
+            opacity: 1;
+            transform: none;
+        }
+    }
 
     --color-overlay: var(--overlay);
     --color-border: var(--border);
@@ -227,6 +247,22 @@
     --brand-green: #1a9f4b;
     /* Auth brand panel: the light mint wash. */
     --brand-panel: #eef8f3;
+
+    /* Sign-in brand panel (docs/design/DESIGN-SYSTEM-v2.md, "Sign-in screens"): deep navy into brand blue into teal. */
+    --auth-ink: #ffffff;
+    --auth-from: #06173a;
+    --auth-via: #0b3b8f;
+    --auth-to: #0a5450;
+    --auth-glow-a: hsl(221 99% 50% / 0.42);
+    --auth-glow-b: hsl(156 70% 42% / 0.34);
+    /* Staff console: darker and more serious. */
+    --auth-staff-from: #040a16;
+    --auth-staff-via: #0b1a33;
+    --auth-staff-to: #0a2a30;
+    --auth-staff-glow-a: hsl(221 90% 55% / 0.2);
+    --auth-staff-glow-b: hsl(170 60% 40% / 0.18);
+    --elevation-auth: 0 1px 2px 0 hsl(213 40% 20% / 0.04), 0 12px 32px -12px hsl(213 40% 20% / 0.12), 0 40px 80px -32px hsl(213 40% 20% / 0.14);
+    --elevation-float: 0 2px 4px 0 hsl(222 70% 8% / 0.12), 0 24px 48px -16px hsl(222 70% 8% / 0.45);
 }
 
 /* Dark theme (a user choice): deep canvas, lifted cards, a brighter green that reads on dark surfaces. */
@@ -316,6 +352,15 @@
     --brand-blue: #4d8dff;
     --brand-green: #2fd16a;
     --brand-panel: #0f1c1a;
+
+    --auth-from: #050f26;
+    --auth-via: #0a2f70;
+    --auth-to: #08403d;
+    --auth-staff-from: #03070f;
+    --auth-staff-via: #091427;
+    --auth-staff-to: #082025;
+    --elevation-auth: 0 1px 2px 0 hsl(0 0% 0% / 0.35), 0 24px 48px -16px hsl(0 0% 0% / 0.55), 0 0 0 1px #223041;
+    --elevation-float: 0 2px 4px 0 hsl(0 0% 0% / 0.3), 0 24px 48px -16px hsl(0 0% 0% / 0.65);
 }
 
 @layer base {
@@ -385,7 +430,12 @@
     .bg-brand-wash {
         background:
             radial-gradient(36rem 14rem at 92% 0%, var(--chrome-glow), transparent 70%),
-            linear-gradient(100deg, color-mix(in oklab, var(--chrome-wash-to) 70%, var(--card)) 0%, var(--chrome-wash-to) 55%, color-mix(in oklab, var(--chrome-wash-to) 55%, var(--card)) 100%);
+            linear-gradient(
+                100deg,
+                color-mix(in oklab, var(--chrome-wash-to) 70%, var(--card)) 0%,
+                var(--chrome-wash-to) 55%,
+                color-mix(in oklab, var(--chrome-wash-to) 55%, var(--card)) 100%
+            );
     }
 
     /* Soft wave lines; put on an absolutely positioned, aria-hidden child of a wash surface. */
@@ -395,6 +445,84 @@
         opacity: var(--wave-opacity);
         -webkit-mask-image: linear-gradient(90deg, transparent, #000 45%);
         mask-image: linear-gradient(90deg, transparent, #000 45%);
+    }
+
+    /* Sign-in brand panel: a deep gradient with two soft glows. `.bg-auth-panel-staff` is the darker staff console. */
+    .bg-auth-panel {
+        background:
+            radial-gradient(38rem 26rem at 88% 4%, var(--auth-glow-a), transparent 68%),
+            radial-gradient(34rem 24rem at 96% 96%, var(--auth-glow-b), transparent 70%),
+            linear-gradient(160deg, var(--auth-from) 0%, var(--auth-via) 52%, var(--auth-to) 100%);
+    }
+
+    .bg-auth-panel-staff {
+        background:
+            radial-gradient(38rem 26rem at 88% 4%, var(--auth-staff-glow-a), transparent 68%),
+            radial-gradient(34rem 24rem at 96% 96%, var(--auth-staff-glow-b), transparent 70%),
+            linear-gradient(160deg, var(--auth-staff-from) 0%, var(--auth-staff-via) 55%, var(--auth-staff-to) 100%);
+    }
+
+    /* Fine grid on the brand panel, fading out towards the edges. Decorative, aria-hidden. */
+    .auth-panel-grid {
+        pointer-events: none;
+        background-image:
+            linear-gradient(to right, color-mix(in oklab, var(--auth-ink) 7%, transparent) 1px, transparent 1px),
+            linear-gradient(to bottom, color-mix(in oklab, var(--auth-ink) 7%, transparent) 1px, transparent 1px);
+        background-size: 44px 44px;
+        -webkit-mask-image: radial-gradient(ellipse 85% 70% at 70% 45%, #000 15%, transparent 75%);
+        mask-image: radial-gradient(ellipse 85% 70% at 70% 45%, #000 15%, transparent 75%);
+    }
+
+    /*
+      The product preview on the sign-in panel fills the space between the headline and the trust row: it scales
+      down on shorter screens and hides when there is too little room (height container queries).
+    */
+    .auth-preview-slot {
+        container-type: size;
+    }
+    .auth-preview {
+        display: none;
+        width: 100%;
+    }
+    @container (min-height: 200px) {
+        .auth-preview {
+            display: block;
+            zoom: 0.56;
+        }
+    }
+    @container (min-height: 240px) {
+        .auth-preview {
+            zoom: 0.64;
+        }
+    }
+    @container (min-height: 280px) {
+        .auth-preview {
+            zoom: 0.74;
+        }
+    }
+    @container (min-height: 320px) {
+        .auth-preview {
+            zoom: 0.84;
+        }
+    }
+    @container (min-height: 360px) {
+        .auth-preview {
+            zoom: 0.94;
+        }
+    }
+    @container (min-height: 395px) {
+        .auth-preview {
+            zoom: 1;
+        }
+    }
+
+    /* Faint dot pattern behind the sign-in card. Decorative, aria-hidden. */
+    .auth-canvas-dots {
+        pointer-events: none;
+        background-image: radial-gradient(var(--border-strong) 1px, transparent 1.3px);
+        background-size: 20px 20px;
+        -webkit-mask-image: radial-gradient(ellipse 70% 60% at 50% 45%, #000 20%, transparent 78%);
+        mask-image: radial-gradient(ellipse 70% 60% at 50% 45%, #000 20%, transparent 78%);
     }
 
     /* Hide scrollbars on horizontal tab strips while keeping them scrollable. */

@@ -1,12 +1,8 @@
-// Components
 import { Head, useForm } from '@inertiajs/react';
-import { LoaderCircle } from 'lucide-react';
 import { FormEventHandler } from 'react';
 
-import InputError from '@/components/input-error';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { AuthSubmit, PasswordInput } from '@/components/auth/auth-fields';
+import { FormField } from '@/components/shared/form-section';
 import AuthLayout from '@/layouts/auth-layout';
 
 export default function ConfirmPassword() {
@@ -23,37 +19,27 @@ export default function ConfirmPassword() {
     };
 
     return (
-        <AuthLayout
-            title="Confirm your password"
-            description="This is a secure area of the application. Please confirm your password before continuing."
-        >
+        <AuthLayout title="Confirm your password" description="This is a secure area. Confirm your password before you continue.">
             <Head title="Confirm password" />
 
-            <form onSubmit={submit}>
-                <div className="space-y-6">
-                    <div className="grid gap-2">
-                        <Label htmlFor="password">Password</Label>
-                        <Input
-                            id="password"
-                            type="password"
-                            name="password"
-                            placeholder="Password"
-                            autoComplete="current-password"
-                            value={data.password}
-                            autoFocus
-                            onChange={(e) => setData('password', e.target.value)}
-                        />
+            <form onSubmit={submit} className="grid gap-5">
+                <FormField id="password" label="Password" error={errors.password}>
+                    <PasswordInput
+                        id="password"
+                        name="password"
+                        placeholder="Your password"
+                        autoComplete="current-password"
+                        value={data.password}
+                        autoFocus
+                        onChange={(e) => setData('password', e.target.value)}
+                        aria-invalid={!!errors.password || undefined}
+                        aria-describedby={errors.password ? 'password-error' : undefined}
+                    />
+                </FormField>
 
-                        <InputError message={errors.password} />
-                    </div>
-
-                    <div className="flex items-center">
-                        <Button size="lg" className="w-full" disabled={processing}>
-                            {processing && <LoaderCircle className="size-4 animate-spin" />}
-                            Confirm password
-                        </Button>
-                    </div>
-                </div>
+                <AuthSubmit processing={processing} className="mt-1">
+                    Confirm password
+                </AuthSubmit>
             </form>
         </AuthLayout>
     );

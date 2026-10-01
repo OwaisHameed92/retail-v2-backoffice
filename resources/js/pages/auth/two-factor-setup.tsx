@@ -1,3 +1,4 @@
+import { AuthSubmit } from '@/components/auth/auth-fields';
 import { FormField } from '@/components/shared/form-section';
 import { CodeInput } from '@/components/shared/two-factor/code-input';
 import { RecoveryCodesPanel } from '@/components/shared/two-factor/recovery-codes-panel';
@@ -6,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import AuthLayout from '@/layouts/auth-layout';
 import { sendJson } from '@/lib/http';
 import { Head, Link, router } from '@inertiajs/react';
-import { Check, Copy, LoaderCircle, ShieldCheck } from 'lucide-react';
+import { Check, Copy, ShieldCheck } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
 
 interface TwoFactorSetupProps {
@@ -123,10 +124,9 @@ export default function TwoFactorSetup({
                                 aria-invalid={!!error || undefined}
                             />
                         </FormField>
-                        <Button type="submit" size="lg" className="w-full" disabled={busy || code.length !== 6}>
-                            {busy ? <LoaderCircle className="size-4 animate-spin" /> : <ShieldCheck className="size-4" />}
+                        <AuthSubmit processing={busy} disabled={code.length !== 6} icon={ShieldCheck}>
                             Turn on two-factor sign-in
-                        </Button>
+                        </AuthSubmit>
                     </form>
                 </li>
             </ol>
