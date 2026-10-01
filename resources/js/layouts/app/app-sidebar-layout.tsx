@@ -2,6 +2,7 @@ import { AppBillingBanner } from '@/components/app-billing-banner';
 import { AppImpersonationBanner } from '@/components/app-impersonation-banner';
 import { AppSidebar } from '@/components/app-sidebar';
 import { AppSidebarHeader } from '@/components/app-sidebar-header';
+import { LegalLinks } from '@/components/legal-links';
 import { Toaster } from '@/components/shared/toaster';
 import { ShellFrame } from '@/components/shell/shell-frame';
 import { TopbarBreadcrumbs } from '@/components/shell/topbar';
@@ -29,6 +30,7 @@ export default function AppSidebarLayout({ children, breadcrumbs = [] }: { child
                 {breadcrumbs.length > 1 && <TopbarBreadcrumbs items={breadcrumbs} />}
                 <AppBillingBanner />
                 {children}
+                <LegalLinks className="border-border mt-auto justify-center border-t pt-4" />
             </div>
             <Toaster />
         </ShellFrame>

@@ -3,6 +3,7 @@ import { CustomerForm } from '@/components/app/customers/customer-form';
 import { BalanceText, balanceTone, dayLabel, money, number } from '@/components/app/customers/format';
 import { LedgerTable } from '@/components/app/customers/ledger-table';
 import { type CustomerShowProps } from '@/components/app/customers/types';
+import { CustomerPrivacyPanel } from '@/components/app/privacy/customer-privacy-panel';
 import { InitialsAvatar } from '@/components/shared/entity-cell';
 import { PageHeader } from '@/components/shared/page-header';
 import { PageTabs } from '@/components/shared/page-tabs';
@@ -16,9 +17,19 @@ import { Head, Link } from '@inertiajs/react';
 import { Coins, CreditCard, Eye, FileText, Info, Store, Wallet } from 'lucide-react';
 import { useState } from 'react';
 
-type Tab = 'history' | 'details' | 'consent';
+type Tab = 'history' | 'details' | 'consent' | 'privacy';
 
-export default function CustomerShow({ customer, account, ledger, ledgerFilters, shops, consent, canEdit, readOnlyReason }: CustomerShowProps) {
+export default function CustomerShow({
+    customer,
+    account,
+    ledger,
+    ledgerFilters,
+    shops,
+    consent,
+    canEdit,
+    privacy,
+    readOnlyReason,
+}: CustomerShowProps) {
     const [tab, setTab] = useState<Tab>('history');
     const tone = balanceTone(account.balance);
     const optedIn = consent.current.filter((c) => c.state === 'given').length;
@@ -57,6 +68,7 @@ export default function CustomerShow({ customer, account, ledger, ledgerFilters,
                             { label: 'Account history', value: 'history', count: ledger.meta.total },
                             { label: 'Details', value: 'details' },
                             { label: 'Marketing consent', value: 'consent', count: optedIn },
+                            ...(privacy ? [{ label: 'Privacy', value: 'privacy' }] : []),
                         ]}
                     />
                 }
@@ -140,6 +152,10 @@ export default function CustomerShow({ customer, account, ledger, ledgerFilters,
                 )}
 
                 {tab === 'consent' && <ConsentPanel consent={consent} name={customer.name || 'The customer'} />}
+
+                {tab === 'privacy' && privacy && (
+                    <CustomerPrivacyPanel customerId={customer.id} name={customer.name || 'this customer'} privacy={privacy} />
+                )}
             </div>
         </AppLayout>
     );

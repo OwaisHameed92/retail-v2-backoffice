@@ -4,6 +4,7 @@ namespace App\Domain\Customers\Queries;
 
 use App\Domain\Customers\Support\CustomerFormat;
 use App\Domain\Customers\Support\MarketingConsent;
+use App\Domain\Privacy\Queries\CustomerPrivacy;
 use App\Domain\Shared\Support\Money;
 use App\Domain\Tenancy\CurrentCompany;
 use App\Domain\Tenancy\Enums\Ability;
@@ -48,6 +49,7 @@ final class CustomerDetail
             ],
             'canEdit' => self::canEdit() && $customer->anonymised_at === null,
             'canEmail' => self::canEmail($customer),
+            'privacy' => $tenancy->can(Ability::PrivacyManage) ? CustomerPrivacy::for($customer) : null,
             'readOnlyReason' => $tenancy->can(Ability::CustomersManage) && $tenancy->restrictedBranchId() !== null ? 'oneShop' : null,
         ];
     }

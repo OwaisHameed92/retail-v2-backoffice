@@ -39,6 +39,8 @@ final class RoleMatrix
         'compliance.view' => ['Business', 'See age checks, incidents, training, diary checks, licences and recalls'],
         'compliance.manage' => ['Business', 'Raise and close product recalls'],
         'audit.view' => ['Business', 'See the activity log'],
+        'privacy.manage' => ['Business', 'Export or anonymise a customer\'s data and set data retention'],
+        'accounts.export' => ['Money', 'Export journals to Xero, QuickBooks or Sage'],
     ];
 
     /** One line per role for pickers and the matrix header. */

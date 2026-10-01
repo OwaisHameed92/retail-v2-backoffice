@@ -4,6 +4,7 @@ namespace App\Domain\Customers\Support;
 
 use App\Domain\TillData\Enums\ConsentChannel;
 use App\Domain\TillData\Models\Consent;
+use App\Domain\TillData\Models\Customer;
 use Illuminate\Contracts\Database\Query\Builder as BuilderContract;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Query\Builder as QueryBuilder;
@@ -14,7 +15,8 @@ use Illuminate\Database\Query\Builder as QueryBuilder;
  *
  * The current state of a channel is its latest row by `at` (then `id`), soft-deleted rows left out: consent is given
  * only when that row has `given` true, no `withdrawnAt` and is not inactive. No row = never asked = **no consent**.
- * Anything that sends marketing must check `allows()` first; a statement or receipt is not marketing.
+ * Anything that sends marketing must check `allows()` first; a statement or receipt is not marketing. An anonymised
+ * customer (module 7.7 erasure) is never allowed, and never in the consent filter.
  *
  * Runs in the company scope.
  */
@@ -22,6 +24,10 @@ final class MarketingConsent
 {
     public static function allows(string $customerId, ConsentChannel $channel): bool
     {
+        if (Customer::query()->whereKey($customerId)->whereNotNull('anonymised_at')->exists()) {
+            return false; // Erased (module 7.7): never marketed to again, whatever the tills' consent rows say.
+        }
+
         return self::current($customerId)[$channel->value]['state'] === 'given';
     }
 
@@ -97,7 +103,7 @@ final class MarketingConsent
      */
     public static function filter(Builder $customers, ConsentChannel $channel): void
     {
-        $customers->whereExists(fn (QueryBuilder $q) => self::given($q->from('consents as c')
+        $customers->whereNull('customers.anonymised_at')->whereExists(fn (QueryBuilder $q) => self::given($q->from('consents as c')
             ->whereColumn('c.company_id', 'customers.company_id')
             ->whereColumn('c.customer_id', 'customers.id')
             ->where('c.channel', $channel->value)

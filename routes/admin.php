@@ -23,6 +23,7 @@ use App\Http\Controllers\Admin\Billing\TenantBillingController;
 use App\Http\Controllers\Admin\Billing\TenantPricingController;
 use App\Http\Controllers\Admin\CloudLinkController;
 use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\DataRequestController;
 use App\Http\Controllers\Admin\EmailLogController;
 use App\Http\Controllers\Admin\EmailTemplateController;
 use App\Http\Controllers\Admin\ImpersonationController;
@@ -80,6 +81,9 @@ Route::middleware(['auth:admin', AdminIsActive::class, BlockAdminWhileImpersonat
     // Audit log across every business: owner and support (audit.view). CSV streams every matching entry.
     Route::get('audit-log', [AuditLogController::class, 'index'])->name('audit-log.index')->middleware('can:'.AdminRole::AUDIT_VIEW);
     Route::get('audit-log/export', [AuditLogController::class, 'export'])->name('audit-log.export')->middleware(['can:'.AdminRole::AUDIT_VIEW, 'throttle:10,1']);
+
+    // Customer data requests (module 7.7) across every business: owner and support (audit.view). No customer details.
+    Route::get('data-requests', [DataRequestController::class, 'index'])->name('data-requests.index')->middleware('can:'.AdminRole::AUDIT_VIEW);
 
     Route::get('/', DashboardController::class)->name('dashboard');
     // Module 3.2: the dashboard's Trading tab (shop sales across businesses). Owner, support and accounts.

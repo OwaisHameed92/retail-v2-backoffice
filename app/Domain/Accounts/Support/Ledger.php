@@ -72,7 +72,7 @@ final class Ledger
      *
      * @return array{0: string, 1: string}
      */
-    private static function amounts(AccountsFilters $filters): array
+    public static function amounts(AccountsFilters $filters): array
     {
         $d = 'ROUND(COALESCE(journal_lines.debit, 0) * 100)';
         $c = 'ROUND(COALESCE(journal_lines.credit, 0) * 100)';

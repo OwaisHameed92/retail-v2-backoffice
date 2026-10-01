@@ -10,12 +10,13 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import AppLayout from '@/layouts/app-layout';
 import { cn } from '@/lib/utils';
-import { Head } from '@inertiajs/react';
+import { type SharedData } from '@/types';
+import { Head, usePage } from '@inertiajs/react';
 import { Lock, TriangleAlert } from 'lucide-react';
 import { type ReactNode } from 'react';
 import { type AccountsFiltersState, type AccountsPageProps, type RefundFixSummary } from './types';
 
-export type AccountsTab = 'chart' | 'journals' | 'trial' | 'pl' | 'bs' | 'expenses' | 'vat' | 'assets';
+export type AccountsTab = 'chart' | 'journals' | 'trial' | 'pl' | 'bs' | 'expenses' | 'vat' | 'assets' | 'export';
 
 const TABS: { key: AccountsTab; label: string; route: string }[] = [
     { key: 'chart', label: 'Chart of accounts', route: 'app.accounts.index' },
@@ -26,6 +27,7 @@ const TABS: { key: AccountsTab; label: string; route: string }[] = [
     { key: 'expenses', label: 'Expenses', route: 'app.accounts.expenses' },
     { key: 'vat', label: 'VAT return', route: 'app.accounts.vat' },
     { key: 'assets', label: 'Fixed assets', route: 'app.accounts.fixed-assets' },
+    { key: 'export', label: 'Export', route: 'app.accounts.export.index' },
 ];
 
 /** The filters every tab keeps (dates, shop, the refund fix); tab-only filters are dropped when switching. */
@@ -182,6 +184,9 @@ interface LayoutProps {
 
 /** The Accounts frame: header, the section tabs, then the page. */
 export function AccountsPageLayout({ tab, filters, title, description, actions, children }: LayoutProps) {
+    const { abilities } = usePage<SharedData>().props;
+    const tabs = TABS.filter((t) => t.key !== 'export' || (abilities ?? []).includes('accounts.export'));
+
     return (
         <AppLayout>
             <Head title={title ?? 'Accounts'} />
@@ -192,7 +197,7 @@ export function AccountsPageLayout({ tab, filters, title, description, actions, 
                 tabs={
                     <PageTabs
                         label="Accounts sections"
-                        tabs={TABS.map((t) => ({ label: t.label, href: route(t.route, keep(filters)), active: t.key === tab }))}
+                        tabs={tabs.map((t) => ({ label: t.label, href: route(t.route, keep(filters)), active: t.key === tab }))}
                     />
                 }
             />

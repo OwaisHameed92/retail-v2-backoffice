@@ -75,6 +75,7 @@ enum CompanyRole: string
                 Ability::StaffView,
                 Ability::TransfersView,
                 Ability::AccountsView,
+                Ability::AccountsExport,
                 Ability::NewsView,
                 Ability::ComplianceView,
                 Ability::PharmacyView,

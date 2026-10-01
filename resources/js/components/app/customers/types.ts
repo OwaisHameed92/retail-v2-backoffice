@@ -1,3 +1,4 @@
+import { type CustomerPrivacyProps } from '@/components/app/privacy/types';
 import { type Paginated } from '@/components/shared/data-table';
 
 /** Module 4.4 props (App\Domain\Customers\Queries\CustomerList, CustomerDetail, CustomerStatement). */
@@ -116,6 +117,8 @@ export interface CustomerShowProps {
     consent: { current: ConsentState[]; history: ConsentEvent[] };
     canEdit: boolean;
     canEmail: boolean;
+    /** Owners only (privacy.manage, module 7.7). */
+    privacy: CustomerPrivacyProps | null;
     readOnlyReason: 'oneShop' | null;
 }
 
