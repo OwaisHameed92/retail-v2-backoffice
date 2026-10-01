@@ -10,7 +10,21 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/app-layout';
 import { Head, Link, router } from '@inertiajs/react';
-import { Banknote, ClipboardList, FileText, Info, PackageCheck, Percent, Plus, ReceiptText, ScanText, Truck, Undo2, type LucideIcon } from 'lucide-react';
+import {
+    Banknote,
+    ClipboardList,
+    FileText,
+    Info,
+    PackageCheck,
+    Percent,
+    Plus,
+    ReceiptText,
+    ScanText,
+    ShoppingCart,
+    Truck,
+    Undo2,
+    type LucideIcon,
+} from 'lucide-react';
 import { useMemo } from 'react';
 
 const ONLY = ['rows', 'filters', 'stats', 'tabs'];
@@ -86,12 +100,23 @@ export default function PurchasingIndex(props: PurchasingIndexProps) {
             </Link>
         </Button>
     );
+    const actions = kind === 'orders' && (
+        <div className="flex flex-wrap gap-2">
+            <Button variant="outline" asChild>
+                <Link href={route('app.purchasing.suggestions.index')}>
+                    <ShoppingCart />
+                    Reorder suggestions
+                </Link>
+            </Button>
+            {newOrder}
+        </div>
+    );
 
     return (
         <AppLayout>
             <Head title={`${KIND_LABELS[kind]} · Purchasing`} />
 
-            <PageHeader title="Purchasing" description={copy.description} actions={newOrder || importInvoice} tabs={<PurchasingTabs current={kind} counts={tabs} />} />
+            <PageHeader title="Purchasing" description={copy.description} actions={actions || importInvoice} tabs={<PurchasingTabs current={kind} counts={tabs} />} />
 
             {oneShop && (
                 <Alert variant="info">

@@ -24,6 +24,7 @@ import {
     ScrollText,
     Settings,
     ShieldCheck,
+    ShoppingCart,
     Store,
     Tag,
     Truck,
@@ -106,7 +107,14 @@ export function tenantNavGroups(path: string): TenantNavGroup[] {
                     title: 'Purchasing',
                     icon: Truck,
                     href: '/app/purchasing/orders',
-                    active: startsWithPath(path, '/app/purchasing'),
+                    active: startsWithPath(path, '/app/purchasing') && !startsWithPath(path, '/app/purchasing/suggestions'),
+                    ability: 'purchasing.view',
+                },
+                {
+                    title: 'Reorder suggestions',
+                    icon: ShoppingCart,
+                    href: '/app/purchasing/suggestions',
+                    active: startsWithPath(path, '/app/purchasing/suggestions'),
                     ability: 'purchasing.view',
                 },
                 {
