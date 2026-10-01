@@ -118,7 +118,7 @@ Contract: v1.4.1 §18.4. Roles: business owner, **shop manager** (one branch onl
 | 6.4 | Reorder suggestions | done |
 | 6.5 | Invoice import | done |
 | 6.6 | Anomaly alerts | todo |
-| 6.7 | Admin AI | todo |
+| 6.7 | Admin AI | deferred (owner, 2026-10-01: build when the customer base needs it) |
 
 ## Phase 7: Finish and go-live — 1/6
 
