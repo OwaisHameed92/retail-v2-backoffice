@@ -6,6 +6,7 @@ use App\Domain\Catalogue\Data\SavedProduct;
 use App\Domain\Catalogue\Support\CatalogueRules;
 use App\Domain\Catalogue\Support\ProductChildren;
 use App\Domain\Catalogue\Support\ProductFields;
+use App\Domain\Labels\Actions\QueueChangedLabels;
 use App\Domain\Shared\Actions\RecordAudit;
 use App\Domain\TillData\Models\Product;
 use Illuminate\Support\Arr;
@@ -29,6 +30,7 @@ final class SaveProduct
         private readonly ProductChildren $children,
         private readonly CatalogueRules $rules,
         private readonly RecordAudit $audit,
+        private readonly QueueChangedLabels $labels,
     ) {}
 
     /**
@@ -77,6 +79,10 @@ final class SaveProduct
 
             if ($units !== null && $this->children->syncUnits($product, $units)) {
                 $changed[] = 'units';
+            }
+
+            if (! $created && in_array('sell_price', $changed, true)) {
+                $this->labels->businessPrice($product, (string) $before['sell_price'], (string) $product->sell_price); // Shelf labels (gap #6).
             }
 
             if ($audit && ($created || $changed !== [])) {

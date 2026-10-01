@@ -3,6 +3,7 @@ import {
     ArrowLeftRight,
     Banknote,
     BarChart3,
+    Barcode,
     BookOpen,
     Boxes,
     CalendarDays,
@@ -86,6 +87,7 @@ export function tenantNavGroups(path: string): TenantNavGroup[] {
             items: [
                 { title: 'Products', icon: Package, href: '/app/products', active: startsWithPath(path, '/app/products'), ability: 'catalogue.view' },
                 { title: 'Prices', icon: PoundSterling, href: '/app/prices', active: startsWithPath(path, '/app/prices'), ability: 'catalogue.view' },
+                { title: 'Shelf labels', icon: Barcode, href: '/app/labels', active: startsWithPath(path, '/app/labels'), ability: 'labels.print' },
                 {
                     title: 'Suppliers',
                     icon: Factory,

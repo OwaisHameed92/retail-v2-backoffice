@@ -17,6 +17,7 @@ use App\Http\Controllers\App\CustomerController;
 use App\Http\Controllers\App\DashboardController;
 use App\Http\Controllers\App\HeadOfficeOrderController;
 use App\Http\Controllers\App\InvitationAcceptController;
+use App\Http\Controllers\App\LabelController;
 use App\Http\Controllers\App\NewsController;
 use App\Http\Controllers\App\NewsTitleController;
 use App\Http\Controllers\App\NotificationController;
@@ -362,6 +363,24 @@ Route::middleware(['auth:web', 'verified', 'company', 'two-factor:web'])->group(
             Route::post('{promotion}/end', [PromotionController::class, 'end'])->name('end')->whereUlid('promotion');
         });
         Route::get('{promotion}', [PromotionController::class, 'edit'])->name('edit')->whereUlid('promotion')->middleware('company.can:catalogue.view');
+    });
+
+    // Gap #6: shelf-edge labels (portal-only queue per shop, filled by price/offer changes or by hand; preview, PDF,
+    // templates). labels.print; a one-shop user works only on their own shop (the requests).
+    Route::prefix('labels')->name('labels.')->middleware('company.can:labels.print')->group(function () {
+        Route::get('/', [LabelController::class, 'index'])->name('index');
+        Route::get('products', [LabelController::class, 'products'])->name('products')->middleware('throttle:120,1');
+        Route::middleware('throttle:60,1')->group(function () {
+            Route::post('queue', [LabelController::class, 'queue'])->name('queue');
+            Route::post('printed', [LabelController::class, 'printed'])->name('printed');
+            Route::post('remove', [LabelController::class, 'remove'])->name('remove');
+            Route::post('copies', [LabelController::class, 'copies'])->name('copies');
+            Route::post('preview', [LabelController::class, 'preview'])->name('preview');
+            Route::post('pdf', [LabelController::class, 'pdf'])->name('pdf');
+            Route::post('templates', [LabelController::class, 'storeTemplate'])->name('templates.store');
+            Route::put('templates/{template}', [LabelController::class, 'updateTemplate'])->name('templates.update')->whereUlid('template');
+            Route::delete('templates/{template}', [LabelController::class, 'destroyTemplate'])->name('templates.destroy')->whereUlid('template');
+        });
     });
 
     // Module 5.9: opening hours (portal-kept, sent as the shop.trading_hours setting, used by Till health), the tills'

@@ -48,5 +48,8 @@ Schedule::command('reports:process-dirty')->everyMinute()->onOneServer()->withou
 // on automatic anonymising (the rest stay a dry run).
 Schedule::command('privacy:retention', ['--apply'])->dailyAt('03:30')->onOneServer()->withoutOverlapping();
 
+// Shelf labels (gap #6): queue labels for offers that start today or ended yesterday.
+Schedule::command('labels:queue-offers')->dailyAt('00:10')->timezone('Europe/London')->onOneServer()->withoutOverlapping(60);
+
 // Admin dashboard (module 1.9): a heartbeat so System health can show the scheduler is running.
 Schedule::call(fn () => SchedulerHeartbeat::beat())->everyMinute()->name('scheduler:heartbeat')->onOneServer();
