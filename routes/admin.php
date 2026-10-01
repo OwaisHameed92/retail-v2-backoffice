@@ -8,9 +8,12 @@ use App\Domain\Admin\Models\Admin;
 use App\Domain\Leads\Models\Lead;
 use App\Domain\Mail\Models\EmailLog;
 use App\Domain\Tenancy\Models\Company;
+use App\Http\Controllers\Admin\AccountSecurityController;
 use App\Http\Controllers\Admin\AdminSearchController;
 use App\Http\Controllers\Admin\AdminUserController;
+use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Admin\Auth\LoginController;
+use App\Http\Controllers\Admin\Auth\TwoFactorController;
 use App\Http\Controllers\Admin\Billing\BillingOverviewController;
 use App\Http\Controllers\Admin\Billing\DirectDebitController;
 use App\Http\Controllers\Admin\Billing\InvoiceActionController;
@@ -45,18 +48,38 @@ use App\Http\Controllers\Admin\TillHealthController;
 use App\Http\Controllers\Admin\TradingController;
 use App\Http\Middleware\AdminIsActive;
 use App\Http\Middleware\BlockAdminWhileImpersonating;
+use App\Http\Middleware\RequireTwoFactor;
 use App\Http\Middleware\ShareAdminInertiaData;
 use Illuminate\Support\Facades\Route;
 
 Route::get('login', [LoginController::class, 'create'])->name('login');
 Route::post('login', [LoginController::class, 'store'])->name('login.store');
 
+// Two-factor sign-in (required for every admin): the steps between the password and the admin area. Log out stays
+// reachable from them. Everything in the main group below needs a session that passed (RequireTwoFactor).
+Route::middleware(['auth:admin', AdminIsActive::class])->group(function () {
+    Route::post('logout', [LoginController::class, 'destroy'])->name('logout');
+
+    Route::prefix('two-factor')->name('two-factor.')->controller(TwoFactorController::class)->group(function () {
+        Route::get('challenge', 'challenge')->name('challenge');
+        Route::post('challenge', 'verify')->name('verify')->middleware('throttle:20,1');
+        Route::get('setup', 'setup')->name('setup');
+        Route::post('setup', 'confirm')->name('confirm')->middleware('throttle:20,1');
+    });
+});
+
 // "Login as customer" ends here. Outside the main group: the admin area is blocked while impersonating (module 1.2).
 Route::post('impersonation/stop', [ImpersonationController::class, 'destroy'])
     ->middleware(['auth:admin', AdminIsActive::class])->name('impersonation.stop');
 
-Route::middleware(['auth:admin', AdminIsActive::class, BlockAdminWhileImpersonating::class, ShareAdminInertiaData::class])->group(function () {
-    Route::post('logout', [LoginController::class, 'destroy'])->name('logout');
+Route::middleware(['auth:admin', AdminIsActive::class, BlockAdminWhileImpersonating::class, RequireTwoFactor::class.':admin', ShareAdminInertiaData::class])->group(function () {
+    // The signed-in admin's own sign-in security: two-factor status and new recovery codes (JSON, shown once).
+    Route::get('security', [AccountSecurityController::class, 'show'])->name('security');
+    Route::post('security/recovery-codes', [AccountSecurityController::class, 'recoveryCodes'])->name('security.recovery-codes')->middleware('throttle:10,1');
+
+    // Audit log across every business: owner and support (audit.view). CSV streams every matching entry.
+    Route::get('audit-log', [AuditLogController::class, 'index'])->name('audit-log.index')->middleware('can:'.AdminRole::AUDIT_VIEW);
+    Route::get('audit-log/export', [AuditLogController::class, 'export'])->name('audit-log.export')->middleware(['can:'.AdminRole::AUDIT_VIEW, 'throttle:10,1']);
 
     Route::get('/', DashboardController::class)->name('dashboard');
     // Module 3.2: the dashboard's Trading tab (shop sales across businesses). Owner, support and accounts.
@@ -73,6 +96,7 @@ Route::middleware(['auth:admin', AdminIsActive::class, BlockAdminWhileImpersonat
         Route::put('{admin}', 'update')->name('update')->can('update', 'admin');
         Route::post('{admin}/deactivate', 'deactivate')->name('deactivate')->can('deactivate', 'admin');
         Route::post('{admin}/reactivate', 'reactivate')->name('reactivate')->can('reactivate', 'admin');
+        Route::post('{admin}/two-factor/reset', [AccountSecurityController::class, 'reset'])->name('two-factor.reset')->can('resetTwoFactor', 'admin');
     });
 
     // Leads (module 1.6): tenants.view or leads.manage read, leads.manage works them, approving a trial also needs
@@ -130,6 +154,7 @@ Route::middleware(['auth:admin', AdminIsActive::class, BlockAdminWhileImpersonat
             Route::put('{company}/users/{user}', [TenantUserController::class, 'update'])->name('users.update')->whereNumber('user');
             Route::delete('{company}/users/{user}', [TenantUserController::class, 'destroy'])->name('users.destroy')->whereNumber('user');
             Route::post('{company}/users/{user}/password-link', [TenantUserController::class, 'sendPasswordLink'])->name('users.password-link')->whereNumber('user');
+            Route::post('{company}/users/{user}/two-factor/reset', [TenantUserController::class, 'resetTwoFactor'])->name('users.two-factor.reset')->whereNumber('user');
         });
 
         Route::post('{company}/impersonate', [ImpersonationController::class, 'store'])->name('impersonate')->can('impersonate', 'company');

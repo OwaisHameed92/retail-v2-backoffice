@@ -742,3 +742,17 @@ still v1 (`X-SSPOS-Contract: 1`); the pack was copied over the contract folder (
 | Turnstile | The website widget must set `data-action="trial"`; tokens from other hosts than APP_URL / PUBLIC_FORM_ORIGINS / TURNSTILE_HOSTNAMES are refused. |
 | Staff PINs | PINs stay unique (the till signs in by PIN), but a clash says only "This PIN cannot be used" and is audited (`staff.pin_refused`). |
 | Fob codes | Accepted risk: stored as the till sends them (the contract syncs the raw `rfid`), never shown in props or logs. |
+
+## Phase 7 (two-factor sign-in and audit log screens, 2026-10-01)
+
+| Topic | Decision |
+|---|---|
+| Two-factor model | TOTP (RFC 6238, 6 digits, 30 s, ±1 step), secret encrypted at rest (`encrypted` cast), 10 recovery codes stored as HMAC-SHA256 (app key) hashes and shown once. The secret is kept in the session until the first code confirms it; set-up is refused once two-factor is on, so a password alone can never replace it. A time step is accepted once (`two_factor_last_step`). |
+| Where it is enforced | Middleware `two-factor:admin` on every admin page after the password (`RequireTwoFactor`); `two-factor:web` after `company` on every portal and account-settings page. The code and set-up pages and log out sit outside it. "Passed" is per session, per guard and bound to the secret, so a reset stops a signed-in person at their next request. |
+| Who must use it | Every admin (no opt-out; only an owner resets someone else's, never their own). Portal users choose, unless their company owner turns on "Require for everyone" (the owner must use it first). While required a user cannot turn theirs off. |
+| Remember this device | 30 days, cookie `{id}|{expires}|HMAC(guard, id, expires, secret stamp)`, also encrypted by Laravel; a reset or new secret forgets every device. |
+| Rate limit | 5 wrong codes a minute per account (set-up and sign-in); the 5th logs a warning and writes `two_factor.locked_out`. Routes are also throttled (20/min). |
+| Impersonation | "Log in as customer" needs the admin's own passed two-factor; the portal closes if that state is lost. The customer's own second factor is not asked of the admin, and an impersonating admin cannot set up, turn off or regenerate the customer's two-factor or change the company requirement. |
+| Lost phone | Admins: an owner resets it (Admin users). Portal users: Switch & Save support resets it from the tenant page (`tenants.manage`), after checking identity. Both audited. |
+| Audit screens | Admin `/admin/audit-log` (`audit.view`: owner and support) across every business; tenant `/app/activity` (`audit.view`: owner only by default) pinned to the current company. Keyset paging by (created_at, id), newest first, no counts. In the tenant view Switch & Save staff show as "Switch & Save" with no name, IP or browser. CSV is streamed, formula-safe, UK times; every export is itself audited (`audit_log.exported`). |
+

@@ -5,6 +5,7 @@ use App\Http\Middleware\AssignTraceId;
 use App\Http\Middleware\EnsureCompanyAbility;
 use App\Http\Middleware\EnsureCompanyMember;
 use App\Http\Middleware\HandleInertiaRequests;
+use App\Http\Middleware\RequireTwoFactor;
 use App\Http\Middleware\SecurityHeaders;
 use App\Http\Support\InertiaErrorPages;
 use Illuminate\Foundation\Application;
@@ -54,6 +55,8 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'company' => EnsureCompanyMember::class,
             'company.can' => EnsureCompanyAbility::class,
+            // Two-factor sign-in step (`two-factor:web` after `company`; `two-factor:admin`).
+            'two-factor' => RequireTwoFactor::class,
         ]);
 
         // Guests on /admin go to the admin login; everyone else to the tenant login.

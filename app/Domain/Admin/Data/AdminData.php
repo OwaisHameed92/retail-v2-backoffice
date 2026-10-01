@@ -10,7 +10,7 @@ use App\Domain\Admin\Models\Admin;
 final class AdminData
 {
     /**
-     * @return array{id: string, name: string, email: string, role: string, roleLabel: string, isActive: bool, lastLoginAt: string|null, createdAt: string|null}
+     * @return array{id: string, name: string, email: string, role: string, roleLabel: string, isActive: bool, lastLoginAt: string|null, createdAt: string|null, twoFactorEnabled: bool}
      */
     public static function fromModel(Admin $admin): array
     {
@@ -23,6 +23,7 @@ final class AdminData
             'isActive' => $admin->is_active,
             'lastLoginAt' => $admin->last_login_at?->toIso8601String(),
             'createdAt' => $admin->created_at?->toIso8601String(),
+            'twoFactorEnabled' => $admin->hasTwoFactorEnabled(),
         ];
     }
 

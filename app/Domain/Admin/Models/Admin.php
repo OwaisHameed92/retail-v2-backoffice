@@ -3,6 +3,8 @@
 namespace App\Domain\Admin\Models;
 
 use App\Domain\Admin\Enums\AdminRole;
+use App\Domain\Security\Concerns\HasTwoFactor;
+use App\Domain\Security\Contracts\TwoFactorUser;
 use Carbon\CarbonInterface;
 use Database\Factories\AdminFactory;
 use Illuminate\Database\Eloquent\Builder;
@@ -22,13 +24,17 @@ use Illuminate\Notifications\Notifiable;
  * @property bool $is_active
  * @property CarbonInterface|null $last_login_at
  * @property string|null $remember_token
+ * @property string|null $two_factor_secret
+ * @property list<string>|null $two_factor_recovery_codes
+ * @property CarbonInterface|null $two_factor_confirmed_at
+ * @property int|null $two_factor_last_step
  * @property CarbonInterface|null $created_at
  * @property CarbonInterface|null $updated_at
  */
-class Admin extends Authenticatable
+class Admin extends Authenticatable implements TwoFactorUser
 {
     /** @use HasFactory<AdminFactory> */
-    use HasFactory, HasUlids, Notifiable;
+    use HasFactory, HasTwoFactor, HasUlids, Notifiable;
 
     /**
      * @var list<string>

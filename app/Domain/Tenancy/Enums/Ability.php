@@ -81,4 +81,7 @@ enum Ability: string
 
     /** Parcel activity and carriers, read only (module 5.10). Owner, manager. */
     case ParcelsView = 'parcels.view';
+
+    /** The business's activity log (who changed what in the portal and on its account). Owner only by default. */
+    case AuditView = 'audit.view';
 }

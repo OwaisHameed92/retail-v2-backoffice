@@ -6,6 +6,7 @@ use App\Http\Controllers\Auth\EmailVerificationNotificationController;
 use App\Http\Controllers\Auth\EmailVerificationPromptController;
 use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
+use App\Http\Controllers\Auth\TwoFactorController;
 use App\Http\Controllers\Auth\VerifyEmailController;
 use Illuminate\Support\Facades\Route;
 
@@ -54,4 +55,13 @@ Route::middleware('auth')->group(function () {
 
     Route::post('logout', [AuthenticatedSessionController::class, 'destroy'])
         ->name('logout');
+
+    // Two-factor sign-in: the code page after the password, and setting up an authenticator app (optional, or required
+    // by the business). The portal itself (`two-factor:web`) stays closed until the session passed.
+    Route::prefix('two-factor')->name('two-factor.')->controller(TwoFactorController::class)->group(function () {
+        Route::get('challenge', 'challenge')->name('challenge');
+        Route::post('challenge', 'verify')->name('verify')->middleware('throttle:20,1');
+        Route::get('setup', 'setup')->name('setup');
+        Route::post('setup', 'confirm')->name('confirm')->middleware('throttle:20,1');
+    });
 });

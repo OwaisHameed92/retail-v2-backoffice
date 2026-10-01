@@ -23,7 +23,10 @@ final class Impersonation
      * Account screens a support admin must not change on the customer's behalf, and the business switcher (the
      * session is pinned to the business it was started for, security review M5).
      */
-    public const BLOCKED_ROUTES = ['profile.update', 'profile.destroy', 'password.update', 'app.company.switch'];
+    public const BLOCKED_ROUTES = [
+        'profile.update', 'profile.destroy', 'password.update', 'app.company.switch',
+        'security.two-factor.destroy', 'security.recovery-codes', 'security.company',
+    ];
 
     /**
      * @return array{admin_id: string, user_id: int, company_id: string, started_at: string}|null

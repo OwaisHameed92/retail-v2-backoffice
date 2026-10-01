@@ -127,7 +127,14 @@ export const adminNavItems: AdminNavItem[] = [
         ability: 'admins.manage',
         group: 'Settings',
     },
-    { title: 'Audit log', icon: ScrollText, group: 'Settings' },
+    {
+        title: 'Audit log',
+        icon: ScrollText,
+        route: 'admin.audit-log.index',
+        activePattern: 'admin.audit-log.*',
+        ability: 'audit.view',
+        group: 'Settings',
+    },
     { title: 'Settings', icon: Settings, group: 'Settings' },
 ];
 

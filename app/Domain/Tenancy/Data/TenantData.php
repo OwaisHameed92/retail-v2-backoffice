@@ -130,6 +130,7 @@ final class TenantData
             'isActive' => $membership->is_active,
             'isOwner' => $role === CompanyRole::Owner,
             'joinedAt' => $joined instanceof DateTimeInterface ? Carbon::instance($joined)->toIso8601String() : null,
+            'twoFactorEnabled' => $user->hasTwoFactorEnabled(),
         ];
     }
 

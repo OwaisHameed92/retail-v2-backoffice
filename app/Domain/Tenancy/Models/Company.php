@@ -43,6 +43,7 @@ use Illuminate\Support\Carbon;
  * @property int $max_branches Branches allowed (key `limits.branches`). Set via UpdateBranchLimits.
  * @property string|null $data_connection Database connection holding its data (sharding groundwork, CompanyConnection).
  * @property CompanyStatus $status
+ * @property bool $require_two_factor Everyone in the business must use two-factor sign-in (SetCompanyTwoFactorRequirement).
  * @property string|null $plan_id Plan for new tills (module 1.3); null = portal default. Set via ChangeCompanyPlan.
  * @property string|null $notes
  * @property Carbon|null $trial_ends_at
@@ -92,6 +93,7 @@ class Company extends Model
         'status' => 'trial',
         'multi_branch' => false,
         'max_branches' => 1,
+        'require_two_factor' => false,
     ];
 
     /**
@@ -103,6 +105,7 @@ class Company extends Model
             'status' => CompanyStatus::class,
             'business_type' => BusinessType::class,
             'multi_branch' => 'boolean',
+            'require_two_factor' => 'boolean',
             'max_branches' => 'integer',
             'suspended_from_status' => CompanyStatus::class,
             'trial_ends_at' => 'datetime',

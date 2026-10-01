@@ -29,6 +29,8 @@ export interface AdminRecord {
     isActive: boolean;
     lastLoginAt: string | null;
     createdAt: string | null;
+    /** Set up an authenticator app (required; "Not set up" until their first sign-in after being added). */
+    twoFactorEnabled: boolean;
 }
 
 export interface RoleOption {
