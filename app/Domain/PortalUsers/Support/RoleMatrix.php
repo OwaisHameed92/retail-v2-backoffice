@@ -41,6 +41,7 @@ final class RoleMatrix
         'audit.view' => ['Business', 'See the activity log'],
         'privacy.manage' => ['Business', 'Export or anonymise a customer\'s data and set data retention'],
         'accounts.export' => ['Money', 'Export journals to Xero, QuickBooks or Sage'],
+        'ai.use' => ['Business', 'Ask the AI assistant about the business'],
     ];
 
     /** One line per role for pickers and the matrix header. */

@@ -9,6 +9,8 @@ reasons: `docs/DECISIONS.md` → "AI foundation".
 ```dotenv
 ANTHROPIC_API_KEY=sk-ant-...   # empty = every AI feature says "AI features are not set up yet"
 AI_ENABLED=true                # kill switch
+AI_MODEL=claude-sonnet-5       # assistant / reasoning tier (add a new id to ai.model_options and ai.pricing)
+AI_FAST_MODEL=claude-haiku-4-5-20251001   # cheap classification and summaries
 AI_MONTHLY_TOKENS=2000000      # default monthly budget per company
 ```
 
@@ -145,3 +147,21 @@ $fake->toolResultsIn();   // tool_result blocks sent back in the last request
 `tests/Feature/Ai/AiTestHelpers.php` has `aiPlan()`, `aiCompany()`, `member()`, `userContext()`, `branchOf()`.
 `AnthropicAiClientTest` shows how to test the real client against a Guzzle `MockHandler` (request shape, retries,
 streaming).
+
+## Portal assistant (module 6.2)
+
+The top bar's "Ask anything" (⌘K) opens `AssistantPanel` (`resources/js/components/app/assistant`) for users with
+`ai.use` (owner, manager, accountant). Server: `App\Http\Controllers\App\AssistantController`, routes
+`/app/assistant/*` (`company.can:ai.use`).
+
+| Piece | What it does |
+|---|---|
+| `Actions\AskPortalAssistant` | `ai.use`, own conversation only, emails / phones / card numbers scrubbed from the question, then `RunAssistant`; stores the answer's report links (`ai_messages.links`) |
+| `POST /app/assistant/ask` | Server-sent events: `text` deltas, then `done` (answer, links, proposals) or `error`. Gate refusals (not set up, not in plan, allowance used) are a 503 JSON before the stream |
+| `Tools\Portal\*` | Read tools on the existing report queries: `get_sales` (3.1 SalesReport: totals, compare, by shop / till / day / hour), `get_product_sales` (top / bottom / departments), `get_refunds_and_voids`, `get_vat_summary`, `get_cash_variances` (4.8 reports via `ReportDigest`), `get_stock` (5.1 StockOnHand), `get_customers_owing` (name, card number, balance only), `get_staff_hours` (5.6 Timesheets, no pay rates), `get_till_health` (2.7), `find_products`. Write: `draft_purchase_order` (5.2 SaveHeadOfficeOrder, draft only, after Confirm) |
+| `Support\Portal\ShopPin` | A one-shop user's tools always read their shop (ToolExecutor sets the membership's `branch_id` on CurrentCompany inside `runAs`) |
+| `Support\Portal\AssistantLinks` | Each tool adds the page showing the same figures; report links carry the shop for the top-bar switcher |
+| `Queries\AiUsageSummary` | This month's tokens against the allowance, by feature and person: `/app/billing` and the panel |
+| `Actions\DeleteAiConversations` | Delete one or all of the user's conversations (pending proposals cancelled) |
+
+Tests: `tests/Feature/Ai/PortalAssistant*Test.php` (FakeAiClient; `PortalAssistantHelpers::ask()` reads the SSE).

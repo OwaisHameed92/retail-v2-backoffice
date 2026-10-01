@@ -19,12 +19,12 @@ final class AiSettings
     {
         $tier = (string) config("ai.features.{$feature->value}.model", 'default');
 
-        return (string) config("ai.models.{$tier}", config('ai.models.default', 'claude-opus-5'));
+        return (string) config("ai.models.{$tier}", config('ai.models.default', 'claude-sonnet-5'));
     }
 
     public static function fastModel(): string
     {
-        return (string) config('ai.models.fast', 'claude-haiku-4-5');
+        return (string) config('ai.models.fast', 'claude-haiku-4-5-20251001');
     }
 
     public static function effortFor(AiFeature $feature): ?string

@@ -1,6 +1,17 @@
 <?php
 
 use App\Domain\Ai\Tools\GetCompanyOverview;
+use App\Domain\Ai\Tools\Portal\DraftPurchaseOrder;
+use App\Domain\Ai\Tools\Portal\FindProducts;
+use App\Domain\Ai\Tools\Portal\GetCashVariances;
+use App\Domain\Ai\Tools\Portal\GetCustomersOwing;
+use App\Domain\Ai\Tools\Portal\GetProductSales;
+use App\Domain\Ai\Tools\Portal\GetRefundsAndVoids;
+use App\Domain\Ai\Tools\Portal\GetSales;
+use App\Domain\Ai\Tools\Portal\GetStaffHours;
+use App\Domain\Ai\Tools\Portal\GetStock;
+use App\Domain\Ai\Tools\Portal\GetTillHealth;
+use App\Domain\Ai\Tools\Portal\GetVatSummary;
 use App\Domain\Ai\Tools\RenameBranch;
 
 /*
@@ -34,12 +45,13 @@ return [
     ],
 
     /*
-    | Model tiers. "default" for reasoning over tool data, "fast" for cheap, high-volume jobs.
-    | Chosen per the claude-api skill: Claude Opus 5 by default, Claude Haiku 4.5 for "fast/cheap".
+    | Model tiers. "default" for reasoning over tool data (the portal assistant), "fast" for cheap, high-volume
+    | jobs (classification, summaries). Claude Sonnet 5 and Claude Haiku 4.5 (dated snapshot) by default; set
+    | AI_MODEL / AI_FAST_MODEL to change them, and add the new id to `model_options` and `pricing`.
     */
     'models' => [
-        'default' => env('AI_MODEL', 'claude-opus-5'),
-        'fast' => env('AI_FAST_MODEL', 'claude-haiku-4-5'),
+        'default' => env('AI_MODEL', 'claude-sonnet-5'),
+        'fast' => env('AI_FAST_MODEL', 'claude-haiku-4-5-20251001'),
     ],
 
     /*
@@ -49,6 +61,9 @@ return [
     | - fallbacks: server-side refusal fallback (`fallbacks: "default"`, beta server-side-fallback-2026-07-01).
     */
     'model_options' => [
+        // Sonnet 5: adaptive thinking (display omitted), effort accepted; no server-side `fallbacks: "default"`.
+        'claude-sonnet-5' => ['thinking' => 'adaptive', 'effort' => true, 'fallbacks' => false],
+        'claude-haiku-4-5-20251001' => ['thinking' => null, 'effort' => false, 'fallbacks' => false],
         'claude-opus-5' => ['thinking' => 'adaptive', 'effort' => true, 'fallbacks' => true],
         'claude-haiku-4-5' => ['thinking' => null, 'effort' => false, 'fallbacks' => false],
     ],
@@ -88,6 +103,8 @@ return [
     */
     'usd_to_gbp' => (string) env('AI_USD_TO_GBP', '0.79'),
     'pricing' => [
+        'claude-sonnet-5' => ['input' => '2.00', 'output' => '10.00', 'cache_write' => '2.50', 'cache_read' => '0.20'],
+        'claude-haiku-4-5-20251001' => ['input' => '1.00', 'output' => '5.00', 'cache_write' => '1.25', 'cache_read' => '0.10'],
         'claude-opus-5' => ['input' => '5.00', 'output' => '25.00', 'cache_write' => '6.25', 'cache_read' => '0.50'],
         'claude-opus-4-8' => ['input' => '5.00', 'output' => '25.00', 'cache_write' => '6.25', 'cache_read' => '0.50'],
         'claude-haiku-4-5' => ['input' => '1.00', 'output' => '5.00', 'cache_write' => '1.25', 'cache_read' => '0.10'],
@@ -110,9 +127,21 @@ return [
     'tools' => [
         GetCompanyOverview::class,
         RenameBranch::class,
+        // Portal assistant (module 6.2): read tools on the report queries, and one write (a draft order).
+        GetSales::class,
+        GetProductSales::class,
+        GetRefundsAndVoids::class,
+        GetStock::class,
+        FindProducts::class,
+        GetCustomersOwing::class,
+        GetCashVariances::class,
+        GetStaffHours::class,
+        GetVatSummary::class,
+        GetTillHealth::class,
+        DraftPurchaseOrder::class,
     ],
 
     // Keys dropped from tool results before they are sent (personal data the model does not need).
     // Secrets are removed separately by App\Domain\Shared\Support\Redactor.
-    'redact_keys' => ['email', 'phone', 'address', 'contact_name', 'device_id', 'ip', 'last_ip', 'user_agent'],
+    'redact_keys' => ['email', 'phone', 'address', 'contact_name', 'device_id', 'ip', 'last_ip', 'user_agent', 'dob', 'postcode'],
 ];

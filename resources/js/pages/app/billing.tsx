@@ -1,5 +1,6 @@
 import { formatDate, formatDay } from '@/components/admin/billing/format';
 import { InvoiceStatusBadge } from '@/components/admin/billing/invoice-status-badge';
+import { AiUsageCard } from '@/components/app/billing/ai-usage-card';
 import { BillingRequestDialog } from '@/components/app/billing/billing-request-dialog';
 import { DirectDebitCard } from '@/components/app/billing/direct-debit-card';
 import { PaymentsCard, SetupFeeCard, SubscriptionCard } from '@/components/app/billing/subscription-cards';
@@ -69,11 +70,20 @@ export default function Billing(props: PortalBillingProps) {
                 />
             </StatGrid>
 
-            <SubscriptionCard account={account} plan={plan} pricing={pricing} requests={requests} canRequest={canRequest} onCancel={() => ask('cancel')} />
+            <SubscriptionCard
+                account={account}
+                plan={plan}
+                pricing={pricing}
+                requests={requests}
+                canRequest={canRequest}
+                onCancel={() => ask('cancel')}
+            />
 
             {setupFee && <SetupFeeCard setupFee={setupFee} />}
 
             <PaymentsCard payments={payments} collections={collections} />
+
+            {props.aiUsage && <AiUsageCard usage={props.aiUsage} />}
 
             <SectionCard title="Invoices" description="Every invoice we have sent you. Download a copy as a PDF." flush contentClassName="p-0">
                 {invoices.length === 0 ? (
@@ -111,7 +121,10 @@ export default function Billing(props: PortalBillingProps) {
                                         </TableCell>
                                         <TableCell className="pr-5 text-right sm:pr-6">
                                             <Button variant="ghost" size="sm" asChild>
-                                                <a href={route('app.billing.invoices.pdf', invoice.id)} aria-label={`Download ${invoice.number} as PDF`}>
+                                                <a
+                                                    href={route('app.billing.invoices.pdf', invoice.id)}
+                                                    aria-label={`Download ${invoice.number} as PDF`}
+                                                >
                                                     <Download />
                                                     <span className="hidden sm:inline">PDF</span>
                                                 </a>

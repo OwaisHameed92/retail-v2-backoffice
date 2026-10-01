@@ -60,7 +60,8 @@ export type Ability =
     | 'pharmacy.view'
     | 'parcels.view'
     | 'privacy.manage'
-    | 'accounts.export';
+    | 'accounts.export'
+    | 'ai.use';
 
 /** The company the user is working in (shared by HandleInertiaRequests). */
 export interface CurrentCompany {

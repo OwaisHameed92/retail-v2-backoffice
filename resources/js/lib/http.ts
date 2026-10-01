@@ -15,7 +15,7 @@ export interface JsonResult<T> {
 
 type Method = 'GET' | 'POST' | 'PUT' | 'DELETE';
 
-function xsrfToken(): string | null {
+export function xsrfToken(): string | null {
     if (typeof document === 'undefined') {
         return null;
     }

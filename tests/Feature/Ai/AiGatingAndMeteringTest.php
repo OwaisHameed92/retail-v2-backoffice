@@ -123,21 +123,21 @@ test('every call is metered with tokens, cost in pounds and latency', function (
     expect($rows)->toHaveCount(2);
 
     $row = $rows->first();
-    // 1000 x $5 + 500 x $25 + 2000 x $0.50 + 400 x $6.25 = $0.021 per call; x 0.79 = £0.016590
+    // Sonnet 5: 1000 x $2 + 500 x $10 + 2000 x $0.20 + 400 x $2.50 = $0.0084 per call; x 0.79 = £0.006636
     expect($row->company_id)->toBe($company->id)
         ->and($row->user_id)->toBe($context->userId())
         ->and($row->conversation_id)->toBe($reply->conversation->id)
         ->and($row->feature)->toBe(AiFeature::Assistant)
-        ->and($row->model)->toBe('claude-opus-5')
+        ->and($row->model)->toBe('claude-sonnet-5')
         ->and($row->status)->toBe(AiUsageStatus::Ok)
         ->and($row->input_tokens)->toBe(1000)
         ->and($row->output_tokens)->toBe(500)
         ->and($row->cache_read_tokens)->toBe(2000)
         ->and($row->cache_write_tokens)->toBe(400)
         ->and($row->total_tokens)->toBe(3900)
-        ->and($row->cost_gbp)->toBe('0.016590')
+        ->and($row->cost_gbp)->toBe('0.006636')
         ->and($row->latency_ms)->toBe(5)
-        ->and($reply->costGbp)->toBe('0.033180')
+        ->and($reply->costGbp)->toBe('0.013272')
         ->and($reply->usage->total())->toBe(7800)
         ->and(app(AiBudget::class)->usedBy($context))->toBe(7800);
 });
@@ -159,7 +159,7 @@ test('single-shot features use the fast model through CallModel', function () {
     ));
 
     expect($response->text())->toBe('Good morning.')
-        ->and($this->fake->lastRequest()->model)->toBe('claude-haiku-4-5')
+        ->and($this->fake->lastRequest()->model)->toBe('claude-haiku-4-5-20251001')
         ->and(AiUsage::query()->sole()->feature)->toBe(AiFeature::MorningSummary)
         ->and(AiUsage::query()->sole()->user_id)->toBeNull();
 });

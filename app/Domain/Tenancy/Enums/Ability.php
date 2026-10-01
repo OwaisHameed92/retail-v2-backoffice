@@ -90,4 +90,7 @@ enum Ability: string
 
     /** Journals and sales summaries exported to Xero, QuickBooks or Sage, and their account mapping (gap #8). Owner and accountant. */
     case AccountsExport = 'accounts.export';
+
+    /** The portal AI assistant (module 6.2). Owner, manager, accountant; its tools still need their own abilities. */
+    case AiUse = 'ai.use';
 }
