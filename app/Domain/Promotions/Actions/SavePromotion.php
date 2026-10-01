@@ -2,6 +2,7 @@
 
 namespace App\Domain\Promotions\Actions;
 
+use App\Domain\Labels\Actions\QueueChangedLabels;
 use App\Domain\Promotions\Support\PriceTiers;
 use App\Domain\Promotions\Support\PromotionChecks;
 use App\Domain\Promotions\Support\PromotionTypes;
@@ -40,7 +41,7 @@ final class SavePromotion
         'price_tiers' => null, 'days' => 'all',
     ];
 
-    public function __construct(private readonly PromotionChecks $checks, private readonly RecordAudit $audit) {}
+    public function __construct(private readonly PromotionChecks $checks, private readonly RecordAudit $audit, private readonly QueueChangedLabels $labels) {}
 
     /**
      * @param  array<string, mixed>  $data  FIELDS (dates `Y-m-d`, times `H:i`, money in pounds, days a list or the till's string)
@@ -53,7 +54,9 @@ final class SavePromotion
         $itemType = in_array($data['type'], PromotionTypes::ITEM_TYPES, true);
         $this->checks->check($rule, $data, $itemType ? $items : []);
 
-        return DB::transaction(function () use ($rule, $data, $items, $created, $itemType) {
+        $wasLive = $this->labels->snapshot($rule);
+
+        return DB::transaction(function () use ($rule, $data, $items, $created, $itemType, $wasLive) {
             $rule ??= (new PromotionRule)->forceFill([
                 'member_value' => '0', 'price_tiers' => null, 'redemption_count' => 0, 'customer_group_id' => null,
                 'seasonal_event_id' => '',
@@ -78,6 +81,7 @@ final class SavePromotion
                 $this->audit->handle($created ? 'promotion.created' : 'promotion.updated', $rule,
                     $before === null ? null : Arr::only($before, $dirty), Arr::only($rule->attributesToArray(), $created ? ['name', 'type', 'scope', 'branch_id'] : $dirty),
                     ['name' => $rule->name, 'items_changed' => $itemsChanged]);
+                $this->labels->offer($rule, $wasLive); // Shelf labels (gap #6).
             }
 
             return $rule;

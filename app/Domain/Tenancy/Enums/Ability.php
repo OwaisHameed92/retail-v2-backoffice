@@ -93,4 +93,7 @@ enum Ability: string
 
     /** The portal AI assistant (module 6.2). Owner, manager, accountant; its tools still need their own abilities. */
     case AiUse = 'ai.use';
+
+    /** Shelf-edge labels: the shop's label queue, templates and printing (gap #6). Owner and manager (a one-shop manager: their shop). */
+    case LabelsPrint = 'labels.print';
 }

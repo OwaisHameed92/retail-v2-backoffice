@@ -2,6 +2,7 @@
 
 namespace App\Domain\Pricing\Actions;
 
+use App\Domain\Labels\Actions\QueueChangedLabels;
 use App\Domain\Shared\Actions\RecordAudit;
 use App\Domain\Tenancy\Models\Branch;
 use App\Domain\TillData\Actions\SetBranchPrice;
@@ -20,7 +21,7 @@ use Illuminate\Validation\ValidationException;
  */
 final class SetShopPrice
 {
-    public function __construct(private readonly SetBranchPrice $set, private readonly RecordAudit $audit) {}
+    public function __construct(private readonly SetBranchPrice $set, private readonly RecordAudit $audit, private readonly QueueChangedLabels $labels) {}
 
     public function handle(
         Branch $branch,
@@ -52,6 +53,8 @@ final class SetShopPrice
             'branch_id' => $branch->id, 'product_unit_id' => $productUnitId, 'price' => $row->price,
             'valid_from_utc' => $row->valid_from_utc->toIso8601ZuluString(), 'valid_to_utc' => $row->valid_to_utc?->toIso8601ZuluString(),
         ], ['name' => $product->name, 'shop' => $branch->name, 'branch_price_id' => $row->id]);
+
+        $this->labels->shopPrice($branch, $product, $row); // Shelf labels (gap #6).
 
         return $row;
     }

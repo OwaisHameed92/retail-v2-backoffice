@@ -61,7 +61,8 @@ export type Ability =
     | 'parcels.view'
     | 'privacy.manage'
     | 'accounts.export'
-    | 'ai.use';
+    | 'ai.use'
+    | 'labels.print';
 
 /** The company the user is working in (shared by HandleInertiaRequests). */
 export interface CurrentCompany {

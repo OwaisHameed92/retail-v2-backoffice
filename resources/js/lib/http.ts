@@ -89,3 +89,46 @@ export async function sendJson<T>(method: Method, url: string, body?: unknown, s
 
     return { ok: false, status: response.status, data: null, errors, message: firstError ?? failureMessage(response.status, parsed) };
 }
+
+/**
+ * POSTs JSON and saves the file the server replies with (e.g. a PDF), as `fallbackName` unless the reply names it.
+ * Returns null when saved, else the message to show.
+ */
+export async function postAndDownload(url: string, body: unknown, fallbackName: string): Promise<string | null> {
+    const headers: Record<string, string> = {
+        Accept: 'application/json, application/pdf',
+        'Content-Type': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest',
+    };
+    const token = xsrfToken();
+    if (token) {
+        headers['X-XSRF-TOKEN'] = token;
+    }
+
+    let response: Response;
+    try {
+        response = await fetch(url, { method: 'POST', headers, credentials: 'same-origin', cache: 'no-store', body: JSON.stringify(body) });
+    } catch {
+        return 'We could not reach the server. Check your connection and try again.';
+    }
+
+    if (!response.ok) {
+        const parsed: unknown = await response.json().catch(() => null);
+        const errors = typeof parsed === 'object' && parsed !== null && 'errors' in parsed ? (parsed as { errors: Record<string, string[]> }).errors : {};
+        const first = Object.values(errors)[0]?.[0];
+
+        return first ?? failureMessage(response.status, parsed);
+    }
+
+    const name = /filename="([^"]+)"/.exec(response.headers.get('Content-Disposition') ?? '')?.[1] ?? fallbackName;
+    const href = URL.createObjectURL(await response.blob());
+    const link = document.createElement('a');
+    link.href = href;
+    link.download = name;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(href), 10_000);
+
+    return null;
+}

@@ -2,6 +2,7 @@
 
 namespace App\Domain\Pricing\Actions;
 
+use App\Domain\Labels\Actions\QueueChangedLabels;
 use App\Domain\Shared\Actions\RecordAudit;
 use App\Domain\Tenancy\Models\Branch;
 use App\Domain\TillData\Models\BranchPrice;
@@ -17,7 +18,7 @@ use Illuminate\Support\Facades\DB;
  */
 final class EndShopPrice
 {
-    public function __construct(private readonly RecordAudit $audit) {}
+    public function __construct(private readonly RecordAudit $audit, private readonly QueueChangedLabels $labels) {}
 
     public function handle(Branch $branch, Product $product, ?string $productUnitId = null, ?CarbonImmutable $at = null): int
     {
@@ -36,6 +37,10 @@ final class EndShopPrice
                     'name' => $product->name, 'shop' => $branch->name, 'branch_id' => $branch->id, 'product_unit_id' => $productUnitId,
                     'branch_price_ids' => $rows->pluck('id')->all(),
                 ]);
+
+                if ($productUnitId === null) {
+                    $this->labels->shopPriceEnded($branch, $product); // Shelf labels (gap #6).
+                }
             }
 
             return $rows->count();

@@ -21,6 +21,7 @@ final class RoleMatrix
         'catalogue.view' => ['Catalogue', 'See products'],
         'catalogue.manage' => ['Catalogue', 'Add and edit products'],
         'prices.manage' => ['Catalogue', 'Change prices'],
+        'labels.print' => ['Catalogue', 'Print shelf-edge labels'],
         'stock.view' => ['Catalogue', 'See stock'],
         'stock.manage' => ['Catalogue', 'Adjust stock'],
         'purchasing.view' => ['Catalogue', 'See orders, deliveries, supplier invoices and statements'],

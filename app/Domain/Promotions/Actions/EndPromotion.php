@@ -2,6 +2,7 @@
 
 namespace App\Domain\Promotions\Actions;
 
+use App\Domain\Labels\Actions\QueueChangedLabels;
 use App\Domain\Shared\Actions\RecordAudit;
 use App\Domain\TillData\Models\PromotionRule;
 use Carbon\CarbonImmutable;
@@ -13,11 +14,12 @@ use Carbon\CarbonImmutable;
  */
 final class EndPromotion
 {
-    public function __construct(private readonly RecordAudit $audit) {}
+    public function __construct(private readonly RecordAudit $audit, private readonly QueueChangedLabels $labels) {}
 
     public function handle(PromotionRule $rule): PromotionRule
     {
         $today = CarbonImmutable::now('Europe/London')->startOfDay();
+        $wasLive = $this->labels->snapshot($rule);
         $before = ['is_active' => $rule->is_active, 'effective_to' => $rule->effective_to?->toDateString()];
 
         $rule->is_active = false;
@@ -34,6 +36,7 @@ final class EndPromotion
         $rule->save();
 
         $this->audit->handle('promotion.ended', $rule, $before, ['is_active' => false, 'effective_to' => $rule->effective_to?->toDateString()], ['name' => $rule->name]);
+        $this->labels->offer($rule, $wasLive); // Shelf labels (gap #6).
 
         return $rule;
     }
