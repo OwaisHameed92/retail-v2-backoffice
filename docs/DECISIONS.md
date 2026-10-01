@@ -764,3 +764,9 @@ still v1 (`X-SSPOS-Contract: 1`); the pack was copied over the contract folder (
 | MySQL 8 | The whole suite also runs on MySQL 8: `composer test:mysql` (serial, `phpunit.mysql.xml`, MAMP 127.0.0.1:8889 root/root, database `retail_v2_testing` only) and the CI `mysql` job (MySQL 8.0 service, parallel). JSON columns read back from MySQL have their members in MySQL's order: tests compare them with `toBeIgnoringKeyOrder()`. `PushScaleTest` (SQLite query plans) is skipped on MySQL. A test that creates a table uses a TEMPORARY table on MySQL (CREATE TABLE commits the test transaction). |
 | MySQL fixes | `sync_keys.created_by` is a ULID (it was a bigint pointing at `admins.id`; SQLite never checked). Reserved word `lines` no longer used as a SQL alias (news deliveries). Stock movement reasons read `reasons.text` (SQLite had been returning the string "name"). Tenders with equal takings are listed in name order. |
 | Deploy | `docs/deploy.md` + `deploy/`: Ubuntu 24.04, PHP 8.4-FPM pool as the app user, Nginx (`$realpath_root`, 64 MB bodies), MySQL 8 on localhost, Supervisor `queue:work` ×2, cron `schedule:run` + nightly `mysqldump` (14 days, optional offsite), logrotate 14 days, release folders + atomic `current` symlink with automatic rollback when `/up` fails. `APP_KEY` and the licence signing key are generated on the server only; `reports:rebuild` + `reports:check` after the first deploy. |
+
+## Two-factor switched off for now (owner, 2026-10-01)
+
+| Topic | Decision |
+|---|---|
+| Two-factor sign-in | Off until the owner asks for it (`TWO_FACTOR_ENABLED=false`, config `security.two_factor.enabled`). The middleware lets everyone through, the account menu and settings hide "Security"; code, screens, data and tests stay (tests run with it on). Turn on before go-live is recommended (security review H1). |

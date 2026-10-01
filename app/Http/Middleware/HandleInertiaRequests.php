@@ -63,6 +63,7 @@ class HandleInertiaRequests extends Middleware
             'auth' => [
                 'user' => $request->user(),
             ],
+            'twoFactorEnabled' => (bool) config('security.two_factor.enabled'),
             'company' => fn () => $this->currentCompany($request)?->only(['id', 'name', 'status']),
             'companies' => fn () => $this->companies($request),
             'companyRole' => fn () => $this->currentCompany($request)?->membership?->role->value,

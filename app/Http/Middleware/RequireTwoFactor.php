@@ -31,6 +31,10 @@ class RequireTwoFactor
 
     public function handle(Request $request, Closure $next, string $guard = 'web'): Response
     {
+        if (! config('security.two_factor.enabled')) {
+            return $next($request);
+        }
+
         $area = TwoFactorArea::from($guard);
         $user = Auth::guard($guard)->user();
 

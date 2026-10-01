@@ -15,7 +15,10 @@ const sidebarNavItems: { title: string; url: string; icon: LucideIcon }[] = [
  * section's cards on the right.
  */
 export default function SettingsLayout({ children }: { children: React.ReactNode }) {
-    const currentPath = usePage().url.split('?')[0];
+    const page = usePage<{ twoFactorEnabled?: boolean }>();
+    const currentPath = page.url.split('?')[0];
+    // Two-factor sign-in is switched off for now (config security.two_factor.enabled): hide its section.
+    const navItems = page.props.twoFactorEnabled ? sidebarNavItems : sidebarNavItems.filter((item) => item.url !== '/settings/security');
 
     return (
         <>
@@ -24,7 +27,7 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
             <div className="flex flex-col gap-6 lg:flex-row lg:gap-10">
                 <aside className="lg:w-52 lg:shrink-0">
                     <nav aria-label="Settings sections" className="scrollbar-none -mx-4 flex gap-1 overflow-x-auto px-4 lg:mx-0 lg:flex-col lg:px-0">
-                        {sidebarNavItems.map((item) => {
+                        {navItems.map((item) => {
                             const active = currentPath === item.url;
 
                             return (

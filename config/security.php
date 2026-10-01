@@ -34,6 +34,12 @@ return [
         'include_subdomains' => (bool) env('HSTS_INCLUDE_SUBDOMAINS', false),
     ],
 
+    // Two-factor sign-in. Off for now (owner, 2026-10-01): the screens and data stay, nothing is asked or enforced.
+    // Turn on with TWO_FACTOR_ENABLED=true (tests run with it on, see phpunit.xml).
+    'two_factor' => [
+        'enabled' => (bool) env('TWO_FACTOR_ENABLED', false),
+    ],
+
     // Admin "Login as customer" (M5): the support session ends by itself after this many minutes.
     'impersonation_minutes' => max(1, (int) env('IMPERSONATION_MINUTES', 60)),
 

@@ -11,12 +11,13 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useMobileNavigation } from '@/hooks/use-mobile-navigation';
-import { Link } from '@inertiajs/react';
+import { Link, usePage } from '@inertiajs/react';
 import { LogOut, ShieldCheck } from 'lucide-react';
 
 /** The admin account menu: who is signed in, sign-in security, theme, log out. */
 function AdminMenuItems({ admin }: { admin: AdminSession }) {
     const cleanup = useMobileNavigation();
+    const twoFactorEnabled = usePage<{ twoFactorEnabled?: boolean }>().props.twoFactorEnabled === true;
 
     return (
         <>
@@ -33,12 +34,14 @@ function AdminMenuItems({ admin }: { admin: AdminSession }) {
                 </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem asChild>
-                <Link className="w-full" href={route('admin.security')} onClick={cleanup}>
-                    <ShieldCheck className="text-muted-foreground size-4" />
-                    Sign-in security
-                </Link>
-            </DropdownMenuItem>
+            {twoFactorEnabled && (
+                <DropdownMenuItem asChild>
+                    <Link className="w-full" href={route('admin.security')} onClick={cleanup}>
+                        <ShieldCheck className="text-muted-foreground size-4" />
+                        Sign-in security
+                    </Link>
+                </DropdownMenuItem>
+            )}
             <ThemeSubmenu />
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
