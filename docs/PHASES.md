@@ -114,9 +114,9 @@ Contract: v1.4.1 §18.4. Roles: business owner, **shop manager** (one branch onl
 |---|---|---|
 | 6.1 | AI foundation (client, tools, preview-then-confirm, metering) | done |
 | 6.2 | Portal assistant | done |
-| 6.3 | Morning summary | todo |
-| 6.4 | Reorder suggestions | todo |
-| 6.5 | Invoice import | todo |
+| 6.3 | Morning summary | done |
+| 6.4 | Reorder suggestions | done |
+| 6.5 | Invoice import | done |
 | 6.6 | Anomaly alerts | todo |
 | 6.7 | Admin AI | todo |
 
