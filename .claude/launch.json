@@ -10,6 +10,17 @@
         "--port=8000"
       ],
       "port": 8000
+    },
+    {
+      "name": "trial-form-page",
+      "runtimeExecutable": "php",
+      "runtimeArgs": [
+        "-S",
+        "localhost:5173",
+        "-t",
+        "/Applications/MAMP/htdocs/switch-save-website"
+      ],
+      "port": 5173
     }
   ]
 }
