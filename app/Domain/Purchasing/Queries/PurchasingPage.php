@@ -63,7 +63,7 @@ final class PurchasingPage
     /**
      * Shops, suppliers and what the user may do, shared by the purchasing screens.
      *
-     * @return array{shops: list<array{id: string, name: string, code: string}>, suppliers: list<array{id: string, name: string}>, oneShop: bool, can: array{manage: bool}}
+     * @return array{shops: list<array{id: string, name: string, code: string}>, suppliers: list<array{id: string, name: string}>, oneShop: bool, can: array{manage: bool, importInvoices: bool}}
      */
     public static function shared(): array
     {
@@ -76,7 +76,7 @@ final class PurchasingPage
             'suppliers' => Supplier::query()->orderBy('name')->get(['id', 'name'])
                 ->map(fn (Supplier $s) => ['id' => $s->id, 'name' => (string) $s->name])->values()->all(),
             'oneShop' => $restricted !== null,
-            'can' => ['manage' => self::canManage()],
+            'can' => ['manage' => self::canManage(), 'importInvoices' => $tenancy->can(Ability::PurchasingManage)],
         ];
     }
 

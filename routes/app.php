@@ -19,6 +19,7 @@ use App\Http\Controllers\App\CustomerController;
 use App\Http\Controllers\App\DashboardController;
 use App\Http\Controllers\App\HeadOfficeOrderController;
 use App\Http\Controllers\App\InvitationAcceptController;
+use App\Http\Controllers\App\InvoiceImportController;
 use App\Http\Controllers\App\LabelController;
 use App\Http\Controllers\App\NewsController;
 use App\Http\Controllers\App\NewsTitleController;
@@ -290,6 +291,18 @@ Route::middleware(['auth:web', 'verified', 'company', 'two-factor:web'])->group(
             Route::put('orders/{order}', [HeadOfficeOrderController::class, 'update'])->name('orders.update')->whereUlid('order')->middleware('throttle:60,1');
             Route::post('orders/{order}/send', [HeadOfficeOrderController::class, 'send'])->name('orders.send')->whereUlid('order')->middleware('throttle:60,1');
             Route::post('orders/{order}/cancel', [HeadOfficeOrderController::class, 'cancel'])->name('orders.cancel')->whereUlid('order')->middleware('throttle:60,1');
+
+            // Module 6.5: invoice import (changes need the plan feature assist_invoice_scan: InvoiceImportRequest).
+            Route::prefix('invoices/import')->name('invoices.import.')->group(function () {
+                Route::get('/', [InvoiceImportController::class, 'index'])->name('index');
+                Route::post('/', [InvoiceImportController::class, 'store'])->name('store')->middleware('throttle:20,1');
+                Route::get('{import}', [InvoiceImportController::class, 'show'])->name('show')->whereUlid('import');
+                Route::get('{import}/file', [InvoiceImportController::class, 'file'])->name('file')->whereUlid('import')->middleware('throttle:60,1');
+                Route::put('{import}', [InvoiceImportController::class, 'update'])->name('update')->whereUlid('import')->middleware('throttle:60,1');
+                Route::post('{import}/confirm', [InvoiceImportController::class, 'confirm'])->name('confirm')->whereUlid('import')->middleware('throttle:30,1');
+                Route::post('{import}/retry', [InvoiceImportController::class, 'retry'])->name('retry')->whereUlid('import')->middleware('throttle:10,1');
+                Route::post('{import}/discard', [InvoiceImportController::class, 'discard'])->name('discard')->whereUlid('import')->middleware('throttle:30,1');
+            });
         });
         Route::get('/', [PurchasingController::class, 'home'])->name('home');
         Route::get('orders/{order}', [PurchasingController::class, 'order'])->name('orders.show')->whereUlid('order');

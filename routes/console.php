@@ -5,6 +5,8 @@ use App\Domain\Ai\Models\AiPendingAction;
 use App\Domain\Ai\Models\AiUsage;
 use App\Domain\Mail\Models\EmailLog;
 use App\Domain\Notifications\Models\AlertNotification;
+use App\Domain\Purchasing\Actions\PurgeInvoiceImportFiles;
+use App\Domain\Purchasing\Models\InvoiceImport;
 use App\Domain\Shared\Support\SchedulerHeartbeat;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
@@ -53,3 +55,7 @@ Schedule::command('labels:queue-offers')->dailyAt('00:10')->timezone('Europe/Lon
 
 // Admin dashboard (module 1.9): a heartbeat so System health can show the scheduler is running.
 Schedule::call(fn () => SchedulerHeartbeat::beat())->everyMinute()->name('scheduler:heartbeat')->onOneServer();
+
+// Invoice import (module 6.5): uploaded files go after 90 days, the import rows after 24 months.
+Schedule::call(fn () => app(PurgeInvoiceImportFiles::class)->handle())->name('invoice-imports:purge-files')->dailyAt('03:40')->onOneServer();
+Schedule::command('model:prune', ['--model' => [InvoiceImport::class]])->dailyAt('03:45')->onOneServer();
