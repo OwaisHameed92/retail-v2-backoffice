@@ -7,7 +7,7 @@ interface ShellFrameProps {
     storageKey: string;
     /** The Topbar. */
     header: ReactNode;
-    /** Strip above the top bar (e.g. the "Viewing as" impersonation banner). */
+    /** Strip above everything (e.g. the "Viewing as" impersonation banner). */
     banner?: ReactNode;
     /** Height of the banner when shown, e.g. "2.5rem". */
     bannerHeight?: string;
@@ -18,9 +18,11 @@ interface ShellFrameProps {
 }
 
 /**
- * The v2 frame shared by the admin and business layouts: a fixed dark top bar (64px) with the dark sidebar
- * below it on the left, the page on the light canvas. Exposes `--shell-top` (and `--app-header-height` for
- * sticky table headers) as the height of everything fixed above the content.
+ * The v2 frame shared by the admin and business layouts (light theme, reference-light-final.webp): the white
+ * sidebar runs full height on the left with the logo at its top; the 64px light top bar sticks to the top of the
+ * content column on its right; the page sits on the light canvas below. An optional banner is fixed above both.
+ * Exposes `--shell-banner` (banner height) and `--shell-top` / `--app-header-height` (banner + top bar) for sticky
+ * table headers.
  */
 export function ShellFrame({ storageKey, header, banner, bannerHeight, sidebar, className, children }: ShellFrameProps) {
     const [isOpen, setIsOpen] = useState(() => (typeof window !== 'undefined' ? localStorage.getItem(storageKey) !== 'false' : true));
@@ -33,16 +35,21 @@ export function ShellFrame({ storageKey, header, banner, bannerHeight, sidebar, 
         }
     };
 
+    const bannerTop = banner && bannerHeight ? bannerHeight : '0px';
     const top = banner && bannerHeight ? `calc(4rem + ${bannerHeight})` : '4rem';
 
     return (
-        <SidebarProvider open={isOpen} onOpenChange={handleOpenChange} style={{ '--shell-top': top, '--app-header-height': top } as CSSProperties}>
-            <div className="fixed inset-x-0 top-0 z-40">
-                {banner}
-                {header}
-            </div>
+        <SidebarProvider
+            open={isOpen}
+            onOpenChange={handleOpenChange}
+            style={{ '--shell-banner': bannerTop, '--shell-top': top, '--app-header-height': top } as CSSProperties}
+        >
+            {banner && <div className="fixed inset-x-0 top-0 z-50">{banner}</div>}
             {sidebar}
-            <SidebarInset className={cn('min-w-0 pt-(--shell-top)', className)}>{children}</SidebarInset>
+            <SidebarInset className={cn('min-w-0 pt-(--shell-banner)', className)}>
+                <div className="sticky top-(--shell-banner) z-30">{header}</div>
+                {children}
+            </SidebarInset>
         </SidebarProvider>
     );
 }

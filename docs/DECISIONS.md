@@ -720,3 +720,12 @@ still v1 (`X-SSPOS-Contract: 1`); the pack was copied over the contract folder (
 | "Soon" | Only for real future features: tenant "Ask anything" (6.2), Help centre / Contact support, admin Devices, Sync & jobs, EPOS versions (phase 8), Audit log, Settings. Admin "Customers" was removed (Leads + Tenants are the customer list). |
 | Tables | Muted sentence-case column headers, sortable or not. Numbers right-aligned, tabular. Phones get card lists (DataTable) or horizontal scroll inside the card (plain `Table`), never page scroll. |
 | Error pages | 403/404/500/503 render the branded `error` page when debug is off; `api/*` and JSON callers keep JSON; 419 goes back with "The page expired. Try again." |
+
+## Phase 7 (module 7.1 pass 2, light brand theme, 2026-10-01)
+
+| Topic | Decision |
+|---|---|
+| Default theme | Light for everyone. Dark and System are user choices saved under the `theme` localStorage key; the old `appearance` key is ignored because earlier builds wrote "system" to it on every load. An inline script in `app.blade.php` applies a saved dark choice before first paint. |
+| Shell | White full-height sidebar with the full logo (`BrandLogo`) and the area label at the top; the 64px light top bar is sticky to the right of it (`ShellFrame`). The impersonation banner is fixed above both (`--shell-banner`). |
+| Help icon | The top-bar Help menu is the chat bubble ("Help and support"); no chat feature is implied. |
+| Admin dashboard | "Recent activity" = newest tenants created, invoices paid (billing access) and leads created (leads access), 5 shown. "Business overview" = tenants per status now (deleted left out) plus paid revenue over 12 weeks. Cache key bumped to `admin-dashboard:v3`. |

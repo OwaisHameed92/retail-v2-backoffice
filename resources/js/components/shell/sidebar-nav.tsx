@@ -51,7 +51,7 @@ function store(label: string, open: boolean) {
 
 function SoonTag() {
     return (
-        <span className="border-sidebar-border text-sidebar-muted ml-auto rounded-full border px-1.5 py-px text-[10px] leading-3.5 font-medium group-data-[collapsible=icon]:hidden">
+        <span className="bg-muted text-sidebar-muted ml-auto rounded-md px-1.5 py-0.5 text-[10px] leading-3 font-medium group-data-[collapsible=icon]:hidden">
             Soon
         </span>
     );
@@ -72,7 +72,7 @@ function ItemExtras({ item }: { item: ShellNavItem }) {
                 </span>
             )}
             {!!item.count && (
-                <span className="bg-primary text-sidebar-primary-foreground inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] font-semibold tabular-nums">
+                <span className="bg-sidebar-primary text-sidebar-primary-foreground inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] font-semibold tabular-nums">
                     {item.count > 99 ? '99+' : item.count}
                 </span>
             )}
@@ -98,7 +98,7 @@ function NavItems({ items }: { items: ShellNavItem[] }) {
                             type="button"
                             aria-disabled="true"
                             tooltip={`${item.title} (soon)`}
-                            className="text-sidebar-muted/80 hover:text-sidebar-muted/80 cursor-default font-normal hover:bg-transparent active:bg-transparent [&>svg]:opacity-60"
+                            className="text-sidebar-muted hover:text-sidebar-muted cursor-default font-normal hover:bg-transparent active:bg-transparent [&>svg]:opacity-70"
                         >
                             <item.icon />
                             <span className="truncate">{item.title}</span>
@@ -156,8 +156,8 @@ function CollapsibleGroup({ group, className }: { group: ShellNavGroup & { label
 }
 
 /**
- * Grouped navigation for the dark sidebar, shared by the admin and business layouts: small uppercase muted
- * group labels (optionally collapsible), chrome-active current item, count pills, live dots, muted "Soon" items that
+ * Grouped navigation for the white sidebar, shared by the admin and business layouts: small grey uppercase
+ * group labels (optionally collapsible), a soft green pill for the current item, green count pills, live dots, subtle "Soon" items that
  * are not links. Empty groups are hidden. Collapses to icons with tooltips.
  */
 export function SidebarNav({ groups, className }: { groups: ShellNavGroup[]; className?: string }) {

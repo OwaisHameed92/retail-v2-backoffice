@@ -1,7 +1,7 @@
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { Search, X } from 'lucide-react';
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 
 interface DataTableToolbarProps {
     search?: string | null;
@@ -55,7 +55,11 @@ export function DataTableToolbar({
         <div className={cn('flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between', className)}>
             <div className="flex flex-1 flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
                 {onSearch && (
-                    <div className="relative w-full sm:w-72">
+                    <div
+                        className="relative w-full sm:w-(--search-width) sm:max-w-full"
+                        // Wide enough for the whole placeholder (never cut off mid-word), 14–28rem.
+                        style={{ '--search-width': `${Math.min(28, Math.max(14, searchPlaceholder.length * 0.45 + 4.5))}rem` } as CSSProperties}
+                    >
                         <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2" aria-hidden />
                         <Input
                             type="text"

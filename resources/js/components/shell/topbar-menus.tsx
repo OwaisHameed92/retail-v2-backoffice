@@ -11,15 +11,20 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
-import { Bell, BookOpen, ChevronDown, CircleHelp, Keyboard, LifeBuoy } from 'lucide-react';
+import { Bell, BookOpen, ChevronDown, Keyboard, LifeBuoy, MessageSquareText } from 'lucide-react';
 import { useState, type ComponentProps } from 'react';
 
 const isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform);
 export const modKey = isMac ? '⌘' : 'Ctrl';
 
-/** Ghost button classes for icons and menus on the dark top bar. */
+/** Ghost button classes for icons and menus on the light top bar. */
 export const chromeButton =
     'text-chrome-muted hover:bg-chrome-hover hover:text-chrome-foreground data-[state=open]:bg-chrome-hover data-[state=open]:text-chrome-foreground focus-visible:ring-sidebar-ring/35';
+
+/** Thin vertical rule between the top-bar icons and the account button. */
+export function TopbarDivider() {
+    return <span className="bg-chrome-border mx-2 hidden h-7 w-px sm:block" aria-hidden />;
+}
 
 const shortcuts: { keys: string[]; label: string }[] = [
     { keys: [modKey, 'K'], label: 'Open search' },
@@ -30,7 +35,7 @@ const shortcuts: { keys: string[]; label: string }[] = [
     { keys: ['Esc'], label: 'Close a dialog or menu' },
 ];
 
-/** "Help" menu: help centre and support (soon) and the keyboard shortcuts sheet. */
+/** "Help and support" menu (the chat bubble): keyboard shortcuts, help centre and support (soon). */
 export function HelpMenu() {
     const [shortcutsOpen, setShortcutsOpen] = useState(false);
 
@@ -38,13 +43,12 @@ export function HelpMenu() {
         <>
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className={cn('size-9 px-0 lg:w-auto lg:px-2.5', chromeButton)} aria-label="Help">
-                        <CircleHelp className="size-[18px]!" />
-                        <span className="hidden lg:inline">Help</span>
+                    <Button variant="ghost" size="icon" className={cn('size-10', chromeButton)} aria-label="Help and support" title="Help and support">
+                        <MessageSquareText className="size-5!" strokeWidth={1.75} />
                     </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-60">
-                    <DropdownMenuLabel>Help</DropdownMenuLabel>
+                    <DropdownMenuLabel>Help and support</DropdownMenuLabel>
                     <DropdownMenuItem onSelect={() => setShortcutsOpen(true)}>
                         <Keyboard className="text-muted-foreground size-4" aria-hidden />
                         Keyboard shortcuts
@@ -98,9 +102,9 @@ export function NotificationsMenu({ unread = false }: { unread?: boolean }) {
     return (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className={cn('relative size-9', chromeButton)} aria-label="Notifications">
-                    <Bell className="size-[18px]!" />
-                    {unread && <span className="bg-sidebar-ring ring-chrome absolute top-2 right-2 size-2 rounded-full ring-2" aria-hidden />}
+                <Button variant="ghost" size="icon" className={cn('relative size-10', chromeButton)} aria-label="Notifications">
+                    <Bell className="size-5!" strokeWidth={1.75} />
+                    {unread && <span className="bg-primary ring-chrome absolute top-2 right-2.5 size-2 rounded-full ring-2" aria-hidden />}
                 </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-80 p-0">
@@ -132,12 +136,12 @@ export function AccountTrigger({ name, subtitle, className, ...props }: AccountT
             )}
             {...props}
         >
-            <InitialsAvatar name={name} size="md" className="bg-info text-chrome-foreground size-9" />
+            <InitialsAvatar name={name} size="md" className="bg-primary text-primary-foreground size-10 text-sm" />
             <span className="hidden min-w-0 leading-tight lg:grid">
                 <span className="text-chrome-foreground max-w-40 truncate text-sm font-semibold">{name}</span>
                 {subtitle && <span className="text-chrome-muted max-w-40 truncate text-xs">{subtitle}</span>}
             </span>
-            <ChevronDown className="hidden size-4 lg:block" aria-hidden />
+            <ChevronDown className="text-chrome-muted ml-1 hidden size-4 lg:block" aria-hidden />
         </button>
     );
 }

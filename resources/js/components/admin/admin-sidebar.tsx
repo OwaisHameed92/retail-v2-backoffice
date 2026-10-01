@@ -29,6 +29,8 @@ export function AdminSidebar() {
 
     return (
         <ShellSidebar
+            homeHref={route('admin.dashboard')}
+            areaLabel="Super admin console"
             groups={adminNavGroups.filter((label) => !isPinned(label)).map(toGroup)}
             pinned={adminNavGroups.filter((label) => isPinned(label)).map(toGroup)}
         />

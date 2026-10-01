@@ -101,7 +101,7 @@ export default function CloudLinkIndex({ view, moves, keys, summary, canClear }:
                     data={keys.data}
                     meta={keys.meta}
                     only={['keys', 'summary']}
-                    searchPlaceholder="Search install code, licence id, shop, PC or token hash"
+                    searchPlaceholder="Search code, licence, shop, PC or token hash"
                     getRowId={(row) => row.id}
                     empty={
                         <EmptyState

@@ -1,5 +1,23 @@
 # Design system v2 (owner-approved, final 2026-09-28)
 
+> **Pass 2 (2026-10-01): the LIGHT theme is the default and `docs/design/reference-light-final.webp` is the
+> target.** It replaces the dark navy "chrome" frame described below. Everyone sees light unless they pick Dark or
+> System in the account menu (saved under the `theme` localStorage key; the old auto-saved `appearance` key is
+> ignored). Dark mode stays available and is kept in step through the same tokens.
+>
+> - **Sidebar**: white (`sidebar` #FFFFFF, `sidebar-border` #E6EBF0), full height on the left. At its top the FULL
+>   logo (`BrandLogo`, `switch-save-logo.png` / `-dark.png`, 196px wide, object-contain, links to the dashboard)
+>   with the area label under it ("Super admin console" / "Business portal"); the round mark when collapsed.
+>   Section labels in small grey caps, outline icons, current page = soft green pill (`sidebar-active` #E3F4EC,
+>   `sidebar-active-foreground` #006B43), green count badges, subtle grey "Soon" chips, the brand card at the bottom.
+> - **Top bar** (64px, sticky, right of the sidebar): `bg-chrome-frame` (white into mint) + `BrandWaves`; hamburger,
+>   rounded white search field with the ⌘K hint on one line, bell, help (chat bubble), divider, green avatar + name + role.
+> - **Canvas** `#F5F8FA`; cards white, 1px `#E6EBF0` border, soft shadow, 14px radius (`--radius-card-value`).
+> - **Primary** green `#097A4C` (white text 5.4:1); `muted-foreground` `#5D6B7E` (AA on the canvas and on cards).
+> - **Dashboard hero**: `WelcomeBanner` = `bg-brand-wash` mint gradient + waves + sun icon tile. Admin dashboard adds
+>   "Recent activity" and the "Business overview" status strip (real counts only). Charts stay monotone (never overshoot).
+> - Auth pages: light mint brand panel with the full logo.
+
 **Final reference: `docs/design/admin-dashboard-reference-2.webp`** (owner: "haan yahi final karo"). The earlier
 `admin-dashboard-reference.webp` is kept only for comparison. This supersedes the colour rules in `docs/BRAND.md` and
 the paused redesign in `docs/ui-redesign-status.md`. Bar: premium, calm, enterprise (Shopify admin / Xero / Stripe).

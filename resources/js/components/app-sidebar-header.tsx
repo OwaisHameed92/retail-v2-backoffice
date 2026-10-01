@@ -1,22 +1,25 @@
-import { AccountTrigger, HelpMenu, NotificationsMenu, SearchTrigger, Topbar, TopbarBrand } from '@/components/shell/topbar';
+import { AccountTrigger, HelpMenu, NotificationsMenu, SearchTrigger, Topbar, TopbarDivider } from '@/components/shell/topbar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { UserMenuContent } from '@/components/user-menu-content';
 import { type SharedData } from '@/types';
 import { usePage } from '@inertiajs/react';
 import { Sparkles } from 'lucide-react';
 
-/** Business portal top bar (dark chrome): logo, "Ask anything" (the portal assistant, module 6.2: "Soon"), help, notifications, account menu. */
+/** Business portal top bar (light, mint wash): menu button, "Ask anything" (the portal assistant, module 6.2: "Soon"), help, notifications, account menu. */
 export function AppSidebarHeader() {
     const { auth, companyRole } = usePage<SharedData>().props;
 
     return (
         <Topbar
-            brand={<TopbarBrand href="/app" />}
-            search={<SearchTrigger placeholder="Ask anything, e.g. top sellers in Leeds" icon={Sparkles} disabled />}
+            home="/app"
+            search={
+                <SearchTrigger placeholder="Ask anything, e.g. top sellers in Leeds" shortPlaceholder="Ask anything…" icon={Sparkles} disabled />
+            }
             actions={
                 <>
                     <NotificationsMenu />
                     <HelpMenu />
+                    <TopbarDivider />
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                             <AccountTrigger

@@ -111,6 +111,7 @@
     --color-sidebar-ring: var(--sidebar-ring);
     --color-sidebar-muted: var(--sidebar-muted);
     --color-sidebar-active: var(--sidebar-active);
+    --color-sidebar-active-foreground: var(--sidebar-active-foreground);
 }
 
 /*
@@ -127,36 +128,43 @@
 }
 
 /*
-  Design system v2 (docs/design/DESIGN-SYSTEM-v2.md). Light theme: dark navy "chrome" frame (sidebar + top bar),
-  light canvas, white cards, Switch & Save green as the primary action colour, soft tinted status tones.
+  Design system v2, pass 2 (docs/design/DESIGN-SYSTEM-v2.md). LIGHT is the default theme and the target is
+  docs/design/reference-light-final.webp: a white sidebar and a light top bar with a soft mint wave wash, a
+  #F5F8FA canvas, white cards with a hairline border and soft shadow, Switch & Save green as the primary colour,
+  soft tinted status tones. Text colours meet WCAG AA on the surfaces they sit on.
 */
 :root {
-    --chrome: #0f1c2c;
-    --chrome-active: #103c38;
-    --chrome-foreground: #e6ebf0;
-    --chrome-muted: #8fa0b3;
-    --chrome-hover: hsl(210 40% 96% / 0.06);
-    --chrome-border: hsl(210 40% 96% / 0.08);
-    --chrome-input: hsl(210 40% 96% / 0.07);
-    --chrome-glow: hsl(156 100% 40% / 0.1);
+    /* The "chrome" frame (top bar) is light: white with the mint wash. */
+    --chrome: #ffffff;
+    --chrome-active: #e3f4ec;
+    --chrome-foreground: #0f172a;
+    --chrome-muted: #5d6b7e;
+    --chrome-hover: #f1f5f8;
+    --chrome-border: #e6ebf0;
+    --chrome-input: #ffffff;
+    --chrome-glow: hsl(152 62% 86% / 0.55);
+    --chrome-wash-from: #ffffff;
+    --chrome-wash-to: #e6f6ee;
+    --wave-stroke: #1fae78;
+    --wave-opacity: 0.14;
 
-    --background: #f4f8fa;
+    --background: #f5f8fa;
     --foreground: #0f172a;
     --card: #ffffff;
     --card-foreground: #0f172a;
     --popover: #ffffff;
     --popover-foreground: #0f172a;
 
-    --primary: #007048;
-    --primary-hover: #005e3c;
+    --primary: #097a4c;
+    --primary-hover: #07673f;
     --primary-foreground: #ffffff;
     --primary-soft: #e3f4ec;
-    --primary-text: #007048;
+    --primary-text: #097a4c;
 
     --secondary: #eef2f5;
     --secondary-foreground: #0f172a;
     --muted: #eef2f5;
-    --muted-foreground: #64748b;
+    --muted-foreground: #5d6b7e;
     /* Very light fill for table headers, code blocks and inset panels. */
     --subtle: #f8fafb;
 
@@ -174,7 +182,7 @@
     --success-foreground: #067a4a;
     --success-soft: #dcf5e8;
     --warning: #b45309;
-    --warning-foreground: #b45309;
+    --warning-foreground: #a24a07;
     --warning-soft: #fef1d6;
     --info: #2f5bd8;
     --info-foreground: #2f5bd8;
@@ -184,52 +192,57 @@
     --violet-soft: #efe7fd;
 
     --overlay: hsl(213 49% 12% / 0.45);
-    --border: #e4e8ec;
+    --border: #e6ebf0;
     --border-strong: #cfd6dd;
     --input: #d9dfe5;
-    --ring: #007048;
+    --ring: #097a4c;
 
-    --chart-1: #007048;
+    --chart-1: #097a4c;
     --chart-2: #2f5bd8;
     --chart-3: #7c3aed;
     --chart-4: #b45309;
     --chart-5: #d12e3b;
 
     --radius: 0.5rem;
-    --radius-card-value: 0.75rem;
+    --radius-card-value: 0.875rem;
 
-    --elevation-card: 0 1px 2px 0 hsl(213 49% 12% / 0.04), 0 2px 8px -2px hsl(213 49% 12% / 0.05);
-    --elevation-raised: 0 1px 2px 0 hsl(213 49% 12% / 0.05), 0 8px 20px -6px hsl(213 49% 12% / 0.1);
+    --elevation-card: 0 1px 2px 0 hsl(213 40% 20% / 0.04), 0 4px 14px -4px hsl(213 40% 20% / 0.07);
+    --elevation-raised: 0 1px 2px 0 hsl(213 40% 20% / 0.05), 0 10px 24px -8px hsl(213 40% 20% / 0.12);
     --elevation-overlay: 0 16px 40px -12px hsl(213 49% 12% / 0.22), 0 4px 10px -4px hsl(213 49% 12% / 0.08);
 
-    /* The sidebar is part of the dark chrome frame in both themes. */
-    --sidebar-background: var(--chrome);
-    --sidebar-foreground: var(--chrome-foreground);
-    --sidebar-muted: var(--chrome-muted);
+    /* Sidebar: white, grey caps section labels, soft green pill for the current page. */
+    --sidebar-background: #ffffff;
+    --sidebar-foreground: #334155;
+    --sidebar-muted: #5d6b7e;
     --sidebar-primary: var(--primary);
     --sidebar-primary-foreground: #ffffff;
-    --sidebar-accent: var(--chrome-hover);
-    --sidebar-accent-foreground: #ffffff;
-    --sidebar-active: var(--chrome-active);
-    --sidebar-border: var(--chrome-border);
-    --sidebar-ring: #1fae78;
+    --sidebar-accent: #f2f6f9;
+    --sidebar-accent-foreground: #0f172a;
+    --sidebar-active: #e3f4ec;
+    --sidebar-active-foreground: #006b43;
+    --sidebar-border: #e6ebf0;
+    --sidebar-ring: #097a4c;
 
     --brand-blue: #015cfc;
-    --brand-green: #22c55e;
-    /* Auth brand panel matches the chrome frame. */
-    --brand-panel: var(--chrome);
+    --brand-green: #1a9f4b;
+    /* Auth brand panel: the light mint wash. */
+    --brand-panel: #eef8f3;
 }
 
-/* Dark theme: deeper canvas and chrome, lifted cards, a brighter green that reads on dark surfaces. */
+/* Dark theme (a user choice): deep canvas, lifted cards, a brighter green that reads on dark surfaces. */
 .dark {
-    --chrome: #08111c;
-    --chrome-active: #0e3a33;
-    --chrome-foreground: #e6ebf0;
-    --chrome-muted: #8394a8;
-    --chrome-hover: hsl(210 40% 96% / 0.05);
-    --chrome-border: hsl(210 40% 96% / 0.07);
-    --chrome-input: hsl(210 40% 96% / 0.06);
+    --chrome: #0f1822;
+    --chrome-active: #10302a;
+    --chrome-foreground: #e8eef4;
+    --chrome-muted: #93a1b1;
+    --chrome-hover: hsl(210 40% 96% / 0.06);
+    --chrome-border: #1f2b3a;
+    --chrome-input: #121b26;
     --chrome-glow: hsl(156 100% 40% / 0.08);
+    --chrome-wash-from: #0f1822;
+    --chrome-wash-to: #0f2620;
+    --wave-stroke: #3cc991;
+    --wave-opacity: 0.1;
 
     --background: #0b121b;
     --foreground: #e8eef4;
@@ -247,7 +260,7 @@
     --secondary: #1a2533;
     --secondary-foreground: #e8eef4;
     --muted: #19232f;
-    --muted-foreground: #8d9bab;
+    --muted-foreground: #93a1b1;
     --subtle: #0f1822;
 
     --accent: #10302a;
@@ -288,10 +301,21 @@
     --elevation-raised: 0 1px 2px 0 hsl(0 0% 0% / 0.35), 0 6px 16px -4px hsl(0 0% 0% / 0.45);
     --elevation-overlay: 0 16px 40px -8px hsl(0 0% 0% / 0.6), 0 0 0 1px #223041;
 
+    --sidebar-background: #0e1620;
+    --sidebar-foreground: #c9d3de;
+    --sidebar-muted: #8b9aac;
+    --sidebar-primary: var(--primary);
     --sidebar-primary-foreground: #04170f;
+    --sidebar-accent: hsl(210 40% 96% / 0.05);
+    --sidebar-accent-foreground: #ffffff;
+    --sidebar-active: #10302a;
+    --sidebar-active-foreground: #5bd6a3;
+    --sidebar-border: #1f2b3a;
+    --sidebar-ring: #1fae78;
 
     --brand-blue: #4d8dff;
     --brand-green: #2fd16a;
+    --brand-panel: #0f1c1a;
 }
 
 @layer base {
@@ -348,9 +372,29 @@
         color: var(--primary-text);
     }
 
-    /* The dark chrome frame (top bar) with the barely visible green glow at the top edge. */
+    /*
+      The light top bar and dashboard hero: white fading into mint with a few soft wave lines on the right
+      (reference-light-final.webp). Colours come from the --chrome-wash and --wave tokens, so dark mode follows.
+    */
     .bg-chrome-frame {
-        background: radial-gradient(48rem 7rem at 72% -3.5rem, var(--chrome-glow), transparent 70%), var(--chrome);
+        background:
+            radial-gradient(42rem 8rem at 78% -3rem, var(--chrome-glow), transparent 70%),
+            linear-gradient(100deg, var(--chrome-wash-from) 35%, var(--chrome-wash-to) 100%);
+    }
+
+    .bg-brand-wash {
+        background:
+            radial-gradient(36rem 14rem at 92% 0%, var(--chrome-glow), transparent 70%),
+            linear-gradient(100deg, color-mix(in oklab, var(--chrome-wash-to) 70%, var(--card)) 0%, var(--chrome-wash-to) 55%, color-mix(in oklab, var(--chrome-wash-to) 55%, var(--card)) 100%);
+    }
+
+    /* Soft wave lines; put on an absolutely positioned, aria-hidden child of a wash surface. */
+    .brand-waves {
+        pointer-events: none;
+        color: var(--wave-stroke);
+        opacity: var(--wave-opacity);
+        -webkit-mask-image: linear-gradient(90deg, transparent, #000 45%);
+        mask-image: linear-gradient(90deg, transparent, #000 45%);
     }
 
     /* Hide scrollbars on horizontal tab strips while keeping them scrollable. */

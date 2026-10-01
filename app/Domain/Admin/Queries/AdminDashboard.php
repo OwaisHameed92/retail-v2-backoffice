@@ -9,6 +9,7 @@ use App\Domain\Admin\Models\Admin;
 use App\Domain\Admin\Queries\Dashboard\Attention;
 use App\Domain\Admin\Queries\Dashboard\DashboardRows;
 use App\Domain\Admin\Queries\Dashboard\Kpis;
+use App\Domain\Admin\Queries\Dashboard\RecentActivity;
 use App\Domain\Admin\Queries\Dashboard\RecentTenants;
 use App\Domain\Admin\Queries\Dashboard\RevenueChart;
 use App\Domain\Admin\Queries\Dashboard\SystemHealth;
@@ -24,13 +25,13 @@ use Illuminate\Support\Facades\Cache;
  *
  * Figures are worked out once for everybody and cached for 60 seconds; what one admin may see is removed after
  * the cache (money needs billing.manage, lead items leads.manage), so the cache never carries one role's view
- * to another. A bounded number of queries (about 15) whatever the number of tenants.
+ * to another. A bounded number of queries (about 17) whatever the number of tenants.
  */
 final class AdminDashboard
 {
     public const CACHE_SECONDS = 60;
 
-    public const CACHE_KEY = 'admin-dashboard:v2';
+    public const CACHE_KEY = 'admin-dashboard:v3';
 
     public function data(): AdminDashboardData
     {
@@ -55,6 +56,8 @@ final class AdminDashboard
             recentTenants: RecentTenants::collect($rows),
             health: SystemHealth::check($now),
             tills: TillHealthSummary::compute(),
+            activity: RecentActivity::collect($rows),
+            statuses: RecentActivity::statusCounts($rows),
         );
     }
 

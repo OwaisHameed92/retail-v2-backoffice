@@ -235,7 +235,7 @@ Stops row clicks; destructive items go last behind a separator and should open a
 ### UI primitives added or changed
 `ui/textarea.tsx` (new), `Badge` variants `success | warning | danger | info | neutral`, `Alert` variants
 `success | warning | info` (destructive is now a soft red panel). Shell pieces for layouts live in
-`components/shell/` (`SidebarNav`, `SidebarBrand`, `Topbar`, `SearchTrigger`, `HelpMenu`, `NotificationsMenu`, `ThemeSubmenu`).
+`components/shell/` (`SidebarNav`, `ShellSidebar`, `Topbar`, `SearchTrigger`, `HelpMenu`, `NotificationsMenu`, `ThemeSubmenu`).
 
 ## Added by module 1.6 (leads)
 
@@ -262,12 +262,16 @@ Tokens live only in `resources/css/app.css` (v2 palette, light + dark): `chrome`
 
 ### Shell (`components/shell/`)
 
-- `ShellFrame` — the dark frame: fixed 64px top bar + dark sidebar under it, page on the canvas. Props
-  `storageKey`, `header`, `sidebar`, optional `banner` + `bannerHeight`. Sets `--shell-top` and `--app-header-height`.
-- `Topbar` (`brand`, `search`, `actions`), `TopbarBrand`, `SearchTrigger` (chrome style, icon-only on phones, passes
-  button props through), `TopbarBreadcrumbs` (now rendered above the page content), `HelpMenu`,
-  `NotificationsMenu` (`unread` dot — only from real data), `AccountTrigger` (avatar + name + role).
-- `ShellSidebar` (`groups`, `pinned`, `header`) — dark sidebar with Settings pinned and the logo + tagline footer.
+- `ShellFrame` — the light frame (pass 2): white full-height sidebar on the left, the 64px top bar sticky to its
+  right, page on the canvas. Props `storageKey`, `header`, `sidebar`, optional `banner` + `bannerHeight` (fixed above
+  both). Sets `--shell-banner`, `--shell-top` and `--app-header-height`.
+- `Topbar` (`home`, `search`, `actions`) with the mint wash + `BrandWaves`; `TopbarStart` (hamburger, mark on
+  phones), `SearchTrigger` (`placeholder`, optional `shortPlaceholder` below xl, ⌘K on one line, icon-only on
+  phones), `TopbarDivider`, `TopbarBreadcrumbs` (rendered above the page content), `HelpMenu` (chat bubble),
+  `NotificationsMenu` (`unread` dot — only from real data), `AccountTrigger` (green avatar + name + role).
+- `ShellSidebar` (`homeHref`, `areaLabel`, `groups`, `pinned`, `header`) — white sidebar: full logo + area label at
+  the top (`SidebarLogo`), Settings pinned, brand card at the bottom.
+- `BrandWaves` — decorative wave lines for `bg-chrome-frame` / `bg-brand-wash` surfaces (top bar, hero, auth panel).
   `SidebarNav` items accept `count` (green pill) and `live` (green dot) besides `badge`/`soon`.
 - Admin nav (`admin-nav.ts`): groups Overview/Customers/Billing/Operations/Communications/Settings;
   `activePattern` may be an array; `countKey` reads the optional `admin.navCounts` shared prop (not sent by the

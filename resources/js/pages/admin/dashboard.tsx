@@ -1,4 +1,6 @@
+import { BusinessOverviewCard } from '@/components/admin/dashboard/business-overview-card';
 import { DashboardTabs } from '@/components/admin/dashboard/dashboard-tabs';
+import { RecentActivityCard } from '@/components/admin/dashboard/recent-activity-card';
 import { RecentTenantsCard } from '@/components/admin/dashboard/recent-tenants-card';
 import { TillHealthTile } from '@/components/admin/dashboard/till-health-tile';
 import { dashboardRangeLabel, dashboardRanges, RevenueCard } from '@/components/admin/dashboard/revenue-card';
@@ -7,18 +9,15 @@ import { type AdminSharedData } from '@/components/admin/types';
 import { AttentionList } from '@/components/shared/attention-list';
 import { HealthList, type HealthItem } from '@/components/shared/health-list';
 import { KpiCard, KpiGrid } from '@/components/shared/kpi-card';
-import { OverviewTile } from '@/components/shared/overview-tile';
 import { QuickActions, type QuickAction } from '@/components/shared/quick-actions';
 import { type ChartTone } from '@/components/shared/trend-chart';
 import { WelcomeBanner } from '@/components/shared/welcome-banner';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import AdminLayout from '@/layouts/admin-layout';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import {
-    Building2,
     CalendarDays,
     Coins,
     Database,
@@ -205,6 +204,7 @@ export default function AdminDashboard({
             <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
                 <div className="flex min-w-0 flex-col gap-4 xl:col-span-7">
                     <RevenueCard chart={revenue} range={range} loading={loadingRange} onRangeChange={changeRange} />
+                    <RecentActivityCard items={dashboard.activity} />
                     <RecentTenantsCard tenants={dashboard.recentTenants} viewAllHref={can('tenants.view') ? route('admin.tenants.index') : undefined} />
                 </div>
 
@@ -215,29 +215,12 @@ export default function AdminDashboard({
                         emptyBody="Trials ending in the next 2 days, licence alerts, overdue invoices and late lead follow-ups show here."
                     />
 
-                    <Card className="flex flex-col gap-3 p-5">
-                        <div className="flex items-center gap-3">
-                            <Building2 className="text-primary size-5" aria-hidden />
-                            <h2 className="text-foreground flex-1 text-base font-semibold tracking-tight">Business overview</h2>
-                        </div>
-                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                            <OverviewTile
-                                label="Total tenants"
-                                icon={Building2}
-                                tone="primary"
-                                value={dashboard.overview.tenants.value}
-                                delta={deltaOf(dashboard.overview.tenants)}
-                            />
-                            <OverviewTile
-                                label="Total revenue (12W)"
-                                icon={Coins}
-                                tone="info"
-                                value={dashboard.overview.revenue.value}
-                                delta={deltaOf(dashboard.overview.revenue)}
-                                emptyText={dashboard.overview.revenue.locked ? <LockedHint /> : undefined}
-                            />
-                        </div>
-                    </Card>
+                    <BusinessOverviewCard
+                        statuses={dashboard.statuses}
+                        tenants={dashboard.overview.tenants}
+                        revenue={dashboard.overview.revenue}
+                        viewAllHref={can('tenants.view') ? route('admin.tenants.index') : undefined}
+                    />
 
                     <TillHealthTile summary={dashboard.tills} href={tillHealthHref} />
 

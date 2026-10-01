@@ -5,6 +5,7 @@ namespace App\Domain\Admin\Data;
 use App\Domain\Admin\Queries\Dashboard\Attention;
 use App\Domain\Admin\Queries\Dashboard\Change;
 use App\Domain\Admin\Queries\Dashboard\Kpis;
+use App\Domain\Admin\Queries\Dashboard\RecentActivity;
 use App\Domain\Admin\Queries\Dashboard\RecentTenants;
 use App\Domain\Admin\Queries\Dashboard\SystemHealth;
 use App\Domain\TillHealth\Queries\TillHealthSummary;
@@ -20,8 +21,10 @@ use App\Domain\TillHealth\Queries\TillHealthSummary;
  * @phpstan-import-type TenantRow from RecentTenants
  * @phpstan-import-type Health from SystemHealth
  * @phpstan-import-type Summary from TillHealthSummary
+ * @phpstan-import-type Activity from RecentActivity
+ * @phpstan-import-type StatusCounts from RecentActivity
  *
- * @phpstan-type Stored array{generatedAt: string, kpis: array<string, Kpi>, overview: array<string, Tile>, attention: list<Item>, attentionTotals: array<string, int>, recentTenants: list<TenantRow>, health: list<Health>, tills: Summary}
+ * @phpstan-type Stored array{generatedAt: string, kpis: array<string, Kpi>, overview: array<string, Tile>, attention: list<Item>, attentionTotals: array<string, int>, recentTenants: list<TenantRow>, health: list<Health>, tills: Summary, activity: list<Activity>, statuses: StatusCounts}
  */
 final readonly class AdminDashboardData
 {
@@ -33,6 +36,8 @@ final readonly class AdminDashboardData
      * @param  list<TenantRow>  $recentTenants
      * @param  list<Health>  $health
      * @param  Summary  $tills  Module 2.7: Till health counts.
+     * @param  list<Activity>  $activity  Module 7.1: newest tenants, paid invoices and leads (5 of each).
+     * @param  StatusCounts  $statuses  Module 7.1: tenants per status.
      */
     public function __construct(
         public string $generatedAt,
@@ -43,6 +48,8 @@ final readonly class AdminDashboardData
         public array $recentTenants,
         public array $health,
         public array $tills,
+        public array $activity,
+        public array $statuses,
     ) {}
 
     /**
@@ -85,6 +92,8 @@ final readonly class AdminDashboardData
             'recentTenants' => array_map(fn (array $row) => [...$row, 'mrr' => $billing ? $row['mrr'] : null], $this->recentTenants),
             'health' => $this->health,
             'tills' => $this->tills,
+            'activity' => array_map(fn (array $item) => array_diff_key($item, ['area' => true]), RecentActivity::visible($this->activity, $areas)),
+            'statuses' => $this->statuses,
         ];
     }
 }

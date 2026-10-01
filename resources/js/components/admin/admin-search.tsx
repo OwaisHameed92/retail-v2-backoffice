@@ -165,6 +165,7 @@ export function AdminSearch() {
         <>
             <SearchTrigger
                 placeholder="Search tenants, businesses, licence keys, or anything…"
+                shortPlaceholder="Search tenants, licence keys…"
                 onClick={() => setOpen(true)}
                 aria-haspopup="dialog"
                 aria-keyshortcuts={isMac ? 'Meta+K' : 'Control+K'}

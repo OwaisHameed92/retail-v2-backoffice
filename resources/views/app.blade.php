@@ -11,7 +11,19 @@
         <link rel="icon" href="/favicon.ico" sizes="any">
         <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
         <link rel="apple-touch-icon" href="/apple-touch-icon.png">
-        <meta name="theme-color" content="#015cfc">
+        <meta name="theme-color" content="#f5f8fa">
+
+        {{-- Light is the default; apply a saved dark choice before first paint (see resources/js/hooks/use-appearance.tsx). --}}
+        <script>
+            (function () {
+                try {
+                    var t = localStorage.getItem('theme');
+                    if (t === 'dark' || (t === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                        document.documentElement.classList.add('dark');
+                    }
+                } catch (e) {}
+            })();
+        </script>
 
         @routes
         @viteReactRefresh

@@ -36,6 +36,27 @@ export interface DashboardHealth {
     detail: string;
 }
 
+/** `RecentActivity::collect()`: a tenant created, an invoice paid or a lead created. */
+export interface DashboardActivity {
+    id: string;
+    kind: 'tenant' | 'invoice' | 'lead';
+    title: string;
+    detail: string;
+    /** UTC ISO timestamp. */
+    at: string;
+    href: string;
+}
+
+/** `RecentActivity::statusCounts()`: tenants (not deleted) per status. */
+export interface DashboardStatuses {
+    total: number;
+    active: number;
+    trial: number;
+    overdue: number;
+    suspended: number;
+    cancelled: number;
+}
+
 /** `AdminDashboardData::forViewer()`: the "dashboard" page prop. */
 export interface AdminDashboardProps {
     generatedAt: string;
@@ -47,6 +68,9 @@ export interface AdminDashboardProps {
     health: DashboardHealth[];
     /** Module 2.7: Till health counts. */
     tills: TillHealthSummary;
+    /** Module 7.1: newest 5 the admin may see. */
+    activity: DashboardActivity[];
+    statuses: DashboardStatuses;
 }
 
 /** `RevenueChart::for()`: the "revenue" page prop (null without billing access). */

@@ -2,11 +2,11 @@ import { BusinessBody, NoSalesYet } from '@/components/app/dashboard/business-bo
 import { BusinessFiltersBar, type BusinessQuery } from '@/components/app/dashboard/business-filters';
 import { type BusinessDashboardProps } from '@/components/app/dashboard/types';
 import { EmptyState } from '@/components/shared/empty-state';
-import { PageHeader } from '@/components/shared/page-header';
 import { SectionCard } from '@/components/shared/section-card';
 import { dayRange } from '@/components/shared/trading/format';
 import { Freshness } from '@/components/shared/trading/freshness';
 import { TradingSkeleton } from '@/components/shared/trading/trading-skeleton';
+import { WelcomeBanner } from '@/components/shared/welcome-banner';
 import { ShopsStatusCard } from '@/components/till-health/shops-status-card';
 import AppLayout from '@/layouts/app-layout';
 import { cn } from '@/lib/utils';
@@ -25,7 +25,7 @@ const RELOAD = ['filters', 'context', 'status', 'sales'];
  */
 export default function Dashboard(props: BusinessDashboardProps) {
     const { status, canSales, filters, context, periods, compares, sales } = props;
-    const { company } = usePage<SharedData>().props;
+    const { auth, company } = usePage<SharedData>().props;
     const [loading, setLoading] = useState(false);
 
     const go = (query: BusinessQuery) =>
@@ -47,9 +47,9 @@ export default function Dashboard(props: BusinessDashboardProps) {
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Dashboard" />
 
-            <PageHeader
-                title="Dashboard"
-                description={canSales ? `How ${where} traded, ${dayRange(filters.from, filters.to)}.` : `Shops and tills of ${company?.name ?? 'your business'}.`}
+            <WelcomeBanner
+                name={auth.user.name.split(' ')[0]}
+                subtitle={canSales ? `How ${where} traded, ${dayRange(filters.from, filters.to)}.` : `Shops and tills of ${company?.name ?? 'your business'}.`}
                 actions={canSales ? <Freshness info={sales?.freshness} generatedAt={sales?.generatedAt} loading={loading} /> : undefined}
             />
 

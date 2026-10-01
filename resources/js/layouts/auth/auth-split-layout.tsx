@@ -1,5 +1,5 @@
-import AppLogoIcon from '@/components/app-logo-icon';
 import BrandLogo from '@/components/brand-logo';
+import { BrandWaves } from '@/components/shell/brand-waves';
 import { Link } from '@inertiajs/react';
 import { BarChart3, Building2, CircleCheck, Headset, KeyRound, ScrollText, ShieldCheck, Store, type LucideIcon } from 'lucide-react';
 import { type ReactNode } from 'react';
@@ -47,31 +47,9 @@ const copy: Record<AuthVariant, { eyebrow: string; heading: string; body: string
     },
 };
 
-/** Quiet geometric pattern for the brand panel: a fine grid and two large rings, white at low opacity. */
-function BrandPattern() {
-    return (
-        <svg className="text-primary-foreground pointer-events-none absolute inset-0 h-full w-full" aria-hidden>
-            <defs>
-                <pattern id="auth-grid" width="32" height="32" patternUnits="userSpaceOnUse">
-                    <path d="M32 0H0V32" fill="none" stroke="currentColor" strokeOpacity="0.07" />
-                </pattern>
-                <radialGradient id="auth-fade" cx="20%" cy="0%" r="90%">
-                    <stop offset="0%" stopColor="currentColor" stopOpacity="0.16" />
-                    <stop offset="100%" stopColor="currentColor" stopOpacity="0" />
-                </radialGradient>
-            </defs>
-            <rect width="100%" height="100%" fill="url(#auth-grid)" />
-            <rect width="100%" height="100%" fill="url(#auth-fade)" />
-            <circle cx="100%" cy="100%" r="260" fill="none" stroke="currentColor" strokeOpacity="0.1" />
-            <circle cx="100%" cy="100%" r="380" fill="none" stroke="currentColor" strokeOpacity="0.07" />
-            <circle cx="100%" cy="100%" r="500" fill="none" stroke="currentColor" strokeOpacity="0.05" />
-        </svg>
-    );
-}
-
 /**
- * Auth template: flat brand-blue panel on the left (logo, tagline, three value points), the form on the right.
- * Phones show only the form with the logo above it.
+ * Auth template: the light mint brand panel on the left (the full logo, tagline, three value points, soft waves),
+ * the form on the right. Phones show only the form with the full logo above it.
  */
 export default function AuthSplitLayout({ children, title, description, variant = 'customer' }: AuthLayoutProps) {
     const text = copy[variant];
@@ -79,30 +57,28 @@ export default function AuthSplitLayout({ children, title, description, variant 
 
     return (
         <div className="bg-background grid min-h-dvh lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
-            <aside className="bg-brand-panel text-primary-foreground relative hidden overflow-hidden lg:flex lg:flex-col lg:justify-between lg:p-12 xl:p-14">
-                <BrandPattern />
+            <aside className="bg-brand-wash border-border relative hidden overflow-hidden border-r lg:flex lg:flex-col lg:justify-between lg:p-12 xl:p-14">
+                <BrandWaves className="inset-y-auto bottom-0 h-40 w-full" />
                 <Link
                     href={route('home')}
-                    className="focus-visible:ring-primary-foreground/60 relative flex items-center gap-3 self-start rounded-lg outline-none focus-visible:ring-2"
+                    className="focus-visible:ring-ring relative self-start rounded-lg outline-none focus-visible:ring-2"
+                    aria-label="Switch & Save home"
                 >
-                    <span className="bg-primary-foreground flex size-10 items-center justify-center rounded-full shadow-sm">
-                        <AppLogoIcon className="size-9" alt="" />
-                    </span>
-                    <span className="text-lg font-semibold tracking-tight">Switch &amp; Save</span>
+                    <BrandLogo className="h-12 xl:h-14" alt="" />
                 </Link>
 
                 <div className="relative max-w-md space-y-8">
                     <div className="space-y-3">
-                        <span className="bg-primary-foreground/12 text-primary-foreground ring-primary-foreground/20 inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold tracking-wide uppercase ring-1">
+                        <span className="bg-card text-accent-foreground ring-primary/15 inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold tracking-wide uppercase shadow-xs ring-1">
                             {text.eyebrow}
                         </span>
-                        <h2 className="text-3xl leading-tight font-semibold tracking-[-0.02em] text-balance">{text.heading}</h2>
-                        <p className="text-primary-foreground/75 text-base">{text.body}</p>
+                        <h2 className="text-foreground text-3xl leading-tight font-semibold tracking-[-0.02em] text-balance">{text.heading}</h2>
+                        <p className="text-muted-foreground text-base">{text.body}</p>
                     </div>
                     <ul className="space-y-4">
                         {text.points.map((point) => (
-                            <li key={point.text} className="text-primary-foreground/90 flex items-start gap-3 text-[15px]">
-                                <span className="bg-primary-foreground/12 ring-primary-foreground/15 flex size-8 shrink-0 items-center justify-center rounded-lg ring-1">
+                            <li key={point.text} className="text-foreground flex items-start gap-3 text-[15px]">
+                                <span className="bg-card text-primary ring-primary/15 flex size-8 shrink-0 items-center justify-center rounded-full shadow-xs ring-1">
                                     <point.icon className="size-4" aria-hidden />
                                 </span>
                                 <span className="pt-1.5">{point.text}</span>
@@ -111,14 +87,14 @@ export default function AuthSplitLayout({ children, title, description, variant 
                     </ul>
                 </div>
 
-                <p className="text-primary-foreground/60 relative text-sm">© {year} Switch &amp; Save. Smart Solutions for Smart Businesses.</p>
+                <p className="text-muted-foreground relative text-sm">© {year} Switch &amp; Save. Smart Solutions for Smart Businesses.</p>
             </aside>
 
             <main className="flex flex-col items-center justify-center px-5 py-10 sm:px-8">
                 <div className={variant === 'trial' ? 'w-full max-w-[560px]' : 'w-full max-w-[400px]'}>
                     <div className="mb-8 flex items-center justify-between gap-3 lg:hidden">
                         <Link href={route('home')} aria-label="Switch & Save home">
-                            <BrandLogo className="h-9" />
+                            <BrandLogo className="h-10" />
                         </Link>
                         {variant === 'staff' && (
                             <span className="bg-primary-soft text-accent-foreground rounded-full px-2.5 py-1 text-xs font-semibold">Staff area</span>

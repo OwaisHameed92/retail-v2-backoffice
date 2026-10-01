@@ -1,6 +1,11 @@
 # Brand and UI standard: Switch & Save
 
 > **Superseded for colours and layout by `docs/design/DESIGN-SYSTEM-v2.md` (owner-approved 2026-09-28).** Logo rules below still apply.
+>
+> **2026-10-01, pass 2: the light theme is the default for everyone** (dark is a user choice) and
+> `docs/design/reference-light-final.webp` is the target look: white sidebar with the full logo at the top, light
+> top bar with the mint wave wash, #F5F8FA canvas, white cards, green primary. The logo always appears complete
+> (`BrandLogo`, object-contain, never cropped or stretched); `docs/design/logo-full-reference.png` shows it.
 
 The owner's bar: **top-notch, professional, classic. Full functionality, no compromise.** Every screen is judged
 against this file. If a screen would look at home in Stripe, Linear or Xero's dashboard, it passes.
@@ -15,8 +20,8 @@ against this file. If a screen would look at home in Stripe, Linear or Xero's da
 
 - Name: **Switch & Save** (the till product is SSPOS). Tagline: "Smart Solutions for Smart Businesses".
 - Logo files in `public/images/brand/`: `switch-save-logo.png` (light), `switch-save-logo-dark.png` (dark),
-  `switch-save-icon.png` (round "S" mark). Components: `BrandLogo` (full wordmark), `AppLogoIcon` (mark),
-  `SidebarBrand` (mark + name + subtitle, used in sidebars). Never recolour or stretch the logo.
+  `switch-save-icon.png` (round "S" mark). Components: `BrandLogo` (full logo, sidebar top and auth pages),
+  `AppLogoIcon` (mark: collapsed sidebar, phones, sidebar brand card). Never recolour, crop or stretch the logo.
 - Colours (tokens in `resources/css/app.css`, use the Tailwind names, never raw hex):
 
 | Role | Token / class | Use |

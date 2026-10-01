@@ -14,7 +14,7 @@ import { cn } from '@/lib/utils';
 
 const SIDEBAR_COOKIE_NAME = 'sidebar:state';
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7;
-const SIDEBAR_WIDTH = '14.5rem';
+const SIDEBAR_WIDTH = '15.5rem';
 const SIDEBAR_WIDTH_MOBILE = '18rem';
 const SIDEBAR_WIDTH_ICON = '4rem';
 const SIDEBAR_KEYBOARD_SHORTCUT = 'b';
@@ -396,18 +396,17 @@ SidebarMenuItem.displayName = 'SidebarMenuItem';
 
 const sidebarMenuButtonVariants = cva(
     [
-        'peer/menu-button relative flex w-full items-center gap-3 overflow-hidden rounded-lg px-2.5 py-2 text-left text-sm font-medium text-sidebar-foreground outline-hidden ring-sidebar-ring',
+        'peer/menu-button relative flex w-full items-center gap-3 overflow-hidden rounded-[0.625rem] px-3 py-2 text-left text-sm font-medium text-sidebar-foreground outline-hidden ring-sidebar-ring',
         'transition-[width,height,padding,background-color,color] duration-150 ease-out',
         'hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 active:bg-sidebar-accent active:text-sidebar-accent-foreground',
         'disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none',
         'group-has-data-[sidebar=menu-action]/menu-item:pr-8',
         'data-[state=open]:hover:bg-sidebar-accent data-[state=open]:hover:text-sidebar-accent-foreground',
-        '[&>svg]:size-4 [&>svg]:shrink-0 [&>svg]:text-sidebar-muted [&>span:last-child]:truncate',
-        // Active page (v2): chrome-active fill, white text and icon, a subtle green edge on the left.
-        'before:absolute before:inset-y-2 before:left-0 before:w-[3px] before:rounded-full before:bg-sidebar-ring before:opacity-0 before:transition-opacity',
-        'data-[active=true]:bg-sidebar-active data-[active=true]:text-sidebar-accent-foreground data-[active=true]:before:opacity-100 data-[active=true]:[&>svg]:text-sidebar-accent-foreground',
-        'data-[active=true]:shadow-[inset_0_0_0_1px_var(--chrome-border)]',
-        'group-data-[collapsible=icon]:size-9! group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:p-2! group-data-[collapsible=icon]:before:hidden',
+        '[&>svg]:size-[18px] [&>svg]:shrink-0 [&>svg]:text-sidebar-muted [&>span:last-child]:truncate',
+        // Active page (v2 light): a soft green pill with green text and icon.
+        'data-[active=true]:bg-sidebar-active data-[active=true]:font-semibold data-[active=true]:text-sidebar-active-foreground data-[active=true]:[&>svg]:text-sidebar-active-foreground',
+        'data-[active=true]:hover:bg-sidebar-active data-[active=true]:hover:text-sidebar-active-foreground',
+        'group-data-[collapsible=icon]:size-10! group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:p-2!',
     ],
     {
         variants: {
