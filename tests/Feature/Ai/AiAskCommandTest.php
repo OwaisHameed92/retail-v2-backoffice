@@ -17,7 +17,8 @@ test('ai:ask answers a question about a company as a read-only job', function ()
         ->expectsOutputToContain('2 step(s)')
         ->assertSuccessful();
 
-    expect($this->fake->requests[0]->toolNames())->toBe(['get_company_overview']);
+    expect($this->fake->requests[0]->toolNames())->toContain('get_company_overview')
+        ->not->toContain('rename_branch')->not->toContain('draft_purchase_order');
 });
 
 test('ai:ask as a member can propose a change but never confirms it', function () {

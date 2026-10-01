@@ -8,6 +8,7 @@ use App\Http\Controllers\App\AccountingExportController;
 use App\Http\Controllers\App\AccountsController;
 use App\Http\Controllers\App\ActivityController;
 use App\Http\Controllers\App\AlertUnsubscribeController;
+use App\Http\Controllers\App\AssistantController;
 use App\Http\Controllers\App\BillingController;
 use App\Http\Controllers\App\CalendarController;
 use App\Http\Controllers\App\CashController;
@@ -57,6 +58,18 @@ Route::middleware(['auth:web', 'verified', 'company', 'two-factor:web'])->group(
 
     Route::post('company/switch', SwitchCompanyController::class)->name('company.switch');
     Route::post('branch/switch', SwitchBranchController::class)->name('branch.switch');
+
+    // Module 6.2: the portal AI assistant (top-bar panel, JSON; the question streams as server-sent events). ai.use;
+    // its tools still need their own abilities, and a one-shop user's tools stay on their shop.
+    Route::prefix('assistant')->name('assistant.')->middleware('company.can:ai.use')->group(function () {
+        Route::get('/', [AssistantController::class, 'status'])->name('status');
+        Route::post('ask', [AssistantController::class, 'ask'])->name('ask')->middleware('throttle:20,1');
+        Route::get('conversations/{conversation}', [AssistantController::class, 'show'])->name('conversations.show')->whereUlid('conversation');
+        Route::delete('conversations/{conversation}', [AssistantController::class, 'destroy'])->name('conversations.destroy')->whereUlid('conversation');
+        Route::delete('conversations', [AssistantController::class, 'destroyAll'])->name('conversations.destroy-all');
+        Route::post('actions/{action}/confirm', [AssistantController::class, 'confirm'])->name('actions.confirm')->whereUlid('action')->middleware('throttle:30,1');
+        Route::post('actions/{action}/cancel', [AssistantController::class, 'cancel'])->name('actions.cancel')->whereUlid('action')->middleware('throttle:30,1');
+    });
 
     // Module 1.13: plan, pricing, Direct Debit (set up by the owner: billing.manage) and invoices. Open while suspended.
     Route::prefix('billing')->name('billing')->middleware('company.can:billing.view')->group(function () {

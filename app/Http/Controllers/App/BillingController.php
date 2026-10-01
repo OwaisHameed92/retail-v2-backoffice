@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\App;
 
+use App\Domain\Ai\Queries\AiUsageSummary;
 use App\Domain\Billing\Actions\SendBillingRequest;
 use App\Domain\Billing\Data\PortalBilling;
 use App\Domain\Billing\Enums\BillingRequestKind;
@@ -30,7 +31,12 @@ class BillingController extends Controller
 {
     public function index(CurrentCompany $tenancy): Response
     {
-        return Inertia::render('app/billing', PortalBilling::for($tenancy->require(), canManage: $tenancy->can(Ability::BillingManage)));
+        $company = $tenancy->require();
+
+        return Inertia::render('app/billing', [
+            ...PortalBilling::for($company, canManage: $tenancy->can(Ability::BillingManage)),
+            'aiUsage' => AiUsageSummary::for($company), // module 6.2: this month's AI allowance and use
+        ]);
     }
 
     public function startDirectDebit(CurrentCompany $tenancy, StartOwnerMandateSetup $start): SymfonyResponse

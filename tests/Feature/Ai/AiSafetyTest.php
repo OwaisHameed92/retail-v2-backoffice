@@ -27,7 +27,7 @@ test('staff are not offered write tools and cannot use them even if the model as
 
     $reply = app(RunAssistant::class)->handle($context, 'Rename my branch to Hacked');
 
-    expect($this->fake->requests[0]->toolNames())->toBe(['get_company_overview'])
+    expect($this->fake->requests[0]->toolNames())->toContain('get_company_overview')->not->toContain('rename_branch')
         ->and($this->fake->toolResultsIn()[0]['is_error'])->toBeTrue()
         ->and($this->fake->toolResultsIn()[0]['content'])->toContain('permission')
         ->and($reply->proposals)->toBe([])
@@ -98,7 +98,8 @@ test('system jobs get read tools only', function () {
 
     app(RunAssistant::class)->handle(AiContext::forSystem($company, AiFeature::Assistant), 'Summarise');
 
-    expect($this->fake->lastRequest()->toolNames())->toBe(['get_company_overview']);
+    expect($this->fake->lastRequest()->toolNames())->toContain('get_company_overview')->toContain('get_sales')
+        ->not->toContain('rename_branch')->not->toContain('draft_purchase_order');
 });
 
 test('unknown tools and invalid input come back as errors, not crashes', function () {

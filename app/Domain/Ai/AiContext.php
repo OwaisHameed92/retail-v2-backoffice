@@ -84,18 +84,33 @@ final class AiContext
      */
     public function currentRole(): ?CompanyRole
     {
+        $role = $this->membership()?->role;
+
+        return $role instanceof CompanyRole ? $role : null;
+    }
+
+    /**
+     * The one shop the user is limited to (membership `branch_id`, module 3.3), read fresh; null = every shop (and
+     * for system and admin contexts). Tenant tools run with it set on CurrentCompany, so they never widen it.
+     */
+    public function restrictedBranchId(): ?string
+    {
+        $branchId = $this->membership()?->branch_id;
+
+        return is_string($branchId) && $branchId !== '' ? $branchId : null;
+    }
+
+    private function membership(): ?CompanyMembership
+    {
         if ($this->user === null || $this->company === null) {
             return null;
         }
 
-        $role = CompanyMembership::query()
+        return CompanyMembership::query()
             ->where('company_id', $this->company->getKey())
             ->where('user_id', $this->user->getKey())
             ->where('is_active', true)
-            ->first()
-            ?->role;
-
-        return $role instanceof CompanyRole ? $role : null;
+            ->first();
     }
 
     public function userCan(Ability $ability): bool

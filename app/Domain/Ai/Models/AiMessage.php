@@ -17,6 +17,7 @@ use Illuminate\Support\Carbon;
  * @property list<array<string, mixed>> $content
  * @property list<array<string, mixed>>|null $tool_calls
  * @property list<array<string, mixed>>|null $tool_results
+ * @property list<array<string, mixed>>|null $links report pages behind a portal answer (module 6.2)
  * @property string|null $model
  * @property string|null $stop_reason
  * @property int $input_tokens
@@ -41,6 +42,7 @@ class AiMessage extends Model
         'content',
         'tool_calls',
         'tool_results',
+        'links',
         'model',
         'stop_reason',
         'input_tokens',
@@ -65,6 +67,7 @@ class AiMessage extends Model
             'content' => 'array',
             'tool_calls' => 'array',
             'tool_results' => 'array',
+            'links' => 'array',
             'input_tokens' => 'integer',
             'output_tokens' => 'integer',
             'cache_read_tokens' => 'integer',

@@ -51,8 +51,9 @@ test('requests carry a frozen cached system prompt, sorted tools and the context
         ->and($request->system[0]['text'])->toBe(SystemPrompt::TENANT)
         ->and($request->system[0]['cache_control'])->toBe(['type' => 'ephemeral'])
         ->and($request->cacheConversation)->toBeTrue()
-        ->and($request->toolNames())->toBe(['get_company_overview', 'rename_branch'])
-        ->and($request->model)->toBe('claude-opus-5')
+        ->and($request->toolNames())->toBe(collect($request->toolNames())->sort()->values()->all())
+        ->and($request->toolNames())->toContain('get_company_overview', 'rename_branch', 'get_sales', 'draft_purchase_order')
+        ->and($request->model)->toBe('claude-sonnet-5')
         ->and($request->effort)->toBe('medium');
 
     $first = $request->messages[0]['content'];
@@ -97,7 +98,7 @@ test('the conversation is stored and the next question continues it', function (
     $assistant = $conversation->messages()->where('role', 'assistant')->first();
     expect($assistant->tool_calls[0]['name'])->toBe('get_company_overview')
         ->and($assistant->input_tokens)->toBe(100)
-        ->and($assistant->model)->toBe('claude-opus-5');
+        ->and($assistant->model)->toBe('claude-sonnet-5');
 
     // The follow-up sent the whole history (4 earlier messages + the new question), context only once.
     $messages = $this->fake->lastRequest()->messages;

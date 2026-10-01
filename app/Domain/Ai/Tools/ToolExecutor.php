@@ -8,6 +8,7 @@ use App\Domain\Ai\Data\AiProposal;
 use App\Domain\Ai\Data\ToolCallResult;
 use App\Domain\Ai\Enums\PendingActionStatus;
 use App\Domain\Ai\Enums\ToolAudience;
+use App\Domain\Ai\Exceptions\AiActionFailed;
 use App\Domain\Ai\Models\AiConversation;
 use App\Domain\Ai\Models\AiPendingAction;
 use App\Domain\Ai\Support\AiRedactor;
@@ -25,7 +26,8 @@ use Throwable;
  *
  * 1. the tool must exist and the actor must be allowed to use it (ability re-read from the database);
  * 2. input keys must be in the schema and pass the tool's rules;
- * 3. tenant tools run inside CurrentCompany::runAs(actor's company), so ids from another company are not found;
+ * 3. tenant tools run inside CurrentCompany::runAs(actor's company, role, one-shop limit), so ids from another
+ *    company are not found and a one-shop user's tools stay on their shop;
  * 4. write tools only produce a proposal, stored as an AiPendingAction (audited), never a change;
  * 5. the result is redacted and wrapped as data (`<tool_data>`), so text inside it cannot pose as instructions.
  *
@@ -61,6 +63,8 @@ final class ToolExecutor
             return $this->error($call, 'Invalid input: '.implode(' ', $e->validator->errors()->all()));
         } catch (ModelNotFoundException) {
             return $this->error($call, 'Not found in this business.');
+        } catch (AiActionFailed $e) {
+            return $this->error($call, $e->getMessage());
         } catch (Throwable $e) {
             report($e);
 
@@ -120,7 +124,15 @@ final class ToolExecutor
             return $callback();
         }
 
-        return $this->tenancy->runAs($context->company, fn () => $callback(), $context->currentRole());
+        $role = $context->currentRole();
+        $branchId = $context->restrictedBranchId();
+
+        // runAs() clears the one-shop limit; put the user's back so tools (and the queries they reuse) keep to it.
+        return $this->tenancy->runAs($context->company, function ($company) use ($callback, $role, $branchId) {
+            $this->tenancy->set($company, $role, $branchId);
+
+            return $callback();
+        }, $role);
     }
 
     private function propose(AiTool $tool, AiProposal $proposal, AiContext $context, ?AiConversation $conversation): AiPendingAction
