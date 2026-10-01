@@ -2,6 +2,7 @@
 
 namespace App\Domain\Sync\Actions;
 
+use App\Domain\MasterCatalogue\Actions\CollectUnknownBarcodes;
 use App\Domain\Shared\Exceptions\ApiException;
 use App\Domain\Shared\Support\Ulid;
 use App\Domain\Sync\Data\PushInput;
@@ -33,6 +34,8 @@ use Illuminate\Support\Facades\Log;
  * 5. Reply 200 `{acknowledgedSeq, accepted}`; when the first row of the batch is rejected (nothing can be
  *    acknowledged) 422 row.invalid with its `rejectedKey`. Rows after a rejection are stored anyway and come back as
  *    duplicates. `sync_branch_status` is updated either way.
+ * 6. Product barcodes the master catalogue does not know go to its review queue, anonymously, unless the business
+ *    opted out (CollectUnknownBarcodes; never fails the push).
  */
 final class PushChanges
 {
@@ -40,6 +43,7 @@ final class PushChanges
         private readonly ApplySyncChanges $apply,
         private readonly PushIdempotency $idempotency,
         private readonly SyncStatusRecorder $status,
+        private readonly CollectUnknownBarcodes $unknownBarcodes,
     ) {}
 
     /**
@@ -63,6 +67,7 @@ final class PushChanges
 
                 $result = $this->apply->handle($caller->company, $caller->branch, $changes, $stream);
                 $this->status->pushed($caller, $stream, $result, $input->appVersion, $input->tillRegisterId);
+                $this->unknownBarcodes->handle($caller->company, $changes);
 
                 if ($upload !== null) {
                     CloudUploads::refresh($upload);

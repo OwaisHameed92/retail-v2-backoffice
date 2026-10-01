@@ -9,7 +9,7 @@ import { StatCard, StatGrid } from '@/components/shared/stat-card';
 import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/app-layout';
 import { Head, Link, router } from '@inertiajs/react';
-import { Archive, FolderTree, Package, Plus, Tags, Upload } from 'lucide-react';
+import { Archive, BookOpenCheck, FolderTree, Package, Plus, Sparkles, Tags, Upload } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
 const number = new Intl.NumberFormat('en-GB');
@@ -41,6 +41,12 @@ export default function Products(props: ProductIndexProps) {
                                     <Link href={route('app.products.imports.index')}>
                                         <Upload />
                                         Import CSV
+                                    </Link>
+                                </Button>
+                                <Button variant="outline" asChild>
+                                    <Link href={route('app.products.catalogue.index')}>
+                                        <BookOpenCheck />
+                                        Add from catalogue
                                     </Link>
                                 </Button>
                                 <Button asChild>
@@ -83,17 +89,29 @@ export default function Products(props: ProductIndexProps) {
                         <EmptyState
                             icon={Package}
                             title="No products yet"
-                            body="Products added on your tills appear here after they sync. You can also add them here or import a spreadsheet."
+                            body="Start with a ready-made range for your kind of shop, pick products from the SSPOS catalogue, or import a spreadsheet. Products added on your tills appear here after they sync."
                             action={
                                 canManage ? (
                                     <div className="flex flex-wrap justify-center gap-2">
+                                        <Button asChild>
+                                            <Link href={route('app.products.starter')}>
+                                                <Sparkles />
+                                                Starter pack
+                                            </Link>
+                                        </Button>
+                                        <Button variant="outline" asChild>
+                                            <Link href={route('app.products.catalogue.index')}>
+                                                <BookOpenCheck />
+                                                Add from catalogue
+                                            </Link>
+                                        </Button>
                                         <Button variant="outline" asChild>
                                             <Link href={route('app.products.imports.index')}>
                                                 <Upload />
                                                 Import CSV
                                             </Link>
                                         </Button>
-                                        <Button asChild>
+                                        <Button variant="outline" asChild>
                                             <Link href={route('app.products.create')}>
                                                 <Plus />
                                                 Add product
@@ -116,10 +134,17 @@ export default function Products(props: ProductIndexProps) {
                 destructive
                 onConfirm={() =>
                     new Promise((resolve) =>
-                        router.post(route('app.products.archive', archiving?.id ?? ''), {}, { preserveScroll: true, onFinish: () => {
-                            setArchiving(null);
-                            resolve(null);
-                        } }),
+                        router.post(
+                            route('app.products.archive', archiving?.id ?? ''),
+                            {},
+                            {
+                                preserveScroll: true,
+                                onFinish: () => {
+                                    setArchiving(null);
+                                    resolve(null);
+                                },
+                            },
+                        ),
                     )
                 }
             />

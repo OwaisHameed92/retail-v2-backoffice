@@ -1,6 +1,7 @@
 import {
     type LucideIcon,
     Activity,
+    BookOpenCheck,
     Building2,
     CloudUpload,
     FileText,
@@ -99,6 +100,14 @@ export const adminNavItems: AdminNavItem[] = [
         route: 'admin.cloud-link.index',
         activePattern: 'admin.cloud-link.*',
         ability: 'tenants.view',
+        group: 'Operations',
+    },
+    {
+        title: 'Catalogue',
+        icon: BookOpenCheck,
+        route: 'admin.catalogue.index',
+        activePattern: 'admin.catalogue.*',
+        ability: 'catalogue.manage',
         group: 'Operations',
     },
     { title: 'Devices', icon: MonitorSmartphone, group: 'Operations' },

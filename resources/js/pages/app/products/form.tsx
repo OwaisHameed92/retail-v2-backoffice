@@ -1,3 +1,4 @@
+import { BarcodeLookup } from '@/components/app/catalogue/barcode-lookup';
 import { BarcodeEditor } from '@/components/app/products/barcode-editor';
 import { BasicsSection, GroupSection, PricingSection } from '@/components/app/products/product-form-basics';
 import { RulesSection, TillSection } from '@/components/app/products/product-form-rules';
@@ -33,7 +34,10 @@ export default function ProductFormPage({ product, values, options, canManage }:
 
     const title = product ? product.name : 'Add product';
     const meta = product
-        ? [`Last changed ${product.updatedAt ? relativeTime(product.updatedAt) : 'at the till'} by ${product.lastChangedBy}`, product.nearestExpiryDate ? `Nearest expiry ${product.nearestExpiryDate}` : null]
+        ? [
+              `Last changed ${product.updatedAt ? relativeTime(product.updatedAt) : 'at the till'} by ${product.lastChangedBy}`,
+              product.nearestExpiryDate ? `Nearest expiry ${product.nearestExpiryDate}` : null,
+          ]
               .filter(Boolean)
               .join(' · ')
         : 'Every shop gets it at its next sync.';
@@ -61,10 +65,17 @@ export default function ProductFormPage({ product, values, options, canManage }:
                                     description="Your tills stop offering it at their next sync. Its sales history stays, and you can restore it at any time."
                                     confirmLabel="Archive product"
                                     destructive
-                                    onConfirm={() => new Promise((resolve) => router.post(route('app.products.archive', product.id), {}, { preserveScroll: true, onFinish: resolve }))}
+                                    onConfirm={() =>
+                                        new Promise((resolve) =>
+                                            router.post(route('app.products.archive', product.id), {}, { preserveScroll: true, onFinish: resolve }),
+                                        )
+                                    }
                                 />
                             ) : (
-                                <Button variant="outline" onClick={() => router.post(route('app.products.restore', product.id), {}, { preserveScroll: true })}>
+                                <Button
+                                    variant="outline"
+                                    onClick={() => router.post(route('app.products.restore', product.id), {}, { preserveScroll: true })}
+                                >
                                     <ArchiveRestore />
                                     Restore
                                 </Button>
@@ -77,7 +88,9 @@ export default function ProductFormPage({ product, values, options, canManage }:
                     <Alert variant="info">
                         <Info />
                         <AlertTitle>View only</AlertTitle>
-                        <AlertDescription>Your role can look at products but not change them. Ask the business owner if you need to.</AlertDescription>
+                        <AlertDescription>
+                            Your role can look at products but not change them. Ask the business owner if you need to.
+                        </AlertDescription>
                     </Alert>
                 )}
                 {canManage && missing && (
@@ -99,6 +112,8 @@ export default function ProductFormPage({ product, values, options, canManage }:
                     </Alert>
                 )}
 
+                {!product && canManage && !missing && <BarcodeLookup data={data} setData={set} />}
+
                 <form onSubmit={submit} className="grid gap-6" noValidate>
                     <fieldset disabled={!canManage} className="contents">
                         <FormCard>
@@ -114,7 +129,9 @@ export default function ProductFormPage({ product, values, options, canManage }:
                     </fieldset>
 
                     {canManage && (
-                        <StickyFormBar message={isDirty ? 'You have unsaved changes.' : 'Prices are in pounds. Changes reach your tills at their next sync.'}>
+                        <StickyFormBar
+                            message={isDirty ? 'You have unsaved changes.' : 'Prices are in pounds. Changes reach your tills at their next sync.'}
+                        >
                             <Button variant="outline" asChild>
                                 <Link href={route('app.products.index')}>Cancel</Link>
                             </Button>

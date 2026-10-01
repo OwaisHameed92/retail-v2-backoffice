@@ -11,6 +11,7 @@ use App\Http\Controllers\App\AlertUnsubscribeController;
 use App\Http\Controllers\App\BillingController;
 use App\Http\Controllers\App\CalendarController;
 use App\Http\Controllers\App\CashController;
+use App\Http\Controllers\App\CatalogueController;
 use App\Http\Controllers\App\CatalogueGroupController;
 use App\Http\Controllers\App\ComplianceController;
 use App\Http\Controllers\App\CustomerController;
@@ -114,6 +115,14 @@ Route::middleware(['auth:web', 'verified', 'company', 'two-factor:web'])->group(
             Route::get('imports/{import}', [ProductImportController::class, 'show'])->name('imports.show')->whereUlid('import');
             Route::post('imports/{import}/preview', [ProductImportController::class, 'preview'])->name('imports.preview')->whereUlid('import');
             Route::post('imports/{import}/apply', [ProductImportController::class, 'apply'])->name('imports.apply')->whereUlid('import');
+            // Starter catalogue and barcode lookup (gap #7): add from the SSPOS master catalogue, the onboarding starter
+            // pack, barcode lookup for the product form, and sharing unknown barcodes (anonymous; opt-out).
+            Route::get('catalogue', [CatalogueController::class, 'index'])->name('catalogue.index');
+            Route::post('catalogue', [CatalogueController::class, 'add'])->name('catalogue.add');
+            Route::get('catalogue/lookup', [CatalogueController::class, 'lookup'])->name('catalogue.lookup');
+            Route::put('catalogue/sharing', [CatalogueController::class, 'sharing'])->name('catalogue.sharing');
+            Route::get('starter', [CatalogueController::class, 'starter'])->name('starter');
+            Route::post('starter', [CatalogueController::class, 'addStarter'])->name('starter.add');
         });
         Route::get('{product}', [ProductController::class, 'show'])->name('show')->whereUlid('product')->middleware('company.can:catalogue.view');
     });

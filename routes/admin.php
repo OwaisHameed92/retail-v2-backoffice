@@ -21,6 +21,9 @@ use App\Http\Controllers\Admin\Billing\InvoiceController;
 use App\Http\Controllers\Admin\Billing\PaymentController;
 use App\Http\Controllers\Admin\Billing\TenantBillingController;
 use App\Http\Controllers\Admin\Billing\TenantPricingController;
+use App\Http\Controllers\Admin\Catalogue\ContributionController;
+use App\Http\Controllers\Admin\Catalogue\MasterCatalogueController;
+use App\Http\Controllers\Admin\Catalogue\MasterImportController;
 use App\Http\Controllers\Admin\CloudLinkController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\DataRequestController;
@@ -86,6 +89,25 @@ Route::middleware(['auth:admin', AdminIsActive::class, BlockAdminWhileImpersonat
     Route::get('data-requests', [DataRequestController::class, 'index'])->name('data-requests.index')->middleware('can:'.AdminRole::AUDIT_VIEW);
 
     Route::get('/', DashboardController::class)->name('dashboard');
+
+    // Starter catalogue and barcode lookup (gap #7): the platform-wide master catalogue, its CSV loads and the review
+    // queue of barcodes collected from tills. Owner and support (catalogue.manage).
+    Route::prefix('catalogue')->name('catalogue.')->middleware('can:'.AdminRole::CATALOGUE_MANAGE)->group(function () {
+        Route::get('/', [MasterCatalogueController::class, 'index'])->name('index');
+        Route::get('create', [MasterCatalogueController::class, 'create'])->name('create');
+        Route::post('/', [MasterCatalogueController::class, 'store'])->name('store')->middleware('throttle:120,1');
+        Route::post('starter', [MasterCatalogueController::class, 'starter'])->name('starter')->middleware('throttle:5,1');
+        Route::get('imports', [MasterImportController::class, 'index'])->name('imports.index');
+        Route::get('imports/template', [MasterImportController::class, 'template'])->name('imports.template');
+        Route::post('imports', [MasterImportController::class, 'store'])->name('imports.store')->middleware('throttle:10,1');
+        Route::get('contributions', [ContributionController::class, 'index'])->name('contributions.index');
+        Route::post('contributions/{contribution}/approve', [ContributionController::class, 'approve'])->name('contributions.approve')->whereUlid('contribution')->middleware('throttle:120,1');
+        Route::post('contributions/{contribution}/reject', [ContributionController::class, 'reject'])->name('contributions.reject')->whereUlid('contribution')->middleware('throttle:120,1');
+        Route::get('{product}', [MasterCatalogueController::class, 'edit'])->name('edit')->whereUlid('product');
+        Route::put('{product}', [MasterCatalogueController::class, 'update'])->name('update')->whereUlid('product')->middleware('throttle:120,1');
+        Route::post('{product}/merge', [MasterCatalogueController::class, 'merge'])->name('merge')->whereUlid('product')->middleware('throttle:60,1');
+    });
+
     // Module 3.2: the dashboard's Trading tab (shop sales across businesses). Owner, support and accounts.
     Route::get('trading', TradingController::class)->name('trading')->middleware('can:'.AdminRole::TRADING_VIEW);
 

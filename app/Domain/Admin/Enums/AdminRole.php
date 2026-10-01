@@ -17,6 +17,7 @@ namespace App\Domain\Admin\Enums;
  * | leads.manage      |  yes  |  yes  |         |          |
  * | trading.view      |  yes  |       |   yes   |   yes    |
  * | audit.view        |  yes  |       |   yes   |          |
+ * | catalogue.manage  |  yes  |       |   yes   |          |
  *
  * The owner can do everything. Unknown abilities are denied for every role except owner.
  */
@@ -45,6 +46,9 @@ enum AdminRole: string
     /** The audit log across every business (/admin/audit-log). Owner and support. */
     public const AUDIT_VIEW = 'audit.view';
 
+    /** The platform-wide master catalogue (/admin/catalogue): products, CSV loads, merges, the till review queue. */
+    public const CATALOGUE_MANAGE = 'catalogue.manage';
+
     /**
      * Abilities granted to each non-owner role. The owner implicitly has all abilities.
      *
@@ -52,7 +56,7 @@ enum AdminRole: string
      */
     private const ABILITIES = [
         'sales' => [self::TENANTS_VIEW, self::TENANTS_MANAGE, self::LEADS_MANAGE],
-        'support' => [self::TENANTS_VIEW, self::TENANTS_MANAGE, self::LICENCES_MANAGE, self::TRADING_VIEW, self::AUDIT_VIEW],
+        'support' => [self::TENANTS_VIEW, self::TENANTS_MANAGE, self::LICENCES_MANAGE, self::TRADING_VIEW, self::AUDIT_VIEW, self::CATALOGUE_MANAGE],
         'accounts' => [self::TENANTS_VIEW, self::BILLING_MANAGE, self::TRADING_VIEW],
     ];
 
@@ -91,6 +95,7 @@ enum AdminRole: string
             self::LEADS_MANAGE,
             self::TRADING_VIEW,
             self::AUDIT_VIEW,
+            self::CATALOGUE_MANAGE,
         ];
     }
 
