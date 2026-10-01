@@ -84,4 +84,10 @@ enum Ability: string
 
     /** The business's activity log (who changed what in the portal and on its account). Owner only by default. */
     case AuditView = 'audit.view';
+
+    /** Customer data export and erasure (anonymise), data retention (module 7.7, GDPR). Owner only. */
+    case PrivacyManage = 'privacy.manage';
+
+    /** Journals and sales summaries exported to Xero, QuickBooks or Sage, and their account mapping (gap #8). Owner and accountant. */
+    case AccountsExport = 'accounts.export';
 }

@@ -37,5 +37,9 @@ Schedule::command('till-health:refresh')->everyFiveMinutes()->onOneServer()->wit
 // Reporting tables (module 3.1): re-queue shop-days whose rebuild job was lost or failed (pushes queue their own).
 Schedule::command('reports:process-dirty')->everyMinute()->onOneServer()->withoutOverlapping(10);
 
+// Privacy (module 7.7): count customers past each business's data retention; anonymise only where the owner turned
+// on automatic anonymising (the rest stay a dry run).
+Schedule::command('privacy:retention', ['--apply'])->dailyAt('03:30')->onOneServer()->withoutOverlapping();
+
 // Admin dashboard (module 1.9): a heartbeat so System health can show the scheduler is running.
 Schedule::call(fn () => SchedulerHeartbeat::beat())->everyMinute()->name('scheduler:heartbeat')->onOneServer();

@@ -4,6 +4,7 @@
 // (see bootstrap/app.php). Every route here must sit behind `auth`, `verified`, `company` and `two-factor:web`; add
 // `company.can:<ability>` for anything role-restricted.
 
+use App\Http\Controllers\App\AccountingExportController;
 use App\Http\Controllers\App\AccountsController;
 use App\Http\Controllers\App\ActivityController;
 use App\Http\Controllers\App\BillingController;
@@ -22,6 +23,7 @@ use App\Http\Controllers\App\PharmacyController;
 use App\Http\Controllers\App\PortalInvitationController;
 use App\Http\Controllers\App\PortalUserController;
 use App\Http\Controllers\App\PriceController;
+use App\Http\Controllers\App\PrivacyController;
 use App\Http\Controllers\App\ProductController;
 use App\Http\Controllers\App\ProductImportController;
 use App\Http\Controllers\App\ProductRecallController;
@@ -158,6 +160,17 @@ Route::middleware(['auth:web', 'verified', 'company', 'two-factor:web'])->group(
         Route::delete('{staff}', [StaffController::class, 'destroy'])->name('destroy')->whereUlid('staff')->middleware('throttle:60,1');
     });
 
+    // Module 7.7: privacy (UK GDPR), owner only (privacy.manage): data requests, a customer's data export (ZIP, never
+    // kept) and erasure (anonymise), data retention. Every action is audited.
+    Route::prefix('privacy')->name('privacy.')->middleware('company.can:privacy.manage')->group(function () {
+        Route::get('/', [PrivacyController::class, 'index'])->name('index');
+        Route::put('settings', [PrivacyController::class, 'updateSettings'])->name('settings.update')->middleware('throttle:30,1');
+        Route::post('retention/apply', [PrivacyController::class, 'applyRetention'])->name('retention.apply')->middleware('throttle:5,1');
+        Route::get('customers/{customer}/export', [PrivacyController::class, 'export'])->name('customers.export')->whereUlid('customer')->middleware('throttle:10,1');
+        Route::post('customers/{customer}/anonymise', [PrivacyController::class, 'anonymise'])->name('customers.anonymise')->whereUlid('customer')->middleware('throttle:10,1');
+        Route::post('requests/{dataRequest}/till-done', [PrivacyController::class, 'tillDone'])->name('requests.till-done')->whereUlid('dataRequest')->middleware('throttle:30,1');
+    });
+
     // Module 4.4: customers, their ledger across shops, statements (screen, PDF, email) and marketing consent. Read:
     // customers.view; add / edit details: customers.manage (a one-shop user may look only, CustomerRequest).
     Route::prefix('customers')->name('customers.')->group(function () {
@@ -211,6 +224,14 @@ Route::middleware(['auth:web', 'verified', 'company', 'two-factor:web'])->group(
         Route::get('vat/print', [AccountsController::class, 'vatPrint'])->name('vat.print');
         Route::get('vat/csv', [AccountsController::class, 'vatCsv'])->name('vat.csv')->middleware('throttle:30,1');
         Route::get('fixed-assets', [AccountsController::class, 'fixedAssets'])->name('fixed-assets');
+        // Gap #8: journals for Xero, QuickBooks and Sage (accounts.export: owner and accountant), preview and CSV, and
+        // the account / VAT code mapping per package.
+        Route::prefix('export')->name('export.')->middleware('company.can:accounts.export')->group(function () {
+            Route::get('/', [AccountingExportController::class, 'index'])->name('index');
+            Route::get('download', [AccountingExportController::class, 'download'])->name('download')->middleware('throttle:30,1');
+            Route::get('mappings', [AccountingExportController::class, 'mappings'])->name('mappings');
+            Route::put('mappings', [AccountingExportController::class, 'updateMappings'])->name('mappings.update')->middleware('throttle:30,1');
+        });
     });
 
     // Module 5.1: stock (the tills' rows, read only): on hand, movements, stock takes, valuation, dates and wastage.

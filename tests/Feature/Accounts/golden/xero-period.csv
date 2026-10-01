@@ -1,0 +1,8 @@
+*Narration,*Date,Description,*AccountCode,*TaxRate,*Amount,TrackingName1,TrackingOption1,TrackingName2,TrackingOption2
+"Kirkgate Convenience - Bradford - EPOS takings 1 Sep 2026 to 30 Sep 2026 (SSPOS-20260901-20260930-BRD)",30/09/2026,"Cash in tills",090,"No VAT",60.00,,,,
+"Kirkgate Convenience - Bradford - EPOS takings 1 Sep 2026 to 30 Sep 2026 (SSPOS-20260901-20260930-BRD)",30/09/2026,"VAT output",820,"No VAT",-10.00,,,,
+"Kirkgate Convenience - Bradford - EPOS takings 1 Sep 2026 to 30 Sep 2026 (SSPOS-20260901-20260930-BRD)",30/09/2026,"Sales standard rated",200,"No VAT",-50.00,,,,
+"Kirkgate Convenience - Leeds - EPOS takings 1 Sep 2026 to 30 Sep 2026 (SSPOS-20260901-20260930-LDS)",30/09/2026,"Cash in tills",090,"No VAT",96.00,,,,
+"Kirkgate Convenience - Leeds - EPOS takings 1 Sep 2026 to 30 Sep 2026 (SSPOS-20260901-20260930-LDS)",30/09/2026,"VAT output",820,"No VAT",-21.00,,,,
+"Kirkgate Convenience - Leeds - EPOS takings 1 Sep 2026 to 30 Sep 2026 (SSPOS-20260901-20260930-LDS)",30/09/2026,"Sales standard rated",200,"No VAT",-105.00,,,,
+"Kirkgate Convenience - Leeds - EPOS takings 1 Sep 2026 to 30 Sep 2026 (SSPOS-20260901-20260930-LDS)",30/09/2026,Purchases,310,"No VAT",30.00,,,,

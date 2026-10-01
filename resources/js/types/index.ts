@@ -58,7 +58,9 @@ export type Ability =
     | 'compliance.manage'
     | 'calendar.manage'
     | 'pharmacy.view'
-    | 'parcels.view';
+    | 'parcels.view'
+    | 'privacy.manage'
+    | 'accounts.export';
 
 /** The company the user is working in (shared by HandleInertiaRequests). */
 export interface CurrentCompany {

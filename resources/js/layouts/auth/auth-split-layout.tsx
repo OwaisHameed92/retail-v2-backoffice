@@ -1,4 +1,5 @@
 import BrandLogo from '@/components/brand-logo';
+import { LegalLinks } from '@/components/legal-links';
 import { BrandWaves } from '@/components/shell/brand-waves';
 import { Link } from '@inertiajs/react';
 import { BarChart3, Building2, CircleCheck, Headset, KeyRound, ScrollText, ShieldCheck, Store, type LucideIcon } from 'lucide-react';
@@ -87,7 +88,10 @@ export default function AuthSplitLayout({ children, title, description, variant 
                     </ul>
                 </div>
 
-                <p className="text-muted-foreground relative text-sm">© {year} Switch &amp; Save. Smart Solutions for Smart Businesses.</p>
+                <div className="relative grid gap-2">
+                    <p className="text-muted-foreground text-sm">© {year} Switch &amp; Save. Smart Solutions for Smart Businesses.</p>
+                    <LegalLinks />
+                </div>
             </aside>
 
             <main className="flex flex-col items-center justify-center px-5 py-10 sm:px-8">
@@ -113,6 +117,8 @@ export default function AuthSplitLayout({ children, title, description, variant 
                     </div>
 
                     {children}
+
+                    <LegalLinks className="mt-10 justify-center lg:hidden" />
                 </div>
             </main>
         </div>
