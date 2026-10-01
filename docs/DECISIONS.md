@@ -782,3 +782,12 @@ still v1 (`X-SSPOS-Contract: 1`); the pack was copied over the contract folder (
 | Staff time (§4) | `User.ratePerHour` and `maxShiftHours` are portal-owned and edited on the staff form (pulled); wages use the rate. Overtime is the till's fixed rule, over 8 hours in a London day, display only (no premium, no filter); the week's `TimesheetApproval.overtimeHours` is shown beside it. Holiday = 12.07% of worked hours, shown as an estimate (screen and payroll CSV). `WageRate` (NMW/NLW) read only. Holiday and absence bookings: not available yet (no till table). |
 | Newspapers (§5) | A title's VAT comes from its linked product; a title without one makes no VAT line on the till, so the list and form warn, and the form suggests the business's zero-rated rate (0%, code C first). Rounds and news accounts: not in the till yet, nothing sent. |
 | Transfers (§6) | Shown as the till sends them, never recalculated: line `qtyVariance` = received − sent (minus = short); receipt `varianceCost` = sent − received at cost (plus = lost in transit). Transfer, route and period money totals are the receipts' `varianceCost` summed ("Lost in transit"); a line's difference at cost is `qtyVariance` × unit cost. |
+
+## Full demo data (`demo:seed`, 2026-10-01)
+
+| Topic | Decision |
+|---|---|
+| Path | Demo rows are pushed like a till's (`ApplySyncChanges`, stream `demo-seed`), never inserted around the applier. Seq = hash of entity + id, so reruns are duplicates; `--fresh` deletes by the ledger's demo streams only. Portal-only rows: `till_user_branches` for demo staff; till health touches the demo tills' licences (issued if none, bound with a check-in) and `sync_branch_status`. |
+| Demo sales | `demo:sales` now sells the ~600-product demo catalogue (`Demo\Catalogue\DemoProducts`; the 35 old keys keep their ids) and names a demo customer on ~9% of baskets. A business whose demo sales predate the catalogue gets them replaced on its first `demo:seed`. |
+| Sale stock movements | Only the last 3 trading days of sales get a `StockMovement` per line (volume); stock on hand is the end of each product's movement chain. |
+

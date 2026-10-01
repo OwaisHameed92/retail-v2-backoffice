@@ -32,7 +32,7 @@ final class DemoCatalogue
     ];
 
     /** The carrier bag line (isBagCharge). */
-    public const BAG = ['key' => 'bag', 'name' => 'Carrier bag', 'barcode' => '5000000000108', 'price' => 10, 'cost' => 3, 'vat' => 'S'];
+    public const BAG = ['key' => 'bag', 'name' => 'Carrier bag', 'barcode' => '5000000000104', 'price' => 10, 'cost' => 3, 'vat' => 'S'];
 
     /**
      * key => [name, barcode, price, cost, vat, weight, when (morning|evening|any), age restricted]
