@@ -35,6 +35,7 @@ use App\Http\Controllers\App\ProductImportController;
 use App\Http\Controllers\App\ProductRecallController;
 use App\Http\Controllers\App\PromotionController;
 use App\Http\Controllers\App\PurchasingController;
+use App\Http\Controllers\App\ReorderSuggestionController;
 use App\Http\Controllers\App\ReportController;
 use App\Http\Controllers\App\SaleController;
 use App\Http\Controllers\App\ShopController;
@@ -290,7 +291,12 @@ Route::middleware(['auth:web', 'verified', 'company', 'two-factor:web'])->group(
             Route::put('orders/{order}', [HeadOfficeOrderController::class, 'update'])->name('orders.update')->whereUlid('order')->middleware('throttle:60,1');
             Route::post('orders/{order}/send', [HeadOfficeOrderController::class, 'send'])->name('orders.send')->whereUlid('order')->middleware('throttle:60,1');
             Route::post('orders/{order}/cancel', [HeadOfficeOrderController::class, 'cancel'])->name('orders.cancel')->whereUlid('order')->middleware('throttle:60,1');
+            // Module 6.4: draft one order per shop and supplier from the reorder suggestions (every shop only).
+            Route::post('suggestions/orders', [ReorderSuggestionController::class, 'store'])->name('suggestions.store')->middleware('throttle:30,1');
         });
+        // Module 6.4: reorder suggestions (a one-shop user: their shop) and the optional AI note (ai.use).
+        Route::get('suggestions', [ReorderSuggestionController::class, 'index'])->name('suggestions.index');
+        Route::post('suggestions/note', [ReorderSuggestionController::class, 'note'])->name('suggestions.note')->middleware(['company.can:ai.use', 'throttle:10,1']);
         Route::get('/', [PurchasingController::class, 'home'])->name('home');
         Route::get('orders/{order}', [PurchasingController::class, 'order'])->name('orders.show')->whereUlid('order');
         Route::get('statements', [PurchasingController::class, 'statements'])->name('statements.index');
