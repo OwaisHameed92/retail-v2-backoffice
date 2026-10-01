@@ -8,6 +8,9 @@ namespace App\Domain\Reporting\Demo;
  */
 final readonly class DemoShop
 {
+    /** Demo customers of a business (`customer|1` … `customer|400`); about 9% of baskets name one. */
+    public const CUSTOMERS = 400;
+
     public string $seed;
 
     /** @var list<string> */
@@ -26,10 +29,10 @@ final readonly class DemoShop
         $this->cashiers = [$this->id('cashier|1'), $this->id('cashier|2'), $this->id('cashier|3')];
     }
 
-    /** A fixed id for something of this business (product, VAT rate, payment type) or shop (cashier, shift). */
+    /** A fixed id for something of this business (product, VAT rate, payment type, promotion, customer) or shop (cashier, shift). */
     public function id(string $what): string
     {
-        $businessWide = str_starts_with($what, 'product|') || str_starts_with($what, 'vat|') || str_starts_with($what, 'tender|') || str_starts_with($what, 'promotion|');
+        $businessWide = (bool) preg_match('/^(product|vat|tender|promotion|customer)\|/', $what);
 
         return DemoIds::fixed(($businessWide ? "demo|{$this->companyId}" : $this->seed).'|'.$what);
     }

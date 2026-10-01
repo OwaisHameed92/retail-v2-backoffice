@@ -34,9 +34,10 @@ final class GenerateDemoSales
 
     /**
      * @param  (Closure(string, string, array{sales: int, refunds: int, voids: int}): void)|null  $progress  shop name, day, counts
+     * @param  bool  $rebuild  false when the caller rebuilds the reporting tables itself (`demo:seed`)
      * @return array{shops: int, days: int, sales: int, refunds: int, voids: int, removed: int}
      */
-    public function handle(Company $company, int $days, bool $fresh = false, ?CarbonImmutable $now = null, ?Closure $progress = null): array
+    public function handle(Company $company, int $days, bool $fresh = false, ?CarbonImmutable $now = null, ?Closure $progress = null, bool $rebuild = true): array
     {
         if (app()->environment('production')) {
             throw new RuntimeException('Demo sales are never generated in production.');
@@ -79,6 +80,10 @@ final class GenerateDemoSales
                     }
                 }
             });
+        }
+
+        if (! $rebuild) {
+            return $totals;
         }
 
         $started = now('UTC')->format('Y-m-d H:i:s');

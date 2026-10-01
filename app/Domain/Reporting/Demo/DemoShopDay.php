@@ -2,6 +2,7 @@
 
 namespace App\Domain\Reporting\Demo;
 
+use App\Domain\Demo\Catalogue\DemoProducts;
 use App\Domain\Reporting\Support\TradingDay;
 use Carbon\CarbonImmutable;
 use Random\Engine\Mt19937;
@@ -62,7 +63,8 @@ final class DemoShopDay
                 $items = $this->items($rng, $hour);
                 $pay = $this->payment($rng, $items);
                 $voided = $roll > 0.992;
-                $sale = $this->builder->sale($shop, $register, $user, $at, $numbers[$till], $items, $pay, $voided);
+                $customer = $rng->nextFloat() < 0.09 ? $shop->id('customer|'.$rng->getInt(1, DemoShop::CUSTOMERS)) : null;
+                $sale = $this->builder->sale($shop, $register, $user, $at, $numbers[$till], $items, $pay, $voided, $customer);
                 $basket = $sale['rows'];
                 $stats[$voided ? 'voids' : 'sales'] += $at <= $now ? 1 : 0;
 
@@ -84,26 +86,12 @@ final class DemoShopDay
      */
     private function items(Randomizer $rng, int $hour): array
     {
-        $weights = [];
-
-        foreach (DemoCatalogue::PRODUCTS as $key => $p) {
-            $boost = match (true) {
-                $p[6] === 'morning' && $hour < 11 => 2.2,
-                $p[6] === 'evening' && $hour >= 17 => 2.4,
-                $p[6] === 'evening' && $hour < 12 => 0.3,
-                default => 1.0,
-            };
-            $weights[$key] = (int) round($p[5] * $boost * 10);
-        }
-
         $lines = self::pick($rng, DemoCatalogue::BASKET_LINES);
         $items = [];
 
-        while (count($items) < $lines && $weights !== []) {
-            $key = self::pick($rng, $weights);
-            unset($weights[$key]);
+        foreach (DemoPicker::distinct($rng, $hour, (int) $lines) as $key) {
             $qty = isset(DemoCatalogue::MULTIBUYS[$key]) && $rng->nextFloat() < 0.3 ? 2 : self::pick($rng, [1 => 82, 2 => 14, 3 => 4]);
-            $items[] = [(string) $key, (int) $qty];
+            $items[] = [$key, (int) $qty];
         }
 
         if ($lines >= 2 && $rng->nextFloat() < 0.18) {
@@ -122,7 +110,7 @@ final class DemoShopDay
         $total = 0;
 
         foreach ($items as [$key, $qty]) {
-            $total += $qty * ($key === 'bag' ? DemoCatalogue::BAG['price'] : DemoCatalogue::PRODUCTS[$key][2]);
+            $total += $qty * ($key === 'bag' ? DemoCatalogue::BAG['price'] : DemoProducts::get($key)['price']);
         }
 
         $cash = $rng->nextFloat() < ($total < 300 ? 0.5 : 0.3);

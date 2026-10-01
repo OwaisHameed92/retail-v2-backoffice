@@ -789,5 +789,14 @@ still v1 (`X-SSPOS-Contract: 1`); the pack was copied over the contract folder (
 |---|---|
 | Look | Every signed-out page (`AuthSplitLayout`) uses a deep brand panel (navy → brand blue → teal; darker navy for the staff console) with a floating product preview and a trust row, and an elevated white card on the right. Replaces the light mint panel. Tokens `--auth-*`, `shadow-auth`, `shadow-float`, `animate-auth-rise` in `app.css`. |
 | Preview data | The preview cards show fixed sample figures (sales £4,812, 3 tills, 128 active tills...) and are `aria-hidden`; they are illustration, never live data. |
-| Footer links | Privacy, Terms and Help are plain text until legal/help pages exist (no dead links). The admin sign-in says to ask an owner for a password reset (no admin reset flow yet). |
+| Footer links | Links to the /legal/* pages (drafts until the owner supplies the text). The admin sign-in says to ask an owner for a password reset (no admin reset flow yet). |
 | Motion | Entrance animations run only under `motion-safe`. |
+
+## Full demo data (`demo:seed`, 2026-10-01)
+
+| Topic | Decision |
+|---|---|
+| Path | Demo rows are pushed like a till's (`ApplySyncChanges`, stream `demo-seed`), never inserted around the applier. Seq = hash of entity + id, so reruns are duplicates; `--fresh` deletes by the ledger's demo streams only. Portal-only rows: `till_user_branches` for demo staff; till health touches the demo tills' licences (issued if none, bound with a check-in) and `sync_branch_status`. |
+| Demo sales | `demo:sales` now sells the ~600-product demo catalogue (`Demo\Catalogue\DemoProducts`; the 35 old keys keep their ids) and names a demo customer on ~9% of baskets. A business whose demo sales predate the catalogue gets them replaced on its first `demo:seed`. |
+| Sale stock movements | Only the last 3 trading days of sales get a `StockMovement` per line (volume); stock on hand is the end of each product's movement chain. |
+

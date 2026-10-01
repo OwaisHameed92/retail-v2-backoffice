@@ -2,6 +2,7 @@
 
 namespace App\Domain\Reporting\Demo;
 
+use App\Domain\Demo\Catalogue\DemoProducts;
 use Carbon\CarbonImmutable;
 
 /**
@@ -17,7 +18,7 @@ final class DemoBasketBuilder
      * @param  array{tender: string, cashback: int, tendered: int}  $pay  tender "cash"|"card"; cashback / tendered in pence
      * @return array{rows: list<array{0: string, 1: array<string, mixed>}>, lines: list<array<string, mixed>>, total: int}
      */
-    public function sale(DemoShop $shop, array $register, string $userId, CarbonImmutable $at, int $number, array $items, array $pay, bool $voided = false): array
+    public function sale(DemoShop $shop, array $register, string $userId, CarbonImmutable $at, int $number, array $items, array $pay, bool $voided = false, ?string $customerId = null): array
     {
         $saleId = DemoIds::at($at, "{$shop->seed}|sale|{$register['id']}|{$number}");
         $lines = [];
@@ -28,6 +29,7 @@ final class DemoBasketBuilder
 
         $total = array_sum(array_map(fn (array $l) => (int) round($l['goodsTotal'] * 100), $lines));
         $sale = $this->salePayload($shop, $register, $userId, $saleId, $at, $number, $lines, $voided ? 'voided' : 'completed', 'sale', null);
+        $sale['customerId'] = $customerId;
         $rows = [['Sale', $sale], ...array_map(fn (array $l) => ['SaleLine', $l], $lines)];
 
         if (! $voided) {
@@ -73,9 +75,9 @@ final class DemoBasketBuilder
      */
     private function line(DemoShop $shop, string $saleId, CarbonImmutable $at, int $position, string $key, int $qty): array
     {
-        [$name, $barcode, $price, $cost, $vat, , , $ageRestricted] = $key === 'bag'
-            ? [DemoCatalogue::BAG['name'], DemoCatalogue::BAG['barcode'], DemoCatalogue::BAG['price'], DemoCatalogue::BAG['cost'], DemoCatalogue::BAG['vat'], 0, 'any', false]
-            : DemoCatalogue::PRODUCTS[$key];
+        [$name, $barcode, $price, $cost, $vat, $ageRestricted] = $key === 'bag'
+            ? [DemoCatalogue::BAG['name'], DemoCatalogue::BAG['barcode'], DemoCatalogue::BAG['price'], DemoCatalogue::BAG['cost'], DemoCatalogue::BAG['vat'], false]
+            : self::product($key);
         $multibuy = DemoCatalogue::MULTIBUYS[$key] ?? null;
         $promo = $multibuy !== null && $qty >= $multibuy[0] ? intdiv($qty, $multibuy[0]) * ($multibuy[0] * $price - $multibuy[1]) : 0;
         $goods = $qty * $price - $promo;
@@ -94,6 +96,16 @@ final class DemoBasketBuilder
             'isCharityRoundUp' => false, 'goodsTotal' => $goods / 100, 'lineTotal' => $goods / 100,
             ...$this->stamp(DemoIds::at($at, "{$saleId}|line|{$position}"), $shop, $at),
         ];
+    }
+
+    /**
+     * @return array{0: string, 1: string, 2: int, 3: int, 4: string, 5: bool}
+     */
+    private static function product(string $key): array
+    {
+        $p = DemoProducts::get($key);
+
+        return [$p['name'], $p['barcode'], $p['price'], $p['cost'], $p['vat'], $p['ageRule'] !== 'none'];
     }
 
     /**

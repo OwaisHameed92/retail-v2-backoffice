@@ -112,3 +112,20 @@ Fills the demo tenants (Khan Mini Mart, Patel News and Booze) with till-shaped s
 stream `demo-sales`), then rebuilds their `rpt_*` rows. Repeatable (same ids and seqs per shop and date); `--fresh`
 first removes only the rows of the `demo-sales` stream. Code: `Reporting\Actions\GenerateDemoSales`,
 `Reporting\Demo\*`.
+
+## Full demo data (`demo:seed`)
+
+```bash
+php artisan demo:seed [--company=<id or exact name>] [--days=60] [--fresh]   # never in production
+```
+
+Without `--company` it fills Khan Mini Mart (Leeds, Bradford) and Singh Family Stores (Wolverhampton), making either
+if missing (no login, no e-mail). Everything goes through `ApplySyncChanges` (ledger stream `demo-seed`, seq derived
+from entity + id, so a rerun is a no-op): ~600 products (EAN-13, VAT 20/5/0, cases), suppliers, POs, deliveries,
+invoices, credit notes, returns, payments, stock with FIFO layers, batches, movements and two stock takes, a transfer
+with a variance, 400 customers with consents, loyalty and paper accounts, staff, rota, clock events, timesheets,
+training, offers, news, compliance records, cash-ups, Z reports, banking, card settlements, journals and till health,
+then the demo sales (lines name the real products) and `rpt_*` rebuilt. `--fresh` removes only rows of the
+`demo-seed` / `demo-sales` streams (`Demo\Actions\ForgetDemoData`); demo sales made before the catalogue existed are
+replaced on the first run. Code: `app/Domain/Demo`.
+
