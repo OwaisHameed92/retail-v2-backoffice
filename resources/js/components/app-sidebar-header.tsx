@@ -1,4 +1,5 @@
-import { AccountTrigger, HelpMenu, NotificationsMenu, SearchTrigger, Topbar, TopbarDivider } from '@/components/shell/topbar';
+import { AppNotificationsMenu } from '@/components/app/notifications/app-notifications-menu';
+import { AccountTrigger, HelpMenu, SearchTrigger, Topbar, TopbarDivider } from '@/components/shell/topbar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { UserMenuContent } from '@/components/user-menu-content';
 import { type SharedData } from '@/types';
@@ -12,12 +13,10 @@ export function AppSidebarHeader() {
     return (
         <Topbar
             home="/app"
-            search={
-                <SearchTrigger placeholder="Ask anything, e.g. top sellers in Leeds" shortPlaceholder="Ask anything…" icon={Sparkles} disabled />
-            }
+            search={<SearchTrigger placeholder="Ask anything, e.g. top sellers in Leeds" shortPlaceholder="Ask anything…" icon={Sparkles} disabled />}
             actions={
                 <>
-                    <NotificationsMenu />
+                    <AppNotificationsMenu />
                     <HelpMenu />
                     <TopbarDivider />
                     <DropdownMenu>

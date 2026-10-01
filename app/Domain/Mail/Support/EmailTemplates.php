@@ -16,6 +16,9 @@ use App\Domain\Mail\Mailables\InvoiceMail;
 use App\Domain\Mail\Mailables\LeadRejectedMail;
 use App\Domain\Mail\Mailables\LicenceKeyMail;
 use App\Domain\Mail\Mailables\LicenceRenewedMail;
+use App\Domain\Mail\Mailables\OwnerAlertMail;
+use App\Domain\Mail\Mailables\OwnerAlertResolvedMail;
+use App\Domain\Mail\Mailables\OwnerDigestMail;
 use App\Domain\Mail\Mailables\PortalInvitationMail;
 use App\Domain\Mail\Mailables\SetPasswordMail;
 use App\Domain\Mail\Mailables\TrialEndedMail;
@@ -47,6 +50,9 @@ final class EmailTemplates
         CustomerStatementMail::class,
         AdminTillRequestMail::class,
         AdminSubscriptionRequestMail::class,
+        OwnerAlertMail::class,
+        OwnerAlertResolvedMail::class,
+        OwnerDigestMail::class,
     ];
 
     /**

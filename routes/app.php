@@ -6,6 +6,7 @@
 
 use App\Http\Controllers\App\AccountsController;
 use App\Http\Controllers\App\ActivityController;
+use App\Http\Controllers\App\AlertUnsubscribeController;
 use App\Http\Controllers\App\BillingController;
 use App\Http\Controllers\App\CalendarController;
 use App\Http\Controllers\App\CashController;
@@ -17,6 +18,8 @@ use App\Http\Controllers\App\HeadOfficeOrderController;
 use App\Http\Controllers\App\InvitationAcceptController;
 use App\Http\Controllers\App\NewsController;
 use App\Http\Controllers\App\NewsTitleController;
+use App\Http\Controllers\App\NotificationController;
+use App\Http\Controllers\App\NotificationSettingsController;
 use App\Http\Controllers\App\ParcelController;
 use App\Http\Controllers\App\PharmacyController;
 use App\Http\Controllers\App\PortalInvitationController;
@@ -133,6 +136,11 @@ Route::middleware(['auth:web', 'verified', 'company', 'two-factor:web'])->group(
         Route::put('reasons/{reason}', [TillListController::class, 'updateReason'])->name('reasons.update')->whereUlid('reason')->middleware('throttle:60,1');
         Route::delete('reasons/{reason}', [TillListController::class, 'destroyReason'])->name('reasons.destroy')->whereUlid('reason')->middleware('throttle:60,1');
     });
+    // Module 7.8: the user's own alert emails and the notifications bell. Every member (alert types follow the role).
+    Route::get('settings/notifications', [NotificationSettingsController::class, 'edit'])->name('notifications.settings');
+    Route::put('settings/notifications', [NotificationSettingsController::class, 'update'])->name('notifications.settings.update')->middleware('throttle:30,1');
+    Route::get('notifications', [NotificationController::class, 'index'])->name('notifications.index')->middleware('throttle:120,1');
+    Route::post('notifications/read', [NotificationController::class, 'read'])->name('notifications.read')->middleware('throttle:60,1');
     // Module 4.9: till settings for every shop or one shop (§10.3). A one-shop user: their own shop only.
     Route::prefix('settings')->name('settings.')->middleware('company.can:settings.manage')->group(function () {
         Route::get('/', [ShopSettingsController::class, 'index'])->name('index');
@@ -366,6 +374,13 @@ Route::middleware(['auth:web', 'verified', 'company', 'two-factor:web'])->group(
         Route::get('{report}/print', [ReportController::class, 'print'])->name('print')->middleware('throttle:60,1');
     });
 });
+
+// Module 7.8: the signed unsubscribe link of an alert email (no sign-in needed). GET asks, POST turns the alert off.
+Route::prefix('alerts/unsubscribe/{company}/{user}/{type}')->name('alerts.unsubscribe')
+    ->where(['company' => '[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}', 'user' => '[0-9]+', 'type' => '[A-Za-z]{3,32}'])->middleware(['signed', 'throttle:30,1'])->group(function () {
+        Route::get('/', [AlertUnsubscribeController::class, 'show']);
+        Route::post('/', [AlertUnsubscribeController::class, 'store'])->name('.store');
+    });
 
 // Module 4.1: the emailed invitation link. Guests and signed-in users (the invitee is not a member yet); the signature
 // and token are checked by the controller. GET shows it, POST accepts, DELETE signs another account out ("Not you?").

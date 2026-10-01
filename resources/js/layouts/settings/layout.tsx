@@ -1,12 +1,13 @@
 import { PageHeader } from '@/components/shared/page-header';
 import { cn } from '@/lib/utils';
 import { Link, usePage } from '@inertiajs/react';
-import { KeyRound, Palette, ShieldCheck, UserRound, type LucideIcon } from 'lucide-react';
+import { Bell, KeyRound, Palette, ShieldCheck, UserRound, type LucideIcon } from 'lucide-react';
 
 const sidebarNavItems: { title: string; url: string; icon: LucideIcon }[] = [
     { title: 'Profile', url: '/settings/profile', icon: UserRound },
     { title: 'Password', url: '/settings/password', icon: KeyRound },
     { title: 'Security', url: '/settings/security', icon: ShieldCheck },
+    { title: 'Notifications', url: '/app/settings/notifications', icon: Bell },
     { title: 'Appearance', url: '/settings/appearance', icon: Palette },
 ];
 
@@ -22,7 +23,10 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
 
     return (
         <>
-            <PageHeader title="Your account" description="Your profile, password, sign-in security and how the backoffice looks for you." />
+            <PageHeader
+                title="Your account"
+                description="Your profile, password, sign-in security, alert emails and how the backoffice looks for you."
+            />
 
             <div className="flex flex-col gap-6 lg:flex-row lg:gap-10">
                 <aside className="lg:w-52 lg:shrink-0">

@@ -4,6 +4,7 @@ use App\Domain\Ai\Models\AiConversation;
 use App\Domain\Ai\Models\AiPendingAction;
 use App\Domain\Ai\Models\AiUsage;
 use App\Domain\Mail\Models\EmailLog;
+use App\Domain\Notifications\Models\AlertNotification;
 use App\Domain\Shared\Support\SchedulerHeartbeat;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
@@ -33,6 +34,12 @@ Schedule::command('model:prune', ['--model' => [AiConversation::class, AiPending
 
 // Till health (module 2.7): online/offline, versions, sync and clock per till; raises and clears health alerts.
 Schedule::command('till-health:refresh')->everyFiveMinutes()->onOneServer()->withoutOverlapping(10);
+
+// Owner alerts (module 7.8): urgent emails two minutes after each health refresh; the daily digest at 07:00 London;
+// bell entries after 90 days.
+Schedule::command('alerts:check')->cron('2-59/5 * * * *')->onOneServer()->withoutOverlapping(10);
+Schedule::command('alerts:digest')->dailyAt('07:00')->timezone('Europe/London')->onOneServer()->withoutOverlapping(60);
+Schedule::command('model:prune', ['--model' => [AlertNotification::class]])->dailyAt('03:15')->onOneServer();
 
 // Reporting tables (module 3.1): re-queue shop-days whose rebuild job was lost or failed (pushes queue their own).
 Schedule::command('reports:process-dirty')->everyMinute()->onOneServer()->withoutOverlapping(10);
