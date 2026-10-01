@@ -22,7 +22,7 @@ export interface PurchasingShared {
     shops: ShopOption[];
     suppliers: NamedOption[];
     oneShop: boolean;
-    can: { manage: boolean };
+    can: { manage: boolean; importInvoices?: boolean };
 }
 
 export interface PurchasingStat {

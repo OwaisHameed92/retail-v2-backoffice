@@ -10,7 +10,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/app-layout';
 import { Head, Link, router } from '@inertiajs/react';
-import { Banknote, ClipboardList, FileText, Info, PackageCheck, Percent, Plus, ReceiptText, Truck, Undo2, type LucideIcon } from 'lucide-react';
+import { Banknote, ClipboardList, FileText, Info, PackageCheck, Percent, Plus, ReceiptText, ScanText, Truck, Undo2, type LucideIcon } from 'lucide-react';
 import { useMemo } from 'react';
 
 const ONLY = ['rows', 'filters', 'stats', 'tabs'];
@@ -70,6 +70,14 @@ export default function PurchasingIndex(props: PurchasingIndexProps) {
     const columns = useMemo(() => purchasingColumns(kind, showShop), [kind, showShop]);
     const filtered = Boolean(rows.meta.search) || Boolean((!oneShop && filters.shop) || filters.supplier || filters.status || filters.origin);
     const opens = kind !== 'payments' && kind !== 'rebates';
+    const importInvoice = can.importInvoices && kind === 'invoices' && (
+        <Button asChild>
+            <Link href={route('app.purchasing.invoices.import.index')}>
+                <ScanText />
+                Import an invoice
+            </Link>
+        </Button>
+    );
     const newOrder = can.manage && kind === 'orders' && (
         <Button asChild>
             <Link href={route('app.purchasing.orders.create')}>
@@ -83,7 +91,7 @@ export default function PurchasingIndex(props: PurchasingIndexProps) {
         <AppLayout>
             <Head title={`${KIND_LABELS[kind]} · Purchasing`} />
 
-            <PageHeader title="Purchasing" description={copy.description} actions={newOrder} tabs={<PurchasingTabs current={kind} counts={tabs} />} />
+            <PageHeader title="Purchasing" description={copy.description} actions={newOrder || importInvoice} tabs={<PurchasingTabs current={kind} counts={tabs} />} />
 
             {oneShop && (
                 <Alert variant="info">
