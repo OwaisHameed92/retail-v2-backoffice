@@ -5,6 +5,7 @@ namespace App\Domain\Reporting\Actions;
 use App\Domain\Reporting\Demo\DemoShop;
 use App\Domain\Reporting\Demo\DemoShopDay;
 use App\Domain\Reporting\ReportTables;
+use App\Domain\Reporting\Support\DirtyDays;
 use App\Domain\Reporting\Support\TradingDay;
 use App\Domain\Tenancy\Models\Branch;
 use App\Domain\Tenancy\Models\Company;
@@ -30,6 +31,7 @@ final class GenerateDemoSales
         private readonly ApplySyncChanges $apply,
         private readonly DemoShopDay $shopDay,
         private readonly RebuildReports $rebuild,
+        private readonly ProcessDirtyReportDays $dirty,
     ) {}
 
     /**
@@ -92,6 +94,8 @@ final class GenerateDemoSales
         // The rebuild covered every day the pushes above marked; the queued job has nothing left to do.
         DB::table(ReportTables::DIRTY_DAYS)->where('company_id', $company->getKey())
             ->whereBetween('trading_day', [$rebuildFrom, $today])->where('marked_at', '<=', $started)->delete();
+        // Anything still queued (e.g. days of removed sales outside the range) is rebuilt now, not left stale.
+        $this->dirty->handle($company->getKey());
 
         return $totals;
     }
@@ -120,7 +124,7 @@ final class GenerateDemoSales
     }
 
     /**
-     * Removes every demo sale of the business (and its lines, payments, VAT and ledger rows).
+     * Removes every demo sale of the business (and its lines, payments, VAT and ledger rows), marking their days dirty.
      *
      * @return array{0: int, 1: string|null} sales removed, their oldest trading day
      */
@@ -131,8 +135,9 @@ final class GenerateDemoSales
         $oldest = null;
 
         foreach (array_chunk($saleIds, 500) as $chunk) {
-            $day = DB::table('sales')->where('company_id', $companyId)->whereIn('id', $chunk)->min('trading_day');
-            $oldest = $day !== null && ($oldest === null || (string) $day < $oldest) ? substr((string) $day, 0, 10) : $oldest;
+            // Mark the days first, so their rpt_* rows are rebuilt (emptied) and never outlive the raw rows.
+            $day = DirtyDays::markSales($companyId, $chunk);
+            $oldest = $day !== null && ($oldest === null || $day < $oldest) ? $day : $oldest;
 
             foreach (['sale_lines', 'sale_payments', 'sale_vats'] as $table) {
                 DB::table($table)->where('company_id', $companyId)->whereIn('sale_id', $chunk)->delete();

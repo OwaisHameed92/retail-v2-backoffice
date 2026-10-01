@@ -4,13 +4,15 @@ namespace App\Domain\Demo\Actions;
 
 use App\Domain\Demo\Support\DemoPush;
 use App\Domain\Reporting\Demo\DemoShopDay;
+use App\Domain\Reporting\Support\DirtyDays;
 use App\Domain\TillData\EntityRegistry;
 use Illuminate\Support\Facades\DB;
 
 /**
  * Removes the rows the demo made for one business, and only those: every row recorded in the push ledger under the
  * demo streams ("demo-seed", "demo-sales"), whatever its entity, plus the demo staff's shop links. A till's own
- * rows (other streams) and every other business are never touched.
+ * rows (other streams) and every other business are never touched. The shop-days of the sales it removes are marked
+ * dirty first, so their `rpt_*` rows are rebuilt (emptied) rather than left behind.
  */
 final class ForgetDemoData
 {
@@ -39,8 +41,8 @@ final class ForgetDemoData
 
             foreach (array_chunk($ids, self::CHUNK) as $chunk) {
                 if ($entity === 'Sale') {
-                    $day = DB::table('sales')->where('company_id', $companyId)->whereIn('id', $chunk)->min('trading_day');
-                    $oldest = $day !== null && ($oldest === null || substr((string) $day, 0, 10) < $oldest) ? substr((string) $day, 0, 10) : $oldest;
+                    $day = DirtyDays::markSales($companyId, $chunk);
+                    $oldest = $day !== null && ($oldest === null || $day < $oldest) ? $day : $oldest;
                 }
 
                 if ($entity === 'User') {

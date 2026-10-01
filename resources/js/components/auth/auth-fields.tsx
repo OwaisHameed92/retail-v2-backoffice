@@ -6,7 +6,7 @@ import { forwardRef, useState, type ComponentProps, type ReactNode } from 'react
 
 type InputProps = ComponentProps<typeof Input>;
 
-/** Sign-in sized text field (44px) with a leading icon. Pass `aria-describedby` for its error/help line. */
+/** Sign-in sized text field (48px) with a leading icon. Pass `aria-describedby` for its error/help line. */
 export const IconInput = forwardRef<HTMLInputElement, InputProps & { icon: LucideIcon; trailing?: ReactNode }>(
     ({ icon: Icon, trailing, className, ...props }, ref) => (
         <div className="group/field relative">
@@ -14,7 +14,7 @@ export const IconInput = forwardRef<HTMLInputElement, InputProps & { icon: Lucid
                 className="text-muted-foreground group-focus-within/field:text-primary pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 transition-colors"
                 aria-hidden
             />
-            <Input ref={ref} className={cn('h-11 pl-10', trailing ? 'pr-11' : undefined, className)} {...props} />
+            <Input ref={ref} className={cn('h-12 pl-10', trailing ? 'pr-11' : undefined, className)} {...props} />
             {trailing && <div className="absolute inset-y-0 right-1 flex items-center">{trailing}</div>}
         </div>
     ),
@@ -62,7 +62,7 @@ export function AuthSubmit({
         <Button
             type="submit"
             size="lg"
-            className={cn('h-11 w-full text-[15px] font-semibold shadow-sm', className)}
+            className={cn('h-12 w-full text-[15px] font-semibold shadow-sm', className)}
             disabled={processing || disabled}
             aria-busy={processing || undefined}
             {...props}

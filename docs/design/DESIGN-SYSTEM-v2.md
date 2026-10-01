@@ -16,11 +16,12 @@
 > - **Primary** green `#097A4C` (white text 5.4:1); `muted-foreground` `#5D6B7E` (AA on the canvas and on cards).
 > - **Dashboard hero**: `WelcomeBanner` = `bg-brand-wash` mint gradient + waves + sun icon tile. Admin dashboard adds
 >   "Recent activity" and the "Business overview" status strip (real counts only). Charts stay monotone (never overshoot).
-> - Sign-in screens (2026-10-01, "Enterprise sign-in"): left = deep brand panel (`bg-auth-panel`, navy → brand blue →
->   teal; staff console `bg-auth-panel-staff`, darker navy) with a fine grid, headline, a floating product preview built
->   from real UI cards (sample figures, aria-hidden, scales to the free height) and a trust row; right = elevated white
->   card (`shadow-auth`, 20px radius) on the dotted canvas with the full logo at its top (the only logo on phones).
->   Shared fields in `components/auth/auth-fields.tsx` (`IconInput`, `PasswordInput`, `AuthSubmit`, `AuthDivider`).
+> - Sign-in screens (2026-10-01, "Sign-in v2"): left = near-black navy panel (`bg-auth-panel`; staff `bg-auth-panel-staff`,
+>   cooler) with blurred brand aurora glows (`auth-aurora-*`), faint grain (`auth-grain`), no grid; full white logo;
+>   48–56px extrabold headline with the key phrase in `auth-gradient-text`; dark-glass preview cards (`auth-glass`,
+>   straight, two staggered columns, aria-hidden, scale to the free space) and a quiet one-line trust row. Right =
+>   borderless form on plain white (`bg-card`), full logo on top (the only logo on phones), 48px fields, no legal links.
+>  Shared fields in `components/auth/auth-fields.tsx` (`IconInput`, `PasswordInput`, `AuthSubmit`, `AuthDivider`).
 
 **Final reference: `docs/design/admin-dashboard-reference-2.webp`** (owner: "haan yahi final karo"). The earlier
 `admin-dashboard-reference.webp` is kept only for comparison. This supersedes the colour rules in `docs/BRAND.md` and
@@ -82,7 +83,7 @@ Dark mode: canvas `#0B121B`, card `#121B26`, border `#223041`, chrome `#08111C`,
   name; numbers right-aligned tabular; status pills (soft background + strong text); row "…" menu.
 - **System health**: rows (icon, name, green dot + "Healthy" + chevron), header pill "All systems operational".
 - **Quick actions**: primary filled first button + outlined icon buttons (Issue licence, Create invoice, Send email).
-- Typography: Inter; numbers tabular; weights 400/500/600/700; generous whitespace, nothing cramped.
+- Typography: Plus Jakarta Sans (Inter fallback, fonts.bunny.net); numbers tabular (tables, `dd`, charts); weights 400–800; generous whitespace, nothing cramped.
 
 ## Rules
 

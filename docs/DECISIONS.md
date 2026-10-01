@@ -800,3 +800,12 @@ still v1 (`X-SSPOS-Contract: 1`); the pack was copied over the contract folder (
 | Demo sales | `demo:sales` now sells the ~600-product demo catalogue (`Demo\Catalogue\DemoProducts`; the 35 old keys keep their ids) and names a demo customer on ~9% of baskets. A business whose demo sales predate the catalogue gets them replaced on its first `demo:seed`. |
 | Sale stock movements | Only the last 3 trading days of sales get a `StockMovement` per line (volume); stock on hand is the end of each product's movement chain. |
 
+
+## Sign-in v2 and rpt clean-up on sale deletion (owner, 2026-10-01)
+
+| Topic | Decision |
+|---|---|
+| Font | Plus Jakarta Sans 400–800 app-wide via fonts.bunny.net, Inter as fallback. Headings tighter; tabular figures in tables, `dd` values and charts. |
+| Sign-in panel | Near-black navy with blurred blue/green aurora and grain (staff: cooler, less green), full white logo, gradient key phrase, straight dark-glass preview cards. Right side plain white, borderless form. |
+| Legal links | Not shown on the sign-in pages or in the portal footer for now. `/legal/*` routes and `LegalLinks` stay in code. |
+| Sale deletion | Code that deletes sales outside the push path (demo clean-up) calls `DirtyDays::markSales()` first; rebuild plans include queued dirty days, and the demo commands process any left over, so no `rpt_*` row outlives its sales. |

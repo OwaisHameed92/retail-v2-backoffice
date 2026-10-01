@@ -48,7 +48,7 @@ export default function AcceptInvitation(props: AcceptInvitationProps) {
         return (
             <AuthLayout title={closedCopy.title} description={closedCopy.body(props)}>
                 <Head title={closedCopy.title} />
-                <Button asChild size="lg" className="h-11 w-full text-[15px] font-semibold">
+                <Button asChild size="lg" className="h-12 w-full text-[15px] font-semibold">
                     <Link href={route('login')}>Go to sign in</Link>
                 </Button>
             </AuthLayout>
@@ -75,7 +75,7 @@ export default function AcceptInvitation(props: AcceptInvitationProps) {
                         You already have a Switch &amp; Save account with <span className="text-foreground font-medium">{props.email}</span>. Sign in
                         and you come straight back here to accept.
                     </p>
-                    <Button asChild size="lg" className="h-11 w-full text-[15px] font-semibold">
+                    <Button asChild size="lg" className="h-12 w-full text-[15px] font-semibold">
                         <Link href={route('login')}>Sign in to accept</Link>
                     </Button>
                 </div>
@@ -146,7 +146,7 @@ function JoinButton({ url, email }: { url: string; email: string }) {
             </p>
             <Button
                 size="lg"
-                className="h-11 w-full text-[15px] font-semibold"
+                className="h-12 w-full text-[15px] font-semibold"
                 disabled={processing}
                 aria-busy={processing || undefined}
                 onClick={() => router.post(url, {}, { onStart: () => setProcessing(true), onFinish: () => setProcessing(false) })}
@@ -169,7 +169,7 @@ function WrongAccount({ url, email, signedInAs }: { url: string; email: string; 
             </p>
             <Button
                 size="lg"
-                className="h-11 w-full text-[15px] font-semibold"
+                className="h-12 w-full text-[15px] font-semibold"
                 disabled={processing}
                 aria-busy={processing || undefined}
                 onClick={() => router.delete(url, { onStart: () => setProcessing(true), onFinish: () => setProcessing(false) })}

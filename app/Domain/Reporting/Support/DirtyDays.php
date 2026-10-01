@@ -41,6 +41,32 @@ final class DirtyDays
     }
 
     /**
+     * Marks the (shop, trading day) of the given sales dirty. Call it before deleting sales outside the push path
+     * (demo clean-up), so the days they leave behind are rebuilt and no `rpt_*` row outlives its raw rows.
+     *
+     * @param  list<string>  $saleIds
+     * @return string|null the oldest trading day marked
+     */
+    public static function markSales(string $companyId, array $saleIds): ?string
+    {
+        $days = [];
+
+        foreach (array_chunk($saleIds, 500) as $chunk) {
+            $rows = DB::table('sales')->where('company_id', $companyId)->whereIn('id', $chunk)
+                ->whereNotNull('branch_id')->whereNotNull('trading_day')->distinct()->get(['branch_id', 'trading_day']);
+
+            foreach ($rows as $row) {
+                $day = substr((string) $row->trading_day, 0, 10);
+                $days[$row->branch_id.'|'.$day] = ['branch' => (string) $row->branch_id, 'day' => $day];
+            }
+        }
+
+        self::mark($companyId, $days);
+
+        return $days === [] ? null : min(array_column($days, 'day'));
+    }
+
+    /**
      * The oldest dirty days of a company.
      *
      * @return list<object{branch_id: string, trading_day: string, token: string}>

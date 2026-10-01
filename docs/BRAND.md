@@ -33,7 +33,7 @@ against this file. If a screen would look at home in Stripe, Linear or Xero's da
 | Soft tints | `bg-success-soft`, `bg-warning-soft`, `bg-danger-soft`, `bg-info-soft` | Badge and banner backgrounds |
 | Neutrals | `background` (soft grey canvas), `card` (white), `muted`, `border` | Everything else |
 
-- Typography: Inter. Page title `text-xl font-semibold tracking-tight`; section title `text-base font-semibold`;
+- Typography: Plus Jakarta Sans (Inter fallback). Page title `text-xl font-semibold tracking-tight`; section title `text-base font-semibold`;
   body `text-sm`; helper text `text-sm text-muted-foreground`. Numbers are tabular (automatic in tables; add
   `tabular-nums` elsewhere). Money always `£1,234.56`; dates `24 Sept 2026`, times `09:41` (Europe/London).
 - Sentence case everywhere ("Add tenant", not "Add Tenant"). No exclamation marks, no "successfully", no "please".

@@ -8,8 +8,8 @@ use Illuminate\Support\Facades\DB;
 
 /**
  * Which shop-days a full rebuild or check covers: every (shop, trading day) that has sales in the raw rows, plus
- * every one that has report rows (so a day whose sales are gone is emptied), within an optional date range, in
- * chunks of a few days per shop.
+ * every one that has report rows or is queued dirty (so a day whose sales are gone is emptied), within an optional
+ * date range, in chunks of a few days per shop.
  */
 final class ReportDayPlan
 {
@@ -38,6 +38,7 @@ final class ReportDayPlan
         $pairs = DB::table('sales')->where('company_id', $companyId)->whereNotNull('trading_day')->whereNotNull('branch_id')
             ->tap($range)->distinct()->select(['branch_id', 'trading_day'])
             ->union(DB::table(ReportTables::SALES_DAILY)->where('company_id', $companyId)->tap($range)->distinct()->select(['branch_id', 'trading_day']))
+            ->union(DB::table(ReportTables::DIRTY_DAYS)->where('company_id', $companyId)->tap($range)->distinct()->select(['branch_id', 'trading_day']))
             ->get();
 
         $byBranch = [];

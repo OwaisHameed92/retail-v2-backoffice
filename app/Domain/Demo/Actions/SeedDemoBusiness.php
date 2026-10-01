@@ -24,6 +24,7 @@ use App\Domain\Demo\Support\DemoJournal;
 use App\Domain\Demo\Support\DemoPush;
 use App\Domain\Demo\Support\StockBook;
 use App\Domain\Reporting\Actions\GenerateDemoSales;
+use App\Domain\Reporting\Actions\ProcessDirtyReportDays;
 use App\Domain\Reporting\Actions\RebuildReports;
 use App\Domain\Reporting\Demo\DemoShop;
 use App\Domain\Reporting\ReportTables;
@@ -55,6 +56,7 @@ final class SeedDemoBusiness
         private readonly RebuildReports $rebuild,
         private readonly ForgetDemoData $forget,
         private readonly TillHealthBuilder $health,
+        private readonly ProcessDirtyReportDays $dirty,
     ) {}
 
     /**
@@ -128,6 +130,8 @@ final class SeedDemoBusiness
         $this->rebuild->handle([$business->companyId], $from, $business->today);
         DB::table(ReportTables::DIRTY_DAYS)->where('company_id', $business->companyId)
             ->whereBetween('trading_day', [$from, $business->today])->where('marked_at', '<=', $started)->delete();
+        // Days of removed sales outside the range (marked dirty by ForgetDemoData) are rebuilt now, never left stale.
+        $this->dirty->handle($business->companyId);
 
         return $totals;
     }
