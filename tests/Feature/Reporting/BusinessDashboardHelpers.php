@@ -26,7 +26,7 @@ final class BusinessDashboardHelpers
         foreach (['CASH' => [true, $variance], 'CARD' => [false, '1.00']] as $type => [$cash, $amount]) {
             $typeId = substr($companyId, 0, 22).$type;
             DB::table('payment_types')->insertOrIgnore(['id' => $typeId, 'company_id' => $companyId, 'name' => $type, 'is_cash' => $cash]);
-            DB::table('shift_tenders')->insert(['id' => "{$id}{$type}", 'company_id' => $companyId, 'branch_id' => $branchId, 'shift_id' => $id, 'payment_type_id' => $typeId, 'variance' => $amount]);
+            DB::table('shift_tenders')->insert(['id' => substr($id, -22).$type, 'company_id' => $companyId, 'branch_id' => $branchId, 'shift_id' => $id, 'payment_type_id' => $typeId, 'variance' => $amount]);
         }
 
         DB::table('shifts')->insert(['id' => $id, 'company_id' => $companyId, 'branch_id' => $branchId, 'status' => 'closed', 'closed_at' => $closedAt]);

@@ -58,11 +58,11 @@ final class NewsDeliveryRows extends DocumentRows
 
         /** @var Collection<string, object{delivery_id: string, lines: int, qty_in: int, qty_sold: int, qty_returned: int, cost: string, credit: string}> */
         return DB::table('news_delivery_lines')->whereIn('delivery_id', $ids)->whereNull('deleted_at')->groupBy('delivery_id')
-            ->selectRaw('delivery_id, count(*) as lines, sum(coalesce(qty_in, 0)) as qty_in, sum(coalesce(qty_sold, 0)) as qty_sold,
+            ->selectRaw('delivery_id, count(*) as line_count, sum(coalesce(qty_in, 0)) as qty_in, sum(coalesce(qty_sold, 0)) as qty_sold,
                 sum(coalesce(qty_returned, 0)) as qty_returned, sum(coalesce(line_cost, 0)) as cost, sum(coalesce(return_value, 0)) as credit')
             ->get()->map(function (object $t) {
                 return (object) [
-                    'delivery_id' => (string) $t->delivery_id, 'lines' => (int) $t->lines, 'qty_in' => (int) $t->qty_in, 'qty_sold' => (int) $t->qty_sold,
+                    'delivery_id' => (string) $t->delivery_id, 'lines' => (int) $t->line_count, 'qty_in' => (int) $t->qty_in, 'qty_sold' => (int) $t->qty_sold,
                     'qty_returned' => (int) $t->qty_returned, 'cost' => Money::normalise($t->cost ?? 0), 'credit' => Money::normalise($t->credit ?? 0),
                 ];
             })->keyBy('delivery_id');

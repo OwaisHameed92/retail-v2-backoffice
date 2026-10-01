@@ -53,7 +53,8 @@ final class TenderReport
         }
 
         $out = array_values($out);
-        usort($out, fn (TenderTotals $a, TenderTotals $b) => Money::compare($b->amount, $a->amount));
+        // Equal takings in name order, whatever order the database returned them in.
+        usort($out, fn (TenderTotals $a, TenderTotals $b) => Money::compare($b->amount, $a->amount) ?: strcmp($a->name, $b->name));
 
         return $out;
     }

@@ -28,9 +28,24 @@ class Note extends Model
 
     public static function createTable(): void
     {
-        Schema::create('test_notes', function (Blueprint $table) {
+        // MySQL commits the test's transaction on CREATE TABLE, so RefreshDatabase would migrate again after every
+        // test and the rows would stay. A TEMPORARY table commits nothing (and goes with the connection), but cannot
+        // have foreign keys or a separate index there (ALTER TABLE commits as well).
+        $temporary = Schema::getConnection()->getDriverName() === 'mysql';
+
+        Schema::create('test_notes', function (Blueprint $table) use ($temporary) {
+            if ($temporary) {
+                $table->temporary();
+            }
+
             $table->ulid('id')->primary();
-            $table->foreignUlid('company_id')->constrained()->cascadeOnDelete();
+
+            if ($temporary) {
+                $table->ulid('company_id');
+            } else {
+                $table->foreignUlid('company_id')->constrained()->cascadeOnDelete();
+            }
+
             $table->string('body');
             $table->timestamps();
         });

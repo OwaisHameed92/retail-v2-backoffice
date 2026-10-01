@@ -1,0 +1,14 @@
+# /etc/logrotate.d/retail-v2 (installed by server-setup.sh).
+# Laravel writes storage/logs/laravel.log (LOG_CHANNEL=stack, LOG_STACK=single in .env.production.example);
+# rotate it here rather than with LOG_STACK=daily so there is one place for retention.
+__APP_ROOT__/shared/storage/logs/*.log
+/var/log/retail-v2/*.log {
+    daily
+    rotate 14
+    missingok
+    notifempty
+    compress
+    delaycompress
+    copytruncate
+    su __APP_USER__ __APP_USER__
+}

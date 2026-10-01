@@ -285,7 +285,17 @@ config([
 DB::purge('sqlite');
 
 if ($mode === 'setup') {
-    Artisan::call('migrate', ['--force' => true]);
+    // The test run's cached dump of the migrated schema (tests/Support/SqliteTestSchema.php) when there is one.
+    $dump = (string) getenv('TEST_SQLITE_DUMP');
+
+    if ($dump !== '' && is_file($dump)) {
+        $pdo = DB::connection()->getPdo();
+        $pdo->exec('PRAGMA foreign_keys = OFF');
+        $pdo->exec((string) file_get_contents($dump));
+        $pdo->exec('PRAGMA foreign_keys = ON');
+    } else {
+        Artisan::call('migrate', ['--force' => true]);
+    }
 
     Plan::factory()->create([
         'name' => 'Standard', 'code' => 'standard',

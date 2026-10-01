@@ -1,0 +1,10 @@
+# /etc/cron.d/retail-v2 (installed by server-setup.sh). Times are the server clock: keep the server on UTC.
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+
+# Laravel scheduler (routes/console.php): licences:refresh, billing:run, till-health:refresh, reports:process-dirty,
+# licence:keys:prune, model:prune, the scheduler heartbeat shown on the admin System health card.
+* * * * * __APP_USER__ cd __APP_ROOT__/current && php artisan schedule:run >> /dev/null 2>&1
+
+# Nightly MySQL backup at 02:15 UTC, kept 14 days (deploy/backup-db.sh; settings in the script header).
+15 2 * * * __APP_USER__ /usr/local/bin/retail-v2-backup-db >> /var/log/retail-v2/backup.log 2>&1

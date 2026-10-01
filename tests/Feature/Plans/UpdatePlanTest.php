@@ -32,8 +32,8 @@ it('updates a plan and records only the changed values', function () {
 
     $log = AuditLog::query()->where('action', 'plan.updated')->sole();
 
-    expect($log->before)->toBe(['price_monthly' => '30.00', 'features' => ['loyalty']])
-        ->and($log->after)->toBe(['price_monthly' => '32.50', 'features' => ['loyalty', 'assist_questions']]);
+    expect($log->before)->toBeIgnoringKeyOrder(['price_monthly' => '30.00', 'features' => ['loyalty']])
+        ->and($log->after)->toBeIgnoringKeyOrder(['price_monthly' => '32.50', 'features' => ['loyalty', 'assist_questions']]);
 });
 
 it('writes nothing when no value changed', function () {

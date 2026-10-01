@@ -31,6 +31,9 @@ final class ContractSchema
     /** @var array<string, stdClass> entity => its schema with derived members optional */
     private static array $relaxed = [];
 
+    /** @var array<string, true> md5 of pull changes that passed {@see changeErrors()} */
+    private static array $validChanges = [];
+
     public static function dir(string $path = ''): string
     {
         // Not base_path(): datasets list the samples before the application boots.
@@ -63,7 +66,18 @@ final class ContractSchema
         $errors = self::errors($reply, 'schemas/pull-reply.schema.json');
 
         foreach ($reply instanceof stdClass && is_array($reply->changes ?? null) ? $reply->changes : [] as $i => $change) {
-            $errors = [...$errors, ...self::changeErrors($change, "changes[{$i}]", derivedOptional: true)];
+            // The same row in a later page or a repeated pull was already checked: the result cannot differ.
+            $key = md5((string) json_encode($change, JSON_PRESERVE_ZERO_FRACTION));
+
+            if (! isset(self::$validChanges[$key])) {
+                $changeErrors = self::changeErrors($change, "changes[{$i}]", derivedOptional: true);
+                $errors = [...$errors, ...$changeErrors];
+
+                if ($changeErrors === []) {
+                    self::$validChanges = count(self::$validChanges) >= 50_000 ? [] : self::$validChanges;
+                    self::$validChanges[$key] = true;
+                }
+            }
 
             // ANSWERS-2026-09-30-portal point 1: a keyed row always carries its payload, `D` included (the till
             // finds its row by the payload's keys).

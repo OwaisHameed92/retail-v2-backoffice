@@ -84,7 +84,8 @@ test('without a plan it uses the company plan, then the portal default, then the
     expect($this->issue(bareTill())->licence->plan_id)->toBe($standard->id);
 
     config(['licence.default_plan' => 'missing']);
-    $first = Plan::factory()->create(['sort_order' => -5]);
+    Plan::query()->update(['sort_order' => 10]);
+    $first = Plan::factory()->create(['sort_order' => 1]);
     expect($this->issue(bareTill())->licence->plan_id)->toBe($first->id);
 });
 

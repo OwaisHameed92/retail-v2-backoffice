@@ -166,7 +166,7 @@ it('sends a test only to the signed-in admin and audits it', function () {
 
     $audit = AuditLog::query()->where('action', 'email.test_sent')->sole();
     expect($audit->actor_id)->toBe($admin->id)
-        ->and($audit->meta)->toBe(['template' => 'admin-new-lead', 'to' => 'sam@switchandsave.test']);
+        ->and($audit->meta)->toBeIgnoringKeyOrder(['template' => 'admin-new-lead', 'to' => 'sam@switchandsave.test']);
 });
 
 it('logs a test send as a test with the [Test] subject', function () {

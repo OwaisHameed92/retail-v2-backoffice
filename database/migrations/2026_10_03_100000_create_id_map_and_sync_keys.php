@@ -53,7 +53,7 @@ return new class extends Migration
             $table->char('key_hash', 64)->unique();
             $table->char('key_last4', 4);
             $table->string('source', 10);
-            $table->foreignId('created_by')->nullable()->constrained('admins')->nullOnDelete();
+            $table->foreignUlid('created_by')->nullable()->constrained('admins')->nullOnDelete();
             $table->string('delivered_install_id', 26)->nullable();
             $table->timestamp('delivered_at')->nullable();
             $table->timestamp('rotate_requested_at')->nullable();

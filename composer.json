@@ -69,10 +69,17 @@
         "analyse": [
             "phpstan analyse --memory-limit=1G --no-progress"
         ],
+        "test": [
+            "@php artisan test --parallel"
+        ],
+        "test:mysql": [
+            "Composer\\Config::disableProcessTimeout",
+            "@php artisan test --configuration=phpunit.mysql.xml"
+        ],
         "check": [
             "@lint:php",
             "@analyse",
-            "@php artisan test"
+            "@test"
         ]
     },
     "extra": {

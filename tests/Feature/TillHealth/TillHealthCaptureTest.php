@@ -34,7 +34,7 @@ test('validate keeps only the known diagnostics members and when they came', fun
     ]])->assertOk();
 
     $licence = $this->licence->fresh();
-    expect($licence->diagnostics)->toBe(['pendingSyncRows' => 42, 'lastSyncError' => '401 auth.invalid_key', 'databaseSizeMb' => 812.4])
+    expect($licence->diagnostics)->toBeIgnoringKeyOrder(['pendingSyncRows' => 42, 'lastSyncError' => '401 auth.invalid_key', 'databaseSizeMb' => 812.4])
         ->and($licence->diagnostics_at?->toIso8601String())->toBe('2026-10-06T09:00:00+00:00')
         ->and(json_encode($licence->getAttributes()))->not->toContain('hunter2')->not->toContain('SSK-SECRET');
 });

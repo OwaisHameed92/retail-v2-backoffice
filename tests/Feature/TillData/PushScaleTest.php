@@ -20,6 +20,13 @@ use Tests\Feature\TillData\TillFixtures;
 /** Tables that grow with a business's history. */
 const PUSH_SCALE_BIG_TABLES = ['sales', 's', 'sale_lines', 'l', 'sale_payments', 'p', 'sale_vats', 'v', 'customers', 'customer_transactions', 'stock_movements', 'sync_applied_changes', 'sync_conflicts'];
 
+// The plan checks read SQLite's EXPLAIN QUERY PLAN and pragma_index_list (MySQL 8 picks the key's index from its statistics).
+beforeEach(function () {
+    if (DB::getDriverName() !== 'sqlite') {
+        $this->markTestSkipped('SQLite query plans: run on the SQLite suite.');
+    }
+});
+
 /**
  * @return array{company: Company, branch: Branch, till: Register}
  */
