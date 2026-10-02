@@ -211,14 +211,44 @@ test('CORS: listed origins and our own page are allowed, others are blocked', fu
 
     postTrial($this, ['email' => 'own@page.test', 'phone' => '0113 496 0100'], ['Origin' => rtrim(config('app.url'), '/')])->assertCreated();
 
+    // Another website: the preflight is answered so the browser can read the refusal, but the POST is still refused.
     $this->call('OPTIONS', TRIAL_URL, server: ['HTTP_ORIGIN' => 'https://evil.example', 'HTTP_ACCESS_CONTROL_REQUEST_METHOD' => 'POST'])
+        ->assertNoContent()
+        ->assertHeader('Access-Control-Allow-Origin', 'https://evil.example')
+        ->assertHeaderMissing('Access-Control-Allow-Credentials');
+
+    postTrial($this, ['email' => 'evil@spam.test', 'phone' => '0113 496 0200'], ['Origin' => 'https://evil.example'])
         ->assertForbidden()
         ->assertJsonPath('code', 'cors.origin_not_allowed')
-        ->assertHeaderMissing('Access-Control-Allow-Origin');
-
-    postTrial($this, ['email' => 'evil@spam.test', 'phone' => '0113 496 0200'], ['Origin' => 'https://evil.example'])->assertForbidden();
+        ->assertHeader('Access-Control-Allow-Origin', 'https://evil.example')
+        ->assertHeaderMissing('Access-Control-Allow-Credentials');
 
     expect(Lead::query()->count())->toBe(2);
+});
+
+test('CORS: every error reply is readable by the browser, and a refused origin can show why (not a network error)', function () {
+    config(['sspos.public_form_origins' => ['https://switchandsave.co.uk']]);
+
+    // Refused origin: the body names the problem, has the error envelope and the headers the browser needs to read it.
+    $refused = postTrial($this, ['email' => 'other@site.test', 'phone' => '0113 496 0300'], ['Origin' => 'https://another-site.test']);
+    $refused->assertForbidden()
+        ->assertJsonStructure(['code', 'message', 'traceId', 'retryAfterSeconds', 'rejectedKey'])
+        ->assertJsonPath('code', 'cors.origin_not_allowed')
+        ->assertHeader('Access-Control-Allow-Origin', 'https://another-site.test')
+        ->assertHeader('Access-Control-Expose-Headers', 'X-Trace-Id, Retry-After')
+        ->assertHeaderMissing('Access-Control-Allow-Credentials');
+    expect($refused->json('message'))->toContain('not allowed')
+        ->and($refused->headers->get('Vary'))->toContain('Origin')
+        ->and(Lead::query()->count())->toBe(0);
+
+    // An allowed origin's validation error (400) is readable too.
+    postTrial($this, ['email' => 'not-an-email'], ['Origin' => 'https://switchandsave.co.uk'])
+        ->assertStatus(400)
+        ->assertJsonPath('code', 'request.invalid')
+        ->assertHeader('Access-Control-Allow-Origin', 'https://switchandsave.co.uk');
+
+    // Server-to-server calls (no Origin) get no CORS headers.
+    postTrial($this, ['email' => 'not-an-email'])->assertStatus(400)->assertHeaderMissing('Access-Control-Allow-Origin');
 });
 
 test('the hosted /trial page renders for guests', function () {

@@ -17,7 +17,8 @@ use Illuminate\Support\Facades\Schema;
 
 /**
  * Read: the current business, its branches and tills, its plan and (when module 1.3 is present) licence counts.
- * Takes no input: it can only ever describe the actor's own company. No personal data (addresses, phones, emails).
+ * Takes no input: it can only ever describe the actor's own company (and, for a one-shop user, only their shop). No
+ * personal data (addresses, phones, emails).
  */
 final class GetCompanyOverview implements AiTool
 {
@@ -64,10 +65,13 @@ final class GetCompanyOverview implements AiTool
     {
         $company = $this->tenancy->require();
         $plan = AiPlan::for($company);
+        // A user limited to one shop sees only that shop and its tills (security review: one-shop pinning).
+        $shopId = $this->tenancy->restrictedBranchId();
 
-        $tills = Register::query()->orderBy('code')->get()->groupBy('branch_id');
+        $tills = Register::query()->when($shopId !== null, fn ($q) => $q->where('branch_id', $shopId))
+            ->orderBy('code')->get()->groupBy('branch_id');
 
-        $branches = Branch::query()->orderBy('code')->get()->map(fn (Branch $branch) => [
+        $branches = Branch::query()->when($shopId !== null, fn ($q) => $q->whereKey($shopId))->orderBy('code')->get()->map(fn (Branch $branch) => [
             'id' => $branch->id,
             'code' => $branch->code,
             'name' => $branch->name,
@@ -98,22 +102,23 @@ final class GetCompanyOverview implements AiTool
                 'tills' => $tills->flatten()->count(),
                 'activeTills' => $tills->flatten()->where('is_active', true)->count(),
             ],
+            'limitedToOneShop' => $shopId !== null ?: null,
             'branches' => $branches->all(),
-            'licences' => $this->licenceCounts(),
+            'licences' => $this->licenceCounts($shopId),
         ];
     }
 
     /**
      * @return array<string, mixed>
      */
-    private function licenceCounts(): array
+    private function licenceCounts(?string $shopId): array
     {
         if (! class_exists(Licence::class) || ! Schema::hasTable('licences')) {
             return ['available' => false, 'note' => 'Licence data is not available yet.'];
         }
 
         /** @var array<string, int> $byStatus */
-        $byStatus = Licence::query()->toBase()
+        $byStatus = Licence::query()->when($shopId !== null, fn ($q) => $q->where('branch_id', $shopId))->toBase()
             ->selectRaw('status, count(*) as aggregate')
             ->groupBy('status')
             ->pluck('aggregate', 'status')

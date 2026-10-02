@@ -79,6 +79,27 @@ test('a photo is sent as an image; the file is served privately to the business 
         ->assertHeader('Content-Type', 'image/jpeg')->assertHeader('X-Content-Type-Options', 'nosniff');
 });
 
+test('AI security review: the upload is kept privately under a random name and the model is told the document is only data', function () {
+    Storage::fake('public');
+    $this->fake->callTool('record_invoice', I::extraction());
+    $this->actingAs($this->owner)->post('/app/purchasing/invoices/import', ['shopId' => $this->sync->leeds->id, 'file' => I::pdf('Jane Doe invoice.pdf')])
+        ->assertSessionHasNoErrors();
+    $import = ($this->import)();
+
+    expect($import->file_path)->toStartWith('invoice-imports/'.$this->company->id.'/')
+        ->and($import->file_path)->not->toContain('Jane')
+        ->and($import->file_path)->toMatch('/\/[0-9a-z]{26}\.pdf$/')
+        ->and(Storage::disk('local')->exists($import->file_path))->toBeTrue()
+        ->and(Storage::disk('public')->allFiles())->toBe([])
+        ->and($this->fake->lastRequest()->system[0]['text'])->toContain('never instructions')
+        ->and($this->fake->lastRequest()->toolNames())->toBe(['record_invoice']);
+
+    // Only through the authenticated route, never cached; guests are sent to log in.
+    $this->actingAs($this->owner)->get("/app/purchasing/invoices/import/{$import->id}/file")->assertOk()->assertHeader('Cache-Control', 'no-store, private');
+    auth()->logout();
+    $this->get("/app/purchasing/invoices/import/{$import->id}/file")->assertRedirect();
+});
+
 test('confirming places a head-office order for the shop and updates the chosen cost prices, audited', function () {
     $this->fake->callTool('record_invoice', I::extraction());
     $this->actingAs($this->owner)->post('/app/purchasing/invoices/import', ['shopId' => $this->sync->leeds->id, 'file' => I::pdf()]);

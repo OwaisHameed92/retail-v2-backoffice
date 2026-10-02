@@ -6,8 +6,10 @@ use Anthropic\Beta\Messages\BetaMessage;
 use Anthropic\Beta\Messages\BetaRawContentBlockDeltaEvent;
 use Anthropic\Beta\Messages\BetaTextDelta;
 use Anthropic\Client;
+use Anthropic\Core\Exceptions\APIConnectionException;
 use Anthropic\Core\Exceptions\APIException;
 use Anthropic\Core\Exceptions\APIStatusException;
+use Anthropic\Core\Exceptions\APITimeoutException;
 use Anthropic\Core\Exceptions\AuthenticationException;
 use Anthropic\Core\Exceptions\PermissionDeniedException;
 use Anthropic\Core\Exceptions\RateLimitException;
@@ -32,7 +34,8 @@ use Psr\Http\Client\ClientInterface;
  * - Timeouts: enforced by the Guzzle transport (`ai.anthropic.timeout`).
  * - Per model (`ai.model_options`): adaptive thinking, effort, `fallbacks: "default"`.
  * - Streaming: tools get `eager_input_streaming`; inputs are validated by ToolExecutor before anything runs.
- * - Errors become AiUnavailable; the key and provider messages are never shown or logged.
+ * - Errors become AiUnavailable with a user-friendly message (busy: 429/503/529, took too long: timeouts, not set up:
+ *   401/403, else could not answer); the key and provider messages are never shown, logged or chained.
  */
 final class AnthropicAiClient implements AiClient
 {
@@ -190,11 +193,26 @@ final class AnthropicAiClient implements AiClient
             'feature' => $request->feature->value,
         ]);
 
+        // The provider exception is not chained: its message can echo request content, and AiUnavailable may be logged.
         return match (true) {
-            $e instanceof RateLimitException => AiUnavailable::rateLimited($e),
+            $e instanceof RateLimitException => AiUnavailable::rateLimited(),
+            // 529 overloaded_error and 503: busy, not broken (after the SDK's own retries).
+            $e instanceof APIStatusException && in_array($e->status, [503, 529], true) => AiUnavailable::overloaded(),
             $e instanceof AuthenticationException, $e instanceof PermissionDeniedException => AiUnavailable::notConfigured(),
-            default => AiUnavailable::providerError($e), // 5xx after retries, connection errors, timeouts
+            self::timedOut($e) => AiUnavailable::timedOut(),
+            default => AiUnavailable::providerError(), // other 4xx/5xx after retries, connection errors
         };
+    }
+
+    /** A transport timeout (Guzzle's cURL error 28 reaches us as a connection error). */
+    private static function timedOut(APIException $e): bool
+    {
+        if ($e instanceof APITimeoutException) {
+            return true;
+        }
+
+        return $e instanceof APIConnectionException
+            && preg_match('/timed out|timeout|cURL error 28/i', (string) $e->getPrevious()?->getMessage()) === 1;
     }
 
     private function sdk(): Client

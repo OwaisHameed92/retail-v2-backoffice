@@ -160,6 +160,7 @@ export default function InvoiceReview(props: InvoiceReviewProps) {
 
             <PageHeader
                 title={title}
+                icon={FileText}
                 status={<StatusBadge status={record.status} label={record.statusLabel} tones={IMPORT_TONES} />}
                 back={{ href: route('app.purchasing.invoices.import.index'), label: 'Invoice import' }}
                 description={meta}

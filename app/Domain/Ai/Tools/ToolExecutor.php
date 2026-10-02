@@ -13,6 +13,7 @@ use App\Domain\Ai\Models\AiConversation;
 use App\Domain\Ai\Models\AiPendingAction;
 use App\Domain\Ai\Support\AiRedactor;
 use App\Domain\Ai\Support\AiSettings;
+use App\Domain\Ai\Support\ProposalSignature;
 use App\Domain\Shared\Actions\RecordAudit;
 use App\Domain\Shared\Support\ApiDate;
 use App\Domain\Tenancy\CurrentCompany;
@@ -28,7 +29,8 @@ use Throwable;
  * 2. input keys must be in the schema and pass the tool's rules;
  * 3. tenant tools run inside CurrentCompany::runAs(actor's company, role, one-shop limit), so ids from another
  *    company are not found and a one-shop user's tools stay on their shop;
- * 4. write tools only produce a proposal, stored as an AiPendingAction (audited), never a change;
+ * 4. write tools only produce a proposal, stored as an AiPendingAction (audited, signed: ProposalSignature), never a
+ *    change;
  * 5. the result is redacted and wrapped as data (`<tool_data>`), so text inside it cannot pose as instructions.
  *
  * Failures become `is_error` tool results with a safe message; the model can recover or tell the user.
@@ -146,8 +148,9 @@ final class ToolExecutor
             'input' => $proposal->input,
             'preview' => mb_substr($proposal->preview, 0, 1000),
             'status' => PendingActionStatus::Pending,
-            'expires_at' => now()->addMinutes(AiSettings::pendingActionTtlMinutes()),
+            'expires_at' => now()->addMinutes(AiSettings::pendingActionTtlMinutes())->startOfSecond(),
         ]);
+        $action->forceFill(['signature' => ProposalSignature::sign($action)])->save();
 
         $this->audit->handle('ai.action_proposed', $action, after: [
             'tool' => $action->tool,

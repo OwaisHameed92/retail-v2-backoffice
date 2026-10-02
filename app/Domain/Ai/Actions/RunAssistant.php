@@ -74,7 +74,7 @@ final class RunAssistant
         $conversation ??= $this->store->start($context, $question);
 
         /** @var list<AiMessage> $turn */
-        $turn = [$this->store->append($conversation, 'user', [['type' => 'text', 'text' => AiRedactor::text($question)]])];
+        $turn = [$this->store->append($conversation, 'user', [['type' => 'text', 'text' => SystemPrompt::untag(AiRedactor::text($question))]])];
 
         $tools = $this->registry->definitions($this->registry->availableFor($context));
         $usage = new AiTokenUsage;

@@ -4,6 +4,7 @@ namespace App\Domain\Ai\Exceptions;
 
 use App\Domain\Ai\Enums\AiFeature;
 use App\Domain\Ai\Enums\AiUnavailableReason;
+use Illuminate\Support\Facades\Log;
 use RuntimeException;
 use Throwable;
 
@@ -54,8 +55,27 @@ final class AiUnavailable extends RuntimeException
         return new self(AiUnavailableReason::RateLimited, 'The AI service is busy. Please try again in a minute.', $previous);
     }
 
+    public static function overloaded(?Throwable $previous = null): self
+    {
+        return new self(AiUnavailableReason::RateLimited, 'The AI service is very busy right now. Please try again in a minute or two.', $previous);
+    }
+
+    public static function timedOut(?Throwable $previous = null): self
+    {
+        return new self(AiUnavailableReason::ProviderError, 'The AI service took too long to answer. Please try again, or ask a narrower question.', $previous);
+    }
+
     public static function providerError(?Throwable $previous = null): self
     {
         return new self(AiUnavailableReason::ProviderError, 'The AI service could not answer just now. Please try again shortly.', $previous);
+    }
+
+    /**
+     * An expected, user-facing condition: log one line with the reason only (never a chained provider error, whose
+     * message can echo prompt content), instead of Laravel's default stack trace.
+     */
+    public function report(): void
+    {
+        Log::info('AI unavailable.', ['reason' => $this->reason->value]);
     }
 }

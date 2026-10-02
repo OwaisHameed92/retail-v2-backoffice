@@ -24,6 +24,7 @@ use Illuminate\Support\Carbon;
  * @property string $tool
  * @property array<string, mixed> $input
  * @property string $preview
+ * @property string|null $signature HMAC over company, proposer, tool, input and expiry (ProposalSignature)
  * @property PendingActionStatus $status
  * @property array<string, mixed>|null $result
  * @property string|null $error

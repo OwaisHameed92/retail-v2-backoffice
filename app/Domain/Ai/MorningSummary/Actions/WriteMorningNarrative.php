@@ -8,6 +8,7 @@ use App\Domain\Ai\Data\AiRequest;
 use App\Domain\Ai\Enums\AiFeature;
 use App\Domain\Ai\Exceptions\AiUnavailable;
 use App\Domain\Ai\MorningSummary\Support\NarrativeCheck;
+use App\Domain\Ai\Support\AiRedactor;
 use App\Domain\Ai\Support\AiSettings;
 use App\Domain\Tenancy\Models\Company;
 use Throwable;
@@ -44,7 +45,7 @@ class WriteMorningNarrative
             feature: $feature,
             model: AiSettings::modelFor($feature),
             system: [['type' => 'text', 'text' => self::PROMPT, 'cache_control' => ['type' => 'ephemeral']]],
-            messages: [['role' => 'user', 'content' => "<facts>\n".json_encode($facts, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)."\n</facts>\n\nWrite the paragraph."]],
+            messages: [['role' => 'user', 'content' => "<facts>\n".AiRedactor::json($facts, pretty: true)."\n</facts>\n\nWrite the paragraph."]],
             maxTokens: min(1024, AiSettings::maxTokensFor($feature)),
             effort: AiSettings::effortFor($feature),
             cacheConversation: false,

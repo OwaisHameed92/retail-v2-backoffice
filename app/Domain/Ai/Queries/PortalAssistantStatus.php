@@ -17,6 +17,8 @@ use App\Domain\Tenancy\Models\Branch;
  */
 final class PortalAssistantStatus
 {
+    public const EXAMPLE_COUNT = 4;
+
     private const EXAMPLES = [
         'get_sales' => 'How did sales this week compare with last week?',
         'get_product_sales' => 'What were my top 10 sellers in the last 30 days?',
@@ -54,7 +56,8 @@ final class PortalAssistantStatus
             'message' => $message,
             'usage' => $company === null ? null : array_intersect_key(AiUsageSummary::for($company), array_flip(['used', 'limit', 'percent', 'resetsOn'])),
             'shop' => $restricted === null ? null : (Branch::query()->withTrashed()->find($restricted)->name ?? 'Your shop'),
-            'examples' => array_values(array_intersect_key(self::EXAMPLES, array_flip($tools))),
+            // The empty state shows four, the first that the user's tools can answer.
+            'examples' => array_slice(array_values(array_intersect_key(self::EXAMPLES, array_flip($tools))), 0, self::EXAMPLE_COUNT),
             'conversations' => AiConversation::query()->ownedBy($context)->orderByDesc('last_message_at')->limit(30)->get()
                 ->map(fn (AiConversation $c) => PortalPresenter::conversation($c))->values()->all(),
         ];
