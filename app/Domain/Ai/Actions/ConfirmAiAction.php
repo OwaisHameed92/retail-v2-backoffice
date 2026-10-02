@@ -11,6 +11,7 @@ use App\Domain\Ai\Exceptions\AiActionNotConfirmable;
 use App\Domain\Ai\Models\AiConversation;
 use App\Domain\Ai\Models\AiPendingAction;
 use App\Domain\Ai\Support\ConversationStore;
+use App\Domain\Ai\Support\ProposalSignature;
 use App\Domain\Ai\Tools\ToolExecutor;
 use App\Domain\Ai\Tools\ToolRegistry;
 use App\Domain\Shared\Actions\RecordAudit;
@@ -26,6 +27,7 @@ use Throwable;
  * - only the proposer (same company and user/admin) can confirm; others get "not found";
  * - the row is claimed under a lock (pending → confirmed) before running, so a double click runs it once;
  * - expired proposals are marked expired and refused; cancelled/failed/confirmed ones are refused;
+ * - the row must carry a valid ProposalSignature (company, proposer, tool, input, expiry), else it fails unrun;
  * - the actor's ability is re-checked and the stored input validated again, inside the company scope;
  * - audited: `ai.action_confirmed` (with the result) or `ai.action_failed`.
  */
@@ -102,6 +104,15 @@ final class ConfirmAiAction
 
             if ($action->status !== PendingActionStatus::Pending) {
                 return [$action, new AiActionNotConfirmable($action->status)];
+            }
+
+            if (! ProposalSignature::matches($action)) {
+                // The stored change is not the one that was previewed and signed for this person: never run it.
+                $action->forceFill(['status' => PendingActionStatus::Failed, 'error' => 'This change could not be verified. Please ask again.'])->save();
+                $this->audit->handle('ai.action_failed', $action, meta: ['tool' => $action->tool, 'error' => 'signatureMismatch'],
+                    actor: $context->actor(), companyId: $action->company_id);
+
+                return [$action, AiActionFailed::because('This change could not be verified. Please ask again.')];
             }
 
             $tool = $this->registry->find($action->tool);

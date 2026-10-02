@@ -3,63 +3,15 @@ import { showToast } from '@/components/shared/toaster';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from '@/components/ui/sheet';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
-import { ArrowUp, History, Loader2, MessageSquarePlus, Plug, Sparkles, Store, Trash2 } from 'lucide-react';
-import { type KeyboardEvent, useEffect, useRef, useState } from 'react';
+import { History, Loader2, MessageSquarePlus, Sparkles, Store, Trash2 } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { AssistantComposer, AssistantEmptyState, AssistantUnavailableState, AssistantUsageMeter } from './assistant-parts';
 import { AssistantTurn } from './assistant-turn';
-import type { AssistantProposal, AssistantStatus } from './types';
+import type { AssistantProposal } from './types';
 import { useAssistant } from './use-assistant';
 
 const MAX_QUESTION = 4000;
-
-function UsageMeter({ status }: { status: AssistantStatus }) {
-    if (!status.usage) {
-        return null;
-    }
-    const { percent, resetsOn } = status.usage;
-
-    return (
-        <div className="space-y-1" title={`${status.usage.used.toLocaleString('en-GB')} of ${status.usage.limit.toLocaleString('en-GB')} tokens`}>
-            <div className="text-muted-foreground flex justify-between text-xs">
-                <span>This month's allowance: {percent}% used</span>
-                <span>Resets {resetsOn}</span>
-            </div>
-            <div
-                className="bg-muted h-1.5 overflow-hidden rounded-full"
-                role="progressbar"
-                aria-valuenow={percent}
-                aria-valuemin={0}
-                aria-valuemax={100}
-                aria-label="AI allowance used"
-            >
-                <div
-                    className={cn('h-full rounded-full', percent >= 90 ? 'bg-destructive' : percent >= 75 ? 'bg-warning' : 'bg-primary')}
-                    style={{ width: `${Math.max(2, percent)}%` }}
-                />
-            </div>
-        </div>
-    );
-}
-
-function Unavailable({ status }: { status: AssistantStatus }) {
-    const setUp = status.reason === 'notConfigured';
-
-    return (
-        <div className="flex flex-1 flex-col items-center justify-center px-6 text-center">
-            <span className="bg-muted text-muted-foreground flex size-12 items-center justify-center rounded-full">
-                <Plug className="size-5" aria-hidden />
-            </span>
-            <p className="mt-4 text-base font-semibold">{setUp ? 'AI is not configured yet' : 'The assistant is not available'}</p>
-            <p className="text-muted-foreground mt-1.5 max-w-xs text-sm">{status.message}</p>
-            {setUp && (
-                <p className="text-muted-foreground mt-3 max-w-xs text-xs">
-                    Once Switch & Save switches it on, you can ask about sales, stock, cash and staff here.
-                </p>
-            )}
-        </div>
-    );
-}
 
 /**
  * The portal assistant (module 6.2): a side panel opened from the top bar's "Ask anything". Questions stream back
@@ -108,13 +60,6 @@ export function AssistantPanel({
         setShowHistory(false);
         setQuestion('');
         void assistant.ask(text);
-    };
-
-    const onKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
-        if (event.key === 'Enter' && !event.shiftKey) {
-            event.preventDefault();
-            send();
-        }
     };
 
     const decide = async (proposal: AssistantProposal, decision: 'confirm' | 'cancel') => {
@@ -176,7 +121,7 @@ export function AssistantPanel({
                             </span>
                         )}
                     </div>
-                    {status && available && <UsageMeter status={status} />}
+                    {status?.usage && available && <AssistantUsageMeter {...status.usage} />}
                 </div>
 
                 <div ref={scroller} className="flex min-h-0 flex-1 flex-col overflow-y-auto px-5 py-5">
@@ -244,7 +189,7 @@ export function AssistantPanel({
                         </div>
                     )}
 
-                    {status && !showHistory && !available && <Unavailable status={status} />}
+                    {status && !showHistory && !available && <AssistantUnavailableState reason={status.reason} message={status.message} />}
 
                     {status && !showHistory && available && (
                         <>
@@ -252,21 +197,7 @@ export function AssistantPanel({
                                 <Loader2 className="text-muted-foreground mx-auto size-5 animate-spin" aria-label="Loading" />
                             )}
                             {!assistant.loadingConversation && turns.length === 0 && (
-                                <div className="my-auto space-y-4 py-6 text-center">
-                                    <p className="text-muted-foreground text-sm">Ask about your business in plain English. Try one of these:</p>
-                                    <div className="flex flex-col items-stretch gap-2">
-                                        {status.examples.map((example) => (
-                                            <button
-                                                key={example}
-                                                type="button"
-                                                onClick={() => send(example)}
-                                                className="border-border bg-card hover:border-primary/40 hover:bg-info-soft focus-visible:ring-ring/30 rounded-xl border px-3.5 py-2.5 text-left text-sm focus-visible:ring-[3px] focus-visible:outline-none"
-                                            >
-                                                {example}
-                                            </button>
-                                        ))}
-                                    </div>
-                                </div>
+                                <AssistantEmptyState examples={status.examples} onPick={(example) => send(example)} />
                             )}
                             <div className="space-y-6">
                                 {turns.map((turn) => (
@@ -277,33 +208,17 @@ export function AssistantPanel({
                     )}
                 </div>
 
-                <div className="border-border border-t px-5 py-4">
-                    <div className="flex items-end gap-2">
-                        <Textarea
-                            ref={input}
-                            value={question}
-                            onChange={(e) => setQuestion(e.target.value.slice(0, MAX_QUESTION))}
-                            onKeyDown={onKeyDown}
-                            rows={2}
-                            disabled={!available}
-                            placeholder={available ? 'e.g. Top sellers in Leeds last week' : 'The assistant is not available'}
-                            aria-label="Your question"
-                            className="max-h-40 min-h-[44px] resize-none"
-                        />
-                        <Button
-                            size="icon"
-                            className="size-11 shrink-0 rounded-xl"
-                            onClick={() => send()}
-                            disabled={!available || busy || question.trim() === ''}
-                            aria-label="Send"
-                        >
-                            {busy ? <Loader2 className="animate-spin" aria-hidden /> : <ArrowUp aria-hidden />}
-                        </Button>
-                    </div>
-                    <p className="text-muted-foreground mt-2 text-xs">
-                        Answers can be wrong: check the linked report. Changes only happen when you confirm them.
-                    </p>
-                </div>
+                <AssistantComposer
+                    inputRef={input}
+                    value={question}
+                    onChange={setQuestion}
+                    onSend={() => send()}
+                    onStop={assistant.stop}
+                    busy={busy}
+                    disabled={!available}
+                    maxLength={MAX_QUESTION}
+                    placeholder={available ? 'e.g. Top sellers in Leeds last week' : 'The assistant is not available'}
+                />
 
                 <ConfirmDialog
                     open={confirmClear}

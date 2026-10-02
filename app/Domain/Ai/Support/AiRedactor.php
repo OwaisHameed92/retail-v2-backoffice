@@ -37,6 +37,19 @@ final class AiRedactor
     }
 
     /**
+     * Data for a prompt as JSON: redacted (data()), and with `<` `>` escaped so text inside it can never close or open
+     * the tag it is wrapped in (`<facts>`, `<order_lines>`, `<tool_data>`): it stays data, never instructions.
+     *
+     * @param  array<array-key, mixed>  $data
+     */
+    public static function json(array $data, bool $pretty = false): string
+    {
+        $flags = JSON_HEX_TAG | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES;
+
+        return (string) json_encode(self::data($data), $pretty ? $flags | JSON_PRETTY_PRINT : $flags);
+    }
+
+    /**
      * Free text from a person (a question) or a model: only secret-looking strings are replaced.
      */
     public static function text(string $text): string

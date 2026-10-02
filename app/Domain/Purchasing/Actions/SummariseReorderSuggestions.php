@@ -8,6 +8,7 @@ use App\Domain\Ai\Data\AiRequest;
 use App\Domain\Ai\Enums\AiFeature;
 use App\Domain\Ai\Exceptions\AiAccessDenied;
 use App\Domain\Ai\Exceptions\AiUnavailable;
+use App\Domain\Ai\Support\AiRedactor;
 use App\Domain\Ai\Support\AiSettings;
 use App\Domain\Purchasing\Reorder\ReorderFilters;
 use App\Domain\Purchasing\Reorder\ReorderSuggestions;
@@ -63,7 +64,7 @@ TXT;
             feature: $feature,
             model: AiSettings::modelFor($feature),
             system: [['type' => 'text', 'text' => self::PROMPT, 'cache_control' => ['type' => 'ephemeral']]],
-            messages: [['role' => 'user', 'content' => "<order_lines>\n".json_encode($data, JSON_HEX_TAG | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)."\n</order_lines>"]],
+            messages: [['role' => 'user', 'content' => "<order_lines>\n".AiRedactor::json($data)."\n</order_lines>"]],
             maxTokens: min(2000, AiSettings::maxTokensFor($feature)),
             effort: AiSettings::effortFor($feature),
             cacheConversation: false,

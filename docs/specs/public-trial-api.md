@@ -19,7 +19,7 @@ matches an open lead is added to that lead as a note (same 201, that lead's refe
 | Status | `code` | When |
 |---|---|---|
 | 400 | `request.invalid` | Validation; `details.fields` = `{"email": ["Enter a valid email address…"]}` |
-| 403 | `cors.origin_not_allowed` | Browser origin not in `PUBLIC_FORM_ORIGINS` |
+| 403 | `cors.origin_not_allowed` | Browser origin not in `PUBLIC_FORM_ORIGINS`. Nothing is stored. The preflight is answered and the 403 echoes the origin in `Access-Control-Allow-Origin` (no credentials), so the page can read the body and show "this website isn't allowed yet" instead of a network error |
 | 422 | `captcha.failed` | Turnstile token missing, wrong or expired: reset the widget and resend |
 | 429 | `rate_limited` | 5 requests an hour per IP (400s do not count) or 3 a day per email; see `retryAfterSeconds` |
 
@@ -48,6 +48,7 @@ form.addEventListener('submit', async (event) => {
   });
   const body = await res.json();
   if (res.status === 201) { form.outerHTML = `<p>${body.message} Your reference: ${body.reference}</p>`; return; }
+  // 403 cors.origin_not_allowed: this website is not on PUBLIC_FORM_ORIGINS yet (ask Switch & Save to add it).
   alert(body.message); // field errors: body.details?.fields; after 422 call turnstile.reset()
 });
 ```

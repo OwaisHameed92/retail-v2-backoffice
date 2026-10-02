@@ -173,6 +173,14 @@ export function useAssistant() {
         [busy, conversationId, loadStatus],
     );
 
+    /** Stops reading the answer being streamed (the server finishes it; it is in the history). */
+    const stop = useCallback(() => {
+        abort.current?.abort();
+        abort.current = null;
+        patchLast((turn) => ({ pending: false, answer: turn.answer === '' ? '' : `${turn.answer}…`, error: turn.answer === '' ? 'Stopped.' : null }));
+        setBusy(false);
+    }, []);
+
     const decide = useCallback(async (proposal: AssistantProposal, decision: 'confirm' | 'cancel'): Promise<string | null> => {
         const result = await sendJson<{ proposal: AssistantProposal }>('POST', `${BASE}/actions/${proposal.id}/${decision}`);
         const updated = result.data?.proposal;
@@ -207,6 +215,7 @@ export function useAssistant() {
         newConversation,
         openConversation,
         ask,
+        stop,
         decide,
         remove,
     };

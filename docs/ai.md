@@ -99,12 +99,13 @@ model calls rename_branch ─► ToolExecutor: ability? input valid? (in company
                                   │
                          tool->handle() returns AiProposal(preview, input)   ← nothing changes
                                   │
-                      ai_pending_actions row (pending, expires in 15 min) + audit ai.action_proposed
+        ai_pending_actions row (pending, expires in 15 min, signed: ProposalSignature) + audit ai.action_proposed
                                   │
           tool result to the model: {status: awaitingConfirmation, actionId, preview}
                                   │
        UI shows preview with Confirm / Cancel ──► ConfirmAiAction::handle($actionId, $context)
                                                     - proposer only, row locked, pending → confirmed (runs once)
+                                                    - signature must match (company, proposer, tool, input, expiry)
                                                     - expired → marked expired, refused
                                                     - ability re-checked, input re-validated
                                                     - tool->execute() → real Action (own audit)
@@ -165,3 +166,17 @@ The top bar's "Ask anything" (⌘K) opens `AssistantPanel` (`resources/js/compon
 | `Actions\DeleteAiConversations` | Delete one or all of the user's conversations (pending proposals cancelled) |
 
 Tests: `tests/Feature/Ai/PortalAssistant*Test.php` (FakeAiClient; `PortalAssistantHelpers::ask()` reads the SSE).
+
+UI building blocks for any assistant panel (portal and admin): `resources/js/components/app/assistant/assistant-parts.tsx`
+(`AssistantUsageMeter`, `AssistantEmptyState` with up to four example questions, `AssistantUnavailableState` for
+notConfigured / budgetExhausted / disabled / notInPlan, `AssistantComposer` with Enter to send, Stop while streaming and
+the ⌘K / Esc hint, `AssistantCopyButton`).
+
+## Security (review 2026-10, `docs/security-review.md` → AI)
+
+- `AiTenantIsolationTest` runs EVERY registered tenant tool with inputs built from its schema: for the owner (no other
+  business's data, no PII), with another business's ids (IDOR) and for a one-shop manager (their shop only). A new
+  tool is covered automatically; make it pass.
+- Data put into a prompt outside a tool result: `AiRedactor::json($data)` (redacted, `<>` escaped) inside a tag.
+- Text typed by a person: `SystemPrompt::untag()` (RunAssistant does this) so it cannot pose as `<app_event>`.
+- Provider errors are never chained into `AiUnavailable` (their messages can echo the prompt).

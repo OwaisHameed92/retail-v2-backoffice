@@ -147,7 +147,15 @@ return [
         QueueShelfLabels::class,
     ],
 
-    // Keys dropped from tool results before they are sent (personal data the model does not need).
+    // Keys dropped from tool results and prompt data before they are sent (personal data the model does not need:
+    // contact details, staff PINs and fob codes, pay rates). Matched ignoring case, `_`, `-` and spaces.
     // Secrets are removed separately by App\Domain\Shared\Support\Redactor.
-    'redact_keys' => ['email', 'phone', 'address', 'contact_name', 'device_id', 'ip', 'last_ip', 'user_agent', 'dob', 'postcode'],
+    'redact_keys' => [
+        'email', 'email_address', 'customer_email', 'billing_emails', 'bill_to_emails',
+        'phone', 'phone_digits', 'customer_phone', 'mobile', 'telephone',
+        'address', 'contact_name', 'postcode', 'dob', 'date_of_birth', 'ni_number',
+        'pin', 'pin_hash_version', 'pin_hash_versioned', 'rfid',
+        'pay_rate', 'rate_per_hour', 'hourly_rate', 'wage_rate', 'wage_rates',
+        'device_id', 'ip', 'last_ip', 'user_agent',
+    ],
 ];

@@ -4,6 +4,7 @@ import { cn } from '@/lib/utils';
 import { router } from '@inertiajs/react';
 import { AlertCircle, ArrowUpRight, Loader2, ShieldCheck, Sparkles } from 'lucide-react';
 import { useState } from 'react';
+import { AssistantCopyButton } from './assistant-parts';
 import { AssistantText } from './assistant-text';
 import type { AssistantLink, AssistantProposal, AssistantTurn as Turn } from './types';
 
@@ -95,6 +96,9 @@ export function AssistantTurn({
                 </span>
                 <div className="min-w-0 flex-1 space-y-3">
                     {turn.answer !== '' && <AssistantText text={turn.answer} />}
+                    {turn.pending && turn.answer !== '' && (
+                        <span className="bg-primary/60 -mt-2 inline-block h-4 w-1.5 animate-pulse rounded-sm align-middle" aria-hidden />
+                    )}
                     {turn.answer === '' && turn.refused && <AssistantText text="Sorry, I can't help with that request." />}
                     {turn.pending && (
                         <p className="text-muted-foreground flex items-center gap-2 text-sm" role="status">
@@ -113,6 +117,11 @@ export function AssistantTurn({
                     {turn.proposals.map((proposal) => (
                         <Proposal key={proposal.id} proposal={proposal} onDecide={onDecide} onNavigate={onNavigate} />
                     ))}
+                    {!turn.pending && !turn.error && turn.answer !== '' && !turn.refused && (
+                        <div className="-mt-1 -ml-2">
+                            <AssistantCopyButton text={turn.answer} />
+                        </div>
+                    )}
                     {turn.links.length > 0 && (
                         <div className="flex flex-wrap gap-1.5">
                             {turn.links.map((link) => (

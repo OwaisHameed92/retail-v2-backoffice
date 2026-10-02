@@ -81,6 +81,7 @@ export default function InvoiceImportIndex({ access, shops, limits, filters, sta
 
             <PageHeader
                 title="Import an invoice"
+                icon={FileSearch}
                 back={{ href: route('app.purchasing.index', 'invoices'), label: 'Invoices' }}
                 description="Upload a supplier invoice or delivery note. We read it, match it to your supplier, products and the shop's order, and check the sums. Nothing changes until you confirm."
             />

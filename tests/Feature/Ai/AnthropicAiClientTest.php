@@ -6,10 +6,14 @@ use App\Domain\Ai\Enums\AiFeature;
 use App\Domain\Ai\Enums\AiUnavailableReason;
 use App\Domain\Ai\Exceptions\AiUnavailable;
 use GuzzleHttp\Client as Guzzle;
+use GuzzleHttp\Exception\ConnectException;
 use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Middleware;
 use GuzzleHttp\Psr7\Response;
+use Illuminate\Log\Events\MessageLogged;
+use Illuminate\Support\Facades\Event;
+use Psr\Http\Message\RequestInterface;
 
 /*
  * The Anthropic client against a Guzzle MockHandler: real SDK, no network.
@@ -183,4 +187,57 @@ test('the client is not configured without a key', function () {
     config(['ai.anthropic.api_key' => '  ']);
 
     expect((new AnthropicAiClient)->isConfigured())->toBeFalse();
+});
+
+test('AI security review: overloaded (529/503) and timeouts get their own friendly messages after the retries', function () {
+    $overloaded = (string) json_encode(['type' => 'error', 'error' => ['type' => 'overloaded_error', 'message' => 'Overloaded']]);
+
+    foreach ([529, 503] as $status) {
+        $client = anthropicWith($this, array_map(fn () => new Response($status, [], $overloaded), range(1, 3)));
+
+        try {
+            $client->send(sampleRequest());
+            $this->fail('Expected AiUnavailable.');
+        } catch (AiUnavailable $e) {
+            expect($e->reason)->toBe(AiUnavailableReason::RateLimited)
+                ->and($e->getMessage())->toContain('very busy')
+                ->and($e->getPrevious())->toBeNull();
+        }
+    }
+
+    $this->history = [];
+    $timeout = fn (RequestInterface $request) => new ConnectException('cURL error 28: Operation timed out after 120001 milliseconds', $request);
+    $client = anthropicWith($this, [$timeout, $timeout, $timeout]);
+
+    try {
+        $client->send(sampleRequest());
+        $this->fail('Expected AiUnavailable.');
+    } catch (AiUnavailable $e) {
+        expect($e->reason)->toBe(AiUnavailableReason::ProviderError)
+            ->and($e->getMessage())->toContain('took too long');
+    }
+});
+
+test('AI security review: logs never carry the prompt, the provider message or the API key', function () {
+    config(['ai.anthropic.api_key' => 'sk-ant-api03-SECRETKEY0123456789abcdef']);
+    $logged = [];
+    Event::listen(MessageLogged::class, function (MessageLogged $event) use (&$logged) {
+        $logged[] = $event->message.' '.json_encode($event->context);
+    });
+
+    $echo = (string) json_encode(['type' => 'error', 'error' => ['type' => 'invalid_request_error', 'message' => 'messages.0: Customer Jane Doe 07700 900123 is invalid']]);
+    $client = anthropicWith($this, [new Response(400, [], $echo)]);
+
+    try {
+        $client->send(sampleRequest());
+        $this->fail('Expected AiUnavailable.');
+    } catch (AiUnavailable $e) {
+        report($e); // as a job or controller would
+        expect($e->getPrevious())->toBeNull();
+    }
+
+    $all = implode("\n", $logged);
+    expect($logged)->not->toBeEmpty()
+        ->and($all)->not->toContain('Jane Doe')->not->toContain('07700')->not->toContain('SECRETKEY')->not->toContain('Rules')
+        ->and($all)->toContain('AI provider call failed.')->toContain('providerError');
 });
