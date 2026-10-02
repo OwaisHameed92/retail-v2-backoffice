@@ -38,6 +38,7 @@ rm -rf "$R/storage"
 ln -s "$APP_ROOT/shared/storage" "$R/storage"
 ln -sfn "$APP_ROOT/shared/.env" "$R/.env"
 chown -R "$APP_USER:$APP_USER" "$R"
+chmod 755 "$R"   # mktemp -d made the packed root 0700: Nginx (www-data) must traverse it
 cd "$R"
 sudo -u "$APP_USER" -H composer install --no-dev --optimize-autoloader --no-interaction --no-progress -q
 sudo -u "$APP_USER" php artisan migrate --force
