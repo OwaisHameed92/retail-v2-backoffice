@@ -55,7 +55,8 @@ final class EnvelopeReader
         }
 
         if ($raw['companyId'] !== $context->companyId) {
-            return $reject('sync.wrong_company', 'The change belongs to another company.');
+            // Name the id we got (ids are not secret): an unmapped till company id is otherwise impossible to trace.
+            return $reject('sync.wrong_company', 'The change belongs to another company ('.(is_string($raw['companyId']) ? $raw['companyId'] : 'not a string').').');
         }
 
         if ($raw['branchId'] !== '' && $raw['branchId'] !== $context->branchId) {
