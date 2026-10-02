@@ -19,6 +19,8 @@ final class SettingSyncPolicy
     public const LOCAL_PREFIXES = [
         'licence.', 'install.', 'sync.', 'server.', 'update.', 'backup.', 'devices.', 'printers.', 'payments.terminal_',
         'payments.dna_', 'payments.dojo_', 'messaging.smtp_', 'messaging.whatsapp_gateway_',
+        // Per-user screen settings (EPOS 2026-10-02, next till release).
+        'grid.layout.', 'help.tour_dismissed.',
     ];
 
     public const SECRET_WORDS = ['secret', 'passphrase', 'thumbprint', 'api_key', 'private_key', 'signing_key'];

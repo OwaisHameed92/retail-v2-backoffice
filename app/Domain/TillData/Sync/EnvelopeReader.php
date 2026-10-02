@@ -54,12 +54,18 @@ final class EnvelopeReader
             return $reject('change.invalid', 'Invalid change: '.implode('; ', $problems).'.');
         }
 
-        if ($raw['companyId'] !== $context->companyId) {
+        // A setting that never leaves the till (§10.3 deny-list) is acknowledged as skipped and never stored, so its
+        // envelope ids do not matter. Till ≤ 0.1.29 sent per-user screen settings (grid.layout.*, help.tour_dismissed.*)
+        // with the user's id as companyId; refusing them stalled the till's whole queue behind them (EPOS 2026-10-02).
+        $localOnlySetting = $entity === 'Setting' && is_array($raw['payload'])
+            && SettingSyncPolicy::isLocalOnly($raw['payload']['scope'] ?? null, $raw['payload']['key'] ?? null);
+
+        if (! $localOnlySetting && $raw['companyId'] !== $context->companyId) {
             // Name the id we got (ids are not secret): an unmapped till company id is otherwise impossible to trace.
             return $reject('sync.wrong_company', 'The change belongs to another company ('.(is_string($raw['companyId']) ? $raw['companyId'] : 'not a string').').');
         }
 
-        if ($raw['branchId'] !== '' && $raw['branchId'] !== $context->branchId) {
+        if (! $localOnlySetting && $raw['branchId'] !== '' && $raw['branchId'] !== $context->branchId) {
             return $reject('sync.wrong_branch', 'The change belongs to another branch than the one sending it.');
         }
 

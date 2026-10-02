@@ -16,7 +16,9 @@
     "payments.dna_",
     "payments.dojo_",
     "messaging.smtp_",
-    "messaging.whatsapp_gateway_"
+    "messaging.whatsapp_gateway_",
+    "grid.layout.",
+    "help.tour_dismissed."
   ],
   "secretWords": [
     "secret",

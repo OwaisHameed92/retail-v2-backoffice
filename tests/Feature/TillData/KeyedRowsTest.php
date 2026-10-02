@@ -107,6 +107,30 @@ it('never stores a deny-listed or register-scope setting: acknowledged, skipped,
         && isset($context['rows']['Setting payments.dojo_api_key']))->once();
 });
 
+it('skips per-user screen settings whose envelope carries a user id as companyId, so the queue never stalls (EPOS 2026-10-02)', function () {
+    $userId = '01M3YKNDEJKKVD6KBE44KGVVPF';
+    $rows = [
+        ['scope' => 'company', 'scopeId' => $userId, 'key' => 'grid.layout.products', 'value' => '{"cols":4}', 'updatedAt' => '2026-10-02T15:30:00Z'],
+        ['scope' => 'company', 'scopeId' => $userId, 'key' => 'help.tour_dismissed.sales', 'value' => 'true', 'updatedAt' => '2026-10-02T15:30:00Z'],
+    ];
+    $changes = array_map(fn (array $payload, int $i) => ($this->setting)($i + 1, $payload, ['companyId' => $userId]), $rows, array_keys($rows));
+    $changes[] = ($this->setting)(3, ['scope' => 'branch', 'scopeId' => '', 'key' => 'receipt.footer_text', 'value' => 'Thanks!', 'updatedAt' => '2026-10-02T15:30:00Z']);
+
+    $result = ($this->apply)($changes);
+
+    expect(TillFixtures::ack($result))->toBe(['acknowledgedSeq' => 3, 'accepted' => 3])
+        ->and($result->count(ChangeOutcome::Skipped))->toBe(2)
+        ->and(DB::table('till_settings')->pluck('setting_key')->all())->toBe(['receipt.footer_text']);
+});
+
+it('still refuses an ordinary setting sent with another company id', function () {
+    $row = ['scope' => 'company', 'scopeId' => '', 'key' => 'receipt.header_text', 'value' => 'x', 'updatedAt' => '2026-10-02T15:30:00Z'];
+
+    $result = ($this->apply)([($this->setting)(1, $row, ['companyId' => '01M3YKNDEJKKVD6KBE44KGVVPF'])]);
+
+    expect(collect($result->rejected)->pluck('code')->all())->toBe(['sync.wrong_company']);
+});
+
 it('acknowledges rows of a `local` table (an older till\'s SyncState) without storing them', function () {
     $state = ['entity' => 'Sale', 'lastPushedSeq' => 10, 'id' => '01K5T0Q8C4000000000000S001', 'companyId' => TillFixtures::COMPANY, 'createdAt' => '2026-09-23T09:00:00Z', 'updatedAt' => '2026-09-23T09:00:00Z', 'rowVersion' => 1, 'deletedAt' => null];
     $before = DB::table('till_sync_states')->count();
