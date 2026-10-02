@@ -10,7 +10,7 @@ Each module is one agent task. Modules in the same wave can run in parallel. Sta
 included) pass, the UI follows `docs/BRAND.md`, and `composer check`, `npm run lint`, `npx tsc --noEmit` and
 `npm run build` are green.
 
-Totals: **64 modules · 52 done · 12 todo** (2026-09-30, counted from the tables of phases 0–7; 2.9 split into A and
+Totals: **64 modules · 62 done · 1 deferred (6.7) · 2 waiting for a server (7.4 deploy, 7.5 EPOS end-to-end) · 7.6 load test todo** (2026-10-02, counted from the tables of phases 0–7; 2.9 split into A and
 B; Phase 8's five later items are not modules yet).
 
 ---
@@ -126,7 +126,7 @@ Contract: v1.4.1 §18.4. Roles: business owner, **shop manager** (one branch onl
 |---|---|---|
 | 7.1 | Apply design system v2 to the business panel and remaining screens | Pass 1 done: one filter location per page (global branch/date bar removed), tenant sidebar regrouped with collapsible groups and ability-hidden items, one breadcrumb trail (PageHeader), sentence-case table headers, shared `ChartLegend` / `ChartTooltipBox`, branded 403/404/500/503 pages, left-aligned select values, token-only colours in account settings, admin "Customers" Soon item removed. Pass 2 done (2026-10-01): light theme by default (dark a user choice), `reference-light-final.webp` look via tokens: white sidebar with the full logo + area label, light top bar with mint wave wash, green active pill, wider search with one-line ⌘K, welcome hero with sun icon (admin and tenant dashboards), admin "Recent activity" and "Business overview" status strip from real data, light auth panel with the full logo, search fields sized to their placeholder. Later pass: per-page spacing/density review, account settings forms onto `FormCard`, admin detail tabs on phones | done |
 | 7.1b | Two-factor sign-in and audit log screens | Built: TOTP two-factor (pragmarx/google2fa, inline SVG QR via bacon/bacon-qr-code) required for every admin (set-up after the first password sign-in) and optional for portal users (Settings → Security), or required by the company owner for the whole business; 10 hashed one-time recovery codes shown once (copy/download), "remember this device" 30 days (signed cookie bound to the secret), 5 codes a minute then lockout (logged + audited), replayed codes refused; owner resets another admin's 2FA, support resets a portal user's (tenant page); impersonation needs the admin's own passed 2FA. Audit log: `/admin/audit-log` (owner, support: `audit.view`) and `/app/activity` (tenant `audit.view`, owner by default) with who/business/action/record/date filters, search, keyset paging, detail drawer with before/after diff and streamed CSV (export audited) | done |
-| 7.2 | Gap analysis (competitors, UK compliance, legacy parity; `docs/research/`) | todo |
+| 7.2 | Gap analysis (competitors, UK compliance, legacy parity; `docs/research/`) | done (docs/research/gap-analysis.md; must-haves built: alerts, GDPR, exports, labels, catalogue, 2FA, audit log) |
 | 7.3 | Security review | Review done; Fix A (H2, M1–M6, L1–L10, npm audit) done; H1 two-factor sign-in done (with audit log screens) | done |
 | 7.4 | Deploy (MySQL server, HTTPS, queues, scheduler, backups, signing key generated on the server) | Kit ready, no server yet: `docs/deploy.md` runbook, `deploy/` (Ubuntu setup, Nginx, PHP-FPM, Supervisor, cron, logrotate, nightly backup, zero-downtime deploy + rollback), `.env.production.example`. Suite also runs on MySQL 8 (`composer test:mysql`, CI `mysql` job) |
 | 7.5 | End-to-end testing with the EPOS team, go-live checklist | todo |
