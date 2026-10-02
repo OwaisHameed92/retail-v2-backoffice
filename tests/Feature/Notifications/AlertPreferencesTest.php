@@ -31,7 +31,7 @@ test('the settings page shows the role\'s alert types with their defaults and th
     $this->actingAs($this->owner)->get('/app/settings/notifications')->assertOk()->assertInertia(fn (Assert $page) => $page
         ->component('app/settings/notifications')
         ->where('business', 'Kirkgate Convenience')
-        ->has('types', 7)
+        ->has('types', 8) // module 6.6 added "Unusual activity"
         ->where('types.0.value', 'tillOffline')->where('types.0.delivery', 'immediate')
         ->where('types.2.value', 'lowStock')->where('types.2.delivery', 'digest')
         ->where('types.2.options', [['value' => 'off', 'label' => 'Off'], ['value' => 'digest', 'label' => 'Daily digest']])

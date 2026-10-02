@@ -7,6 +7,7 @@ use App\Domain\Mail\Mailables\AccountSuspendedMail;
 use App\Domain\Mail\Mailables\AdminNewLeadMail;
 use App\Domain\Mail\Mailables\AdminSubscriptionRequestMail;
 use App\Domain\Mail\Mailables\AdminTillRequestMail;
+use App\Domain\Mail\Mailables\AnomalyAlertMail;
 use App\Domain\Mail\Mailables\BrandedMailable;
 use App\Domain\Mail\Mailables\CustomerStatementMail;
 use App\Domain\Mail\Mailables\DirectDebitCancelledMail;
@@ -53,6 +54,7 @@ final class EmailTemplates
         OwnerAlertMail::class,
         OwnerAlertResolvedMail::class,
         OwnerDigestMail::class,
+        AnomalyAlertMail::class,
     ];
 
     /**

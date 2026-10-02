@@ -12,6 +12,7 @@ use App\Domain\Ai\Tools\Portal\GetStaffHours;
 use App\Domain\Ai\Tools\Portal\GetStock;
 use App\Domain\Ai\Tools\Portal\GetTillHealth;
 use App\Domain\Ai\Tools\Portal\GetVatSummary;
+use App\Domain\Ai\Tools\Portal\ListAnomalies;
 use App\Domain\Ai\Tools\Portal\QueueShelfLabels;
 use App\Domain\Ai\Tools\Portal\SuggestReorder;
 use App\Domain\Ai\Tools\RenameBranch;
@@ -145,6 +146,8 @@ return [
         // Module 6.4: reorder suggestions as draft orders, and shelf labels (both preview-then-confirm).
         SuggestReorder::class,
         QueueShelfLabels::class,
+        // Module 6.6: unusual-activity findings (read only).
+        ListAnomalies::class,
     ],
 
     // Keys dropped from tool results before they are sent (personal data the model does not need).
