@@ -51,6 +51,7 @@ final class AlertLinks
             AlertType::Compliance => self::portal('/app/compliance', $shop),
             AlertType::SyncConflicts => self::portal('/app/sync/conflicts'),
             AlertType::MorningSummary => self::portal('/app'),
+            AlertType::UnusualActivity => self::portal('/app/anomalies', $shop),
         };
     }
 }

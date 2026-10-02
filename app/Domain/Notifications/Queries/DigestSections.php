@@ -2,9 +2,10 @@
 
 namespace App\Domain\Notifications\Queries;
 
+use App\Domain\Anomalies\Queries\AnomalyDigest;
+use App\Domain\Anomalies\Support\AnomalyVisibility;
 use App\Domain\Mail\Support\MailFormat;
 use App\Domain\Notifications\Data\Recipient;
-use App\Domain\Notifications\Enums\AlertDelivery;
 use App\Domain\Notifications\Enums\AlertType;
 use App\Domain\Notifications\Support\AlertLinks;
 
@@ -24,7 +25,7 @@ final class DigestSections
         $sections = [];
 
         foreach (AlertType::cases() as $type) {
-            if ($recipient->delivery($type) !== AlertDelivery::Digest || ! isset($findings[$type->value])) {
+            if (! $recipient->inDigest($type) || ! isset($findings[$type->value])) {
                 continue;
             }
 
@@ -35,6 +36,14 @@ final class DigestSections
 
             foreach ($findings[$type->value] as $shop => $entry) {
                 $shop = (string) $shop;
+
+                if (str_starts_with($shop, AnomalyDigest::STAFF)) {
+                    if (! AnomalyVisibility::seesStaff($recipient->role)) {
+                        continue; // staff-level findings: owners and managers only (module 6.6)
+                    }
+
+                    $shop = substr($shop, strlen(AnomalyDigest::STAFF));
+                }
 
                 if ($shop !== '*' && ! $recipient->covers($shop === '' ? null : $shop)) {
                     continue;
@@ -100,6 +109,10 @@ final class DigestSections
             ]),
             // Not a digest section: the morning summary has its own block in the same email (module 6.3).
             AlertType::MorningSummary => '',
+            AlertType::UnusualActivity => $parts([
+                MailFormat::count(($c['high'] ?? 0) + ($c['medium'] ?? 0) + ($c['low'] ?? 0), 'new finding').' far from normal',
+                ($c['high'] ?? 0) > 0 ? $c['high'].' serious' : null,
+            ]),
         };
     }
 }

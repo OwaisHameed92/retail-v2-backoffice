@@ -36,6 +36,24 @@ final readonly class Recipient
         return $this->delivery($type) !== AlertDelivery::Off;
     }
 
+    /** Whether this type goes in the user's daily digest ({@see AlertType::digestedWith()}). */
+    public function inDigest(AlertType $type): bool
+    {
+        return $type->digestedWith($this->delivery($type));
+    }
+
+    /** Whether the user gets a daily digest at all. */
+    public function getsDigest(): bool
+    {
+        foreach (AlertType::cases() as $type) {
+            if ($this->inDigest($type)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     /**
      * Whether something about this shop (null = the whole business) is for this user: a one-shop user only hears
      * about their shop, a multi-shop user about the shops they picked plus business-wide things.

@@ -2,6 +2,7 @@
 
 namespace App\Domain\Notifications\Queries;
 
+use App\Domain\Anomalies\Queries\AnomalyDigest;
 use App\Domain\Mail\Support\MailFormat;
 use App\Domain\Notifications\Enums\AlertType;
 use App\Domain\Reporting\Support\TradingDay;
@@ -17,7 +18,9 @@ use Illuminate\Support\Facades\DB;
  *
  * - tillOffline / syncFailing: Till health alerts still open (module 2.7);
  * - lowStock: StockDigest; cashVariance: yesterday's variances (CashDigest); compliance: ComplianceDigest;
- * - syncConflicts: open portal conflicts and the tills' pending clashes (module 2.9B).
+ * - syncConflicts: open portal conflicts and the tills' pending clashes (module 2.9B);
+ * - unusualActivity: new anomaly findings of the last 24 hours (module 6.6, AnomalyDigest; staff-level ones under
+ *   `staff:<shop id>`, for owners and managers only).
  */
 final class DigestFindings
 {
@@ -52,6 +55,7 @@ final class DigestFindings
                     AlertType::Compliance => ComplianceDigest::for($shops, $now),
                     AlertType::SyncConflicts => $this->conflicts($company->id, $shops),
                     AlertType::MorningSummary => [], // its own facts (module 6.3, MorningFacts)
+                    AlertType::UnusualActivity => AnomalyDigest::for($shops, $now),
                 };
             }
 

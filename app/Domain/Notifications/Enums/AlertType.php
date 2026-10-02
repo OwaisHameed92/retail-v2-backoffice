@@ -23,6 +23,7 @@ enum AlertType: string
     case Compliance = 'compliance';
     case SyncConflicts = 'syncConflicts';
     case MorningSummary = 'morningSummary';
+    case UnusualActivity = 'unusualActivity';
 
     public function label(): string
     {
@@ -34,6 +35,7 @@ enum AlertType: string
             self::Compliance => 'Compliance expiries and recalls',
             self::SyncConflicts => 'Sync conflicts waiting',
             self::MorningSummary => 'Morning summary',
+            self::UnusualActivity => 'Unusual activity',
         };
     }
 
@@ -47,13 +49,23 @@ enum AlertType: string
             self::Compliance => 'Staff training and licences expired or expiring within 14 days, and open product recalls.',
             self::SyncConflicts => 'Changes from a shop that the portal kept out and that need a decision.',
             self::MorningSummary => 'Yesterday\'s sales against last week and last year, top movers, unusual refunds or discounts and fast sellers running low, with a short written summary.',
+            self::UnusualActivity => 'Figures far from normal: a shop with no sales for hours, voids, refunds or no-sales well above the norm, repeated cash shortfalls, sales outside opening hours. "Straight away" emails the serious ones at once; the rest go in the daily digest.',
         };
     }
 
     /** May be emailed straight away (else only off or digest). */
     public function urgent(): bool
     {
-        return $this === self::TillOffline || $this === self::SyncFailing;
+        return $this === self::TillOffline || $this === self::SyncFailing || $this === self::UnusualActivity;
+    }
+
+    /**
+     * Whether a user with this delivery hears about it in the daily digest: "daily digest", and for unusual activity
+     * also "straight away" (only the serious findings are emailed at once; module 6.6).
+     */
+    public function digestedWith(AlertDelivery $delivery): bool
+    {
+        return $delivery === AlertDelivery::Digest || ($this === self::UnusualActivity && $delivery === AlertDelivery::Immediate);
     }
 
     /** The role ability needed to receive it (the screen it links to). */
@@ -65,7 +77,7 @@ enum AlertType: string
             self::CashVariance => Ability::CashView,
             self::Compliance => Ability::ComplianceView,
             self::SyncConflicts => Ability::SyncManage,
-            self::MorningSummary => Ability::ReportsView,
+            self::MorningSummary, self::UnusualActivity => Ability::ReportsView,
         };
     }
 

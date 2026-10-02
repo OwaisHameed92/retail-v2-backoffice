@@ -8,6 +8,7 @@ use App\Http\Controllers\App\AccountingExportController;
 use App\Http\Controllers\App\AccountsController;
 use App\Http\Controllers\App\ActivityController;
 use App\Http\Controllers\App\AlertUnsubscribeController;
+use App\Http\Controllers\App\AnomalyController;
 use App\Http\Controllers\App\AssistantController;
 use App\Http\Controllers\App\BillingController;
 use App\Http\Controllers\App\CalendarController;
@@ -446,6 +447,15 @@ Route::middleware(['auth:web', 'verified', 'company', 'two-factor:web'])->group(
         });
     });
     Route::get('parcels', [ParcelController::class, 'index'])->name('parcels.index')->middleware('company.can:parcels.view');
+
+    // Module 6.6: unusual activity (anomaly findings). reports.view; staff-level findings for owners and managers only,
+    // a one-shop user their shop (AnomalyVisibility). Status changes: owners and managers; explanation: ai.use.
+    Route::prefix('anomalies')->name('anomalies.')->middleware('company.can:reports.view')->group(function () {
+        Route::get('/', [AnomalyController::class, 'index'])->name('index');
+        Route::get('{anomaly}', [AnomalyController::class, 'show'])->name('show')->whereUlid('anomaly');
+        Route::put('{anomaly}/status', [AnomalyController::class, 'status'])->name('status')->whereUlid('anomaly')->middleware('throttle:60,1');
+        Route::post('{anomaly}/explain', [AnomalyController::class, 'explain'])->name('explain')->whereUlid('anomaly')->middleware(['company.can:ai.use', 'throttle:10,1']);
+    });
 
     // Module 4.8: reports (sales, products, refunds, discounts, VAT, payments, staff, hours, stock, shifts and Z), each
     // on screen, as CSV and printable. reports.view; a one-shop user sees only their shop (BusinessContext).

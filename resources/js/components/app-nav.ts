@@ -23,6 +23,7 @@ import {
     Receipt,
     ScrollText,
     Settings,
+    ShieldAlert,
     ShieldCheck,
     ShoppingCart,
     Store,
@@ -56,6 +57,13 @@ export function tenantNavGroups(path: string): TenantNavGroup[] {
             items: [
                 { title: 'Dashboard', icon: LayoutGrid, href: '/app', active: path === '/app' },
                 { title: 'Reports', icon: BarChart3, href: '/app/reports', active: startsWithPath(path, '/app/reports'), ability: 'reports.view' },
+                {
+                    title: 'Unusual activity',
+                    icon: ShieldAlert,
+                    href: '/app/anomalies',
+                    active: startsWithPath(path, '/app/anomalies'),
+                    ability: 'reports.view',
+                },
             ],
         },
         {

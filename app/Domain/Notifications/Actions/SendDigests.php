@@ -70,7 +70,7 @@ class SendDigests
         $already = AlertDispatch::withoutCompanyScope()->where('company_id', $company->id)->where('subject_key', $key)->pluck('user_id')->all();
         $recipients = array_values(array_filter(
             AlertRecipients::for($company->id),
-            fn (Recipient $r) => ! in_array($r->userId, $already, true) && in_array(AlertDelivery::Digest, $r->deliveries, true),
+            fn (Recipient $r) => ! in_array($r->userId, $already, true) && $r->getsDigest(),
         ));
         $totals['already'] += count($already);
 
@@ -80,7 +80,7 @@ class SendDigests
 
         $types = array_values(array_filter(AlertType::cases(), function (AlertType $type) use ($recipients) {
             foreach ($recipients as $recipient) {
-                if ($recipient->delivery($type) === AlertDelivery::Digest) {
+                if ($recipient->inDigest($type)) {
                     return true;
                 }
             }
