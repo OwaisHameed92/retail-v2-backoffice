@@ -112,7 +112,7 @@ final class EnvelopeReader
         }
 
         if (! Ulid::isValid($raw['companyId'])) {
-            $problems[] = 'companyId must be a ULID';
+            $problems[] = 'companyId must be a ULID (got '.json_encode(mb_substr((string) $raw['companyId'], 0, 40)).')';
         }
 
         foreach (['branchId', 'registerId'] as $member) {
