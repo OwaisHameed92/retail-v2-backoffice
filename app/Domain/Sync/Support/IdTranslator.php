@@ -76,9 +76,17 @@ final class IdTranslator
             return $portalId;
         }
 
-        foreach ($candidates as $row) {
-            if (in_array($row->till_id, $this->preferred, true)) {
-                return $row->till_id;
+        // Only where the answer is ambiguous (two installs mapped the same shop) does the caller's own id win;
+        // a company alias still follows the branch the reply goes to.
+        $scoped = $kind === IdKind::Company && $branchId !== null
+            ? array_values(array_filter($candidates, fn (IdMapping $row) => $row->branch_id === $branchId))
+            : $candidates;
+
+        if (count($scoped) > 1) {
+            foreach ($scoped as $row) {
+                if (in_array($row->till_id, $this->preferred, true)) {
+                    return $row->till_id;
+                }
             }
         }
 
