@@ -77,7 +77,7 @@ final class EnvelopeReader
         }
 
         return new SyncChange(
-            $index, (int) $seq, $entity, $entityId, $raw['op'], (int) $version, $raw['companyId'],
+            $index, (int) $seq, $entity, $entityId, $raw['op'], (int) $version, self::isTillBookkeeping($raw) ? '' : $raw['companyId'],
             $raw['branchId'], $raw['registerId'], Values::dateTime($raw['at']), $raw['payload'], $key,
             isset($raw['baseVersion']) ? $this->integer($raw['baseVersion']) : null,
         );
@@ -163,6 +163,6 @@ final class EnvelopeReader
      */
     public static function isTillBookkeeping(array $raw): bool
     {
-        return in_array($raw['entity'] ?? null, self::TILL_BOOKKEEPING, true) && ($raw['companyId'] ?? null) === '';
+        return in_array($raw['entity'] ?? null, self::TILL_BOOKKEEPING, true) && in_array($raw['companyId'] ?? null, ['', null], true);
     }
 }

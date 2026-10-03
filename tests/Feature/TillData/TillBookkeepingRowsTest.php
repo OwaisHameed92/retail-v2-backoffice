@@ -14,7 +14,11 @@ it('acknowledges EventSubscription rows with an empty companyId without storing 
             'createdAt' => '2026-10-03T21:00:00Z', 'updatedAt' => '2026-10-03T21:40:00Z', 'rowVersion' => $seq, 'deletedAt' => null, 'isDeleted' => false],
     ];
 
-    $result = TillFixtures::apply($company, $leeds, [$row(1, ''), $row(2, '')]);
+    $nullCompany = $row(2, '');
+    $nullCompany['entity'] = 'TopSellerTile';
+    $nullCompany['companyId'] = null;
+
+    $result = TillFixtures::apply($company, $leeds, [$row(1, ''), $nullCompany]);
 
     expect(TillFixtures::ack($result))->toBe(['acknowledgedSeq' => 2, 'accepted' => 2])
         ->and($result->count(ChangeOutcome::Skipped))->toBe(2)
