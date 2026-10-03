@@ -26,7 +26,24 @@ final class IdTranslator
      * @param  array<string, array<string, string>>  $toPortal  kind => till id => our id
      * @param  list<IdMapping>  $rows
      */
-    private function __construct(private readonly array $toPortal, private readonly array $rows) {}
+    private function __construct(
+        private readonly array $toPortal,
+        private readonly array $rows,
+        /** @var list<string> the calling till's own ids (sync headers): echoed back when they are one of the aliases */
+        private readonly array $preferred = [],
+    ) {}
+
+    /**
+     * The same map, answering with the calling till's own ids where several tills mapped the same shop (a second
+     * till installed on its own, not joined to the main till, brings its own company/branch ids): the main till
+     * must get its own ids back from hello and pull, or it treats the key as another shop's and stops syncing.
+     *
+     * @param  list<string>  $tillIds
+     */
+    public function preferring(array $tillIds): self
+    {
+        return new self($this->toPortal, $this->rows, array_values(array_filter($tillIds, fn (string $id) => $id !== '')));
+    }
 
     public static function forCompany(string $companyId): self
     {
@@ -57,6 +74,12 @@ final class IdTranslator
 
         if ($candidates === []) {
             return $portalId;
+        }
+
+        foreach ($candidates as $row) {
+            if (in_array($row->till_id, $this->preferred, true)) {
+                return $row->till_id;
+            }
         }
 
         if ($kind === IdKind::Company) {

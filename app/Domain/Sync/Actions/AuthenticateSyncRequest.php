@@ -65,7 +65,9 @@ class AuthenticateSyncRequest
         $this->touch($key, $now);
         self::rehash($key, $bearer);
 
-        return new SyncCaller($company, $branch, $key->id, $this->register($ids, $branch, trim((string) $registerHeader)), $tillCompany, $tillBranch, $ids);
+        $register = trim((string) $registerHeader);
+
+        return new SyncCaller($company, $branch, $key->id, $this->register($ids, $branch, $register), $tillCompany, $tillBranch, $ids->preferring([$tillCompany, $tillBranch, $register]));
     }
 
     private function register(IdTranslator $ids, Branch $branch, string $header): ?string
