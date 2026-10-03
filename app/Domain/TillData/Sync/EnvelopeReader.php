@@ -15,6 +15,9 @@ use App\Domain\TillData\Sync\Data\SyncChange;
  */
 final class EnvelopeReader
 {
+    /** Till-side screen/bookkeeping tables some till builds push with an empty companyId (EPOS asked, 2026-10-04). */
+    public const TILL_BOOKKEEPING = ['EventSubscription', 'TopSellerTile'];
+
     private const INTEGER = '/^(0|[1-9]\d{0,17})$/';
 
     public function read(mixed $raw, int $index, SyncContext $context): SyncChange|Rejection
@@ -160,6 +163,6 @@ final class EnvelopeReader
      */
     public static function isTillBookkeeping(array $raw): bool
     {
-        return ($raw['entity'] ?? null) === 'EventSubscription' && ($raw['companyId'] ?? null) === '';
+        return in_array($raw['entity'] ?? null, self::TILL_BOOKKEEPING, true) && ($raw['companyId'] ?? null) === '';
     }
 }

@@ -22,7 +22,7 @@ final class NeverStored
     public static function matches(SyncChange $change): bool
     {
         return EntityRegistry::isLocal($change->entity)
-            || ($change->entity === 'EventSubscription' && $change->companyId === '')
+            || (in_array($change->entity, EnvelopeReader::TILL_BOOKKEEPING, true) && $change->companyId === '')
             || ($change->entity === 'Setting' && is_array($change->payload)
                 && SettingSyncPolicy::isLocalOnly($change->payload['scope'] ?? null, $change->payload['key'] ?? null));
     }
