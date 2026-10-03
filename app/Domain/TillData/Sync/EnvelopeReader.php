@@ -60,7 +60,7 @@ final class EnvelopeReader
         $localOnlySetting = $entity === 'Setting' && is_array($raw['payload'])
             && SettingSyncPolicy::isLocalOnly($raw['payload']['scope'] ?? null, $raw['payload']['key'] ?? null);
 
-        if (! $localOnlySetting && $raw['companyId'] !== $context->companyId) {
+        if (! $localOnlySetting && ! self::isTillBookkeeping($raw) && $raw['companyId'] !== $context->companyId) {
             // Name the id we got (ids are not secret): an unmapped till company id is otherwise impossible to trace.
             return $reject('sync.wrong_company', 'The change belongs to another company ('.(is_string($raw['companyId']) ? $raw['companyId'] : 'not a string').').');
         }
@@ -111,7 +111,7 @@ final class EnvelopeReader
             $problems[] = 'op must be I, U or D';
         }
 
-        if (! Ulid::isValid($raw['companyId'])) {
+        if (! Ulid::isValid($raw['companyId']) && ! self::isTillBookkeeping($raw)) {
             $problems[] = 'companyId must be a ULID (got '.json_encode(mb_substr((string) $raw['companyId'], 0, 40)).')';
         }
 
@@ -149,5 +149,17 @@ final class EnvelopeReader
         }
 
         return is_string($value) && preg_match(self::INTEGER, $value) === 1 ? (int) $value : null;
+    }
+
+    /**
+     * Till 0.1.29–0.1.37 push their own EventSubscription bookkeeping (handler name + last event seq) with an empty
+     * companyId. It is not business data: acknowledged as skipped and never stored (NeverStored), so it can no
+     * longer stall the till's queue (2026-10-04, asked the EPOS team whether the table should be `local`).
+     *
+     * @param  array<string, mixed>  $raw
+     */
+    public static function isTillBookkeeping(array $raw): bool
+    {
+        return ($raw['entity'] ?? null) === 'EventSubscription' && ($raw['companyId'] ?? null) === '';
     }
 }
