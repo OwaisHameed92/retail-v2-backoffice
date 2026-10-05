@@ -1,5 +1,5 @@
 import { formatPence, toPence } from '@/components/admin/billing/money';
-import { type BillingMode, type CompanyRef, type DirectDebitData, type SetupFeeMethod } from '@/components/admin/billing/types';
+import { type BillingMode, type CompanyRef, type DirectDebitData } from '@/components/admin/billing/types';
 import { MoneyInput } from '@/components/admin/plans/plan-form-fields';
 import { Field } from '@/components/admin/tenants/field';
 import { Button } from '@/components/ui/button';
@@ -20,11 +20,10 @@ interface DirectDebitSettingsDialogProps {
 type FormData = {
     billing_mode: BillingMode;
     setup_fee_override: string;
-    setup_fee_method: SetupFeeMethod;
     setup_fee_instalments: string;
 };
 
-/** How the business pays (upfront or Direct Debit) and its setup fee: amount, how it is paid, instalments. */
+/** How the business pays its recurring fee (Direct Debit, or upfront as an exception) and its setup fee: amount, instalments. */
 export function DirectDebitSettingsDialog(props: DirectDebitSettingsDialogProps) {
     return (
         <Dialog open={props.open} onOpenChange={props.onOpenChange}>
@@ -39,7 +38,6 @@ function SettingsBody({ onOpenChange, company, directDebit }: DirectDebitSetting
     const { data, setData, put, processing, errors } = useForm<FormData>({
         billing_mode: directDebit.mode,
         setup_fee_override: setupFee.override ?? '',
-        setup_fee_method: setupFee.method,
         setup_fee_instalments: String(setupFee.instalments),
     });
 
@@ -48,14 +46,15 @@ function SettingsBody({ onOpenChange, company, directDebit }: DirectDebitSetting
         put(route('admin.billing.tenants.direct-debit.settings', company.id), { preserveScroll: true, onSuccess: () => onOpenChange(false) });
     };
 
-    const directDebitMode = data.billing_mode === 'directDebit';
-
     return (
         <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-xl" onInteractOutside={(event) => processing && event.preventDefault()}>
             <form onSubmit={submit} className="grid gap-5" noValidate>
                 <DialogHeader>
                     <DialogTitle>How {company.name} pays</DialogTitle>
-                    <DialogDescription>Upfront: each period paid by hand. Direct Debit: GoCardless collects the subscription and the setup fee.</DialogDescription>
+                    <DialogDescription>
+                        Direct Debit (the normal way): GoCardless collects the monthly or yearly fee. Upfront: each period paid by hand, as an
+                        exception.
+                    </DialogDescription>
                 </DialogHeader>
 
                 <Field id="dd-mode" label="Billing mode" error={errors.billing_mode}>
@@ -76,10 +75,14 @@ function SettingsBody({ onOpenChange, company, directDebit }: DirectDebitSetting
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <Field
                         id="dd-setup-fee"
-                        label="Setup fee (before VAT)"
+                        label="Setup fee (upfront, before VAT)"
                         optional
                         error={errors.setup_fee_override}
-                        hint={locked ? 'Already invoiced, so it cannot change.' : `Empty uses the plan’s fee (${formatPence(toPence(setupFee.plan) ?? 0)}).`}
+                        hint={
+                            locked
+                                ? 'Already invoiced, so it cannot change.'
+                                : `Empty uses the plan’s fee (${formatPence(toPence(setupFee.plan) ?? 0)}).`
+                        }
                     >
                         <MoneyInput
                             id="dd-setup-fee"
@@ -90,7 +93,12 @@ function SettingsBody({ onOpenChange, company, directDebit }: DirectDebitSetting
                             onChange={(event) => setData('setup_fee_override', event.target.value)}
                         />
                     </Field>
-                    <Field id="dd-instalments" label="Instalments" error={errors.setup_fee_instalments} hint="1 = paid at once; more = monthly payments.">
+                    <Field
+                        id="dd-instalments"
+                        label="Instalments"
+                        error={errors.setup_fee_instalments}
+                        hint="1 = paid at once; more = monthly payments by hand."
+                    >
                         <Input
                             id="dd-instalments"
                             type="number"
@@ -104,29 +112,10 @@ function SettingsBody({ onOpenChange, company, directDebit }: DirectDebitSetting
                     </Field>
                 </div>
 
-                <Field
-                    id="dd-setup-method"
-                    label="Setup fee paid by"
-                    error={errors.setup_fee_method}
-                    hint={
-                        directDebitMode
-                            ? 'Direct Debit: collected on the mandate as soon as it is set up. Cash or bank transfer: invoiced now, recorded with Record payment.'
-                            : 'Upfront customers pay the setup fee by cash or bank transfer.'
-                    }
-                >
-                    <Select value={directDebitMode ? data.setup_fee_method : 'manual'} onValueChange={(value) => setData('setup_fee_method', value as SetupFeeMethod)} disabled={locked || !directDebitMode}>
-                        <SelectTrigger id="dd-setup-method">
-                            <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {options.setupFeeMethods.map((option) => (
-                                <SelectItem key={option.value} value={option.value}>
-                                    {option.label}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                </Field>
+                <p className="text-muted-foreground text-sm">
+                    The setup fee is always paid by hand: cash, card or bank transfer, recorded with{' '}
+                    <span className="font-medium">Record setup fee payment</span>. It is never taken by Direct Debit.
+                </p>
 
                 <DialogFooter className="gap-2">
                     <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={processing}>

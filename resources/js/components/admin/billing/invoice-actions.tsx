@@ -12,6 +12,7 @@ import { useState } from 'react';
 
 const METHODS: Option<PaymentMethod>[] = [
     { value: 'cash', label: 'Cash' },
+    { value: 'card', label: 'Card' },
     { value: 'bankTransfer', label: 'Bank transfer' },
     { value: 'other', label: 'Other' },
 ];

@@ -13,6 +13,7 @@ use App\Domain\Tenancy\Actions\SuspendCompany;
 use App\Domain\Tenancy\Enums\CompanyStatus;
 use App\Domain\Tenancy\Models\Company;
 use Carbon\CarbonImmutable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -21,7 +22,9 @@ use Illuminate\Support\Facades\DB;
  * their next check-in) and the owners get AccountSuspendedMail with the amount overdue.
  *
  * Each invoice triggers this once: if staff lift the suspension by hand, the same invoice does not suspend the
- * company again (a later overdue invoice can). A company already suspended or cancelled is left alone.
+ * company again (a later overdue invoice can, and so can the same invoice after a Direct Debit failure reopens
+ * it). For a reopened invoice the grace counts from the reopening (`reopened_at`), so a late chargeback still gets
+ * the full grace. A company already suspended or cancelled is left alone.
  */
 class SuspendForUnpaidInvoices
 {
@@ -37,10 +40,10 @@ class SuspendForUnpaidInvoices
     {
         $days = max(0, (int) config('billing.suspend_after_days', 14));
         $cutoff = BillingDates::today($now)->subDays($days)->format('Y-m-d');
+        $reopenedBefore = $now->subDays($days);
         $suspended = 0;
 
-        $companyIds = Invoice::withoutCompanyScope()->where('status', InvoiceStatus::Overdue->value)
-            ->whereNull('suspension_triggered_at')->where('due_date', '<', $cutoff)
+        $companyIds = self::due(Invoice::withoutCompanyScope(), $cutoff, $reopenedBefore)
             ->distinct()->pluck('company_id');
 
         foreach ($companyIds as $companyId) {
@@ -50,12 +53,11 @@ class SuspendForUnpaidInvoices
                 continue;
             }
 
-            $done = DB::transaction(function () use ($company, $cutoff, $now) {
+            $done = DB::transaction(function () use ($company, $cutoff, $reopenedBefore, $now) {
                 $account = $this->accounts->lock($company);
 
-                $invoices = Invoice::withoutCompanyScope()->where('company_id', $company->id)
-                    ->where('status', InvoiceStatus::Overdue->value)->whereNull('suspension_triggered_at')
-                    ->where('due_date', '<', $cutoff)->orderBy('due_date')->orderBy('sequence')->lockForUpdate()->get();
+                $invoices = self::due(Invoice::withoutCompanyScope()->where('company_id', $company->id), $cutoff, $reopenedBefore)
+                    ->orderBy('due_date')->orderBy('sequence')->lockForUpdate()->get();
 
                 if ($invoices->isEmpty()) {
                     return null;
@@ -95,5 +97,19 @@ class SuspendForUnpaidInvoices
         }
 
         return $suspended;
+    }
+
+    /**
+     * Overdue invoices past the grace that have not suspended the company yet: due more than the grace ago, and
+     * (for one a Direct Debit failure or chargeback reopened) reopened more than the grace ago.
+     *
+     * @param  Builder<Invoice>  $query
+     * @return Builder<Invoice>
+     */
+    public static function due(Builder $query, string $cutoff, CarbonImmutable $reopenedBefore): Builder
+    {
+        return $query->where('status', InvoiceStatus::Overdue->value)->whereNull('suspension_triggered_at')
+            ->where('due_date', '<', $cutoff)
+            ->where(fn (Builder $q) => $q->whereNull('reopened_at')->orWhere('reopened_at', '<', $reopenedBefore));
     }
 }

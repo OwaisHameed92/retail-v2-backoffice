@@ -3,8 +3,9 @@
 namespace App\Domain\Billing\Enums;
 
 /**
- * How the setup fee is collected: recorded by hand (cash or bank transfer, through Record payment) or taken by
- * GoCardless on the mandate. Either way it can be split into monthly instalments.
+ * How the setup fee is collected. Owner rule (2026-10-05): ALWAYS by hand (cash, card or bank transfer, recorded by an
+ * admin), optionally in monthly instalments. `directDebit` is kept only so old rows still load; nothing reads it as
+ * "collect by Direct Debit" any more (ChargeSetupFee never creates a GoCardless payment) and it is not offered.
  */
 enum SetupFeeMethod: string
 {
@@ -14,8 +15,8 @@ enum SetupFeeMethod: string
     public function label(): string
     {
         return match ($this) {
-            self::Manual => 'Cash or bank transfer',
-            self::DirectDebit => 'Direct Debit',
+            self::Manual => 'By hand (cash, card or bank transfer)',
+            self::DirectDebit => 'Direct Debit (no longer used)',
         };
     }
 
@@ -24,6 +25,6 @@ enum SetupFeeMethod: string
      */
     public static function options(): array
     {
-        return array_map(fn (self $method) => ['value' => $method->value, 'label' => $method->label()], self::cases());
+        return [['value' => self::Manual->value, 'label' => self::Manual->label()]];
     }
 }

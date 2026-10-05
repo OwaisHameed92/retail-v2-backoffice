@@ -4,12 +4,14 @@ namespace App\Domain\Billing\GoCardless\Actions;
 
 use App\Domain\Billing\GoCardless\Contracts\GoCardlessClient;
 use App\Domain\Billing\GoCardless\Data\GcSubscription;
+use App\Domain\Billing\GoCardless\Enums\SubscriptionStatus;
 use App\Domain\Billing\GoCardless\GoCardlessException;
 use App\Domain\Billing\GoCardless\Support\Pence;
 use App\Domain\Billing\GoCardless\Support\SubscriptionAmount;
 use App\Domain\Billing\Models\BillingAccount;
 use App\Domain\Billing\Support\BillingAccounts;
 use App\Domain\Billing\Support\BillingFormat;
+use App\Domain\Billing\Support\SetupFeeState;
 use App\Domain\Shared\Actions\RecordAudit;
 use App\Domain\Tenancy\Models\Company;
 use Carbon\CarbonImmutable;
@@ -33,7 +35,7 @@ class SyncSubscription
     ) {}
 
     /**
-     * @return 'noMandate'|'nothingToCollect'|'unchanged'|'created'|'updated'|'replaced'|'cancelled'
+     * @return 'noMandate'|'setupFeeUnpaid'|'nothingToCollect'|'unchanged'|'created'|'updated'|'replaced'|'resumed'|'cancelled'
      */
     public function handle(Company $company, string $reason = 'manual'): string
     {
@@ -58,9 +60,19 @@ class SyncSubscription
         }
 
         if ($live === null) {
+            // Owner rule (2026-10-05): the recurring Direct Debit starts once the setup fee (upfront) is paid, or
+            // its first instalment; until then the tills run on the trial and then lock (expired).
+            if (! SetupFeeState::for($company, $account)->isStarted()) {
+                return 'setupFeeUnpaid';
+            }
+
             $this->store($company, $this->create($company, $account, $pence, $amount['start'], null), 'billing.dd_subscription_created', $account, $reason);
 
             return 'created';
+        }
+
+        if ($reason === 'mandate' && ($moved = $this->followMandate($company, $account, $live, $pence, $amount['start'], $reason)) !== null) {
+            return $moved;
         }
 
         if ($account->gc_subscription_cycle !== $amount['cycle']) {
@@ -83,6 +95,37 @@ class SyncSubscription
 
             return 'replaced';
         }
+    }
+
+    /**
+     * A new (or reinstated) mandate: a subscription paused when the old one stopped is resumed, and one that still
+     * belongs to a replaced mandate is cancelled and created again on the current one.
+     *
+     * @return 'replaced'|'resumed'|null
+     */
+    private function followMandate(Company $company, BillingAccount $account, string $live, int $pence, CarbonImmutable $start, string $reason): ?string
+    {
+        $remote = $this->client->subscription($live);
+
+        if ($remote->mandateId !== null && $remote->mandateId !== $account->gc_mandate_id) {
+            try {
+                $this->client->cancelSubscription($live);
+            } catch (GoCardlessException) {
+                // Already cancelled by GoCardless with its mandate.
+            }
+
+            $this->store($company, $this->create($company, $account, $pence, $start, $live), 'billing.dd_subscription_replaced', $account, $reason, ['replaced' => $live]);
+
+            return 'replaced';
+        }
+
+        if ($remote->status === SubscriptionStatus::Paused) {
+            $this->store($company, $this->client->resumeSubscription($live), 'billing.dd_subscription_resumed', $account, $reason);
+
+            return 'resumed';
+        }
+
+        return null;
     }
 
     private function replace(Company $company, BillingAccount $account, string $live, int $pence, ?CarbonImmutable $periodStart, string $reason): void

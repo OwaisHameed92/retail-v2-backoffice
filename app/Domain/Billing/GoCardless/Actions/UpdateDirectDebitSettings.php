@@ -3,6 +3,7 @@
 namespace App\Domain\Billing\GoCardless\Actions;
 
 use App\Domain\Billing\Enums\BillingMode;
+use App\Domain\Billing\Enums\SetupFeeMethod;
 use App\Domain\Billing\GoCardless\Contracts\GoCardlessClient;
 use App\Domain\Billing\GoCardless\Data\DirectDebitSettingsInput;
 use App\Domain\Billing\GoCardless\GoCardlessException;
@@ -17,8 +18,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 /**
- * Saves how a company pays: upfront cash or Direct Debit, its setup fee override, how the setup fee is paid and
- * in how many instalments. Moving to upfront cancels a live GoCardless subscription; moving to Direct Debit with a
+ * Saves how a company pays: upfront cash or Direct Debit, its setup fee override and in how many instalments (the
+ * setup fee is always paid by hand: owner rule 2026-10-05). Moving to upfront cancels a live GoCardless subscription; moving to Direct Debit with a
  * working mandate creates it. The setup fee cannot change once invoiced. Audited.
  */
 class UpdateDirectDebitSettings
@@ -37,7 +38,7 @@ class UpdateDirectDebitSettings
         $account = DB::transaction(function () use ($company, $input) {
             $account = $this->accounts->lock($company);
             $override = $input->setupFeeOverride === null ? null : Money::normalise($input->setupFeeOverride);
-            $feeChanged = $override !== $account->setup_fee_override || $input->instalments !== $account->setup_fee_instalments || $input->setupFeeMethod !== $account->setup_fee_method;
+            $feeChanged = $override !== $account->setup_fee_override || $input->instalments !== $account->setup_fee_instalments;
 
             if ($account->setup_fee_invoiced_at !== null && $feeChanged) {
                 throw ValidationException::withMessages(['setup_fee_override' => 'The setup fee is already invoiced, so it cannot change. Void or credit those invoices instead.']);
@@ -46,7 +47,7 @@ class UpdateDirectDebitSettings
             $account->fill([
                 'billing_mode' => $input->mode,
                 'setup_fee_override' => $override,
-                'setup_fee_method' => $input->setupFeeMethod,
+                'setup_fee_method' => SetupFeeMethod::Manual,
                 'setup_fee_instalments' => max(1, min((int) config('billing.direct_debit.max_instalments', 12), $input->instalments)),
             ]);
 

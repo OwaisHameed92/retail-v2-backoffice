@@ -1,9 +1,13 @@
 <?php
 
+use App\Domain\Billing\Actions\RecordUpfrontPayment;
 use App\Domain\Billing\Actions\UpdateBillingSettings;
 use App\Domain\Billing\Data\BillingSettingsInput;
+use App\Domain\Billing\Data\UpfrontPayment;
 use App\Domain\Billing\Enums\BillingCycle;
 use App\Domain\Billing\Enums\InvoiceKind;
+use App\Domain\Billing\Enums\InvoiceStatus;
+use App\Domain\Billing\Enums\PaymentMethod;
 use App\Domain\Billing\Enums\SetupFeeMethod;
 use App\Domain\Billing\GoCardless\Actions\ChargeSetupFee;
 use App\Domain\Billing\GoCardless\Enums\MandateStatus;
@@ -11,6 +15,8 @@ use App\Domain\Billing\GoCardless\Enums\SubscriptionStatus;
 use App\Domain\Billing\GoCardless\Models\GoCardlessPayment;
 use App\Domain\Billing\GoCardless\Support\SetupFee;
 use App\Domain\Billing\Models\Invoice;
+use App\Domain\Billing\Models\Payment;
+use App\Domain\Billing\Support\SetupFeeState;
 use App\Domain\Mail\Mailables\DirectDebitSetupMail;
 use App\Domain\Mail\Mailables\InvoiceMail;
 use App\Domain\Shared\Models\AuditLog;
@@ -110,26 +116,30 @@ test('an upfront business cannot be sent the setup email', function () {
     expect(fn () => $this->sendSetupEmail($company))->toThrow(ValidationException::class, 'pays upfront');
 });
 
-test('completing the mandate by webhook charges the setup fee and starts the subscription', function () {
+test('completing the mandate never charges the setup fee by Direct Debit; the subscription starts once the setup fee is recorded', function () {
     $company = $this->directDebitTenant(setupFee: '349.00');
     $mandateId = $this->setUpMandate($company);
     $account = $this->billingAccountOf($company);
 
+    // Owner rule (2026-10-05): the setup fee is paid by hand only, and the Direct Debit waits for it.
     expect($account->gc_mandate_id)->toBe($mandateId)
         ->and($account->gc_mandate_status)->toBe(MandateStatus::PendingSubmission)
-        ->and($account->setup_fee_invoiced_at)->not->toBeNull();
+        ->and($account->setup_fee_invoiced_at)->toBeNull()
+        ->and(Invoice::withoutCompanyScope()->count())->toBe(0)
+        ->and($this->gc->payments)->toBe([])
+        ->and($this->gc->subscriptions)->toBe([]);
 
-    // Setup fee: one invoice, collected on the mandate's first possible day.
+    // Card payment on our machine, recorded by an admin: setup fee invoice paid, the subscription starts.
+    app(RecordUpfrontPayment::class)->handle($company, new UpfrontPayment(null, PaymentMethod::Card, 'Terminal 4411'));
+
     $setup = Invoice::withoutCompanyScope()->where('kind', InvoiceKind::SetupFee->value)->sole();
-    $row = GoCardlessPayment::withoutCompanyScope()->sole();
     expect($setup->total)->toBe('418.80')
-        ->and($row->invoice_id)->toBe($setup->id)
-        ->and($row->amount)->toBe('418.80')
-        ->and($this->gc->payments[$row->gc_payment_id]->amountPence)->toBe(41880)
-        ->and($setup->due_date->format('Y-m-d'))->toBe($row->charge_date->format('Y-m-d'));
-    Mail::assertQueued(InvoiceMail::class, fn (InvoiceMail $mail) => $mail->data->directDebitOn?->format('Y-m-d') === $row->charge_date->format('Y-m-d'));
+        ->and($setup->status)->toBe(InvoiceStatus::Paid)
+        ->and(Payment::withoutCompanyScope()->sole()->method)->toBe(PaymentMethod::Card)
+        ->and($this->gc->oneOffPayments())->toBe([]);
 
-    // Subscription: 2 tills × £25.00 + 20% VAT = £60.00 a month, from the next period (1 Nov).
+    // Subscription: 2 tills × £25.00 + 20% VAT = £60.00 a month, from the next period (1 Nov). No setup fee in it.
+    $account = $this->billingAccountOf($company);
     $subscription = $this->gc->lastSubscription();
     expect($subscription->amountPence)->toBe(6000)
         ->and($subscription->intervalUnit)->toBe('monthly')
@@ -142,20 +152,29 @@ test('completing the mandate by webhook charges the setup fee and starts the sub
     $this->get(URL::temporarySignedRoute('direct-debit.done', now()->addHour(), ['company' => $company->id]))->assertOk();
     $this->webhook([$this->gcEvent('mandates', 'active', ['mandate' => $mandateId])])->assertOk();
     expect($this->gc->subscriptions)->toHaveCount(1)
-        ->and(GoCardlessPayment::withoutCompanyScope()->count())->toBe(1);
+        ->and($this->gc->payments)->toBe([]);
 });
 
-test('setup fee instalments are separate Direct Debit payments, each with its invoice', function () {
+test('setup fee instalments are invoices paid by hand a month apart; the first one starts the Direct Debit', function () {
     $company = $this->directDebitTenant(setupFee: '300.00', instalments: 3);
     $this->setUpMandate($company);
+    expect($this->gc->subscriptions)->toBe([]);
 
-    $rows = GoCardlessPayment::withoutCompanyScope()->orderBy('charge_date')->get();
+    app(RecordUpfrontPayment::class)->handle($company, new UpfrontPayment(null, PaymentMethod::Cash));
 
-    expect($rows)->toHaveCount(3)
-        ->and($rows->pluck('amount')->all())->toBe(['120.00', '120.00', '120.00'])
-        ->and($rows->pluck('instalment')->all())->toBe([1, 2, 3])
-        ->and($rows->pluck('invoice_id')->unique())->toHaveCount(3)
-        ->and($rows[1]->charge_date->format('Y-m-d'))->toBe($rows[0]->charge_date->addMonthNoOverflow()->format('Y-m-d'));
+    $invoices = Invoice::withoutCompanyScope()->where('kind', InvoiceKind::SetupFee->value)->orderBy('due_date')->get();
+    expect($invoices)->toHaveCount(3)
+        ->and($invoices->pluck('total')->all())->toBe(['120.00', '120.00', '120.00'])
+        ->and($invoices->pluck('status')->all())->toBe([InvoiceStatus::Paid, InvoiceStatus::Issued, InvoiceStatus::Issued])
+        ->and($invoices[2]->due_date->format('Y-m-d'))->toBe($invoices[1]->due_date->addMonthNoOverflow()->format('Y-m-d'))
+        ->and($this->gc->oneOffPayments())->toBe([])
+        ->and($this->gc->lastSubscription()?->amountPence)->toBe(6000);
+
+    // The next instalment, by bank transfer: the oldest unpaid one is paid.
+    app(RecordUpfrontPayment::class)->handle($company, new UpfrontPayment(null, PaymentMethod::BankTransfer));
+    expect($this->fresh($invoices[1])->status)->toBe(InvoiceStatus::Paid)
+        ->and($this->fresh($invoices[2])->status)->toBe(InvoiceStatus::Issued)
+        ->and(SetupFeeState::for($company, $this->billingAccountOf($company))->status)->toBe(SetupFeeState::PART_PAID);
 });
 
 test('the subscription follows the live tills and the billing cycle', function () {

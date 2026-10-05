@@ -1,9 +1,9 @@
-import { formatDate } from '@/components/admin/billing/format';
+import { formatDate, formatDay } from '@/components/admin/billing/format';
 import { PricingDialog } from '@/components/admin/billing/pricing-dialog';
-import { type CompanyRef, type DirectDebitData } from '@/components/admin/billing/types';
+import { type CompanyRef, type DirectDebitData, type SetupFeeStatus } from '@/components/admin/billing/types';
 import { emptyUpfront, type OnboardingBillingOptions, UpfrontPaymentFields } from '@/components/admin/billing/upfront-payment-fields';
 import { SectionCard } from '@/components/shared/section-card';
-import { StatusPill } from '@/components/shared/status-badge';
+import { StatusPill, type StatusTone } from '@/components/shared/status-badge';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useForm } from '@inertiajs/react';
@@ -25,23 +25,30 @@ interface PricingPanelProps {
     canManage: boolean;
 }
 
-/** Tenant Billing tab (module 1.13): how the business is priced (plan or its own override) and its upfront payment. */
+const feeTones: Record<SetupFeeStatus, StatusTone> = { none: 'neutral', unpaid: 'warning', partPaid: 'info', paid: 'success' };
+
+/**
+ * Tenant Billing tab (owner rules 2026-10-05): the plan type and pricing, the setup fee (upfront, always paid by hand)
+ * and the monthly or yearly fee (always by Direct Debit) with the mandate and the next collection.
+ */
 export function PricingPanel({ company, directDebit, canManage }: PricingPanelProps) {
     const [dialog, setDialog] = useState<'pricing' | 'upfront' | null>(null);
     const close = (open: boolean) => !open && setDialog(null);
-    const { pricing, upfront, setupFee } = directDebit;
+    const { pricing, upfront, mandate, subscription, planType } = directDebit;
+    const cycleLabel = pricing.per === 'per year' ? 'Yearly' : 'Monthly';
+    const byDirectDebit = directDebit.mode === 'directDebit';
 
     return (
         <SectionCard
-            title="Pricing and upfront payment"
-            description="What the business pays each cycle, and what it paid when it joined."
+            title="Plan and payments"
+            description="The setup fee is paid by hand (cash, card or bank transfer). The monthly or yearly fee is collected by Direct Debit."
             actions={
                 canManage ? (
                     <div className="flex flex-wrap gap-2">
                         {upfront.canRecord && (
                             <Button size="sm" variant="outline" onClick={() => setDialog('upfront')}>
                                 <Banknote />
-                                Record upfront payment
+                                Record setup fee payment
                             </Button>
                         )}
                         <Button size="sm" variant="outline" onClick={() => setDialog('pricing')}>
@@ -53,33 +60,58 @@ export function PricingPanel({ company, directDebit, canManage }: PricingPanelPr
             }
         >
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                <Tile label="Pricing">
+                <Tile label="Plan">
                     <span className="inline-flex flex-wrap items-center gap-2 font-medium">
-                        {pricing.modeLabel}
-                        {pricing.overridden && <StatusPill tone="info">Custom</StatusPill>}
+                        {pricing.plan?.name ?? 'No plan'}
+                        {pricing.overridden && <StatusPill tone="info">Custom pricing</StatusPill>}
                     </span>
-                    <span className="text-muted-foreground text-sm tabular-nums">
-                        {pricing.unitPrice ? `${pricing.unitPrice} per ${pricing.unit} ${pricing.per}` : 'Mixed plan prices'}
-                        {pricing.plan ? ` · ${pricing.plan.name}` : ''}
+                    <span className="text-muted-foreground text-sm">{planType?.label ?? pricing.modeLabel}</span>
+                    {!pricing.recurringIsZero && (
+                        <span className="text-muted-foreground text-sm tabular-nums">
+                            {pricing.unitPrice ? `${pricing.unitPrice} per ${pricing.unit} ${pricing.per}` : 'Mixed plan prices'}
+                        </span>
+                    )}
+                </Tile>
+                <Tile label="Setup fee (upfront)">
+                    <span className="inline-flex flex-wrap items-center gap-2 font-medium tabular-nums">
+                        {upfront.status === 'none' ? (upfront.recorded ? upfront.amount : '£0.00') : upfront.total}
+                        <StatusPill tone={feeTones[upfront.status]}>{upfront.statusLabel}</StatusPill>
+                    </span>
+                    <span className="text-muted-foreground text-sm">
+                        {upfront.status === 'paid' || (upfront.status === 'none' && upfront.recorded)
+                            ? `${upfront.method ?? 'Recorded'}${upfront.recordedAt ? ` · ${formatDate(upfront.recordedAt)}` : ''}`
+                            : upfront.status === 'none'
+                              ? 'Nothing to pay'
+                              : `${upfront.owed} to pay by cash, card or bank transfer${upfront.nextDue ? ` · next due ${formatDay(upfront.nextDue)}` : ''}`}
                     </span>
                 </Tile>
-                <Tile label="Each cycle">
+                <Tile label={`${cycleLabel} fee`}>
                     <span className="font-medium tabular-nums">
-                        {pricing.recurringIsZero ? 'Nothing to pay' : `${pricing.recurring} ${pricing.per}`}
+                        {pricing.recurringIsZero ? 'Nothing recurring' : `${pricing.recurring} ${byDirectDebit ? 'by Direct Debit' : pricing.per}`}
                     </span>
-                    <span className="text-muted-foreground text-sm">
-                        {pricing.recurringIsZero ? 'No Direct Debit needed' : `${pricing.unitsLabel}, VAT included`}
-                    </span>
-                </Tile>
-                <Tile label="Upfront payment">
-                    <span className="font-medium tabular-nums">{upfront.recorded ? upfront.amount : 'Not recorded'}</span>
-                    <span className="text-muted-foreground text-sm">
-                        {upfront.recorded && upfront.recordedAt
-                            ? `${upfront.method} · ${formatDate(upfront.recordedAt)}`
-                            : setupFee.invoicedAt
-                              ? 'Setup fee invoiced separately'
-                              : 'Setup fee collected by Direct Debit unless recorded here'}
-                    </span>
+                    {pricing.recurringIsZero ? (
+                        <span className="text-muted-foreground text-sm">No Direct Debit needed</span>
+                    ) : byDirectDebit ? (
+                        <>
+                            <span className="inline-flex flex-wrap items-center gap-2 text-sm">
+                                Mandate
+                                <StatusPill tone={mandate.usable ? 'success' : mandate.lostAt ? 'danger' : 'warning'}>
+                                    {mandate.statusLabel}
+                                </StatusPill>
+                            </span>
+                            <span className="text-muted-foreground text-sm">
+                                {subscription.live && subscription.nextChargeDate
+                                    ? `Next collection ${formatDay(subscription.nextChargeDate)} · ${subscription.amount ?? pricing.recurring}`
+                                    : upfront.status === 'unpaid'
+                                      ? 'Starts once the setup fee is paid'
+                                      : mandate.usable
+                                        ? 'Subscription not running'
+                                        : 'No collection until the mandate is set up'}
+                            </span>
+                        </>
+                    ) : (
+                        <span className="text-muted-foreground text-sm">Paid by hand (exception), {pricing.unitsLabel}</span>
+                    )}
                 </Tile>
             </div>
 
@@ -105,15 +137,13 @@ function UpfrontBody({
     onOpenChange: (open: boolean) => void;
 }) {
     const { data, setData, post, processing, errors } = useForm({ ...emptyUpfront, upfront_record: true });
+    const { upfront } = directDebit;
     const options: OnboardingBillingOptions = {
         canRecord: true,
         setupFees: {},
         vatRate: directDebit.setupFee.vatRate,
         deadlineDays: 0,
-        methods: [
-            { value: 'cash', label: 'Cash' },
-            { value: 'bankTransfer', label: 'Bank transfer' },
-        ],
+        methods: upfront.methods,
     };
 
     const submit: FormEventHandler = (event) => {
@@ -125,9 +155,12 @@ function UpfrontBody({
         <DialogContent className="sm:max-w-lg" onInteractOutside={(event) => processing && event.preventDefault()}>
             <form onSubmit={submit} className="grid gap-5" noValidate>
                 <DialogHeader>
-                    <DialogTitle>Record the upfront payment</DialogTitle>
+                    <DialogTitle>Record a setup fee payment</DialogTitle>
                     <DialogDescription>
-                        {company.name} gets a paid setup fee invoice by email. The setup fee is then never collected by Direct Debit.
+                        {upfront.invoiced
+                            ? `Pays the next unpaid part of ${company.name}'s setup fee (${upfront.owed} still to pay). The paid invoice is emailed as the receipt.`
+                            : `${company.name} gets a paid setup fee invoice by email as the receipt.`}{' '}
+                        The setup fee is never taken by Direct Debit.
                     </DialogDescription>
                 </DialogHeader>
                 <UpfrontPaymentFields
@@ -137,6 +170,7 @@ function UpfrontBody({
                     options={options}
                     planFee={directDebit.setupFee.plan}
                     toggle={false}
+                    amountLocked={upfront.invoiced}
                     idPrefix="tab-upfront"
                 />
                 <DialogFooter className="gap-2">

@@ -23,7 +23,17 @@ export interface PortalBillingProps {
         vatApplies: boolean;
         isZero: boolean;
     };
-    upfront: { recorded: boolean; amount: string | null; method: string | null; recordedAt: string | null };
+    /** The setup fee (upfront): one thing, always paid by hand. Money formatted, VAT included. */
+    upfront: {
+        recorded: boolean;
+        amount: string | null;
+        method: string | null;
+        recordedAt: string | null;
+        status: 'none' | 'unpaid' | 'partPaid' | 'paid';
+        statusLabel: string;
+        total: string;
+        owed: string;
+    };
     directDebit: {
         directDebit: boolean;
         available: boolean;
@@ -57,7 +67,7 @@ export interface PortalBillingProps {
     collections: { id: string; chargeDate: string | null; amount: string; what: string; statusLabel: string }[];
     setupFee: {
         charged: boolean;
-        method: 'directDebit' | 'manual' | null;
+        method: 'manual' | null;
         total: string;
         parts: { label: string; dueDate: string | null; amount: string; status: string; statusLabel: string; number: string | null }[];
     } | null;

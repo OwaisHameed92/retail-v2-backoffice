@@ -5,8 +5,10 @@ namespace App\Http\Requests\Admin;
 use App\Domain\Admin\Enums\AdminRole;
 use App\Domain\Plans\Data\PlanInput;
 use App\Domain\Plans\Enums\Feature;
+use App\Domain\Plans\Enums\PlanBillingType;
 use App\Domain\Plans\Enums\PricingMode;
 use App\Domain\Plans\Models\Plan;
+use App\Domain\Shared\Support\Money;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -41,6 +43,15 @@ abstract class PlanRequest extends FormRequest
             'features' => $this->input('features', []),
             'pricing_mode' => $this->input('pricing_mode', PricingMode::PerTill->value),
         ]);
+
+        // The plan type decides which prices apply: setup only has no recurring price, recurring only no fee.
+        $type = PlanBillingType::tryFrom((string) $this->input('billing_type'));
+
+        if ($type === PlanBillingType::SetupOnly) {
+            $this->merge(['price_monthly' => '0', 'price_yearly' => '0']);
+        } elseif ($type === PlanBillingType::RecurringOnly) {
+            $this->merge(['setup_fee' => '0']);
+        }
     }
 
     /**
@@ -56,6 +67,7 @@ abstract class PlanRequest extends FormRequest
             ],
             'description' => ['nullable', 'string', 'max:500'],
             'pricing_mode' => ['required', Rule::enum(PricingMode::class)],
+            'billing_type' => ['nullable', Rule::enum(PlanBillingType::class)],
             'price_monthly' => ['required', 'string', 'regex:'.self::MONEY_PATTERN],
             'price_yearly' => ['required', 'string', 'regex:'.self::MONEY_PATTERN],
             'setup_fee' => ['required', 'string', 'regex:'.self::MONEY_PATTERN],
@@ -68,6 +80,31 @@ abstract class PlanRequest extends FormRequest
             'is_public' => ['required', 'boolean'],
             'sort_order' => ['required', 'integer', 'min:0', 'max:9999'],
         ];
+    }
+
+    /**
+     * A setup fee plan needs a fee above £0; a recurring plan needs a monthly or yearly price above £0.
+     *
+     * @return list<callable>
+     */
+    public function after(): array
+    {
+        return [function ($validator) {
+            $type = PlanBillingType::tryFrom((string) $this->input('billing_type'));
+            $positive = fn (string $key) => is_string($this->input($key)) && preg_match(self::MONEY_PATTERN, $this->input($key)) === 1 && ! Money::isZero($this->input($key));
+
+            if ($type === null || $validator->errors()->isNotEmpty()) {
+                return;
+            }
+
+            if ($type->hasSetupFee() && ! $positive('setup_fee')) {
+                $validator->errors()->add('setup_fee', 'Enter the setup fee (above £0.00) for this plan type, or choose "Monthly or yearly only".');
+            }
+
+            if ($type->recurs() && ! $positive('price_monthly') && ! $positive('price_yearly')) {
+                $validator->errors()->add('price_monthly', 'Enter a monthly or yearly price above £0.00, or choose "Setup fee only".');
+            }
+        }];
     }
 
     /**
@@ -123,6 +160,7 @@ abstract class PlanRequest extends FormRequest
             sortOrder: $this->integer('sort_order'),
             setupFee: $this->string('setup_fee')->value(),
             pricingMode: PricingMode::from($this->string('pricing_mode')->value()),
+            billingType: PlanBillingType::tryFrom($this->string('billing_type')->value()),
         );
     }
 

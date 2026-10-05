@@ -42,12 +42,15 @@ const columns: ColumnDef<PlanRow>[] = [
         header: 'Monthly / unit',
         enableSorting: true,
         meta: { align: 'right' },
-        cell: ({ row }) => (
-            <span className="font-medium tabular-nums">
-                {formatMoney(row.original.priceMonthly)}
-                <span className="text-muted-foreground font-normal"> / {row.original.pricingMode === 'perBranch' ? 'branch' : 'till'}</span>
-            </span>
-        ),
+        cell: ({ row }) =>
+            row.original.billingType === 'setupOnly' ? (
+                <span className="text-muted-foreground">Setup fee only</span>
+            ) : (
+                <span className="font-medium tabular-nums">
+                    {formatMoney(row.original.priceMonthly)}
+                    <span className="text-muted-foreground font-normal"> / {row.original.pricingMode === 'perBranch' ? 'branch' : 'till'}</span>
+                </span>
+            ),
     },
     {
         id: 'price_yearly',

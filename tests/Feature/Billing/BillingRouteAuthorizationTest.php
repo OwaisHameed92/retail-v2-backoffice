@@ -313,7 +313,7 @@ test('the payment list and payment page', function () {
         ->assertInertia(fn (AssertableInertia $page) => $page->component('admin/billing/payments/index')
             ->has('payments.data', 2)
             ->where('totals', ['count' => 2, 'amount' => '£62.50'])
-            ->has('manualMethods', 3)
+            ->has('manualMethods', 4)
             ->where('canManage', true));
 
     $this->actingAs($admin, 'admin')->get(route('admin.billing.payments.index', ['method' => 'bankTransfer']))

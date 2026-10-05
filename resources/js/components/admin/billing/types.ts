@@ -2,7 +2,7 @@ import { type Paginated } from '@/components/shared/data-table';
 
 export type InvoiceStatus = 'draft' | 'issued' | 'partiallyPaid' | 'paid' | 'overdue' | 'void';
 
-export type PaymentMethod = 'cash' | 'bankTransfer' | 'other' | 'online' | 'directDebit';
+export type PaymentMethod = 'cash' | 'card' | 'bankTransfer' | 'other' | 'online' | 'directDebit';
 
 export type BillingCycle = 'monthly' | 'yearly';
 
@@ -207,6 +207,10 @@ export type BillingMode = 'upfrontCash' | 'directDebit';
 
 export type SetupFeeMethod = 'manual' | 'directDebit';
 
+export type SetupFeeStatus = 'none' | 'unpaid' | 'partPaid' | 'paid';
+
+export type PlanBillingType = 'setupOnly' | 'setupAndRecurring' | 'recurringOnly';
+
 /** One GoCardless payment (DirectDebitData::for). Money formatted, dates "YYYY-MM-DD". */
 export interface DirectDebitPaymentRow {
     id: string;
@@ -282,7 +286,24 @@ export interface DirectDebitData {
         per: string;
         options: Option<PricingMode>[];
     };
-    upfront: { recorded: boolean; amount: string | null; method: string | null; recordedAt: string | null; canRecord: boolean };
+    /** Owner rules 2026-10-05: setup only, setup + recurring, or recurring only. */
+    planType: { value: PlanBillingType; label: string } | null;
+    /** The setup fee (upfront): one thing, always paid by hand (cash, card or bank transfer). */
+    upfront: {
+        recorded: boolean;
+        amount: string | null;
+        method: string | null;
+        recordedAt: string | null;
+        canRecord: boolean;
+        status: SetupFeeStatus;
+        statusLabel: string;
+        /** Formatted, VAT included. */
+        total: string;
+        owed: string;
+        invoiced: boolean;
+        nextDue: string | null;
+        methods: Option<string>[];
+    };
     /** Waiting for the customer's first mandate: the deadline (null when none is needed). */
     deadline: MandateDeadline | null;
 }

@@ -1,22 +1,30 @@
 import { PlanFeaturePicker } from '@/components/admin/plans/plan-feature-picker';
 import { CheckboxRow, Field, FormSection, MoneyInput, NumberInput } from '@/components/admin/plans/plan-form-fields';
 import { formatMoney, slugify, yearlySaving } from '@/components/admin/plans/plan-format';
-import { type FeatureOption, type PlanRecord } from '@/components/admin/plans/types';
+import { type FeatureOption, type PlanBillingType, type PlanRecord } from '@/components/admin/plans/types';
 import { FormCard } from '@/components/shared/form-section';
 import { StickyFormBar } from '@/components/shared/sticky-form-bar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { cn } from '@/lib/utils';
 import { Link } from '@inertiajs/react';
 import { LoaderCircle } from 'lucide-react';
 import { useState, type FormEventHandler } from 'react';
+
+const PLAN_TYPES: { value: PlanBillingType; label: string; description: string }[] = [
+    { value: 'setupOnly', label: 'Setup fee only', description: 'One payment by hand. Once paid in full the licence does not expire.' },
+    { value: 'setupAndRecurring', label: 'Setup fee + monthly', description: 'Setup fee paid by hand, then a Direct Debit each month or year.' },
+    { value: 'recurringOnly', label: 'Monthly only', description: 'No setup fee. A Direct Debit each month or year.' },
+];
 
 export interface PlanFormData {
     name: string;
     code: string;
     description: string;
     pricing_mode: string;
+    billing_type: PlanBillingType;
     price_monthly: string;
     price_yearly: string;
     setup_fee: string;
@@ -39,6 +47,7 @@ export function planFormDefaults(
         code: plan?.code ?? '',
         description: plan?.description ?? '',
         pricing_mode: plan?.pricingMode ?? 'perTill',
+        billing_type: plan?.billingType ?? 'setupAndRecurring',
         price_monthly: plan?.priceMonthly ?? '',
         price_yearly: plan?.priceYearly ?? '',
         setup_fee: plan?.setupFee ?? '0.00',
@@ -82,6 +91,8 @@ export function PlanForm({
     const [codeTouched, setCodeTouched] = useState(!autoCode);
     const saving = yearlySaving(data.price_monthly, data.price_yearly);
     const unit = data.pricing_mode === 'perBranch' ? 'branch' : 'till';
+    const recurs = data.billing_type !== 'setupOnly';
+    const hasSetupFee = data.billing_type !== 'recurringOnly';
 
     const changeName = (name: string) => {
         setData('name', name);
@@ -141,92 +152,130 @@ export function PlanForm({
                 </FormSection>
 
                 <FormSection
-                    title="Pricing"
-                    description="Price per till or per branch and the one-off setup fee, in pounds (GBP). A business can have its own pricing on its Billing tab."
+                    title="Plan type"
+                    description="How the customer pays. The setup fee is always paid by hand (cash, card or bank transfer); the monthly or yearly fee is always collected by Direct Debit."
                 >
+                    <div role="radiogroup" aria-label="Plan type" className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                        {PLAN_TYPES.map((type) => {
+                            const selected = data.billing_type === type.value;
+
+                            return (
+                                <button
+                                    key={type.value}
+                                    type="button"
+                                    role="radio"
+                                    aria-checked={selected}
+                                    onClick={() => setData('billing_type', type.value)}
+                                    className={cn(
+                                        'grid gap-1 rounded-lg border p-3.5 text-left transition-colors',
+                                        selected ? 'border-primary bg-primary/5 ring-primary/30 ring-2' : 'hover:bg-subtle',
+                                    )}
+                                >
+                                    <span className="text-sm font-medium">{type.label}</span>
+                                    <span className="text-muted-foreground text-[13px]">{type.description}</span>
+                                </button>
+                            );
+                        })}
+                    </div>
+                    {errors.billing_type && <p className="text-danger-foreground text-[13px]">{errors.billing_type}</p>}
+                </FormSection>
+
+                <FormSection title="Pricing" description="In pounds (GBP), before VAT. A business can have its own pricing on its Billing tab.">
                     <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-                        <Field
-                            id="pricing_mode"
-                            label="Charge"
-                            error={errors.pricing_mode}
-                            help={
-                                unit === 'branch'
-                                    ? 'Each active branch pays one price, whatever its number of tills.'
-                                    : 'Each live till pays one price.'
-                            }
-                        >
-                            <Select value={data.pricing_mode} onValueChange={(value) => setData('pricing_mode', value)}>
-                                <SelectTrigger id="pricing_mode">
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="perTill">Per till</SelectItem>
-                                    <SelectItem value="perBranch">Per branch</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </Field>
-                        <div className="hidden sm:block" aria-hidden />
-                        <Field
-                            id="price_monthly"
-                            label={`Monthly price per ${unit}`}
-                            error={errors.price_monthly}
-                            help={`Charged each month for each ${unit}.`}
-                        >
-                            <MoneyInput
+                        {recurs && (
+                            <Field
+                                id="pricing_mode"
+                                label="Charge"
+                                error={errors.pricing_mode}
+                                help={
+                                    unit === 'branch'
+                                        ? 'Each active branch pays one price, whatever its number of tills.'
+                                        : 'Each live till pays one price.'
+                                }
+                            >
+                                <Select value={data.pricing_mode} onValueChange={(value) => setData('pricing_mode', value)}>
+                                    <SelectTrigger id="pricing_mode">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="perTill">Per till</SelectItem>
+                                        <SelectItem value="perBranch">Per branch</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </Field>
+                        )}
+                        {recurs && <div className="hidden sm:block" aria-hidden />}
+                        {recurs && (
+                            <Field
                                 id="price_monthly"
-                                required
-                                placeholder="30.00"
-                                value={data.price_monthly}
-                                invalid={!!errors.price_monthly}
-                                onChange={(e) => setData('price_monthly', e.target.value)}
-                            />
-                        </Field>
-                        <Field
-                            id="price_yearly"
-                            label={`Yearly price per ${unit}`}
-                            error={errors.price_yearly}
-                            help={
-                                saving && saving.percent !== null ? (
-                                    Number(saving.saving) > 0 ? (
-                                        <span className="tabular-nums">
-                                            Saves {formatMoney(saving.saving)} ({saving.percent}%) a year against paying monthly.
-                                        </span>
-                                    ) : Number(saving.saving) < 0 ? (
-                                        <span className="text-warning-foreground tabular-nums">
-                                            Costs more than 12 monthly payments ({formatMoney(String(-Number(saving.saving)))} extra).
-                                        </span>
-                                    ) : (
-                                        'Same as 12 monthly payments.'
-                                    )
-                                ) : (
-                                    `Charged once a year for each ${unit}.`
-                                )
-                            }
-                        >
-                            <MoneyInput
+                                label={`Monthly price per ${unit}`}
+                                error={errors.price_monthly}
+                                help={`Charged each month for each ${unit}.`}
+                            >
+                                <MoneyInput
+                                    id="price_monthly"
+                                    required
+                                    placeholder="30.00"
+                                    value={data.price_monthly}
+                                    invalid={!!errors.price_monthly}
+                                    onChange={(e) => setData('price_monthly', e.target.value)}
+                                />
+                            </Field>
+                        )}
+                        {recurs && (
+                            <Field
                                 id="price_yearly"
-                                required
-                                placeholder="300.00"
-                                value={data.price_yearly}
-                                invalid={!!errors.price_yearly}
-                                onChange={(e) => setData('price_yearly', e.target.value)}
-                            />
-                        </Field>
-                        <Field
-                            id="setup_fee"
-                            label="Setup fee"
-                            error={errors.setup_fee}
-                            help="Charged once per business, before VAT. 0 for none. Can be changed per customer on their Billing tab."
-                        >
-                            <MoneyInput
+                                label={`Yearly price per ${unit}`}
+                                error={errors.price_yearly}
+                                help={
+                                    saving && saving.percent !== null ? (
+                                        Number(saving.saving) > 0 ? (
+                                            <span className="tabular-nums">
+                                                Saves {formatMoney(saving.saving)} ({saving.percent}%) a year against paying monthly.
+                                            </span>
+                                        ) : Number(saving.saving) < 0 ? (
+                                            <span className="text-warning-foreground tabular-nums">
+                                                Costs more than 12 monthly payments ({formatMoney(String(-Number(saving.saving)))} extra).
+                                            </span>
+                                        ) : (
+                                            'Same as 12 monthly payments.'
+                                        )
+                                    ) : (
+                                        `Charged once a year for each ${unit}.`
+                                    )
+                                }
+                            >
+                                <MoneyInput
+                                    id="price_yearly"
+                                    required
+                                    placeholder="300.00"
+                                    value={data.price_yearly}
+                                    invalid={!!errors.price_yearly}
+                                    onChange={(e) => setData('price_yearly', e.target.value)}
+                                />
+                            </Field>
+                        )}
+                        {hasSetupFee && (
+                            <Field
                                 id="setup_fee"
-                                required
-                                placeholder="0.00"
-                                value={data.setup_fee}
-                                invalid={!!errors.setup_fee}
-                                onChange={(e) => setData('setup_fee', e.target.value)}
-                            />
-                        </Field>
+                                label="Setup fee (upfront)"
+                                error={errors.setup_fee}
+                                help={
+                                    recurs
+                                        ? 'Paid once per business, by hand, before the Direct Debit starts. Can be changed per customer on their Billing tab.'
+                                        : 'Paid once per business, by hand. Paid in full = a licence that does not expire.'
+                                }
+                            >
+                                <MoneyInput
+                                    id="setup_fee"
+                                    required
+                                    placeholder="0.00"
+                                    value={data.setup_fee}
+                                    invalid={!!errors.setup_fee}
+                                    onChange={(e) => setData('setup_fee', e.target.value)}
+                                />
+                            </Field>
+                        )}
                     </div>
                 </FormSection>
 
@@ -328,7 +377,7 @@ export function PlanForm({
                 </FormSection>
             </FormCard>
 
-            <StickyFormBar message={isDirty ? 'You have unsaved changes.' : 'Prices are in pounds, per till.'}>
+            <StickyFormBar message={isDirty ? 'You have unsaved changes.' : 'Prices are in pounds, before VAT.'}>
                 <Button variant="outline" asChild>
                     <Link href={cancelHref}>Cancel</Link>
                 </Button>

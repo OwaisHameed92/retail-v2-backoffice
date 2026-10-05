@@ -47,14 +47,26 @@ interface UpfrontPaymentFieldsProps {
     planFee: string;
     /** Show the "Took an upfront payment" checkbox (onboarding); off on the Billing tab dialog. */
     toggle?: boolean;
+    /** The setup fee is already invoiced (instalments): the amount is fixed, only method and reference are asked. */
+    amountLocked?: boolean;
     idPrefix?: string;
 }
 
 /**
- * The upfront payment staff took (module 1.13): the setup fee (the plan's unless changed; 0 = nothing to pay), cash
- * or bank transfer, and a reference. Used by the tenant wizard, the trial approval and the Billing tab.
+ * The setup fee (upfront) payment staff took: the setup fee (the plan's unless changed; 0 = nothing to pay), cash,
+ * card or bank transfer, and a reference. "Setup fee" and "upfront payment" are the same thing (owner, 2026-10-05).
+ * Used by the tenant wizard, the trial approval and the Billing tab.
  */
-export function UpfrontPaymentFields({ value, onChange, errors, options, planFee, toggle = true, idPrefix = 'upfront' }: UpfrontPaymentFieldsProps) {
+export function UpfrontPaymentFields({
+    value,
+    onChange,
+    errors,
+    options,
+    planFee,
+    toggle = true,
+    amountLocked = false,
+    idPrefix = 'upfront',
+}: UpfrontPaymentFieldsProps) {
     const shown = !toggle || value.upfront_record;
     const amount = value.upfront_amount.trim() === '' ? planFee : value.upfront_amount;
     const total = withVat(amount, options.vatRate);
@@ -69,9 +81,10 @@ export function UpfrontPaymentFields({ value, onChange, errors, options, planFee
                         onCheckedChange={(checked) => onChange('upfront_record', checked === true)}
                     />
                     <div className="grid gap-1">
-                        <Label htmlFor={`${idPrefix}-record`}>The business paid upfront</Label>
+                        <Label htmlFor={`${idPrefix}-record`}>The setup fee is paid now</Label>
                         <p className="text-muted-foreground text-sm">
-                            Records the setup fee as a paid invoice now. Leave unticked to collect it by Direct Debit once the owner sets it up.
+                            Records the setup fee (upfront) as a paid invoice: cash, card or bank transfer. Leave unticked if it is not paid yet; the
+                            tills then stay on the trial until it is recorded. It is never taken by Direct Debit.
                         </p>
                     </div>
                 </div>
@@ -79,23 +92,27 @@ export function UpfrontPaymentFields({ value, onChange, errors, options, planFee
 
             {shown && (
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                    <Field
-                        id={`${idPrefix}-amount`}
-                        label="Setup fee (before VAT)"
-                        optional
-                        error={errors.upfront_amount}
-                        hint={
-                            total ? `Received: ${total}. Empty = the plan’s fee; 0 = nothing to pay.` : 'Empty = the plan’s fee; 0 = nothing to pay.'
-                        }
-                    >
-                        <MoneyInput
+                    {!amountLocked && (
+                        <Field
                             id={`${idPrefix}-amount`}
-                            placeholder={planFee}
-                            value={value.upfront_amount}
-                            invalid={!!errors.upfront_amount}
-                            onChange={(event) => onChange('upfront_amount', event.target.value)}
-                        />
-                    </Field>
+                            label="Setup fee (before VAT)"
+                            optional
+                            error={errors.upfront_amount}
+                            hint={
+                                total
+                                    ? `Received: ${total}. Empty = the plan’s fee; 0 = nothing to pay.`
+                                    : 'Empty = the plan’s fee; 0 = nothing to pay.'
+                            }
+                        >
+                            <MoneyInput
+                                id={`${idPrefix}-amount`}
+                                placeholder={planFee}
+                                value={value.upfront_amount}
+                                invalid={!!errors.upfront_amount}
+                                onChange={(event) => onChange('upfront_amount', event.target.value)}
+                            />
+                        </Field>
+                    )}
                     <Field id={`${idPrefix}-method`} label="Paid by" error={errors.upfront_method}>
                         <Select value={value.upfront_method} onValueChange={(method) => onChange('upfront_method', method)}>
                             <SelectTrigger id={`${idPrefix}-method`}>
@@ -131,8 +148,9 @@ export function OnboardingBillingNote({ options }: { options: OnboardingBillingO
     return (
         <p className="text-muted-foreground text-sm">
             The owner sets up their Direct Debit from Billing in the portal (the welcome email links to it) within {options.deadlineDays}{' '}
-            {options.deadlineDays === 1 ? 'day' : 'days'}, or the tills lock until they do. Not needed when nothing is charged each cycle.
-            {!options.canRecord && ' Only owner and accounts staff can record an upfront payment; the setup fee is then collected by Direct Debit.'}
+            {options.deadlineDays === 1 ? 'day' : 'days'}, or the tills lock until they do. Not needed when nothing is charged each cycle. The Direct
+            Debit collects the monthly or yearly fee only; the setup fee is always paid by hand.
+            {!options.canRecord && ' Only owner and accounts staff can record the setup fee payment; until they do, the tills stay on the trial.'}
         </p>
     );
 }

@@ -215,13 +215,20 @@ test('the owner sets up Direct Debit from the portal: GoCardless page, back to B
     // Back before GoCardless finished: "confirming".
     $this->actingAs($owner, 'web')->get('/app/billing/direct-debit/return')->assertRedirect(route('app.billing'))->assertSessionHas('success', fn (string $m) => str_contains($m, 'confirming'));
 
-    // Finished: the return completes it, the subscription starts.
+    // Finished: the return completes it. The £199 setup fee is not paid yet, so the subscription waits for it.
     $this->gc->fulfil($requestId);
     $this->actingAs($owner, 'web')->get('/app/billing/direct-debit/return')->assertSessionHas('success', fn (string $m) => str_contains($m, 'is set up'));
 
     $account = $this->billingAccountOf($company);
     expect($account->hasUsableMandate())->toBeTrue()
-        ->and($this->gc->lastSubscription()->amountPence)->toBe(6000);
+        ->and($this->gc->lastSubscription())->toBeNull()
+        ->and($this->gc->oneOffPayments())->toBe([]);
+
+    // Accounts record the setup fee taken on the card machine: the Direct Debit starts.
+    $this->actingAs($this->admin(AdminRole::Accounts), 'admin')
+        ->post(route('admin.billing.tenants.upfront', $company), ['upfront_method' => 'card'])->assertSessionHasNoErrors();
+    expect($this->gc->lastSubscription()->amountPence)->toBe(6000)
+        ->and($this->gc->oneOffPayments())->toBe([]);
 
     // Pressing the button again is refused.
     $this->actingAs($owner, 'web')->post('/app/billing/direct-debit')->assertSessionHasErrors('status');

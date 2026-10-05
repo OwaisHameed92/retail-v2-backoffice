@@ -2,9 +2,11 @@
 
 namespace App\Domain\Billing\GoCardless\Actions;
 
+use App\Domain\Billing\Actions\ApplySetupFeeTerms;
 use App\Domain\Billing\Actions\ReleaseBillingHolds;
-use App\Domain\Billing\Enums\SetupFeeMethod;
+use App\Domain\Billing\GoCardless\Contracts\GoCardlessClient;
 use App\Domain\Billing\GoCardless\Data\GcMandate;
+use App\Domain\Billing\GoCardless\Enums\SubscriptionStatus;
 use App\Domain\Billing\GoCardless\GoCardlessException;
 use App\Domain\Billing\GoCardless\Support\DirectDebitMailer;
 use App\Domain\Billing\Support\BillingAccounts;
@@ -13,24 +15,26 @@ use App\Domain\Tenancy\Models\Company;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Validation\ValidationException;
 
 /**
  * Applies a mandate's status to the company (webhook, return page or reconcile; idempotent).
  *
- * - Usable (pending submission, submitted, active) and new to us: store it, charge the setup fee (when it is
- *   collected by Direct Debit and not invoiced yet), create the subscription and lift a billing hold (the "no
- *   Direct Debit after the trial" suspension, an overdue flag) once nothing is overdue.
- * - Lost (cancelled, failed, expired…): remember when, email the owners and staff once; billing:run marks the
- *   company overdue after `billing.direct_debit.mandate_grace_days`.
+ * - Usable (pending submission, submitted, active) and new to us: store it, create the subscription (or move it
+ *   onto this mandate) and lift a billing hold (the "no Direct Debit" suspension, an overdue flag). The setup fee
+ *   is never collected here: it is always paid by hand (owner rule 2026-10-05).
+ * - Lost (cancelled, failed, expired…): treated like "no mandate" (owner rule 2026-10-05): a new deadline of
+ *   `billing.direct_debit.mandate_grace_days` starts, the subscription is paused, owners and staff are emailed
+ *   once, and billing:run suspends the business when the deadline passes without a new mandate.
  */
 class ApplyMandate
 {
     public function __construct(
         private readonly BillingAccounts $accounts,
-        private readonly ChargeSetupFee $chargeSetupFee,
         private readonly SyncSubscription $syncSubscription,
+        private readonly ApplySubscription $applySubscription,
+        private readonly GoCardlessClient $client,
         private readonly ReleaseBillingHolds $releaseHolds,
+        private readonly ApplySetupFeeTerms $setupFeeTerms,
         private readonly DirectDebitMailer $mailer,
         private readonly RecordAudit $audit,
     ) {}
@@ -80,6 +84,8 @@ class ApplyMandate
 
             if ($lostNow) {
                 $account->gc_mandate_lost_at = $now;
+                // Same as never having one: a new deadline, then suspension (EnforceDirectDebit).
+                $account->mandate_deadline_at = $now->addDays(self::graceDays());
             }
 
             $account->save();
@@ -96,11 +102,33 @@ class ApplyMandate
         }
 
         if ($outcome === 'lost') {
+            $this->pauseSubscription($company);
             $account = $this->accounts->for($company);
-            $this->mailer->mandateLost($company, $account, $now->addDays(max(0, (int) config('billing.direct_debit.mandate_grace_days', 3))));
+            $this->mailer->mandateLost($company, $account, $account->mandate_deadline_at ?? $now->addDays(self::graceDays()));
         }
 
         return $outcome;
+    }
+
+    public static function graceDays(): int
+    {
+        return max(0, (int) config('billing.direct_debit.mandate_grace_days', 3));
+    }
+
+    /** GoCardless cancels the subscriptions of a cancelled mandate itself; anything still live is paused. */
+    private function pauseSubscription(Company $company): void
+    {
+        $account = $this->accounts->for($company);
+
+        if ($account->gc_subscription_id === null || $account->gc_subscription_status !== SubscriptionStatus::Active) {
+            return;
+        }
+
+        try {
+            $this->applySubscription->handle($company, $this->client->pauseSubscription($account->gc_subscription_id));
+        } catch (GoCardlessException $exception) {
+            Log::info('Direct Debit subscription not paused after the mandate stopped', ['company_id' => $company->id, 'error' => $exception->getMessage()]);
+        }
     }
 
     private function finalise(Company $company): void
@@ -112,18 +140,15 @@ class ApplyMandate
         }
 
         try {
-            if ($account->setup_fee_invoiced_at === null && $account->setup_fee_method === SetupFeeMethod::DirectDebit) {
-                $this->chargeSetupFee->handle($company);
-            }
-        } catch (ValidationException) {
-            // No setup fee to charge.
-        }
-
-        try {
             $this->syncSubscription->handle($company, 'mandate');
         } catch (GoCardlessException $exception) {
             // The daily reconcile creates it; staff can also press "Update subscription".
             Log::warning('Direct Debit subscription could not be created', ['company_id' => $company->id, 'error' => $exception->getMessage()]);
+        }
+
+        // A mandate set up after (or just before) the trial end: the tills keep trading until the first collection.
+        if ($this->accounts->for($company)->hasLiveSubscription()) {
+            $this->setupFeeTerms->bridgeTrial($company);
         }
 
         $this->releaseHolds->handle($company);

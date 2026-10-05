@@ -17,8 +17,8 @@ use Illuminate\Support\Facades\DB;
 /**
  * Takes back money we recorded but did not keep (a Direct Debit charged back, module 1.12): every allocation of the
  * payment is released and nothing goes to credit, so the invoices it paid are owed again (a paid invoice goes back
- * to issued; billing:run marks it overdue after its due date, and the usual suspension follows). Licences already
- * renewed stay renewed until then. Once per payment.
+ * to issued; billing:run marks it overdue after its due date, and the usual suspension follows `suspend_after_days`
+ * after the reversal at the earliest). Licences already renewed stay renewed (a paid date is never shortened). Once per payment.
  */
 class ReversePayment
 {
@@ -57,6 +57,11 @@ class ReversePayment
                     $invoice->status = InvoiceStatus::Issued;
                     $invoice->paid_at = null;
                 }
+
+                // The suspension grace runs from now, not from a due date that may be weeks ago (a late chargeback),
+                // and a new suspension can follow even if this invoice suspended the company before.
+                $invoice->reopened_at = $now;
+                $invoice->suspension_triggered_at = null;
 
                 InvoiceBalance::refresh($invoice);
                 $reopened[] = $invoice->number;

@@ -72,17 +72,32 @@ export default function ShowPlan({ plan, features, activity }: ShowPlanProps) {
             )}
 
             <StatGrid>
+                {plan.billingType === 'setupOnly' ? (
+                    <StatCard
+                        label="Setup fee"
+                        value={formatMoney(plan.setupFee)}
+                        hint="Setup fee only, + VAT, paid by hand. Paid in full = a licence that does not expire."
+                        icon={PoundSterling}
+                    />
+                ) : (
+                    <StatCard
+                        label="Monthly price"
+                        value={formatMoney(plan.priceMonthly)}
+                        hint={
+                            plan.billingType === 'setupAndRecurring'
+                                ? `Per ${plan.pricingMode === 'perBranch' ? 'branch' : 'till'} by Direct Debit · setup fee ${formatMoney(plan.setupFee)} + VAT`
+                                : `Per ${plan.pricingMode === 'perBranch' ? 'branch' : 'till'} by Direct Debit · no setup fee`
+                        }
+                        icon={PoundSterling}
+                    />
+                )}
                 <StatCard
-                    label="Monthly price"
-                    value={formatMoney(plan.priceMonthly)}
-                    hint={
-                        Number(plan.setupFee) > 0
-                            ? `Per ${plan.pricingMode === 'perBranch' ? 'branch' : 'till'} · setup fee ${formatMoney(plan.setupFee)} + VAT`
-                            : `Per ${plan.pricingMode === 'perBranch' ? 'branch' : 'till'}, billed monthly · no setup fee`
-                    }
-                    icon={PoundSterling}
+                    label={plan.billingType === 'setupOnly' ? 'Plan type' : 'Yearly price'}
+                    value={plan.billingType === 'setupOnly' ? 'Setup only' : formatMoney(plan.priceYearly)}
+                    hint={plan.billingType === 'setupOnly' ? 'Nothing recurring, no Direct Debit' : yearlyHint(plan)}
+                    icon={CalendarRange}
+                    tone="success"
                 />
-                <StatCard label="Yearly price" value={formatMoney(plan.priceYearly)} hint={yearlyHint(plan)} icon={CalendarRange} tone="success" />
                 <StatCard
                     label="Free trial"
                     value={formatDays(plan.trialDays, 'No trial')}

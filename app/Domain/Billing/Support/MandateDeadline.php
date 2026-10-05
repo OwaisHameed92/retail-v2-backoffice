@@ -9,9 +9,10 @@ use App\Domain\Tenancy\Models\Company;
 use Carbon\CarbonImmutable;
 
 /**
- * The Direct Debit deadline (module 1.13): a Direct Debit business must have a working mandate within
- * `billing.direct_debit.mandate_deadline_days` (3) of onboarding, or billing:run suspends it until it has one. Not
- * needed while nothing recurs (£0 a cycle), nor once a mandate exists (a lost mandate has its own grace rule).
+ * The Direct Debit deadline (module 1.13, owner rules 2026-10-05): a Direct Debit business must have a working
+ * mandate within `billing.direct_debit.mandate_deadline_days` (3) of going live, or billing:run suspends it until it
+ * has one. A lost (cancelled, failed…) mandate is treated the same: ApplyMandate starts a new deadline of
+ * `mandate_grace_days`. Not needed while nothing recurs (£0 a cycle, e.g. a setup-only plan).
  */
 final class MandateDeadline
 {
@@ -30,10 +31,24 @@ final class MandateDeadline
     {
         return $account->isDirectDebit()
             && ! $account->hasUsableMandate()
-            && $account->gc_mandate_lost_at === null
             && $account->mandate_deadline_at !== null
             && ! $company->isCancelled()
             && ! Money::isZero(SubscriptionAmount::for($company, $account)['gross']);
+    }
+
+    /** A mandate is needed and the deadline has passed (the business is, or is about to be, suspended). */
+    public static function missed(Company $company, BillingAccount $account, ?CarbonImmutable $now = null): bool
+    {
+        return self::applies($company, $account) && $account->mandate_deadline_at !== null
+            && $account->mandate_deadline_at->lessThanOrEqualTo($now ?? CarbonImmutable::now());
+    }
+
+    /** The suspension reason: never set up, or set up and then stopped. */
+    public static function reason(BillingAccount $account): string
+    {
+        return $account->gc_mandate_lost_at !== null
+            ? 'Direct Debit '.mb_strtolower($account->gc_mandate_status?->label() ?? 'cancelled').' and not replaced'
+            : 'No Direct Debit set up';
     }
 
     /**

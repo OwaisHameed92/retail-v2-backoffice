@@ -4,7 +4,9 @@ namespace App\Http\Controllers\Admin\Billing;
 
 use App\Domain\Billing\Actions\RecordUpfrontPayment;
 use App\Domain\Billing\Actions\UpdateCompanyPricing;
+use App\Domain\Billing\Support\BillingAccounts;
 use App\Domain\Billing\Support\BillingFormat;
+use App\Domain\Billing\Support\SetupFeeState;
 use App\Domain\Tenancy\Models\Company;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\Billing\PricingRequest;
@@ -25,8 +27,11 @@ class TenantPricingController extends Controller
 
     public function upfront(UpfrontPaymentRequest $request, Company $company, RecordUpfrontPayment $record): RedirectResponse
     {
-        $account = $record->handle($company, $request->toPayment());
+        $record->handle($company, $request->toPayment());
+        $state = SetupFeeState::for($company, app(BillingAccounts::class)->for($company));
 
-        return back()->with('success', 'Upfront payment of '.BillingFormat::money((string) $account->upfront_amount).' recorded.');
+        return back()->with('success', $state->isSettled()
+            ? 'Setup fee payment recorded. The setup fee is paid.'
+            : 'Setup fee payment recorded. '.BillingFormat::money($state->owed()).' still to pay.');
     }
 }

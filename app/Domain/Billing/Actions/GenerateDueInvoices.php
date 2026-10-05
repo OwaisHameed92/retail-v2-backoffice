@@ -7,6 +7,7 @@ use App\Domain\Billing\Support\BillingAccounts;
 use App\Domain\Billing\Support\BillingPeriod;
 use App\Domain\Licensing\Actions\RenewCompanyLicences;
 use App\Domain\Licensing\Models\Licence;
+use App\Domain\Plans\Enums\PlanBillingType;
 use App\Domain\Tenancy\Enums\CompanyStatus;
 use App\Domain\Tenancy\Models\Company;
 use Carbon\CarbonImmutable;
@@ -17,8 +18,8 @@ use Illuminate\Validation\ValidationException;
  * billing:run step: creates the next invoice for every company whose tills run out (BillingPeriod::anchor)
  * within `billing.generate.days_before` days and that has no invoice (draft or issued, not void) for that next
  * period yet. Drafts for staff to review, or issued and emailed when `billing.generate.auto_issue` is on.
- * Idempotent: the overlap check stops a second invoice for the same period. Companies paying by Direct Debit
- * with a live GoCardless subscription are skipped (their invoices come with each GoCardless payment).
+ * Idempotent: the overlap check stops a second invoice for the same period. Companies paying by Direct Debit are
+ * skipped (their invoices come with each GoCardless payment), and so are setup-only plans (nothing recurs).
  */
 class GenerateDueInvoices
 {
@@ -50,11 +51,13 @@ class GenerateDueInvoices
                 continue;
             }
 
-            // Direct Debit (module 1.12): GoCardless creates the payment and the invoice comes with it. Without a
-            // live subscription (no mandate yet, or it was cancelled) the company is invoiced by hand as before.
+            // Owner rules (2026-10-05): the recurring fee of a Direct Debit business is only ever collected by
+            // Direct Debit (the invoice comes with each GoCardless payment); without a mandate the deadline and
+            // suspension rules apply instead of hand invoices. Staff can still raise one by hand as an exception.
+            // A setup-only plan has nothing recurring to invoice.
             $account = $this->accounts->for($company);
 
-            if ($account->isDirectDebit() && $account->hasLiveSubscription()) {
+            if ($account->isDirectDebit() || ApplySetupFeeTerms::planType($company) === PlanBillingType::SetupOnly) {
                 continue;
             }
 

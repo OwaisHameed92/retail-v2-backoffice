@@ -4,6 +4,7 @@ namespace App\Domain\Plans\Models;
 
 use App\Domain\Licensing\Models\Licence;
 use App\Domain\Plans\Enums\Feature;
+use App\Domain\Plans\Enums\PlanBillingType;
 use App\Domain\Plans\Enums\PlanStatus;
 use App\Domain\Plans\Enums\PricingMode;
 use App\Domain\Shared\Casts\MoneyCast;
@@ -31,6 +32,7 @@ use Illuminate\Support\Collection;
  * @property string $code
  * @property string|null $description
  * @property PricingMode $pricing_mode
+ * @property PlanBillingType|null $billing_type Null on rows saved before 2026-10-05: see billingType().
  * @property string $price_monthly
  * @property string $price_yearly
  * @property string $setup_fee
@@ -65,6 +67,7 @@ class Plan extends Model
         'code',
         'description',
         'pricing_mode',
+        'billing_type',
         'price_monthly',
         'price_yearly',
         'setup_fee',
@@ -99,6 +102,7 @@ class Plan extends Model
     {
         return [
             'pricing_mode' => PricingMode::class,
+            'billing_type' => PlanBillingType::class,
             'price_monthly' => MoneyCast::class,
             'price_yearly' => MoneyCast::class,
             'setup_fee' => MoneyCast::class,
@@ -125,6 +129,12 @@ class Plan extends Model
             ! $this->is_public => PlanStatus::Hidden,
             default => PlanStatus::Active,
         };
+    }
+
+    /** Setup only, setup + recurring or recurring only: the stored type, else what the prices imply. */
+    public function billingType(): PlanBillingType
+    {
+        return $this->billing_type ?? PlanBillingType::infer((string) $this->setup_fee, (string) $this->price_monthly, (string) $this->price_yearly);
     }
 
     public function hasFeature(Feature $feature): bool

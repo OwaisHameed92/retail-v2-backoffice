@@ -1,5 +1,9 @@
 # GoCardless billing (modules 1.12, 1.13)
 
+> **Owner rules 2026-10-05 win over this page where they differ** (see `docs/billing-flow.md`): the setup fee
+> (= the upfront payment) is always paid by hand and never collected by Direct Debit; the subscription starts once
+> it is paid; a lost mandate gets a deadline and then a suspension (not "overdue").
+
 Two ways to sell: **upfront cash** (module 1.8: invoices paid by hand) or **setup fee + Direct Debit**
 (GoCardless, monthly or yearly). Decisions: `docs/DECISIONS.md` → "GoCardless billing". Code:
 `app/Domain/Billing/GoCardless`.

@@ -41,7 +41,7 @@ final class DirectDebitSetupMail extends BrandedMailable
 
     public function subjectLine(): string
     {
-        return 'Set up your Direct Debit for Switch & Save';
+        return $this->data->reminder ? 'Reminder: set up your Direct Debit for Switch & Save' : 'Set up your Direct Debit for Switch & Save';
     }
 
     public function companyId(): ?string
@@ -63,13 +63,15 @@ final class DirectDebitSetupMail extends BrandedMailable
         }
 
         if ($this->data->setupFee !== null) {
-            $facts['Setup fee'] = MailFormat::money($this->data->setupFee).($this->data->setupInstalments > 1 ? " in {$this->data->setupInstalments} monthly payments" : ', once').' (VAT included)';
+            // Shown for information only: the setup fee is paid by hand, never by this Direct Debit.
+            $facts['Setup fee'] = MailFormat::money($this->data->setupFee).' (VAT included), paid separately by cash, card or bank transfer';
         }
 
         return new Content(markdown: 'mail.direct-debit-setup', with: [
             'firstName' => MailFormat::firstName($this->data->ownerName),
             'facts' => $facts,
             'linkDays' => (int) config('billing.direct_debit.setup_link_days', 14),
+            'deadline' => $this->data->deadline !== null ? MailFormat::date($this->data->deadline) : null,
         ]);
     }
 }

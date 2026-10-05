@@ -1,11 +1,16 @@
 export type PlanStatusValue = 'active' | 'hidden' | 'inactive' | 'archived';
 
+/** Owner rules 2026-10-05: how a plan is paid for. */
+export type PlanBillingType = 'setupOnly' | 'setupAndRecurring' | 'recurringOnly';
+
 /** A row from App\Domain\Plans\Data\PlanData::row(). Money is a 2 dp string in pounds. */
 export interface PlanRow {
     id: string;
     name: string;
     code: string;
     pricingMode: 'perTill' | 'perBranch';
+    billingType: PlanBillingType;
+    billingTypeLabel: string;
     priceMonthly: string;
     priceYearly: string;
     currency: string;
@@ -23,6 +28,8 @@ export interface PlanRecord {
     code: string;
     description: string | null;
     pricingMode: 'perTill' | 'perBranch';
+    billingType: PlanBillingType;
+    billingTypeLabel: string;
     priceMonthly: string;
     priceYearly: string;
     setupFee: string;

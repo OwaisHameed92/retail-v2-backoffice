@@ -4,6 +4,7 @@ namespace App\Domain\Billing\Actions;
 
 use App\Domain\Billing\Data\NewPayment;
 use App\Domain\Billing\Data\RecordedPayment;
+use App\Domain\Billing\Enums\InvoiceKind;
 use App\Domain\Billing\Models\Invoice;
 use App\Domain\Billing\Models\Payment;
 use App\Domain\Billing\Support\Actor;
@@ -33,6 +34,7 @@ class RecordPayment
         private readonly Allocator $allocator,
         private readonly SettleInvoice $settleInvoice,
         private readonly ReleaseBillingHolds $releaseHolds,
+        private readonly ApplySetupFeeTerms $setupFeeTerms,
         private readonly RecordAudit $audit,
     ) {}
 
@@ -123,6 +125,11 @@ class RecordPayment
         }
 
         $unsuspended = $this->releaseHolds->handle($company);
+
+        // A setup fee (upfront) invoice paid: unlock what it holds back (setup-only licence, the Direct Debit).
+        if (array_filter($result->paidInvoices, fn (Invoice $invoice) => $invoice->kind === InvoiceKind::SetupFee) !== []) {
+            $this->setupFeeTerms->handle($company, justPaid: true);
+        }
 
         return new RecordedPayment($result->payment, $result->paidInvoices, $result->licencesRenewed, $result->credit, $unsuspended);
     }

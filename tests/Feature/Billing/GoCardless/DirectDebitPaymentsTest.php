@@ -5,11 +5,13 @@ use App\Domain\Billing\Enums\PaymentMethod;
 use App\Domain\Billing\GoCardless\Data\GcPayment;
 use App\Domain\Billing\GoCardless\Enums\MandateStatus;
 use App\Domain\Billing\GoCardless\Enums\PaymentStatus;
+use App\Domain\Billing\GoCardless\Enums\SubscriptionStatus;
 use App\Domain\Billing\GoCardless\Models\GoCardlessPayment;
 use App\Domain\Billing\Models\Invoice;
 use App\Domain\Billing\Models\Payment;
 use App\Domain\Mail\Mailables\DirectDebitCancelledMail;
 use App\Domain\Mail\Mailables\DirectDebitFailedMail;
+use App\Domain\Mail\Mailables\DirectDebitSetupMail;
 use App\Domain\Mail\Mailables\InvoiceMail;
 use App\Domain\Tenancy\Enums\CompanyStatus;
 use Illuminate\Support\Facades\Mail;
@@ -95,9 +97,10 @@ test('a failed payment sends the dunning email, leaves the invoice unpaid and en
         ->and($this->fresh($row->invoice)->status)->toBe(InvoiceStatus::Issued);
     Mail::assertQueued(DirectDebitFailedMail::class, fn (DirectDebitFailedMail $mail) => ! $mail->data->reminder && $mail->data->amount === '60.00' && $mail->hasTo($this->ownerOf($this->company)->email));
 
-    // The same event again: no second email.
+    // Staff get a copy (owner rule 2026-10-05). The same event again: no second email.
+    Mail::assertQueued(DirectDebitFailedMail::class, fn (DirectDebitFailedMail $mail) => $mail->hasTo(config('sspos.staff_email')));
     $this->paymentEvent($payment, PaymentStatus::Failed, 'failed')->assertOk();
-    Mail::assertQueued(DirectDebitFailedMail::class, 1);
+    Mail::assertQueued(DirectDebitFailedMail::class, 2);
 
     // Overdue the next morning, a reminder after 5 days, suspended 14 days after the due date.
     expect($this->runBillingOn('2026-11-05')['invoicesOverdue'])->toBe(1)
@@ -131,7 +134,7 @@ test('a charge back reverses the recorded payment and the invoice is owed again'
     Mail::assertQueued(DirectDebitFailedMail::class, fn (DirectDebitFailedMail $mail) => $mail->data->chargedBack);
 });
 
-test('a cancelled mandate emails the owners and staff, then the business is overdue after the grace', function () {
+test('a cancelled mandate emails the owners and staff, pauses the subscription, reminds, then suspends after the grace until a new mandate', function () {
     $mandateId = (string) $this->billingAccountOf($this->company)->gc_mandate_id;
     $this->gc->setMandateStatus($mandateId, MandateStatus::Cancelled);
 
@@ -143,12 +146,25 @@ test('a cancelled mandate emails the owners and staff, then the business is over
     Mail::assertQueued(DirectDebitCancelledMail::class, 2);
     Mail::assertQueued(DirectDebitCancelledMail::class, fn (DirectDebitCancelledMail $mail) => $mail->hasTo(config('sspos.staff_email')) && $mail->data->setupUrl === null);
 
-    expect($this->runBillingOn('2026-10-26')['mandateOverdue'])->toBe(0);
-    expect($this->runBillingOn('2026-10-28')['mandateOverdue'])->toBe(1)
-        ->and($this->companyFresh($this->company)->status)->toBe(CompanyStatus::Overdue);
+    // Same as no mandate (owner rule 2026-10-05): a 3-day deadline, the subscription paused meanwhile.
+    expect($account->mandate_deadline_at?->toIso8601String())->toBe(now()->addDays(3)->toIso8601String())
+        ->and($account->gc_subscription_status)->toBe(SubscriptionStatus::Paused);
 
-    // A new mandate replaces it: the business is active again.
-    $this->setUpMandate($this->company);
-    expect($this->billingAccountOf($this->company)->hasUsableMandate())->toBeTrue()
-        ->and($this->companyFresh($this->company)->status)->toBe(CompanyStatus::Active);
+    $run = $this->runBillingOn('2026-10-26');
+    expect($run['noMandateSuspended'])->toBe(0)->and($run['mandateReminders'])->toBe(1);
+    Mail::assertQueued(DirectDebitSetupMail::class, fn (DirectDebitSetupMail $mail) => $mail->data->reminder && $mail->data->deadline !== null);
+
+    expect($this->runBillingOn('2026-10-28')['noMandateSuspended'])->toBe(1)
+        ->and($this->companyFresh($this->company)->status)->toBe(CompanyStatus::Suspended)
+        ->and($this->companyFresh($this->company)->suspension_reason)->toBe('Direct Debit cancelled and not replaced');
+    expect($this->runBillingOn('2026-10-29')['noMandateSuspended'])->toBe(0);
+
+    // A new mandate replaces it: the suspension is lifted at once and the subscription moves to the new mandate.
+    $newMandate = $this->setUpMandate($this->company);
+    $account = $this->billingAccountOf($this->company);
+    expect($account->hasUsableMandate())->toBeTrue()
+        ->and($this->companyFresh($this->company)->status)->toBe(CompanyStatus::Trial) // back to what it was
+        ->and($account->gc_subscription_id)->not->toBe($this->subscription->id)
+        ->and($this->gc->subscription((string) $account->gc_subscription_id)->mandateId)->toBe($newMandate)
+        ->and($this->gc->subscription($this->subscription->id)->status)->toBe(SubscriptionStatus::Cancelled);
 });

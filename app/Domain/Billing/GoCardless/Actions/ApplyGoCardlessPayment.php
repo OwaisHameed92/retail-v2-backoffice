@@ -31,8 +31,9 @@ use Illuminate\Validation\ValidationException;
  * - first seen: stored, and a subscription payment gets its invoice (SubscriptionInvoices) and the invoice email;
  * - confirmed / paid out: RecordPayment (method Direct Debit, gateway "gocardless" + payment id, so it is recorded
  *   once) on its invoice; the invoice is paid and its tills renewed to the period end (SettleInvoice);
- * - failed / charged back: a payment we recorded is reversed (the invoice is owed again) and the owners get the
- *   "Direct Debit failed" email once; billing:run then marks it overdue and suspends as for any unpaid invoice.
+ * - failed / charged back: a payment we recorded is reversed (the invoice is owed again) and the owners (and staff)
+ *   get the "Direct Debit failed" email once; billing:run then marks it overdue and suspends as for any unpaid
+ *   invoice. A retried payment (back to pending) can email again if it fails again.
  */
 class ApplyGoCardlessPayment
 {
@@ -55,7 +56,14 @@ class ApplyGoCardlessPayment
             'status' => $remote->status,
             'amount' => Pence::toPounds($remote->amountPence),
             'charge_date' => $remote->chargeDate !== null ? BillingDates::date($remote->chargeDate) : $row->charge_date,
-        ])->save();
+        ]);
+
+        // GoCardless is retrying a failed payment (Success+ / a retry): a new failure gets its own emails.
+        if ($before->isProblem() && $remote->status->isPending()) {
+            $row->forceFill(['failure_notified_at' => null, 'reminder_sent_at' => null]);
+        }
+
+        $row->save();
 
         if ($before !== $remote->status) {
             $this->audit->handle('billing.dd_payment_'.$remote->status->value, $row, ['status' => $before->value], ['status' => $remote->status->value], [

@@ -34,7 +34,8 @@ export function DirectDebitPanel({ company, directDebit, canManage }: { company:
     const isDirectDebit = directDebit.mode === 'directDebit';
     // Upfront customers that never had Direct Debit only need the mode and the setup fee.
     const showDirectDebit = isDirectDebit || mandate.id !== null || payments.data.length > 0;
-    const canInvoiceSetup = setupFee.hasFee && setupFee.invoicedAt === null && (setupFee.method === 'manual' || !isDirectDebit || mandate.usable);
+    // The setup fee is always paid by hand (owner rule 2026-10-05): invoice it to send it before it is paid.
+    const canInvoiceSetup = setupFee.hasFee && setupFee.invoicedAt === null;
     const url = (name: string, params: Record<string, string> = {}) =>
         route(`admin.billing.tenants.direct-debit.${name}`, { company: company.id, ...params });
 
@@ -48,8 +49,8 @@ export function DirectDebitPanel({ company, directDebit, canManage }: { company:
             }
             description={
                 isDirectDebit
-                    ? 'GoCardless collects the subscription and the setup fee; every payment has its own invoice.'
-                    : 'This business pays upfront by cash or bank transfer.'
+                    ? 'GoCardless collects the monthly or yearly fee; every payment has its own invoice. The setup fee is paid by hand.'
+                    : 'This business pays each period by hand (exception): cash, card or bank transfer.'
             }
             actions={
                 canManage ? (
@@ -103,8 +104,8 @@ export function DirectDebitPanel({ company, directDebit, canManage }: { company:
                         <XCircle className="size-4" />
                         <AlertTitle>Direct Debit stopped ({mandate.statusLabel.toLowerCase()})</AlertTitle>
                         <AlertDescription>
-                            Since {formatDate(mandate.lostAt)}. The business becomes overdue after {directDebit.graceDays} days without a new one;
-                            send the setup email again.
+                            Since {formatDate(mandate.lostAt)}. The subscription is paused and the business is suspended (tills lock) if there is no
+                            new one after {directDebit.graceDays} days; a new mandate lifts it. Send the setup email again.
                         </AlertDescription>
                     </Alert>
                 )}
@@ -113,14 +114,14 @@ export function DirectDebitPanel({ company, directDebit, canManage }: { company:
                     <Tile label="Billing mode">
                         <span className="font-medium">{isDirectDebit ? 'Direct Debit' : 'Upfront'}</span>
                         <span className="text-muted-foreground text-sm">
-                            {isDirectDebit ? 'GoCardless, monthly or yearly' : 'Cash or bank transfer'}
+                            {isDirectDebit ? 'GoCardless, monthly or yearly' : 'Cash, card or bank transfer (exception)'}
                         </span>
                     </Tile>
-                    <Tile label="Setup fee">
+                    <Tile label="Setup fee (upfront)">
                         <span className="font-medium tabular-nums">{setupFee.hasFee ? `${setupFee.gross} incl. VAT` : 'None'}</span>
                         <span className="text-muted-foreground text-sm">
                             {setupFee.hasFee
-                                ? `${setupFee.override !== null ? 'Custom' : 'Plan fee'} · ${setupFee.instalments > 1 ? `${setupFee.instalments} monthly payments` : 'one payment'} · ${setupFee.method === 'directDebit' && isDirectDebit ? 'Direct Debit' : 'cash or bank'}`
+                                ? `${setupFee.override !== null ? 'Custom' : 'Plan fee'} · ${setupFee.instalments > 1 ? `${setupFee.instalments} monthly payments` : 'one payment'} · paid by hand`
                                 : 'No setup fee on this plan'}
                         </span>
                         {setupFee.invoicedAt && (
@@ -196,7 +197,7 @@ export function DirectDebitPanel({ company, directDebit, canManage }: { company:
                         open={action === 'setup-email'}
                         onOpenChange={close}
                         title="Send the Direct Debit setup email?"
-                        description="The owners get a secure link to the GoCardless page. Once they finish, the setup fee and subscription start automatically."
+                        description="The owners get a secure link to the GoCardless page. Once they finish, the subscription starts automatically (after the setup fee is paid). The setup fee is never taken by Direct Debit."
                         confirmLabel="Send email"
                         onConfirm={() => post(url('setup-email'))}
                     />
@@ -204,11 +205,7 @@ export function DirectDebitPanel({ company, directDebit, canManage }: { company:
                         open={action === 'setup-fee'}
                         onOpenChange={close}
                         title={`Invoice the setup fee of ${setupFee.gross}?`}
-                        description={
-                            setupFee.method === 'directDebit' && isDirectDebit
-                                ? 'Each invoice is collected by Direct Debit on its due date.'
-                                : 'The invoice is emailed now; record the cash or bank transfer with Record payment.'
-                        }
+                        description="The invoice (one per instalment) is emailed now. Record the cash, card or bank transfer with Record setup fee payment."
                         confirmLabel="Invoice setup fee"
                         onConfirm={() => post(url('setup-fee'))}
                     />

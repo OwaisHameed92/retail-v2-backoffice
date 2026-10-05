@@ -55,11 +55,17 @@ export default function Billing(props: PortalBillingProps) {
                     tone="success"
                 />
                 <StatCard
-                    label="Paid upfront"
-                    value={upfront.recorded ? (upfront.amount ?? '£0.00') : '—'}
-                    hint={upfront.recorded && upfront.recordedAt ? `${upfront.method ?? ''} · ${formatDate(upfront.recordedAt)}` : 'Nothing recorded'}
+                    label="Setup fee"
+                    value={upfront.status === 'none' ? (upfront.recorded ? (upfront.amount ?? '£0.00') : '—') : upfront.total}
+                    hint={
+                        upfront.status === 'paid'
+                            ? `Paid${upfront.method ? ` by ${upfront.method.toLowerCase()}` : ''}${upfront.recordedAt ? ` · ${formatDate(upfront.recordedAt)}` : ''}`
+                            : upfront.status === 'none'
+                              ? 'Nothing to pay'
+                              : `${upfront.statusLabel} · ${upfront.owed} to pay by cash, card or bank transfer`
+                    }
                     icon={Receipt}
-                    tone="neutral"
+                    tone={upfront.status === 'unpaid' ? 'warning' : 'neutral'}
                 />
                 <StatCard
                     label="Next collection"

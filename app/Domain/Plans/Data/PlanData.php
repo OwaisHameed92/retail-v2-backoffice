@@ -13,7 +13,7 @@ final class PlanData
     /**
      * Row for the plans DataTable.
      *
-     * @return array{id: string, name: string, code: string, pricingMode: string, priceMonthly: string, priceYearly: string, currency: string, trialDays: int, featureCount: int, status: string, statusLabel: string, sortOrder: int}
+     * @return array{id: string, name: string, code: string, pricingMode: string, billingType: string, billingTypeLabel: string, priceMonthly: string, priceYearly: string, currency: string, trialDays: int, featureCount: int, status: string, statusLabel: string, sortOrder: int}
      */
     public static function row(Plan $plan): array
     {
@@ -24,6 +24,8 @@ final class PlanData
             'name' => $plan->name,
             'code' => $plan->code,
             'pricingMode' => $plan->pricing_mode->value,
+            'billingType' => $plan->billingType()->value,
+            'billingTypeLabel' => $plan->billingType()->label(),
             'priceMonthly' => $plan->price_monthly,
             'priceYearly' => $plan->price_yearly,
             'currency' => $plan->currency,
@@ -50,6 +52,8 @@ final class PlanData
             'code' => $plan->code,
             'description' => $plan->description,
             'pricingMode' => $plan->pricing_mode->value,
+            'billingType' => $plan->billingType()->value,
+            'billingTypeLabel' => $plan->billingType()->label(),
             'priceMonthly' => $plan->price_monthly,
             'priceYearly' => $plan->price_yearly,
             'setupFee' => $plan->setup_fee,
@@ -84,6 +88,7 @@ final class PlanData
             'code' => $plan->code,
             'description' => $plan->description,
             'pricing_mode' => $plan->pricing_mode->value,
+            'billing_type' => $plan->billingType()->value,
             'price_monthly' => $plan->price_monthly,
             'price_yearly' => $plan->price_yearly,
             'setup_fee' => $plan->setup_fee,

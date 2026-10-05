@@ -57,6 +57,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property CarbonImmutable|null $paid_at
  * @property CarbonImmutable|null $overdue_at
  * @property CarbonImmutable|null $suspension_triggered_at
+ * @property CarbonImmutable|null $reopened_at A Direct Debit failure or chargeback made it owed again (suspension grace counts from here).
  * @property CarbonImmutable|null $licences_renewed_at
  * @property CarbonImmutable|null $last_sent_at
  * @property int $sent_count
@@ -126,6 +127,7 @@ class Invoice extends Model
             'paid_at' => 'immutable_datetime',
             'overdue_at' => 'immutable_datetime',
             'suspension_triggered_at' => 'immutable_datetime',
+            'reopened_at' => 'immutable_datetime',
             'licences_renewed_at' => 'immutable_datetime',
             'last_sent_at' => 'immutable_datetime',
             'voided_at' => 'immutable_datetime',

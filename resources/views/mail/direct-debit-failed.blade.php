@@ -16,7 +16,7 @@ Hi {{ $firstName }}, we could not collect **{{ $amount }}** by Direct Debit for 
 <x-mail::facts :rows="$facts" />
 
 <x-mail::notice>
-If it stays unpaid for {{ $suspendAfter }} days after the due date, your account is suspended and your tills stop taking sales at their next check-in.
+If it is still unpaid {{ $suspendAfter }} days after the due date (after the reversal, for a payment your bank reversed), your account is suspended and your tills stop taking sales at their next check-in. Paying it unlocks them straight away.
 </x-mail::notice>
 
 ## What to do

@@ -27,7 +27,8 @@ class DirectDebitSettingsRequest extends BillingRequest
         return [
             'billing_mode' => ['required', Rule::enum(BillingMode::class)],
             'setup_fee_override' => ['nullable', 'string', 'regex:'.self::MONEY_PATTERN],
-            'setup_fee_method' => ['required', Rule::enum(SetupFeeMethod::class)],
+            // Kept for old clients: the setup fee is always paid by hand (owner rule 2026-10-05), whatever is sent.
+            'setup_fee_method' => ['sometimes', 'nullable', Rule::enum(SetupFeeMethod::class)],
             'setup_fee_instalments' => ['required', 'integer', 'min:1', 'max:'.(int) config('billing.direct_debit.max_instalments', 12)],
         ];
     }
@@ -50,7 +51,7 @@ class DirectDebitSettingsRequest extends BillingRequest
         return new DirectDebitSettingsInput(
             mode: BillingMode::from((string) $this->validated('billing_mode')),
             setupFeeOverride: is_string($override) ? $override : null,
-            setupFeeMethod: SetupFeeMethod::from((string) $this->validated('setup_fee_method')),
+            setupFeeMethod: SetupFeeMethod::Manual,
             instalments: (int) $this->validated('setup_fee_instalments'),
         );
     }

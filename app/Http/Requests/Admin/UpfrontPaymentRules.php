@@ -10,10 +10,10 @@ use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 /**
- * The "Upfront payment" part of the tenant wizard and the trial approval (module 1.13): `upfront_record`,
- * `upfront_amount` (the setup fee, net; blank = the plan's, 0 = nothing to pay), `upfront_method` (cash or bank
- * transfer) and `upfront_reference`. Only billing admins (`billing.manage`) record money; for anyone else the
- * fields are ignored and the setup fee is collected by Direct Debit once the owner sets it up.
+ * The "Setup fee (upfront)" part of the tenant wizard, the trial approval and the Billing tab: `upfront_record`,
+ * `upfront_amount` (the setup fee, net; blank = the plan's, 0 = nothing to pay), `upfront_method` (cash, card or
+ * bank transfer) and `upfront_reference`. Only billing admins (`billing.manage`) record money; for anyone else the
+ * fields are ignored and the setup fee stays unpaid until an admin records it (never by Direct Debit).
  */
 final class UpfrontPaymentRules
 {
@@ -35,7 +35,7 @@ final class UpfrontPaymentRules
         return [
             'upfront_record' => ['sometimes', 'boolean'],
             'upfront_amount' => ['nullable', 'string', 'regex:'.BillingRequest::MONEY_PATTERN],
-            'upfront_method' => ['nullable', 'required_if_accepted:upfront_record', Rule::in([PaymentMethod::Cash->value, PaymentMethod::BankTransfer->value])],
+            'upfront_method' => ['nullable', 'required_if_accepted:upfront_record', Rule::in(array_map(fn (PaymentMethod $method) => $method->value, PaymentMethod::setupFee()))],
             'upfront_reference' => ['nullable', 'string', 'max:120'],
         ];
     }
@@ -47,8 +47,8 @@ final class UpfrontPaymentRules
     {
         return [
             'upfront_amount.regex' => BillingRequest::MONEY_MESSAGE,
-            'upfront_method.required_if_accepted' => 'Choose how the upfront payment was made.',
-            'upfront_method.in' => 'Choose cash or bank transfer.',
+            'upfront_method.required_if_accepted' => 'Choose how the setup fee was paid.',
+            'upfront_method.in' => 'Choose cash, card or bank transfer.',
         ];
     }
 

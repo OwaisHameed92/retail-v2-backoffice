@@ -3,6 +3,7 @@
 namespace App\Domain\Plans\Data;
 
 use App\Domain\Plans\Enums\Feature;
+use App\Domain\Plans\Enums\PlanBillingType;
 use App\Domain\Plans\Enums\PricingMode;
 use App\Domain\Plans\Models\Plan;
 use App\Domain\Shared\Support\Money;
@@ -20,6 +21,8 @@ final readonly class PlanInput
     public string $priceYearly;
 
     public string $setupFee;
+
+    public PlanBillingType $billingType;
 
     /**
      * @param  iterable<Feature|string>  $features
@@ -40,10 +43,16 @@ final readonly class PlanInput
         string|int $setupFee = '0.00',
         /** Module 1.13: the prices are per till or per branch. */
         public PricingMode $pricingMode = PricingMode::PerTill,
+        /** Null = what the prices imply. Setup only clears the prices; recurring only clears the setup fee. */
+        ?PlanBillingType $billingType = null,
     ) {
-        $this->priceMonthly = Money::normalise($priceMonthly);
-        $this->priceYearly = Money::normalise($priceYearly);
-        $this->setupFee = Money::normalise($setupFee);
+        $monthly = Money::normalise($priceMonthly);
+        $yearly = Money::normalise($priceYearly);
+        $fee = Money::normalise($setupFee);
+        $this->billingType = $billingType ?? PlanBillingType::infer($fee, $monthly, $yearly);
+        $this->priceMonthly = $this->billingType->recurs() ? $monthly : '0.00';
+        $this->priceYearly = $this->billingType->recurs() ? $yearly : '0.00';
+        $this->setupFee = $this->billingType->hasSetupFee() ? $fee : '0.00';
         $this->features = Feature::normalise($features);
     }
 
@@ -59,6 +68,7 @@ final readonly class PlanInput
             'code' => strtolower(trim($this->code)),
             'description' => $description === '' ? null : $description,
             'pricing_mode' => $this->pricingMode,
+            'billing_type' => $this->billingType,
             'price_monthly' => $this->priceMonthly,
             'price_yearly' => $this->priceYearly,
             'setup_fee' => $this->setupFee,

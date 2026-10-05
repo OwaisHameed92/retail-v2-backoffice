@@ -2,6 +2,8 @@
 
 namespace App\Domain\Mail\Data;
 
+use Carbon\CarbonInterface;
+
 final readonly class DirectDebitSetupData
 {
     /**
@@ -20,5 +22,9 @@ final readonly class DirectDebitSetupData
         public string $per = 'per month',
         public int $tillCount = 0,
         public ?string $companyId = null,
+        /** When the tills lock without a mandate (the reminder before the deadline); null = not shown. */
+        public ?CarbonInterface $deadline = null,
+        /** The reminder billing:run sends before the deadline (other subject line). */
+        public bool $reminder = false,
     ) {}
 }

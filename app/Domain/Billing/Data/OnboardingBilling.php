@@ -11,7 +11,7 @@ use App\Domain\Plans\Models\Plan;
 
 /**
  * Props for the "Billing" step of the tenant wizard and the trial approval dialog (module 1.13): whether this
- * admin may record the upfront payment, each active plan's setup fee (net), the VAT rate and the Direct Debit
+ * admin may record the setup fee (upfront) payment, each active plan's setup fee (net), the VAT rate and the Direct Debit
  * deadline the owner gets.
  */
 final class OnboardingBilling
@@ -27,7 +27,7 @@ final class OnboardingBilling
                 ->mapWithKeys(fn (Plan $plan) => [$plan->id => $plan->setup_fee])->all(),
             'vatRate' => Vat::enabled() ? Vat::rate() : null,
             'deadlineDays' => MandateDeadline::days(),
-            'methods' => array_map(fn (PaymentMethod $method) => ['value' => $method->value, 'label' => $method->label()], [PaymentMethod::Cash, PaymentMethod::BankTransfer]),
+            'methods' => PaymentMethod::setupFeeOptions(),
         ];
     }
 }

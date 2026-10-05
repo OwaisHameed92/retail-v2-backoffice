@@ -12,6 +12,7 @@ use App\Domain\Billing\Support\BillingDates;
 use App\Domain\Billing\Support\BillingFormat;
 use App\Domain\Billing\Support\CompanyPricing;
 use App\Domain\Billing\Support\MandateDeadline;
+use App\Domain\Billing\Support\SetupFeeState;
 use App\Domain\Shared\Support\Money;
 use App\Domain\Tenancy\Models\Company;
 use Carbon\CarbonImmutable;
@@ -33,6 +34,7 @@ final class PortalBilling
         $account = app(BillingAccounts::class)->for($company);
         $amount = SubscriptionAmount::for($company, $account, $now);
         $cycle = $amount['cycle'];
+        $fee = SetupFeeState::for($company, $account);
 
         return [
             'businessName' => $company->name,
@@ -58,6 +60,11 @@ final class PortalBilling
                 'amount' => $account->upfront_amount !== null ? BillingFormat::money($account->upfront_amount) : null,
                 'method' => $account->upfront_method?->label(),
                 'recordedAt' => $account->upfront_recorded_at?->toIso8601String(),
+                // The setup fee and the upfront payment are one thing (owner, 2026-10-05), always paid by hand.
+                'status' => $fee->status,
+                'statusLabel' => $fee->label(),
+                'total' => BillingFormat::money($fee->total),
+                'owed' => BillingFormat::money($fee->owed()),
             ],
             'directDebit' => self::directDebit($company, $account, $now, $canManage),
             'invoices' => self::invoices(),

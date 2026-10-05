@@ -65,6 +65,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property PaymentMethod|null $upfront_method
  * @property CarbonImmutable|null $upfront_recorded_at
  * @property CarbonImmutable|null $mandate_deadline_at Direct Debit must be set up by then (billing:run suspends).
+ * @property CarbonImmutable|null $mandate_reminder_for The deadline the "set up your Direct Debit" reminder went for.
  * @property CarbonImmutable|null $created_at
  * @property CarbonImmutable|null $updated_at
  * @property-read Company|null $company
@@ -89,7 +90,7 @@ class BillingAccount extends Model
         'payment_terms_days' => 7,
         'vat_applies' => true,
         'billing_mode' => 'upfrontCash',
-        'setup_fee_method' => 'directDebit',
+        'setup_fee_method' => 'manual',
         'setup_fee_instalments' => 1,
     ];
 
@@ -133,6 +134,7 @@ class BillingAccount extends Model
             'upfront_method' => PaymentMethod::class,
             'upfront_recorded_at' => 'immutable_datetime',
             'mandate_deadline_at' => 'immutable_datetime',
+            'mandate_reminder_for' => 'immutable_datetime',
             'created_at' => 'immutable_datetime',
             'updated_at' => 'immutable_datetime',
         ];

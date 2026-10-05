@@ -1,7 +1,10 @@
 <?php
 
+use App\Domain\Billing\Actions\RecordUpfrontPayment;
 use App\Domain\Billing\Actions\SendBillingRequest;
+use App\Domain\Billing\Data\UpfrontPayment;
 use App\Domain\Billing\Enums\BillingRequestKind;
+use App\Domain\Billing\Enums\PaymentMethod;
 use App\Domain\Licensing\Enums\LicenceAlertType;
 use App\Domain\Licensing\Models\Licence;
 use App\Domain\Licensing\Models\LicenceAlert;
@@ -30,11 +33,12 @@ beforeEach(function () {
     $this->owner = $this->ownerOf($this->company);
 });
 
-test('the page shows the account, what is counted and the setup fee instalments still to be charged', function () {
+test('the page shows the account, what is counted and the setup fee instalments still to be paid', function () {
     $this->actingAs($this->owner, 'web')->get('/app/billing')->assertOk()->assertInertia(fn (Assert $page) => $page
         ->component('app/billing')
         ->where('account.tills', 2)->where('account.shops', 1)->where('account.cancelled', false)
-        ->where('setupFee.charged', false)->where('setupFee.method', 'directDebit')->where('setupFee.total', '£144.00')
+        ->where('setupFee.charged', false)->where('setupFee.method', 'manual')->where('setupFee.total', '£144.00')
+        ->where('upfront.status', 'unpaid')->where('upfront.owed', '£144.00')
         ->has('setupFee.parts', 3)->where('setupFee.parts.0.label', 'Part 1 of 3')->where('setupFee.parts.0.amount', '£48.00')
         ->where('payments', [])->where('collections', [])->where('requests', [])->where('canRequest', true));
 
@@ -42,13 +46,15 @@ test('the page shows the account, what is counted and the setup fee instalments 
         ->assertInertia(fn (Assert $page) => $page->where('canRequest', false)->has('setupFee.parts', 3));
 });
 
-test('once the Direct Debit is set up the instalments are invoices and GoCardless collections', function () {
+test('once the first instalment is paid by hand the instalments are invoices, never Direct Debit collections', function () {
     $this->setUpMandate($this->company);
+    app(RecordUpfrontPayment::class)->handle($this->company, new UpfrontPayment(null, PaymentMethod::Card));
 
     $this->actingAs($this->owner, 'web')->get('/app/billing')->assertOk()->assertInertia(fn (Assert $page) => $page
         ->where('setupFee.charged', true)->has('setupFee.parts', 3)->where('setupFee.total', '£144.00')
-        ->where('setupFee.parts.2.label', 'Part 3 of 3')
-        ->where('collections', fn ($collections) => count($collections) >= 1));
+        ->where('setupFee.parts.0.status', 'paid')->where('setupFee.parts.2.label', 'Part 3 of 3')
+        ->where('upfront.status', 'partPaid')->where('upfront.owed', '£96.00')
+        ->where('collections', []));
 });
 
 test('payments received are listed, newest first, returned ones marked', function () {

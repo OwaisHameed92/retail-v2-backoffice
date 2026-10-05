@@ -63,11 +63,20 @@ return [
         'ended_window_days' => 3,
     ],
 
+    // Setup-only plans (owner rule 2026-10-05): once the setup fee is paid in full, every live till gets a full
+    // licence this many years ahead, topped up by billing:run whenever less than `renew_below_years` are left.
+    'setup_only' => [
+        'years' => 10,
+        'renew_below_years' => 9,
+    ],
+
     // GoCardless Direct Debit (module 1.12). Keys are in config/services.php (GOCARDLESS_*).
     'direct_debit' => [
-        // Days a Direct Debit customer keeps trading after the trial ends (or after the mandate is cancelled)
-        // without a working mandate: then suspended (trial) or marked overdue (lost mandate).
+        // Days a Direct Debit customer keeps trading after its mandate is cancelled, fails or expires without a new
+        // one: then suspended (tills lock) until a new mandate exists (owner rule 2026-10-05).
         'mandate_grace_days' => (int) env('BILLING_MANDATE_GRACE_DAYS', 3),
+        // The "set up your Direct Debit" reminder goes once when fewer than this many hours are left.
+        'mandate_reminder_hours' => 48,
         // Module 1.13: a new Direct Debit customer sets it up in the portal within this many days of onboarding,
         // else billing:run suspends the business (tills lock) until the mandate exists. Not when nothing recurs.
         'mandate_deadline_days' => (int) env('BILLING_MANDATE_DEADLINE_DAYS', 3),

@@ -3,6 +3,7 @@
 namespace App\Domain\Billing\GoCardless\Data;
 
 use App\Domain\Billing\Enums\BillingMode;
+use App\Domain\Billing\Enums\PaymentMethod;
 use App\Domain\Billing\Enums\SetupFeeMethod;
 use App\Domain\Billing\GoCardless\Contracts\GoCardlessClient;
 use App\Domain\Billing\GoCardless\Models\GoCardlessPayment;
@@ -12,6 +13,7 @@ use App\Domain\Billing\Support\BillingAccounts;
 use App\Domain\Billing\Support\BillingFormat;
 use App\Domain\Billing\Support\CompanyPricing;
 use App\Domain\Billing\Support\MandateDeadline;
+use App\Domain\Billing\Support\SetupFeeState;
 use App\Domain\Billing\Support\Vat;
 use App\Domain\Plans\Enums\PricingMode;
 use App\Domain\Shared\Support\Money;
@@ -36,6 +38,8 @@ final class DirectDebitData
         $expected = SubscriptionAmount::for($company, $account);
         $query = GoCardlessPayment::withoutCompanyScope()->with('invoice')->where('company_id', $company->id);
         $pricing = CompanyPricing::for($company, $account);
+        $fee = SetupFeeState::for($company, $account);
+        $planType = $pricing->plan?->billingType();
 
         return [
             'enabled' => $client->enabled(),
@@ -66,12 +70,21 @@ final class DirectDebitData
                 'per' => $expected['cycle']->per(),
                 'options' => PricingMode::options(),
             ],
+            // "Setup fee" and "upfront payment" are one thing (owner, 2026-10-05): always paid by hand.
+            'planType' => $planType !== null ? ['value' => $planType->value, 'label' => $planType->label()] : null,
             'upfront' => [
                 'recorded' => $account->upfront_recorded_at !== null,
                 'amount' => $account->upfront_amount !== null ? BillingFormat::money($account->upfront_amount) : null,
                 'method' => $account->upfront_method?->label(),
                 'recordedAt' => $account->upfront_recorded_at?->toIso8601String(),
-                'canRecord' => $account->upfront_recorded_at === null && $account->setup_fee_invoiced_at === null,
+                'canRecord' => ! $company->isCancelled() && (! $fee->isSettled() || ($account->upfront_recorded_at === null && $account->setup_fee_invoiced_at === null)),
+                'status' => $fee->status,
+                'statusLabel' => $fee->label(),
+                'total' => BillingFormat::money($fee->total),
+                'owed' => BillingFormat::money($fee->owed()),
+                'invoiced' => $fee->invoiced,
+                'nextDue' => $fee->nextDue?->format('Y-m-d'),
+                'methods' => PaymentMethod::setupFeeOptions(),
             ],
             'deadline' => MandateDeadline::state($company, $account),
             'setupFee' => [

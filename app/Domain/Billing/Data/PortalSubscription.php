@@ -5,7 +5,6 @@ namespace App\Domain\Billing\Data;
 use App\Domain\Billing\Enums\BillingRequestKind;
 use App\Domain\Billing\Enums\InvoiceKind;
 use App\Domain\Billing\Enums\InvoiceStatus;
-use App\Domain\Billing\Enums\SetupFeeMethod;
 use App\Domain\Billing\GoCardless\Models\GoCardlessPayment;
 use App\Domain\Billing\GoCardless\Support\SetupFee;
 use App\Domain\Billing\Models\BillingAccount;
@@ -119,14 +118,14 @@ final class PortalSubscription
 
         return $schedule === [] ? null : [
             'charged' => false,
-            'method' => $account->setup_fee_method === SetupFeeMethod::DirectDebit ? 'directDebit' : 'manual',
+            'method' => 'manual', // always paid by hand (owner rule 2026-10-05)
             'total' => BillingFormat::money(SetupFee::totals($company, $account)['gross']),
             'parts' => array_map(fn (array $part, int $i) => [
                 'label' => count($schedule) > 1 ? 'Part '.($i + 1).' of '.count($schedule) : 'Setup fee',
                 'dueDate' => null,
                 'amount' => BillingFormat::money($part['gross']),
                 'status' => 'planned',
-                'statusLabel' => 'Not charged yet',
+                'statusLabel' => 'Not paid yet',
                 'number' => null,
             ], $schedule, array_keys($schedule)),
         ];

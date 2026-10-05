@@ -5,6 +5,7 @@ namespace App\Domain\Billing\GoCardless\Support;
 use App\Domain\Billing\Data\InvoiceDocument;
 use App\Domain\Billing\GoCardless\Models\GoCardlessPayment;
 use App\Domain\Billing\Models\BillingAccount;
+use App\Domain\Billing\Support\SetupFeeState;
 use App\Domain\Licensing\Support\LicenceMailer;
 use App\Domain\Mail\Data\AccountSuspendedData;
 use App\Domain\Mail\Data\DirectDebitCancelledData;
@@ -27,11 +28,13 @@ final class DirectDebitMailer
 {
     public function __construct(private readonly LicenceMailer $licenceMailer) {}
 
-    public function setup(Company $company, BillingAccount $account): int
+    public function setup(Company $company, BillingAccount $account, ?CarbonImmutable $deadline = null, bool $reminder = false): int
     {
         $owners = $this->licenceMailer->owners($company);
         $amount = SubscriptionAmount::for($company, $account);
-        $setup = $account->setup_fee_invoiced_at === null ? SetupFee::totals($company, $account) : null;
+        // For information only: the setup fee is paid by hand, never by this Direct Debit.
+        $setupFee = SetupFeeState::for($company, $account);
+        $owed = $setupFee->isSettled() ? null : $setupFee->owed();
         $url = SetupLink::for($company);
 
         foreach ($owners as $owner) {
@@ -39,12 +42,14 @@ final class DirectDebitMailer
                 businessName: $company->name,
                 ownerName: $owner->name,
                 setupUrl: $url,
-                setupFee: $setup !== null && ! Money::isZero($setup['gross']) ? $setup['gross'] : null,
+                setupFee: $owed !== null && ! Money::isZero($owed) ? $owed : null,
                 setupInstalments: max(1, $account->setup_fee_instalments),
                 recurring: Money::isZero($amount['gross']) ? null : $amount['gross'],
                 per: $amount['cycle']->per(),
                 tillCount: $amount['tills'],
                 companyId: $company->id,
+                deadline: $deadline,
+                reminder: $reminder,
             )));
         }
 
@@ -70,7 +75,25 @@ final class DirectDebitMailer
             )));
         }
 
-        return $owners->count();
+        if ($reminder) {
+            return $owners->count();
+        }
+
+        // Staff copy of the first failure, so accounts can call the customer (owner rule 2026-10-05).
+        Mail::to((string) config('sspos.staff_email'))->queue(new DirectDebitFailedMail(new DirectDebitFailedData(
+            businessName: $company->name,
+            ownerName: 'Switch & Save team',
+            amount: $payment->amount,
+            invoiceNumber: $payment->invoice?->number,
+            chargeDate: $payment->charge_date,
+            reason: $payment->failure_reason,
+            chargedBack: $payment->status->value === 'chargedBack',
+            reminder: false,
+            bankDetails: [],
+            companyId: $company->id,
+        )));
+
+        return $owners->count() + 1;
     }
 
     public function mandateLost(Company $company, BillingAccount $account, CarbonImmutable $graceUntil): int
@@ -89,7 +112,7 @@ final class DirectDebitMailer
         return $owners->count() + 1;
     }
 
-    /** AccountSuspendedMail for "no Direct Debit after the trial", with the setup link as the way out. */
+    /** AccountSuspendedMail for "no Direct Debit set up" (never, or not replaced), with the setup link as the way out. */
     public function suspendedWithoutMandate(Company $company, string $reason, CarbonImmutable $at): int
     {
         $owners = $this->licenceMailer->owners($company);

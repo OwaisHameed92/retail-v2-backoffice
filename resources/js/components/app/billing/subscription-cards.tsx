@@ -31,7 +31,9 @@ export function SubscriptionCard({
             footer={
                 canRequest ? (
                     <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                        <p className="text-muted-foreground text-sm">Your tills can only be cancelled by Switch & Save. Ask us and we will call you.</p>
+                        <p className="text-muted-foreground text-sm">
+                            Your tills can only be cancelled by Switch & Save. Ask us and we will call you.
+                        </p>
                         <Button variant="outline" size="sm" onClick={onCancel} disabled={open.some((r) => r.kind === 'cancel')}>
                             <CircleX />
                             {open.some((r) => r.kind === 'cancel') ? 'Cancellation requested' : 'Ask to cancel'}
@@ -74,10 +76,8 @@ export function SubscriptionCard({
 /** Module 4.10: the one-off setup fee, in one payment or monthly instalments. */
 export function SetupFeeCard({ setupFee }: { setupFee: NonNullable<PortalBillingProps['setupFee']> }) {
     const how = setupFee.charged
-        ? 'Each part is its own invoice below.'
-        : setupFee.method === 'directDebit'
-          ? 'Collected by Direct Debit once it is set up, one part a month.'
-          : 'We invoice it and you pay by cash or bank transfer.';
+        ? 'Each part is its own invoice below. Pay by cash, card or bank transfer; it is never taken by Direct Debit.'
+        : 'Paid by cash, card or bank transfer, never by Direct Debit. Your tills stay on the free trial until it is paid.';
 
     return (
         <SectionCard title="Setup fee" description={`${setupFee.total} in total, VAT included. ${how}`} flush contentClassName="p-0">
@@ -119,7 +119,12 @@ export function SetupFeeCard({ setupFee }: { setupFee: NonNullable<PortalBilling
 /** Module 4.10: Direct Debit collections still to come, and every payment we received. */
 export function PaymentsCard({ payments, collections }: Pick<PortalBillingProps, 'payments' | 'collections'>) {
     return (
-        <SectionCard title="Payments" description="Collections scheduled by Direct Debit and every payment we have received from you." flush contentClassName="p-0">
+        <SectionCard
+            title="Payments"
+            description="Collections scheduled by Direct Debit and every payment we have received from you."
+            flush
+            contentClassName="p-0"
+        >
             {payments.length === 0 && collections.length === 0 ? (
                 <EmptyState icon={Wallet} title="No payments yet" body="Your payments appear here as soon as we receive them." className="m-5" />
             ) : (
