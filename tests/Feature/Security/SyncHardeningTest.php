@@ -61,7 +61,7 @@ test('L4: a push never moves a row to another company, even if the id was taken 
 
     // Another business takes the id right after the push has read the stored rows (a race).
     DB::listen(function (QueryExecuted $query) use (&$taken, $intruder, $product) {
-        if (! $taken && str_starts_with($query->sql, 'select') && str_contains($query->sql, 'from "products"') && str_contains($query->sql, '"id" in')) {
+        if (! $taken && str_starts_with($query->sql, 'select') && preg_match('/from [`"]products[`"]/', $query->sql) && preg_match('/[`"]id[`"] in/', $query->sql)) {
             $taken = true;
             DB::table('products')->where('id', $product['id'])->update(['company_id' => $intruder->id]);
         }

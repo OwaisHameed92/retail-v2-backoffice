@@ -33,7 +33,9 @@ final class MasterCatalogueList
         $query = MasterProduct::query()->current()
             ->when($source !== null, fn (Builder $q) => $q->where('source', $source->value))
             ->when($department !== null, fn (Builder $q) => $q->where('department', $department))
-            ->when($duplicates, fn (Builder $q) => $q->whereIn(DB::raw('lower(name)'), self::duplicateNames()))
+            // Through a derived table: MySQL rewrites a grouped IN subquery into a semi-join and then refuses its HAVING
+            // under only_full_group_by (SQLite does not).
+            ->when($duplicates, fn (Builder $q) => $q->whereIn(DB::raw('lower(name)'), DB::query()->fromSub(self::duplicateNames(), 'd')->select('dup_name')))
             ->when($search !== null, fn (Builder $q) => CatalogueSearch::search($q, (string) $search));
 
         $bySource = MasterProduct::query()->current()->selectRaw('source, count(*) as aggregate')->groupBy('source')->pluck('aggregate', 'source')->all();

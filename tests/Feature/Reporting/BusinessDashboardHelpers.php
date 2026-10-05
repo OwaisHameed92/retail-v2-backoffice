@@ -36,6 +36,6 @@ final class BusinessDashboardHelpers
     public static function stock(string $companyId, string $branchId, string $id, string $qty, ?string $min = null, bool $tracked = true): void
     {
         DB::table('products')->insertOrIgnore(['id' => $id, 'company_id' => $companyId, 'name' => "Product {$id}", 'track_stock' => $tracked, 'min_stock_qty' => $min]);
-        DB::table('branch_products')->insert(['id' => $id.substr($branchId, -4), 'company_id' => $companyId, 'branch_id' => $branchId, 'product_id' => $id, 'is_active' => true, 'qty_on_hand' => $qty]);
+        DB::table('branch_products')->insert(['id' => substr($id, -22).substr($branchId, -4), 'company_id' => $companyId, 'branch_id' => $branchId, 'product_id' => $id, 'is_active' => true, 'qty_on_hand' => $qty]);
     }
 }

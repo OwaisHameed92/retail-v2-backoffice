@@ -22,7 +22,7 @@ final class AnomalyDetail
     {
         $history = AuditLog::query()->where('company_id', $anomaly->company_id)
             ->where('subject_type', $anomaly->getMorphClass())->where('subject_id', $anomaly->id)
-            ->where('action', 'like', 'anomaly.%')->orderByDesc('created_at')->limit(50)->get();
+            ->where('action', 'like', 'anomaly.%')->orderByDesc('created_at')->orderByDesc('id')->limit(50)->get();
         $userIds = array_values(array_unique(array_filter([$anomaly->status_by, ...$history->where('actor_type', (new User)->getMorphClass())->pluck('actor_id')->map(fn ($id) => (int) $id)->all()])));
         $users = User::query()->whereKey($userIds)->pluck('name', 'id')->all();
 

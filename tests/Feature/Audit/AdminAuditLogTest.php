@@ -73,8 +73,8 @@ test('entries show who, which business, what and a field-by-field diff', functio
         ->where('entries.data.0.subject.label', 'Licence')
         ->where('entries.data.0.ip', '203.0.113.5')
         ->where('entries.data.0.changes', [
-            ['field' => 'status', 'label' => 'Status', 'before' => 'active', 'after' => 'suspended'],
             ['field' => 'note', 'label' => 'Note', 'before' => null, 'after' => 'Unpaid'],
+            ['field' => 'status', 'label' => 'Status', 'before' => 'active', 'after' => 'suspended'],
         ])
         ->where('entries.data.0.meta', [['key' => 'reason', 'label' => 'Reason', 'value' => 'Unpaid invoice']])
         ->where('options.actions', fn ($actions) => collect($actions)->pluck('value')->all() === ['licence.*', 'licence.suspended'])

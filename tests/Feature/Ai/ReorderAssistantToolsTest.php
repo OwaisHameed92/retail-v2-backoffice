@@ -51,7 +51,8 @@ test('suggest_reorder takes the user\'s changes to the cases, and says so when n
     $this->fake->callTool('suggest_reorder', ['shop_id' => $this->leeds->id, 'lines' => [['product_id' => F::COLA, 'cases' => 5]]])->replyWith('Please confirm.');
 
     $id = $this->ask($this->owner, 'Reorder Leeds but 5 cases of cola')['done']['proposals'][0]['id'];
-    expect(AiPendingAction::query()->find($id)->input['lines'])->toBe([['product_id' => F::COLA, 'supplier_id' => F::SUPPLIER, 'cases' => 5]]);
+    // toEqual: a MySQL JSON column does not keep the key order.
+    expect(AiPendingAction::query()->find($id)->input['lines'])->toEqual([['product_id' => F::COLA, 'supplier_id' => F::SUPPLIER, 'cases' => 5]]);
     $this->actingAs($this->owner)->postJson("/app/assistant/actions/{$id}/confirm")->assertOk();
     expect((int) PurchaseOrderLine::withoutCompanyScope()->where('purchase_order_id', ($this->orders)()->sole()->id)->sole()->ordered_cases)->toBe(5);
 

@@ -82,8 +82,12 @@ final class AuditPresenter
         $before ??= [];
         $after ??= [];
         $out = [];
+        // By field name: a MySQL JSON column does not keep the written key order (SQLite does), so the order must not
+        // depend on the database.
+        $fields = array_map('strval', array_unique([...array_keys($before), ...array_keys($after)]));
+        sort($fields);
 
-        foreach (array_unique([...array_keys($before), ...array_keys($after)]) as $field) {
+        foreach ($fields as $field) {
             $from = array_key_exists($field, $before) ? self::value($before[$field]) : null;
             $to = array_key_exists($field, $after) ? self::value($after[$field]) : null;
 
@@ -91,7 +95,7 @@ final class AuditPresenter
                 continue;
             }
 
-            $out[] = ['field' => (string) $field, 'label' => AuditLabels::field((string) $field), 'before' => $from, 'after' => $to];
+            $out[] = ['field' => $field, 'label' => AuditLabels::field($field), 'before' => $from, 'after' => $to];
         }
 
         return $out;

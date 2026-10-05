@@ -82,7 +82,7 @@ test('every model call is metered and the month\'s use shows on the billing page
     $this->fake->usage(1000, 200)->callTool('get_sales', ['period' => 'today'])->replyWith('£9.06 net.');
     $this->ask($this->owner, 'Sales today?');
 
-    expect(AiUsage::query()->where('company_id', $this->kirkgate->id)->sum('total_tokens'))->toBe(2400);
+    expect((int) AiUsage::query()->where('company_id', $this->kirkgate->id)->sum('total_tokens'))->toBe(2400);
 
     $this->actingAs($this->owner)->get('/app/billing')->assertOk()->assertInertia(fn (Assert $page) => $page
         ->where('aiUsage.used', 2400)
