@@ -26,6 +26,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property string|null $branch_id
  * @property string $reference
  * @property string $token
+ * @property string|null $customer_id
  * @property string $customer_name
  * @property string $customer_phone
  * @property string $customer_email

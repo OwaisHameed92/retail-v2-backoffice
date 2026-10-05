@@ -26,6 +26,8 @@ final class CustomerFormat
             CustomerTransactionType::PointsAdjust => 'Points adjusted',
             CustomerTransactionType::PointsExpire => 'Points expired',
             CustomerTransactionType::Opening => 'Opening balance',
+            CustomerTransactionType::Advance => 'Paid in advance',
+            CustomerTransactionType::AdvanceRefund => 'Advance refunded',
             null => 'Other',
         };
     }
@@ -39,7 +41,7 @@ final class CustomerFormat
     {
         return $group === 'points'
             ? ['pointsEarn', 'pointsBurn', 'pointsAdjust', 'pointsExpire', 'opening']
-            : ['charge', 'payment', 'refund', 'opening'];
+            : ['charge', 'payment', 'refund', 'opening', 'advance', 'advanceRefund'];
     }
 
     public static function channelLabel(ConsentChannel $channel): string

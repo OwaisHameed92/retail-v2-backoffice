@@ -36,7 +36,7 @@ export interface CustomerIndexProps {
     customers: Paginated<CustomerRow>;
     filters: CustomerFilters;
     shops: Option[];
-    counts: { all: number; owing: number; owed: string; points: number; emailConsent: number };
+    counts: { all: number; owing: number; owed: string; creditHeld: string; points: number; emailConsent: number };
     canEdit: boolean;
 }
 
@@ -101,6 +101,24 @@ export interface ConsentEvent {
     shop: string | null;
 }
 
+/** A current pay date (till 0.1.51 AccountPayDate) and its reminder state. */
+export interface PayDate {
+    id: string;
+    dueAt: string;
+    wholeAccount: boolean;
+    saleId: string | null;
+    note: string | null;
+    shop: string;
+    reminder: {
+        state: 'sent' | 'failed' | 'none';
+        at: string | null;
+        channel: string | null;
+        attempts: number;
+        error: string | null;
+        detail: string | null;
+    };
+}
+
 export interface CustomerShowProps {
     customer: CustomerDetails;
     account: {
@@ -111,6 +129,7 @@ export interface CustomerShowProps {
         overLimit: boolean;
         byShop: ShopTotal[];
     };
+    payDates: PayDate[];
     ledger: Paginated<LedgerRow>;
     ledgerFilters: { shop: string | null; type: 'account' | 'points' | null };
     shops: Option[];

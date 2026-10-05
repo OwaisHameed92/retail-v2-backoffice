@@ -21,8 +21,8 @@ On a secondary till the sync key box is greyed: "Enter the sync key on the main 
 
 Every till is built with **one portal address** (`build/portal.json` → `pwsh build/publish.ps1 -PortalUrl …`,
 baked into the exe). Licence calls, the cloud move and sync all go to it, with the fixed `/api/v1/…` paths.
-**Send the owner the production base URL** (e.g. `https://portal.example.co.uk`, https only) and it goes into
-`build/portal.json` before the next release.
+The address is `https://retail-v2-portal.sspos.co.uk` (the owner's own host). If it ever moves, the new one goes
+into `build/portal.json` and every till follows at its next update — nothing is typed in a shop.
 
 Which address a call uses, in order (the first one that is filled in):
 

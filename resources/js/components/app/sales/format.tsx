@@ -96,6 +96,11 @@ export function actionLabel(action: string): string {
         NoSale: 'Drawer opened (no sale)',
         PriceOverride: 'Price changed at the till',
         DiscountApplied: 'Discount given',
+        CartCleared: 'Basket cleared before payment',
+        AccountPaymentCollected: 'Account payment taken',
+        AdvanceRefunded: 'Advance refunded',
+        PaymentReminderSent: 'Payment reminder sent',
+        PaymentReminderFailed: 'Payment reminder failed',
     };
 
     return known[action] ?? action.replace(/([a-z])([A-Z])/g, '$1 $2').replace(/^./, (c) => c.toUpperCase());

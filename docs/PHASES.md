@@ -87,12 +87,12 @@ Contract: v1.4.1 §18.4. Roles: business owner, **shop manager** (one branch onl
 | 4.1 | Portal users and roles (incl. branch-scoped shop manager) | done |
 | 4.2 | Products, barcodes, units, departments, categories, CSV import | done |
 | 4.3 | Prices and promotions (incl. per-shop price screen, `BranchPrice`). EPOS answers 2026-10-01: every offer type incl. `quantityPrice` tiers, days, past-midnight times, style items | done |
-| 4.4 | Customers (ledger-based balance and points, statements, consent) | done |
+| 4.4 | Customers (ledger-based balance and points, statements, consent). Till 0.1.51 pack: owed / credit held, advances in the ledger, current pay dates and reminder state | done |
 | 4.5 | Suppliers, payment types, reasons, staff users/PINs. EPOS answers 2026-10-01: till `pbkdf2$…` PIN hash, sent only when set/changed | done |
 | 4.6 | Sales and receipts (refunds, voids) | done |
 | 4.7 | Shops and tills (licence read-only, till status, "Ask for more tills") | done |
 | 4.8 | Reports (sales, refunds, VAT, stock, Z) | done |
-| 4.9 | Shop settings (receipt text, opening hours; per §18.6) | done |
+| 4.9 | Shop settings (receipt text, opening hours; per §18.6). Till 0.1.51 pack: customer accounts and reminders, shelf labels, product library, shop checks (choice and time types) | done |
 | 4.10 | My subscription and invoices | done |
 
 ## Phase 5: Operations — 10/10 (complete)

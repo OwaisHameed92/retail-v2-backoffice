@@ -40,6 +40,7 @@ final class CustomerDetail
                 'overLimit' => ! Money::isZero($limit) && Money::compare($totals['balance'], $limit) > 0,
                 'byShop' => CustomerLedger::byShop($customer->id, $branches),
             ],
+            'payDates' => CustomerPayDates::current($customer->id, $branches),
             'ledger' => CustomerLedger::page($request, $customer->id, $branches, $shop, $type),
             'ledgerFilters' => ['shop' => $shop, 'type' => $type],
             'shops' => self::options($branches),

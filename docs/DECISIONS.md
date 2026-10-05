@@ -871,3 +871,43 @@ Plain explanation for staff: `docs/billing-flow.md`.
   it, logins in no other business, its files) in one transaction; refuses a business with an activated licence or sales
   unless `--force`; always shows the counts and asks first. `demo:billing --fresh` uses the same code.
 
+
+## Till 0.1.51 pack (2026-10-06)
+
+`docs/contracts/portal-api-v1.4.1/docs/web-portal-api/PORTAL-CHANGES-2026-10-06.md` (tills 0.1.27–0.1.51; detail in
+`UPCOMING-CHANGES.md` and `PORTAL-CHANGES-2026-10-02-cash-reports.md`). Contract still v1. The pack's changed and new
+files were copied over the contract folder (LF, our `ANSWERS-*` files kept). `SettingSyncPolicy` already matched the
+new `settings-local-only.json` (the new local keys fall under its prefixes / secret words; drift test green).
+
+| Topic | Decision |
+|---|---|
+| Entity store | Generator release `0.1.51` (prefix `2026_11_24_1000`): new table `account_pay_dates` (`AccountPayDate`, branch-owned, read only; `isCurrent` / `lastTryFailed` derived; `lastReminderError` multi-line `text`); `customers.pending_points`, `earns_points`; `customer_transactions.tender`, `register_id`, `shift_id`; `customer_orders.customer_id`; `rota_shifts.ends_next_day` (in the pack's schema, not the note); enum values `advance`, `advanceRefund`, `customerAdvance`, `customerAdvanceRefund`, `AccountPayDateReminderChannel` |
+| EventSubscription | `local` (till 0.1.38): no model or registry entry; a push of one is skipped like any local row. Older tills' blank-company `EventSubscription` / `TopSellerTile` rows stay accepted as skipped (`EnvelopeReader::TILL_BOOKKEEPING`), `grid.layout.` / `help.tour_dismissed.` settings stay skipped. The `event_subscriptions` table stays (additive migrations; it never held rows) |
+| Balance / credit held | Balance = the ledger sum (`RecomputeCustomerBalances`, unchanged), so an advance (negative) gives a negative balance = credit held. Screens say "owed" / "credit held" (list hint, customer page, statement, statement email). `Customer.owed` / `creditHeld` are derived (never stored); a pull sends them worked out from our balance (EPOS Q2 open) |
+| earnsPoints / pendingPoints | A pushed Customer without `earnsPoints` (or null) is stored as true (`PayloadMapper::ABSENT_DEFAULTS`); a pulled Customer always carries `earnsPoints` (null = true, never false) and `pendingPoints` echoes the last pushed value, 0 when none (EPOS Q1 open). Portal-made customers start `earns_points` true, `pending_points` 0 |
+| Cash | Expected cash / card are the till's `ShiftTender.expected` (we rebuild neither), so advances and card account payments are already in them; the cash shortfall anomaly reads the till's variance. The new movement types get words ("Customer advance", "Advance refunded") |
+| Ledger | Account `2260` per shop is stored by id and grouped by code (`AccountChart`). `refType` is free text (never validated); journals link to their source by `refId` only, never by date, so late postings (dated the first open month) need nothing. `RefundFix` does not flag `CustomerAdvanceRefund` (no income lines) |
+| Compliance / invoices | No insert-only rule exists: `U` / `D` on the compliance tables and `SupplierInvoice` apply like any branch row (soft delete hides them) — tested |
+| Push ack (§7) | Unchanged and tested: skipped, unknown-entity and stored rows all count as accepted, so `acknowledgedSeq` reaches the batch's last seq; only a rejection stops it. Rejections are not remembered: a row refused for a blank `companyId` is accepted when re-sent under the same id, version and seq |
+| Licence key mandatory | `ApproveTrial` already required a plan (keys + welcome email). The admin wizard (`OnboardTenant`) now refuses when no plan exists instead of making keyless tills. `cloud/migrate` takes `localTrialEndsAt: null` (sample replayed). `licence/redeem` from unseen shops: recorded on first sighting (module 2.8, tested) |
+| Exceptions | ExceptionLog `LineVoided` (written with every void since 0.1.28) is left out of "other" so voids count once (from AuditLog); `CartCleared` "Sale cleared before payment", `HeldSaleDiscarded` "Held sale thrown away"; the void log reads the till's PascalCase `ProductName` / `Quantity` / `Value` |
+| Settings catalogue | New sections "Customer accounts and reminders" (every shop only), "Shelf labels", "Products and the product library", "Shop checks"; loyalty on tobacco / lottery. New setting types `choice` (the till's exact texts) and `time` (HH:mm). A section whose settings are all every-shop-only is hidden on a shop's page |
+| Pay dates | The customer page lists current pay dates (not replaced) with the last reminder: sent (channel, when) or failed (first line, then the per-channel lines). Read only |
+| Not done | No account ageing exists (nothing to change for `saleId`-first ageing); `Product.imagePath` is never rendered (and stays a till path); `PurchaseOrder` closed short shows "closed short" on the order page |
+
+**Training-mode practice rows (§5, till ≤ 0.1.44).** No code until EPOS sends the list. When it arrives (per shop:
+entity + id), in a maintenance window: (1) load the list into a scratch table; (2) per shop, in one transaction, set
+`deleted_at` (never hard-delete) on the listed rows and their children (`sale_lines`, `sale_payments`, `sale_vats` of
+the sales; `journal_lines` of the entries; stock movements, cash movements, customer ledger rows listed); (3) run
+`RecomputeCustomerBalances` for the company, `php artisan reports:rebuild --company=<id> --from=<first day> --to=<last
+day>`; (4) record one admin audit row with the counts. A change pulled during a training session: our pull is cursor
+based (`since` = what the till sends), so it is re-sent as soon as the till pulls again from its last live cursor.
+
+**EPOS questions still open (PORTAL-CHANGES-2026-10-06 §11):** Q1 does a pulled `Customer.pendingPoints` overwrite the
+till's (we echo the pushed value)? Q2 does the till ignore pulled `owed` / `creditHeld`, and should they be
+`derivedColumns`? Q3 who wins on `ProductRecall` close / reopen / note edits made at both ends? Q4 the AuditLog
+action names of `SupplierInvoice` update / soft delete. Q5 does `AccountPayDate.saleId` stay `""` (not null) for the
+whole account? Q6 will `CustomerTransaction.tender` stay free text "Cash" / "Card", other values? Q7 the date of the
+one-time `CustomerCreditReclass` journal, and is it skipped with no customer in credit? Q8 `web-portal-api.md` §13
+says 111 branch-owned tables, `ownership.json` lists 114. Q9 a sample `samples/entities/AccountPayDate.json`. Q10
+should the portal manage `library.url` per company or only store it (we show it under every shop)?

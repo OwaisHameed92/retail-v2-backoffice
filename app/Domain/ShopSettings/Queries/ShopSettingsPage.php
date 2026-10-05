@@ -59,6 +59,10 @@ final class ShopSettingsPage
                 }
                 $settings[] = ['key' => $key, ...$definition];
             }
+            if ($settings === []) {
+                continue; // Every setting of the section is for the whole business.
+            }
+
             $sections[] = ['id' => $id, 'title' => $section['title'], 'description' => $section['description'], 'settings' => $settings];
         }
 

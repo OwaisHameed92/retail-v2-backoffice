@@ -31,7 +31,7 @@ function fallback(definition: SettingDefinition, inherited: SettingFieldProps['i
     return byDefault ? `Till default: ${byDefault}` : 'Till default';
 }
 
-/** One till setting: an On/Off choice, a number with its unit, or text. Blank = use the wider setting. */
+/** One till setting: an On/Off choice, one of the till's options, a time, a number with its unit, or text. Blank = use the wider setting. */
 export function SettingField({ definition, value, onChange, inherited, overrides, isShop, error }: SettingFieldProps) {
     const id = `setting-${definition.key.replace(/[^a-z0-9]/gi, '-')}`;
     const inheritLabel = fallback(definition, inherited, isShop);
@@ -60,6 +60,34 @@ export function SettingField({ definition, value, onChange, inherited, overrides
                             <SelectItem value="false">Off</SelectItem>
                         </SelectContent>
                     </Select>
+                );
+            case 'choice':
+                return (
+                    <Select value={value === '' ? INHERIT : value} onValueChange={(v) => onChange(v === INHERIT ? '' : v)}>
+                        <SelectTrigger id={id} aria-invalid={invalid} aria-describedby={describedBy}>
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value={INHERIT}>{inheritLabel}</SelectItem>
+                            {(definition.options ?? []).map((option) => (
+                                <SelectItem key={option} value={option}>
+                                    {option}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                );
+            case 'time':
+                return (
+                    <Input
+                        id={id}
+                        type="time"
+                        value={value}
+                        onChange={(e) => onChange(e.target.value)}
+                        className="tabular-nums"
+                        aria-invalid={invalid}
+                        aria-describedby={describedBy}
+                    />
                 );
             case 'multiline':
                 return (

@@ -5,9 +5,10 @@
  * Every key is a shared key of `samples/settings-local-only.json` (`sharedKeys`) and never a deny-listed one; a test
  * keeps it that way. Values are stored as text exactly as the till keeps them: `true`/`false`, `20`, `2.50`.
  *
- * Per setting: label, help, type (bool, int, money, percent, decimal, text, multiline), optional min/max (numbers),
- * max (characters for text), unit ("minutes", "days"…), default (only the till's defaults the contract states) and
- * everyShopOnly (a company-scope setting the till reads for the whole business: never set per shop).
+ * Per setting: label, help, type (bool, int, money, percent, decimal, text, multiline, choice, time), optional
+ * min/max (numbers), max (characters for text), options (choice: the till's exact texts), unit ("minutes", "days"…),
+ * default (only the till's defaults the contract states) and everyShopOnly (a company-scope setting the till reads
+ * for the whole business: never set per shop).
  */
 
 return [
@@ -125,6 +126,54 @@ return [
             'customers.loyalty_min_redeem_points' => ['label' => 'Least points to spend', 'type' => 'int', 'unit' => 'points', 'min' => 0, 'max' => 1000000, 'help' => 'A customer needs at least this many points to pay with them.'],
             'customers.loyalty_expiry_months' => ['label' => 'Points expire after', 'type' => 'int', 'unit' => 'months', 'min' => 0, 'max' => 120, 'help' => 'How long points last.'],
             'customers.default_credit_limit' => ['label' => 'Usual account credit limit', 'type' => 'money', 'min' => 0, 'max' => 100000, 'help' => 'For new customer accounts.'],
+            'customers.loyalty_points_on_tobacco' => ['label' => 'Points on tobacco', 'type' => 'bool', 'default' => 'false', 'everyShopOnly' => true, 'help' => 'On: tobacco sales earn points too.'],
+            'customers.loyalty_points_on_lottery' => ['label' => 'Points on lottery', 'type' => 'bool', 'default' => 'false', 'everyShopOnly' => true, 'help' => 'On: lottery sales earn points too.'],
+        ],
+    ],
+    // Till 0.1.51 (PORTAL-CHANGES-2026-10-06 §2.5): company settings, the same for every shop.
+    'accounts' => [
+        'title' => 'Customer accounts and reminders',
+        'description' => 'Paying in advance, pay dates and payment reminders. The tills send reminders by the shop\'s own WhatsApp or email.',
+        'settings' => [
+            'customers.advance_enabled' => ['label' => 'Pay in advance', 'type' => 'bool', 'default' => 'false', 'everyShopOnly' => true, 'help' => 'A customer may pay more than they owe; the shop holds the rest as credit for their next account sales.'],
+            'customers.advance_refund_needs_pin' => ['label' => 'Manager PIN to refund an advance', 'type' => 'bool', 'default' => 'true', 'everyShopOnly' => true, 'help' => 'Handing credit back as cash or card needs a manager.'],
+            'customers.advance_print_slip' => ['label' => 'Print a slip for advances', 'type' => 'bool', 'default' => 'true', 'everyShopOnly' => true, 'help' => 'The customer gets a slip showing the credit held.'],
+            'customers.payment_reminders' => ['label' => 'Pay dates and reminders', 'type' => 'bool', 'default' => 'false', 'everyShopOnly' => true, 'help' => 'Record when customers will pay, list accounts due under Collections and send reminders.'],
+            'customers.pay_date_ask_at_till' => ['label' => 'Ask "When will they pay?"', 'type' => 'bool', 'default' => 'true', 'everyShopOnly' => true, 'help' => 'The till asks for a pay date on a sale that leaves money owed.'],
+            'customers.reminders_auto_send' => ['label' => 'Send reminders automatically', 'type' => 'bool', 'default' => 'true', 'everyShopOnly' => true, 'help' => 'Off: staff send each reminder by hand from Collections.'],
+            'customers.reminders_send_by' => ['label' => 'Send reminders by', 'type' => 'choice', 'options' => ['WhatsApp, then email', 'WhatsApp only', 'Email only'], 'default' => 'WhatsApp, then email', 'everyShopOnly' => true, 'help' => 'Email is used when WhatsApp is not set up or the customer has no mobile number.'],
+            'customers.reminders_quiet_from' => ['label' => 'No reminders after', 'type' => 'time', 'default' => '21:00', 'everyShopOnly' => true, 'help' => 'Shop time. Reminders wait until the quiet hours end.'],
+            'customers.reminders_quiet_until' => ['label' => 'No reminders before', 'type' => 'time', 'default' => '08:00', 'everyShopOnly' => true, 'help' => 'Shop time.'],
+            'customers.reminders_repeat' => ['label' => 'Repeat a reminder', 'type' => 'choice', 'options' => ['Never', '1 day', '3 days', '7 days'], 'default' => 'Never', 'everyShopOnly' => true, 'help' => 'How long after a reminder to send another while the money is still owed.'],
+            'customers.reminders_message' => ['label' => 'Reminder message', 'type' => 'multiline', 'max' => 500, 'default' => 'Hi {name}, a reminder that {amount} on your account is due {when}. Thank you — {shop}', 'everyShopOnly' => true, 'help' => 'Use {name}, {amount}, {when} and {shop}: the till fills them in.'],
+        ],
+    ],
+    'labels' => [
+        'title' => 'Shelf labels',
+        'description' => 'Your own label size and when the till offers labels. Label designs are on the Labels page.',
+        'settings' => [
+            'labels.default_layout' => ['label' => 'Usual label', 'type' => 'choice', 'options' => ['Small', 'Medium', 'Large', 'ShelfEdge', 'A4Sheet', 'Custom'], 'help' => 'Custom uses the size below.'],
+            'labels.custom_width_mm' => ['label' => 'Custom label width', 'type' => 'decimal', 'unit' => 'mm', 'min' => 20, 'max' => 110, 'default' => '50', 'help' => 'For the Custom label.'],
+            'labels.custom_height_mm' => ['label' => 'Custom label height', 'type' => 'decimal', 'unit' => 'mm', 'min' => 15, 'max' => 150, 'default' => '30', 'help' => 'For the Custom label.'],
+            'labels.gap_mm' => ['label' => 'Gap between labels', 'type' => 'decimal', 'unit' => 'mm', 'min' => 0, 'max' => 10, 'default' => '2', 'help' => '0 for a continuous roll.'],
+            'labels.ask_after_goods_in' => ['label' => 'Offer labels after a delivery', 'type' => 'bool', 'default' => 'false', 'help' => 'After goods in, the till offers to print labels for what arrived.'],
+        ],
+    ],
+    'products' => [
+        'title' => 'Products and the product library',
+        'description' => 'Product pictures and the shared barcode library the tills look products up in.',
+        'settings' => [
+            'catalogue.auto_product_images' => ['label' => 'Find product pictures', 'type' => 'bool', 'default' => 'true', 'everyShopOnly' => true, 'help' => 'The main till finds a picture for each new product and keeps it on that PC.'],
+            'library.lookup_enabled' => ['label' => 'Look up new barcodes', 'type' => 'bool', 'default' => 'true', 'help' => 'An unknown barcode is looked up in the shared product library.'],
+            'library.share_new_products' => ['label' => 'Share new products', 'type' => 'bool', 'default' => 'true', 'help' => 'Products you add help other shops (name and barcode only, never prices).'],
+            'library.url' => ['label' => 'Product library address', 'type' => 'text', 'max' => 200, 'everyShopOnly' => true, 'help' => 'Leave blank to use the standard library.'],
+        ],
+    ],
+    'checks' => [
+        'title' => 'Shop checks',
+        'description' => 'Daily diary checks such as fridge temperatures.',
+        'settings' => [
+            'compliance.shop_checks_ask_at_shift_open' => ['label' => 'Ask at shift open', 'type' => 'bool', 'default' => 'false', 'help' => 'The Shop checks card opens by itself when a shift is opened.'],
         ],
     ],
     'promotions' => [

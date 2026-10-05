@@ -147,7 +147,8 @@ test('never echoed: a row Leeds pushed goes to Bradford (parents first, in the t
     foreach (Pull::changes($bradford) as $i => $change) {
         $derived = array_diff(EntityRegistry::get($change['entity'])->derived, ['isDeleted', 'domainEvents']);
         // §10.1: a customer's balance and points are the portal's sum of its ledger (none here), never the till's cache.
-        $ledger = $change['entity'] === 'Customer' ? ['balance' => 0, 'points' => 0] : [];
+        // owed / creditHeld (till 0.1.51) are worked out from that balance, never stored.
+        $ledger = $change['entity'] === 'Customer' ? ['balance' => 0, 'points' => 0, 'owed' => 0, 'creditHeld' => 0] : [];
         expect($change['payload'])->toEqual([...array_diff_key($sample[$i]['payload'], array_flip($derived)), ...$ledger])
             ->and($change['op'])->toBe('I');
     }

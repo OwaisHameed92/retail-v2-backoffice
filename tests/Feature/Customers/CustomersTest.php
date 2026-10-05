@@ -100,7 +100,7 @@ test('the list searches by name, phone, email and card and filters by balance, p
         ->and($names('?sort=balance&direction=desc'))->toBe(['Aisha Rahman', 'Sam Patel']);
 
     $this->actingAs($this->manager)->get('/app/customers')->assertInertia(fn (AssertableInertia $page) => $page
-        ->where('counts', ['all' => 2, 'owing' => 1, 'owed' => '12.00', 'points' => 50, 'emailConsent' => 1])->where('canEdit', true));
+        ->where('counts', ['all' => 2, 'owing' => 1, 'owed' => '12.00', 'creditHeld' => '0.00', 'points' => 50, 'emailConsent' => 1])->where('canEdit', true));
 });
 
 test('marketing consent is the latest answer per channel, with its history; never asked means no consent', function () {

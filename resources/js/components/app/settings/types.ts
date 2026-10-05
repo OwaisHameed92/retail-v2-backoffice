@@ -1,6 +1,6 @@
 /** Module 4.9: props of `app/settings/index` (App\Domain\ShopSettings\Queries\ShopSettingsPage). */
 
-export type SettingType = 'bool' | 'int' | 'money' | 'percent' | 'decimal' | 'text' | 'multiline';
+export type SettingType = 'bool' | 'int' | 'money' | 'percent' | 'decimal' | 'text' | 'multiline' | 'choice' | 'time';
 
 export interface SettingDefinition {
     key: string;
@@ -10,6 +10,8 @@ export interface SettingDefinition {
     min?: number;
     max?: number;
     unit?: string;
+    /** `choice`: the till's exact texts. */
+    options?: string[];
     /** The till's built-in default, only where the contract states it. */
     default?: string;
     /** One value for the whole business: not offered per shop. */

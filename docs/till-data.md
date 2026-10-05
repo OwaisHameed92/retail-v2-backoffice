@@ -10,19 +10,21 @@ Contract v1.4.1: `docs/contracts/portal-api-v1.4.1/docs/web-portal-api.md` §5�
 |---|---|---|
 | Overrides | `app/Domain/TillData/definitions.php` | hand |
 | Generator | `app/Domain/TillData/Generator/*`, `php artisan till:entities:generate` | hand |
-| Migrations, additive per release | v1.1: `2026_09_27_1100NN_create_till_<group>_tables.php`; v1.3.1: `2026_10_02_10000{0,1}_…_v1_3_1_…`; v1.4.1: `2026_10_06_100000_create_till_v1_4_1_tables.php`, `2026_10_06_100001_add_till_v1_4_1_columns.php` (+ hand `2026_10_06_100002_add_v1_4_1_sync_columns.php`); v1.4.1-b: `2026_10_10_100001_…`; till 0.1.15 pack (release `0.1.15`): `2026_10_25_100001_add_till_0_1_15_columns.php` (`ClockEvent.register_id`, `StoreCreditVoucher.note`) | generated |
+| Migrations, additive per release | v1.1: `2026_09_27_1100NN_create_till_<group>_tables.php`; v1.3.1: `2026_10_02_10000{0,1}_…_v1_3_1_…`; v1.4.1: `2026_10_06_100000_create_till_v1_4_1_tables.php`, `2026_10_06_100001_add_till_v1_4_1_columns.php` (+ hand `2026_10_06_100002_add_v1_4_1_sync_columns.php`); v1.4.1-b: `2026_10_10_100001_…`; till 0.1.15 pack (release `0.1.15`): `2026_10_25_100001_add_till_0_1_15_columns.php` (`ClockEvent.register_id`, `StoreCreditVoucher.note`); till 0.1.51 pack (release `0.1.51`): `2026_11_24_100000_create_till_0_1_51_tables.php` (`AccountPayDate`), `2026_11_24_100001_add_till_0_1_51_columns.php` (Customer, CustomerTransaction, CustomerOrder, RotaShift) | generated |
 | Schema lock | `database/till-schema.json`: what each release's migrations made | generated |
 | Models (141) | `app/Domain/TillData/Models/*.php` | generated |
-| Enums (88) | `app/Domain/TillData/Enums/*.php` | generated |
+| Enums (89) | `app/Domain/TillData/Enums/*.php` | generated |
 | Registry | `app/Domain/TillData/EntityRegistry.php` | generated |
 | Behaviour traits, casts, queries | `app/Domain/TillData/{Concerns,Casts,Queries}` | hand |
 | Applier | `app/Domain/TillData/Actions/ApplySyncChanges.php` + `app/Domain/TillData/Sync/*` | hand |
 | Sync bookkeeping | `2026_09_27_100000_create_till_sync_tables.php`, `…100001_add_till_columns_to_tenancy_tables.php` | hand |
 
-145 schema entities (v1.4.1). 144 have a registry entry; 141 have their own table and model. `Company`, `Branch` and
-`Register` land on module 1.2's `companies`, `branches` and `registers` tables. The `local` tables of
-`ownership.json` (`SyncState`, `DomainEventRecord`, `ProcessedCommand`; `EntityRegistry::LOCAL`) are never synced
-and never stored: a push of one is acknowledged as `skipped` (v1.3.1's `till_sync_states` table is kept, unused).
+146 schema entities (till 0.1.51 pack). 144 have a registry entry; 141 have their own table and model. `Company`,
+`Branch` and `Register` land on module 1.2's `companies`, `branches` and `registers` tables. The `local` tables of
+`ownership.json` (`SyncState`, `DomainEventRecord`, `ProcessedCommand`, and `EventSubscription` since till 0.1.38;
+`EntityRegistry::LOCAL`) are never synced and never stored: a push of one is acknowledged as `skipped` (v1.3.1's
+`till_sync_states` and the old `event_subscriptions` tables are kept, unused). Older tills' `EventSubscription` /
+`TopSellerTile` rows with a blank `companyId` are skipped too (`EnvelopeReader::TILL_BOOKKEEPING`).
 `Setting` and `RolePermission` are **keyed rows** (below).
 
 Groups (table order): catalogue, promotions, customers, sales, stock, purchasing, cash, accounts, staff, system,
@@ -48,7 +50,10 @@ compliance.
   (a MySQL `json` column would re-format them, and `""` is not valid JSON).
 - Enums are `string(40)`, cast with `TillEnumCast` to the generated backed enum. A value the contract does not list
   yet is stored as sent, read back as `null`, and logged once per batch (never lose a row for an additive change).
-- Derived members (`isDeleted`, `domainEvents`, `key`, `balanceDue`, `isCompleted`, Money objects like
+- A member missing from an older till's row gets its type's default, except where that would be wrong
+  (`PayloadMapper::ABSENT_DEFAULTS`: `Customer.earnsPoints` missing or null = true, till 0.1.32).
+- Derived members (`isDeleted`, `domainEvents`, `key`, `balanceDue`, `isCompleted`, `Customer.owed` / `creditHeld`,
+  `AccountPayDate.isCurrent` / `lastTryFailed`, Money objects like
   `priceIncVat`, navigation collections like `Product.barcodes`) are not stored.
 - Unknown members (a newer till adds a column) go into `extra` (json). Secret-looking ones are redacted there.
 - Secrets: `Licence.licenceKey` is stored as `licence_key_hash` (HMAC-SHA256 under APP_KEY, as module 1.3 hashes
@@ -203,7 +208,9 @@ become visible in order. Who stamps:
   `SaveTillSetting`, `SetRolePermission` (HubOwnedRow). Company / Branch: `SentToTills` on a portal save of a till
   member. A hub conflict re-queues the row the portal kept, so the overruled shop gets the winner.
 - Customer `balance` / `points` are the ledger's sum (`RecomputeCustomerBalances`, run in every push chunk); they are
-  not part of `hub_hash` and never stamp a new version (§10.1).
+  not part of `hub_hash` and never stamp a new version (§10.1). A negative balance is credit held (advances, till
+  0.1.51). A pulled Customer carries `owed` / `creditHeld` worked out from that balance, `earnsPoints` (null = true)
+  and `pendingPoints` (the last pushed value, 0 when none) — `PullPayload::customer()`.
 
 Indexes: `(company_id, hub_version)` on every hub-owned table (`2026_10_05_100000_add_sync_pull_feed.php`; v1.4.1's
 three new hub tables in `2026_10_06_100002_add_v1_4_1_sync_columns.php`; hand

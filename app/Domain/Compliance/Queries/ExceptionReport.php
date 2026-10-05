@@ -14,8 +14,8 @@ use Illuminate\Support\Facades\DB;
 
 /**
  * Exceptions per staff member, the loss-prevention view (module 5.7): drawer opened with no sale (`ExceptionLog` type
- * `NoSale`), lines voided from an open basket (`AuditLog` action `LineVoided`, PORTAL-CHANGES-0.1.15 item 16; only
- * when the shop asks a reason for voids) and every other exception the till logs (price overrides, refunds…), with
+ * `NoSale`), lines voided from an open basket (`AuditLog` action `LineVoided`, PORTAL-CHANGES-0.1.15 item 16; on
+ * every void since till 0.1.28, reason "Not asked" when the shop does not ask) and every other exception the till logs (price overrides, refunds…), with
  * their amounts. The log shows the exceptions, or the voided lines when `type` is `LineVoided`.
  */
 final class ExceptionReport
@@ -63,11 +63,18 @@ final class ExceptionReport
         ];
     }
 
+    /** Types whose words are not just the split name (PORTAL-CHANGES-2026-10-02-cash-reports §1, till 0.1.28). */
+    private const LABELS = ['CartCleared' => 'Sale cleared before payment', 'HeldSaleDiscarded' => 'Held sale thrown away'];
+
     /** Words for a till exception type ("NoSale" → "No sale", "PriceOverride" → "Price override"). */
     public static function typeLabel(string $type): string
     {
         if ($type === '') {
             return 'Other';
+        }
+
+        if (isset(self::LABELS[$type])) {
+            return self::LABELS[$type];
         }
 
         return ucfirst(strtolower(trim((string) preg_replace('/(?<!^)[A-Z]/', ' $0', $type))));
@@ -116,8 +123,9 @@ final class ExceptionReport
                 return [
                     'id' => $r->id, 'at' => L::iso($r->at), 'type' => 'Line voided', 'staff' => L::name($staff, $r->user_id),
                     'shop' => L::name($shops, $r->branch_id), 'till' => L::name($tills, $r->register_id),
-                    'amount' => is_numeric($v = $pick(['value', 'lineTotal', 'total', 'amount'])) ? Money::normalise($v) : null,
-                    'detail' => trim(implode(' × ', array_filter([(string) $pick(['quantity', 'qty']), (string) $pick(['product', 'productName', 'name'])])).($r->reason ? ' · '.$r->reason : '')) ?: null,
+                    // The till writes PascalCase members (Value, Quantity, ProductName; till 0.1.28).
+                    'amount' => is_numeric($v = $pick(['Value', 'value', 'lineTotal', 'total', 'amount'])) ? Money::normalise($v) : null,
+                    'detail' => trim(implode(' × ', array_filter([(string) $pick(['Quantity', 'quantity', 'qty']), (string) $pick(['ProductName', 'product', 'productName', 'name'])])).($r->reason ? ' · '.$r->reason : '')) ?: null,
                 ];
             }, $rows),
             'meta' => ['page' => $page->currentPage(), 'perPage' => $page->perPage(), 'total' => $page->total(), 'lastPage' => $page->lastPage(), 'search' => null, 'sort' => $table->sort(), 'direction' => $table->direction()],
@@ -146,7 +154,10 @@ final class ExceptionReport
     /** @return Builder<ExceptionLog> */
     private static function exceptions(ComplianceFilters $f, bool $byType = true): Builder
     {
+        // Till 0.1.28 also logs every line void as an ExceptionLog `LineVoided`: voids are counted once, from the
+        // AuditLog rows (voids()), so those exception rows are left out here.
         return $f->during($f->scope(ExceptionLog::query()), 'at')
+            ->where(fn (Builder $q) => $q->where('type', '!=', self::LINE_VOIDED)->orWhereNull('type'))
             ->when($f->staff !== null, fn (Builder $q) => $q->where('user_id', $f->staff))
             ->when($byType && $f->type !== null && $f->type !== self::LINE_VOIDED, fn (Builder $q) => $q->where('type', $f->type));
     }

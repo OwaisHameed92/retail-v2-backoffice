@@ -136,7 +136,7 @@ export function MovementsCard({ movements, totals }: { movements: ShiftDetailPro
             {totals.length > 0 && (
                 <div className="flex flex-wrap gap-2 border-b px-6 py-3">
                     {totals.map((t) => (
-                        <StatusPill key={t.type ?? 'unknown'} tone={t.type === 'accountPayment' ? 'info' : 'neutral'}>
+                        <StatusPill key={t.type ?? 'unknown'} tone={t.type === 'accountPayment' || t.type === 'customerAdvance' || t.type === 'customerAdvanceRefund' ? 'info' : 'neutral'}>
                             {movementLabel(t.type)} · {number(t.count)} · {money(t.total)}
                         </StatusPill>
                     ))}

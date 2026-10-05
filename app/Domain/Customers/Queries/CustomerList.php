@@ -65,6 +65,8 @@ final class CustomerList
         ]);
 
         $owing = TillSum::many(Customer::query()->where('balance', '>', 0), ['balance' => 2]);
+        // A negative balance is credit the shop holds for the customer (advance, till 0.1.51).
+        $credit = TillSum::many(Customer::query()->where('balance', '<', 0), ['balance' => 2]);
 
         return [
             'customers' => $page,
@@ -74,6 +76,7 @@ final class CustomerList
                 'all' => Customer::query()->count(),
                 'owing' => Customer::query()->where('balance', '>', 0)->count(),
                 'owed' => $owing['balance'],
+                'creditHeld' => Money::normalise(ltrim($credit['balance'], '-')),
                 'points' => (int) Customer::query()->where('points', '>', 0)->sum('points'),
                 'emailConsent' => Customer::query()->tap(fn (Builder $q) => MarketingConsent::filter($q, ConsentChannel::Email))->count(),
             ],

@@ -28,6 +28,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property string $card_no
  * @property string $balance
  * @property int $points
+ * @property int $pending_points
+ * @property bool $earns_points
  * @property string $credit_limit
  * @property string $tier
  * @property string $notes
@@ -69,6 +71,8 @@ final class Customer extends Model
             'dob' => 'immutable_date:Y-m-d',
             'balance' => MoneyCast::class,
             'points' => 'integer',
+            'pending_points' => 'integer',
+            'earns_points' => 'boolean',
             'credit_limit' => MoneyCast::class,
             'is_active' => 'boolean',
             'anonymised_at' => UtcDateTimeCast::class,

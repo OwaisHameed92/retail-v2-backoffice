@@ -29,6 +29,8 @@ final class CustomerFields
         return [
             'name' => '', 'phone' => '', 'email' => '', 'address' => '', 'dob' => null, 'card_no' => '', 'balance' => '0.00',
             'points' => 0, 'credit_limit' => '0.00', 'tier' => '', 'notes' => '', 'is_active' => true, 'anonymised_at' => null,
+            // Till 0.1.28 / 0.1.32: a customer the portal adds collects points and holds none back yet.
+            'pending_points' => 0, 'earns_points' => true,
         ];
     }
 

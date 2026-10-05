@@ -139,6 +139,7 @@ final class PullPayload
             'PurchaseOrder' => [...$payload, 'branchCode' => ''],
             'PurchaseOrderLine' => [...$payload, 'receivedQty' => 0],
             'PromotionRule' => [...$payload, 'isGroupOffer' => self::isGroupOffer($payload)],
+            'Customer' => self::customer($payload),
             default => $payload,
         };
     }
@@ -155,6 +156,29 @@ final class PullPayload
         return (int) ($payload['minQuantity'] ?? 0) >= 2
             && in_array($payload['type'] ?? null, ['percentOff', 'fixedOff', 'fixedPrice'], true)
             && ($payload['scope'] ?? null) !== 'basket';
+    }
+
+    /**
+     * Till 0.1.28–0.1.51 (PORTAL-CHANGES-2026-10-06 §2.1, §2.7): `earnsPoints` is always sent and never defaulted to
+     * false (a row from before 0.1.32, or one the portal made, collects points: the till reads a missing value as
+     * true). `pendingPoints` echoes the till's last pushed value (0 when none; EPOS Q1 open). `owed` / `creditHeld`
+     * are worked out from the balance we send (the ledger's sum), never stored (EPOS Q2 open: the till ignores them).
+     *
+     * @param  array<string, mixed>  $payload
+     * @return array<string, mixed>
+     */
+    private static function customer(array $payload): array
+    {
+        $balance = Money::normalise($payload['balance'] ?? 0);
+        $negative = Money::isNegative($balance);
+
+        return [
+            ...$payload,
+            'earnsPoints' => $payload['earnsPoints'] ?? true,
+            'pendingPoints' => (int) ($payload['pendingPoints'] ?? 0),
+            'owed' => $negative ? 0 : self::number($balance),
+            'creditHeld' => $negative ? self::number(ltrim($balance, '-')) : 0,
+        ];
     }
 
     /**

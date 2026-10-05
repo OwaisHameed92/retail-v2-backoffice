@@ -18,7 +18,7 @@ export function balanceTone(balance: string): 'owes' | 'credit' | 'clear' {
     return value > 0 ? 'owes' : value < 0 ? 'credit' : 'clear';
 }
 
-/** A balance with its meaning: "£12.40 owed", "£4.00 in credit", "£0.00". */
+/** A balance with its meaning: "£12.40 owed", "£4.00 credit held" (paid in advance), "£0.00". */
 export function BalanceText({ balance, className, short = false }: { balance: string; className?: string; short?: boolean }) {
     const tone = balanceTone(balance);
     const amount = money(Math.abs(Number(balance)));
@@ -35,7 +35,7 @@ export function BalanceText({ balance, className, short = false }: { balance: st
         >
             {amount}
             {!short && tone === 'owes' && <span className="text-muted-foreground ml-1 text-xs font-normal">owed</span>}
-            {!short && tone === 'credit' && <span className="text-muted-foreground ml-1 text-xs font-normal">credit</span>}
+            {!short && tone === 'credit' && <span className="text-muted-foreground ml-1 text-xs font-normal">credit held</span>}
         </span>
     );
 }
@@ -72,7 +72,7 @@ export const CONSENT_OPTIONS: Option[] = [
 
 export const BALANCE_OPTIONS: Option[] = [
     { value: 'owes', label: 'Owes money' },
-    { value: 'credit', label: 'In credit' },
+    { value: 'credit', label: 'Credit held' },
     { value: 'overLimit', label: 'Over credit limit' },
 ];
 

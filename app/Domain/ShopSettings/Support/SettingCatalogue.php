@@ -10,12 +10,12 @@ use Illuminate\Validation\ValidationException;
  * settings with a label, help text and a type. `normalise()` turns what a person typed into the text the till
  * stores (`true`/`false`, `20`, `2.50`), or refuses it. Deny-listed keys are never part of it (a test checks).
  *
- * @phpstan-type Definition array{label: string, help: string, type: string, min?: int|float, max?: int|float, unit?: string, default?: string, everyShopOnly?: bool}
+ * @phpstan-type Definition array{label: string, help: string, type: string, min?: int|float, max?: int|float, unit?: string, default?: string, everyShopOnly?: bool, options?: list<string>}
  * @phpstan-type Section array{title: string, description: string, settings: array<string, Definition>}
  */
 final class SettingCatalogue
 {
-    public const TYPES = ['bool', 'int', 'money', 'percent', 'decimal', 'text', 'multiline'];
+    public const TYPES = ['bool', 'int', 'money', 'percent', 'decimal', 'text', 'multiline', 'choice', 'time'];
 
     /** @var array<string, Section>|null */
     private static ?array $sections = null;
@@ -77,6 +77,11 @@ final class SettingCatalogue
             'bool' => in_array(strtolower($text), ['true', 'false'], true) ? strtolower($text)
                 : throw ValidationException::withMessages([$field => "{$definition['label']}: choose on or off."]),
             'text', 'multiline' => self::text($definition, $field, (string) $value),
+            // The till's own texts, exactly ("WhatsApp, then email", "Custom"); a time is HH:mm shop time.
+            'choice' => in_array($text, $definition['options'] ?? [], true) ? $text
+                : throw ValidationException::withMessages([$field => "{$definition['label']}: choose one of the options."]),
+            'time' => preg_match('/^([01]\d|2[0-3]):[0-5]\d$/', $text) === 1 ? $text
+                : throw ValidationException::withMessages([$field => "{$definition['label']}: enter a time like 21:00."]),
             default => self::number($definition, $field, $text),
         };
     }

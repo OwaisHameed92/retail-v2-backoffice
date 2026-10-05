@@ -346,6 +346,7 @@
     "payload": {
       "reference": "WEB-20260923-0007",
       "token": "K7Q2",
+      "customerId": null,
       "customerName": "Aisha Rahman",
       "customerPhone": "07700 900123",
       "customerEmail": "aisha.rahman@example.co.uk",

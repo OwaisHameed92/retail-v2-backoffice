@@ -17,7 +17,9 @@
         "pointsBurn",
         "pointsAdjust",
         "pointsExpire",
-        "opening"
+        "opening",
+        "advance",
+        "advanceRefund"
       ]
     },
     "amount": {
@@ -60,6 +62,24 @@
     "at": {
       "type": "string",
       "format": "date-time"
+    },
+    "tender": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "registerId": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "shiftId": {
+      "type": [
+        "string",
+        "null"
+      ]
     },
     "branchId": {
       "type": "string"
@@ -140,6 +160,9 @@
     "userId",
     "note",
     "at",
+    "tender",
+    "registerId",
+    "shiftId",
     "branchId",
     "id",
     "companyId",

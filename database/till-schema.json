@@ -6112,6 +6112,83 @@
                     "indexes": []
                 }
             }
+        },
+        {
+            "release": "0.1.51",
+            "migrations": [
+                "2026_11_24_100000_create_till_0_1_51_tables.php",
+                "2026_11_24_100001_add_till_0_1_51_columns.php"
+            ],
+            "tables": {
+                "account_pay_dates": {
+                    "columns": {
+                        "id": "string('id', 26)->primary()",
+                        "company_id": "string('company_id', 26)",
+                        "branch_id": "string('branch_id', 26)->nullable()",
+                        "customer_id": "string('customer_id', 64)->nullable()",
+                        "sale_id": "string('sale_id', 64)->nullable()",
+                        "due_at": "dateTime('due_at')->nullable()",
+                        "note": "text('note')->nullable()",
+                        "user_id": "string('user_id', 64)->nullable()",
+                        "replaced_at": "dateTime('replaced_at')->nullable()",
+                        "reminder_sent_at": "dateTime('reminder_sent_at')->nullable()",
+                        "reminder_channel": "string('reminder_channel', 40)->nullable()",
+                        "reminder_attempts": "integer('reminder_attempts')->nullable()",
+                        "last_reminder_at": "dateTime('last_reminder_at')->nullable()",
+                        "last_reminder_error": "text('last_reminder_error')->nullable()",
+                        "row_version": "unsignedBigInteger('row_version')->default(0)",
+                        "created_at": "dateTime('created_at')->nullable()",
+                        "updated_at": "dateTime('updated_at')->nullable()",
+                        "deleted_at": "dateTime('deleted_at')->nullable()",
+                        "synced_at": "dateTime('synced_at')->nullable()",
+                        "sync_seq": "unsignedBigInteger('sync_seq')->nullable()",
+                        "extra": "json('extra')->nullable()",
+                        "portal_received_at": "dateTime('portal_received_at')->nullable()"
+                    },
+                    "indexes": {
+                        "account_pay_dates_company_id_updated_at_index": [
+                            "company_id",
+                            "updated_at"
+                        ],
+                        "account_pay_dates_company_id_branch_id_index": [
+                            "company_id",
+                            "branch_id"
+                        ],
+                        "account_pay_dates_company_id_customer_id_replaced_at_index": [
+                            "company_id",
+                            "customer_id",
+                            "replaced_at"
+                        ]
+                    }
+                },
+                "customer_orders": {
+                    "columns": {
+                        "customer_id": "string('customer_id', 64)->nullable()"
+                    },
+                    "indexes": []
+                },
+                "customer_transactions": {
+                    "columns": {
+                        "tender": "string('tender', 255)->nullable()",
+                        "register_id": "string('register_id', 64)->nullable()",
+                        "shift_id": "string('shift_id', 64)->nullable()"
+                    },
+                    "indexes": []
+                },
+                "customers": {
+                    "columns": {
+                        "pending_points": "integer('pending_points')->nullable()",
+                        "earns_points": "boolean('earns_points')->nullable()"
+                    },
+                    "indexes": []
+                },
+                "rota_shifts": {
+                    "columns": {
+                        "ends_next_day": "boolean('ends_next_day')->nullable()"
+                    },
+                    "indexes": []
+                }
+            }
         }
     ]
 }

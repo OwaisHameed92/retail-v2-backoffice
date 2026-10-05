@@ -157,7 +157,9 @@ final class EnvelopeReader
     /**
      * Till 0.1.29–0.1.37 push their own EventSubscription bookkeeping (handler name + last event seq) with an empty
      * companyId. It is not business data: acknowledged as skipped and never stored (NeverStored), so it can no
-     * longer stall the till's queue (2026-10-04, asked the EPOS team whether the table should be `local`).
+     * longer stall the till's queue. Since till 0.1.38 the table is `local` (ownership.json, never pushed; a row
+     * with our company is skipped as any local row) and from 0.1.42 no row goes up with a blank companyId, but older
+     * tills still send these, so the exception stays.
      *
      * @param  array<string, mixed>  $raw
      */

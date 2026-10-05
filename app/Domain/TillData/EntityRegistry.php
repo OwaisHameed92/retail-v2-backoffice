@@ -5,6 +5,7 @@ namespace App\Domain\TillData;
 use App\Domain\Tenancy\Models\Branch;
 use App\Domain\Tenancy\Models\Company;
 use App\Domain\Tenancy\Models\Register;
+use App\Domain\TillData\Enums\AccountPayDateReminderChannel;
 use App\Domain\TillData\Enums\AccountType;
 use App\Domain\TillData\Enums\AgeRule;
 use App\Domain\TillData\Enums\AlertSubscriptionType;
@@ -94,6 +95,7 @@ use App\Domain\TillData\Enums\VatReturnScheme;
 use App\Domain\TillData\Enums\VatTreatment;
 use App\Domain\TillData\Enums\VoucherTransactionType;
 use App\Domain\TillData\Models\Account;
+use App\Domain\TillData\Models\AccountPayDate;
 use App\Domain\TillData\Models\AgeRefusal;
 use App\Domain\TillData\Models\AlertSubscription;
 use App\Domain\TillData\Models\BackupRun;
@@ -124,7 +126,6 @@ use App\Domain\TillData\Models\DiaryCheckRecord;
 use App\Domain\TillData\Models\DispensingItem;
 use App\Domain\TillData\Models\DispensingRecord;
 use App\Domain\TillData\Models\EReceiptLog;
-use App\Domain\TillData\Models\EventSubscription;
 use App\Domain\TillData\Models\ExceptionLog;
 use App\Domain\TillData\Models\ExchangeRate;
 use App\Domain\TillData\Models\Expense;
@@ -249,7 +250,7 @@ use RuntimeException;
 final class EntityRegistry
 {
     /** Till tables that never sync (ownership `local`, contract §10): accepted in a push, never stored. */
-    public const LOCAL = ['DomainEventRecord', 'ProcessedCommand', 'SyncState'];
+    public const LOCAL = ['DomainEventRecord', 'EventSubscription', 'ProcessedCommand', 'SyncState'];
 
     public const ENTITIES = [
         'Account' => [
@@ -274,6 +275,34 @@ final class EntityRegistry
                 'isSystem' => ['column' => 'is_system', 'type' => 'bool', 'nullable' => false, 'arg' => null],
                 'isActive' => ['column' => 'is_active', 'type' => 'bool', 'nullable' => false, 'arg' => null],
                 'isDebitBalance' => ['column' => 'is_debit_balance', 'type' => 'bool', 'nullable' => false, 'arg' => null],
+            ],
+        ],
+        'AccountPayDate' => [
+            'model' => AccountPayDate::class,
+            'table' => 'account_pay_dates',
+            'ownership' => 'branch',
+            'scope' => 'branch',
+            'scopeColumns' => ['branch_id'],
+            'tenancy' => false,
+            'parent' => null,
+            'children' => [],
+            'derived' => ['isCurrent', 'lastTryFailed', 'isDeleted', 'domainEvents'],
+            'dropped' => [],
+            'immutable' => null,
+            'tillFields' => [],
+            'fields' => [
+                'customerId' => ['column' => 'customer_id', 'type' => 'string', 'nullable' => false, 'arg' => 64],
+                'saleId' => ['column' => 'sale_id', 'type' => 'string', 'nullable' => false, 'arg' => 64],
+                'dueAt' => ['column' => 'due_at', 'type' => 'datetime', 'nullable' => false, 'arg' => null],
+                'note' => ['column' => 'note', 'type' => 'text', 'nullable' => false, 'arg' => null],
+                'userId' => ['column' => 'user_id', 'type' => 'string', 'nullable' => false, 'arg' => 64],
+                'replacedAt' => ['column' => 'replaced_at', 'type' => 'datetime', 'nullable' => true, 'arg' => null],
+                'reminderSentAt' => ['column' => 'reminder_sent_at', 'type' => 'datetime', 'nullable' => true, 'arg' => null],
+                'reminderChannel' => ['column' => 'reminder_channel', 'type' => 'enum', 'nullable' => false, 'arg' => AccountPayDateReminderChannel::class],
+                'reminderAttempts' => ['column' => 'reminder_attempts', 'type' => 'int', 'nullable' => false, 'arg' => null],
+                'lastReminderAt' => ['column' => 'last_reminder_at', 'type' => 'datetime', 'nullable' => true, 'arg' => null],
+                'lastReminderError' => ['column' => 'last_reminder_error', 'type' => 'text', 'nullable' => false, 'arg' => null],
+                'branchId' => ['column' => 'branch_id', 'type' => 'string', 'nullable' => false, 'arg' => 26],
             ],
         ],
         'AgeRefusal' => [
@@ -808,7 +837,7 @@ final class EntityRegistry
             'tenancy' => false,
             'parent' => null,
             'children' => [],
-            'derived' => ['isAnonymised', 'isDeleted', 'domainEvents'],
+            'derived' => ['isAnonymised', 'owed', 'creditHeld', 'isDeleted', 'domainEvents'],
             'dropped' => [],
             'immutable' => null,
             'tillFields' => [],
@@ -821,6 +850,8 @@ final class EntityRegistry
                 'cardNo' => ['column' => 'card_no', 'type' => 'string', 'nullable' => false, 'arg' => 255],
                 'balance' => ['column' => 'balance', 'type' => 'money', 'nullable' => false, 'arg' => null],
                 'points' => ['column' => 'points', 'type' => 'int', 'nullable' => false, 'arg' => null],
+                'pendingPoints' => ['column' => 'pending_points', 'type' => 'int', 'nullable' => false, 'arg' => null],
+                'earnsPoints' => ['column' => 'earns_points', 'type' => 'bool', 'nullable' => false, 'arg' => null],
                 'creditLimit' => ['column' => 'credit_limit', 'type' => 'money', 'nullable' => false, 'arg' => null],
                 'tier' => ['column' => 'tier', 'type' => 'string', 'nullable' => false, 'arg' => 255],
                 'notes' => ['column' => 'notes', 'type' => 'text', 'nullable' => false, 'arg' => null],
@@ -871,6 +902,7 @@ final class EntityRegistry
             'fields' => [
                 'reference' => ['column' => 'reference', 'type' => 'string', 'nullable' => false, 'arg' => 255],
                 'token' => ['column' => 'token', 'type' => 'string', 'nullable' => false, 'arg' => 255],
+                'customerId' => ['column' => 'customer_id', 'type' => 'string', 'nullable' => true, 'arg' => 64],
                 'customerName' => ['column' => 'customer_name', 'type' => 'string', 'nullable' => false, 'arg' => 255],
                 'customerPhone' => ['column' => 'customer_phone', 'type' => 'string', 'nullable' => false, 'arg' => 255],
                 'customerEmail' => ['column' => 'customer_email', 'type' => 'string', 'nullable' => false, 'arg' => 255],
@@ -939,6 +971,9 @@ final class EntityRegistry
                 'userId' => ['column' => 'user_id', 'type' => 'string', 'nullable' => false, 'arg' => 64],
                 'note' => ['column' => 'note', 'type' => 'text', 'nullable' => false, 'arg' => null],
                 'at' => ['column' => 'at', 'type' => 'datetime', 'nullable' => false, 'arg' => null],
+                'tender' => ['column' => 'tender', 'type' => 'string', 'nullable' => true, 'arg' => 255],
+                'registerId' => ['column' => 'register_id', 'type' => 'string', 'nullable' => true, 'arg' => 64],
+                'shiftId' => ['column' => 'shift_id', 'type' => 'string', 'nullable' => true, 'arg' => 64],
                 'branchId' => ['column' => 'branch_id', 'type' => 'string', 'nullable' => false, 'arg' => 26],
             ],
         ],
@@ -1129,24 +1164,6 @@ final class EntityRegistry
                 'error' => ['column' => 'error', 'type' => 'text', 'nullable' => false, 'arg' => null],
                 'sentAt' => ['column' => 'sent_at', 'type' => 'datetime', 'nullable' => false, 'arg' => null],
                 'branchId' => ['column' => 'branch_id', 'type' => 'string', 'nullable' => false, 'arg' => 26],
-            ],
-        ],
-        'EventSubscription' => [
-            'model' => EventSubscription::class,
-            'table' => 'event_subscriptions',
-            'ownership' => 'branch',
-            'scope' => 'sender',
-            'scopeColumns' => ['branch_id'],
-            'tenancy' => false,
-            'parent' => null,
-            'children' => [],
-            'derived' => ['isDeleted', 'domainEvents'],
-            'dropped' => [],
-            'immutable' => null,
-            'tillFields' => [],
-            'fields' => [
-                'handlerName' => ['column' => 'handler_name', 'type' => 'string', 'nullable' => false, 'arg' => 255],
-                'lastSeq' => ['column' => 'last_seq', 'type' => 'bigint', 'nullable' => false, 'arg' => null],
             ],
         ],
         'ExceptionLog' => [
@@ -2809,6 +2826,7 @@ final class EntityRegistry
                 'breakMinutes' => ['column' => 'break_minutes', 'type' => 'int', 'nullable' => false, 'arg' => null],
                 'isPublished' => ['column' => 'is_published', 'type' => 'bool', 'nullable' => false, 'arg' => null],
                 'note' => ['column' => 'note', 'type' => 'text', 'nullable' => false, 'arg' => null],
+                'endsNextDay' => ['column' => 'ends_next_day', 'type' => 'bool', 'nullable' => false, 'arg' => null],
                 'branchId' => ['column' => 'branch_id', 'type' => 'string', 'nullable' => false, 'arg' => 26],
             ],
         ],

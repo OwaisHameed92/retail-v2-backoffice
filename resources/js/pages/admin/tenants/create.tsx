@@ -275,8 +275,8 @@ export default function CreateTenant({ nations, maxTills, plans, defaultPlanId, 
                             <Alert variant="warning" className="sm:col-span-2">
                                 <CircleAlert className="size-4" />
                                 <AlertDescription>
-                                    There is no active plan yet, so the tills will have no licences. Create a plan, then issue them from the tenant
-                                    page.
+                                    {errors.plan_id ??
+                                        'There is no active plan yet, so the tills would have no licence keys and could not be used. Create a plan first.'}
                                 </AlertDescription>
                             </Alert>
                         )}

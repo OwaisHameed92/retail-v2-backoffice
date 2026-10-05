@@ -57,6 +57,8 @@ export const MOVEMENT_TYPES: Record<string, string> = {
     safeBankDrop: 'Safe to bank',
     voucherSale: 'Voucher sale',
     accountPayment: 'Account payment',
+    customerAdvance: 'Customer advance',
+    customerAdvanceRefund: 'Advance refunded',
 };
 
 export const movementLabel = (type: string | null) => (type ? (MOVEMENT_TYPES[type] ?? type) : 'Unknown');

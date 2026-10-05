@@ -118,7 +118,10 @@ export default function Customers({ customers, filters, shops, counts, canEdit }
                 <StatCard
                     label="Owed to you"
                     value={money(counts.owed)}
-                    hint={`${number(counts.owing)} ${counts.owing === 1 ? 'customer owes' : 'customers owe'}`}
+                    hint={
+                        `${number(counts.owing)} ${counts.owing === 1 ? 'customer owes' : 'customers owe'}` +
+                        (Number(counts.creditHeld) > 0 ? ` · ${money(counts.creditHeld)} credit held` : '')
+                    }
                     icon={Wallet}
                     tone="warning"
                     href={route('app.customers.index', { balance: 'owes', sort: 'balance', direction: 'desc' })}

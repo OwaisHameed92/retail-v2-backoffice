@@ -26,6 +26,12 @@ final class PayloadMapper
     /** Members any payload may carry that are never stored (contract section 6, "Derived members"). */
     private const ALWAYS_DERIVED = ['isDeleted', 'domainEvents', 'key'];
 
+    /**
+     * What a missing (or null) member stands for when the type's default would be wrong: a Customer row from a till
+     * before 0.1.32 has no `earnsPoints` and is read as true, never false (PORTAL-CHANGES-2026-10-06 §2.7).
+     */
+    private const ABSENT_DEFAULTS = ['Customer' => ['earnsPoints' => true]];
+
     /** Decimal types: [scale, digits before the point] (Values has the full rules). */
     private const DECIMALS = ['money' => [2, 10], 'cost' => [4, 10], 'quantity' => [4, 10], 'percent' => [4, 5], 'rate' => [6, 10]];
 
@@ -63,6 +69,12 @@ final class PayloadMapper
         $unknownEnums = [];
 
         foreach ($def->plan as [$name, $column, $type, $nullable, $max, $enum]) {
+            if (($payload[$name] ?? null) === null && isset(self::ABSENT_DEFAULTS[$def->entity][$name])) {
+                $row[$column] = Values::toColumn($def->fields[$name], self::ABSENT_DEFAULTS[$def->entity][$name]);
+
+                continue;
+            }
+
             if (! array_key_exists($name, $payload)) {
                 if ($nullable) {
                     $row[$column] = null;

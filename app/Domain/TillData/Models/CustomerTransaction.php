@@ -33,6 +33,9 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property string $user_id
  * @property string $note
  * @property CarbonImmutable $at
+ * @property string|null $tender
+ * @property string|null $register_id
+ * @property string|null $shift_id
  * @property int $row_version
  * @property CarbonImmutable|null $created_at
  * @property CarbonImmutable|null $updated_at

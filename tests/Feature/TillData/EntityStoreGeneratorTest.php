@@ -28,9 +28,10 @@ it('has a registry entry, a table with every mapped column, and a final generate
     $schemas = tillSchemaEntities();
     $entities = array_values(array_diff($schemas, EntityRegistry::LOCAL));
 
-    // v1.4.1: 145 schemas; SyncState is `local` (never synced, never stored), so no registry entry.
-    expect($schemas)->toHaveCount(145)
-        ->and(EntityRegistry::LOCAL)->toBe(['DomainEventRecord', 'ProcessedCommand', 'SyncState'])
+    // Till 0.1.51 pack: 146 schemas (+ AccountPayDate); the `local` ones (EventSubscription since till 0.1.38) are
+    // never synced, never stored, so no registry entry (event_subscriptions stays, additive migrations only).
+    expect($schemas)->toHaveCount(146)
+        ->and(EntityRegistry::LOCAL)->toBe(['DomainEventRecord', 'EventSubscription', 'ProcessedCommand', 'SyncState'])
         ->and($entities)->toHaveCount(144)
         ->and(EntityRegistry::names())->toEqualCanonicalizing($entities);
 
@@ -120,9 +121,10 @@ it('writes additive migrations: applied releases are never rewritten, the curren
     $previous = $lock['releases'][1];
     $v141 = $lock['releases'][2];
     $v141b = $lock['releases'][3];
-    $current = $lock['releases'][4];
+    $till0115 = $lock['releases'][4];
+    $current = $lock['releases'][5];
 
-    expect(array_column($lock['releases'], 'release'))->toBe(['v1.1', 'v1.3.1', 'v1.4.1', 'v1.4.1-b', '0.1.15'])
+    expect(array_column($lock['releases'], 'release'))->toBe(['v1.1', 'v1.3.1', 'v1.4.1', 'v1.4.1-b', '0.1.15', '0.1.51'])
         ->and($previous['migrations'])->toBe(['2026_10_02_100000_create_till_v1_3_1_tables.php', '2026_10_02_100001_add_till_v1_3_1_columns.php'])
         ->and($previous['tables']['products']['columns'])->toHaveKeys(['variant3_name', 'hub_hash', 'origin_branch_id', 'portal_received_at'])
         ->and($v141['migrations'])->toBe(['2026_10_06_100000_create_till_v1_4_1_tables.php', '2026_10_06_100001_add_till_v1_4_1_columns.php'])
@@ -138,13 +140,18 @@ it('writes additive migrations: applied releases are never rewritten, the curren
         ->and($v141b['migrations'])->toBe(['2026_10_10_100001_add_till_v1_4_1_b_columns.php'])
         ->and($v141b['tables'])->toBe(['promotion_rules' => ['columns' => ['is_group_offer' => "boolean('is_group_offer')->nullable()"], 'indexes' => []]])
         // Till 0.1.15 pack: ClockEvent.registerId and StoreCreditVoucher.note, in their own additive migration.
-        ->and($current['migrations'])->toBe(['2026_10_25_100001_add_till_0_1_15_columns.php'])
-        ->and($current['tables'])->toBe([
+        ->and($till0115['migrations'])->toBe(['2026_10_25_100001_add_till_0_1_15_columns.php'])
+        ->and($till0115['tables'])->toBe([
             'clock_events' => ['columns' => ['register_id' => "string('register_id', 64)->nullable()"], 'indexes' => []],
             'store_credit_vouchers' => ['columns' => ['note' => "text('note')->nullable()"], 'indexes' => []],
-        ]);
+        ])
+        // Till 0.1.51 pack: the AccountPayDate table, then Customer / CustomerTransaction / CustomerOrder / RotaShift columns.
+        ->and($current['migrations'])->toBe(['2026_11_24_100000_create_till_0_1_51_tables.php', '2026_11_24_100001_add_till_0_1_51_columns.php'])
+        ->and(array_keys($current['tables']))->toEqualCanonicalizing(['account_pay_dates', 'customers', 'customer_transactions', 'customer_orders', 'rota_shifts'])
+        ->and(array_keys($current['tables']['customer_transactions']['columns']))->toBe(['tender', 'register_id', 'shift_id'])
+        ->and(array_keys($current['tables']['customers']['columns']))->toBe(['pending_points', 'earns_points']);
 
-    foreach ([...$lock['releases'][0]['migrations'], ...$previous['migrations'], ...$v141['migrations'], ...$v141b['migrations']] as $applied) {
+    foreach ([...$lock['releases'][0]['migrations'], ...$previous['migrations'], ...$v141['migrations'], ...$v141b['migrations'], ...$till0115['migrations']] as $applied) {
         expect(file_exists(database_path("migrations/{$applied}")))->toBeTrue()
             ->and($produced)->not->toContain("database/migrations/{$applied}");
     }

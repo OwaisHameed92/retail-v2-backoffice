@@ -1,6 +1,7 @@
 {
   "entities": {
     "Account": "hub",
+    "AccountPayDate": "branch",
     "AgeRefusal": "branch",
     "AlertSubscription": "branch",
     "AuditLog": "branch",
@@ -35,7 +36,7 @@
     "DispensingRecord": "branch",
     "DomainEventRecord": "local",
     "EReceiptLog": "branch",
-    "EventSubscription": "branch",
+    "EventSubscription": "local",
     "ExceptionLog": "branch",
     "ExchangeRate": "hub",
     "Expense": "branch",

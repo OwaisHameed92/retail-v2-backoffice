@@ -79,7 +79,7 @@ final class CustomerStatementMail extends BrandedMailable
     {
         $balance = Money::normalise($this->data->closingBalance);
         $owes = Money::compare($balance, '0') > 0;
-        $label = $owes ? 'Amount owed' : (Money::isNegative($balance) ? 'In credit' : 'Balance');
+        $label = $owes ? 'Amount owed' : (Money::isNegative($balance) ? 'Credit held' : 'Balance');
 
         return new Content(markdown: 'mail.customer-statement', with: [
             'firstName' => MailFormat::firstName($this->data->customerName),

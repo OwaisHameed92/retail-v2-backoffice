@@ -112,7 +112,7 @@ export default function CustomerStatementPage({ statement, canEmail }: Statement
                     tone="success"
                 />
                 <StatCard
-                    label={closing > 0 ? 'Amount owed' : closing < 0 ? 'In credit' : 'Closing balance'}
+                    label={closing > 0 ? 'Amount owed' : closing < 0 ? 'Credit held' : 'Closing balance'}
                     value={money(Math.abs(closing))}
                     hint={`${number(s.closing.points)} points (${number(s.totals.pointsEarned)} earned, ${number(s.totals.pointsUsed)} used)`}
                     icon={closing > 0 ? Wallet : Coins}

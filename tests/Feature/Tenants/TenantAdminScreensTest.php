@@ -1,5 +1,7 @@
 <?php
 
+use App\Domain\Mail\Mailables\WelcomeTenantMail;
+use App\Domain\Plans\Models\Plan;
 use App\Domain\Tenancy\Actions\SuspendCompany;
 use App\Domain\Tenancy\Enums\CompanyStatus;
 use App\Domain\Tenancy\Models\Branch;
@@ -75,6 +77,7 @@ test('the list searches name and owner email, filters by status and sorts by til
 });
 
 test('the create wizard makes the whole tenant and cleans the input', function () {
+    Plan::factory()->create();
     $response = $this->post('/admin/tenants', validTenantForm());
 
     $company = Company::query()->where('name', 'Patel News')->firstOrFail();
@@ -113,9 +116,20 @@ test('the create wizard explains what is wrong', function () {
 });
 
 test('a trial end date is saved as the end of that day in London', function () {
+    Plan::factory()->create();
     $this->post('/admin/tenants', validTenantForm(['trial_ends_at' => '2026-10-01']));
 
     expect(Company::query()->firstOrFail()->trial_ends_at?->toIso8601String())->toBe('2026-10-01T22:59:59+00:00');
+});
+
+test('licence key mandatory (till 0.1.35): with no plan the wizard creates nothing; with one, the owner is emailed the keys', function () {
+    $this->post('/admin/tenants', validTenantForm())->assertSessionHasErrors(['plan_id' => 'There is no active plan yet, so the tills would have no licence keys. Create a plan first.']);
+    expect(Company::query()->count())->toBe(0);
+
+    Plan::factory()->create();
+    $this->post('/admin/tenants', validTenantForm())->assertSessionHasNoErrors();
+
+    Mail::assertQueued(WelcomeTenantMail::class, fn (WelcomeTenantMail $mail) => $mail->hasTo('raj@patelnews.test'));
 });
 
 test('the detail page has branches with tills, users, activity and options', function () {

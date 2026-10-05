@@ -29,7 +29,9 @@
         "cashReconciliationVariance",
         "safeBankDrop",
         "voucherSale",
-        "accountPayment"
+        "accountPayment",
+        "customerAdvance",
+        "customerAdvanceRefund"
       ]
     },
     "amount": {

@@ -31,7 +31,7 @@ return [
      * missing columns and indexes. database/till-schema.json records what each release's migrations made (v1.1:
      * the ten 2026_09_27_1100NN group migrations). For the next contract: new name and a later prefix.
      */
-    'release' => ['name' => '0.1.15', 'migrationPrefix' => '2026_10_25_1000'],
+    'release' => ['name' => '0.1.51', 'migrationPrefix' => '2026_11_24_1000'],
 
     /* Entity groups: the order tables are created in. Every schema entity must be in exactly one group. */
     'groups' => [
@@ -47,7 +47,7 @@ return [
         ],
         'customers' => [
             'Customer', 'Consent', 'CustomerTransaction', 'CustomerCorrection', 'CustomerOrder', 'CustomerOrderPayment',
-            'StoreCreditVoucher', 'VoucherTransaction', 'EReceiptLog',
+            'StoreCreditVoucher', 'VoucherTransaction', 'EReceiptLog', 'AccountPayDate',
         ],
         'sales' => [
             'Sale', 'SaleLine', 'SalePayment', 'SaleVat', 'PaymentAttempt', 'OfflineCardReconciliation', 'HeldOrder',
@@ -76,7 +76,7 @@ return [
         'staff' => ['User', 'Role', 'ClockEvent', 'RotaShift', 'TimesheetApproval', 'WageRate', 'TrainingRecord', 'RolePermission'],
         'system' => [
             'AuditLog', 'ExceptionLog', 'AlertSubscription', 'BackupRun', 'BranchHoursOverride', 'ComplianceLicence',
-            'EventSubscription', 'HardwareCheck', 'ImportColumnMap', 'ImportJob', 'Licence', 'LicenceAddOnTrial',
+            'HardwareCheck', 'ImportColumnMap', 'ImportJob', 'Licence', 'LicenceAddOnTrial',
             'PrintJob', 'PrinterProfile', 'ScaleCalibrationLog', 'SyncConflict', 'UpdateRun', 'LayoutProfile',
             'ParcelCarrier', 'Parcel', 'Setting',
         ],
@@ -173,7 +173,7 @@ return [
         'logoPath', 'maxQtyReason', 'memo', 'message', 'note', 'notes', 'overrideReason', 'reason', 'reasonText',
         'receiptFile', 'text', 'unlockReason', 'varianceFlags', 'verificationDetail', 'voidReason', 'weekdays',
         'days', 'afterValue', 'beforeValue', 'directions', 'allergensCsv', 'handOverIdCheckNote', 'declineReason',
-        'resolutionReason', 'attributeFilter', 'Setting.value',
+        'resolutionReason', 'attributeFilter', 'Setting.value', 'lastReminderError',
     ],
 
     /* Integers that may exceed 2^31. */
@@ -253,7 +253,13 @@ return [
         'PaymentAttempt' => ['indexes' => [['sale_id']]],
 
         // Customers and orders.
-        'Customer' => ['derived' => ['isAnonymised'], 'indexes' => [['company_id', 'card_no']]],
+        // owed / creditHeld (till 0.1.51) are worked out from balance on the till: never stored, we derive them.
+        'Customer' => ['derived' => ['isAnonymised', 'owed', 'creditHeld'], 'indexes' => [['company_id', 'card_no']]],
+        // Pay dates and reminder state (till 0.1.51): branch-owned, read-only. isCurrent / lastTryFailed are worked out.
+        'AccountPayDate' => [
+            'derived' => ['isCurrent', 'lastTryFailed'],
+            'indexes' => [['company_id', 'customer_id', 'replaced_at']],
+        ],
         'Consent' => ['parent' => ['Customer', 'customerId'], 'scope' => 'sender'],
         'CustomerOrder' => [
             'derived' => ['balanceDue', 'isOpen'],

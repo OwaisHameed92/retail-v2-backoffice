@@ -2,6 +2,7 @@ import { ConsentPanel } from '@/components/app/customers/consent-panel';
 import { CustomerForm } from '@/components/app/customers/customer-form';
 import { BalanceText, balanceTone, dayLabel, money, number } from '@/components/app/customers/format';
 import { LedgerTable } from '@/components/app/customers/ledger-table';
+import { PayDatesCard } from '@/components/app/customers/pay-dates-card';
 import { type CustomerShowProps } from '@/components/app/customers/types';
 import { CustomerPrivacyPanel } from '@/components/app/privacy/customer-privacy-panel';
 import { InitialsAvatar } from '@/components/shared/entity-cell';
@@ -22,6 +23,7 @@ type Tab = 'history' | 'details' | 'consent' | 'privacy';
 export default function CustomerShow({
     customer,
     account,
+    payDates,
     ledger,
     ledgerFilters,
     shops,
@@ -76,9 +78,9 @@ export default function CustomerShow({
 
             <StatGrid columns={4}>
                 <StatCard
-                    label={tone === 'credit' ? 'In credit' : 'Balance owed'}
+                    label={tone === 'credit' ? 'Credit held' : 'Balance owed'}
                     value={money(Math.abs(Number(account.balance)))}
-                    hint={account.overLimit ? 'Over their credit limit' : 'Added up from every shop'}
+                    hint={account.overLimit ? 'Over their credit limit' : tone === 'credit' ? 'Paid in advance, taken off their next account sales' : 'Added up from every shop'}
                     icon={Wallet}
                     tone={account.overLimit ? 'danger' : tone === 'owes' ? 'warning' : 'success'}
                 />
@@ -109,6 +111,7 @@ export default function CustomerShow({
                                 synced. Payments and points adjustments are taken at a till.
                             </AlertDescription>
                         </Alert>
+                        <PayDatesCard payDates={payDates} />
                         <LedgerTable ledger={ledger} filters={ledgerFilters} shops={shops} />
                         {account.byShop.length > 1 && (
                             <SectionCard title="By shop" description="How each shop's rows moved this customer's account." flush>

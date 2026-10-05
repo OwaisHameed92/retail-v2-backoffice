@@ -41,7 +41,9 @@
     "pointsBurn",
     "pointsAdjust",
     "pointsExpire",
-    "opening"
+    "opening",
+    "advance",
+    "advanceRefund"
   ],
   "DiscountSource": [
     "manual",

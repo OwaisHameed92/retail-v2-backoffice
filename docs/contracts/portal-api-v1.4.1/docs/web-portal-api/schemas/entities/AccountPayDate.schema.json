@@ -1,95 +1,72 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "urn:sspos:web-portal-api:v1:Customer",
-  "title": "Customer",
-  "description": "Payload of a Customer row.",
+  "$id": "urn:sspos:web-portal-api:v1:AccountPayDate",
+  "title": "AccountPayDate",
+  "description": "Payload of a AccountPayDate row.",
   "type": "object",
   "properties": {
-    "name": {
+    "customerId": {
       "type": "string"
     },
-    "phone": {
+    "saleId": {
       "type": "string"
     },
-    "email": {
+    "dueAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "note": {
       "type": "string"
     },
-    "address": {
+    "userId": {
       "type": "string"
     },
-    "dob": {
-      "type": [
-        "string",
-        "null"
-      ],
-      "format": "date"
-    },
-    "cardNo": {
-      "type": "string"
-    },
-    "balance": {
-      "type": [
-        "string",
-        "number"
-      ],
-      "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$"
-    },
-    "points": {
-      "type": [
-        "string",
-        "integer"
-      ],
-      "pattern": "^-?(?:0|[1-9]\\d*)$"
-    },
-    "pendingPoints": {
-      "type": [
-        "string",
-        "integer"
-      ],
-      "pattern": "^-?(?:0|[1-9]\\d*)$"
-    },
-    "earnsPoints": {
-      "type": "boolean"
-    },
-    "creditLimit": {
-      "type": [
-        "string",
-        "number"
-      ],
-      "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$"
-    },
-    "tier": {
-      "type": "string"
-    },
-    "notes": {
-      "type": "string"
-    },
-    "isActive": {
-      "type": "boolean"
-    },
-    "anonymisedAt": {
+    "replacedAt": {
       "type": [
         "string",
         "null"
       ],
       "format": "date-time"
     },
-    "isAnonymised": {
+    "reminderSentAt": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "reminderChannel": {
+      "enum": [
+        "none",
+        "whatsApp",
+        "email"
+      ]
+    },
+    "reminderAttempts": {
+      "type": [
+        "string",
+        "integer"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)$"
+    },
+    "lastReminderAt": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "lastReminderError": {
+      "type": "string"
+    },
+    "isCurrent": {
       "type": "boolean"
     },
-    "owed": {
-      "type": [
-        "string",
-        "number"
-      ],
-      "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$"
+    "lastTryFailed": {
+      "type": "boolean"
     },
-    "creditHeld": {
-      "type": [
-        "string",
-        "number"
-      ],
-      "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$"
+    "branchId": {
+      "type": "string"
     },
     "id": {
       "type": "string"
@@ -157,24 +134,20 @@
     }
   },
   "required": [
-    "name",
-    "phone",
-    "email",
-    "address",
-    "dob",
-    "cardNo",
-    "balance",
-    "points",
-    "pendingPoints",
-    "earnsPoints",
-    "creditLimit",
-    "tier",
-    "notes",
-    "isActive",
-    "anonymisedAt",
-    "isAnonymised",
-    "owed",
-    "creditHeld",
+    "customerId",
+    "saleId",
+    "dueAt",
+    "note",
+    "userId",
+    "replacedAt",
+    "reminderSentAt",
+    "reminderChannel",
+    "reminderAttempts",
+    "lastReminderAt",
+    "lastReminderError",
+    "isCurrent",
+    "lastTryFailed",
+    "branchId",
     "id",
     "companyId",
     "createdAt",

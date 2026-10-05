@@ -18,4 +18,6 @@ enum CustomerTransactionType: string
     case PointsAdjust = 'pointsAdjust';
     case PointsExpire = 'pointsExpire';
     case Opening = 'opening';
+    case Advance = 'advance';
+    case AdvanceRefund = 'advanceRefund';
 }

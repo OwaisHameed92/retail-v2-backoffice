@@ -441,8 +441,8 @@ It is the full, current answer to "who owns this table"; the table below is a su
 | Owner | Entities | Portal may |
 |---|---|---|
 | **Portal** (`HubOwned`, `"hub"` in the file) | Account, BranchPrice, Category, Customer, Department, ExchangeRate, FixedAssetCategory, MedicineClassification, NewsTitle, PaymentType, PriceHistory, Product, ProductAlias, ProductBarcode, ProductRecall, ProductSupplier, ProductUnit, PromotionCoupon, PromotionItem, PromotionRule, Reason, RebateAgreement, Role, RolePermission, Setting, Supplier, TaxRule, Unit, User, VatRate | Create and change them and send them down. The till applies them. If the shop also edited one, the portal's version wins by default and the clash is shown in the shop. `Setting` and `RolePermission` are keyed rows with their own envelope and a deny-list (§10.3). `Customer.balance` / `points` are never taken from you (§10.1). `BranchPrice` is a shop's own price (§10.5). `User.remoteApprovalSecret` never travels and a blank `pinHash` keeps the till's PIN (§10.7). |
-| **Till** (`BranchOwned`, `"branch"` in the file — everything else, 112 tables) | Sale, SaleLine, SalePayment, SaleVat, StockMovement, BranchProduct, Shift, ZReport, CustomerOrder, CustomerOrderPayment, CustomerTransaction, StockTransfer (+ lines, receipts), PurchaseOrder (+ lines), GoodsReceipt (+ lines), AuditLog, JournalEntry/Line, cash, clock events, VatReturn, ComplianceLicence, NewsDelivery/Line, FifoStockLayer, rota/timesheet/wage rows … | **Read only.** Never change these and never send them back to the branch that owns them. The till's version always wins. Two exceptions, both sent down unchanged in the one shop's pull: you **relay** some of them to the other branch they concern (§10.2), and you may **draft a head-office purchase order** (+ lines) for a shop, which the shop then owns (§10.6). |
-| **Nobody — local** (`"local"` in the file) | `SyncState` (the branch's own sync cursor), `DomainEventRecord` (the till's event outbox), `ProcessedCommand` (its idempotency store); also `ChangeLog` (the feed itself) and `SyncParkedRow` (pulled rows waiting for their parent, §8) — neither is an entity | Nothing. Never pushed, never in the history upload, refused in a pull. |
+| **Till** (`BranchOwned`, `"branch"` in the file — everything else, 111 tables) | Sale, SaleLine, SalePayment, SaleVat, StockMovement, BranchProduct, Shift, ZReport, CustomerOrder, CustomerOrderPayment, CustomerTransaction, StockTransfer (+ lines, receipts), PurchaseOrder (+ lines), GoodsReceipt (+ lines), AuditLog, JournalEntry/Line, cash, clock events, VatReturn, ComplianceLicence, NewsDelivery/Line, FifoStockLayer, rota/timesheet/wage rows … | **Read only.** Never change these and never send them back to the branch that owns them. The till's version always wins. Two exceptions, both sent down unchanged in the one shop's pull: you **relay** some of them to the other branch they concern (§10.2), and you may **draft a head-office purchase order** (+ lines) for a shop, which the shop then owns (§10.6). |
+| **Nobody — local** (`"local"` in the file) | `SyncState` (the branch's own sync cursor), `DomainEventRecord` (the till's event outbox), `ProcessedCommand` (its idempotency store), `EventSubscription` (each handler's cursor into that outbox); also `ChangeLog` (the feed itself) and `SyncParkedRow` (pulled rows waiting for their parent, §8) — neither is an entity | Nothing. Never pushed, never in the history upload, refused in a pull. |
 
 The shop can edit portal-owned rows too (e.g. a price change at the till); those come up in push
 like any other row. Decide on your side whether to accept or overwrite them; either way send your
@@ -573,6 +573,9 @@ or `branch` (`scopeId` = the branch id); the till reads a setting register → b
 - every setting whose catalogue type is secret;
 - every key starting `licence.`, `install.`, `sync.`, `server.`, `update.`, `backup.`, `devices.`, `printers.`,
   `payments.terminal_`, `payments.dna_`, `payments.dojo_`, `messaging.smtp_` or `messaging.whatsapp_gateway_`;
+- every key starting `grid.layout.` or `help.tour_dismissed.` — one user's own screen preferences, stored under
+  the **user's** id (new 2026-10-02: up to 0.1.31 they went up as `company` rows whose `scopeId` and envelope
+  `companyId` were that user id — refuse those, they are not a second company);
 - every key containing `secret`, `passphrase`, `thumbprint`, `api_key`, `private_key` or `signing_key`, or
   ending in `password`, `_key`, `.key`, `_hash` or `token`;
 - every key ending in `_utc` — one PC's own bookkeeping time (when it last vacuumed its database, its clock
@@ -828,9 +831,10 @@ is new, and `User` lost `remoteApprovalSecret` / `remoteApprovalSecretSetAt` in 
 **Local-only tables — never pushed, never in the history upload, refused in a pull:** `SyncState` (the
 branch's own sync cursor: last pushed seq, last pulled version, last error), `DomainEventRecord` (the till's
 outbox of domain events, replayed after a crash), `ProcessedCommand` (the till's idempotency store: one row per
-command it has completed, so a retried press is answered, not repeated), `ChangeLog` (the feed itself) and
-`SyncParkedRow` (pulled rows waiting for their parent, §8). `samples/ownership.json` marks the first three
-`"local"` (the last two are not entities). What they record reaches you anyway through the rows they are about
+command it has completed, so a retried press is answered, not repeated), `EventSubscription` (each handler's
+cursor into that outbox — local since 2026-10-03; it carries no company and moves on every event), `ChangeLog`
+(the feed itself) and `SyncParkedRow` (pulled rows waiting for their parent, §8). `samples/ownership.json` marks
+the first four `"local"` (the last two are not entities). What they record reaches you anyway through the rows they are about
 (the sale, the shift…), so you never need them.
 
 ## 14. How to test against the till

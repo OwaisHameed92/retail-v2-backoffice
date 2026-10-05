@@ -2,6 +2,7 @@
 
 use App\Domain\Customers\Actions\SaveCustomer;
 use App\Domain\Tenancy\Enums\CompanyRole;
+use Illuminate\Support\Facades\DB;
 use Inertia\Testing\AssertableInertia;
 use Tests\Feature\Sync\PullTestHelpers as Pull;
 use Tests\Feature\Sync\SyncApiFixtures;
@@ -44,4 +45,60 @@ test('a new customer and an edit are pulled by every till, schema-valid, with th
     $this->actingAs($this->memberOf($this->company, CompanyRole::Staff))->get("/app/customers/{$aisha->id}")->assertOk()
         ->assertInertia(fn (AssertableInertia $page) => $page->where('account.balance', '12.50')->where('account.points', 30)
             ->where('ledger.data.0.shop', 'Leeds Kirkgate')->where('canEdit', false)->where('canEmail', false));
+});
+
+test('till 0.1.51: credit held shows as such, earnsPoints is always sent (missing = true), owed / creditHeld are ours, pay dates show', function () {
+    $customer = TillFixtures::sample('entities/Customer.json');
+    unset($customer['earnsPoints'], $customer['pendingPoints']);
+    $ledger = TillFixtures::sample('entities/CustomerTransaction.json');
+    $advance = [...$ledger, 'id' => '01K5VB0000000000000CT00490', 'type' => 'advance', 'amount' => -23.40, 'saleId' => '', 'tender' => 'Card',
+        'registerId' => TillFixtures::TILL_1, 'shiftId' => '01K5VB0000000SHR0010000001'];
+    $payDate = Pull::payload('AccountPayDate', '01K5VB0000000000000PD00001', [
+        'branchId' => TillFixtures::LEEDS, 'customerId' => $customer['id'], 'saleId' => '', 'dueAt' => '2026-10-30T00:00:00Z', 'note' => 'Payday',
+        'replacedAt' => null, 'reminderSentAt' => null, 'reminderChannel' => 'none', 'reminderAttempts' => 3, 'lastReminderAt' => '2026-10-24T08:00:00Z',
+        'lastReminderError' => "WhatsApp and Email not set up\nWhatsApp: no gateway.\nEmail: no SMTP server.",
+    ]);
+    $replaced = [...$payDate, 'id' => '01K5VB0000000000000PD00000', 'replacedAt' => '2026-10-23T08:00:00Z'];
+
+    $this->sync->push([
+        TillFixtures::envelope('Customer', [...$customer, 'owed' => 50, 'creditHeld' => 0], 1),
+        TillFixtures::envelope('CustomerTransaction', $ledger, 2),
+        TillFixtures::envelope('CustomerTransaction', $advance, 3),
+        TillFixtures::envelope('AccountPayDate', $payDate, 4),
+        TillFixtures::envelope('AccountPayDate', $replaced, 5),
+    ])->assertOk()->assertJson(['acknowledgedSeq' => 5]);
+
+    $row = collect(($this->customer)(true))->firstWhere('entityId', $customer['id']);
+    expect($row['payload'])->toMatchArray(['balance' => -15, 'owed' => 0, 'creditHeld' => 15, 'earnsPoints' => true, 'pendingPoints' => 0]);
+
+    $staff = $this->memberOf($this->company, CompanyRole::Staff);
+    $this->actingAs($staff)->get('/app/customers?balance=credit')->assertInertia(fn (AssertableInertia $page) => $page
+        ->where('counts.creditHeld', '15.00')->where('customers.data.0.balance', '-15.00'));
+    $this->actingAs($staff)->get("/app/customers/{$customer['id']}")->assertOk()->assertInertia(fn (AssertableInertia $page) => $page
+        ->where('account.balance', '-15.00')
+        ->where('ledger.data.0.typeLabel', 'Paid in advance')
+        ->has('payDates', 1)
+        ->where('payDates.0.wholeAccount', true)
+        ->where('payDates.0.shop', 'Leeds Kirkgate')
+        ->where('payDates.0.reminder.state', 'failed')
+        ->where('payDates.0.reminder.error', 'WhatsApp and Email not set up')
+        ->where('payDates.0.reminder.detail', "WhatsApp: no gateway.\nEmail: no SMTP server.")
+        ->where('payDates.0.reminder.attempts', 3));
+
+    // A customer the portal adds collects points.
+    $sam = app(SaveCustomer::class)->handle($this->company, null, ['name' => 'Sam Patel']);
+    expect(collect(($this->customer)())->firstWhere('entityId', $sam->id)['payload'])
+        ->toMatchArray(['earnsPoints' => true, 'pendingPoints' => 0, 'owed' => 0, 'creditHeld' => 0]);
+});
+
+test('pay dates of another business are never shown', function () {
+    $other = new SyncApiFixtures($this, mapTillIds: false);
+    $payDate = Pull::payload('AccountPayDate', '01K5VB0000000000000PD00009', ['companyId' => $other->company->id, 'customerId' => '01K5T0Q8C4000000000000K001', 'replacedAt' => null, 'lastReminderError' => '']);
+    DB::table('account_pay_dates')->insert(['id' => $payDate['id'], 'company_id' => $other->company->id, 'branch_id' => $other->leeds->id,
+        'customer_id' => '01K5T0Q8C4000000000000K001', 'sale_id' => '', 'due_at' => '2026-10-30 00:00:00', 'note' => '', 'user_id' => '',
+        'reminder_attempts' => 0, 'last_reminder_error' => '', 'row_version' => 1]);
+    $this->sync->push([TillFixtures::envelope('Customer', TillFixtures::sample('entities/Customer.json'), 1)])->assertOk();
+
+    $this->actingAs($this->memberOf($this->company, CompanyRole::Staff))->get('/app/customers/01K5T0Q8C4000000000000K001')->assertOk()
+        ->assertInertia(fn (AssertableInertia $page) => $page->has('payDates', 0));
 });

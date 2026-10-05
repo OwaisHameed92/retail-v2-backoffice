@@ -27,6 +27,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property int $break_minutes
  * @property bool $is_published
  * @property string $note
+ * @property bool $ends_next_day
  * @property int $row_version
  * @property CarbonImmutable|null $created_at
  * @property CarbonImmutable|null $updated_at
@@ -59,6 +60,7 @@ final class RotaShift extends Model
             'shift_date' => 'immutable_date:Y-m-d',
             'break_minutes' => 'integer',
             'is_published' => 'boolean',
+            'ends_next_day' => 'boolean',
             'row_version' => 'integer',
             'created_at' => UtcDateTimeCast::class,
             'updated_at' => UtcDateTimeCast::class,

@@ -89,7 +89,7 @@
         <td><div class="label">Account sales</div><div class="v">{{ $money($s['totals']['charges']) }}</div></td>
         <td><div class="label">Payments and credits</div><div class="v">{{ $money($s['totals']['credits']) }}</div></td>
         <td>
-            <div class="label">{{ $owes ? 'Amount owed' : ($credit ? 'In credit' : 'Closing balance') }}</div>
+            <div class="label">{{ $owes ? 'Amount owed' : ($credit ? 'Credit held' : 'Closing balance') }}</div>
             <div class="v">{{ $money($credit ? ltrim($closing, '-') : $closing) }}</div>
         </td>
     </tr>
@@ -133,7 +133,7 @@
 </table>
 
 <p class="muted small" style="margin-top: 14px;">
-    A positive balance is what you owe; a negative balance is credit on your account. Points: {{ $points($s['totals']['pointsEarned']) }} earned and {{ $points($s['totals']['pointsUsed']) }} used in this period, {{ $points($s['closing']['points']) }} available at the end of it.
+    A positive balance is what you owe; a negative balance is credit held on your account (paid in advance). Points: {{ $points($s['totals']['pointsEarned']) }} earned and {{ $points($s['totals']['pointsUsed']) }} used in this period, {{ $points($s['closing']['points']) }} available at the end of it.
     Questions about this statement? Contact {{ $b['name'] }}@if ($b['phone']) on {{ $b['phone'] }}@endif.
 </p>
 </body>

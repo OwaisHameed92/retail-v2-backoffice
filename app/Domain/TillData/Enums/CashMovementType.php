@@ -27,4 +27,6 @@ enum CashMovementType: string
     case SafeBankDrop = 'safeBankDrop';
     case VoucherSale = 'voucherSale';
     case AccountPayment = 'accountPayment';
+    case CustomerAdvance = 'customerAdvance';
+    case CustomerAdvanceRefund = 'customerAdvanceRefund';
 }

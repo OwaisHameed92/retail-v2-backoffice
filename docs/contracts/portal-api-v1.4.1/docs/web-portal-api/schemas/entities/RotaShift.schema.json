@@ -35,6 +35,9 @@
     "note": {
       "type": "string"
     },
+    "endsNextDay": {
+      "type": "boolean"
+    },
     "branchId": {
       "type": "string"
     },
@@ -111,6 +114,7 @@
     "breakMinutes",
     "isPublished",
     "note",
+    "endsNextDay",
     "branchId",
     "id",
     "companyId",

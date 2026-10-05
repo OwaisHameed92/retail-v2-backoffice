@@ -82,3 +82,22 @@ test('the exceptions report counts no sales, voided lines and other exceptions p
     expect($voids['kind'])->toBe('voids')
         ->and($voids['data'][0])->toMatchArray(['staff' => 'Bea Jones', 'amount' => '3.50', 'detail' => '2 × Beer · Changed mind']);
 });
+
+test('till 0.1.28 voids: an ExceptionLog LineVoided is not counted twice, the new types have words, PascalCase void details are read', function () {
+    $id = $this->company->id;
+    $ex = fn (string $tag, string $type, string $amount) => F::row('exception_logs', [
+        'id' => F::id('E'.$tag), 'company_id' => $id, 'branch_id' => TillFixtures::LEEDS, 'register_id' => TillFixtures::TILL_1, 'user_id' => F::BEA, 'type' => $type, 'amount' => $amount, 'at' => '2026-10-14 10:00:00',
+    ]);
+    $ex('1', 'LineVoided', '1.20');
+    $ex('2', 'CartCleared', '8.40');
+    $ex('3', 'HeldSaleDiscarded', '3.00');
+    F::row('till_audit_logs', ['id' => F::id('V1'), 'company_id' => $id, 'branch_id' => TillFixtures::LEEDS, 'register_id' => TillFixtures::TILL_1, 'user_id' => F::BEA, 'entity_name' => 'Sale', 'entity_id' => 'CART1', 'action' => 'LineVoided', 'after_json' => '{"ProductId":"P1","ProductName":"Crisps","Quantity":1,"Value":1.2,"Reason":"Not asked","ReasonId":"","ApprovedBy":""}', 'reason' => 'Not asked', 'at' => '2026-10-14 10:00:00']);
+
+    $p = C::props($this->actingAs($this->owner)->get('/app/compliance/exceptions?shop=all&from=2026-10-01&to=2026-10-15'));
+
+    expect($p['summary'])->toBe(['noSales' => 0, 'voidedLines' => 1, 'other' => 2, 'amount' => '11.40'])
+        ->and(collect($p['types'])->pluck('label')->sort()->values()->all())->toBe(['Held sale thrown away', 'Sale cleared before payment']);
+
+    $voids = C::props($this->actingAs($this->owner)->get('/app/compliance/exceptions?shop=all&from=2026-10-01&to=2026-10-15&type=LineVoided'))['log'];
+    expect($voids['data'][0])->toMatchArray(['amount' => '1.20', 'detail' => '1 × Crisps · Not asked']);
+});

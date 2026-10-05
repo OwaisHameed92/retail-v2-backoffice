@@ -114,7 +114,11 @@ export default function PurchaseOrderShow({ order, totals, lines, deliveries, in
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-3 lg:items-start">
                 <SectionCard
                     title="Lines"
-                    description={`${qty(totals.received)} of ${qty(totals.ordered)} units received`}
+                    description={
+                        `${qty(totals.received)} of ${qty(totals.ordered)} units received` +
+                        // Till 0.1.33: a part-received order can be closed; the rest is not coming.
+                        (order.status === 'received' && Number(totals.received) < Number(totals.ordered) ? ' · closed short, the rest is not coming' : '')
+                    }
                     flush
                     className="lg:col-span-2"
                 >

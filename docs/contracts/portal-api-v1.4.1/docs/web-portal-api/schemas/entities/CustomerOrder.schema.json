@@ -11,6 +11,12 @@
     "token": {
       "type": "string"
     },
+    "customerId": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
     "customerName": {
       "type": "string"
     },
@@ -197,6 +203,7 @@
   "required": [
     "reference",
     "token",
+    "customerId",
     "customerName",
     "customerPhone",
     "customerEmail",

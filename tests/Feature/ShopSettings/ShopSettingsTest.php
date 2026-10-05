@@ -92,7 +92,28 @@ test('bad values and keys outside the catalogue are refused, deny-listed ones al
     'secret' => ['payments.dojo_api_key', 'sk_live'],
     'local display' => ['display.theme', 'dark'],
     'bookkeeping' => ['retention.last_vacuum_utc', '2026-01-01'],
+    'not one of the till\'s options' => ['customers.reminders_send_by', 'SMS'],
+    'not a time' => ['customers.reminders_quiet_from', '25:00'],
+    'label too narrow' => ['labels.custom_width_mm', '10'],
 ]);
+
+test('till 0.1.28–0.1.51 settings: choices and times as the till writes them; a shop sees no section that is every-shop only', function () {
+    $changed = ($this->save)(null, [
+        'customers.advance_enabled' => true, 'customers.reminders_send_by' => 'Email only', 'customers.reminders_quiet_from' => '22:30',
+        'customers.reminders_repeat' => '3 days', 'labels.default_layout' => 'Custom', 'labels.custom_width_mm' => '62.5', 'labels.gap_mm' => '0',
+        'catalogue.auto_product_images' => false, 'compliance.shop_checks_ask_at_shift_open' => true, 'library.lookup_enabled' => false,
+    ]);
+
+    expect($changed)->toHaveCount(10)
+        ->and(TillSetting::withoutCompanyScope()->pluck('value', 'setting_key')->all())->toMatchArray([
+            'customers.advance_enabled' => 'true', 'customers.reminders_send_by' => 'Email only', 'customers.reminders_quiet_from' => '22:30',
+            'customers.reminders_repeat' => '3 days', 'labels.default_layout' => 'Custom', 'labels.custom_width_mm' => '62.5', 'labels.gap_mm' => '0',
+        ]);
+
+    $this->actingAs($this->manager)->get("/app/settings?shop={$this->sync->leeds->id}")->assertOk()->assertInertia(fn (AssertableInertia $page) => $page
+        ->where('sections', fn ($sections) => ! collect($sections)->contains('id', 'accounts') && collect($sections)->contains('id', 'labels'))
+        ->where('inherited', fn ($inherited) => $inherited['labels.custom_height_mm'] === ['value' => '30', 'from' => 'default']));
+});
 
 test('the page shows every-shop values with the shops that differ, and a shop\'s own values with what it falls back to', function () {
     ($this->save)(null, ['receipt.footer_text' => 'Thanks', 'cash.count_on_close' => 'true']);

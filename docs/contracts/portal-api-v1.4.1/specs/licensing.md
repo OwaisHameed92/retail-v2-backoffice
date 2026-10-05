@@ -11,7 +11,7 @@ licences, transfer, dealer view, feature flags) stands and is made concrete here
 | Issued by | the web portal (built by another team, to docs/web-portal-api.md) | `tools/licence-generator` — a separate Windows app, only on the owner's / chosen dealers' PCs, never shipped to shops |
 | Online check | **once a day**; if the portal cannot be reached, a daily alert "Your licence has not been validated with the server — connect the internet"; after **14 days** without a successful check the till locks | none — runs until the date in the key |
 | Ends | at `expiresAt`, when the portal revokes it (next daily check), or after 14 days offline | at `expiresAt` (a date is **required** — no lifetime keys) |
-| Trial | the portal issues a trial licence at sign-up (default **7 days**, the portal can set any length per customer and extend it) | **a key is required on a new install (owner 2026-09-28)** — a trial is a trial key from the generator (any length) or the portal; the built-in 7-day trial only runs out on installs that already started it |
+| Trial | the portal issues a trial licence at sign-up (default **7 days**, the portal can set any length per customer and extend it) | **a key is mandatory (owner 2026-10-03, §9)** — a trial is a trial key from the generator (any length) or the portal; there is no built-in trial: a till with no genuine key is locked |
 | Seats (tills) | counted by the portal (daily check lists the branch's tills) **and** by the branch's main till | counted by the branch's main till |
 | Later | — | a local customer can move to the cloud: enters a portal activation code; history is uploaded; days left on the local key carry over |
 
@@ -53,7 +53,7 @@ SSPOS1.<base64url(payload JSON)>.<base64url(Ed25519 signature over "SSPOS1." + p
   beyond tolerance locks until corrected or the portal confirms the time. The portal's time is used on
   every successful check.
 - **Warnings:** from 7 days before `expiresAt`, and daily for a cloud licence that has not checked in.
-- **Lock (trial over, expired, revoked, 14 days offline, clock tampering, seats exceeded):** the till
+- **Lock (no key, key not started yet, trial key over, expired, revoked, 14 days offline, clock tampering, seats exceeded):** the till
   finishes the sale in progress, then shows the lock screen. **Only three things work there:** enter a
   licence key / "Check again"; data backup/export (take data out only); support number. No sales, no
   products, no settings.
@@ -101,9 +101,10 @@ treated as "not active" by the till, never as a crash.
 
 - Local trial reinstall: **superseded (owner 2026-09-28)** — a new install needs a licence key in the first-run
   wizard (Skip greyed, Next refuses an empty box; installer key page stays optional and pre-fills it). No key →
-  no set-up, so a reinstall with the data folder deleted no longer gets a fresh trial. Installs already on the
-  built-in trial keep it until it ends, then lock as before. A reinstall restores its backup (licence included)
-  from the licence step without a new key.
+  no set-up, so a reinstall with the data folder deleted no longer gets a fresh trial. ~~Installs already on the
+  built-in trial keep it until it ends, then lock as before.~~ **Superseded (owner 2026-10-03, §9): the built-in
+  trial is gone; those installs lock at the update until a key is entered.** A reinstall restores its backup
+  (licence included) from the licence step without a new key.
 - Paid feature list — **open**, the owner will give it later; the token's `features` list carries any names.
 - **Withdrawing a signer: decided (owner 2026-09-26) — cut-off date.** A dealer's generator key that has to go
   is not deleted from the till: its key id gets a cut-off date (`TrustedLicenceKeys.RetiredAfter`). Keys it issued
@@ -222,3 +223,26 @@ greyed key on Settings → Shops; redeem/deactivate/hub link/messages in `Licenc
 left in `sync.migrate_code` for the cloud move (§7). Company/Branch details edited on the portal come back by pull
 (detail columns only, `HubRowMaps`). Open: durable portal row versions / `baseVersion` (needs a table); one manual run
 of the generator's Make key with a scratch signing key.
+
+## 9. Licence key mandatory — no built-in trial (owner, 2026-10-03) — supersedes §6's "no valid key = built-in 7-day trial"
+
+The owner saw the till running with no key. A licence key is not optional:
+- **No genuine key = locked.** `LicenceEvaluator`: no stored key, or one whose signature does not check out, locks with
+  `LicenceLockReason.NoKey` ("This till has no licence key. Enter your licence key to start…"); a key whose `validFrom`
+  has not come locks with `KeyNotStarted` (it used to fall back to the trial). Order unchanged: clock guard → seats /
+  join refusal → the key. A trial is only ever a **trial key** (generator or portal).
+- **Existing installs** that were still on the built-in trial lock at the update; the lock screen's key box is the way in.
+- **First-run wizard:** a new install is locked from its first read, so the lock stays off the wizard
+  (`LicenceLockViewModel.HoldForSetup`, driven by `ShellViewModel.IsSetupRunning`) — its first step is the key — and
+  decides again when the wizard closes (finished, or joined a main till as an extra till).
+- **Before the gate's first read** it still answers "may trade" (a till never locks on "not known yet"); that read is
+  awaited at start-up before the shell opens.
+- **Record:** `licence.trial_started_utc` is no longer written or read (the setting stays defined so stored rows and old
+  backups resolve). `cloud/migrate` sends `localTrialEndsAt: null`.
+- **Main till with no key takes no tills (owner 2026-10-03).** `StoreJoinLicence.Check(…, mainTillHasNoKey)` refuses
+  every join with `JoinOutcome.MainTillHasNoLicence` ("The main till has no licence key. Enter the licence key on the
+  main till, then connect this till again."), and adds no till to the till list. `MainTillLicence.HasNoKey` is true
+  only once the gate has read the licence and found no genuine key — never on "not read yet". The joining till is
+  **not** locked for it (its own key is fine; `licence.join_refused` is not written): it shows
+  `TillLinkProblem.MainTillNoLicence` in its banner / Connect tills and trades in emergency mode until the main till
+  has a key. A main till locked for another reason (expired, withdrawn) still judges joins by its stored key as before.
