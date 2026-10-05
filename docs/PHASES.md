@@ -105,7 +105,7 @@ Contract: v1.4.1 §18.4. Roles: business owner, **shop manager** (one branch onl
 | 5.4 | Cash and Z (shifts, Z reports, cash office, card settlement, day lock) | done |
 | 5.5 | Accounts and VAT (expenses, VAT return, journals, fixed assets) | done |
 | 5.6 | Staff (clock events, rota, timesheets, wages). EPOS answers 2026-10-01: till overtime rule (8 h/day), holiday estimate 12.07% | done |
-| 5.7 | Compliance (age refusals, incidents, training, diary checks, licences, recalls) | done |
+| 5.7 | Compliance (age refusals, incidents, training, diary checks, licences, recalls). EPOS answers 2026-10-06: recalls raised and text-edited on the portal only (close / reopen / returns at a till), returns per shop from stock movements | done |
 | 5.8 | Newspapers (titles, deliveries, returns, vouchers). EPOS answers 2026-10-01: VAT from the linked product, warnings | done |
 | 5.9 | Seasonal events and opening hours. EPOS answers 2026-10-01: one company-scope `shop.trading_hours` line (≤ 200) | done |
 | 5.10 | Pharmacy and parcels (dispensing, medicine classes, parcel carriers) | done |

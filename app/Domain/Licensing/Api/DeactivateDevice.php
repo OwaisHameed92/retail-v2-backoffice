@@ -30,6 +30,9 @@ use SensitiveParameter;
  *   own id from `existingIds`, or our register id). A till we sent the branch's sync key must also send it as
  *   Bearer (§17.7 "the branch key when the till holds one", security review H2). Every release raises a
  *   `tillDeactivated` alert; the route is rate limited per install and per IP.
+ * - Optional `tokenSha256` (ANSWERS-2026-10-06 "Purane khule sawal" 2, additive): when sent it must be the hash of
+ *   the token we issued this install (current or the one before, LicenceToken::isHeld, as licence/validate), else
+ *   403 `device.token_mismatch` + a `tokenMismatch` alert and nothing released. Absent (tills up to 0.1.51): as before.
  * - Idempotent by registerId: a till already released gets the same reply. Unknown → 404 device.not_found.
  * - Reply: `seat: "deactivated"`, the branch's seats in use and maxRegisters. `apiKeyRevoked`: true when this till
  *   (the branch's main till) had been sent the branch's sync key in a licence reply — that key is revoked and rotated
@@ -52,23 +55,28 @@ class DeactivateDevice
     /**
      * @return array<string, mixed>
      *
-     * @throws ApiException device.not_found, auth.invalid_key
+     * @throws ApiException device.not_found, device.token_mismatch, auth.invalid_key
      */
-    public function handle(string $registerId, TillRequest $till, string $reason, ?string $note, #[SensitiveParameter] ?string $bearer = null): array
+    public function handle(string $registerId, TillRequest $till, string $reason, ?string $note, #[SensitiveParameter] ?string $bearer = null, ?string $tokenSha256 = null): array
     {
         $now = CarbonImmutable::now()->startOfSecond();
         $bound = $this->bound($registerId, $till, lock: false);
 
         if ($bound !== null) {
+            $this->ensureToken($bound, $till, $tokenSha256);
             $this->ensureBranchKey($bound, $till, $bearer, $now);
         }
 
         $fresh = false;
-        $licence = DB::transaction(function () use ($registerId, $till, $reason, $note, $now, &$fresh) {
+        $licence = DB::transaction(function () use ($registerId, $till, $reason, $note, $now, $tokenSha256, &$fresh) {
             $bound = $this->bound($registerId, $till, lock: true);
 
             if ($bound === null) {
                 return $this->released($registerId, $till) ?? throw LicenceApiErrors::deviceNotFound();
+            }
+
+            if ($tokenSha256 !== null && ! LicenceToken::isHeld($bound, $tokenSha256)) {
+                throw LicenceApiErrors::tokenMismatch();
             }
 
             $fresh = true;
@@ -126,6 +134,21 @@ class DeactivateDevice
     {
         return Licence::withoutCompanyScope()->where('device_id', $till->installId)->when($lock, fn ($q) => $q->lockForUpdate())->get()
             ->first(fn (Licence $licence) => self::isRegister($licence, $registerId));
+    }
+
+    /**
+     * A till that sends `tokenSha256` must hold the token we issued this install; one that sends none is checked as
+     * before (the branch key when it holds one).
+     *
+     * @throws ApiException device.token_mismatch
+     */
+    private function ensureToken(Licence $licence, TillRequest $till, ?string $tokenSha256): void
+    {
+        if ($tokenSha256 !== null && ! LicenceToken::isHeld($licence, $tokenSha256)) {
+            $this->alerts->raise($licence, LicenceAlertType::TokenMismatch, $till, ['attempted' => 'deactivate']);
+
+            throw LicenceApiErrors::tokenMismatch();
+        }
     }
 
     /**

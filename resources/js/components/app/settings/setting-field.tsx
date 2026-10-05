@@ -39,7 +39,7 @@ export function SettingField({ definition, value, onChange, inherited, overrides
     const describedBy = error ? `${id}-error` : `${id}-help`;
 
     const aside =
-        isShop && value !== '' ? (
+        isShop && value !== '' && !definition.readOnly ? (
             <Button type="button" variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={() => onChange('')}>
                 <Undo2 className="size-3.5" aria-hidden />
                 Use {inherited?.from === 'everyShop' ? "every shop's" : 'default'}
@@ -47,6 +47,19 @@ export function SettingField({ definition, value, onChange, inherited, overrides
         ) : undefined;
 
     const control = (() => {
+        if (definition.readOnly) {
+            return (
+                <Input
+                    id={id}
+                    value={value === '' ? 'Not set' : value}
+                    readOnly
+                    disabled
+                    className={cn(value === '' && 'text-muted-foreground')}
+                    aria-describedby={describedBy}
+                />
+            );
+        }
+
         switch (definition.type) {
             case 'bool':
                 return (

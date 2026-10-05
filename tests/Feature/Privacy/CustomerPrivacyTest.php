@@ -181,3 +181,46 @@ test('managers see no privacy tab on the customer page; owners do', function () 
     $this->actingAs($this->owner)->get('/app/customers/'.$this->aisha->id)
         ->assertInertia(fn ($page) => $page->where('privacy.settled', true)->where('privacy.anonymised', false));
 });
+
+test('anonymising scrubs the portal\'s own copies of till rows (orders, pay-date notes, e-receipt addresses), this business only', function () {
+    $aisha = $this->aisha->id;
+    $order = fn (string $id, string $company, string $branch) => DB::table('customer_orders')->insert([
+        'id' => $id, 'company_id' => $company, 'branch_id' => $branch, 'reference' => 'CO-'.substr($id, -2), 'customer_id' => $aisha, 'customer_name' => 'Aisha R',
+        'customer_phone' => '07700 900123', 'customer_email' => 'aisha@example.co.uk', 'status' => 'ready', 'goods_total' => '30.00', 'extra' => '{"nickname":"Ash"}',
+    ]);
+    $payDate = fn (string $id, string $company, string $branch) => DB::table('account_pay_dates')->insert([
+        'id' => $id, 'company_id' => $company, 'branch_id' => $branch, 'customer_id' => $aisha, 'sale_id' => '', 'due_at' => '2026-10-30 00:00:00',
+        'note' => 'Aisha pays on Friday, call 07700 900123', 'user_id' => '', 'reminder_attempts' => 0, 'last_reminder_error' => '', 'row_version' => 1,
+    ]);
+    $receipt = fn (string $id, string $company, string $branch, string $sale) => DB::table('e_receipt_logs')->insert([
+        'id' => $id, 'company_id' => $company, 'branch_id' => $branch, 'sale_id' => $sale, 'channel' => 'email', 'address' => 'aisha@example.co.uk', 'status' => 'sent', 'error' => '',
+    ]);
+
+    $order('01K5T0Q8C4000000000000ORA1', $this->company->id, TillFixtures::BRADFORD);
+    $payDate('01K5T0Q8C4000000000000PDA1', $this->company->id, TillFixtures::LEEDS);
+    privacySale($this->company->id, TillFixtures::LEEDS, $aisha, '01K5T0Q8C4000000000000SAA1');
+    $receipt('01K5T0Q8C4000000000000ERA1', $this->company->id, TillFixtures::LEEDS, '01K5T0Q8C4000000000000SAA1');
+    $receipt('01K5T0Q8C4000000000000ERA2', $this->company->id, TillFixtures::LEEDS, '01K5T0Q8C4000000000000SXX9'); // another customer's sale
+    F::consent($this->company->id, TillFixtures::LEEDS, $aisha, 'email', true, '2026-09-01 09:00:00');
+
+    // Another business's rows naming the same customer id are never touched.
+    $order('01K5T0Q8C4000000000000ORB1', $this->other->id, $this->otherShop->id);
+    $payDate('01K5T0Q8C4000000000000PDB1', $this->other->id, $this->otherShop->id);
+    privacySale($this->other->id, $this->otherShop->id, $aisha, '01K5T0Q8C4000000000000SAB1');
+    $receipt('01K5T0Q8C4000000000000ERB1', $this->other->id, $this->otherShop->id, '01K5T0Q8C4000000000000SAB1');
+
+    app(AnonymiseCustomer::class)->handle($this->company, $aisha, null);
+
+    expect((array) DB::table('customer_orders')->where('id', '01K5T0Q8C4000000000000ORA1')->first(['customer_name', 'customer_phone', 'customer_email', 'extra']))
+        ->toBe(['customer_name' => '', 'customer_phone' => '', 'customer_email' => '', 'extra' => null])
+        ->and(DB::table('account_pay_dates')->where('id', '01K5T0Q8C4000000000000PDA1')->value('note'))->toBe('')
+        ->and(DB::table('e_receipt_logs')->where('id', '01K5T0Q8C4000000000000ERA1')->value('address'))->toBe('')
+        ->and(DB::table('e_receipt_logs')->where('id', '01K5T0Q8C4000000000000ERA2')->value('address'))->toBe('aisha@example.co.uk')
+        ->and(DB::table('consents')->where('customer_id', $aisha)->count())->toBe(1)
+        ->and(AuditLog::query()->where('action', 'customer.anonymised')->sole()->meta['portalCopiesScrubbed'])
+        ->toEqual(['customerOrders' => 1, 'accountPayDates' => 1, 'eReceipts' => 1, 'consents' => 0]); // toEqual: MySQL JSON key order
+
+    expect(DB::table('customer_orders')->where('id', '01K5T0Q8C4000000000000ORB1')->value('customer_email'))->toBe('aisha@example.co.uk')
+        ->and(DB::table('account_pay_dates')->where('id', '01K5T0Q8C4000000000000PDB1')->value('note'))->toBe('Aisha pays on Friday, call 07700 900123')
+        ->and(DB::table('e_receipt_logs')->where('id', '01K5T0Q8C4000000000000ERB1')->value('address'))->toBe('aisha@example.co.uk');
+});

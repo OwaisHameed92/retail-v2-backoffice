@@ -25,7 +25,6 @@ class ProductRecallRequest extends CompanyWideWriteRequest
             'source' => ['nullable', 'string', 'max:100'],
             'reason' => ['required', 'string', 'max:1000'],
             'supplier_id' => ['nullable', 'string', 'max:64'],
-            'note' => ['nullable', 'string', 'max:2000'],
         ];
     }
 

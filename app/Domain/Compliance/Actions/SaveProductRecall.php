@@ -19,11 +19,13 @@ use Illuminate\Validation\ValidationException;
  * save goes through the HubOwnedRow model path and every shop's till receives it in its next pull (company-wide,
  * `scope` null). A new recall is open, raised now; its `raisedByUserId` stays blank (a portal user is not a till
  * user: the portal's audit log says who). An edit raises `row_version` by one; a save that changes nothing writes
- * nothing. A closed recall cannot be edited (reopen it first).
+ * nothing. Only the text fields (FIELDS) are the portal's: closing, reopening, returns and the note are done at a till
+ * and never sent in an update (PullPayload::TILL_KEEPS_ON_UPDATE, ANSWERS-2026-10-06 Q3), so a closed recall's text
+ * can be corrected too.
  */
 final class SaveProductRecall
 {
-    public const FIELDS = ['reference', 'product_id', 'product_name', 'batch_code', 'expiry_from', 'expiry_to', 'source', 'reason', 'supplier_id', 'note'];
+    public const FIELDS = ['reference', 'product_id', 'product_name', 'batch_code', 'expiry_from', 'expiry_to', 'source', 'reason', 'supplier_id'];
 
     public function __construct(private readonly CurrentCompany $tenancy, private readonly RecordAudit $audit) {}
 
@@ -36,10 +38,6 @@ final class SaveProductRecall
     {
         return $this->tenancy->runAs($company, fn (): ProductRecall => DB::transaction(function () use ($recallId, $data): ProductRecall {
             $recall = $recallId === null ? $this->fresh() : ProductRecall::query()->lockForUpdate()->findOrFail($recallId);
-
-            if ($recall->exists && $recall->status === ProductRecallStatus::Closed) {
-                throw ValidationException::withMessages(['reason' => 'This recall is closed. Reopen it to change it.']);
-            }
 
             $values = $this->clean(Arr::only($data, self::FIELDS), $recall);
             $before = $recall->exists ? Arr::only($recall->attributesToArray(), self::FIELDS) : null;

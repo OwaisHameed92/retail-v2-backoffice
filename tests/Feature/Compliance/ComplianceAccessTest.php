@@ -46,7 +46,7 @@ test('guests are sent to log in and staff get 403 on every Compliance page and w
 
     $staff = C::member($this->company, CompanyRole::Staff);
     $this->actingAs($staff)->post('/app/compliance/recalls', ['product_name' => 'X', 'reason' => 'Y'])->assertForbidden();
-    $this->actingAs($staff)->put('/app/compliance/recalls/'.F::id('RCMINE').'/status', ['status' => 'closed'])->assertForbidden();
+    $this->actingAs($staff)->put('/app/compliance/recalls/'.F::id('RCMINE'), ['product_name' => 'X', 'reason' => 'Y'])->assertForbidden();
 });
 
 test('owners, managers and accountants see every page; only owners and managers of every shop raise recalls', function () {
@@ -67,7 +67,7 @@ test('owners, managers and accountants see every page; only owners and managers 
     $oneShop = C::member($this->company, CompanyRole::Manager, TillFixtures::BRADFORD);
     expect(C::props($this->actingAs($oneShop)->get('/app/compliance/recalls'))['canManage'])->toBeFalse();
     $this->actingAs($oneShop)->post('/app/compliance/recalls', ['product_name' => 'X', 'reason' => 'Y'])->assertForbidden();
-    $this->actingAs($oneShop)->put('/app/compliance/recalls/'.F::id('RCMINE').'/status', ['status' => 'closed'])->assertForbidden();
+    $this->actingAs($oneShop)->put('/app/compliance/recalls/'.F::id('RCMINE'), ['product_name' => 'X', 'reason' => 'Y'])->assertForbidden();
 
     expect(CompanyRole::Staff->can('compliance.view'))->toBeFalse()
         ->and(CompanyRole::Accountant->can('compliance.manage'))->toBeFalse()
@@ -101,7 +101,6 @@ test('one business never sees or changes another business\'s compliance rows', f
     $this->actingAs($owner)->get('/app/compliance/incidents/'.F::id('IOTHER'))->assertNotFound();
     $this->actingAs($owner)->get('/app/compliance/recalls/'.F::id('RCOTHER'))->assertNotFound();
     $this->actingAs($owner)->put('/app/compliance/recalls/'.F::id('RCOTHER'), ['product_name' => 'Mine now', 'reason' => 'x'])->assertNotFound();
-    $this->actingAs($owner)->put('/app/compliance/recalls/'.F::id('RCOTHER').'/status', ['status' => 'closed'])->assertNotFound();
 
     $this->assertDatabaseHas('product_recalls', ['id' => F::id('RCOTHER'), 'product_name' => 'Theirs', 'status' => 'open']);
 });

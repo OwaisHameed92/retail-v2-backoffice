@@ -40,7 +40,10 @@ export function LedgerTable({
                 header: 'What',
                 cell: ({ row }) => (
                     <div className="grid max-w-72 leading-5">
-                        <span className="font-medium">{row.original.typeLabel}</span>
+                        <span className="font-medium">
+                            {row.original.typeLabel}
+                            {row.original.tender && <span className="text-muted-foreground font-normal"> · {row.original.tender}</span>}
+                        </span>
                         {row.original.note && <span className="text-muted-foreground truncate text-xs">{row.original.note}</span>}
                     </div>
                 ),

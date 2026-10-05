@@ -1,5 +1,7 @@
 <?php
 
+use App\Domain\Licensing\Enums\LicenceAlertType;
+use App\Domain\Licensing\Models\LicenceAlert;
 use App\Domain\Shared\Models\AuditLog;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Mail;
@@ -77,4 +79,26 @@ test('ANSWERS-2026-09-30-portal point 6: the main till gets no transfer code, ap
 
     expect($this->licence->fresh()->device_id)->toBe(self::OTHER_INSTALL)
         ->and($moved->json('apiKey'))->toStartWith('SSK-');
+});
+
+test('optional tokenSha256 (ANSWERS-2026-10-06): the issued token releases; another is 403 and nothing is released', function () {
+    $body = fn (array $extra) => ['registerId' => self::TILL_REGISTER, 'installId' => self::INSTALL, 'reason' => 'removed', 'note' => null, ...$extra];
+
+    $this->till('devices/deactivate', $body(['tokenSha256' => hash('sha256', 'not-our-token'), 'installCode' => self::INSTALL_CODE]))
+        ->assertForbidden()->assertJsonPath('code', 'device.token_mismatch')->assertJsonStructure(['code', 'message', 'traceId']);
+    expect($this->licence->fresh()->device_id)->toBe(self::INSTALL)
+        ->and(LicenceAlert::withoutCompanyScope()->where('type', LicenceAlertType::TokenMismatch->value)->count())->toBe(1);
+
+    $this->till('devices/deactivate', $body(['tokenSha256' => 'NOT-A-HASH']))->assertStatus(400)->assertJsonPath('code', 'request.invalid');
+
+    $this->till('devices/deactivate', $body(['tokenSha256' => hash('sha256', $this->token), 'installCode' => self::INSTALL_CODE]))
+        ->assertOk()->assertJsonPath('seat', 'deactivated');
+    expect($this->licence->fresh()->device_id)->toBeNull();
+});
+
+test('without tokenSha256 or installCode (tills up to 0.1.51) the release works as before', function () {
+    $this->till('devices/deactivate', ['registerId' => self::TILL_REGISTER, 'installId' => self::INSTALL, 'reason' => 'removed', 'note' => null])
+        ->assertOk()->assertJsonPath('seat', 'deactivated');
+
+    expect($this->licence->fresh()->device_id)->toBeNull();
 });

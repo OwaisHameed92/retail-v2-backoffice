@@ -69,7 +69,8 @@ test('till 0.1.51: credit held shows as such, earnsPoints is always sent (missin
     ])->assertOk()->assertJson(['acknowledgedSeq' => 5]);
 
     $row = collect(($this->customer)(true))->firstWhere('entityId', $customer['id']);
-    expect($row['payload'])->toMatchArray(['balance' => -15, 'owed' => 0, 'creditHeld' => 15, 'earnsPoints' => true, 'pendingPoints' => 0]);
+    expect($row['payload'])->toMatchArray(['balance' => -15, 'owed' => 0, 'creditHeld' => 15, 'earnsPoints' => true])
+        ->and($row['payload'])->not->toHaveKey('pendingPoints');
 
     $staff = $this->memberOf($this->company, CompanyRole::Staff);
     $this->actingAs($staff)->get('/app/customers?balance=credit')->assertInertia(fn (AssertableInertia $page) => $page
@@ -77,6 +78,8 @@ test('till 0.1.51: credit held shows as such, earnsPoints is always sent (missin
     $this->actingAs($staff)->get("/app/customers/{$customer['id']}")->assertOk()->assertInertia(fn (AssertableInertia $page) => $page
         ->where('account.balance', '-15.00')
         ->where('ledger.data.0.typeLabel', 'Paid in advance')
+        ->where('ledger.data.0.tender', 'Card')
+        ->where('ledger.data.1.tender', null)
         ->has('payDates', 1)
         ->where('payDates.0.wholeAccount', true)
         ->where('payDates.0.shop', 'Leeds Kirkgate')
@@ -88,7 +91,20 @@ test('till 0.1.51: credit held shows as such, earnsPoints is always sent (missin
     // A customer the portal adds collects points.
     $sam = app(SaveCustomer::class)->handle($this->company, null, ['name' => 'Sam Patel']);
     expect(collect(($this->customer)())->firstWhere('entityId', $sam->id)['payload'])
-        ->toMatchArray(['earnsPoints' => true, 'pendingPoints' => 0, 'owed' => 0, 'creditHeld' => 0]);
+        ->toMatchArray(['earnsPoints' => true, 'owed' => 0, 'creditHeld' => 0])->not->toHaveKey('pendingPoints');
+});
+
+test('pendingPoints is stored as a till pushes it but never sent down (ANSWERS-2026-10-06 Q1: each till has its own)', function () {
+    $customer = [...TillFixtures::sample('entities/Customer.json'), 'pendingPoints' => 12];
+    $this->sync->push([TillFixtures::envelope('Customer', $customer, 1)])->assertOk();
+
+    expect(DB::table('customers')->where('id', $customer['id'])->value('pending_points'))->toEqual(12);
+
+    // Bradford gets Leeds's customer; Leeds's own figure never goes there.
+    $reply = $this->sync->pull(0, bradford: true)->assertOk();
+    expect(SyncApiFixtures::schemaErrors($reply, 'pull-reply.schema.json'))->toBe([]);
+    $row = collect(Pull::changes($reply))->firstWhere('entityId', $customer['id']);
+    expect($row)->not->toBeNull()->and($row['payload'])->not->toHaveKey('pendingPoints')->toHaveKey('earnsPoints');
 });
 
 test('pay dates of another business are never shown', function () {
@@ -101,4 +117,13 @@ test('pay dates of another business are never shown', function () {
 
     $this->actingAs($this->memberOf($this->company, CompanyRole::Staff))->get('/app/customers/01K5T0Q8C4000000000000K001')->assertOk()
         ->assertInertia(fn (AssertableInertia $page) => $page->has('payDates', 0));
+});
+
+test('a tender the portal does not know is stored and shown as the till wrote it (ANSWERS-2026-10-06 Q6: free text)', function () {
+    $customer = TillFixtures::sample('entities/Customer.json');
+    $payment = [...TillFixtures::sample('entities/CustomerTransaction.json'), 'id' => '01K5VB0000000000000CT00777', 'type' => 'payment', 'amount' => -5, 'saleId' => '', 'tender' => 'Gift card'];
+    $this->sync->push([TillFixtures::envelope('Customer', $customer, 1), TillFixtures::envelope('CustomerTransaction', $payment, 2)])->assertOk();
+
+    $this->actingAs($this->memberOf($this->company, CompanyRole::Staff))->get("/app/customers/{$customer['id']}")->assertOk()
+        ->assertInertia(fn (AssertableInertia $page) => $page->where('ledger.data.0.id', $payment['id'])->where('ledger.data.0.tender', 'Gift card'));
 });

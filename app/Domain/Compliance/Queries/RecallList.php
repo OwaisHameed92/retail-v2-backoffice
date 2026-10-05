@@ -7,10 +7,12 @@ use App\Domain\Compliance\Support\ComplianceLookup as L;
 use App\Domain\Shared\Support\Money;
 use App\Domain\Shared\Support\TableQuery;
 use App\Domain\TillData\Enums\ProductRecallStatus;
+use App\Domain\TillData\Enums\StockMovementType;
 use App\Domain\TillData\Models\BranchProduct;
 use App\Domain\TillData\Models\Product;
 use App\Domain\TillData\Models\ProductRecall;
 use App\Domain\TillData\Models\StockLayer;
+use App\Domain\TillData\Models\StockMovement;
 use App\Domain\TillData\Models\Supplier;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
@@ -19,7 +21,9 @@ use Illuminate\Support\Collection;
 /**
  * Product recalls (module 5.7): hub-owned rows the portal raises and every till applies. The list (open first,
  * newest raised first) and one recall with the stock it touches in each shop: on hand of the product, and what is
- * left of deliveries whose batch number or best-before date matches (`StockLayer`), when the tills track them.
+ * left of deliveries whose batch number or best-before date matches (`StockLayer`), when the tills track them, and
+ * what each shop sent back: its till's `supplierReturn` stock movements for the recall (`refType` "Recall", `refId` the
+ * recall's id), never the row's `returnedQty`, which is one till's own count (ANSWERS-2026-10-06 Q3).
  */
 final class RecallList
 {
@@ -58,7 +62,8 @@ final class RecallList
         $onHand = $r->product_id === '' ? collect() : $f->scope(BranchProduct::query())->where('product_id', $r->product_id)->get(['branch_id', 'qty_on_hand'])
             ->groupBy('branch_id')->map(fn ($rows) => Money::sum($rows->pluck('qty_on_hand'), 4));
         $batches = self::batches($r, $f)->groupBy('branch_id')->map(fn ($rows) => ['qty' => Money::sum($rows->pluck('qty_remaining'), 4), 'count' => $rows->count()]);
-        $ids = $onHand->keys()->merge($batches->keys())->unique()->values()->all();
+        $returned = self::returned($r, $f);
+        $ids = $onHand->keys()->merge($batches->keys())->merge($returned->keys())->unique()->values()->all();
         $shops = L::shops($ids);
         $supplier = $r->supplier_id !== '' ? Supplier::query()->withTrashed()->find($r->supplier_id, ['id', 'name']) : null;
 
@@ -68,7 +73,7 @@ final class RecallList
                 'productId' => L::blank($r->product_id),
                 'supplierId' => L::blank($r->supplier_id),
                 'supplier' => $supplier?->name,
-                'returnedQty' => Money::normalise($r->returned_qty, 4),
+                'returnedQty' => Money::sum($returned->values(), 4),
                 'closedAt' => L::iso($r->closed_at),
                 'note' => L::blank($r->note),
                 'fromPortal' => $r->origin_branch_id === null,
@@ -78,6 +83,7 @@ final class RecallList
                 'onHand' => $onHand[$id] ?? null,
                 'batchQty' => $batches[$id]['qty'] ?? null,
                 'batches' => $batches[$id]['count'] ?? 0,
+                'returned' => $returned[$id] ?? null,
             ])->sortBy('shop')->values()->all(),
             'matchesBatches' => $r->batch_code !== '' || $r->expiry_from !== null || $r->expiry_to !== null,
         ];
@@ -139,6 +145,19 @@ final class RecallList
 
         return $ids === [] ? [] : $f->scope(BranchProduct::query())->whereIn('product_id', $ids)->get(['product_id', 'qty_on_hand'])
             ->groupBy('product_id')->map(fn ($rows) => Money::sum($rows->pluck('qty_on_hand'), 4))->all();
+    }
+
+    /**
+     * Quantity each shop returned to the supplier against this recall (a return's `qtyDelta` takes stock out).
+     *
+     * @return Collection<string, string> branch id → quantity
+     */
+    private static function returned(ProductRecall $r, ComplianceFilters $f): Collection
+    {
+        return $f->scope(StockMovement::query())->where('ref_type', 'Recall')->where('ref_id', $r->id)
+            ->where('type', StockMovementType::SupplierReturn->value)->get(['branch_id', 'qty_delta'])
+            ->groupBy(fn (StockMovement $m) => (string) $m->branch_id)
+            ->map(fn ($rows) => ltrim(Money::sum($rows->pluck('qty_delta'), 4), '-'));
     }
 
     /**

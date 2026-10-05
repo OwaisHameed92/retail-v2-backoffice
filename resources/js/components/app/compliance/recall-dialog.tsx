@@ -19,7 +19,6 @@ type RecallValues = {
     source: string;
     reason: string;
     supplier_id: string;
-    note: string;
 };
 
 const SOURCES: Option[] = [
@@ -41,7 +40,6 @@ function initial(recall: RecallDetail | null): RecallValues {
         source: recall?.source ?? '',
         reason: recall?.reason ?? '',
         supplier_id: recall?.supplierId ?? '',
-        note: recall?.note ?? '',
     };
 }
 
@@ -206,16 +204,6 @@ export function RecallDialog({ recall, suppliers, productResults = [], onClose }
                             value={data.reason}
                             aria-invalid={!!errors.reason}
                             onChange={(e) => setData('reason', e.target.value)}
-                        />
-                    </FormField>
-                    <FormField id="recall-note" label="What shops should do" optional error={errors.note}>
-                        <Textarea
-                            id="recall-note"
-                            rows={2}
-                            maxLength={2000}
-                            value={data.note}
-                            placeholder="e.g. Take off sale, keep in the back room for the supplier to collect."
-                            onChange={(e) => setData('note', e.target.value)}
                         />
                     </FormField>
 

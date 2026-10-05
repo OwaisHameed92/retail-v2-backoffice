@@ -7,8 +7,9 @@
  *
  * Per setting: label, help, type (bool, int, money, percent, decimal, text, multiline, choice, time), optional
  * min/max (numbers), max (characters for text), options (choice: the till's exact texts), unit ("minutes", "days"…),
- * default (only the till's defaults the contract states) and everyShopOnly (a company-scope setting the till reads
- * for the whole business: never set per shop).
+ * default (only the till's defaults the contract states), everyShopOnly (a company-scope setting the till reads
+ * for the whole business: never set per shop) and readOnly (shown as the tills sent it, never changed from the portal:
+ * `library.url`, ANSWERS-2026-10-06 Q10, every till of the business would follow a value the portal set).
  */
 
 return [
@@ -166,7 +167,7 @@ return [
             'catalogue.auto_product_images' => ['label' => 'Find product pictures', 'type' => 'bool', 'default' => 'true', 'everyShopOnly' => true, 'help' => 'The main till finds a picture for each new product and keeps it on that PC.'],
             'library.lookup_enabled' => ['label' => 'Look up new barcodes', 'type' => 'bool', 'default' => 'true', 'help' => 'An unknown barcode is looked up in the shared product library.'],
             'library.share_new_products' => ['label' => 'Share new products', 'type' => 'bool', 'default' => 'true', 'help' => 'Products you add help other shops (name and barcode only, never prices).'],
-            'library.url' => ['label' => 'Product library address', 'type' => 'text', 'max' => 200, 'everyShopOnly' => true, 'help' => 'Leave blank to use the standard library.'],
+            'library.url' => ['label' => 'Product library address', 'type' => 'text', 'max' => 200, 'everyShopOnly' => true, 'readOnly' => true, 'help' => 'Set at a till, only when your dealer asks. Blank means the standard library.'],
         ],
     ],
     'checks' => [

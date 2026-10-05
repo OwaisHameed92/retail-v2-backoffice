@@ -67,6 +67,8 @@ export interface LedgerRow {
     typeLabel: string;
     shop: string;
     note: string | null;
+    /** How a payment or advance was taken, as the till wrote it ("Cash", "Card"; free text). */
+    tender: string | null;
     saleId: string | null;
     amount: string;
     points: number;

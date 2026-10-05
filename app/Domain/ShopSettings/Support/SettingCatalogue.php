@@ -8,9 +8,10 @@ use Illuminate\Validation\ValidationException;
 /**
  * The till settings the portal edits (module 4.9), from `app/Domain/ShopSettings/catalogue.php`: sections of
  * settings with a label, help text and a type. `normalise()` turns what a person typed into the text the till
- * stores (`true`/`false`, `20`, `2.50`), or refuses it. Deny-listed keys are never part of it (a test checks).
+ * stores (`true`/`false`, `20`, `2.50`), or refuses it. Deny-listed keys are never part of it (a test checks); a
+ * `readOnly` key is shown but always refused (the tills set it).
  *
- * @phpstan-type Definition array{label: string, help: string, type: string, min?: int|float, max?: int|float, unit?: string, default?: string, everyShopOnly?: bool, options?: list<string>}
+ * @phpstan-type Definition array{label: string, help: string, type: string, min?: int|float, max?: int|float, unit?: string, default?: string, everyShopOnly?: bool, readOnly?: bool, options?: list<string>}
  * @phpstan-type Section array{title: string, description: string, settings: array<string, Definition>}
  */
 final class SettingCatalogue
@@ -58,6 +59,10 @@ final class SettingCatalogue
     {
         $definition = self::find($key) ?? throw ValidationException::withMessages(["values.{$key}" => 'This setting cannot be changed from the portal.']);
         $field = "values.{$key}";
+
+        if ($definition['readOnly'] ?? false) {
+            throw ValidationException::withMessages([$field => "{$definition['label']} is set at a till; the portal only shows it."]);
+        }
 
         if ($value === null || (is_string($value) && trim($value) === '')) {
             return null;

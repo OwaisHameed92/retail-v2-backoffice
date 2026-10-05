@@ -1,6 +1,6 @@
 import { dash, formatDateTime, formatDay } from '@/components/app/compliance/format';
 import { RecallDialog } from '@/components/app/compliance/recall-dialog';
-import { RecallStatus, RecallStatusDialog } from '@/components/app/compliance/recall-status';
+import { RecallStatus } from '@/components/app/compliance/recall-status';
 import { type RecallProps } from '@/components/app/compliance/types';
 import { DescriptionList } from '@/components/shared/description-list';
 import { EmptyState } from '@/components/shared/empty-state';
@@ -11,15 +11,18 @@ import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import AppLayout from '@/layouts/app-layout';
 import { Head } from '@inertiajs/react';
-import { Boxes, CircleCheck, Pencil, RotateCcw } from 'lucide-react';
+import { Boxes, Pencil } from 'lucide-react';
 import { useState } from 'react';
 
 const qty = (v: string | null) => (v === null ? dash : <span className="tabular-nums">{number(Number(v))}</span>);
 
-/** One product recall (module 5.7): what, why, and the stock it touches in each shop. Edit and close with compliance.manage. */
+/**
+ * One product recall (module 5.7): what, why, the stock it touches and what each shop sent back. The portal edits its
+ * text (compliance.manage); closing, reopening and returns are done at a till, so the status is read only here.
+ */
 export default function ComplianceRecall({ recall, stock, matchesBatches, suppliers, productResults, canManage }: RecallProps) {
-    const [dialog, setDialog] = useState<'edit' | 'status' | null>(null);
-    const open = recall.status === 'open';
+    const [editing, setEditing] = useState(false);
+    const anyReturned = stock.some((s) => s.returned !== null);
 
     return (
         <AppLayout>
@@ -37,18 +40,10 @@ export default function ComplianceRecall({ recall, stock, matchesBatches, suppli
                     .join(' · ')}
                 actions={
                     canManage && (
-                        <>
-                            {open && (
-                                <Button variant="outline" onClick={() => setDialog('edit')}>
-                                    <Pencil />
-                                    Edit
-                                </Button>
-                            )}
-                            <Button variant={open ? 'default' : 'outline'} onClick={() => setDialog('status')}>
-                                {open ? <CircleCheck /> : <RotateCcw />}
-                                {open ? 'Close recall' : 'Reopen'}
-                            </Button>
-                        </>
+                        <Button variant="outline" onClick={() => setEditing(true)}>
+                            <Pencil />
+                            Edit
+                        </Button>
                     )
                 }
             />
@@ -59,7 +54,7 @@ export default function ComplianceRecall({ recall, stock, matchesBatches, suppli
                         <p className="text-sm leading-6 whitespace-pre-line">{recall.reason ?? 'No reason given.'}</p>
                         {recall.note && (
                             <div className="bg-muted mt-4 rounded-md px-4 py-3 text-sm">
-                                <p className="font-medium">What shops should do</p>
+                                <p className="font-medium">Closing note from a till</p>
                                 <p className="text-muted-foreground mt-1 whitespace-pre-line">{recall.note}</p>
                             </div>
                         )}
@@ -68,8 +63,8 @@ export default function ComplianceRecall({ recall, stock, matchesBatches, suppli
                         title="Stock in the shops"
                         description={
                             matchesBatches
-                                ? 'On hand of the product, and what is left of deliveries with a matching batch or best-before date.'
-                                : 'On hand of the product in each shop.'
+                                ? 'On hand of the product, what is left of deliveries with a matching batch or best-before date, and what each shop sent back.'
+                                : 'On hand of the product in each shop, and what each shop sent back.'
                         }
                         flush
                     >
@@ -88,17 +83,18 @@ export default function ComplianceRecall({ recall, stock, matchesBatches, suppli
                                 <TableHeader>
                                     <TableRow>
                                         <TableHead className="pl-5">Shop</TableHead>
-                                        <TableHead className="text-right">On hand</TableHead>
-                                        {matchesBatches && <TableHead className="pr-5 text-right">In matching batches</TableHead>}
+                                        <TableHead className={matchesBatches || anyReturned ? 'text-right' : 'pr-5 text-right'}>On hand</TableHead>
+                                        {matchesBatches && <TableHead className={anyReturned ? 'text-right' : 'pr-5 text-right'}>In matching batches</TableHead>}
+                                        {anyReturned && <TableHead className="pr-5 text-right">Returned</TableHead>}
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
                                     {stock.map((s) => (
                                         <TableRow key={s.shop}>
                                             <TableCell className="pl-5 font-medium">{s.shop}</TableCell>
-                                            <TableCell className="text-right">{qty(s.onHand)}</TableCell>
+                                            <TableCell className={matchesBatches || anyReturned ? 'text-right' : 'pr-5 text-right'}>{qty(s.onHand)}</TableCell>
                                             {matchesBatches && (
-                                                <TableCell className="pr-5 text-right">
+                                                <TableCell className={anyReturned ? 'text-right' : 'pr-5 text-right'}>
                                                     {qty(s.batchQty)}
                                                     {s.batches > 0 && (
                                                         <span className="text-muted-foreground ml-1 text-xs">
@@ -107,6 +103,7 @@ export default function ComplianceRecall({ recall, stock, matchesBatches, suppli
                                                     )}
                                                 </TableCell>
                                             )}
+                                            {anyReturned && <TableCell className="pr-5 text-right">{qty(s.returned)}</TableCell>}
                                         </TableRow>
                                     ))}
                                 </TableBody>
@@ -114,7 +111,7 @@ export default function ComplianceRecall({ recall, stock, matchesBatches, suppli
                         )}
                     </SectionCard>
                 </div>
-                <SectionCard title="Details">
+                <SectionCard title="Details" description="Closed, reopened and returns are done at a till.">
                     <DescriptionList
                         layout="rows"
                         items={[
@@ -131,10 +128,7 @@ export default function ComplianceRecall({ recall, stock, matchesBatches, suppli
                 </SectionCard>
             </div>
 
-            {dialog === 'edit' && (
-                <RecallDialog recall={recall} suppliers={suppliers} productResults={productResults} onClose={() => setDialog(null)} />
-            )}
-            {dialog === 'status' && <RecallStatusDialog recall={recall} onClose={() => setDialog(null)} />}
+            {editing && <RecallDialog recall={recall} suppliers={suppliers} productResults={productResults} onClose={() => setEditing(false)} />}
         </AppLayout>
     );
 }

@@ -93,4 +93,10 @@ final class LicenceApiErrors
     {
         return new ApiException('device.not_found', 'This till is not linked to a licence on the portal.', 404);
     }
+
+    /** devices/deactivate: the till's `tokenSha256` is not the token we issued this install (pending code, DECISIONS). */
+    public static function tokenMismatch(): ApiException
+    {
+        return new ApiException('device.token_mismatch', 'This till\'s licence does not match the portal\'s, so it cannot be released from here. '.self::SUPPORT, 403);
+    }
 }

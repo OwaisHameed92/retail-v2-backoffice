@@ -108,7 +108,7 @@ it('sums advances into the balance (negative = credit held), stores tender / til
             ->and([$sale->tender, $sale->register_id, $sale->shift_id])->toBe([null, null, null]);
     });
 
-    // A customer who does not collect points stays that way; pendingPoints is stored as sent (EPOS Q1 open).
+    // A customer who does not collect points stays that way; pendingPoints is stored as sent, never sent back (ANSWERS-2026-10-06 Q1).
     $off = [...TillFixtures::sample('entities/Customer.json'), 'earnsPoints' => false, 'pendingPoints' => 12, 'rowVersion' => 2, 'updatedAt' => '2026-09-02T08:00:00Z'];
     expect(($this->push)([TillFixtures::envelope('Customer', $off, 6, ['op' => 'U'])])->rejected)->toBe([]);
     ($this->asCompany)(fn () => expect(Customer::query()->findOrFail('01K5T0Q8C4000000000000K001')->only(['earns_points', 'pending_points', 'balance']))

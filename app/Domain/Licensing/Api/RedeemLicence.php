@@ -164,6 +164,7 @@ class RedeemLicence
             };
         }
 
-        return ['result' => 'applied', ...Arr::except($reply, ['apiKey', 'hubUrl'])];
+        // The redeem reply carries no sync link: neither the key nor the shop ids that go with it (redeem-reply.applied.json).
+        return ['result' => 'applied', ...Arr::except($reply, ['apiKey', 'hubUrl', 'companyId', 'branchId'])];
     }
 }

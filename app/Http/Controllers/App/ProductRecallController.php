@@ -2,18 +2,16 @@
 
 namespace App\Http\Controllers\App;
 
-use App\Domain\Compliance\Actions\ChangeRecallStatus;
 use App\Domain\Compliance\Actions\SaveProductRecall;
 use App\Domain\Tenancy\CurrentCompany;
-use App\Domain\TillData\Enums\ProductRecallStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\App\Compliance\ProductRecallRequest;
-use App\Http\Requests\App\Compliance\RecallStatusRequest;
 use Illuminate\Http\RedirectResponse;
 
 /**
  * Product recalls raised on the portal (module 5.7, `company.can:compliance.manage`, every shop only). `ProductRecall`
- * is hub-owned (ownership.json): each save reaches every shop's tills in their next pull.
+ * is hub-owned (ownership.json): each save reaches every shop's tills in their next pull. The portal raises a recall
+ * and edits its text; closing, reopening, returns and the note are done at a till (ANSWERS-2026-10-06 Q3).
  */
 class ProductRecallController extends Controller
 {
@@ -31,13 +29,5 @@ class ProductRecallController extends Controller
         $model = $save->handle($this->tenancy->require(), $recall, $request->validated());
 
         return back()->with('success', "Recall {$model->reference} saved.");
-    }
-
-    public function status(RecallStatusRequest $request, string $recall, ChangeRecallStatus $change): RedirectResponse
-    {
-        $status = ProductRecallStatus::from($request->string('status')->toString());
-        $model = $change->handle($this->tenancy->require(), $recall, $status, $request->filled('returned_qty') ? $request->string('returned_qty')->toString() : null, $request->filled('note') ? $request->string('note')->toString() : null);
-
-        return back()->with('success', $status === ProductRecallStatus::Closed ? "Recall {$model->reference} closed." : "Recall {$model->reference} reopened.");
     }
 }

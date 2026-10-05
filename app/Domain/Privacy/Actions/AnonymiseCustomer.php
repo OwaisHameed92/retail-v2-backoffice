@@ -7,6 +7,7 @@ use App\Domain\Privacy\Enums\DataRequestStatus;
 use App\Domain\Privacy\Enums\DataRequestType;
 use App\Domain\Privacy\Models\DataRequest;
 use App\Domain\Privacy\Support\ErasureTraces;
+use App\Domain\Privacy\Support\TillCopyScrub;
 use App\Domain\Privacy\Support\TillSteps;
 use App\Domain\Shared\Actions\RecordAudit;
 use App\Domain\Shared\Support\Money;
@@ -24,9 +25,11 @@ use Illuminate\Validation\ValidationException;
  * Financial records (ledger rows, sales, journals) are kept with the customer id, as the law on accounts requires.
  *
  * Marketing is blocked at once (no contact details left; MarketingConsent::allows() refuses an anonymised customer).
- * Till-owned records that carry their details (customer orders, e-receipt addresses, stored receipts) cannot be
- * changed from the portal: they are listed on the request as till steps (status tillPending). The portal's own
- * copies of their details in the activity log and email log are erased too.
+ * Till-owned records that carry their details (customer orders, e-receipt addresses, pay-date notes, stored receipts)
+ * are not cleared by the tills when the anonymised customer arrives (ANSWERS-2026-10-06 "Purane khule sawal" 3) and
+ * are never sent down from the portal: they stay listed on the request as till steps (status tillPending), and the
+ * portal's own copies are scrubbed here (TillCopyScrub, this company only). The portal's copies of their details in
+ * the activity log and email log are erased too.
  *
  * Refused while the account balance is not zero (settle it at a till first). A second call changes nothing.
  */
@@ -69,6 +72,7 @@ final class AnonymiseCustomer
             ])->save();
 
             ErasureTraces::erase($customer, $email);
+            $scrubbed = TillCopyScrub::handle($customer->company_id, $customer);
 
             $request = DataRequest::query()->create([
                 'customer_id' => $customer->id,
@@ -82,7 +86,7 @@ final class AnonymiseCustomer
             ]);
 
             $this->audit->handle('customer.anonymised', $customer, null, ['anonymised' => true], [
-                'request' => $request->id, 'source' => $source, 'tillSteps' => count($steps),
+                'request' => $request->id, 'source' => $source, 'tillSteps' => count($steps), 'portalCopiesScrubbed' => $scrubbed,
             ]);
 
             return $request;

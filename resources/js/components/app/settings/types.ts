@@ -16,6 +16,8 @@ export interface SettingDefinition {
     default?: string;
     /** One value for the whole business: not offered per shop. */
     everyShopOnly?: boolean;
+    /** Shown as the tills sent it; never changed from the portal. */
+    readOnly?: boolean;
 }
 
 export interface SettingSection {

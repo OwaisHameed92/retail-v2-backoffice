@@ -13,8 +13,9 @@ use Carbon\CarbonImmutable;
 /**
  * The 200 replies of `licence/activate` (licence-activate-reply.schema.json) and `licence/validate`
  * (validate-reply.schema.json), contract v1.4.1 §17.15. The `licence` summary lists the token's fields; the
- * signed token always wins. Module 2.1: `apiKey` (+ `hubUrl`) is added by SyncKeyDelivery; top-level
- * `companyId`/`branchId` are never sent next to it (§17.3: they would have to be the till's own ids).
+ * signed token always wins. Module 2.1: `apiKey` (+ `hubUrl`) is added by SyncKeyDelivery. Top-level
+ * `companyId`/`branchId` are always the shop's ids as its tills know them, never blank (ShopTillIds,
+ * ANSWERS-2026-10-06 "Purane khule sawal" 1): the till takes an `apiKey` only when they match its own database.
  */
 final class LicenceReply
 {
@@ -31,6 +32,7 @@ final class LicenceReply
             'status' => $status,
             'licenceToken' => $token,
             'licence' => self::summary($claims),
+            ...ShopTillIds::for($licence),
             'portalTimeUtc' => ApiDate::format($now),
             'nextCheckAfterSeconds' => TillStatus::nextCheckAfterSeconds($status),
             'messages' => self::messages($licence, $state, $status, $claims->expiresAt, $now),
@@ -47,6 +49,7 @@ final class LicenceReply
             'status' => $status,
             'licenceToken' => $token,
             'licence' => self::summary($claims),
+            ...ShopTillIds::for($licence),
             'apiKey' => $link['apiKey'] ?? null,
             ...(isset($link['hubUrl']) ? ['hubUrl' => $link['hubUrl']] : []),
             'minimumAppVersion' => self::minimumAppVersion(),

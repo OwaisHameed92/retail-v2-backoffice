@@ -95,7 +95,21 @@ test('bad values and keys outside the catalogue are refused, deny-listed ones al
     'not one of the till\'s options' => ['customers.reminders_send_by', 'SMS'],
     'not a time' => ['customers.reminders_quiet_from', '25:00'],
     'label too narrow' => ['labels.custom_width_mm', '10'],
+    'set at a till (ANSWERS-2026-10-06 Q10)' => ['library.url', 'https://library.example'],
+    'set at a till, even blank' => ['library.url', ''],
 ]);
+
+test('the product library address is shown as a till sent it and never changed from the portal (ANSWERS-2026-10-06 Q10)', function () {
+    app(SaveTillSetting::class)->handle($this->company, SettingScope::Company, null, 'library.url', 'https://dealer.example/library');
+
+    $this->actingAs($this->manager)->get('/app/settings')->assertOk()->assertInertia(fn (AssertableInertia $page) => $page
+        ->where('values', fn ($values) => $values['library.url'] === 'https://dealer.example/library')
+        ->where('sections', fn ($sections) => collect(collect($sections)->firstWhere('id', 'products')['settings'])->firstWhere('key', 'library.url')['readOnly'] === true));
+
+    $this->actingAs($this->manager)->put('/app/settings', ['shop' => null, 'values' => ['library.url' => 'https://other.example']])
+        ->assertSessionHasErrors('values.library.url');
+    expect(TillSetting::withoutCompanyScope()->where('setting_key', 'library.url')->sole()->value)->toBe('https://dealer.example/library');
+});
 
 test('till 0.1.28–0.1.51 settings: choices and times as the till writes them; a shop sees no section that is every-shop only', function () {
     $changed = ($this->save)(null, [

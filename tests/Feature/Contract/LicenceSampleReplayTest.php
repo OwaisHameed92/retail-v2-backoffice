@@ -40,7 +40,8 @@ beforeEach(function () {
         $keys = fn (array $a) => array_values(array_diff(array_keys($a), $exceptSample));
 
         expect(array_values(array_diff($keys($expected), array_keys($reply->json()))))->toBe([], "{$sample}: members we do not send")
-            ->and(array_values(array_diff(array_keys($reply->json()), array_keys($expected))))->toBe([], "{$sample}: members the sample does not have");
+            // ANSWERS-2026-10-06: activate / validate also carry the shop's top-level companyId / branchId (additive).
+            ->and(array_values(array_diff(array_keys($reply->json()), array_keys($expected), ['companyId', 'branchId'])))->toBe([], "{$sample}: members the sample does not have");
 
         foreach (['licence', 'details'] as $block) {
             if (is_array($expected[$block] ?? null) && $expected[$block] !== []) {

@@ -127,6 +127,8 @@ final class CustomerLedger
             'typeLabel' => CustomerFormat::typeLabel($row->type),
             'shop' => $branches[(string) $row->branch_id] ?? 'Another shop',
             'note' => $row->note ?: null,
+            // Free text, not an enum (ANSWERS-2026-10-06 Q6: "Cash" / "Card" today): shown as the till wrote it.
+            'tender' => trim((string) $row->tender) !== '' ? trim((string) $row->tender) : null,
             'saleId' => $row->sale_id ?: null,
             'amount' => Money::normalise($row->amount ?? '0'),
             'points' => (int) $row->points,

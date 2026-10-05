@@ -19,7 +19,8 @@ use App\Domain\TillData\Registry\EntityDefinition;
  * Never written: secrets (`dropped` members such as `User.remoteApprovalSecret`, hashed `secret` members),
  * derived members other than `isDeleted` / `domainEvents` (the till ignores derived members when reading), a
  * blank `User.pinHash` / `User.rfid` (KEPT_WHEN_BLANK), and a `User.pinHash` this till already has or cannot read
- * (sendsPin: only to set or change a PIN, in the till's `pbkdf2$…` format, ANSWERS-2026-10-01 §1).
+ * (sendsPin: only to set or change a PIN, in the till's `pbkdf2$…` format, ANSWERS-2026-10-01 §1). Also never
+ * written: `Customer.pendingPoints` (NEVER_SENT), and a recall's close / return members in a `U` (TILL_KEEPS_ON_UPDATE).
  */
 final class PullPayload
 {
@@ -31,6 +32,25 @@ final class PullPayload
      * clears a PIN. The till's own values arrive by push; the portal only sends one it holds.
      */
     public const KEPT_WHEN_BLANK = ['User' => ['pinHash', 'rfid']];
+
+    /**
+     * Members never sent (ANSWERS-2026-10-06 Q1): `Customer.pendingPoints` is each till's own figure (points held on
+     * that till's unpaid sales), so an echo would overwrite another shop's; a missing member keeps the till's value,
+     * a `null` would reject the whole row. What a till pushes is stored, but it is not the truth.
+     */
+    public const NEVER_SENT = ['Customer' => ['pendingPoints']];
+
+    /**
+     * Members left out of a `U` (ANSWERS-2026-10-06 Q3): the tills close, reopen, return and note a recall; the portal
+     * raises it (an `I` sends the whole row) and edits its text only. Left out, each till keeps its own values.
+     */
+    public const TILL_KEEPS_ON_UPDATE = ['ProductRecall' => ['status', 'closedAt', 'closedByUserId', 'note', 'returnedQty']];
+
+    /** @return list<string> members a payload of this entity may lack (contract tests relax `required` by these) */
+    public static function omittable(string $entity): array
+    {
+        return [...self::KEPT_WHEN_BLANK[$entity] ?? [], ...self::NEVER_SENT[$entity] ?? [], ...self::TILL_KEEPS_ON_UPDATE[$entity] ?? []];
+    }
 
     /** @var array<string, string> "kind:ourId" → the till's id */
     private array $ids = [];
@@ -53,24 +73,26 @@ final class PullPayload
             default => '',
         };
 
+        $op = match (true) {
+            $deleted => 'D',
+            // §10.2: a relayed row is `I`, or `U` for a receipt that moved on (received → closed).
+            $def->copy === 'relay' => $def->entity === 'StockTransferReceipt' && ($row['status'] ?? null) !== 'received' ? 'U' : 'I',
+            self::dateTime($row['created_at']) === self::dateTime($row['updated_at']) => 'I',
+            default => 'U',
+        };
+
         return [
             'seq' => 0,
             'entity' => $def->entity,
             'entityId' => $id,
-            'op' => match (true) {
-                $deleted => 'D',
-                // §10.2: a relayed row is `I`, or `U` for a receipt that moved on (received → closed).
-                $def->copy === 'relay' => $def->entity === 'StockTransferReceipt' && ($row['status'] ?? null) !== 'received' ? 'U' : 'I',
-                self::dateTime($row['created_at']) === self::dateTime($row['updated_at']) => 'I',
-                default => 'U',
-            },
+            'op' => $op,
             'version' => $version,
             'companyId' => $this->till(IdKind::Company, (string) $row['company_id']),
             'branchId' => $branchId,
             'registerId' => '',
             'at' => self::dateTime(($row['origin_branch_id'] ?? null) !== null ? $row['synced_at'] : ($row['hub_edited_at'] ?? null))
                 ?? self::dateTime($row['updated_at']) ?? self::dateTime(now('UTC')),
-            'payload' => $this->payload($def, $row),
+            'payload' => $this->payload($def, $row, $op),
             'key' => "{$def->entity}:{$id}:{$version}",
         ];
     }
@@ -79,7 +101,7 @@ final class PullPayload
      * @param  array<string, mixed>  $row
      * @return array<string, mixed>
      */
-    private function payload(EntityDefinition $def, array $row): array
+    private function payload(EntityDefinition $def, array $row, string $op): array
     {
         $payload = [];
 
@@ -134,6 +156,9 @@ final class PullPayload
             }
         }
 
+        $omit = [...self::NEVER_SENT[$def->entity] ?? [], ...($op === 'U' ? self::TILL_KEEPS_ON_UPDATE[$def->entity] ?? [] : [])];
+        $payload = array_diff_key($payload, array_flip($omit));
+
         // §10.6: the till writes a head-office order's shop code itself and never reads `receivedQty` from a pull.
         return match ($def->entity) {
             'PurchaseOrder' => [...$payload, 'branchCode' => ''],
@@ -161,8 +186,8 @@ final class PullPayload
     /**
      * Till 0.1.28–0.1.51 (PORTAL-CHANGES-2026-10-06 §2.1, §2.7): `earnsPoints` is always sent and never defaulted to
      * false (a row from before 0.1.32, or one the portal made, collects points: the till reads a missing value as
-     * true). `pendingPoints` echoes the till's last pushed value (0 when none; EPOS Q1 open). `owed` / `creditHeld`
-     * are worked out from the balance we send (the ledger's sum), never stored (EPOS Q2 open: the till ignores them).
+     * true). `pendingPoints` is never sent (NEVER_SENT). `owed` / `creditHeld` are worked out from the balance we send
+     * (the ledger's sum), never stored; the till never reads them (ANSWERS-2026-10-06 Q2).
      *
      * @param  array<string, mixed>  $payload
      * @return array<string, mixed>
@@ -175,7 +200,6 @@ final class PullPayload
         return [
             ...$payload,
             'earnsPoints' => $payload['earnsPoints'] ?? true,
-            'pendingPoints' => (int) ($payload['pendingPoints'] ?? 0),
             'owed' => $negative ? 0 : self::number($balance),
             'creditHeld' => $negative ? self::number(ltrim($balance, '-')) : 0,
         ];

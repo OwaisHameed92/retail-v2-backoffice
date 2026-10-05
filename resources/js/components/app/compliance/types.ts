@@ -223,7 +223,7 @@ export interface RecallDetail extends RecallRow {
 
 export interface RecallProps extends CompliancePageProps, RecallFormProps {
     recall: RecallDetail;
-    stock: { shop: string; onHand: string | null; batchQty: string | null; batches: number }[];
+    stock: { shop: string; onHand: string | null; batchQty: string | null; batches: number; returned: string | null }[];
     matchesBatches: boolean;
 }
 

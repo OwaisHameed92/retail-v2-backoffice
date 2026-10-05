@@ -2,6 +2,7 @@
 
 use App\Domain\Licensing\Actions\ReissueKey;
 use App\Domain\Licensing\Actions\RevokeLicence;
+use App\Domain\Licensing\Api\Support\ShopTillIds;
 use App\Domain\Licensing\Enums\LicenceAlertType;
 use App\Domain\Licensing\Enums\LicenceStatus;
 use App\Domain\Licensing\Models\Licence;
@@ -211,4 +212,30 @@ test('the install id header must match the body', function () {
     $this->till('licence/activate', $this->activateBody(), $this->tillHeaders(self::OTHER_INSTALL))
         ->assertStatus(400)->assertJsonPath('details.field', 'installId');
     expect(Licence::withoutCompanyScope()->whereNotNull('device_id')->count())->toBe(0);
+});
+
+test('activate and validate replies always carry the shop\'s companyId / branchId, an extra till\'s too (ANSWERS-2026-10-06)', function () {
+    [$company, $main] = $this->keyedTenant();
+    $branch = $this->branchOf($company);
+    $second = Licence::withoutCompanyScope()->live()->where('branch_id', $branch->id)->whereKeyNot($main->id)->sole();
+    $this->giveKey($second, self::OTHER_KEY);
+    expect($main->register->is_main_till)->toBeTrue()->and($second->register->is_main_till)->toBeFalse();
+
+    // The main till's own ids are the shop's (adopted at its activation).
+    $reply = $this->activateTill()->assertOk()->assertJsonPath('companyId', self::TILL_COMPANY)->assertJsonPath('branchId', self::TILL_BRANCH);
+    expect($this->schemaErrors($reply, 'licence-activate-reply.schema.json'))->toBe([]);
+
+    // A second till of the same shop installed on its own sends its own ids; the reply names the shop's, never its own.
+    $extra = $this->till('licence/activate', $this->activateBody(self::OTHER_KEY, self::OTHER_INSTALL, self::OTHER_CODE, 'TILL-2'))->assertOk()
+        ->assertJsonPath('companyId', self::TILL_COMPANY)->assertJsonPath('branchId', self::TILL_BRANCH)->assertJsonMissingPath('apiKey');
+    $this->validateTill($second->id, (string) $extra->json('licenceToken'), self::OTHER_INSTALL)->assertOk()
+        ->assertJsonPath('companyId', self::TILL_COMPANY)->assertJsonPath('branchId', self::TILL_BRANCH);
+    $this->validateTill($main->id, (string) $reply->json('licenceToken'))->assertOk()
+        ->assertJsonPath('companyId', self::TILL_COMPANY)->assertJsonPath('branchId', self::TILL_BRANCH);
+});
+
+test('before any till sent its ids the shop ids are our own, never blank', function () {
+    [$company, $licence] = $this->keyedTenant();
+
+    expect(ShopTillIds::for($licence))->toBe(['companyId' => $company->id, 'branchId' => $this->branchOf($company)->id]);
 });

@@ -350,8 +350,8 @@ Route::middleware(['auth:web', 'verified', 'company', 'two-factor:web'])->group(
         Route::get('{kind}', [NewsController::class, 'index'])->name('index')->whereIn('kind', ['titles', 'deliveries', 'returns', 'vouchers']);
     });
 
-    // Module 5.7: compliance. Read only (the tills' rows) except product recalls, hub-owned: raised, edited and closed
-    // with compliance.manage and every shop. compliance.view; a one-shop user sees their shop only.
+    // Module 5.7: compliance. Read only (the tills' rows) except product recalls, hub-owned: raised and their text edited
+    // with compliance.manage and every shop (closed / reopened at a till). compliance.view; a one-shop user sees their shop only.
     Route::prefix('compliance')->name('compliance.')->middleware('company.can:compliance.view')->group(function () {
         Route::get('/', [ComplianceController::class, 'index'])->name('index');
         Route::get('age-checks', [ComplianceController::class, 'ageChecks'])->name('age-checks');
@@ -366,7 +366,6 @@ Route::middleware(['auth:web', 'verified', 'company', 'two-factor:web'])->group(
         Route::middleware(['company.can:compliance.manage', 'throttle:30,1'])->group(function () {
             Route::post('recalls', [ProductRecallController::class, 'store'])->name('recalls.store');
             Route::put('recalls/{recall}', [ProductRecallController::class, 'update'])->name('recalls.update')->whereAlphaNumeric('recall');
-            Route::put('recalls/{recall}/status', [ProductRecallController::class, 'status'])->name('recalls.status')->whereAlphaNumeric('recall');
         });
     });
 
