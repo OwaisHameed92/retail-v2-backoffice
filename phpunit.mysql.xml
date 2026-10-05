@@ -35,6 +35,8 @@
         <env name="QUEUE_CONNECTION" value="sync"/>
         <env name="SESSION_DRIVER" value="array"/>
         <env name="TWO_FACTOR_ENABLED" value="true"/>
+        <!-- The billing tests were written for a 14-day suspension; production default is 7 (owner 2026-10-05). -->
+        <env name="BILLING_SUSPEND_AFTER_DAYS" value="14"/>
         <env name="TELESCOPE_ENABLED" value="false"/>
     </php>
 </phpunit>

@@ -42,7 +42,7 @@ return [
     'payment_terms_days' => (int) env('BILLING_PAYMENT_TERMS_DAYS', 7),
 
     // billing:run suspends a company when an invoice is still unpaid this many days after its due date.
-    'suspend_after_days' => (int) env('BILLING_SUSPEND_AFTER_DAYS', 14),
+    'suspend_after_days' => (int) env('BILLING_SUSPEND_AFTER_DAYS', 7),
 
     'generate' => [
         // billing:run creates the next invoice when a company's licences end within this many days.

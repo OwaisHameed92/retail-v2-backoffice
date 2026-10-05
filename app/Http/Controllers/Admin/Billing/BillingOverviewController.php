@@ -67,7 +67,7 @@ class BillingOverviewController extends Controller
                 'next' => DirectDebitStats::nextCollections(),
             ],
             'settings' => [
-                'suspendAfterDays' => (int) config('billing.suspend_after_days', 14),
+                'suspendAfterDays' => (int) config('billing.suspend_after_days', 7),
                 'generateDaysBefore' => (int) config('billing.generate.days_before', 7),
                 'autoIssue' => (bool) config('billing.generate.auto_issue', false),
             ],
