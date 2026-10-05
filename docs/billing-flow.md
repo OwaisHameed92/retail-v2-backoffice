@@ -98,3 +98,25 @@ A paid end date is never moved back. Only an admin can shorten it, on purpose.
 | 06:00 | `billing:run` | Setup-only licences, overdue invoices, suspensions, trial emails, Direct Debit reminders and deadlines. |
 
 Both can run twice without harm.
+
+## See it
+
+`php artisan demo:billing` makes **DEMO – Setup + monthly** (setup fee £1,440 paid by bank transfer, Direct Debit
+active, last month's £14.40 collected, next collection shown). Open it from Admin → Billing ("Businesses by billing
+state") or Tenants: the **Billing status** card on its Billing tab says where it stands and what happens next.
+
+More cases: `php artisan demo:billing --scenario=<case>` (or `all`):
+
+| `--scenario` | Business | Shows |
+|---|---|---|
+| `setup-monthly` (default) | DEMO – Setup + monthly | All paid, next Direct Debit date |
+| `setup-only-paid` | DEMO – Setup only, paid | Paid by card, licence for 10 years, nothing more to pay |
+| `setup-only-unpaid` | DEMO – Setup only, on trial | Trial — N days left, the day the tills lock |
+| `waiting-for-dd` | DEMO – Waiting for Direct Debit | Setup paid in cash, no mandate, reminder sent, lock date |
+| `payment-failed` | DEMO – Direct Debit failed | Monthly only, payment failed 4 days ago, locks in 3 days |
+| `instalments` | DEMO – Setup fee in instalments | 1 of 2 instalments paid, next due next month |
+
+Demo businesses are safe on the live server: nothing is ever sent to GoCardless for them and they never get an email
+(logged as "Not sent (demo)"). `--fresh` removes every demo business (and only those) first. In production add
+`--force`. To remove any one business for good: `php artisan tenant:purge "<name or id>"` (shows what goes, asks first).
+

@@ -12,6 +12,9 @@ use LogicException;
  * the transaction ends (MySQL row lock; SQLite takes the database write lock), so concurrent callers queue up
  * and never get the same number, and a rolled-back transaction gives its number back: no gaps. The number is
  * only taken when a document is issued (drafts have none), in the same transaction that issues it.
+ *
+ * Demo businesses (demo:billing) have their own counters ("demo_invoice" → DEMO-INV-000001, sequence from
+ * DEMO_OFFSET), so making or removing them never leaves a gap in the real numbers.
  */
 final class DocumentNumbers
 {
@@ -27,12 +30,15 @@ final class DocumentNumbers
         self::PAYMENT => 'PAY',
     ];
 
+    /** Demo document sequences start here, far above any real one (the columns are unique). */
+    public const DEMO_OFFSET = 9_000_000_000_000;
+
     /**
      * The next number of a sequence: [sequence, "INV-000042"]. Must run inside a transaction.
      *
      * @return array{0: int, 1: string}
      */
-    public function next(string $sequence): array
+    public function next(string $sequence, bool $demo = false): array
     {
         if (! isset(self::PREFIXES[$sequence])) {
             throw new LogicException("Unknown document sequence \"{$sequence}\".");
@@ -43,16 +49,17 @@ final class DocumentNumbers
         }
 
         $table = DB::table('billing_sequences');
+        $name = $demo ? 'demo_'.$sequence : $sequence;
 
-        if ($table->clone()->where('name', $sequence)->increment('last_value') === 0) {
-            // The migration creates the rows; this only helps a database that lost one.
-            $table->clone()->insertOrIgnore(['name' => $sequence, 'last_value' => 0]);
-            $table->clone()->where('name', $sequence)->increment('last_value');
+        if ($table->clone()->where('name', $name)->increment('last_value') === 0) {
+            // The migration creates the rows; this only helps a database that lost one (and makes the demo ones).
+            $table->clone()->insertOrIgnore(['name' => $name, 'last_value' => 0]);
+            $table->clone()->where('name', $name)->increment('last_value');
         }
 
-        $value = (int) $table->clone()->where('name', $sequence)->value('last_value');
+        $value = (int) $table->clone()->where('name', $name)->value('last_value');
 
-        return [$value, self::format($sequence, $value)];
+        return $demo ? [self::DEMO_OFFSET + $value, 'DEMO-'.self::format($sequence, $value)] : [$value, self::format($sequence, $value)];
     }
 
     public static function format(string $sequence, int $value): string

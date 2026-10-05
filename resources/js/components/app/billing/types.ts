@@ -1,4 +1,5 @@
 import { type InvoiceStatus } from '@/components/admin/billing/types';
+import { type BillingStatusData } from '@/components/shared/billing-status-card';
 import type { AiUsage } from './ai-usage-card';
 
 /** Props of `app/billing` (App\Domain\Billing\Data\PortalBilling + PortalSubscription, modules 1.13 and 4.10). */
@@ -6,6 +7,8 @@ export interface PortalBillingProps {
     /** This month's AI allowance and use (module 6.2). */
     aiUsage?: AiUsage;
     businessName: string;
+    /** The Billing status card (same as the admin Billing tab). */
+    status: BillingStatusData;
     plan: string | null;
     pricing: {
         mode: 'perTill' | 'perBranch';

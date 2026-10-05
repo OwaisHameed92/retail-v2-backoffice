@@ -10,6 +10,7 @@ use App\Domain\Billing\GoCardless\GoCardlessException;
 use App\Domain\Billing\Models\BillingAccount;
 use App\Domain\Billing\Support\BillingAccounts;
 use App\Domain\Billing\Support\MandateDeadline;
+use App\Domain\Demo\Support\DemoBusinesses;
 use App\Domain\Shared\Actions\RecordAudit;
 use App\Domain\Shared\Support\Money;
 use App\Domain\Tenancy\Models\Company;
@@ -65,6 +66,10 @@ class UpdateDirectDebitSettings
 
             return $account;
         });
+
+        if (DemoBusinesses::isDemo($company)) {
+            return $account->refresh(); // settings saved; nothing is sent to GoCardless for a demo business
+        }
 
         try {
             if ($input->mode === BillingMode::UpfrontCash && $account->hasLiveSubscription() && $account->gc_subscription_id !== null) {

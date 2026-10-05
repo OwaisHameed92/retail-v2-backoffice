@@ -278,6 +278,7 @@ Route::middleware(['auth:admin', AdminIsActive::class, BlockAdminWhileImpersonat
             Route::put('/', [DirectDebitController::class, 'settings'])->name('settings');
             Route::post('setup-email', [DirectDebitController::class, 'sendSetup'])->name('setup-email')->middleware('throttle:10,1');
             Route::post('setup-fee', [DirectDebitController::class, 'chargeSetupFee'])->name('setup-fee');
+            Route::post('payments/{payment}/retry', [DirectDebitController::class, 'retryPayment'])->name('retry')->middleware('throttle:10,1');
             Route::post('subscription/sync', [DirectDebitController::class, 'syncSubscription'])->name('sync');
             Route::post('subscription/{action}', [DirectDebitController::class, 'subscription'])->name('subscription')->whereIn('action', ['pause', 'resume', 'cancel']);
         });

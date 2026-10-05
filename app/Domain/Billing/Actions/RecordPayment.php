@@ -68,7 +68,7 @@ class RecordPayment
 
             $invoices = $this->invoicesToPay($company, $input, $amount);
 
-            [$sequence, $number] = $this->numbers->next(DocumentNumbers::PAYMENT);
+            [$sequence, $number] = $this->numbers->next(DocumentNumbers::PAYMENT, demo: (bool) $company->is_demo);
             $payment = new Payment([
                 'number' => $number,
                 'sequence' => $sequence,

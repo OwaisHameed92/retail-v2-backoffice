@@ -38,14 +38,20 @@ class SendInvoice
             throw ValidationException::withMessages(['status' => 'There is no billing email or active owner to send it to. Add a billing email in the billing settings.']);
         }
 
-        $invoice->sent_count++;
-        $invoice->last_sent_at = CarbonImmutable::now();
-        $invoice->save();
+        // A demo business's email is only logged (BrandedMailable), so its invoice does not count as emailed.
+        $demo = (bool) ($invoice->company->is_demo ?? false);
+
+        if (! $demo) {
+            $invoice->sent_count++;
+            $invoice->last_sent_at = CarbonImmutable::now();
+            $invoice->save();
+        }
 
         $this->audit->handle('invoice.sent', $invoice, null, null, [
             'number' => $invoice->number,
             'recipients' => $sent,
             'resent' => $resent,
+            ...($demo ? ['suppressed' => 'demo'] : []),
         ]);
 
         return $sent;

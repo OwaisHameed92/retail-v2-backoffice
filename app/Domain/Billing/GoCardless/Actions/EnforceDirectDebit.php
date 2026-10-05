@@ -26,6 +26,8 @@ use Illuminate\Support\Facades\DB;
  *   (ApplyMandate → ReleaseBillingHolds);
  * - a failed payment still unpaid `dunning_reminder_days` (5) after the failure email: one reminder.
  *
+ * `$companyId` limits it to one business (the demo:billing showcase); billing:run passes none.
+ *
  * @phpstan-type Result array{suspended: int, mandateReminders: int, reminders: int}
  */
 class EnforceDirectDebit
@@ -40,12 +42,12 @@ class EnforceDirectDebit
     /**
      * @return Result
      */
-    public function handle(CarbonImmutable $now): array
+    public function handle(CarbonImmutable $now, ?string $companyId = null): array
     {
         $result = ['suspended' => 0, 'mandateReminders' => 0, 'reminders' => 0];
 
         $accounts = BillingAccount::withoutCompanyScope()->where('billing_mode', BillingMode::DirectDebit->value)
-            ->whereNotNull('mandate_deadline_at')->get()
+            ->whereNotNull('mandate_deadline_at')->when($companyId !== null, fn ($q) => $q->where('company_id', $companyId))->get()
             ->reject(fn (BillingAccount $account) => $account->hasUsableMandate());
 
         foreach ($accounts as $account) {
@@ -63,7 +65,7 @@ class EnforceDirectDebit
             }
         }
 
-        $result['reminders'] = $this->reminders($now);
+        $result['reminders'] = $this->reminders($now, $companyId);
 
         return $result;
     }
@@ -114,7 +116,7 @@ class EnforceDirectDebit
         return $suspended !== null;
     }
 
-    private function reminders(CarbonImmutable $now): int
+    private function reminders(CarbonImmutable $now, ?string $companyId): int
     {
         $days = max(1, (int) config('billing.direct_debit.dunning_reminder_days', 5));
         $sent = 0;
@@ -122,7 +124,7 @@ class EnforceDirectDebit
         $rows = GoCardlessPayment::withoutCompanyScope()->with('invoice')
             ->whereIn('status', [PaymentStatus::Failed->value, PaymentStatus::ChargedBack->value])
             ->whereNotNull('failure_notified_at')->where('failure_notified_at', '<=', $now->subDays($days))
-            ->whereNull('reminder_sent_at')->get();
+            ->whereNull('reminder_sent_at')->when($companyId !== null, fn ($q) => $q->where('company_id', $companyId))->get();
 
         foreach ($rows as $row) {
             $company = Company::query()->find($row->company_id);

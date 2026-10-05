@@ -113,6 +113,17 @@ final class FakeGoCardlessClient implements GoCardlessClient
         return $this->payments[$id] ?? throw new GoCardlessException("GoCardless: payment {$id} not found");
     }
 
+    public function retryPayment(string $id): GcPayment
+    {
+        $this->called(__FUNCTION__);
+
+        if (! isset($this->payments[$id])) {
+            throw new GoCardlessException("GoCardless: payment {$id} not found");
+        }
+
+        return $this->setPaymentStatus($id, PaymentStatus::PendingSubmission);
+    }
+
     public function paymentsForMandate(string $mandateId, CarbonImmutable $since): array
     {
         $this->called(__FUNCTION__);

@@ -6,6 +6,7 @@ use App\Domain\Billing\GoCardless\Contracts\GoCardlessClient;
 use App\Domain\Billing\GoCardless\GoCardlessException;
 use App\Domain\Billing\GoCardless\Support\SetupLink;
 use App\Domain\Billing\Support\BillingAccounts;
+use App\Domain\Demo\Support\DemoBusinesses;
 use App\Domain\Licensing\Support\LicenceMailer;
 use App\Domain\Tenancy\Models\Company;
 use Carbon\CarbonImmutable;
@@ -31,6 +32,8 @@ class StartMandateSetup
     /** @throws GoCardlessException */
     public function handle(Company $company, ?string $redirectUri = null, ?string $exitUri = null): string
     {
+        DemoBusinesses::refuseGoCardless($company);
+
         $account = $this->accounts->for($company);
         $now = CarbonImmutable::now();
         $portal = $redirectUri !== null;

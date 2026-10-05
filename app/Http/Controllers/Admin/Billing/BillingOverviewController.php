@@ -11,6 +11,7 @@ use App\Domain\Billing\GoCardless\Support\DirectDebitStats;
 use App\Domain\Billing\Models\BillingAccount;
 use App\Domain\Billing\Models\Invoice;
 use App\Domain\Billing\Models\Payment;
+use App\Domain\Billing\Queries\BillingStateOverview;
 use App\Domain\Billing\Queries\BillingStats;
 use App\Domain\Billing\Support\BillingDates;
 use App\Domain\Billing\Support\BillingFormat;
@@ -22,7 +23,8 @@ use Inertia\Inertia;
 use Inertia\Response;
 
 /**
- * "Cash due": what is owed, overdue and due this week across every tenant, drafts to review and recent payments.
+ * "Cash due": what is owed, overdue and due this week across every tenant, drafts to review and recent payments,
+ * and every business by billing state (who is paid, on trial, waiting for Direct Debit, overdue, suspended).
  */
 class BillingOverviewController extends Controller
 {
@@ -66,6 +68,8 @@ class BillingOverviewController extends Controller
                 'environment' => $client->environment(),
                 'next' => DirectDebitStats::nextCollections(),
             ],
+            // Every business by billing state (paid, trial, waiting for Direct Debit, overdue…), filtered by ?state=.
+            'businesses' => BillingStateOverview::for(is_string($request->query('state')) ? $request->query('state') : null, $now),
             'settings' => [
                 'suspendAfterDays' => (int) config('billing.suspend_after_days', 7),
                 'generateDaysBefore' => (int) config('billing.generate.days_before', 7),

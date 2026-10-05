@@ -51,6 +51,9 @@ interface GoCardlessClient
     /** @throws GoCardlessException */
     public function payment(string $id): GcPayment;
 
+    /** Asks GoCardless to collect a failed payment again (it picks the date). @throws GoCardlessException */
+    public function retryPayment(string $id): GcPayment;
+
     /**
      * Payments on a mandate created since `$since` (for the daily reconcile).
      *

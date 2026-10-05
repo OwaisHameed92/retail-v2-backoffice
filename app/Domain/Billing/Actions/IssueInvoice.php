@@ -61,7 +61,7 @@ class IssueInvoice
             }
 
             $billTo = InvoiceDocument::billTo($invoice);
-            [$sequence, $number] = $this->numbers->next(DocumentNumbers::INVOICE);
+            [$sequence, $number] = $this->numbers->next(DocumentNumbers::INVOICE, demo: (bool) $company->is_demo);
             $today = BillingDates::today($now);
 
             $invoice->forceFill([

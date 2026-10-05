@@ -11,6 +11,7 @@ use App\Domain\Billing\GoCardless\Support\Pence;
 use App\Domain\Billing\GoCardless\Support\SubscriptionAmount;
 use App\Domain\Billing\Models\BillingAccount;
 use App\Domain\Billing\Support\BillingAccounts;
+use App\Domain\Demo\Support\DemoBusinesses;
 use App\Domain\Tenancy\Models\Company;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Log;
@@ -62,8 +63,8 @@ class ReconcileGoCardless
         foreach ($accounts as $account) {
             $company = Company::query()->find($account->company_id);
 
-            if ($company === null) {
-                continue;
+            if ($company === null || DemoBusinesses::isDemo($company)) {
+                continue; // demo businesses are never sent to GoCardless
             }
 
             $report['checked']++;

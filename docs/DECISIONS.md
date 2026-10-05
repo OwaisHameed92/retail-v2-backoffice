@@ -850,3 +850,24 @@ Plain explanation for staff: `docs/billing-flow.md`.
 | Failures | Staff get a copy of the first "Direct Debit failed / reversed" email. A chargeback sets `invoices.reopened_at`: the 14-day suspension grace counts from it (and the invoice may suspend again). An invoice whose GoCardless payment is still pending is not marked overdue. A retried payment (back to pending) can email again. Paid dates are never shortened. |
 | Lifting holds | `ReleaseBillingHolds` lifts the billing suspension once no overdue invoice is past the suspension grace and the mandate deadline is not missed; the company stays/becomes overdue while younger overdue invoices remain. |
 | Open (owner) | (1) Till lock on a failed payment comes first from the plan's payment grace (7 days, then `expired`); suspension follows at 14 days (`BILLING_SUSPEND_AFTER_DAYS`). Align the two if one date is wanted. (2) GoCardless automatic retries (Success+) are a GoCardless dashboard setting. |
+
+## Billing showcase and tenant purge (owner, 2026-10-05)
+
+- `companies.is_demo` marks a made-up business (`demo:billing`). Demo businesses are **never sent to GoCardless**:
+  their ids start `DEMO-`, the app's GoCardless client is `DemoSafeGoCardlessClient` (refuses demo ids and demo
+  `company_id` metadata), SyncSubscription returns `demo`, mandate setup / pause / retry refuse, the reconcile skips them.
+- **No email** goes to a demo business, about one, or to any `*.invalid` address: BrandedMailable logs it with status
+  `suppressed` ("Not sent (demo)") instead of queuing it.
+- Demo invoices, payments and credit notes have their own counters (`DEMO-INV-000001`, sequence from 9×10¹²), so the
+  real gap-free numbers are never touched by making or removing demos.
+- billing:run still processes demo businesses (overdue, suspension, setup-only top-ups), so "what happens next" comes
+  true; its emails are suppressed and it makes no GoCardless call for them.
+- `demo:billing` makes one business by default ("DEMO – Setup + monthly"); other cases with `--scenario`. Plans "Setup
+  only" (£1,200), "Setup + monthly" (£1,200 + £12/till/month), "Monthly only" (£120/till/month) are made when missing
+  (active, not public). Runs in production only with `--force` (safe because of the guards above).
+- The billing state (BillingStatus) is computed, never stored: paid, trial, waiting for Direct Debit, payment failed /
+  overdue, setup fee due, instalment due, suspended, cancelled; lock dates are the days the 06:00 billing run acts.
+- `tenant:purge` removes one business and every row with its `company_id` (plus rows hanging off them, audit rows about
+  it, logins in no other business, its files) in one transaction; refuses a business with an activated licence or sales
+  unless `--force`; always shows the counts and asks first. `demo:billing --fresh` uses the same code.
+

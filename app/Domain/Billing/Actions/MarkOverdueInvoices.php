@@ -27,7 +27,8 @@ class MarkOverdueInvoices
         private readonly RecordAudit $audit,
     ) {}
 
-    public function handle(CarbonImmutable $now): int
+    /** `$companyId`: only this business (the demo:billing showcase); null = every business (billing:run). */
+    public function handle(CarbonImmutable $now, ?string $companyId = null): int
     {
         $today = BillingDates::today($now)->format('Y-m-d');
         $marked = 0;
@@ -35,6 +36,7 @@ class MarkOverdueInvoices
         $companyIds = Invoice::withoutCompanyScope()
             ->whereIn('status', [InvoiceStatus::Issued->value, InvoiceStatus::PartiallyPaid->value])
             ->where('due_date', '<', $today)->whereNotIn('id', self::beingCollected())
+            ->when($companyId !== null, fn (Builder $q) => $q->where('company_id', $companyId))
             ->distinct()->pluck('company_id');
 
         foreach ($companyIds as $companyId) {

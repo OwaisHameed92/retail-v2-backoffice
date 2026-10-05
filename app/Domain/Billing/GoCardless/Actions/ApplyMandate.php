@@ -10,6 +10,7 @@ use App\Domain\Billing\GoCardless\Enums\SubscriptionStatus;
 use App\Domain\Billing\GoCardless\GoCardlessException;
 use App\Domain\Billing\GoCardless\Support\DirectDebitMailer;
 use App\Domain\Billing\Support\BillingAccounts;
+use App\Domain\Demo\Support\DemoBusinesses;
 use App\Domain\Shared\Actions\RecordAudit;
 use App\Domain\Tenancy\Models\Company;
 use Carbon\CarbonImmutable;
@@ -120,7 +121,7 @@ class ApplyMandate
     {
         $account = $this->accounts->for($company);
 
-        if ($account->gc_subscription_id === null || $account->gc_subscription_status !== SubscriptionStatus::Active) {
+        if ($account->gc_subscription_id === null || $account->gc_subscription_status !== SubscriptionStatus::Active || DemoBusinesses::isDemo($company)) {
             return;
         }
 

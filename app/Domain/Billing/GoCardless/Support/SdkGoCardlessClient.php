@@ -102,6 +102,11 @@ final class SdkGoCardlessClient implements GoCardlessClient
         return $this->call(fn (Client $client) => self::toPayment($client->payments()->get($id)));
     }
 
+    public function retryPayment(string $id): GcPayment
+    {
+        return $this->call(fn (Client $client) => self::toPayment($client->payments()->retry($id)));
+    }
+
     public function paymentsForMandate(string $mandateId, CarbonImmutable $since): array
     {
         return $this->call(function (Client $client) use ($mandateId, $since) {

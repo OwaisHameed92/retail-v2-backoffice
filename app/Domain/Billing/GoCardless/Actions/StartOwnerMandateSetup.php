@@ -5,6 +5,7 @@ namespace App\Domain\Billing\GoCardless\Actions;
 use App\Domain\Billing\GoCardless\Contracts\GoCardlessClient;
 use App\Domain\Billing\GoCardless\GoCardlessException;
 use App\Domain\Billing\Support\BillingAccounts;
+use App\Domain\Demo\Support\DemoBusinesses;
 use App\Domain\Tenancy\Models\Company;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
@@ -28,6 +29,10 @@ class StartOwnerMandateSetup
      */
     public function handle(Company $company, string $returnUrl, string $exitUrl): string
     {
+        if (DemoBusinesses::isDemo($company)) {
+            throw ValidationException::withMessages(['status' => 'This is a demo business: the Direct Debit page never opens for it (nothing is sent to GoCardless).']);
+        }
+
         $account = $this->accounts->for($company);
 
         if ($account->hasUsableMandate()) {

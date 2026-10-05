@@ -6,6 +6,7 @@ use App\Domain\Billing\GoCardless\Contracts\GoCardlessClient;
 use App\Domain\Billing\GoCardless\Enums\SubscriptionStatus;
 use App\Domain\Billing\GoCardless\GoCardlessException;
 use App\Domain\Billing\Support\BillingAccounts;
+use App\Domain\Demo\Support\DemoBusinesses;
 use App\Domain\Shared\Actions\RecordAudit;
 use App\Domain\Tenancy\Models\Company;
 use Illuminate\Support\Facades\DB;
@@ -32,6 +33,10 @@ class ChangeSubscription
      */
     public function handle(Company $company, string $action): SubscriptionStatus
     {
+        if (DemoBusinesses::isDemo($company)) {
+            throw ValidationException::withMessages(['subscription' => DemoBusinesses::goCardlessMessage()]);
+        }
+
         $account = $this->accounts->for($company);
         $id = $account->gc_subscription_id;
 

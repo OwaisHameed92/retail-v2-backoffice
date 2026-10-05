@@ -5,6 +5,7 @@ import { BillingRequestDialog } from '@/components/app/billing/billing-request-d
 import { DirectDebitCard } from '@/components/app/billing/direct-debit-card';
 import { PaymentsCard, SetupFeeCard, SubscriptionCard } from '@/components/app/billing/subscription-cards';
 import { type BillingRequestKind, type PortalBillingProps } from '@/components/app/billing/types';
+import { BillingStatusCard } from '@/components/shared/billing-status-card';
 import { EmptyState } from '@/components/shared/empty-state';
 import { PageHeader } from '@/components/shared/page-header';
 import { SectionCard } from '@/components/shared/section-card';
@@ -13,8 +14,8 @@ import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
-import { Head } from '@inertiajs/react';
-import { CalendarClock, Download, FileText, PoundSterling, Receipt, Tags } from 'lucide-react';
+import { Head, router } from '@inertiajs/react';
+import { CalendarClock, Download, FileText, Landmark, PoundSterling, Receipt, Tags } from 'lucide-react';
 import { useState } from 'react';
 
 const breadcrumbs: BreadcrumbItem[] = [{ title: 'My subscription', href: '/app/billing' }];
@@ -33,6 +34,19 @@ export default function Billing(props: PortalBillingProps) {
             <Head title="My subscription" />
 
             <PageHeader title="My subscription" description="Your plan, how you pay, your payments and your invoices from Switch & Save." />
+
+            <BillingStatusCard
+                status={props.status}
+                recurringLabel={pricing.cycle === 'yearly' ? 'Yearly fee' : 'Monthly fee'}
+                action={
+                    directDebit.canSetUp && (props.status.action === 'sendDirectDebitLink' || props.status.state === 'waitingForDirectDebit') ? (
+                        <Button size="sm" onClick={() => router.post(route('app.billing.direct-debit'))}>
+                            <Landmark />
+                            Set up Direct Debit
+                        </Button>
+                    ) : undefined
+                }
+            />
 
             <DirectDebitCard directDebit={directDebit} pricing={pricing} onChangeBank={canRequest ? () => ask('changeBank') : undefined} />
 

@@ -6,6 +6,7 @@ import { DueDate, InvoiceNumber, Money } from '@/components/admin/billing/invoic
 import { InvoiceStatusBadge } from '@/components/admin/billing/invoice-status-badge';
 import { PricingPanel } from '@/components/admin/billing/pricing-panel';
 import { RecordPaymentDialog } from '@/components/admin/billing/record-payment-dialog';
+import { TenantBillingStatus } from '@/components/admin/billing/tenant-billing-status';
 import { type TenantBillingData } from '@/components/admin/billing/types';
 import { ConfirmDialog } from '@/components/shared/confirm-dialog';
 import { DescriptionList } from '@/components/shared/description-list';
@@ -54,6 +55,8 @@ export function TenantBillingPanel({ tenant, billing }: TenantBillingPanelProps)
                     <AlertDescription>The tills are locked. Recording the overdue payment lifts the suspension straight away.</AlertDescription>
                 </Alert>
             )}
+
+            <TenantBillingStatus company={company} billing={billing} />
 
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <p className="text-muted-foreground text-sm">

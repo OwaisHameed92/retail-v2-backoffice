@@ -127,7 +127,8 @@ export function PricingPanel({ company, directDebit, canManage }: PricingPanelPr
     );
 }
 
-function UpfrontBody({
+/** The "Record a setup fee payment" dialog body (also opened from the Billing status card). */
+export function UpfrontBody({
     company,
     directDebit,
     onOpenChange,

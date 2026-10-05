@@ -2,6 +2,7 @@
 
 namespace App\Domain\Mail\Mailables;
 
+use App\Domain\Demo\Support\DemoBusinesses;
 use App\Domain\Mail\Support\EmailLogRecorder;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Mail\Factory as MailFactory;
@@ -14,6 +15,7 @@ use Illuminate\Mail\Mailables\Address;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Mail\SentMessage;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Log;
 use Throwable;
 
 /**
@@ -118,6 +120,10 @@ abstract class BrandedMailable extends Mailable implements ShouldBeEncrypted, Sh
      */
     public function queue(Queue $queue)
     {
+        if ($this->suppress()) {
+            return null;
+        }
+
         $this->openLog();
         $this->afterCommit ??= true;
 
@@ -130,6 +136,10 @@ abstract class BrandedMailable extends Mailable implements ShouldBeEncrypted, Sh
      */
     public function later($delay, Queue $queue)
     {
+        if ($this->suppress()) {
+            return null;
+        }
+
         $this->openLog();
         $this->afterCommit ??= true;
 
@@ -141,6 +151,10 @@ abstract class BrandedMailable extends Mailable implements ShouldBeEncrypted, Sh
      */
     public function send($mailer): ?SentMessage
     {
+        if ($this->suppress()) {
+            return null;
+        }
+
         $this->openLog();
 
         try {
@@ -170,6 +184,31 @@ abstract class BrandedMailable extends Mailable implements ShouldBeEncrypted, Sh
 
             return (string) ($this->buildMarkdownText($data))($data);
         });
+    }
+
+    /**
+     * Demo businesses (demo:billing) never get an email, and nothing goes to a reserved `.invalid` address: the
+     * message is logged as "suppressed" instead of being queued or sent. Test sends from the template screen go.
+     */
+    private function suppress(): bool
+    {
+        if ($this->isTest) {
+            return false;
+        }
+
+        $to = $this->recipientAddresses();
+        $undeliverable = $to !== [] && array_filter($to, fn (string $email) => ! DemoBusinesses::isUndeliverable($email)) === [];
+
+        if (! $undeliverable && ! DemoBusinesses::isDemo($this->companyId())) {
+            return false;
+        }
+
+        if ($this->emailLogId === null) {
+            $this->emailLogId = app(EmailLogRecorder::class)->suppressed($to, static::class, static::templateKey(), $this->subjectLine(), $this->companyId(), $this->logMeta())->id;
+            Log::info('Email not sent: demo business or reserved address', ['template' => static::templateKey(), 'company_id' => $this->companyId()]);
+        }
+
+        return true;
     }
 
     /** Open the log row once per message (queued jobs keep the id when they are unserialised). */

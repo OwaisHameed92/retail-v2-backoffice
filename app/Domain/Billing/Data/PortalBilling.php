@@ -10,6 +10,7 @@ use App\Domain\Billing\Models\Invoice;
 use App\Domain\Billing\Support\BillingAccounts;
 use App\Domain\Billing\Support\BillingDates;
 use App\Domain\Billing\Support\BillingFormat;
+use App\Domain\Billing\Support\BillingStatus;
 use App\Domain\Billing\Support\CompanyPricing;
 use App\Domain\Billing\Support\MandateDeadline;
 use App\Domain\Billing\Support\SetupFeeState;
@@ -38,6 +39,7 @@ final class PortalBilling
 
         return [
             'businessName' => $company->name,
+            'status' => BillingStatusData::for(BillingStatus::for($company, $now), portal: true),
             'plan' => CompanyPricing::for($company, $account)->plan?->name,
             'pricing' => [
                 'mode' => $amount['mode']->value,

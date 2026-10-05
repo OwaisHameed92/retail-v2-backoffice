@@ -4,6 +4,7 @@ namespace App\Domain\Billing\GoCardless\Actions;
 
 use App\Domain\Billing\GoCardless\Contracts\GoCardlessClient;
 use App\Domain\Billing\GoCardless\GoCardlessException;
+use App\Domain\Demo\Support\DemoBusinesses;
 use App\Domain\Tenancy\Models\Company;
 
 /**
@@ -25,6 +26,8 @@ class CompleteMandateSetup
      */
     public function handle(Company $company, string $billingRequestId): string
     {
+        DemoBusinesses::refuseGoCardless($company);
+
         $request = $this->client->billingRequest($billingRequestId);
 
         if ($request->mandateId === null) {

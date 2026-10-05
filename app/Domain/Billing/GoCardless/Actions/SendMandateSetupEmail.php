@@ -30,7 +30,7 @@ class SendMandateSetupEmail
         $account = $this->accounts->for($company);
 
         $problem = match (true) {
-            ! $this->client->enabled() => 'GoCardless is not set up yet: add GOCARDLESS_ACCESS_TOKEN to the server settings.',
+            ! $this->client->enabled() && ! $company->is_demo => 'GoCardless is not set up yet: add GOCARDLESS_ACCESS_TOKEN to the server settings.',
             ! $account->isDirectDebit() => "{$company->name} pays upfront. Switch it to Direct Debit first.",
             $company->isCancelled() => "{$company->name} is cancelled.",
             $account->hasUsableMandate() => "{$company->name} already has a working Direct Debit.",

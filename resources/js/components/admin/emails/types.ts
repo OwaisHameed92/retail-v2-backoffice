@@ -1,6 +1,6 @@
 import { type StatusToneMap } from '@/components/shared/status-badge';
 
-export type EmailStatus = 'queued' | 'sent' | 'failed';
+export type EmailStatus = 'queued' | 'sent' | 'failed' | 'suppressed';
 
 /** A row from App\Http\Controllers\Admin\EmailLogController::row(). */
 export interface EmailLogRow {
@@ -57,4 +57,5 @@ export const emailStatusTones: StatusToneMap = {
     queued: 'info',
     sent: 'success',
     failed: 'danger',
+    suppressed: 'neutral',
 };

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin\Billing;
 
 use App\Domain\Billing\GoCardless\Actions\ChangeSubscription;
 use App\Domain\Billing\GoCardless\Actions\ChargeSetupFee;
+use App\Domain\Billing\GoCardless\Actions\RetryDirectDebitPayment;
 use App\Domain\Billing\GoCardless\Actions\SendMandateSetupEmail;
 use App\Domain\Billing\GoCardless\Actions\SyncSubscription;
 use App\Domain\Billing\GoCardless\Actions\UpdateDirectDebitSettings;
@@ -33,7 +34,18 @@ class DirectDebitController extends Controller
     {
         $sent = $send->handle($company);
 
+        if ($company->is_demo) {
+            return back()->with('success', 'Demo business: the setup email is logged under Emails as "Not sent (demo)". Nothing was sent.');
+        }
+
         return back()->with('success', 'Direct Debit setup email sent to '.($sent === 1 ? 'the owner.' : "{$sent} owners."));
+    }
+
+    public function retryPayment(Company $company, string $payment, RetryDirectDebitPayment $retry): RedirectResponse
+    {
+        $row = $retry->handle($company, $payment);
+
+        return back()->with('success', 'GoCardless will collect '.BillingFormat::money($row->amount).' again'.($row->charge_date !== null ? ' on '.$row->charge_date->format('j M Y') : '').'.');
     }
 
     public function chargeSetupFee(Company $company, ChargeSetupFee $charge): RedirectResponse
@@ -55,6 +67,7 @@ class DirectDebitController extends Controller
         }
 
         return back()->with('success', match ($outcome) {
+            'demo' => 'Demo business: nothing is sent to GoCardless.',
             'noMandate' => 'Nothing to update: the Direct Debit is not set up yet.',
             'nothingToCollect' => 'Nothing to collect: there are no live tills.',
             'unchanged' => 'The subscription already matches the live tills.',

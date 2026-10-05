@@ -13,6 +13,7 @@ use App\Domain\Billing\Support\BillingDates;
 use App\Domain\Billing\Support\BillingFormat;
 use App\Domain\Billing\Support\BillingMailer;
 use App\Domain\Billing\Support\BillingPeriod;
+use App\Domain\Billing\Support\BillingStatus;
 use App\Domain\Billing\Support\Vat;
 use App\Domain\Shared\Support\Money;
 use App\Domain\Tenancy\Models\Company;
@@ -43,6 +44,8 @@ final class TenantBilling
         $recipients = app(BillingMailer::class)->invoiceRecipients($company);
 
         return [
+            // The "Billing status" card: the state in plain words, what happens next and the next action.
+            'status' => BillingStatusData::for(BillingStatus::for($company, $now)),
             'settings' => [
                 'billingName' => $account->billing_name,
                 'billingAddress' => $account->billing_address,

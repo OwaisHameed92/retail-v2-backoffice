@@ -6,6 +6,7 @@ use App\Domain\Admin\Enums\AdminRole;
 use App\Domain\Admin\Models\Admin;
 use App\Domain\Billing\GoCardless\Contracts\GoCardlessClient;
 use App\Domain\Billing\GoCardless\Listeners\SyncDirectDebitOnTillChange;
+use App\Domain\Billing\GoCardless\Support\DemoSafeGoCardlessClient;
 use App\Domain\Billing\GoCardless\Support\SdkGoCardlessClient;
 use App\Domain\Licensing\Listeners\IssueLicenceForNewTill;
 use App\Domain\Licensing\Listeners\SendWelcomeEmailWithKeys;
@@ -30,8 +31,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        // GoCardless Direct Debit (module 1.12). Tests bind FakeGoCardlessClient::install().
-        $this->app->singleton(GoCardlessClient::class, SdkGoCardlessClient::class);
+        // GoCardless Direct Debit (module 1.12). Tests bind FakeGoCardlessClient::install(). Demo businesses
+        // (demo:billing) are never sent to GoCardless: DemoSafeGoCardlessClient refuses their calls.
+        $this->app->singleton(GoCardlessClient::class, fn () => new DemoSafeGoCardlessClient(new SdkGoCardlessClient));
     }
 
     /**

@@ -44,6 +44,7 @@ use Illuminate\Support\Carbon;
  * @property string|null $data_connection Database connection holding its data (sharding groundwork, CompanyConnection).
  * @property CompanyStatus $status
  * @property bool $share_unknown_barcodes Tills' unknown barcodes go to the master catalogue's review queue, anonymously (SetCatalogueSharing).
+ * @property bool $is_demo A made-up business (demo:billing): never sent to GoCardless, never emailed. Set with forceFill.
  * @property bool $require_two_factor Everyone in the business must use two-factor sign-in (SetCompanyTwoFactorRequirement).
  * @property string|null $plan_id Plan for new tills (module 1.3); null = portal default. Set via ChangeCompanyPlan.
  * @property string|null $notes
@@ -95,6 +96,7 @@ class Company extends Model
         'multi_branch' => false,
         'max_branches' => 1,
         'require_two_factor' => false,
+        'is_demo' => false,
     ];
 
     /**
@@ -107,6 +109,7 @@ class Company extends Model
             'business_type' => BusinessType::class,
             'multi_branch' => 'boolean',
             'require_two_factor' => 'boolean',
+            'is_demo' => 'boolean',
             'share_unknown_barcodes' => 'boolean',
             'max_branches' => 'integer',
             'suspended_from_status' => CompanyStatus::class,

@@ -1,3 +1,5 @@
+import { type BillingStatesData } from '@/components/admin/billing/billing-states-card';
+import { type BillingStatusData } from '@/components/shared/billing-status-card';
 import { type Paginated } from '@/components/shared/data-table';
 
 export type InvoiceStatus = 'draft' | 'issued' | 'partiallyPaid' | 'paid' | 'overdue' | 'void';
@@ -168,6 +170,7 @@ export interface OpenInvoice {
 
 /** TenantBilling::for (the tenant page's Billing tab). */
 export interface TenantBillingData {
+    status: BillingStatusData;
     settings: {
         billingName: string | null;
         billingAddress: string | null;
@@ -351,6 +354,7 @@ export interface PaymentIndexProps {
 }
 
 export interface BillingOverviewProps {
+    businesses: BillingStatesData;
     stats: {
         cashDue: { count: number; amount: string };
         overdue: { count: number; amount: string };

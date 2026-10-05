@@ -80,7 +80,7 @@ it('lets owner and support staff open the log', function (AdminRole $role) {
             ->where('logs.data.0.meta.business', 'Khan Mini Mart')
             ->where('summary.sent', 1)
             ->has('templateOptions', count(EmailTemplates::MAILABLES))
-            ->has('statusOptions', 3));
+            ->has('statusOptions', 4)); // queued, sent, failed, suppressed (demo)
 })->with([AdminRole::Owner, AdminRole::Support]);
 
 it('searches and filters the log by template, status and date', function () {

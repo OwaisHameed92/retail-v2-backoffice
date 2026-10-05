@@ -12,6 +12,7 @@ use App\Domain\Billing\Models\BillingAccount;
 use App\Domain\Billing\Support\BillingAccounts;
 use App\Domain\Billing\Support\BillingFormat;
 use App\Domain\Billing\Support\SetupFeeState;
+use App\Domain\Demo\Support\DemoBusinesses;
 use App\Domain\Shared\Actions\RecordAudit;
 use App\Domain\Tenancy\Models\Company;
 use Carbon\CarbonImmutable;
@@ -35,10 +36,14 @@ class SyncSubscription
     ) {}
 
     /**
-     * @return 'noMandate'|'setupFeeUnpaid'|'nothingToCollect'|'unchanged'|'created'|'updated'|'replaced'|'resumed'|'cancelled'
+     * @return 'demo'|'noMandate'|'setupFeeUnpaid'|'nothingToCollect'|'unchanged'|'created'|'updated'|'replaced'|'resumed'|'cancelled'
      */
     public function handle(Company $company, string $reason = 'manual'): string
     {
+        if (DemoBusinesses::isDemo($company)) {
+            return 'demo'; // never sent to GoCardless (demo:billing)
+        }
+
         $account = $this->accounts->for($company);
 
         if (! $account->isDirectDebit() || ! $account->hasUsableMandate() || $company->isCancelled()) {

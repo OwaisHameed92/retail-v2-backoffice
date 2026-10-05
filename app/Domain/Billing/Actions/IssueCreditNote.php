@@ -69,7 +69,7 @@ class IssueCreditNote
             }
 
             $split = InvoiceMaths::splitGross($amount, $invoice->vat_rate);
-            [$sequence, $number] = $this->numbers->next(DocumentNumbers::CREDIT_NOTE);
+            [$sequence, $number] = $this->numbers->next(DocumentNumbers::CREDIT_NOTE, demo: (bool) $company->is_demo);
 
             $note = new CreditNote([
                 'number' => $number,

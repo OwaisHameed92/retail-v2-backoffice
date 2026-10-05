@@ -4,6 +4,9 @@ use App\Domain\Admin\Enums\AdminRole;
 use App\Domain\Billing\Data\NewInvoice;
 use App\Domain\Billing\Enums\InvoiceStatus;
 use App\Domain\Billing\Enums\PaymentMethod;
+use App\Domain\Billing\GoCardless\Enums\PaymentKind;
+use App\Domain\Billing\GoCardless\Enums\PaymentStatus;
+use App\Domain\Billing\GoCardless\Models\GoCardlessPayment;
 use App\Domain\Billing\Models\CreditNote;
 use App\Domain\Billing\Models\Invoice;
 use App\Domain\Billing\Models\Payment;
@@ -58,6 +61,8 @@ $billingRoutes = [
     ['admin.billing.tenants.direct-debit.setup-fee', 'post', ['company' => 'company'], 'manage', []],
     ['admin.billing.tenants.direct-debit.sync', 'post', ['company' => 'company'], 'manage', []],
     ['admin.billing.tenants.direct-debit.subscription', 'post', ['company' => 'company', 'action' => 'pause'], 'manage', []],
+    // Billing status card: retry a failed Direct Debit (another business, with a working mandate).
+    ['admin.billing.tenants.direct-debit.retry', 'post', ['company' => 'retryCompany', 'payment' => 'failedPayment'], 'manage', []],
     // Module 1.13: pricing override, and the upfront payment (£0, on a second business with nothing invoiced).
     ['admin.billing.tenants.pricing', 'put', ['company' => 'company'], 'manage', ['pricing_mode' => 'perBranch', 'price_monthly' => '40.00', 'price_yearly' => '']],
     ['admin.billing.tenants.upfront', 'post', ['company' => 'fresh'], 'manage', ['upfront_amount' => '0', 'upfront_method' => 'cash']],
@@ -89,7 +94,18 @@ $billingFixture = function (object $test): array {
     $account = $test->billingAccountOf($company);
     $account->forceFill(['gc_mandate_id' => 'MD000900', 'gc_mandate_status' => 'suspendedByPayer', 'gc_subscription_id' => $subscription->id, 'gc_subscription_status' => 'active', 'gc_subscription_amount' => '30.00', 'gc_subscription_cycle' => 'monthly'])->save();
 
+    // A second business whose last Direct Debit failed, on an active mandate (Retry Direct Debit).
+    $retry = $test->payingTenant('Retry '.uniqid(), 1, 'RTY');
+    $test->billingAccountOf($retry)->forceFill(['billing_mode' => 'directDebit', 'gc_mandate_id' => 'MD000901', 'gc_mandate_status' => 'active'])->save();
+    $failed = $test->gc->createPayment('MD000901', 3000, '2026-10-20', 'Subscription', [], 'fixture-failed-'.$retry->id);
+    $test->gc->setPaymentStatus($failed->id, PaymentStatus::Failed);
+    $row = new GoCardlessPayment(['gc_payment_id' => $failed->id, 'gc_mandate_id' => 'MD000901', 'kind' => PaymentKind::Subscription, 'amount' => '30.00', 'charge_date' => '2026-10-20', 'status' => PaymentStatus::Failed]);
+    $row->company_id = $retry->id;
+    $row->save();
+
     return [
+        'retryCompany' => $retry->id,
+        'failedPayment' => $row->id,
         'company' => $company->id,
         'draft1' => $drafts[1], 'draft2' => $drafts[2], 'draft3' => $drafts[3],
         'issued1' => $issued[1], 'issued2' => $issued[2], 'issued3' => $issued[3],
@@ -115,7 +131,7 @@ test('the table covers every billing route', function () use ($billingRoutes) {
         ->map(fn (RoutingRoute $route) => $route->getName())
         ->sort()->values()->all();
 
-    expect($registered)->toHaveCount(25)
+    expect($registered)->toHaveCount(26)
         ->and(collect($billingRoutes)->pluck(0)->sort()->values()->all())->toBe($registered);
 });
 
@@ -160,7 +176,8 @@ test('sales and support cannot read or change billing (owner and accounts only)'
         ->and($this->fresh(Invoice::withoutCompanyScope()->findOrFail($fixture['issued1']))->sent_count)->toBe(1)
         ->and($this->billingAccountOf(Company::query()->findOrFail($fixture['company']))->billing_name)->toBeNull()
         ->and($this->billingAccountOf(Company::query()->findOrFail($fixture['company']))->billing_mode->value)->toBe('upfrontCash')
-        ->and($this->gc->calls)->not->toContain('pauseSubscription');
+        ->and($this->gc->calls)->not->toContain('pauseSubscription')
+        ->and($this->gc->calls)->not->toContain('retryPayment');
 })->with([AdminRole::Sales, AdminRole::Support]);
 
 test('accounts and owner admins can use every billing route', function (AdminRole $role) use ($billingRoutes, $billingFixture, $billingRequest) {
@@ -196,7 +213,8 @@ test('accounts and owner admins can use every billing route', function (AdminRol
         ->and($this->billingAccountOf($company)->gc_subscription_status?->value)->toBe('paused')
         ->and(Invoice::withoutCompanyScope()->where('kind', 'setupFee')->sole()->total)->toBe('120.00')
         ->and($this->billingAccountOf($company)->pricing_mode_override?->value)->toBe('perBranch')
-        ->and($this->billingAccountOf(Company::query()->findOrFail($fixture['fresh']))->upfront_amount)->toBe('0.00');
+        ->and($this->billingAccountOf(Company::query()->findOrFail($fixture['fresh']))->upfront_amount)->toBe('0.00')
+        ->and(GoCardlessPayment::withoutCompanyScope()->findOrFail($fixture['failedPayment'])->status)->toBe(PaymentStatus::PendingSubmission);
 })->with([AdminRole::Accounts, AdminRole::Owner]);
 
 test('the JSON helpers answer with the preview and the open invoices', function () {

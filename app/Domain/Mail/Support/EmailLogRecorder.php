@@ -60,6 +60,20 @@ final class EmailLogRecorder
         );
     }
 
+    /**
+     * An email we chose not to send (demo business, `.invalid` address): logged so staff can see it would have gone.
+     *
+     * @param  list<string>  $to
+     * @param  array<string, mixed>  $meta
+     */
+    public function suppressed(array $to, string $mailable, string $template, ?string $subject, ?string $companyId, array $meta = []): EmailLog
+    {
+        $log = $this->queued($to, $mailable, $template, $subject, $companyId, [...$meta, 'suppressed' => 'demo']);
+        $log->forceFill(['status' => EmailStatus::Suppressed])->save();
+
+        return $log;
+    }
+
     public function sent(string $id, Email $message, ?string $messageId): void
     {
         EmailLog::query()->whereKey($id)->update([
