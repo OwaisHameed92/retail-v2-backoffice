@@ -13,6 +13,7 @@ import { currencySymbol, vatNumberLabel } from '@/lib/country';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { LoaderCircle } from 'lucide-react';
 import { type FormEventHandler } from 'react';
+import { postcodeLabel, townHint, townNeededWithAddress } from '@/lib/country-address';
 
 const BLANK: SupplierFormData = {
     name: '',
@@ -115,8 +116,8 @@ export default function SupplierForm({ supplier, options, canEdit }: SupplierFor
                             {text('email', 'Email', { optional: true, type: 'email', className: 'sm:col-span-2' })}
                             {text('address_line1', 'Address', { optional: true })}
                             {text('address_line2', 'Address line 2', { optional: true })}
-                            {text('town', 'Town', { optional: true })}
-                            {text('postcode', 'Postcode', { optional: true, upper: true })}
+                            {text('town', 'Town', { optional: !townNeededWithAddress(), help: townHint() })}
+                            {text('postcode', postcodeLabel(), { optional: true, upper: true })}
                         </FormGrid>
                     </FormSection>
 

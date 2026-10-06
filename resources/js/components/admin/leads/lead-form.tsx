@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { timeZoneLabel } from '@/lib/country';
+import { postcodeInputProps, postcodeLabel, townNeededWithAddress } from '@/lib/country-address';
 import { Link, useForm } from '@inertiajs/react';
 import { CircleAlert, LoaderCircle } from 'lucide-react';
 import { type ComponentProps, type FormEventHandler, type ReactNode } from 'react';
@@ -91,11 +92,11 @@ export function LeadForm({ initial, options, mode, submitUrl, cancelHref, submit
                         >
                             {text('current_system', 'current_system', { maxLength: 160 })}
                         </FormField>
-                        <FormField id="town" label="Town" optional error={errors.town}>
+                        <FormField id="town" label="Town" optional={!townNeededWithAddress()} help={townNeededWithAddress() ? `Needed with a ${postcodeLabel().toLowerCase()}.` : undefined} error={errors.town}>
                             {text('town', 'town', { maxLength: 80, autoComplete: 'address-level2' })}
                         </FormField>
-                        <FormField id="postcode" label="Postcode" optional error={errors.postcode}>
-                            {text('postcode', 'postcode', { maxLength: 10, autoComplete: 'postal-code', className: 'uppercase' })}
+                        <FormField id="postcode" label={postcodeLabel()} optional error={errors.postcode}>
+                            {text('postcode', 'postcode', { maxLength: 10, autoComplete: 'postal-code', className: 'uppercase', ...postcodeInputProps() })}
                         </FormField>
                     </FormGrid>
                     <FormGrid>

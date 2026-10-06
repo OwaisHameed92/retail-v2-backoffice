@@ -7,6 +7,7 @@ use App\Domain\Leads\Data\LeadDetails;
 use App\Domain\Leads\Enums\BusinessType;
 use App\Domain\Leads\Enums\LeadSource;
 use App\Domain\Leads\Models\Lead;
+use App\Domain\Shared\Country\ContactRules;
 use App\Http\Requests\Admin\TenantRules;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Carbon;
@@ -49,9 +50,10 @@ class LeadRequest extends FormRequest
             'business_name' => ['required', 'string', 'max:160'],
             'contact_name' => ['required', 'string', 'max:120'],
             'email' => ['nullable', 'required_without:phone', 'string', 'email', 'max:255'],
-            'phone' => ['nullable', 'required_without:email', 'string', 'regex:'.TenantRules::PHONE_PATTERN],
-            'town' => ['nullable', 'string', 'max:80'],
-            'postcode' => ['nullable', 'string', 'max:10', 'regex:/^[A-Za-z0-9 ]{2,10}$/'],
+            // Phone, town and postcode follow the country profile (Pakistan plan P4); GB keeps these exact rules.
+            'phone' => ['nullable', 'required_without:email', 'string', 'regex:'.ContactRules::phonePattern(TenantRules::PHONE_PATTERN)],
+            'town' => ContactRules::town(['nullable', 'string', 'max:80'], ['postcode']),
+            'postcode' => ContactRules::postcode(['nullable', 'string', 'max:10', 'regex:/^[A-Za-z0-9 ]{2,10}$/']),
             'shops_count' => ['required', 'integer', 'min:1', 'max:'.Lead::MAX_SHOPS],
             'tills_count' => ['required', 'integer', 'min:1', 'max:'.Lead::MAX_TILLS],
             'business_type' => ['required', Rule::enum(BusinessType::class)],
@@ -76,8 +78,9 @@ class LeadRequest extends FormRequest
             'email.required_without' => 'Enter an email address or a phone number so we can reach them.',
             'phone.required_without' => 'Enter a phone number or an email address so we can reach them.',
             'email.email' => 'Enter a valid email address.',
-            'phone.regex' => 'Enter a phone number like 07700 900123.',
-            'postcode.regex' => 'Enter a postcode like LS1 6BX.',
+            'phone.regex' => ContactRules::phoneText('Enter a phone number like 07700 900123.'),
+            'postcode.regex' => ContactRules::postcodeMessage('Enter a postcode like LS1 6BX.'),
+            ...ContactRules::townMessages(),
             'shops_count.min' => 'A business has at least 1 shop.',
             'shops_count.max' => 'Up to '.Lead::MAX_SHOPS.' shops.',
             'tills_count.min' => 'They need at least 1 till.',

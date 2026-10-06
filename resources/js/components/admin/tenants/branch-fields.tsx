@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { keepsUkStyles, vatNumberLabel } from '@/lib/country';
+import { postcodeInputProps, postcodeLabel, townHint, townNeededWithAddress } from '@/lib/country-address';
 
 export type BranchFieldsData = {
     code: string;
@@ -81,11 +82,12 @@ export function BranchFields({ prefix = '', data, setField, errors, nations, sho
             <Field id={id('address')} label="Shop address" optional error={error('address')} className="sm:col-span-2">
                 <Textarea id={id('address')} rows={2} value={data.address} onChange={(e) => setField('address', e.target.value)} />
             </Field>
-            <Field id={id('town')} label="Town" optional error={error('town')}>
+            <Field id={id('town')} label="Town" optional={!townNeededWithAddress()} hint={townHint()} error={error('town')}>
                 <Input id={id('town')} value={data.town} onChange={(e) => setField('town', e.target.value)} aria-invalid={!!error('town')} />
             </Field>
-            <Field id={id('postcode')} label="Postcode" optional error={error('postcode')}>
+            <Field id={id('postcode')} label={postcodeLabel()} optional error={error('postcode')}>
                 <Input
+                    {...postcodeInputProps()}
                     id={id('postcode')}
                     value={data.postcode}
                     onChange={(e) => setField('postcode', e.target.value.toUpperCase())}

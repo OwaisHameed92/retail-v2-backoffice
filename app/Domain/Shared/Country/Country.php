@@ -13,7 +13,7 @@ use Illuminate\Container\Container;
  *
  * @phpstan-type TaxId array{label: string, pattern: string|null, example: string}
  * @phpstan-type Address array{postcodeLabel: string, postcodeRequired: bool, postcodePattern: string, postcodeExample: string, cityRequired: bool}
- * @phpstan-type Phone array{pattern: string, example: string}
+ * @phpstan-type Phone array{pattern: string, example: string, dialCode: string}
  * @phpstan-type Profile array{name: string, currency: string, currencySymbol: string, currencyName: string, currencySymbolSpace: bool, displayDecimals: int, grouping: string, numberLocale: string, dateLocale: string, timezone: string, taxName: string, taxIds: array<string, TaxId>, address: Address, phone: Phone, billing: array{collection: string, manualMethods: list<string>}, features: array<string, bool>}
  */
 final class Country

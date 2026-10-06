@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Admin;
 
+use App\Domain\Shared\Country\ContactRules;
 use App\Domain\Shared\Country\Country;
 use App\Domain\Tenancy\Data\BranchDetails;
 use App\Domain\Tenancy\Data\CompanyDetails;
@@ -42,12 +43,12 @@ final class TenantRules
             ...($strn === null ? [] : ['strn' => ['nullable', 'string', 'regex:'.$strn]]),
             'company_number' => ['nullable', 'string', 'regex:'.(self::taxIdPattern('company_number') ?? self::COMPANY_NUMBER_PATTERN)],
             'address' => ['nullable', 'string', 'max:500'],
-            'phone' => ['nullable', 'string', 'regex:'.self::PHONE_PATTERN],
+            'phone' => ['nullable', 'string', 'regex:'.ContactRules::phonePattern(self::PHONE_PATTERN)],
             'email' => ['nullable', 'string', 'email', 'max:255'],
             'contact_name' => ['nullable', 'string', 'max:120'],
             'business_type' => ['nullable', Rule::enum(BusinessType::class)],
-            'town' => ['nullable', 'string', 'max:80'],
-            'postcode' => ['nullable', 'string', 'max:10', 'regex:'.self::POSTCODE_PATTERN],
+            'town' => ContactRules::town(['nullable', 'string', 'max:80'], ['address', 'postcode']),
+            'postcode' => ContactRules::postcode(['nullable', 'string', 'max:10', 'regex:'.self::POSTCODE_PATTERN]),
             'owner_name' => ['nullable', 'string', 'max:80'],
             'receipt_footer' => ['nullable', 'string', 'max:200'],
             'notes' => ['nullable', 'string', 'max:5000'],
@@ -73,10 +74,10 @@ final class TenantRules
             $prefix.'code' => $code,
             $prefix.'name' => ['required', 'string', 'max:120'],
             $prefix.'address' => ['nullable', 'string', 'max:500'],
-            $prefix.'phone' => ['nullable', 'string', 'regex:'.self::PHONE_PATTERN],
+            $prefix.'phone' => ['nullable', 'string', 'regex:'.ContactRules::phonePattern(self::PHONE_PATTERN)],
             $prefix.'vat_number' => ['nullable', 'string', 'regex:'.(self::taxIdPattern('vat_number') ?? self::VAT_PATTERN)],
-            $prefix.'town' => ['nullable', 'string', 'max:80'],
-            $prefix.'postcode' => ['nullable', 'string', 'max:10', 'regex:'.self::POSTCODE_PATTERN],
+            $prefix.'town' => ContactRules::town(['nullable', 'string', 'max:80'], [$prefix.'address', $prefix.'postcode']),
+            $prefix.'postcode' => ContactRules::postcode(['nullable', 'string', 'max:10', 'regex:'.self::POSTCODE_PATTERN]),
             $prefix.'receipt_footer' => ['nullable', 'string', 'max:200'],
             $prefix.'nation' => ['required', Rule::enum(Nation::class)],
             $prefix.'licensed_hours_json' => ['nullable', 'string', 'json', 'max:4000'],
@@ -103,10 +104,13 @@ final class TenantRules
             $prefix.'vat_number.regex' => $id('vat_number', 'Enter a UK VAT number like GB123456789.'),
             ...($country->taxIdFor('strn') === null ? [] : ['strn.regex' => $id('strn', '')]),
             'company_number.regex' => $id('company_number', 'Enter a Companies House number: 8 digits, or 2 letters and 6 digits.'),
-            'phone.regex' => 'Enter a phone number like 0113 496 0000.',
-            'postcode.regex' => 'Enter a UK postcode like LS1 6AB.',
-            $prefix.'postcode.regex' => 'Enter a UK postcode like LS1 6AB.',
-            $prefix.'phone.regex' => 'Enter a phone number like 0113 496 0000.',
+            // Postcode, town and phone follow the profile (Pakistan plan P4); GB keeps these exact messages.
+            'phone.regex' => ContactRules::phoneText('Enter a phone number like 0113 496 0000.'),
+            'postcode.regex' => ContactRules::postcodeMessage('Enter a UK postcode like LS1 6AB.'),
+            $prefix.'postcode.regex' => ContactRules::postcodeMessage('Enter a UK postcode like LS1 6AB.'),
+            $prefix.'phone.regex' => ContactRules::phoneText('Enter a phone number like 0113 496 0000.'),
+            ...ContactRules::townMessages(),
+            ...ContactRules::townMessages($prefix.'town'),
             $prefix.'code.regex' => 'Use 2 to 5 capital letters, for example LDS.',
             $prefix.'code.unique' => 'Another branch of this business already uses this code.',
             $prefix.'licensed_hours_json.json' => 'Licensed hours must be valid JSON, as set on the till.',

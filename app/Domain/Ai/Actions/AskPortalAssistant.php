@@ -10,6 +10,7 @@ use App\Domain\Ai\Models\AiMessage;
 use App\Domain\Ai\Models\AiPendingAction;
 use App\Domain\Ai\Support\Portal\AssistantLinks;
 use App\Domain\Ai\Support\Portal\PortalPresenter;
+use App\Domain\Shared\Country\ContactRules;
 use App\Domain\Tenancy\Enums\Ability;
 use App\Domain\Tenancy\Models\Company;
 use App\Models\User;
@@ -72,12 +73,15 @@ final class AskPortalAssistant
     }
 
     /**
-     * Personal details the assistant never needs: email addresses, phone numbers and card-like digit runs.
+     * Personal details the assistant never needs: email addresses, phone numbers and card-like digit runs. Phone
+     * numbers start with 0 or the profile's calling code (Pakistan plan P4: "+44" on GB as before, "+92" on PK).
      */
     public static function scrub(string $question): string
     {
+        $code = ContactRules::dialCode();
+
         return (string) preg_replace(
-            ['/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i', '/(?<![\w£.,])(?:\+44\s?|0)\d(?:[\s-]?\d){8,9}(?!\d)/', '/(?<![\d.,])\d(?:[ -]?\d){12,18}(?!\d)/'],
+            ['/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i', '/(?<![\w£.,])(?:\+'.$code.'\s?|0)\d(?:[\s-]?\d){8,9}(?!\d)/', '/(?<![\d.,])\d(?:[ -]?\d){12,18}(?!\d)/'],
             ['[email removed]', '[phone removed]', '[number removed]'],
             $question,
         );

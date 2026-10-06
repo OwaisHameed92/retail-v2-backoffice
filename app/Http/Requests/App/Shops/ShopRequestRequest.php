@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\App\Shops;
 
+use App\Domain\Shared\Country\ContactRules;
 use App\Domain\Shops\Data\ShopRequest;
 use App\Domain\Shops\Enums\ShopRequestKind;
 use App\Http\Requests\Admin\TenantRules;
@@ -30,7 +31,7 @@ class ShopRequestRequest extends FormRequest
             'branch_id' => ['nullable', 'required_if:kind,'.ShopRequestKind::MoreTills->value, 'string', 'max:26'],
             'new_shop_name' => ['nullable', 'required_if:kind,'.ShopRequestKind::NewShop->value, 'string', 'max:120'],
             'message' => ['nullable', 'string', 'max:1000'],
-            'phone' => ['nullable', 'string', 'regex:'.TenantRules::PHONE_PATTERN],
+            'phone' => ['nullable', 'string', 'regex:'.ContactRules::phonePattern(TenantRules::PHONE_PATTERN)],
         ];
     }
 
@@ -43,7 +44,7 @@ class ShopRequestRequest extends FormRequest
             'branch_id.required_if' => 'Choose the shop that needs more tills.',
             'new_shop_name.required_if' => 'Tell us where the new shop is.',
             'tills.max' => 'Ask for up to '.ShopRequest::MAX_TILLS.' tills at a time.',
-            'phone.regex' => 'Enter a phone number like 0113 496 0000.',
+            'phone.regex' => ContactRules::phoneText('Enter a phone number like 0113 496 0000.'),
         ];
     }
 
