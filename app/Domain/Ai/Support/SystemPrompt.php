@@ -8,7 +8,7 @@ use Carbon\CarbonImmutable;
 
 /**
  * The system prompts. Frozen text (no dates, names or ids) so the tools + system prefix is cached across every
- * request and company. Per-request facts go in the context block, which is added to the first user message.
+ * request and company. Written for the UK; PromptCountry swaps the UK-only wording on another country profile. Per-request facts go in the context block, which is added to the first user message.
  */
 final class SystemPrompt
 {
@@ -72,7 +72,7 @@ TXT;
     {
         return [[
             'type' => 'text',
-            'text' => $context->isAdmin() ? self::ADMIN : self::TENANT,
+            'text' => PromptCountry::localise($context->isAdmin() ? self::ADMIN : self::TENANT),
             'cache_control' => ['type' => 'ephemeral'],
         ]];
     }

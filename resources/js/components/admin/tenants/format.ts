@@ -1,8 +1,8 @@
-import { zonedDateFormat } from '@/lib/country';
+import { dateLocale, formatNumber, zonedDateFormat } from '@/lib/country';
 
-const dateFormat = () => zonedDateFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+const dateFormat = () => zonedDateFormat(dateLocale(), { day: 'numeric', month: 'short', year: 'numeric' });
 
-const timeFormat = () => zonedDateFormat('en-GB', { hour: '2-digit', minute: '2-digit' });
+const timeFormat = () => zonedDateFormat(dateLocale(), { hour: '2-digit', minute: '2-digit' });
 
 /** "24 Sept 2026" in the profile's time zone. */
 export function formatDate(iso: string | null | undefined, fallback = '—'): string {
@@ -30,5 +30,5 @@ export function toDateInput(iso: string | null | undefined): string {
 }
 
 export function plural(count: number, one: string, many = `${one}s`): string {
-    return `${count.toLocaleString('en-GB')} ${count === 1 ? one : many}`;
+    return `${formatNumber(count)} ${count === 1 ? one : many}`;
 }

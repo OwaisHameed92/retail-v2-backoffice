@@ -8,12 +8,12 @@ import { StatCard, StatGrid } from '@/components/shared/stat-card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/app-layout';
+import { formatNumber } from '@/lib/country';
 import { Head, router } from '@inertiajs/react';
 import { AlertTriangle, ArrowLeftRight, Download, Info, PackageCheck, Truck, type LucideIcon } from 'lucide-react';
 import { useMemo } from 'react';
 
 const ONLY = ['rows', 'filters', 'stats'];
-const count = new Intl.NumberFormat('en-GB');
 const ICONS: LucideIcon[] = [Truck, ArrowLeftRight, PackageCheck, AlertTriangle];
 
 /** Stock transfers between shops (module 5.3), read only: the shops raise, dispatch and receive them on the till. */
@@ -56,7 +56,7 @@ export default function TransferIndex(props: TransferIndexProps) {
                     <StatCard
                         key={stat.label}
                         label={stat.label}
-                        value={stat.format === 'money' ? money(stat.value) : count.format(Number(stat.value))}
+                        value={stat.format === 'money' ? money(stat.value) : formatNumber(Number(stat.value))}
                         hint={stat.hint}
                         tone={stat.tone}
                         icon={ICONS[i]}

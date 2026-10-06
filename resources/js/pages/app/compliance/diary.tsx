@@ -8,6 +8,7 @@ import { SectionCard } from '@/components/shared/section-card';
 import { StatCard, StatGrid } from '@/components/shared/stat-card';
 import { StatusBadge, StatusPill } from '@/components/shared/status-badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { formatNumber } from '@/lib/country';
 import { type ColumnDef } from '@tanstack/react-table';
 import { CalendarCheck, CalendarX, ClipboardCheck, ClipboardX } from 'lucide-react';
 
@@ -67,22 +68,17 @@ export default function ComplianceDiary({ definitions, missed, summary, records,
             </ComplianceFilters>
 
             <StatGrid>
-                <StatCard label="Checks set up" value={summary.definitions.toLocaleString('en-GB')} icon={ClipboardCheck} tone="neutral" />
+                <StatCard label="Checks set up" value={formatNumber(summary.definitions)} icon={ClipboardCheck} tone="neutral" />
                 <StatCard
                     label="Done on time"
-                    value={`${summary.done.toLocaleString('en-GB')} of ${summary.due.toLocaleString('en-GB')}`}
+                    value={`${formatNumber(summary.done)} of ${formatNumber(summary.due)}`}
                     icon={CalendarCheck}
                     tone="success"
                 />
-                <StatCard
-                    label="Missed"
-                    value={summary.missed.toLocaleString('en-GB')}
-                    icon={CalendarX}
-                    tone={summary.missed > 0 ? 'warning' : 'success'}
-                />
+                <StatCard label="Missed" value={formatNumber(summary.missed)} icon={CalendarX} tone={summary.missed > 0 ? 'warning' : 'success'} />
                 <StatCard
                     label="Failed readings"
-                    value={summary.failed.toLocaleString('en-GB')}
+                    value={formatNumber(summary.failed)}
                     icon={ClipboardX}
                     tone={summary.failed > 0 ? 'danger' : 'success'}
                 />

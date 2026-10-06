@@ -54,7 +54,7 @@ class TenantBillingController extends Controller
             $parts[] = "{$numbers} paid".($result->licencesRenewed > 0 ? ', '.($result->licencesRenewed === 1 ? '1 licence' : "{$result->licencesRenewed} licences").' renewed.' : '.');
         }
 
-        if (BillingFormat::money($result->credit) !== '£0.00') {
+        if (BillingFormat::money($result->credit) !== BillingFormat::money('0')) {
             $parts[] = BillingFormat::money($result->credit).' kept as credit.';
         }
 

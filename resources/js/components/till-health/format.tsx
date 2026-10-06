@@ -1,5 +1,5 @@
 import { StatusBadge, StatusPill, type StatusTone } from '@/components/shared/status-badge';
-import { zonedDateFormat } from '@/lib/country';
+import { dateLocale, relativeTimeFormat, zonedDateFormat } from '@/lib/country';
 import { type HealthProblem, type SyncState, type TillState } from './types';
 
 export const tillStateTones: Record<TillState, StatusTone> = {
@@ -49,7 +49,7 @@ export function ProblemPills({ problems, empty = 'None' }: { problems: HealthPro
     );
 }
 
-const relative = new Intl.RelativeTimeFormat('en-GB', { numeric: 'auto' });
+const relative = () => relativeTimeFormat({ numeric: 'auto' });
 const UNITS: [Intl.RelativeTimeFormatUnit, number][] = [
     ['day', 86400],
     ['hour', 3600],
@@ -67,14 +67,14 @@ export function ago(iso: string | null | undefined, fallback = 'Never'): string 
     }
     for (const [unit, size] of UNITS) {
         if (Math.abs(seconds) >= size) {
-            return relative.format(Math.round(seconds / size), unit);
+            return relative().format(Math.round(seconds / size), unit);
         }
     }
 
-    return relative.format(Math.round(seconds / 60), 'minute');
+    return relative().format(Math.round(seconds / 60), 'minute');
 }
 
-const dateTime = () => zonedDateFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+const dateTime = () => zonedDateFormat(dateLocale(), { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 
 /** "7 Oct 2026, 12:04" in shop time. */
 export function shopDateTime(iso: string | null | undefined): string {

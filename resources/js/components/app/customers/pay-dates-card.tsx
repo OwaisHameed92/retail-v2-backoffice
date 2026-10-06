@@ -1,10 +1,10 @@
 import { SectionCard } from '@/components/shared/section-card';
 import { StatusPill } from '@/components/shared/status-badge';
-import { zonedDateFormat } from '@/lib/country';
+import { dateLocale, zonedDateFormat } from '@/lib/country';
 import { dayLabel } from './format';
 import { type PayDate } from './types';
 
-const shopTime = () => zonedDateFormat('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+const shopTime = () => zonedDateFormat(dateLocale(), { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
 
 function ReminderState({ reminder }: { reminder: PayDate['reminder'] }) {
     if (reminder.state === 'failed') {

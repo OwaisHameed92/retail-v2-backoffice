@@ -1,5 +1,6 @@
 import { SectionCard } from '@/components/shared/section-card';
 import { pillToneClasses, StatusPill, type StatusTone } from '@/components/shared/status-badge';
+import { dateFormat } from '@/lib/country';
 import { cn } from '@/lib/utils';
 import { AlertTriangle, CalendarClock, CheckCircle2, Clock3, Hourglass, Landmark, Lock, ReceiptText, XCircle } from 'lucide-react';
 import { type ComponentType, type ReactNode } from 'react';
@@ -65,9 +66,7 @@ const accent: Record<StatusTone, string> = {
 };
 
 function day(date: string): string {
-    return new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }).format(
-        new Date(`${date}T00:00:00Z`),
-    );
+    return dateFormat({ day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }).format(new Date(`${date}T00:00:00Z`));
 }
 
 function Line({ icon: Icon, label, line }: { icon: ComponentType<{ className?: string }>; label: string; line: BillingStatusLine }) {

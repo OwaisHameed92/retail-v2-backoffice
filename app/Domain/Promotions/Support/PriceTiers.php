@@ -2,6 +2,9 @@
 
 namespace App\Domain\Promotions\Support;
 
+use App\Domain\Shared\Country\Country;
+use App\Domain\Shared\Country\MoneyFormat;
+
 /**
  * `PromotionRule.priceTiers` of a `quantityPrice` offer (ANSWERS-2026-10-01 §2a, the till's `PromotionPriceTiers.cs`):
  * a string, not JSON — `quantity=total price` incl. VAT, `;` between tiers, e.g. "2=5.00;3=7.00". Quantities rise,
@@ -18,7 +21,7 @@ final class PriceTiers
         $parts = self::parts($tiers);
 
         if ($parts === []) {
-            return 'Add at least one tier, e.g. 2 for £5.00.';
+            return 'Add at least one tier, e.g. 2 for '.MoneyFormat::format('5').'.';
         }
 
         if (count($parts) > self::MAX_TIERS) {
@@ -29,7 +32,7 @@ final class PriceTiers
 
         foreach ($parts as $part) {
             if (preg_match('/^(\d{1,3})=(\d{1,6}(?:\.\d{1,2})?)$/', $part, $m) !== 1) {
-                return 'Write each tier as a quantity and a price in pounds, e.g. 2 for 5.00.';
+                return 'Write each tier as a quantity and a price in '.app(Country::class)->currencyName().', e.g. 2 for 5.00.';
             }
 
             if ((int) $m[1] < 2) {
@@ -41,7 +44,7 @@ final class PriceTiers
             }
 
             if (bccomp($m[2], '0', 2) <= 0) {
-                return 'Each tier needs a price above £0.00.';
+                return 'Each tier needs a price above '.MoneyFormat::format('0').'.';
             }
 
             $last = (int) $m[1];
@@ -77,7 +80,7 @@ final class PriceTiers
     /** "2 for £5.00, 3 for £7.00". */
     public static function describe(?string $tiers): string
     {
-        return implode(', ', array_map(fn (array $t) => $t['quantity'].' for £'.number_format((float) $t['price'], 2), self::rows($tiers)));
+        return implode(', ', array_map(fn (array $t) => $t['quantity'].' for '.MoneyFormat::format(number_format((float) $t['price'], 2, '.', ''), ukStyle: MoneyFormat::SIGN_AFTER_SYMBOL), self::rows($tiers)));
     }
 
     /** @return list<string> */

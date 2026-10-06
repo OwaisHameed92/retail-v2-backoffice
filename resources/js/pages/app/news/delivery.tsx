@@ -3,6 +3,7 @@ import { type DeliveryShowProps } from '@/components/app/news/types';
 import { cost } from '@/components/app/purchasing/format';
 import { DescriptionList } from '@/components/shared/description-list';
 import { EmptyState } from '@/components/shared/empty-state';
+import { MoneyIcon } from '@/components/shared/money-icon';
 import { PageHeader } from '@/components/shared/page-header';
 import { SectionCard } from '@/components/shared/section-card';
 import { StatCard, StatGrid } from '@/components/shared/stat-card';
@@ -11,7 +12,7 @@ import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, Table
 import AppLayout from '@/layouts/app-layout';
 import { cn } from '@/lib/utils';
 import { Head } from '@inertiajs/react';
-import { Eye, ListX, Newspaper, PoundSterling, Undo2 } from 'lucide-react';
+import { Eye, ListX, Newspaper, Undo2 } from 'lucide-react';
 
 /** One news delivery (module 5.8), read only: the shop's own record, by title. */
 export default function NewsDeliveryShow({ delivery, lines, totals }: DeliveryShowProps) {
@@ -47,14 +48,14 @@ export default function NewsDeliveryShow({ delivery, lines, totals }: DeliverySh
                     label="Net cost"
                     value={money(totals.netCost)}
                     hint={`${money(totals.cost)} before returns`}
-                    icon={PoundSterling}
+                    icon={MoneyIcon}
                     tone="neutral"
                 />
                 <StatCard
                     label="Margin"
                     value={money(totals.margin)}
                     hint={`On ${money(totals.sales)} sales at cover price`}
-                    icon={PoundSterling}
+                    icon={MoneyIcon}
                     tone={Number(totals.margin) < 0 ? 'danger' : 'success'}
                 />
             </StatGrid>

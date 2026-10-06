@@ -2,6 +2,7 @@ import { formatDateTime, formatDay } from '@/components/app/pricing/format';
 import { PageTabs } from '@/components/shared/page-tabs';
 import { StatusBadge, statusLabel, type StatusToneMap } from '@/components/shared/status-badge';
 import { money } from '@/components/shared/trading/format';
+import { formatCost, formatNumber } from '@/lib/country';
 import { type PurchasingKind } from './types';
 
 export { formatDateTime, formatDay, money };
@@ -94,16 +95,16 @@ export function qty(value: string | number | null | undefined): string {
     }
     const n = Number(value);
 
-    return Number.isInteger(n) ? n.toLocaleString('en-GB') : n.toLocaleString('en-GB', { maximumFractionDigits: 4 });
+    return Number.isInteger(n) ? formatNumber(n) : formatNumber(n, { maximumFractionDigits: 4 });
 }
 
-/** A cost ex VAT with up to 4 decimal places ("£0.4575"), at least 2. */
+/** A cost ex VAT with up to 4 decimal places ("£0.4575"), at least the profile's display decimals. */
 export function cost(value: string | null | undefined): string {
     if (value === null || value === undefined || value === '') {
         return '—';
     }
 
-    return `£${Number(value).toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 4 })}`;
+    return formatCost(value);
 }
 
 export function documentHref(kind: PurchasingKind, id: string): string | null {

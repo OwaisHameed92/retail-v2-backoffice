@@ -39,7 +39,7 @@ class DirectDebitSettingsRequest extends BillingRequest
     public function messages(): array
     {
         return [
-            'setup_fee_override.regex' => self::MONEY_MESSAGE,
+            'setup_fee_override.regex' => self::moneyMessage(),
             'setup_fee_instalments.max' => 'Split the setup fee into at most :max payments.',
         ];
     }

@@ -11,6 +11,7 @@ use App\Domain\Billing\Support\DocumentNumbers;
 use App\Domain\Billing\Support\InvoiceBalance;
 use App\Domain\Billing\Support\InvoiceMaths;
 use App\Domain\Shared\Actions\RecordAudit;
+use App\Domain\Shared\Country\MoneyFormat;
 use App\Domain\Shared\Support\Money;
 use App\Domain\Tenancy\Models\Company;
 use Carbon\CarbonImmutable;
@@ -45,7 +46,7 @@ class IssueCreditNote
         }
 
         if (Money::compare($amount, '0') <= 0) {
-            throw ValidationException::withMessages(['amount' => 'Enter an amount above £0.00.']);
+            throw ValidationException::withMessages(['amount' => 'Enter an amount above '.MoneyFormat::format('0').'.']);
         }
 
         /** @var Company $company */

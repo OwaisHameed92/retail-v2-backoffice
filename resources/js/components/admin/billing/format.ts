@@ -1,6 +1,6 @@
 import { type InvoiceStatus } from '@/components/admin/billing/types';
 import { type StatusToneMap } from '@/components/shared/status-badge';
-import { zonedDateFormat } from '@/lib/country';
+import { dateFormat, zonedDateFormat } from '@/lib/country';
 
 export { formatDate, formatDateTimeShort, plural } from '@/components/admin/tenants/format';
 
@@ -31,7 +31,7 @@ export const invoiceStatusHelp: Record<InvoiceStatus, string> = {
     void: 'Cancelled. Nothing is owed on it.',
 };
 
-const calendar = new Intl.DateTimeFormat('en-GB', { timeZone: 'UTC', day: 'numeric', month: 'short', year: 'numeric' });
+const calendar = () => dateFormat({ timeZone: 'UTC', day: 'numeric', month: 'short', year: 'numeric' });
 
 /** "2026-10-24" → "24 Oct 2026" (a calendar date: no time zone shift). */
 export function formatDay(ymd: string | null | undefined, fallback = '—'): string {
@@ -40,7 +40,7 @@ export function formatDay(ymd: string | null | undefined, fallback = '—'): str
     }
     const [y, m, d] = ymd.split('-').map(Number);
 
-    return calendar.format(new Date(Date.UTC(y, m - 1, d)));
+    return calendar().format(new Date(Date.UTC(y, m - 1, d)));
 }
 
 const shopParts = () => zonedDateFormat('en-CA', { year: 'numeric', month: '2-digit', day: '2-digit' });

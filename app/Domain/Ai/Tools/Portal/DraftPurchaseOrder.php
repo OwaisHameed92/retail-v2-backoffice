@@ -10,6 +10,7 @@ use App\Domain\Ai\Enums\ToolKind;
 use App\Domain\Ai\Exceptions\AiActionFailed;
 use App\Domain\Purchasing\Actions\SaveHeadOfficeOrder;
 use App\Domain\Purchasing\Queries\PurchasingPage;
+use App\Domain\Shared\Country\MoneyFormat;
 use App\Domain\Shared\Rules\ValidUlid;
 use App\Domain\Shared\Support\Money;
 use App\Domain\Tenancy\Enums\Ability;
@@ -99,11 +100,11 @@ final class DraftPurchaseOrder implements AiWriteTool
     {
         [$shop, $supplier, $lines] = $this->resolve($input);
 
-        $text = implode('; ', array_map(fn (array $l) => "{$l['cases']} × {$l['caseQty']} {$l['name']} (£{$l['unitCost']} each)", $lines));
+        $text = implode('; ', array_map(fn (array $l) => "{$l['cases']} × {$l['caseQty']} {$l['name']} (".MoneyFormat::cost($l['unitCost'], ukStyle: MoneyFormat::AS_GIVEN).' each)', $lines));
         $total = Money::sum(array_map(fn (array $l) => Money::mul(Money::mul((string) $l['cases'], (string) $l['caseQty'], 4), $l['unitCost'], 4), $lines), 4);
 
         return new AiProposal(
-            preview: "Draft a head-office order for {$shop->name} from {$supplier->name}: {$text}. Cost about £".Money::round($total, 2)
+            preview: "Draft a head-office order for {$shop->name} from {$supplier->name}: {$text}. Cost about ".MoneyFormat::format(Money::round($total, 2), ukStyle: MoneyFormat::AS_GIVEN)
                 .' ex VAT. It is saved as a draft; nothing is sent to the supplier.',
             input: [
                 'shop_id' => $shop->id,

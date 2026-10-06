@@ -5,6 +5,7 @@ namespace App\Domain\Labels\Actions;
 use App\Domain\Labels\Enums\LabelReason;
 use App\Domain\Labels\Support\PromotionProducts;
 use App\Domain\Promotions\Support\PromotionSummary;
+use App\Domain\Shared\Country\MoneyFormat;
 use App\Domain\Tenancy\Models\Branch;
 use App\Domain\TillData\Models\BranchPrice;
 use App\Domain\TillData\Models\Product;
@@ -27,7 +28,7 @@ final class QueueChangedLabels
             return;
         }
 
-        $this->queue->handle($product->company_id, [$product->id], null, LabelReason::PriceChange, '£'.$before.' → £'.$after, skipOwnPrice: true);
+        $this->queue->handle($product->company_id, [$product->id], null, LabelReason::PriceChange, MoneyFormat::format($before, ukStyle: MoneyFormat::AS_GIVEN).' → '.MoneyFormat::format($after, ukStyle: MoneyFormat::AS_GIVEN), skipOwnPrice: true);
     }
 
     /** A shop's own price for the product (base unit only; a pack price has no shelf label). */
@@ -37,12 +38,12 @@ final class QueueChangedLabels
             return;
         }
 
-        $this->queue->handle($product->company_id, [$product->id], [$branch->id], LabelReason::ShopPrice, 'Shop price £'.$row->price, $row->valid_from_utc);
+        $this->queue->handle($product->company_id, [$product->id], [$branch->id], LabelReason::ShopPrice, 'Shop price '.MoneyFormat::format($row->price, ukStyle: MoneyFormat::AS_GIVEN), $row->valid_from_utc);
     }
 
     public function shopPriceEnded(Branch $branch, Product $product): void
     {
-        $this->queue->handle($product->company_id, [$product->id], [$branch->id], LabelReason::ShopPriceEnded, 'Back to £'.$product->sell_price);
+        $this->queue->handle($product->company_id, [$product->id], [$branch->id], LabelReason::ShopPriceEnded, 'Back to '.MoneyFormat::format($product->sell_price, ukStyle: MoneyFormat::AS_GIVEN));
     }
 
     /**

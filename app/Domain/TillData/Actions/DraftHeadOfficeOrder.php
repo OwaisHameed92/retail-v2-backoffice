@@ -3,6 +3,7 @@
 namespace App\Domain\TillData\Actions;
 
 use App\Domain\Shared\Actions\RecordAudit;
+use App\Domain\Shared\Country\MoneyFormat;
 use App\Domain\Shared\Support\Money;
 use App\Domain\Shared\Support\Ulid;
 use App\Domain\Tenancy\CurrentCompany;
@@ -190,7 +191,7 @@ final class DraftHeadOfficeOrder
         foreach ($data->lines as $i => $line) {
             if ($line->caseQty < 1 || $line->orderedCases < 0 || $line->looseUnits < 0 || $line->orderedUnits() < 1
                 || Money::isNegative($line->unitCost) || Money::compare($line->vatPercentage, '100') > 0 || Money::isNegative($line->vatPercentage)) {
-                $errors["lines.{$i}"] = 'Line '.($i + 1).': order at least one unit, at a cost of £0 or more and a VAT rate of 0–100%.';
+                $errors["lines.{$i}"] = 'Line '.($i + 1).': order at least one unit, at a cost of '.MoneyFormat::whole('0').' or more and a VAT rate of 0–100%.';
             }
         }
 

@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { formatMoneyAsGiven } from '@/lib/country';
 import { cn } from '@/lib/utils';
 import { ChevronDown, RotateCcw } from 'lucide-react';
 import { Fragment, useState } from 'react';
@@ -56,7 +57,9 @@ export function SuggestionGroupCard({ group, lines, quantities, editable, showSh
             description={`Arrives in ${group.leadDays} ${group.leadDays === 1 ? 'day' : 'days'} (${LEAD_BASIS[group.leadBasis](group)}). Each order covers ${group.leadDays + group.reviewDays} days, until the next one arrives.`}
             actions={
                 <div className="flex flex-wrap items-center justify-end gap-2 text-sm">
-                    {belowMinimum && <Badge variant="warning">Below the £{Number(group.minimumOrder).toFixed(2)} minimum order</Badge>}
+                    {belowMinimum && (
+                        <Badge variant="warning">Below the {formatMoneyAsGiven(Number(group.minimumOrder).toFixed(2))} minimum order</Badge>
+                    )}
                     <span className="font-medium tabular-nums">{money(total)}</span>
                     <span className="text-muted-foreground">ex VAT</span>
                 </div>

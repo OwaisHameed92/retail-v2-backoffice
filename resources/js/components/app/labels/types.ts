@@ -1,4 +1,5 @@
 import { type TableMeta } from '@/components/shared/data-table';
+import { formatMoney } from '@/lib/country';
 
 export interface Option {
     value: string;
@@ -104,7 +105,13 @@ export interface LabelPreview {
 export const OPTION_LABELS: { key: LabelOptionKey; label: string; help: string }[] = [
     { key: 'show_unit_price', label: 'Unit price', help: 'Per kg, litre, 100 g or 100 ml when the product has a size.' },
     { key: 'show_barcode', label: 'Barcode', help: 'EAN-13 or Code 128. Hidden on the smallest labels.' },
-    { key: 'show_offer_name', label: 'Offer', help: 'The live offer at the shop, e.g. "3 for £2.00".' },
+    {
+        key: 'show_offer_name',
+        label: 'Offer',
+        get help() {
+            return `The live offer at the shop, e.g. "3 for ${formatMoney(2)}".`;
+        },
+    },
     { key: 'highlight_offers', label: 'Highlight offers', help: 'A yellow band across the top of offer labels.' },
     { key: 'show_shop_name', label: 'Shop name', help: 'Small, at the bottom.' },
     { key: 'show_date', label: 'Date', help: 'When the price was printed.' },

@@ -9,6 +9,7 @@ import { StatCard, StatGrid } from '@/components/shared/stat-card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/app-layout';
+import { formatNumber } from '@/lib/country';
 import { Head, Link, router } from '@inertiajs/react';
 import {
     Banknote,
@@ -28,7 +29,6 @@ import {
 import { useMemo } from 'react';
 
 const ONLY = ['rows', 'filters', 'stats', 'tabs'];
-const count = new Intl.NumberFormat('en-GB');
 
 const COPY: Record<PurchasingKind, { icon: LucideIcon; description: string; search: string; empty: string }> = {
     orders: {
@@ -116,7 +116,12 @@ export default function PurchasingIndex(props: PurchasingIndexProps) {
         <AppLayout>
             <Head title={`${KIND_LABELS[kind]} · Purchasing`} />
 
-            <PageHeader title="Purchasing" description={copy.description} actions={actions || importInvoice} tabs={<PurchasingTabs current={kind} counts={tabs} />} />
+            <PageHeader
+                title="Purchasing"
+                description={copy.description}
+                actions={actions || importInvoice}
+                tabs={<PurchasingTabs current={kind} counts={tabs} />}
+            />
 
             {oneShop && (
                 <Alert variant="info">
@@ -130,7 +135,7 @@ export default function PurchasingIndex(props: PurchasingIndexProps) {
                     <StatCard
                         key={stat.label}
                         label={stat.label}
-                        value={stat.format === 'money' ? money(stat.value) : count.format(Number(stat.value))}
+                        value={stat.format === 'money' ? money(stat.value) : formatNumber(Number(stat.value))}
                         hint={stat.hint}
                         tone={stat.tone}
                         icon={copy.icon}

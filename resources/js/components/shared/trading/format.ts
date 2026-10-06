@@ -1,53 +1,50 @@
 import { type StatDelta } from '@/components/shared/stat-card';
+import { dateFormat, formatMoney, formatMoneyCompact, formatMoneyWhole, formatNumber } from '@/lib/country';
 
-const gbp = new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', minimumFractionDigits: 2, maximumFractionDigits: 2 });
-const gbpWhole = new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', maximumFractionDigits: 0 });
-const gbpCompact = new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', notation: 'compact', maximumFractionDigits: 1 });
-const count = new Intl.NumberFormat('en-GB');
-const dayFormat = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' });
-const dayYearFormat = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' });
-const weekdayFormat = new Intl.DateTimeFormat('en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' });
+const dayFormat = () => dateFormat({ day: 'numeric', month: 'short', timeZone: 'UTC' });
+const dayYearFormat = () => dateFormat({ day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' });
+const weekdayFormat = () => dateFormat({ weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' });
 
-/** "£1,234.56" from a decimal string; null → "—". Display only: the server does the sums. */
+/** "£1,234.56" (GB), "Rs 1,235" (PK) from a decimal string; null → "—". Display only: the server does the sums. */
 export function money(value: string | number | null | undefined): string {
-    return value === null || value === undefined ? '—' : gbp.format(Number(value));
+    return formatMoney(value);
 }
 
-/** "£1,235" for big tiles; pence shown under £1,000. */
+/** "£1,235" for big tiles; pence shown under 1,000. */
 export function moneyShort(value: string | number | null | undefined): string {
     if (value === null || value === undefined) {
         return '—';
     }
     const n = Number(value);
 
-    return Math.abs(n) >= 1000 ? gbpWhole.format(n) : gbp.format(n);
+    return Math.abs(n) >= 1000 ? formatMoneyWhole(n) : formatMoney(n);
 }
 
 /** Axis ticks: "£1.2K". */
 export function moneyAxis(value: number): string {
-    return gbpCompact.format(value);
+    return formatMoneyCompact(value);
 }
 
 export function number(value: string | number | null | undefined): string {
-    return value === null || value === undefined ? '—' : count.format(Number(value));
+    return value === null || value === undefined ? '—' : formatNumber(Number(value));
 }
 
 /** "24 Sept" from "2026-09-24". */
 export function shortDay(day: string): string {
-    return dayFormat.format(new Date(`${day}T00:00:00Z`));
+    return dayFormat().format(new Date(`${day}T00:00:00Z`));
 }
 
 export function weekday(day: string): string {
-    return weekdayFormat.format(new Date(`${day}T00:00:00Z`));
+    return weekdayFormat().format(new Date(`${day}T00:00:00Z`));
 }
 
 /** "1 – 30 Sept 2026", "24 Sept 2026". */
 export function dayRange(from: string, to: string): string {
     if (from === to) {
-        return dayYearFormat.format(new Date(`${from}T00:00:00Z`));
+        return dayYearFormat().format(new Date(`${from}T00:00:00Z`));
     }
 
-    return `${shortDay(from)} – ${dayYearFormat.format(new Date(`${to}T00:00:00Z`))}`;
+    return `${shortDay(from)} – ${dayYearFormat().format(new Date(`${to}T00:00:00Z`))}`;
 }
 
 /** "09:00" for hour 9. */
@@ -63,7 +60,7 @@ export function changeDelta(change: string | null | undefined, label: string, go
     const n = Number(change);
 
     return {
-        value: `${Math.abs(n).toLocaleString('en-GB', { maximumFractionDigits: 1 })}%`,
+        value: `${formatNumber(Math.abs(n), { maximumFractionDigits: 1 })}%`,
         direction: n > 0 ? 'up' : n < 0 ? 'down' : 'flat',
         goodWhen,
         label,

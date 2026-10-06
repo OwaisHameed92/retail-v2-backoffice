@@ -8,11 +8,10 @@ import { PageHeader } from '@/components/shared/page-header';
 import { StatCard, StatGrid } from '@/components/shared/stat-card';
 import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/app-layout';
+import { formatNumber } from '@/lib/country';
 import { Head, Link, router } from '@inertiajs/react';
 import { Archive, BookOpenCheck, FolderTree, Package, Plus, Sparkles, Tags, Upload } from 'lucide-react';
 import { useMemo, useState } from 'react';
-
-const number = new Intl.NumberFormat('en-GB');
 
 export default function Products(props: ProductIndexProps) {
     const { products, filters, counts, canManage } = props;
@@ -62,17 +61,17 @@ export default function Products(props: ProductIndexProps) {
             />
 
             <StatGrid>
-                <StatCard label="Active products" value={number.format(counts.active)} hint="On sale at your tills" icon={Package} tone="primary" />
-                <StatCard label="Archived" value={number.format(counts.archived)} hint="Kept for history, not sold" icon={Archive} tone="neutral" />
+                <StatCard label="Active products" value={formatNumber(counts.active)} hint="On sale at your tills" icon={Package} tone="primary" />
+                <StatCard label="Archived" value={formatNumber(counts.archived)} hint="Kept for history, not sold" icon={Archive} tone="neutral" />
                 <StatCard
                     label="Departments"
-                    value={number.format(counts.departments)}
+                    value={formatNumber(counts.departments)}
                     hint="Top level of your catalogue"
                     icon={FolderTree}
                     tone="neutral"
                     href={route('app.products.groups')}
                 />
-                <StatCard label="Categories" value={number.format(counts.categories)} hint="Including sub-categories" icon={Tags} tone="neutral" />
+                <StatCard label="Categories" value={formatNumber(counts.categories)} hint="Including sub-categories" icon={Tags} tone="neutral" />
             </StatGrid>
 
             <DataTable

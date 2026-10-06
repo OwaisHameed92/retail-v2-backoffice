@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { currencySymbol, wideCurrencySymbol } from '@/lib/country';
 import { useForm } from '@inertiajs/react';
 import { LoaderCircle } from 'lucide-react';
 import { type FormEventHandler } from 'react';
@@ -40,8 +41,8 @@ function CreditBody({ onOpenChange, invoice }: CreditNoteDialogProps) {
                 <DialogHeader>
                     <DialogTitle>Add a credit note</DialogTitle>
                     <DialogDescription>
-                        Takes an amount off {invoice.number}, for example goodwill for downtime. Up to {invoice.balance} is still owed. To cancel the whole
-                        invoice, void it instead.
+                        Takes an amount off {invoice.number}, for example goodwill for downtime. Up to {invoice.balance} is still owed. To cancel the
+                        whole invoice, void it instead.
                     </DialogDescription>
                 </DialogHeader>
 
@@ -52,14 +53,16 @@ function CreditBody({ onOpenChange, invoice }: CreditNoteDialogProps) {
                     hint={invoice.vatRate !== '0.00' ? 'Split into net and VAT at the invoice’s rate.' : undefined}
                 >
                     <div className="relative">
-                        <span className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-sm">£</span>
+                        <span className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-sm">
+                            {currencySymbol()}
+                        </span>
                         <Input
                             id="credit-amount"
                             inputMode="decimal"
                             autoComplete="off"
                             value={data.amount}
                             onChange={(event) => setData('amount', event.target.value)}
-                            className="pl-7 tabular-nums"
+                            className={wideCurrencySymbol() ? 'pl-10 tabular-nums' : 'pl-7 tabular-nums'}
                             aria-invalid={!!errors.amount || over}
                             autoFocus
                         />
@@ -67,7 +70,14 @@ function CreditBody({ onOpenChange, invoice }: CreditNoteDialogProps) {
                 </Field>
 
                 <Field id="credit-reason" label="Reason" error={errors.reason} hint="Printed on the invoice.">
-                    <Textarea id="credit-reason" rows={2} maxLength={500} value={data.reason} onChange={(event) => setData('reason', event.target.value)} aria-invalid={!!errors.reason} />
+                    <Textarea
+                        id="credit-reason"
+                        rows={2}
+                        maxLength={500}
+                        value={data.reason}
+                        onChange={(event) => setData('reason', event.target.value)}
+                        aria-invalid={!!errors.reason}
+                    />
                 </Field>
 
                 <DialogFooter className="gap-2">

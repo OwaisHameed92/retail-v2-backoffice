@@ -1,13 +1,13 @@
 import { ConfirmDialog } from '@/components/shared/confirm-dialog';
 import { StatusPill } from '@/components/shared/status-badge';
 import { Button } from '@/components/ui/button';
-import { zonedDateFormat } from '@/lib/country';
+import { dateLocale, zonedDateFormat } from '@/lib/country';
 import { router } from '@inertiajs/react';
 import { CircleCheck, Store } from 'lucide-react';
 import { type DataRequestRow } from './types';
 
 const shopDateTime = () =>
-    zonedDateFormat('en-GB', {
+    zonedDateFormat(dateLocale(), {
         day: 'numeric',
         month: 'short',
         year: 'numeric',
@@ -15,7 +15,7 @@ const shopDateTime = () =>
         minute: '2-digit',
     });
 
-const shopDate = () => zonedDateFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+const shopDate = () => zonedDateFormat(dateLocale(), { day: 'numeric', month: 'short', year: 'numeric' });
 
 /** "1 Oct 2026, 14:30" in shop time; "" when missing. */
 export function when(iso: string | null | undefined): string {

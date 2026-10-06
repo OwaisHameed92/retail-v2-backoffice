@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Admin\Leads;
 
 use App\Domain\Leads\Models\LeadNote;
+use App\Domain\Shared\Country\MoneyFormat;
 use Illuminate\Foundation\Http\FormRequest;
 
 class LeadNoteRequest extends FormRequest
@@ -29,7 +30,7 @@ class LeadNoteRequest extends FormRequest
     {
         return [
             'body.required' => 'Write a note first.',
-            'body.max' => 'Keep notes under '.number_format(LeadNote::MAX_LENGTH).' characters.',
+            'body.max' => 'Keep notes under '.MoneyFormat::number(LeadNote::MAX_LENGTH).' characters.',
         ];
     }
 }

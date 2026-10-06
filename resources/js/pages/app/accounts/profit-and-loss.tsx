@@ -2,15 +2,25 @@ import { AccountsFilters, AccountsPageLayout, Amount, RefundFixNotice } from '@/
 import { StatementSection, StatementTotal } from '@/components/app/accounts/statement-section';
 import { type ProfitAndLossProps } from '@/components/app/accounts/types';
 import { useTableQuery } from '@/components/shared/data-table';
+import { MoneyIcon } from '@/components/shared/money-icon';
 import { SectionCard } from '@/components/shared/section-card';
 import { StatCard, StatGrid } from '@/components/shared/stat-card';
 import { money } from '@/components/shared/trading/format';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Link } from '@inertiajs/react';
-import { BarChart3, Info, PoundSterling, TrendingUp } from 'lucide-react';
+import { BarChart3, Info, TrendingUp } from 'lucide-react';
 
-export default function AccountsProfitAndLoss({ income, costOfSales, overheads, totals, salesCheck, refundFix, filters, options }: ProfitAndLossProps) {
+export default function AccountsProfitAndLoss({
+    income,
+    costOfSales,
+    overheads,
+    totals,
+    salesCheck,
+    refundFix,
+    filters,
+    options,
+}: ProfitAndLossProps) {
     const { update } = useTableQuery();
     const margin = Number(totals.income) !== 0 ? ((Number(totals.grossProfit) / Number(totals.income)) * 100).toFixed(1) : null;
 
@@ -32,8 +42,14 @@ export default function AccountsProfitAndLoss({ income, costOfSales, overheads, 
             <AccountsFilters filters={filters} options={options} update={update} />
             <RefundFixNotice summary={refundFix} fix={filters.fix} update={update} />
             <StatGrid columns={3}>
-                <StatCard label="Income" value={money(totals.income)} icon={PoundSterling} />
-                <StatCard label="Gross profit" value={money(totals.grossProfit)} hint={margin !== null ? `${margin}% margin` : undefined} icon={TrendingUp} tone="success" />
+                <StatCard label="Income" value={money(totals.income)} icon={MoneyIcon} />
+                <StatCard
+                    label="Gross profit"
+                    value={money(totals.grossProfit)}
+                    hint={margin !== null ? `${margin}% margin` : undefined}
+                    icon={TrendingUp}
+                    tone="success"
+                />
                 <StatCard
                     label="Net profit"
                     value={money(totals.netProfit)}

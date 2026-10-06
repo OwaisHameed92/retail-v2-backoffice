@@ -9,13 +9,13 @@ import { RowActions } from '@/components/shared/row-actions';
 import { StatusBadge, StatusPill } from '@/components/shared/status-badge';
 import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/app-layout';
+import { formatMoney } from '@/lib/country';
 import { Head, Link, router } from '@inertiajs/react';
 import { type ColumnDef } from '@tanstack/react-table';
 import { KeyRound, Nfc, Pencil, Plus, UserCog } from 'lucide-react';
 import { useMemo } from 'react';
 
 const ONLY = ['staff', 'filters', 'counts'];
-const money = new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP' });
 
 function SignIn({ row }: { row: StaffRow }) {
     return (
@@ -56,7 +56,7 @@ export default function Staff({ staff, filters, counts, options, canEdit }: Staf
             {
                 id: 'rate',
                 header: 'Hourly rate',
-                cell: ({ row }) => (Number(row.original.ratePerHour) > 0 ? money.format(Number(row.original.ratePerHour)) : '—'),
+                cell: ({ row }) => (Number(row.original.ratePerHour) > 0 ? formatMoney(row.original.ratePerHour) : '—'),
                 meta: { align: 'right' },
             },
             { id: 'status', header: 'Status', cell: ({ row }) => <StatusBadge status={row.original.isActive ? 'active' : 'inactive'} /> },

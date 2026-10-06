@@ -1,3 +1,4 @@
+import { MoneyIcon } from '@/components/shared/money-icon';
 import { type ShellNavGroup, type ShellNavItem } from '@/components/shell/sidebar-nav';
 import {
     ArrowLeftRight,
@@ -19,7 +20,6 @@ import {
     Package,
     PackageOpen,
     Pill,
-    PoundSterling,
     Receipt,
     ScrollText,
     Settings,
@@ -95,7 +95,7 @@ export function tenantNavGroups(path: string): TenantNavGroup[] {
             collapsible: 'open',
             items: [
                 { title: 'Products', icon: Package, href: '/app/products', active: startsWithPath(path, '/app/products'), ability: 'catalogue.view' },
-                { title: 'Prices', icon: PoundSterling, href: '/app/prices', active: startsWithPath(path, '/app/prices'), ability: 'catalogue.view' },
+                { title: 'Prices', icon: MoneyIcon, href: '/app/prices', active: startsWithPath(path, '/app/prices'), ability: 'catalogue.view' },
                 { title: 'Shelf labels', icon: Barcode, href: '/app/labels', active: startsWithPath(path, '/app/labels'), ability: 'labels.print' },
                 {
                     title: 'Suppliers',

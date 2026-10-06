@@ -9,12 +9,11 @@ import { StatusBadge } from '@/components/shared/status-badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/app-layout';
+import { formatNumber } from '@/lib/country';
 import { relativeTime } from '@/lib/relative-time';
 import { Head, Link, router } from '@inertiajs/react';
 import { CircleAlert, CircleCheck, CirclePlus, FileSpreadsheet, Package, RefreshCw, Upload } from 'lucide-react';
 import { useEffect } from 'react';
-
-const number = new Intl.NumberFormat('en-GB');
 
 export default function ProductImportShow({ import: detail, fields }: { import: ImportDetail; fields: ImportField[] }) {
     const applying = detail.status === 'queued' || detail.status === 'running';
@@ -35,7 +34,7 @@ export default function ProductImportShow({ import: detail, fields }: { import: 
                 <PageHeader
                     title={detail.fileName}
                     status={<StatusBadge status={detail.status} label={detail.statusLabel} tone={IMPORT_TONES[detail.status]} />}
-                    description={`${number.format(detail.totalRows || 0)} rows · uploaded ${detail.createdAt ? relativeTime(detail.createdAt) : ''}${detail.by ? ` by ${detail.by}` : ''}`}
+                    description={`${formatNumber(detail.totalRows || 0)} rows · uploaded ${detail.createdAt ? relativeTime(detail.createdAt) : ''}${detail.by ? ` by ${detail.by}` : ''}`}
                     back={{ href: route('app.products.imports.index'), label: 'Imports' }}
                 />
 
@@ -44,24 +43,24 @@ export default function ProductImportShow({ import: detail, fields }: { import: 
                 {detail.status === 'uploaded' && detail.preview && (
                     <>
                         <StatGrid>
-                            <StatCard label="Rows" value={number.format(detail.totalRows)} hint="In the file" icon={FileSpreadsheet} tone="neutral" />
+                            <StatCard label="Rows" value={formatNumber(detail.totalRows)} hint="In the file" icon={FileSpreadsheet} tone="neutral" />
                             <StatCard
                                 label="New products"
-                                value={number.format(detail.preview.new)}
+                                value={formatNumber(detail.preview.new)}
                                 hint="Will be added"
                                 icon={CirclePlus}
                                 tone="success"
                             />
                             <StatCard
                                 label="Updates"
-                                value={number.format(detail.preview.update)}
+                                value={formatNumber(detail.preview.update)}
                                 hint="Found by barcode or code"
                                 icon={RefreshCw}
                                 tone="primary"
                             />
                             <StatCard
                                 label="Rows with problems"
-                                value={number.format(detail.errorRows)}
+                                value={formatNumber(detail.errorRows)}
                                 hint={detail.errorRows > 0 ? 'Left out of the import' : 'None'}
                                 icon={CircleAlert}
                                 tone={detail.errorRows > 0 ? 'warning' : 'success'}
@@ -76,11 +75,11 @@ export default function ProductImportShow({ import: detail, fields }: { import: 
                                 trigger={
                                     <Button disabled={detail.validRows === 0}>
                                         <Upload />
-                                        Import {number.format(detail.validRows)} {detail.validRows === 1 ? 'row' : 'rows'}
+                                        Import {formatNumber(detail.validRows)} {detail.validRows === 1 ? 'row' : 'rows'}
                                     </Button>
                                 }
-                                title={`Import ${number.format(detail.validRows)} rows?`}
-                                description={`${number.format(detail.preview.new)} new products are added and ${number.format(detail.preview.update)} are updated for every shop. ${detail.errorRows > 0 ? `${number.format(detail.errorRows)} rows with problems are left out.` : ''}`}
+                                title={`Import ${formatNumber(detail.validRows)} rows?`}
+                                description={`${formatNumber(detail.preview.new)} new products are added and ${formatNumber(detail.preview.update)} are updated for every shop. ${detail.errorRows > 0 ? `${formatNumber(detail.errorRows)} rows with problems are left out.` : ''}`}
                                 confirmLabel="Start import"
                                 onConfirm={() =>
                                     new Promise((resolve) =>
@@ -109,7 +108,7 @@ export default function ProductImportShow({ import: detail, fields }: { import: 
                                 <div className="bg-primary h-full rounded-full transition-all" style={{ width: `${percent}%` }} />
                             </div>
                             <p className="text-muted-foreground text-sm tabular-nums">
-                                {number.format(detail.processedRows)} of {number.format(detail.totalRows)} rows · {percent}%
+                                {formatNumber(detail.processedRows)} of {formatNumber(detail.totalRows)} rows · {percent}%
                             </p>
                         </div>
                     </SectionCard>
@@ -122,7 +121,7 @@ export default function ProductImportShow({ import: detail, fields }: { import: 
                                 <CircleAlert />
                                 <AlertTitle>The import stopped</AlertTitle>
                                 <AlertDescription>
-                                    {number.format(detail.processedRows)} rows were handled before it stopped. Upload the file again to finish: rows
+                                    {formatNumber(detail.processedRows)} rows were handled before it stopped. Upload the file again to finish: rows
                                     already imported are not added twice.
                                 </AlertDescription>
                             </Alert>
@@ -134,18 +133,18 @@ export default function ProductImportShow({ import: detail, fields }: { import: 
                             </Alert>
                         )}
                         <StatGrid>
-                            <StatCard label="Added" value={number.format(detail.created)} hint="New products" icon={CirclePlus} tone="success" />
-                            <StatCard label="Updated" value={number.format(detail.updated)} hint="Changed products" icon={RefreshCw} tone="primary" />
+                            <StatCard label="Added" value={formatNumber(detail.created)} hint="New products" icon={CirclePlus} tone="success" />
+                            <StatCard label="Updated" value={formatNumber(detail.updated)} hint="Changed products" icon={RefreshCw} tone="primary" />
                             <StatCard
                                 label="Unchanged"
-                                value={number.format(detail.unchanged)}
+                                value={formatNumber(detail.unchanged)}
                                 hint="Already up to date"
                                 icon={Package}
                                 tone="neutral"
                             />
                             <StatCard
                                 label="Not imported"
-                                value={number.format(detail.failed)}
+                                value={formatNumber(detail.failed)}
                                 hint="See the list below"
                                 icon={CircleAlert}
                                 tone={detail.failed > 0 ? 'warning' : 'success'}

@@ -5,6 +5,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { formatMoney, formatMoneyAsGiven, keepsUkStyles } from '@/lib/country';
 import { useForm } from '@inertiajs/react';
 import { LoaderCircle } from 'lucide-react';
 import { type FormEventHandler, useEffect, useMemo } from 'react';
@@ -21,22 +22,23 @@ interface Props {
     shopOnly: boolean;
 }
 
-const SAMPLE: LabelContent = {
+/** Built when shown (the profile is set after the modules load). */
+const sampleLabel = (): LabelContent => ({
     id: 'sample',
     productId: 'sample',
     name: 'Coca-Cola Original 500ml',
     price: '1.25',
-    priceText: '£1.25',
-    unitPrice: '£2.50 per litre',
+    priceText: formatMoneyAsGiven('1.25'),
+    unitPrice: `${formatMoneyAsGiven('2.50')} per litre`,
     barcode: null,
-    offer: '2 for £2.00',
+    offer: `2 for ${formatMoney(2)}`,
     offerUntil: null,
     pmp: null,
-    deposit: '+ 20p deposit',
+    deposit: keepsUkStyles() ? '+ 20p deposit' : `+ ${formatMoney(20)} deposit`,
     shop: 'Your shop',
     date: '12/11/26',
     copies: 1,
-};
+});
 
 /** A label template: the stock it prints on, what each label shows, and which shops use it. With a live sample label. */
 export function TemplateDialog({ open, onOpenChange, template, stocks, shop, shopOnly }: Props) {
@@ -48,7 +50,13 @@ export function TemplateDialog({ open, onOpenChange, template, stocks, shop, sho
         if (open) {
             clearErrors();
             if (template) {
-                setData({ name: template.name, stock: template.stock, branch_id: template.branchId, is_default: template.isDefault, options: template.options });
+                setData({
+                    name: template.name,
+                    stock: template.stock,
+                    branch_id: template.branchId,
+                    is_default: template.isDefault,
+                    options: template.options,
+                });
             } else {
                 reset();
                 setData('branch_id', shop.id);
@@ -58,7 +66,7 @@ export function TemplateDialog({ open, onOpenChange, template, stocks, shop, sho
     }, [open, template]);
 
     const stock = stocks.find((s) => s.key === data.stock) ?? stocks[0];
-    const sample = useMemo(() => [{ ...SAMPLE, shop: shop.name }], [shop.name]);
+    const sample = useMemo(() => [{ ...sampleLabel(), shop: shop.name }], [shop.name]);
     const preview = useMemo<LabelStock>(
         () => ({ ...stock, pageWidth: stock.width, pageHeight: stock.height, cols: 1, rows: 1, top: 0, left: 0, perPage: 1, kind: 'roll' }),
         [stock],
@@ -85,7 +93,14 @@ export function TemplateDialog({ open, onOpenChange, template, stocks, shop, sho
 
                     <FormGrid>
                         <FormField id="name" label="Name" error={errors.name}>
-                            <Input id="name" value={data.name} maxLength={60} onChange={(e) => setData('name', e.target.value)} aria-invalid={Boolean(errors.name)} autoFocus />
+                            <Input
+                                id="name"
+                                value={data.name}
+                                maxLength={60}
+                                onChange={(e) => setData('name', e.target.value)}
+                                aria-invalid={Boolean(errors.name)}
+                                autoFocus
+                            />
                         </FormField>
                         <FormField id="stock" label="Label stock" error={errors.stock}>
                             <OptionSelect
@@ -110,7 +125,11 @@ export function TemplateDialog({ open, onOpenChange, template, stocks, shop, sho
                             />
                         </FormField>
                         <div className="flex items-end gap-2 pb-2">
-                            <Checkbox id="is_default" checked={data.is_default} onCheckedChange={(checked) => setData('is_default', checked === true)} />
+                            <Checkbox
+                                id="is_default"
+                                checked={data.is_default}
+                                onCheckedChange={(checked) => setData('is_default', checked === true)}
+                            />
                             <Label htmlFor="is_default" className="font-normal">
                                 Use first when printing
                             </Label>

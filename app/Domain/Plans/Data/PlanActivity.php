@@ -6,8 +6,8 @@ use App\Domain\Admin\Models\Admin;
 use App\Domain\Plans\Enums\Feature;
 use App\Domain\Plans\Enums\PricingMode;
 use App\Domain\Plans\Models\Plan;
+use App\Domain\Shared\Country\MoneyFormat;
 use App\Domain\Shared\Models\AuditLog;
-use App\Domain\Shared\Support\Money;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 
@@ -117,14 +117,10 @@ final class PlanActivity
         };
     }
 
-    /** "1234.5" → "£1,234.50" without going through a float. */
+    /** "1234.5" → "£1,234.50" (GB), "Rs 1,235" (PK) without going through a float. */
     private static function money(mixed $value): string
     {
-        $amount = Money::normalise($value);
-        $negative = str_starts_with($amount, '-');
-        [$whole, $fraction] = explode('.', ltrim($amount, '-'));
-
-        return ($negative ? '-' : '').'£'.number_format((int) $whole).'.'.$fraction;
+        return MoneyFormat::format($value);
     }
 
     private static function featureChange(mixed $before, mixed $after): string

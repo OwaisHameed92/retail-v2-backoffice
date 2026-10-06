@@ -1,6 +1,6 @@
 import { FormField, FormGrid } from '@/components/shared/form-section';
 import { Input } from '@/components/ui/input';
-import { timeZoneLabel, zonedDateFormat } from '@/lib/country';
+import { dateLocale, timeZoneLabel, zonedDateFormat } from '@/lib/country';
 
 /** "2026-09-25" for an ISO time, or tomorrow when empty (the profile's time zone). */
 export function dateInputValue(iso: string | null | undefined, fallbackDays = 1): string {
@@ -11,7 +11,7 @@ export function dateInputValue(iso: string | null | undefined, fallbackDays = 1)
 
 /** "14:30" for an ISO time (the profile's time zone), or the fallback. */
 export function timeInputValue(iso: string | null | undefined, fallback: string): string {
-    return iso ? zonedDateFormat('en-GB', { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date(iso)) : fallback;
+    return iso ? zonedDateFormat(dateLocale(), { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date(iso)) : fallback;
 }
 
 export function todayInputValue(): string {

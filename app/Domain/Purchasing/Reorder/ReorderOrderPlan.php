@@ -2,6 +2,7 @@
 
 namespace App\Domain\Purchasing\Reorder;
 
+use App\Domain\Shared\Country\MoneyFormat;
 use App\Domain\Shared\Support\Money;
 use App\Domain\Tenancy\Models\Branch;
 use App\Domain\TillData\Models\Product;
@@ -92,6 +93,6 @@ final class ReorderOrderPlan
     public static function describe(array $orders): string
     {
         return implode('; ', array_map(fn (array $o) => "{$o['shop']->name} from {$o['supplier']->name}: ".count($o['lines'])
-            .' '.(count($o['lines']) === 1 ? 'line' : 'lines').", about £{$o['net']} ex VAT", $orders));
+            .' '.(count($o['lines']) === 1 ? 'line' : 'lines').', about '.MoneyFormat::format($o['net'], ukStyle: MoneyFormat::AS_GIVEN).' ex VAT', $orders));
     }
 }

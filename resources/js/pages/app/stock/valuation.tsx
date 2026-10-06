@@ -3,13 +3,14 @@ import { StockFilters } from '@/components/app/stock/stock-filters';
 import { type ValuationGroup, type ValuationProps } from '@/components/app/stock/types';
 import { useTableQuery } from '@/components/shared/data-table';
 import { EmptyState } from '@/components/shared/empty-state';
+import { MoneyIcon } from '@/components/shared/money-icon';
 import { PageHeader } from '@/components/shared/page-header';
 import { SectionCard } from '@/components/shared/section-card';
 import { StatCard, StatGrid } from '@/components/shared/stat-card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import AppLayout from '@/layouts/app-layout';
 import { Head, Link } from '@inertiajs/react';
-import { Layers, PoundSterling, Scale } from 'lucide-react';
+import { Layers, Scale } from 'lucide-react';
 
 const right = 'text-right tabular-nums';
 
@@ -89,7 +90,7 @@ export default function StockValuation({ totals, byShop, byDepartment, top, filt
                             label="At today’s cost price"
                             value={money(totals.costValue)}
                             hint="On hand × product cost price"
-                            icon={PoundSterling}
+                            icon={MoneyIcon}
                             tone="neutral"
                         />
                         <StatCard

@@ -7,11 +7,10 @@ import { PageHeader } from '@/components/shared/page-header';
 import { Button } from '@/components/ui/button';
 import { useBreakpoint } from '@/hooks/use-min-width';
 import AdminLayout from '@/layouts/admin-layout';
+import { formatNumber } from '@/lib/country';
 import { Head, Link, router } from '@inertiajs/react';
 import { Building2, KeyRound } from 'lucide-react';
 import { useMemo } from 'react';
-
-const number = new Intl.NumberFormat('en-GB');
 
 export default function LicenceIndex({ licences, filters, statuses, counts, total, plans }: LicenceIndexProps) {
     const breakpoint = useBreakpoint();
@@ -28,7 +27,7 @@ export default function LicenceIndex({ licences, filters, statuses, counts, tota
                 description={
                     total === 0
                         ? 'One licence per till. Licences are issued when tills are added to a tenant.'
-                        : `${number.format(total)} ${total === 1 ? 'licence' : 'licences'}, one per till. ${number.format(trading)} can trade right now.`
+                        : `${formatNumber(total)} ${total === 1 ? 'licence' : 'licences'}, one per till. ${formatNumber(trading)} can trade right now.`
                 }
             />
 

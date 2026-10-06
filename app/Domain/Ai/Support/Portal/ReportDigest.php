@@ -9,6 +9,7 @@ use App\Domain\Reporting\Reports\ReportKind;
 use App\Domain\Reporting\Reports\ReportOptions;
 use App\Domain\Reporting\Reports\ReportResult;
 use App\Domain\Reporting\Reports\ReportTable;
+use App\Domain\Shared\Country\MoneyFormat;
 
 /**
  * A report of module 4.8 (BuildReport, the same builder as the report page) cut down for the model: the headline
@@ -92,7 +93,7 @@ final class ReportDigest
         }
 
         return match ($type) {
-            'money', 'signedMoney' => '£'.$value,
+            'money', 'signedMoney' => MoneyFormat::format($value, ukStyle: MoneyFormat::AS_GIVEN),
             'percent' => $value.'%',
             default => is_scalar($value) ? $value : null,
         };

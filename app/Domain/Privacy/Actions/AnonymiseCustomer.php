@@ -10,6 +10,7 @@ use App\Domain\Privacy\Support\ErasureTraces;
 use App\Domain\Privacy\Support\TillCopyScrub;
 use App\Domain\Privacy\Support\TillSteps;
 use App\Domain\Shared\Actions\RecordAudit;
+use App\Domain\Shared\Country\MoneyFormat;
 use App\Domain\Shared\Support\Money;
 use App\Domain\Tenancy\CurrentCompany;
 use App\Domain\Tenancy\Models\Company;
@@ -57,7 +58,7 @@ final class AnonymiseCustomer
             $balance = CustomerLedger::totals($customer->id)['balance'];
 
             if (! Money::isZero($balance)) {
-                $owed = Money::compare($balance, '0') > 0 ? "owes £{$balance}" : 'is £'.Money::normalise(ltrim($balance, '-')).' in credit';
+                $owed = Money::compare($balance, '0') > 0 ? 'owes '.MoneyFormat::format($balance, ukStyle: MoneyFormat::AS_GIVEN) : 'is '.MoneyFormat::format(Money::normalise(ltrim($balance, '-')), ukStyle: MoneyFormat::AS_GIVEN).' in credit';
                 throw ValidationException::withMessages(['customer' => "This customer {$owed}. Settle their account at a till first, then anonymise them."]);
             }
 

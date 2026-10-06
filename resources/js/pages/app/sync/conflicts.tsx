@@ -8,12 +8,11 @@ import { PageHeader } from '@/components/shared/page-header';
 import { PageTabs } from '@/components/shared/page-tabs';
 import { StatCard, StatGrid } from '@/components/shared/stat-card';
 import AppLayout from '@/layouts/app-layout';
+import { formatNumber } from '@/lib/country';
 import { relativeTime } from '@/lib/relative-time';
 import { Head, router } from '@inertiajs/react';
 import { Archive, CheckCircle2, Clock, GitCompareArrows, Store } from 'lucide-react';
 import { useMemo } from 'react';
-
-const number = new Intl.NumberFormat('en-GB');
 
 export default function SyncConflicts(props: ConflictIndexProps) {
     const { tab, counts, stats, filters } = props;
@@ -46,26 +45,26 @@ export default function SyncConflicts(props: ConflictIndexProps) {
                     <StatGrid>
                         <StatCard
                             label="Needs review"
-                            value={number.format(counts.open)}
+                            value={formatNumber(counts.open)}
                             hint={stats.oldestOpenAt ? `Oldest received ${relativeTime(stats.oldestOpenAt)}` : 'Nothing waiting'}
                             icon={GitCompareArrows}
                             tone={counts.open > 0 ? 'warning' : 'success'}
                         />
                         <StatCard
                             label="Shop changes kept out"
-                            value={number.format(stats.hubRows)}
+                            value={formatNumber(stats.hubRows)}
                             hint="The shop's version can still be used"
                             icon={Store}
                             tone="neutral"
                         />
                         <StatCard
                             label="Finished records"
-                            value={number.format(stats.historic)}
+                            value={formatNumber(stats.historic)}
                             hint="Historic records and deletes: review only"
                             icon={Archive}
                             tone="neutral"
                         />
-                        <StatCard label="Resolved" value={number.format(counts.resolved)} hint="All time" icon={CheckCircle2} tone="success" />
+                        <StatCard label="Resolved" value={formatNumber(counts.resolved)} hint="All time" icon={CheckCircle2} tone="success" />
                     </StatGrid>
 
                     {props.conflicts && (

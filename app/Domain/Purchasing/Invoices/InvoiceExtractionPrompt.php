@@ -5,6 +5,7 @@ namespace App\Domain\Purchasing\Invoices;
 use App\Domain\Ai\Data\AiRequest;
 use App\Domain\Ai\Enums\AiFeature;
 use App\Domain\Ai\Support\AiSettings;
+use App\Domain\Ai\Support\PromptCountry;
 
 /**
  * The model request that reads one supplier invoice or delivery note (module 6.5): a frozen system prompt (cached), one
@@ -39,7 +40,7 @@ TXT;
         return new AiRequest(
             feature: AiFeature::InvoiceImport,
             model: AiSettings::modelFor(AiFeature::InvoiceImport),
-            system: [['type' => 'text', 'text' => self::SYSTEM, 'cache_control' => ['type' => 'ephemeral']]],
+            system: [['type' => 'text', 'text' => PromptCountry::localise(self::SYSTEM), 'cache_control' => ['type' => 'ephemeral']]],
             messages: [['role' => 'user', 'content' => [
                 $document,
                 ['type' => 'text', 'text' => 'Record this supplier document with record_invoice.'],

@@ -2,6 +2,7 @@
 
 namespace App\Domain\Privacy\Support;
 
+use App\Domain\Shared\Country\Country;
 use App\Domain\Shared\Support\CsvText;
 use Barryvdh\DomPDF\Facade\Pdf;
 use RuntimeException;
@@ -112,7 +113,7 @@ final class CustomerExportBundle
             'customer-orders.csv  orders taken under your email or phone number',
             'e-receipts.csv       e-receipts sent for your sales',
             '',
-            'Amounts are in pounds (GBP). Times are UTC.',
+            'Amounts are in '.app(Country::class)->currencyName().' ('.app(Country::class)->currency().'). Times are UTC.',
             '',
         ]);
     }

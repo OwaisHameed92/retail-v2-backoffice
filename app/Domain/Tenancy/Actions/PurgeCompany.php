@@ -3,6 +3,7 @@
 namespace App\Domain\Tenancy\Actions;
 
 use App\Domain\Shared\Actions\RecordAudit;
+use App\Domain\Shared\Country\MoneyFormat;
 use App\Domain\Tenancy\Models\Company;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Database\QueryException;
@@ -68,7 +69,7 @@ class PurgeCompany
         }
 
         if ($sales > 0) {
-            $blockers[] = number_format($sales).' sale'.($sales === 1 ? '' : 's');
+            $blockers[] = MoneyFormat::number($sales).' sale'.($sales === 1 ? '' : 's');
         }
 
         return $blockers;

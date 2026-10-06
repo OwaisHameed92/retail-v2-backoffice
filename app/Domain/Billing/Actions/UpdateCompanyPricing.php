@@ -8,6 +8,7 @@ use App\Domain\Billing\GoCardless\GoCardlessException;
 use App\Domain\Billing\Models\BillingAccount;
 use App\Domain\Billing\Support\BillingAccounts;
 use App\Domain\Shared\Actions\RecordAudit;
+use App\Domain\Shared\Country\MoneyFormat;
 use App\Domain\Shared\Support\Money;
 use App\Domain\Tenancy\Models\Company;
 use App\Domain\Tenancy\Support\AuditChanges;
@@ -33,7 +34,7 @@ class UpdateCompanyPricing
     {
         foreach (['price_monthly_override' => $input->priceMonthly, 'price_yearly_override' => $input->priceYearly] as $field => $price) {
             if ($price !== null && Money::isNegative($price)) {
-                throw ValidationException::withMessages([$field => 'The price cannot be below £0.00.']);
+                throw ValidationException::withMessages([$field => 'The price cannot be below '.MoneyFormat::format('0').'.']);
             }
         }
 

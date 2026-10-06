@@ -13,6 +13,7 @@ use App\Domain\Billing\Support\BillingAccounts;
 use App\Domain\Billing\Support\BillingFormat;
 use App\Domain\Billing\Support\DocumentNumbers;
 use App\Domain\Shared\Actions\RecordAudit;
+use App\Domain\Shared\Country\MoneyFormat;
 use App\Domain\Shared\Support\Money;
 use App\Domain\Tenancy\Models\Company;
 use Carbon\CarbonImmutable;
@@ -46,7 +47,7 @@ class RecordPayment
         $amount = Money::normalise($input->amount);
 
         if (Money::compare($amount, '0') <= 0) {
-            throw ValidationException::withMessages(['amount' => 'Enter an amount above £0.00.']);
+            throw ValidationException::withMessages(['amount' => 'Enter an amount above '.MoneyFormat::format('0').'.']);
         }
 
         if ($company->trashed()) {
@@ -168,7 +169,7 @@ class RecordPayment
             }
 
             if (Money::isNegative($share) || Money::compare($share, $invoice->balance) > 0) {
-                throw ValidationException::withMessages(['allocations' => 'Put between £0.01 and '.BillingFormat::money($invoice->balance)." on {$invoice->number}."]);
+                throw ValidationException::withMessages(['allocations' => 'Put between '.MoneyFormat::cost('0.01').' and '.BillingFormat::money($invoice->balance)." on {$invoice->number}."]);
             }
 
             $total = Money::add($total, $share);

@@ -18,13 +18,13 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import AppLayout from '@/layouts/app-layout';
+import { formatNumber } from '@/lib/country';
 import { Head, router } from '@inertiajs/react';
 import { type ColumnDef } from '@tanstack/react-table';
 import { Barcode, CalendarClock, CheckCheck, Package, Plus, Printer, Store, Tag, Tags, X } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 
 const ONLY = ['items', 'filters', 'counts'];
-const number = new Intl.NumberFormat('en-GB');
 
 const REASON_TONES: Record<string, 'info' | 'violet' | 'warning' | 'neutral' | 'success'> = {
     priceChange: 'info',
@@ -35,7 +35,19 @@ const REASON_TONES: Record<string, 'info' | 'violet' | 'warning' | 'neutral' | '
     manual: 'neutral',
 };
 
-export default function LabelsIndex({ shops, shop, restrictedShop, filters, reasons, stocks, items, counts, templates, departments, suppliers }: LabelsPageProps) {
+export default function LabelsIndex({
+    shops,
+    shop,
+    restrictedShop,
+    filters,
+    reasons,
+    stocks,
+    items,
+    counts,
+    templates,
+    departments,
+    suppliers,
+}: LabelsPageProps) {
     const { update } = useTableQuery({ only: ONLY });
     const [selected, setSelected] = useState<string[]>([]);
     const [printing, setPrinting] = useState<string[] | 'all' | null>(null);
@@ -72,7 +84,9 @@ export default function LabelsIndex({ shops, shop, restrictedShop, filters, reas
                     <Checkbox
                         checked={selected.includes(row.original.id)}
                         onCheckedChange={(checked) =>
-                            setSelected((current) => (checked === true ? [...current, row.original.id] : current.filter((id) => id !== row.original.id)))
+                            setSelected((current) =>
+                                checked === true ? [...current, row.original.id] : current.filter((id) => id !== row.original.id),
+                            )
                         }
                         onClick={(e) => e.stopPropagation()}
                         aria-label={`Select ${row.original.name}`}
@@ -84,7 +98,14 @@ export default function LabelsIndex({ shops, shop, restrictedShop, filters, reas
                 id: 'name',
                 header: 'Product',
                 cell: ({ row }) => (
-                    <EntityCell name={row.original.name} subline={row.original.sku ?? undefined} monoSubline shape="square" icon={Package} className="max-w-72" />
+                    <EntityCell
+                        name={row.original.name}
+                        subline={row.original.sku ?? undefined}
+                        monoSubline
+                        shape="square"
+                        icon={Package}
+                        className="max-w-72"
+                    />
                 ),
                 meta: { mobile: 'title' },
             },
@@ -135,7 +156,9 @@ export default function LabelsIndex({ shops, shop, restrictedShop, filters, reas
                       {
                           id: 'copies',
                           header: 'Copies',
-                          cell: ({ row }) => <CopiesInput row={row.original} onSave={(copies) => send('app.labels.copies', { ids: [row.original.id], copies })} />,
+                          cell: ({ row }) => (
+                              <CopiesInput row={row.original} onSave={(copies) => send('app.labels.copies', { ids: [row.original.id], copies })} />
+                          ),
                           meta: { align: 'right', mobile: 'field', label: 'Copies' },
                       } satisfies ColumnDef<QueueRow>,
                   ]
@@ -145,7 +168,13 @@ export default function LabelsIndex({ shops, shop, restrictedShop, filters, reas
                 header: () => <span className="sr-only">Actions</span>,
                 cell: ({ row }) => (
                     <div className="flex justify-end gap-1" onClick={(e) => e.stopPropagation()}>
-                        <Button size="icon" variant="ghost" className="size-8" aria-label={`Print ${row.original.name}`} onClick={() => setPrinting([row.original.id])}>
+                        <Button
+                            size="icon"
+                            variant="ghost"
+                            className="size-8"
+                            aria-label={`Print ${row.original.name}`}
+                            onClick={() => setPrinting([row.original.id])}
+                        >
                             <Printer className="size-4" />
                         </Button>
                         {waitingView && (
@@ -189,7 +218,10 @@ export default function LabelsIndex({ shops, shop, restrictedShop, filters, reas
                 actions={
                     <>
                         {shops.length > 1 && restrictedShop === null && (
-                            <Select value={shop.id} onValueChange={(id) => router.get(route('app.labels.index'), { shop: id }, { preserveState: false })}>
+                            <Select
+                                value={shop.id}
+                                onValueChange={(id) => router.get(route('app.labels.index'), { shop: id }, { preserveState: false })}
+                            >
                                 <SelectTrigger className="h-9 w-full sm:w-52" aria-label="Shop">
                                     <Store className="size-4" aria-hidden />
                                     <SelectValue />
@@ -216,10 +248,16 @@ export default function LabelsIndex({ shops, shop, restrictedShop, filters, reas
             />
 
             <StatGrid columns={4}>
-                <StatCard label="Waiting to print" value={number.format(counts.waiting)} hint={shop.name} icon={Tags} tone="primary" />
-                <StatCard label="Price changes" value={number.format(counts.priceChanges)} hint="Business and shop prices" icon={Barcode} tone="neutral" />
-                <StatCard label="Offers" value={number.format(counts.offers)} hint="Started or ended" icon={Tag} tone="warning" />
-                <StatCard label="Printed this week" value={number.format(counts.printedWeek)} icon={CheckCheck} tone="success" />
+                <StatCard label="Waiting to print" value={formatNumber(counts.waiting)} hint={shop.name} icon={Tags} tone="primary" />
+                <StatCard
+                    label="Price changes"
+                    value={formatNumber(counts.priceChanges)}
+                    hint="Business and shop prices"
+                    icon={Barcode}
+                    tone="neutral"
+                />
+                <StatCard label="Offers" value={formatNumber(counts.offers)} hint="Started or ended" icon={Tag} tone="warning" />
+                <StatCard label="Printed this week" value={formatNumber(counts.printedWeek)} icon={CheckCheck} tone="success" />
             </StatGrid>
 
             <PageTabs
@@ -239,7 +277,13 @@ export default function LabelsIndex({ shops, shop, restrictedShop, filters, reas
                 only={ONLY}
                 searchPlaceholder="Search by name, code or barcode"
                 filters={
-                    <FilterSelect value={filters.reason} onChange={(reason) => update({ reason, page: 1 })} all="Any reason" options={reasons} label="Filter by reason" />
+                    <FilterSelect
+                        value={filters.reason}
+                        onChange={(reason) => update({ reason, page: 1 })}
+                        all="Any reason"
+                        options={reasons}
+                        label="Filter by reason"
+                    />
                 }
                 toolbarActions={
                     selected.length > 0 ? (
@@ -294,7 +338,14 @@ export default function LabelsIndex({ shops, shop, restrictedShop, filters, reas
 
             <TemplatesCard templates={templates} stocks={stocks} shop={shop} restrictedShop={restrictedShop} />
 
-            <AddLabelsDialog open={adding} onOpenChange={setAdding} shopId={shop.id} shopName={shop.name} departments={departments} suppliers={suppliers} />
+            <AddLabelsDialog
+                open={adding}
+                onOpenChange={setAdding}
+                shopId={shop.id}
+                shopName={shop.name}
+                departments={departments}
+                suppliers={suppliers}
+            />
             {printing !== null && (
                 <PrintDialog
                     open

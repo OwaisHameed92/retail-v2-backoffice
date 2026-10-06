@@ -1,5 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { formatNumber } from '@/lib/country';
 import { cn } from '@/lib/utils';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { PER_PAGE_OPTIONS, type TableMeta } from './types';
@@ -11,8 +12,6 @@ interface DataTablePaginationProps {
     disabled?: boolean;
     className?: string;
 }
-
-const number = new Intl.NumberFormat('en-GB');
 
 /** "1–25 of 132" on the left; rows per page, page x of y and previous/next on the right. */
 export function DataTablePagination({ meta, onPageChange, onPerPageChange, disabled = false, className }: DataTablePaginationProps) {
@@ -28,9 +27,9 @@ export function DataTablePagination({ meta, onPageChange, onPerPageChange, disab
                 ) : (
                     <>
                         <span className="text-foreground font-medium">
-                            {number.format(from)}–{number.format(to)}
+                            {formatNumber(from)}–{formatNumber(to)}
                         </span>{' '}
-                        of <span className="text-foreground font-medium">{number.format(meta.total)}</span>
+                        of <span className="text-foreground font-medium">{formatNumber(meta.total)}</span>
                     </>
                 )}
             </p>

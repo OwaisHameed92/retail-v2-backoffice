@@ -1,15 +1,16 @@
 import { DashboardTabs } from '@/components/admin/dashboard/dashboard-tabs';
+import { queryOf, TradingFiltersBar, type TradingQuery } from '@/components/admin/trading/trading-filters';
+import { type TradingData, type TradingPageProps } from '@/components/admin/trading/types';
+import { PageHeader, type PageCrumb } from '@/components/shared/page-header';
 import { dayRange, number, share } from '@/components/shared/trading/format';
 import { Freshness } from '@/components/shared/trading/freshness';
 import { LeadersCard, salesDetail, type LeaderItem } from '@/components/shared/trading/leaders-card';
 import { HourlyPatternCard, SalesTrendCard } from '@/components/shared/trading/sales-charts';
 import { TenderMixCard, VatCard } from '@/components/shared/trading/tender-vat-cards';
-import { queryOf, TradingFiltersBar, type TradingQuery } from '@/components/admin/trading/trading-filters';
 import { TradingKpis } from '@/components/shared/trading/trading-kpis';
 import { TradingSkeleton } from '@/components/shared/trading/trading-skeleton';
-import { type TradingData, type TradingPageProps } from '@/components/admin/trading/types';
-import { PageHeader, type PageCrumb } from '@/components/shared/page-header';
 import AdminLayout from '@/layouts/admin-layout';
+import { formatNumber } from '@/lib/country';
 import { cn } from '@/lib/utils';
 import { Deferred, Head, router } from '@inertiajs/react';
 import { Building2, Monitor, Package, Store } from 'lucide-react';
@@ -115,7 +116,7 @@ function TradingBody({ data, props, go }: { data: TradingData; props: TradingPag
                         items={products.map<LeaderItem>((p) => ({
                             id: p.productId,
                             name: p.name,
-                            subline: `${Number(p.qty).toLocaleString('en-GB', { maximumFractionDigits: 3 })} sold${p.department === 'Unassigned' ? '' : ` · ${p.department}`}`,
+                            subline: `${formatNumber(Number(p.qty), { maximumFractionDigits: 3 })} sold${p.department === 'Unassigned' ? '' : ` · ${p.department}`}`,
                             value: p.net,
                         }))}
                     />
@@ -144,7 +145,10 @@ export default function AdminTrading(props: TradingPageProps) {
         ? [
               { title: 'All businesses', href: route('admin.trading', queryOf(filters, { company: null, branch: null })) },
               ...(context.branch
-                  ? [{ title: context.company.name, href: route('admin.trading', queryOf(filters, { branch: null })) }, { title: context.branch.name }]
+                  ? [
+                        { title: context.company.name, href: route('admin.trading', queryOf(filters, { branch: null })) },
+                        { title: context.branch.name },
+                    ]
                   : [{ title: context.company.name }]),
           ]
         : undefined;

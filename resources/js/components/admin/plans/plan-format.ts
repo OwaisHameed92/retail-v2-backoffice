@@ -1,16 +1,14 @@
-import { zonedDateFormat } from '@/lib/country';
+import { dateLocale, formatMoney as profileMoney, stripMoney, zonedDateFormat } from '@/lib/country';
 
-const gbp = new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP' });
+const dateFormat = () => zonedDateFormat(dateLocale(), { day: 'numeric', month: 'short', year: 'numeric' });
 
-const dateFormat = () => zonedDateFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-
-/** "1234.5" → "£1,234.50". Display only; amounts stay strings everywhere else. */
+/** "1234.5" → "£1,234.50" (GB), "Rs 1,235" (PK). Display only; amounts stay strings everywhere else. */
 export function formatMoney(amount: string | null | undefined): string {
     if (amount === null || amount === undefined || amount.trim() === '' || Number.isNaN(Number(amount))) {
-        return '£0.00';
+        return profileMoney(0);
     }
 
-    return gbp.format(Number(amount));
+    return profileMoney(amount);
 }
 
 /** "7 days", "1 day", "No trial" style labels. */
@@ -46,7 +44,7 @@ export function slugify(value: string): string {
  */
 export function yearlySaving(monthly: string, yearly: string): { saving: string; percent: number | null } | null {
     const toPence = (value: string): number | null => {
-        const match = /^(\d{1,5})(?:\.(\d{1,2}))?$/.exec(value.replace(/[£,\s]/g, ''));
+        const match = /^(\d{1,5})(?:\.(\d{1,2}))?$/.exec(stripMoney(value));
 
         return match ? Number(match[1]) * 100 + Number((match[2] ?? '').padEnd(2, '0')) : null;
     };

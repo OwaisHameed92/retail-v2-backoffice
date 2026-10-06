@@ -2,19 +2,20 @@ import { currentTableParams } from '@/components/shared/data-table';
 import { PageTabs } from '@/components/shared/page-tabs';
 import { StatusPill, type StatusTone } from '@/components/shared/status-badge';
 import { money } from '@/components/shared/trading/format';
+import { formatNumber } from '@/lib/country';
 import { cn } from '@/lib/utils';
 import { type StockStatus, type ValuationBasis } from './types';
 
 export { formatDateTime, formatDay } from '@/components/app/pricing/format';
 export { money, number } from '@/components/shared/trading/format';
 
-const qtyFormat = new Intl.NumberFormat('en-GB', { maximumFractionDigits: 4 });
+const qtyFormat = (value: number | string) => formatNumber(value, { maximumFractionDigits: 4 });
 
 /** A stock quantity without trailing zeros: "12.0000" → "12", "−2.5". */
 export function qty(value: string | number | null | undefined): string {
     const n = Number(value ?? 0);
 
-    return n < 0 ? `−${qtyFormat.format(Math.abs(n))}` : qtyFormat.format(n);
+    return n < 0 ? `−${qtyFormat(Math.abs(n))}` : qtyFormat(n);
 }
 
 /** A movement quantity with its sign: "+24", "−2". */

@@ -1,6 +1,7 @@
 import { InitialsAvatar } from '@/components/shared/entity-cell';
 import { statusDotClasses, statusTone } from '@/components/shared/status-badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { formatNumber } from '@/lib/country';
 import { cn } from '@/lib/utils';
 import { Link } from '@inertiajs/react';
 import { ArrowRight } from 'lucide-react';
@@ -8,8 +9,6 @@ import { FollowUp } from './follow-up';
 import { formatDate, leadStatusTones } from './format';
 import { shopsAndTills } from './lead-columns';
 import { type BoardColumn, type LeadRow } from './types';
-
-const number = new Intl.NumberFormat('en-GB');
 
 function BoardCard({ lead }: { lead: LeadRow }) {
     return (
@@ -73,7 +72,7 @@ export function LeadBoard({ columns, loading = false, listHref }: LeadBoardProps
                                     <span className={cn('size-2 rounded-full', statusDotClasses[tone])} aria-hidden />
                                     {column.label}
                                 </h2>
-                                <span className="text-muted-foreground text-xs font-medium tabular-nums">{number.format(column.total)}</span>
+                                <span className="text-muted-foreground text-xs font-medium tabular-nums">{formatNumber(column.total)}</span>
                             </header>
 
                             {loading ? (
@@ -97,7 +96,7 @@ export function LeadBoard({ columns, loading = false, listHref }: LeadBoardProps
                                     href={listHref(column.status)}
                                     className="text-primary hover:bg-card mt-2 inline-flex items-center justify-center gap-1 rounded-md px-2 py-1.5 text-sm font-medium"
                                 >
-                                    View all {number.format(column.total)}
+                                    View all {formatNumber(column.total)}
                                     <ArrowRight className="size-3.5" aria-hidden />
                                 </Link>
                             )}

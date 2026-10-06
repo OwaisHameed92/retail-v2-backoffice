@@ -2,9 +2,11 @@
 
 namespace App\Domain\Ai\MorningSummary\Support;
 
+use App\Domain\Shared\Country\Country;
+
 /**
  * The guard on the morning summary's AI paragraph (module 6.3): every number the model wrote must appear in the
- * facts it was given (compared after dropping thousands separators, £, % and trailing zeros, so "£1,234.50" in the
+ * facts it was given (compared after dropping digit group separators, £, % and trailing zeros, so "£1,234.50" in the
  * facts allows "1234.5"), the text must be plain, and short. Anything else is dropped and the email goes without it.
  */
 final class NarrativeCheck
@@ -52,7 +54,9 @@ final class NarrativeCheck
      */
     public static function numbers(string $text): array
     {
-        preg_match_all('/\d+(?:,\d{3})*(?:\.\d+)?/', $text, $matches);
+        // Lakh grouping ("1,25,000") on a profile that uses it; the thousands pattern is the UK's, unchanged.
+        $grouped = app(Country::class)->grouping() === 'lakh' ? '(?:(?:,\d{2})*,\d{3})?' : '(?:,\d{3})*';
+        preg_match_all('/\d+'.$grouped.'(?:\.\d+)?/', $text, $matches);
 
         return array_values(array_unique(array_map(function (string $n) {
             $n = str_replace(',', '', $n);

@@ -1,3 +1,5 @@
+import { currencySymbol, formatMoneyAsGiven } from '@/lib/country';
+
 /** Module 4.9: props of `app/settings/index` (App\Domain\ShopSettings\Queries\ShopSettingsPage). */
 
 export type SettingType = 'bool' | 'int' | 'money' | 'percent' | 'decimal' | 'text' | 'multiline' | 'choice' | 'time';
@@ -57,12 +59,12 @@ export function displayValue(definition: SettingDefinition, value: string | null
         case 'bool':
             return value === 'true' ? 'On' : 'Off';
         case 'money':
-            return `£${value}`;
+            return formatMoneyAsGiven(value);
         case 'percent':
             return `${value}%`;
         case 'multiline':
             return value.split('\n')[0] + (value.includes('\n') ? ' …' : '');
         default:
-            return definition.unit && definition.unit !== '£' ? `${value} ${definition.unit}` : value;
+            return definition.unit && definition.unit !== currencySymbol() ? `${value} ${definition.unit}` : value;
     }
 }

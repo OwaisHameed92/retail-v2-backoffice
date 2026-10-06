@@ -2,6 +2,7 @@
 
 namespace App\Domain\ShopSettings\Support;
 
+use App\Domain\Shared\Country\Country;
 use App\Domain\TillData\Sync\SettingSyncPolicy;
 use Illuminate\Validation\ValidationException;
 
@@ -115,10 +116,12 @@ final class SettingCatalogue
      */
     private static function number(array $definition, string $field, string $text): string
     {
-        $text = ltrim($text, '£');
+        $country = app(Country::class);
+        // The symbol people may type ("£2.50", "Rs 250").
+        $text = $country->symbolSpace() ? ltrim(ltrim($text, $country->symbol())) : ltrim($text, $country->symbol());
         [$pattern, $places, $what] = match ($definition['type']) {
             'int' => ['/^\d+$/', 0, 'a whole number'],
-            'money' => ['/^\d+(\.\d{1,2})?$/', 2, 'an amount in pounds, like 2.50'],
+            'money' => ['/^\d+(\.\d{1,2})?$/', 2, 'an amount in '.$country->currencyName().', like 2.50'],
             'percent' => ['/^\d+(\.\d{1,2})?$/', null, 'a percentage, like 10'],
             default => ['/^\d+(\.\d{1,4})?$/', null, 'a number'],
         };

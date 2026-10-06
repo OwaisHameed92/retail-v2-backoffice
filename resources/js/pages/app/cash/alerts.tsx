@@ -7,6 +7,7 @@ import { StatCard, StatGrid } from '@/components/shared/stat-card';
 import { StatusPill } from '@/components/shared/status-badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { currencySymbol, formatMoneyAsGiven } from '@/lib/country';
 import { router } from '@inertiajs/react';
 import { type ColumnDef } from '@tanstack/react-table';
 import { Clock, ShieldCheck, TrendingDown, TriangleAlert, Vault } from 'lucide-react';
@@ -71,8 +72,8 @@ function ThresholdForm({
             <Input
                 inputMode="decimal"
                 className="h-9 w-full sm:w-32"
-                aria-label="Alert at (£)"
-                placeholder={`£${fallback}`}
+                aria-label={`Alert at (${currencySymbol()})`}
+                placeholder={formatMoneyAsGiven(fallback)}
                 value={draft}
                 onChange={(e) => setDraft(e.target.value)}
             />

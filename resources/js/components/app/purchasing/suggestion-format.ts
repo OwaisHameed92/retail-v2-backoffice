@@ -1,3 +1,4 @@
+import { formatNumber } from '@/lib/country';
 import { type Quantities, type SuggestionFlag, type SuggestionGroup, type SuggestionLine } from './suggestion-types';
 
 type Tone = 'danger' | 'warning' | 'info' | 'violet' | 'neutral';
@@ -16,11 +17,11 @@ export const FLAGS: Record<SuggestionFlag, { label: string; tone: Tone; hint: st
     capped: { label: 'At max level', tone: 'neutral', hint: 'Capped so stock stays under the maximum level.' },
 };
 
-const qtyFormat = new Intl.NumberFormat('en-GB', { maximumFractionDigits: 1 });
+const qtyFormat = (value: number | string) => formatNumber(value, { maximumFractionDigits: 1 });
 
 /** "12", "3.5" from a decimal string; null → "—". */
 export function qty(value: string | number | null | undefined): string {
-    return value === null || value === undefined ? '—' : qtyFormat.format(Number(value));
+    return value === null || value === undefined ? '—' : qtyFormat(Number(value));
 }
 
 export const LEAD_BASIS: Record<SuggestionGroup['leadBasis'], (g: SuggestionGroup) => string> = {

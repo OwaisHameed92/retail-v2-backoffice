@@ -1,12 +1,11 @@
 import { useTableQuery } from '@/components/shared/data-table';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { formatNumber } from '@/lib/country';
 import { X } from 'lucide-react';
 import { type Option, type ProductIndexProps } from './types';
 
 export const PRODUCT_INDEX_ONLY = ['products', 'filters', 'counts'];
-
-const number = new Intl.NumberFormat('en-GB');
 
 function FilterSelect({
     value,
@@ -52,8 +51,8 @@ export function ProductFilters({ filters, options, counts }: Pick<ProductIndexPr
                 value={filters.status}
                 onChange={(value) => update({ status: value ?? 'active', page: 1 })}
                 options={[
-                    { value: 'active', label: `Active (${number.format(counts.active)})` },
-                    { value: 'archived', label: `Archived (${number.format(counts.archived)})` },
+                    { value: 'active', label: `Active (${formatNumber(counts.active)})` },
+                    { value: 'archived', label: `Archived (${formatNumber(counts.archived)})` },
                     { value: 'all', label: 'Active and archived' },
                 ]}
                 label="Filter by status"

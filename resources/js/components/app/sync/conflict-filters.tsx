@@ -1,11 +1,10 @@
 import { useTableQuery } from '@/components/shared/data-table';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { formatNumber } from '@/lib/country';
 import { X } from 'lucide-react';
 import { CONFLICT_INDEX_ONLY } from './format';
 import { type ConflictIndexProps, type Option } from './types';
-
-const number = new Intl.NumberFormat('en-GB');
 
 function FilterSelect({
     value,
@@ -77,8 +76,8 @@ export function ConflictFilters({ tab, filters, options, counts }: Pick<Conflict
     }
 
     const status: Option[] = [
-        { value: 'open', label: `Needs review (${number.format(counts.open)})` },
-        { value: 'resolved', label: `Resolved (${number.format(counts.resolved)})` },
+        { value: 'open', label: `Needs review (${formatNumber(counts.open)})` },
+        { value: 'resolved', label: `Resolved (${formatNumber(counts.resolved)})` },
     ];
     const active = Boolean(filters.kind || filters.branch) || filters.status !== 'open';
 

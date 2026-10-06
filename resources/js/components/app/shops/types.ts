@@ -1,6 +1,6 @@
 /** Module 4.7 (Shops and tills). Matches App\Domain\Shops\Queries\{ShopsOverview, ShopDetail, BusinessPage, ShopRequests}. */
 import { type HealthThresholds, type ShopHealth, type TillHealth } from '@/components/till-health/types';
-import { zonedDateFormat } from '@/lib/country';
+import { dateLocale, zonedDateFormat } from '@/lib/country';
 
 export type LicenceKind = 'trial' | 'full';
 export type ShopRequestKind = 'moreTills' | 'newShop';
@@ -154,7 +154,7 @@ export interface BusinessPageProps {
     can: { edit: boolean };
 }
 
-const dateFormat = () => zonedDateFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+const dateFormat = () => zonedDateFormat(dateLocale(), { day: 'numeric', month: 'short', year: 'numeric' });
 
 /** "7 Oct 2026" in shop time, or the fallback. */
 export function shopDate(iso: string | null | undefined, fallback = ''): string {

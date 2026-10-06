@@ -1,9 +1,11 @@
 import { type DashboardRange, type RevenueChartData } from '@/components/admin/dashboard/types';
 import { ChartCard, SegmentedControl, StatPill, type SegmentOption } from '@/components/shared/chart-card';
 import { EmptyState } from '@/components/shared/empty-state';
+import { MoneyIcon } from '@/components/shared/money-icon';
 import { TrendChart } from '@/components/shared/trend-chart';
+import { formatMoneyTrim } from '@/lib/country';
 import { cn } from '@/lib/utils';
-import { BarChart3, Lock, PoundSterling } from 'lucide-react';
+import { BarChart3, Lock } from 'lucide-react';
 
 export const dashboardRanges: SegmentOption<DashboardRange>[] = [
     { value: '12w', label: '12W' },
@@ -12,8 +14,6 @@ export const dashboardRanges: SegmentOption<DashboardRange>[] = [
 ];
 
 export const dashboardRangeLabel: Record<DashboardRange, string> = { '12w': 'Last 12 weeks', '6m': 'Last 6 months', '1y': 'Last 12 months' };
-
-const pounds = new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', minimumFractionDigits: 0, maximumFractionDigits: 2 });
 
 function Stat({ chart }: { chart: RevenueChartData }) {
     const { change } = chart;
@@ -67,7 +67,7 @@ export function RevenueCard({
                     />
                 ) : empty ? (
                     <EmptyState
-                        icon={PoundSterling}
+                        icon={MoneyIcon}
                         title="No paid invoices in this period"
                         body="Invoices chart here by the date they were paid in full."
                         size="sm"
@@ -77,7 +77,7 @@ export function RevenueCard({
                     <TrendChart
                         data={chart.points}
                         variant={range === '12w' ? 'line' : 'bar'}
-                        format={(value) => pounds.format(value)}
+                        format={(value) => formatMoneyTrim(value)}
                         seriesName="Paid"
                     />
                 )}

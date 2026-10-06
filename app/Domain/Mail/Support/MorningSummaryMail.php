@@ -84,10 +84,10 @@ final class MorningSummaryMail
             'moversUp' => [['name' => 'Coca-Cola 500ml', 'sales' => '84.00', 'before' => '60.00', 'difference' => '24.00']],
             'moversDown' => [['name' => 'Warburtons Toastie 800g', 'sales' => '12.50', 'before' => '30.00', 'difference' => '-17.50']],
             'watch' => [
-                ['kind' => 'refunds', 'text' => 'Bradford: £84.00 refunded (6 refunds) yesterday, against a usual £21.50 a day'],
+                ['kind' => 'refunds', 'text' => 'Bradford: '.MailFormat::money('84').' refunded (6 refunds) yesterday, against a usual '.MailFormat::money('21.5').' a day'],
                 ['kind' => 'stock', 'text' => 'Leeds: Coca-Cola 500ml is low, 4 on hand with 63 sold in the last 7 days'],
             ],
-            'narrative' => 'Yesterday your 2 shops took £3,120.40, up 8.0% on the same day last week. Leeds led the way at +13.9%, while Bradford was close to last week at -1.3%. Bradford refunded £84.00, against a usual £21.50 a day, so it is worth a look. Coca-Cola 500ml is running low at Leeds.',
+            'narrative' => 'Yesterday your 2 shops took '.MailFormat::money('3120.40').', up 8.0% on the same day last week. Leeds led the way at +13.9%, while Bradford was close to last week at -1.3%. Bradford refunded '.MailFormat::money('84').', against a usual '.MailFormat::money('21.5').' a day, so it is worth a look. Coca-Cola 500ml is running low at Leeds.',
             'url' => $portal.'/app',
             'unsubscribeUrl' => $settings,
         ];

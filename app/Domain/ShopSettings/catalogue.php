@@ -12,6 +12,11 @@
  * `library.url`, ANSWERS-2026-10-06 Q10, every till of the business would follow a value the portal set).
  */
 
+use App\Domain\Shared\Country\Country;
+use App\Domain\Shared\Country\MoneyFormat;
+
+$country = app(Country::class);
+
 return [
     'receipt' => [
         'title' => 'Receipts',
@@ -65,7 +70,7 @@ return [
         'title' => 'Till and checkout',
         'description' => 'How the sales screen behaves.',
         'settings' => [
-            'till.keypad_price_in_pence' => ['label' => 'Type prices in pence', 'type' => 'bool', 'help' => 'On: typing 150 on the keypad means £1.50. Off: type 1.50.'],
+            'till.keypad_price_in_pence' => ['label' => 'Type prices in pence', 'type' => 'bool', 'help' => 'On: typing 150 on the keypad means '.MoneyFormat::prefix().'1.50. Off: type 1.50.'],
             'till.show_prices_on_tiles' => ['label' => 'Prices on product buttons', 'type' => 'bool', 'help' => 'Shows each price on its button.'],
             'till.lock_after_idle_minutes' => ['label' => 'Lock the till after', 'type' => 'int', 'unit' => 'minutes', 'min' => 0, 'max' => 240, 'help' => 'Minutes without use before staff must enter their PIN again.'],
             'till.hold_requires_customer_name' => ['label' => 'Name on held sales', 'type' => 'bool', 'help' => 'Ask for the customer\'s name when a sale is put on hold.'],
@@ -121,8 +126,8 @@ return [
         'description' => 'How customers earn and spend points.',
         'settings' => [
             'customers.loyalty_enabled' => ['label' => 'Loyalty points', 'type' => 'bool', 'help' => 'Customers earn points on what they spend.'],
-            'customers.loyalty_points_per_pound' => ['label' => 'Points per £1 spent', 'type' => 'decimal', 'min' => 0, 'max' => 1000, 'help' => 'For example 1.'],
-            'customers.loyalty_pounds_per_point' => ['label' => 'Value of one point', 'type' => 'decimal', 'unit' => '£', 'min' => 0, 'max' => 100, 'help' => 'In pounds, for example 0.01 for 1p a point.'],
+            'customers.loyalty_points_per_pound' => ['label' => 'Points per '.MoneyFormat::whole('1').' spent', 'type' => 'decimal', 'min' => 0, 'max' => 1000, 'help' => 'For example 1.'],
+            'customers.loyalty_pounds_per_point' => ['label' => 'Value of one point', 'type' => 'decimal', 'unit' => $country->symbol(), 'min' => 0, 'max' => 100, 'help' => MoneyFormat::keepsUkStyles() ? 'In pounds, for example 0.01 for 1p a point.' : 'In '.$country->currencyName().', for example 1 for '.MoneyFormat::whole('1').' a point.'],
             'customers.loyalty_min_spend_to_earn' => ['label' => 'Least spend to earn points', 'type' => 'money', 'min' => 0, 'max' => 1000, 'help' => 'Sales below this earn no points.'],
             'customers.loyalty_min_redeem_points' => ['label' => 'Least points to spend', 'type' => 'int', 'unit' => 'points', 'min' => 0, 'max' => 1000000, 'help' => 'A customer needs at least this many points to pay with them.'],
             'customers.loyalty_expiry_months' => ['label' => 'Points expire after', 'type' => 'int', 'unit' => 'months', 'min' => 0, 'max' => 120, 'help' => 'How long points last.'],

@@ -2,6 +2,7 @@
 
 namespace App\Domain\Catalogue\Import;
 
+use App\Domain\Shared\Country\Country;
 use App\Domain\TillData\Enums\AgeRule;
 
 /**
@@ -90,7 +91,7 @@ final class RowInterpreter
 
     public static function decimal(string $value, int $places): ?string
     {
-        $value = str_replace(['£', ',', ' '], '', $value);
+        $value = str_replace([app(Country::class)->symbol(), ',', ' '], '', $value);
 
         if (preg_match('/^\d+(\.\d{1,'.$places.'})?$/', $value) !== 1 || (float) $value > self::MAX_PRICE) {
             return null;

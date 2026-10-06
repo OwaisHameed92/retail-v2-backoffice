@@ -1,10 +1,10 @@
 import { BrandWaves } from '@/components/shell/brand-waves';
-import { zonedDateFormat } from '@/lib/country';
+import { dateLocale, zonedDateFormat } from '@/lib/country';
 import { cn } from '@/lib/utils';
 import { Moon, Sun, type LucideIcon } from 'lucide-react';
 import { type ReactNode } from 'react';
 
-const shopHour = (now: Date) => Number(zonedDateFormat('en-GB', { hour: 'numeric', hour12: false }).format(now));
+const shopHour = (now: Date) => Number(zonedDateFormat(dateLocale(), { hour: 'numeric', hour12: false }).format(now));
 
 /** "Good morning" / "Good afternoon" / "Good evening" for the current time in the profile's time zone. */
 export function greeting(now: Date = new Date()): string {

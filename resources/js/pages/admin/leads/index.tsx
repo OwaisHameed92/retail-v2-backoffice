@@ -9,12 +9,11 @@ import { StatCard, StatGrid } from '@/components/shared/stat-card';
 import { Button } from '@/components/ui/button';
 import { useBreakpoint } from '@/hooks/use-min-width';
 import AdminLayout from '@/layouts/admin-layout';
+import { formatNumber } from '@/lib/country';
 import { cn } from '@/lib/utils';
 import { Head, Link, router } from '@inertiajs/react';
 import { AlarmClock, Columns3, Inbox, List, Percent, PhoneIncoming, Plus, Sparkles } from 'lucide-react';
 import { useMemo } from 'react';
-
-const number = new Intl.NumberFormat('en-GB');
 
 function ViewToggle({ view, onChange }: { view: LeadIndexProps['view']; onChange: (view: LeadIndexProps['view']) => void }) {
     const options = [
@@ -87,7 +86,7 @@ export default function LeadIndex(props: LeadIndexProps) {
                 description={
                     total === 0
                         ? 'Trial requests from the website, calls and walk-ins. Approve a 7-day trial to set a customer up.'
-                        : `${number.format(total)} ${total === 1 ? 'trial request' : 'trial requests'}, ${number.format(counts.open ?? 0)} still open.`
+                        : `${formatNumber(total)} ${total === 1 ? 'trial request' : 'trial requests'}, ${formatNumber(counts.open ?? 0)} still open.`
                 }
                 actions={
                     <>
@@ -98,10 +97,10 @@ export default function LeadIndex(props: LeadIndexProps) {
             />
 
             <StatGrid>
-                <StatCard label="New this week" value={number.format(stats.newThisWeek)} hint="Since Monday" icon={Sparkles} />
+                <StatCard label="New this week" value={formatNumber(stats.newThisWeek)} hint="Since Monday" icon={Sparkles} />
                 <StatCard
                     label="Awaiting contact"
-                    value={number.format(stats.awaitingContact)}
+                    value={formatNumber(stats.awaitingContact)}
                     hint="Nobody has spoken to them yet"
                     icon={PhoneIncoming}
                     tone={stats.awaitingContact > 0 ? 'warning' : 'neutral'}
@@ -109,16 +108,16 @@ export default function LeadIndex(props: LeadIndexProps) {
                 />
                 <StatCard
                     label="Follow-ups due"
-                    value={number.format(stats.followUpsDue)}
-                    hint={stats.overdueFollowUps > 0 ? `${number.format(stats.overdueFollowUps)} overdue` : 'By the end of today'}
+                    value={formatNumber(stats.followUpsDue)}
+                    hint={stats.overdueFollowUps > 0 ? `${formatNumber(stats.overdueFollowUps)} overdue` : 'By the end of today'}
                     icon={AlarmClock}
                     tone={stats.overdueFollowUps > 0 ? 'danger' : 'neutral'}
                     href={`${route('admin.leads.index')}?followUp=due`}
                 />
                 <StatCard
                     label="Conversion"
-                    value={stats.conversionRate === null ? '—' : `${stats.conversionRate.toLocaleString('en-GB', { maximumFractionDigits: 1 })}%`}
-                    hint={`${number.format(stats.convertedInWindow)} of ${number.format(stats.receivedInWindow)} in the last ${stats.windowDays} days`}
+                    value={stats.conversionRate === null ? '—' : `${formatNumber(stats.conversionRate, { maximumFractionDigits: 1 })}%`}
+                    hint={`${formatNumber(stats.convertedInWindow)} of ${formatNumber(stats.receivedInWindow)} in the last ${stats.windowDays} days`}
                     icon={Percent}
                     tone="success"
                 />

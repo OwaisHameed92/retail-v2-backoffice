@@ -9,6 +9,7 @@ use App\Domain\Pricing\Actions\SetShopPrice;
 use App\Domain\Pricing\Queries\PriceChangeList;
 use App\Domain\Pricing\Queries\PriceList;
 use App\Domain\Pricing\Queries\ProductPrices;
+use App\Domain\Shared\Country\MoneyFormat;
 use App\Domain\Tenancy\Models\Branch;
 use App\Domain\TillData\Models\BranchPrice;
 use App\Domain\TillData\Models\Product;
@@ -49,7 +50,7 @@ class PriceController extends Controller
         $row = $set->handle($shop, Product::query()->findOrFail($product), $request->validated('product_unit_id'),
             (string) $request->validated('price'), $request->time('valid_from'), $request->time('valid_to'));
 
-        return back()->with('success', "£{$row->price} saved for {$shop->name}. Its tills get it at their next sync.");
+        return back()->with('success', MoneyFormat::format($row->price, ukStyle: MoneyFormat::AS_GIVEN)." saved for {$shop->name}. Its tills get it at their next sync.");
     }
 
     public function endShop(ShopPriceRequest $request, string $product, EndShopPrice $end): RedirectResponse
@@ -65,7 +66,7 @@ class PriceController extends Controller
     {
         $saved = $set->handle(Product::query()->findOrFail($product), (string) $request->validated('price'), $request->endShopIds());
 
-        return back()->with('success', "Business price now £{$saved->product->sell_price}. Every till gets it at its next sync.");
+        return back()->with('success', 'Business price now '.MoneyFormat::format($saved->product->sell_price, ukStyle: MoneyFormat::AS_GIVEN).'. Every till gets it at its next sync.');
     }
 
     public function cancel(ShopPriceRowRequest $request, string $row, CancelScheduledPrice $cancel): RedirectResponse

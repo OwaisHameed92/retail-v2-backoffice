@@ -1,6 +1,7 @@
 import { formatDateTime, formatDay, money } from '@/components/app/purchasing/format';
 import { PageTabs } from '@/components/shared/page-tabs';
 import { StatusBadge, statusLabel, type StatusToneMap } from '@/components/shared/status-badge';
+import { formatNumber } from '@/lib/country';
 import { type NewsKind } from './types';
 
 export { formatDateTime, formatDay, money };
@@ -45,14 +46,12 @@ export const KIND_LABELS: Record<NewsKind, string> = {
     vouchers: 'Vouchers',
 };
 
-const count = new Intl.NumberFormat('en-GB');
-
 export function copies(value: number | null | undefined): string {
-    return value === null || value === undefined ? '—' : count.format(value);
+    return value === null || value === undefined ? '—' : formatNumber(value);
 }
 
 export function percent(value: number | string | null | undefined): string {
-    return value === null || value === undefined || value === '' ? '—' : `${Number(value).toLocaleString('en-GB', { maximumFractionDigits: 1 })}%`;
+    return value === null || value === undefined || value === '' ? '—' : `${formatNumber(Number(value), { maximumFractionDigits: 1 })}%`;
 }
 
 /** The newspaper sections as link tabs, with counts. The weekly summary last. */

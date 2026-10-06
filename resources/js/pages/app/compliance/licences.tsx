@@ -5,6 +5,7 @@ import { FilterSelect } from '@/components/app/setup/fields';
 import { DataTable, useTableQuery } from '@/components/shared/data-table';
 import { EmptyState } from '@/components/shared/empty-state';
 import { StatCard, StatGrid } from '@/components/shared/stat-card';
+import { formatNumber } from '@/lib/country';
 import { type ColumnDef } from '@tanstack/react-table';
 import { BadgeCheck, CalendarClock, CalendarX } from 'lucide-react';
 
@@ -50,17 +51,17 @@ export default function ComplianceLicences({ licences, summary, types, soonDays,
             description={`The licences each shop recorded on its till. Expiring soon = within ${soonDays} days, time enough to renew.`}
         >
             <StatGrid columns={3}>
-                <StatCard label="Licences held" value={summary.total.toLocaleString('en-GB')} icon={BadgeCheck} tone="neutral" />
+                <StatCard label="Licences held" value={formatNumber(summary.total)} icon={BadgeCheck} tone="neutral" />
                 <StatCard
                     label="Expiring soon"
-                    value={summary.expiring.toLocaleString('en-GB')}
+                    value={formatNumber(summary.expiring)}
                     hint={`Within ${soonDays} days`}
                     icon={CalendarClock}
                     tone={summary.expiring > 0 ? 'warning' : 'success'}
                 />
                 <StatCard
                     label="Expired"
-                    value={summary.expired.toLocaleString('en-GB')}
+                    value={formatNumber(summary.expired)}
                     hint="Renew before trading these lines"
                     icon={CalendarX}
                     tone={summary.expired > 0 ? 'danger' : 'success'}

@@ -10,6 +10,7 @@ import { StatCard, StatGrid } from '@/components/shared/stat-card';
 import { StatusPill } from '@/components/shared/status-badge';
 import { Input } from '@/components/ui/input';
 import AppLayout from '@/layouts/app-layout';
+import { formatNumber } from '@/lib/country';
 import { Head, Link, router } from '@inertiajs/react';
 import { type ColumnDef } from '@tanstack/react-table';
 import { BellRing, CheckCheck, Lock, ShieldAlert, ShieldCheck, Siren, UserRound } from 'lucide-react';
@@ -90,31 +91,19 @@ export default function AnomaliesIndex({ anomalies, summary, filters, options, s
                     <p className="text-muted-foreground text-sm">Findings about individual staff members are shown to owners and managers only.</p>
                 )}
                 <StatGrid>
-                    <StatCard label="New" value={summary.new.toLocaleString('en-GB')} hint="Not looked at yet" icon={BellRing} tone="primary" />
-                    <StatCard
-                        label="Serious and open"
-                        value={summary.highOpen.toLocaleString('en-GB')}
-                        hint="High severity"
-                        icon={Siren}
-                        tone="danger"
-                    />
+                    <StatCard label="New" value={formatNumber(summary.new)} hint="Not looked at yet" icon={BellRing} tone="primary" />
+                    <StatCard label="Serious and open" value={formatNumber(summary.highOpen)} hint="High severity" icon={Siren} tone="danger" />
                     <StatCard
                         label="Acknowledged"
-                        value={summary.acknowledged.toLocaleString('en-GB')}
+                        value={formatNumber(summary.acknowledged)}
                         hint="Being looked into"
                         icon={CheckCheck}
                         tone="neutral"
                     />
-                    <StatCard
-                        label="Dismissed"
-                        value={summary.dismissed.toLocaleString('en-GB')}
-                        hint="With a reason"
-                        icon={ShieldCheck}
-                        tone="neutral"
-                    />
+                    <StatCard label="Dismissed" value={formatNumber(summary.dismissed)} hint="With a reason" icon={ShieldCheck} tone="neutral" />
                 </StatGrid>
 
-                <SectionCard title="Findings" description={`${anomalies.meta.total.toLocaleString('en-GB')} in these dates, newest first.`} flush>
+                <SectionCard title="Findings" description={`${formatNumber(anomalies.meta.total)} in these dates, newest first.`} flush>
                     <DataTable
                         columns={columns(canManage)}
                         data={anomalies.data}

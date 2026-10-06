@@ -3,6 +3,7 @@
 namespace App\Domain\Promotions\Support;
 
 use App\Domain\Shared\Country\Country;
+use App\Domain\Shared\Country\MoneyFormat;
 use App\Domain\TillData\Models\Category;
 use App\Domain\TillData\Models\Department;
 use App\Domain\TillData\Models\Product;
@@ -91,7 +92,7 @@ final class PromotionSummary
 
     public static function deal(PromotionRule $r): string
     {
-        $money = fn (string $v) => '£'.number_format((float) $v, 2);
+        $money = fn (string $v) => MoneyFormat::format(number_format((float) $v, 2, '.', ''), ukStyle: MoneyFormat::SIGN_AFTER_SYMBOL);
         $percent = rtrim(rtrim(number_format((float) $r->percent, 2, '.', ''), '0'), '.').'%';
         $min = $r->min_quantity >= 2 ? " when buying {$r->min_quantity}+" : '';
 

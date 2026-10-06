@@ -12,13 +12,13 @@ import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import AdminLayout from '@/layouts/admin-layout';
+import { formatNumber } from '@/lib/country';
 import { Head, router } from '@inertiajs/react';
 import { type ColumnDef } from '@tanstack/react-table';
 import { Banknote, Building2, SearchX, X } from 'lucide-react';
 import { useState } from 'react';
 
 const ONLY = ['payments', 'filters', 'totals'];
-const number = new Intl.NumberFormat('en-GB');
 
 const columns: ColumnDef<PaymentRow>[] = [
     {
@@ -110,7 +110,13 @@ function PaymentFilters({ filters, methods }: Pick<PaymentIndexProps, 'filters' 
                 <span className="bg-accent inline-flex h-9 max-w-full items-center gap-1 rounded-md border pr-1 pl-3 text-sm">
                     <Building2 className="text-muted-foreground size-4 shrink-0" aria-hidden />
                     <span className="truncate">{filters.company.name}</span>
-                    <Button variant="ghost" size="icon" className="size-7" aria-label={`Stop filtering by ${filters.company.name}`} onClick={() => update({ company: undefined, page: 1 })}>
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="size-7"
+                        aria-label={`Stop filtering by ${filters.company.name}`}
+                        onClick={() => update({ company: undefined, page: 1 })}
+                    >
                         <X className="size-4" />
                     </Button>
                 </span>
@@ -122,13 +128,32 @@ function PaymentFilters({ filters, methods }: Pick<PaymentIndexProps, 'filters' 
             )}
 
             <div className="flex items-center gap-2">
-                <Input type="date" value={filters.from ?? ''} max={filters.to ?? undefined} onChange={(event) => update({ from: event.target.value || undefined, page: 1 })} aria-label="Received from" className="h-9 w-full sm:w-38" />
+                <Input
+                    type="date"
+                    value={filters.from ?? ''}
+                    max={filters.to ?? undefined}
+                    onChange={(event) => update({ from: event.target.value || undefined, page: 1 })}
+                    aria-label="Received from"
+                    className="h-9 w-full sm:w-38"
+                />
                 <span className="text-muted-foreground text-sm">to</span>
-                <Input type="date" value={filters.to ?? ''} min={filters.from ?? undefined} onChange={(event) => update({ to: event.target.value || undefined, page: 1 })} aria-label="Received to" className="h-9 w-full sm:w-38" />
+                <Input
+                    type="date"
+                    value={filters.to ?? ''}
+                    min={filters.from ?? undefined}
+                    onChange={(event) => update({ to: event.target.value || undefined, page: 1 })}
+                    aria-label="Received to"
+                    className="h-9 w-full sm:w-38"
+                />
             </div>
 
             {active && (
-                <Button variant="ghost" size="sm" className="h-9 self-start sm:self-auto" onClick={() => update({ method: undefined, company: undefined, from: undefined, to: undefined, page: 1 })}>
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-9 self-start sm:self-auto"
+                    onClick={() => update({ method: undefined, company: undefined, from: undefined, to: undefined, page: 1 })}
+                >
                     <X />
                     Clear filters
                 </Button>
@@ -182,7 +207,12 @@ export default function PaymentIndex({ payments, filters, totals, methods, manua
                     onRowClick={(row) => router.visit(route('admin.billing.payments.show', row.id))}
                     empty={
                         filtered ? (
-                            <EmptyState icon={SearchX} title="No payments match" body="Try a different search, method, business or date range." tone="neutral" />
+                            <EmptyState
+                                icon={SearchX}
+                                title="No payments match"
+                                body="Try a different search, method, business or date range."
+                                tone="neutral"
+                            />
                         ) : (
                             <EmptyState
                                 icon={Banknote}
@@ -204,7 +234,7 @@ export default function PaymentIndex({ payments, filters, totals, methods, manua
                 {totals.count > 0 && (
                     <Card className="flex flex-col gap-2 px-5 py-3 text-sm sm:flex-row sm:items-center sm:justify-between">
                         <span className="text-muted-foreground">
-                            {number.format(totals.count)} {totals.count === 1 ? 'payment' : 'payments'}
+                            {formatNumber(totals.count)} {totals.count === 1 ? 'payment' : 'payments'}
                             {filtered ? ' matching the filters' : ''}
                         </span>
                         <span>
@@ -226,7 +256,14 @@ export default function PaymentIndex({ payments, filters, totals, methods, manua
                 }}
             />
 
-            {paying && <RecordPaymentDialog open={paying !== null} onOpenChange={(open) => !open && setPaying(null)} company={paying} methods={manualMethods} />}
+            {paying && (
+                <RecordPaymentDialog
+                    open={paying !== null}
+                    onOpenChange={(open) => !open && setPaying(null)}
+                    company={paying}
+                    methods={manualMethods}
+                />
+            )}
         </AdminLayout>
     );
 }

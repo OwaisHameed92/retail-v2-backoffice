@@ -1,22 +1,23 @@
-import { FilterSelect } from '@/components/app/setup/fields';
 import { changedAtLabel, difference, formatDateTime, pounds } from '@/components/app/pricing/format';
 import { PricingTabs } from '@/components/app/pricing/pricing-tabs';
 import { type PriceIndexProps, type PriceListRow } from '@/components/app/pricing/types';
+import { FilterSelect } from '@/components/app/setup/fields';
 import { DataTable, useTableQuery } from '@/components/shared/data-table';
 import { EmptyState } from '@/components/shared/empty-state';
 import { EntityCell } from '@/components/shared/entity-cell';
+import { MoneyIcon } from '@/components/shared/money-icon';
 import { PageHeader } from '@/components/shared/page-header';
 import { StatCard, StatGrid } from '@/components/shared/stat-card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import AppLayout from '@/layouts/app-layout';
+import { formatNumber } from '@/lib/country';
 import { Head, router } from '@inertiajs/react';
 import { type ColumnDef } from '@tanstack/react-table';
-import { CalendarClock, Info, Package, PoundSterling, Store, Tags } from 'lucide-react';
+import { CalendarClock, Info, Package, Store, Tags } from 'lucide-react';
 import { useMemo } from 'react';
 
 const ONLY = ['products', 'filters', 'counts'];
-const number = new Intl.NumberFormat('en-GB');
 
 export default function PricesIndex({ products, shops, filters, departments, counts, restrictedShop }: PriceIndexProps) {
     const { update } = useTableQuery({ only: ONLY });
@@ -28,7 +29,16 @@ export default function PricesIndex({ products, shops, filters, departments, cou
                 id: 'name',
                 header: 'Product',
                 enableSorting: true,
-                cell: ({ row }) => <EntityCell name={row.original.name} subline={row.original.sku ?? undefined} monoSubline shape="square" icon={Package} className="max-w-72" />,
+                cell: ({ row }) => (
+                    <EntityCell
+                        name={row.original.name}
+                        subline={row.original.sku ?? undefined}
+                        monoSubline
+                        shape="square"
+                        icon={Package}
+                        className="max-w-72"
+                    />
+                ),
             },
             {
                 id: 'sell_price',
@@ -47,7 +57,10 @@ export default function PricesIndex({ products, shops, filters, departments, cou
                     }
                     const diff = difference(cell.price, row.original.sellPrice);
                     return (
-                        <div className="grid leading-5" title={`Set by ${changedAtLabel(cell.changedAt).toLowerCase()}${cell.validTo ? `, until ${formatDateTime(cell.validTo)}` : ''}`}>
+                        <div
+                            className="grid leading-5"
+                            title={`Set by ${changedAtLabel(cell.changedAt).toLowerCase()}${cell.validTo ? `, until ${formatDateTime(cell.validTo)}` : ''}`}
+                        >
                             <span className="font-medium tabular-nums">{pounds(cell.price)}</span>
                             <span className="text-muted-foreground text-xs">
                                 {diff ?? 'Same'} · {changedAtLabel(cell.changedAt)}
@@ -84,15 +97,17 @@ export default function PricesIndex({ products, shops, filters, departments, cou
             {restrictedShop !== null && (
                 <Alert variant="info">
                     <Info />
-                    <AlertDescription>You see your own shop. You can set its prices; the business price is shared by every shop, so it is read-only here.</AlertDescription>
+                    <AlertDescription>
+                        You see your own shop. You can set its prices; the business price is shared by every shop, so it is read-only here.
+                    </AlertDescription>
                 </Alert>
             )}
 
             <StatGrid columns={4}>
-                <StatCard label="Products on sale" value={number.format(counts.products)} icon={Package} tone="neutral" />
-                <StatCard label="With a shop price" value={number.format(counts.withOwnPrice)} hint="Live now" icon={Store} tone="primary" />
-                <StatCard label="Shop prices live" value={number.format(counts.livePrices)} icon={PoundSterling} tone="success" />
-                <StatCard label="Scheduled" value={number.format(counts.scheduled)} hint="Start later" icon={CalendarClock} tone="neutral" />
+                <StatCard label="Products on sale" value={formatNumber(counts.products)} icon={Package} tone="neutral" />
+                <StatCard label="With a shop price" value={formatNumber(counts.withOwnPrice)} hint="Live now" icon={Store} tone="primary" />
+                <StatCard label="Shop prices live" value={formatNumber(counts.livePrices)} icon={MoneyIcon} tone="success" />
+                <StatCard label="Scheduled" value={formatNumber(counts.scheduled)} hint="Start later" icon={CalendarClock} tone="neutral" />
             </StatGrid>
 
             <DataTable

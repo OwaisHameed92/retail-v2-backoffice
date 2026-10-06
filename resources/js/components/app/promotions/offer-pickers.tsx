@@ -1,7 +1,8 @@
-import { MoneyInput, NumberField } from '@/components/app/products/fields';
 import { type Option, type PriceTierValues } from '@/components/app/pricing/types';
+import { MoneyInput, NumberField } from '@/components/app/products/fields';
 import { Button } from '@/components/ui/button';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { formatMoneyWhole } from '@/lib/country';
 import { cn } from '@/lib/utils';
 import { Plus, Trash2 } from 'lucide-react';
 
@@ -10,8 +11,12 @@ export const TYPE_HELP: Record<string, string> = {
     percentOff: 'A percentage off each item.',
     fixedOff: 'An amount off each item.',
     fixedPrice: 'The item sells at this price.',
-    multiBuy: 'A number of the same item for one price, e.g. 3 for £2.',
-    quantityPrice: 'Several prices by quantity, e.g. 2 for £5, 3 for £7.',
+    get multiBuy() {
+        return `A number of the same item for one price, e.g. 3 for ${formatMoneyWhole(2)}.`;
+    },
+    get quantityPrice() {
+        return `Several prices by quantity, e.g. 2 for ${formatMoneyWhole(5)}, 3 for ${formatMoneyWhole(7)}.`;
+    },
     bogof: 'Buy some, get some free.',
     buyGet: 'Buy some, get more at a discount.',
     mixMatch: 'Any of the chosen items, a number for one price.',
@@ -19,9 +24,24 @@ export const TYPE_HELP: Record<string, string> = {
 };
 
 /** The offer types as cards: choosing one shows only the fields that type uses. */
-export function TypePicker({ value, options, onChange, invalid }: { value: string; options: Option[]; onChange: (value: string) => void; invalid?: boolean }) {
+export function TypePicker({
+    value,
+    options,
+    onChange,
+    invalid,
+}: {
+    value: string;
+    options: Option[];
+    onChange: (value: string) => void;
+    invalid?: boolean;
+}) {
     return (
-        <div role="radiogroup" aria-label="Type of offer" aria-invalid={invalid || undefined} className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+        <div
+            role="radiogroup"
+            aria-label="Type of offer"
+            aria-invalid={invalid || undefined}
+            className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3"
+        >
             {options.map((option) => {
                 const selected = option.value === value;
 
@@ -47,7 +67,17 @@ export function TypePicker({ value, options, onChange, invalid }: { value: strin
 }
 
 /** quantityPrice tiers: quantity → total price incl. VAT, smallest quantity first. */
-export function PriceTiersEditor({ tiers, onChange, error, disabled }: { tiers: PriceTierValues[]; onChange: (tiers: PriceTierValues[]) => void; error?: string; disabled: boolean }) {
+export function PriceTiersEditor({
+    tiers,
+    onChange,
+    error,
+    disabled,
+}: {
+    tiers: PriceTierValues[];
+    onChange: (tiers: PriceTierValues[]) => void;
+    error?: string;
+    disabled: boolean;
+}) {
     const update = (index: number, patch: Partial<PriceTierValues>) => onChange(tiers.map((tier, i) => (i === index ? { ...tier, ...patch } : tier)));
     const next = () => {
         const last = Number(tiers[tiers.length - 1]?.quantity ?? 1);
@@ -58,8 +88,8 @@ export function PriceTiersEditor({ tiers, onChange, error, disabled }: { tiers: 
     return (
         <div className="grid gap-3">
             <p className="text-muted-foreground text-sm">
-                Each tier is a quantity and the total price for that many, including VAT. The till picks the tiers that save the customer most; any left over sell at
-                the shelf price.
+                Each tier is a quantity and the total price for that many, including VAT. The till picks the tiers that save the customer most; any
+                left over sell at the shelf price.
             </p>
             {error && (
                 <p id="price_tiers-error" className="text-destructive text-sm">
@@ -79,15 +109,33 @@ export function PriceTiersEditor({ tiers, onChange, error, disabled }: { tiers: 
                             onChange={(e) => update(i, { quantity: e.target.value })}
                         />
                         <span className="text-muted-foreground text-sm">for</span>
-                        <MoneyInput id={`price_tiers-${i}-price`} aria-label={`Tier ${i + 1} price`} value={tier.price} invalid={!!error} onChange={(e) => update(i, { price: e.target.value })} />
-                        <Button type="button" variant="ghost" size="icon" disabled={disabled} aria-label={`Remove tier ${i + 1}`} onClick={() => onChange(tiers.filter((_, x) => x !== i))}>
+                        <MoneyInput
+                            id={`price_tiers-${i}-price`}
+                            aria-label={`Tier ${i + 1} price`}
+                            value={tier.price}
+                            invalid={!!error}
+                            onChange={(e) => update(i, { price: e.target.value })}
+                        />
+                        <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            disabled={disabled}
+                            aria-label={`Remove tier ${i + 1}`}
+                            onClick={() => onChange(tiers.filter((_, x) => x !== i))}
+                        >
                             <Trash2 />
                         </Button>
                     </div>
                 ))}
             </div>
             {!disabled && (
-                <Button type="button" variant="outline" className="justify-self-start" onClick={() => onChange([...tiers, { quantity: next(), price: '' }])}>
+                <Button
+                    type="button"
+                    variant="outline"
+                    className="justify-self-start"
+                    onClick={() => onChange([...tiers, { quantity: next(), price: '' }])}
+                >
                     <Plus />
                     Add tier
                 </Button>
@@ -125,7 +173,15 @@ export function DaysPicker({ value, onChange, disabled }: { value: string[]; onC
 
     return (
         <div className="grid gap-2">
-            <ToggleGroup type="multiple" variant="outline" aria-label="Days" value={value} disabled={disabled} onValueChange={(days) => onChange(all.filter((d) => days.includes(d)))} className="flex-wrap justify-start">
+            <ToggleGroup
+                type="multiple"
+                variant="outline"
+                aria-label="Days"
+                value={value}
+                disabled={disabled}
+                onValueChange={(days) => onChange(all.filter((d) => days.includes(d)))}
+                className="flex-wrap justify-start"
+            >
                 {DAYS.map((day) => (
                     <ToggleGroupItem key={day.value} value={day.value} aria-label={day.value} className="min-w-11">
                         {day.label}

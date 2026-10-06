@@ -2,6 +2,7 @@
 
 namespace App\Domain\Promotions\Support;
 
+use App\Domain\Shared\Country\Country;
 use App\Domain\TillData\Enums\PromotionScope;
 use App\Domain\TillData\Enums\PromotionType;
 
@@ -47,7 +48,7 @@ final class PromotionTypes
     {
         return match ($type) {
             PromotionType::PercentOff => '% off',
-            PromotionType::FixedOff => '£ off',
+            PromotionType::FixedOff => app(Country::class)->symbol().' off',
             PromotionType::FixedPrice => 'Fixed price',
             PromotionType::MultiBuy => 'Multi-buy',
             PromotionType::Bogof => 'Buy one get one free',

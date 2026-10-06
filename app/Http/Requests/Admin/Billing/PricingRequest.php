@@ -38,7 +38,7 @@ class PricingRequest extends BillingRequest
      */
     public function messages(): array
     {
-        return ['price_monthly.regex' => self::MONEY_MESSAGE, 'price_yearly.regex' => self::MONEY_MESSAGE];
+        return ['price_monthly.regex' => self::moneyMessage(), 'price_yearly.regex' => self::moneyMessage()];
     }
 
     public function toOverride(): PricingOverride

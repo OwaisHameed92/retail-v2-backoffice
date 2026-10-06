@@ -1,9 +1,10 @@
 import { EveryShopDialog } from '@/components/app/pricing/every-shop-dialog';
-import { changedAtLabel, difference, formatDateTime, PRICE_TONES, pounds } from '@/components/app/pricing/format';
+import { changedAtLabel, difference, formatDateTime, pounds, PRICE_TONES } from '@/components/app/pricing/format';
 import { PriceHistory } from '@/components/app/pricing/price-history';
 import { SetPriceDialog } from '@/components/app/pricing/set-price-dialog';
 import { type ProductPricesProps, type ShopPrices } from '@/components/app/pricing/types';
 import { ConfirmDialog } from '@/components/shared/confirm-dialog';
+import { MoneyIcon } from '@/components/shared/money-icon';
 import { PageHeader } from '@/components/shared/page-header';
 import { RowActions } from '@/components/shared/row-actions';
 import { SectionCard } from '@/components/shared/section-card';
@@ -13,7 +14,7 @@ import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import AppLayout from '@/layouts/app-layout';
 import { Head, Link, router } from '@inertiajs/react';
-import { CalendarX, Globe, Info, Pencil, PoundSterling, Store, Undo2 } from 'lucide-react';
+import { CalendarX, Globe, Info, Pencil, Store, Undo2 } from 'lucide-react';
 import { useState } from 'react';
 
 type Ending = { shop: ShopPrices; unitId: string | null } | null;
@@ -41,7 +42,7 @@ export default function ProductPricesPage(props: ProductPricesProps) {
                             </Button>
                             {canSetShopPrices && (
                                 <Button onClick={() => setSetting({ open: true, shopId: restrictedShop })}>
-                                    <PoundSterling />
+                                    <MoneyIcon />
                                     Set a shop price
                                 </Button>
                             )}
@@ -53,8 +54,8 @@ export default function ProductPricesPage(props: ProductPricesProps) {
                     <Alert variant="info">
                         <Info />
                         <AlertDescription>
-                            You manage one shop: you can set and end its own price. The business price is shared by every shop, so only someone who manages all
-                            shops can change it.
+                            You manage one shop: you can set and end its own price. The business price is shared by every shop, so only someone who
+                            manages all shops can change it.
                         </AlertDescription>
                     </Alert>
                 )}
@@ -101,7 +102,11 @@ export default function ProductPricesPage(props: ProductPricesProps) {
                                         <TableCell className="text-right tabular-nums">
                                             <div className="grid leading-5">
                                                 <span className="font-medium">{pounds(shop.current?.price ?? product.sellPrice)}</span>
-                                                {shop.current && <span className="text-muted-foreground text-xs">{difference(shop.current.price, product.sellPrice) ?? 'Same as business'}</span>}
+                                                {shop.current && (
+                                                    <span className="text-muted-foreground text-xs">
+                                                        {difference(shop.current.price, product.sellPrice) ?? 'Same as business'}
+                                                    </span>
+                                                )}
                                             </div>
                                         </TableCell>
                                         <TableCell className="text-sm">
@@ -134,7 +139,12 @@ export default function ProductPricesPage(props: ProductPricesProps) {
                                                             {s.unit ? ` (${s.unit})` : ''}
                                                         </span>
                                                         {canSetShopPrices && (
-                                                            <Button variant="ghost" size="sm" onClick={() => setCancelling(s.id)} aria-label={`Cancel scheduled price ${pounds(s.price)}`}>
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="sm"
+                                                                onClick={() => setCancelling(s.id)}
+                                                                aria-label={`Cancel scheduled price ${pounds(s.price)}`}
+                                                            >
                                                                 <CalendarX />
                                                             </Button>
                                                         )}
@@ -147,12 +157,34 @@ export default function ProductPricesPage(props: ProductPricesProps) {
                                                 <RowActions
                                                     label={`Actions for ${shop.name}`}
                                                     actions={[
-                                                        { label: 'Set price', icon: Pencil, onSelect: () => setSetting({ open: true, shopId: shop.id }) },
-                                                        ...(shop.current ? [{ label: 'Back to business price', icon: Undo2, onSelect: () => setEnding({ shop, unitId: null }) }] : []),
-                                                        ...(shop.current && canSetEveryShop
-                                                            ? [{ label: 'Use for every shop…', icon: Globe, onSelect: () => setEvery({ open: true, preselect: [shop.id] }) }]
+                                                        {
+                                                            label: 'Set price',
+                                                            icon: Pencil,
+                                                            onSelect: () => setSetting({ open: true, shopId: shop.id }),
+                                                        },
+                                                        ...(shop.current
+                                                            ? [
+                                                                  {
+                                                                      label: 'Back to business price',
+                                                                      icon: Undo2,
+                                                                      onSelect: () => setEnding({ shop, unitId: null }),
+                                                                  },
+                                                              ]
                                                             : []),
-                                                        ...shop.unitPrices.map((u) => ({ label: `End ${u.unit} price`, icon: Undo2, onSelect: () => setEnding({ shop, unitId: u.unitId }) })),
+                                                        ...(shop.current && canSetEveryShop
+                                                            ? [
+                                                                  {
+                                                                      label: 'Use for every shop…',
+                                                                      icon: Globe,
+                                                                      onSelect: () => setEvery({ open: true, preselect: [shop.id] }),
+                                                                  },
+                                                              ]
+                                                            : []),
+                                                        ...shop.unitPrices.map((u) => ({
+                                                            label: `End ${u.unit} price`,
+                                                            icon: Undo2,
+                                                            onSelect: () => setEnding({ shop, unitId: u.unitId }),
+                                                        })),
                                                     ]}
                                                 />
                                             )}
@@ -213,7 +245,11 @@ export default function ProductPricesPage(props: ProductPricesProps) {
                 destructive
                 onConfirm={() =>
                     new Promise((resolve) =>
-                        router.post(route('app.prices.rows.cancel', cancelling ?? ''), {}, { preserveScroll: true, onFinish: () => resolve(setCancelling(null)) }),
+                        router.post(
+                            route('app.prices.rows.cancel', cancelling ?? ''),
+                            {},
+                            { preserveScroll: true, onFinish: () => resolve(setCancelling(null)) },
+                        ),
                     )
                 }
             />

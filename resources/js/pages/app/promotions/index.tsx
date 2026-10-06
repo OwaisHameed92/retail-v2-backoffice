@@ -1,6 +1,6 @@
-import { FilterSelect } from '@/components/app/setup/fields';
 import { formatDay, OFFER_TONES } from '@/components/app/pricing/format';
 import { type PromotionIndexProps, type PromotionRow } from '@/components/app/pricing/types';
+import { FilterSelect } from '@/components/app/setup/fields';
 import { ConfirmDialog } from '@/components/shared/confirm-dialog';
 import { DataTable, useTableQuery } from '@/components/shared/data-table';
 import { EmptyState } from '@/components/shared/empty-state';
@@ -12,13 +12,13 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/app-layout';
+import { formatNumber } from '@/lib/country';
 import { Head, Link, router } from '@inertiajs/react';
 import { type ColumnDef } from '@tanstack/react-table';
 import { CalendarClock, CircleStop, Eye, Info, Pencil, Plus, Store, Tag, TicketPercent } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
 const ONLY = ['promotions', 'filters', 'counts'];
-const number = new Intl.NumberFormat('en-GB');
 const STATUS_OPTIONS = [
     { value: 'live', label: 'Live now' },
     { value: 'scheduled', label: 'Scheduled' },
@@ -49,7 +49,15 @@ export default function Promotions({ promotions, filters, shops, counts, restric
             {
                 id: 'shop',
                 header: 'Where',
-                cell: ({ row }) => (row.original.branchId === null ? <span>All shops</span> : <span className="inline-flex items-center gap-1.5"><Store className="size-3.5" aria-hidden />{row.original.shop}</span>),
+                cell: ({ row }) =>
+                    row.original.branchId === null ? (
+                        <span>All shops</span>
+                    ) : (
+                        <span className="inline-flex items-center gap-1.5">
+                            <Store className="size-3.5" aria-hidden />
+                            {row.original.shop}
+                        </span>
+                    ),
             },
             {
                 id: 'effective_from',
@@ -64,7 +72,13 @@ export default function Promotions({ promotions, filters, shops, counts, restric
                     </div>
                 ),
             },
-            { id: 'status', header: 'Status', cell: ({ row }) => <StatusBadge status={row.original.status} tones={OFFER_TONES} label={row.original.status === 'live' ? 'Live' : undefined} /> },
+            {
+                id: 'status',
+                header: 'Status',
+                cell: ({ row }) => (
+                    <StatusBadge status={row.original.status} tones={OFFER_TONES} label={row.original.status === 'live' ? 'Live' : undefined} />
+                ),
+            },
             {
                 id: 'actions',
                 header: () => <span className="sr-only">Actions</span>,
@@ -72,7 +86,11 @@ export default function Promotions({ promotions, filters, shops, counts, restric
                     <RowActions
                         label={`Actions for ${row.original.name}`}
                         actions={[
-                            { label: row.original.canEdit ? 'Edit' : 'View', icon: row.original.canEdit ? Pencil : Eye, href: route('app.promotions.edit', row.original.id) },
+                            {
+                                label: row.original.canEdit ? 'Edit' : 'View',
+                                icon: row.original.canEdit ? Pencil : Eye,
+                                href: route('app.promotions.edit', row.original.id),
+                            },
                             ...(row.original.canEdit && row.original.status !== 'ended'
                                 ? [{ label: 'End now', icon: CircleStop, destructive: true, onSelect: () => setEnding(row.original) }]
                                 : []),
@@ -97,20 +115,26 @@ export default function Promotions({ promotions, filters, shops, counts, restric
     return (
         <AppLayout>
             <Head title="Promotions" />
-            <PageHeader title="Promotions" description="Offers and standing discounts. Each till runs every-shop offers and its own shop's." actions={add} />
+            <PageHeader
+                title="Promotions"
+                description="Offers and standing discounts. Each till runs every-shop offers and its own shop's."
+                actions={add}
+            />
 
             {restrictedShop !== null && (
                 <Alert variant="info">
                     <Info />
-                    <AlertDescription>You can add and change offers for your own shop. Offers for every shop are shown but read-only.</AlertDescription>
+                    <AlertDescription>
+                        You can add and change offers for your own shop. Offers for every shop are shown but read-only.
+                    </AlertDescription>
                 </Alert>
             )}
 
             <StatGrid columns={4}>
-                <StatCard label="Live now" value={number.format(counts.live)} icon={TicketPercent} tone="success" />
-                <StatCard label="Scheduled" value={number.format(counts.scheduled)} icon={CalendarClock} tone="neutral" />
-                <StatCard label="Shop-only live" value={number.format(counts.shopOnly)} hint="One shop's own offers" icon={Store} tone="primary" />
-                <StatCard label="Ended" value={number.format(counts.ended)} icon={CircleStop} tone="neutral" />
+                <StatCard label="Live now" value={formatNumber(counts.live)} icon={TicketPercent} tone="success" />
+                <StatCard label="Scheduled" value={formatNumber(counts.scheduled)} icon={CalendarClock} tone="neutral" />
+                <StatCard label="Shop-only live" value={formatNumber(counts.shopOnly)} hint="One shop's own offers" icon={Store} tone="primary" />
+                <StatCard label="Ended" value={formatNumber(counts.ended)} icon={CircleStop} tone="neutral" />
             </StatGrid>
 
             <DataTable
@@ -121,7 +145,13 @@ export default function Promotions({ promotions, filters, shops, counts, restric
                 searchPlaceholder="Search by name or coupon code"
                 filters={
                     <>
-                        <FilterSelect value={filters.status === 'all' ? null : filters.status} onChange={(status) => update({ status, page: 1 })} all="Any status" options={STATUS_OPTIONS} label="Filter by status" />
+                        <FilterSelect
+                            value={filters.status === 'all' ? null : filters.status}
+                            onChange={(status) => update({ status, page: 1 })}
+                            all="Any status"
+                            options={STATUS_OPTIONS}
+                            label="Filter by status"
+                        />
                         <FilterSelect
                             value={filters.shop === 'all' ? null : filters.shop}
                             onChange={(shop) => update({ shop, page: 1 })}
@@ -133,7 +163,16 @@ export default function Promotions({ promotions, filters, shops, counts, restric
                 }
                 getRowId={(row) => row.id}
                 onRowClick={(row) => router.visit(route('app.promotions.edit', row.id))}
-                empty={filtered ? undefined : <EmptyState icon={Tag} title="No offers yet" body="Add a % off, multi-buy or meal deal. Offers made at a till appear here after it syncs." action={add} />}
+                empty={
+                    filtered ? undefined : (
+                        <EmptyState
+                            icon={Tag}
+                            title="No offers yet"
+                            body="Add a % off, multi-buy or meal deal. Offers made at a till appear here after it syncs."
+                            action={add}
+                        />
+                    )
+                }
             />
 
             <ConfirmDialog
@@ -145,7 +184,11 @@ export default function Promotions({ promotions, filters, shops, counts, restric
                 destructive
                 onConfirm={() =>
                     new Promise((resolve) =>
-                        router.post(route('app.promotions.end', ending?.id ?? ''), {}, { preserveScroll: true, onFinish: () => resolve(setEnding(null)) }),
+                        router.post(
+                            route('app.promotions.end', ending?.id ?? ''),
+                            {},
+                            { preserveScroll: true, onFinish: () => resolve(setEnding(null)) },
+                        ),
                     )
                 }
             />

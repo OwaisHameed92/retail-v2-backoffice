@@ -12,7 +12,7 @@ namespace App\Domain\Shared\Country;
  * @phpstan-type TaxId array{label: string, pattern: string|null, example: string}
  * @phpstan-type Address array{postcodeLabel: string, postcodeRequired: bool, postcodePattern: string, postcodeExample: string, cityRequired: bool}
  * @phpstan-type Phone array{pattern: string, example: string}
- * @phpstan-type Profile array{name: string, currency: string, currencySymbol: string, currencySymbolSpace: bool, displayDecimals: int, grouping: string, numberLocale: string, dateLocale: string, timezone: string, taxName: string, taxIds: array<string, TaxId>, address: Address, phone: Phone, billing: array{collection: string, manualMethods: list<string>}, features: array<string, bool>}
+ * @phpstan-type Profile array{name: string, currency: string, currencySymbol: string, currencyName: string, currencySymbolSpace: bool, displayDecimals: int, grouping: string, numberLocale: string, dateLocale: string, timezone: string, taxName: string, taxIds: array<string, TaxId>, address: Address, phone: Phone, billing: array{collection: string, manualMethods: list<string>}, features: array<string, bool>}
  */
 final class Country
 {
@@ -73,6 +73,12 @@ final class Country
     public function symbol(): string
     {
         return $this->profile['currencySymbol'];
+    }
+
+    /** The currency in words: "pounds", "rupees". */
+    public function currencyName(): string
+    {
+        return $this->profile['currencyName'];
     }
 
     /** True when a space separates the symbol from the amount ("Rs 1,250"), false for "£1,250.00". */

@@ -2,6 +2,7 @@
 
 namespace App\Domain\Transfers\Queries;
 
+use App\Domain\Shared\Country\MoneyFormat;
 use App\Domain\Shared\Support\Money;
 use App\Domain\Shared\Support\TableQuery;
 use App\Domain\Tenancy\CurrentCompany;
@@ -170,11 +171,9 @@ final class TransferList
         return CarbonImmutable::parse($stored, 'UTC')->toIso8601ZuluString();
     }
 
-    /** "£1,234.50" from a 2 dp money string, without going through a float. */
+    /** "£1,234.50" (GB), "Rs 1,235" (PK) from a 2 dp money string, without going through a float. */
     public static function pounds(string $money): string
     {
-        [$whole, $pence] = explode('.', ltrim($money, '-')) + [1 => '00'];
-
-        return (str_starts_with($money, '-') ? '-' : '').'£'.strrev(implode(',', str_split(strrev($whole), 3))).'.'.$pence;
+        return MoneyFormat::format($money);
     }
 }

@@ -10,12 +10,12 @@ import { StatCard, StatGrid } from '@/components/shared/stat-card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/app-layout';
+import { formatNumber } from '@/lib/country';
 import { Head, Link, router } from '@inertiajs/react';
 import { Info, Newspaper, Plus, Ticket, Truck, Undo2, type LucideIcon } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
 const ONLY = ['rows', 'filters', 'stats', 'tabs'];
-const count = new Intl.NumberFormat('en-GB');
 
 const COPY: Record<NewsKind, { icon: LucideIcon; description: string; search: string; empty: string }> = {
     titles: {
@@ -50,7 +50,7 @@ function statValue(format: string, value: string): string {
         return money(value);
     }
 
-    return format === 'percent' ? percent(value) : count.format(Number(value));
+    return format === 'percent' ? percent(value) : formatNumber(Number(value));
 }
 
 /** Newspapers (module 5.8): titles (edited here), and the shops' deliveries, returns and vouchers (read only). */

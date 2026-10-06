@@ -1,5 +1,5 @@
 import { type StatusToneMap } from '@/components/shared/status-badge';
-import { zonedDateFormat } from '@/lib/country';
+import { dateLocale, zonedDateFormat } from '@/lib/country';
 import { type BusinessType, type LeadSource, type LeadStatus } from './types';
 
 export { formatDate, formatDateTimeShort, plural, toDateInput } from '@/components/admin/tenants/format';
@@ -48,11 +48,11 @@ export const businessTypeLabels: Record<BusinessType, string> = {
 
 const dayKey = (date: Date) => zonedDateFormat('en-CA', { year: 'numeric', month: '2-digit', day: '2-digit' }).format(date);
 
-const timeFormat = () => zonedDateFormat('en-GB', { hour: '2-digit', minute: '2-digit' });
+const timeFormat = () => zonedDateFormat(dateLocale(), { hour: '2-digit', minute: '2-digit' });
 
-const shortDate = () => zonedDateFormat('en-GB', { day: 'numeric', month: 'short' });
+const shortDate = () => zonedDateFormat(dateLocale(), { day: 'numeric', month: 'short' });
 
-const weekday = () => zonedDateFormat('en-GB', { weekday: 'short' });
+const weekday = () => zonedDateFormat(dateLocale(), { weekday: 'short' });
 
 export type FollowUpState = 'overdue' | 'today' | 'upcoming';
 

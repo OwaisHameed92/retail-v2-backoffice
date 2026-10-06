@@ -18,6 +18,8 @@ return [
             'name' => 'United Kingdom',
             'currency' => 'GBP',
             'currencySymbol' => '£',
+            // The currency in words, for text such as "Amounts are in pounds (GBP)" and the AI prompts (phase P2).
+            'currencyName' => 'pounds',
             // "£1,234.50": no space between symbol and amount.
             'currencySymbolSpace' => false,
             'displayDecimals' => 2,
@@ -70,6 +72,7 @@ return [
             'name' => 'Pakistan',
             'currency' => 'PKR',
             'currencySymbol' => 'Rs',
+            'currencyName' => 'rupees',
             // "Rs 1,250".
             'currencySymbolSpace' => true,
             // Owner decision 2026-10-06: whole rupees ("Rs 1,250"; stored values keep 2 decimals) and lakh

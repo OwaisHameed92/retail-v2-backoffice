@@ -7,6 +7,7 @@ use App\Domain\Billing\Models\InvoiceLine;
 use App\Domain\Billing\Support\BillingAccounts;
 use App\Domain\Billing\Support\InvoiceMaths;
 use App\Domain\Shared\Actions\RecordAudit;
+use App\Domain\Shared\Country\MoneyFormat;
 use App\Domain\Shared\Support\Money;
 use App\Domain\Tenancy\Models\Company;
 use Illuminate\Support\Facades\DB;
@@ -87,7 +88,7 @@ class UpdateDraftInvoice
             $totals = InvoiceMaths::totals($amounts);
 
             if (Money::isNegative($totals['total'])) {
-                throw ValidationException::withMessages(['lines' => 'Discount lines cannot take the invoice total below £0.00.']);
+                throw ValidationException::withMessages(['lines' => 'Discount lines cannot take the invoice total below '.MoneyFormat::format('0').'.']);
             }
 
             $notes = trim((string) $notes);

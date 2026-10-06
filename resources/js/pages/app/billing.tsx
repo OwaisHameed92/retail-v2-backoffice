@@ -7,15 +7,17 @@ import { PaymentsCard, SetupFeeCard, SubscriptionCard } from '@/components/app/b
 import { type BillingRequestKind, type PortalBillingProps } from '@/components/app/billing/types';
 import { BillingStatusCard } from '@/components/shared/billing-status-card';
 import { EmptyState } from '@/components/shared/empty-state';
+import { MoneyIcon } from '@/components/shared/money-icon';
 import { PageHeader } from '@/components/shared/page-header';
 import { SectionCard } from '@/components/shared/section-card';
 import { StatCard, StatGrid } from '@/components/shared/stat-card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import AppLayout from '@/layouts/app-layout';
+import { formatMoney } from '@/lib/country';
 import { type BreadcrumbItem } from '@/types';
 import { Head, router } from '@inertiajs/react';
-import { CalendarClock, Download, FileText, Landmark, PoundSterling, Receipt, Tags } from 'lucide-react';
+import { CalendarClock, Download, FileText, Landmark, Receipt, Tags } from 'lucide-react';
 import { useState } from 'react';
 
 const breadcrumbs: BreadcrumbItem[] = [{ title: 'My subscription', href: '/app/billing' }];
@@ -59,18 +61,18 @@ export default function Billing(props: PortalBillingProps) {
                 />
                 <StatCard
                     label={pricing.cycle === 'yearly' ? 'Each year' : 'Each month'}
-                    value={pricing.isZero ? '£0.00' : pricing.gross}
+                    value={pricing.isZero ? formatMoney(0) : pricing.gross}
                     hint={
                         pricing.isZero
                             ? 'Nothing to pay each cycle'
                             : `${pricing.unitsLabel}${pricing.vatApplies ? `, incl. ${pricing.vat} VAT` : ''}`
                     }
-                    icon={PoundSterling}
+                    icon={MoneyIcon}
                     tone="success"
                 />
                 <StatCard
                     label="Setup fee"
-                    value={upfront.status === 'none' ? (upfront.recorded ? (upfront.amount ?? '£0.00') : '—') : upfront.total}
+                    value={upfront.status === 'none' ? (upfront.recorded ? (upfront.amount ?? formatMoney(0)) : '—') : upfront.total}
                     hint={
                         upfront.status === 'paid'
                             ? `Paid${upfront.method ? ` by ${upfront.method.toLowerCase()}` : ''}${upfront.recordedAt ? ` · ${formatDate(upfront.recordedAt)}` : ''}`

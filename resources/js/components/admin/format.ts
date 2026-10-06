@@ -1,7 +1,7 @@
-import { zonedDateFormat } from '@/lib/country';
+import { dateLocale, zonedDateFormat } from '@/lib/country';
 
 const dateTimeFormat = () =>
-    zonedDateFormat('en-GB', {
+    zonedDateFormat(dateLocale(), {
         day: 'numeric',
         month: 'short',
         year: 'numeric',

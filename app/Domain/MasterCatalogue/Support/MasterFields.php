@@ -2,6 +2,7 @@
 
 namespace App\Domain\MasterCatalogue\Support;
 
+use App\Domain\Shared\Country\Country;
 use App\Domain\TillData\Enums\AgeRule;
 
 /**
@@ -51,7 +52,7 @@ final class MasterFields
                 continue;
             }
 
-            $raw = str_replace(['£', '%', ','], '', trim((string) $input[$key]));
+            $raw = str_replace([app(Country::class)->symbol(), '%', ','], '', trim((string) $input[$key]));
             $values[$key] = null;
 
             if ($raw !== '' && (! is_numeric($raw) || (float) $raw < $min || (float) $raw > $max)) {
