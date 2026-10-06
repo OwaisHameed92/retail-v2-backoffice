@@ -155,6 +155,15 @@ export function wideCurrencySymbol(): boolean {
     return current.currencySymbol.length > 1;
 }
 
+/**
+ * The browser check on typed money (an `<input pattern>`). GB keeps the exact rule it always had (up to £99,999.99,
+ * digits and a point only). Other currencies (PKR) allow larger amounts typed with grouping commas, "1,00,000" or
+ * "100,000.00": the server strips the symbol and commas and checks up to 9 digits (BillingRequest::LARGE_MONEY_PATTERN).
+ */
+export function moneyInputPattern(): string {
+    return keepsUkStyles() ? '^\\d{1,5}(\\.\\d{1,2})?$' : '^\\d[\\d,]{0,12}(\\.\\d{1,2})?$';
+}
+
 /** The currency in words for text: "pounds" (GB), "rupees" (PK). */
 export function currencyName(): string {
     return ({ GBP: 'pounds', PKR: 'rupees' } as Record<string, string>)[current.currency] ?? current.currency;
