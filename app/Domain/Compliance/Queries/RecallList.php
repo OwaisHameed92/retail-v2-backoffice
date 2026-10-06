@@ -4,9 +4,9 @@ namespace App\Domain\Compliance\Queries;
 
 use App\Domain\Compliance\Data\ComplianceFilters;
 use App\Domain\Compliance\Support\ComplianceLookup as L;
+use App\Domain\Compliance\Support\RecallShops;
 use App\Domain\Shared\Support\Money;
 use App\Domain\Shared\Support\TableQuery;
-use App\Domain\TillData\Enums\ProductRecallStatus;
 use App\Domain\TillData\Enums\StockMovementType;
 use App\Domain\TillData\Models\BranchProduct;
 use App\Domain\TillData\Models\Product;
@@ -20,10 +20,11 @@ use Illuminate\Support\Collection;
 
 /**
  * Product recalls (module 5.7): hub-owned rows the portal raises and every till applies. The list (open first,
- * newest raised first) and one recall with the stock it touches in each shop: on hand of the product, and what is
- * left of deliveries whose batch number or best-before date matches (`StockLayer`), when the tills track them, and
- * what each shop sent back: its till's `supplierReturn` stock movements for the recall (`refType` "Recall", `refId` the
- * recall's id), never the row's `returnedQty`, which is one till's own count (ANSWERS-2026-10-06 Q3).
+ * newest raised first) and one recall with its state in each shop and the stock it touches there. State: each shop's
+ * own close / reopen (`ProductRecallBranchState`, till 0.1.52; no row = open there, RecallShops), never the company
+ * row's `status`. Stock: on hand of the product, and what is left of deliveries whose batch number or best-before date
+ * matches (`StockLayer`), when the tills track them. Returned: each shop's till `supplierReturn` stock movements for the
+ * recall (`refType` "Recall", `refId` the recall's id), never the row's `returnedQty` (ANSWERS-2026-10-06 Q3).
  */
 final class RecallList
 {
@@ -34,22 +35,28 @@ final class RecallList
     {
         $table = TableQuery::from($request)->searchable(['reference', 'product_name', 'batch_code', 'reason'])
             ->sortable(['raised_at', 'reference'])->defaultSort('raised_at', 'desc')->defaultPerPage(25);
-        $query = ProductRecall::query()
-            ->when($f->status === 'open' || $f->status === 'closed', fn (Builder $q) => $q->where('status', $f->status))
-            ->orderByRaw("case when status = 'open' then 0 else 1 end");
+        $shops = RecallShops::ids($f->shop);
+        $query = RecallShops::openFirst(ProductRecall::query(), $shops)
+            ->when($f->status === 'open' || $f->status === 'closed', fn (Builder $q) => RecallShops::where($q, $shops, $f->status === 'open'));
         $page = $table->paginator($query);
         /** @var list<ProductRecall> $rows */
         $rows = $page->items();
         $onHand = self::onHand($f, array_map(fn (ProductRecall $r) => $r->product_id, $rows));
+        $closed = RecallShops::closed(array_map(fn (ProductRecall $r) => (string) $r->id, $rows), $shops);
 
         return [
             'recalls' => [
-                'data' => array_map(fn (ProductRecall $r) => [...self::row($r), 'onHand' => $r->product_id !== '' ? ($onHand[$r->product_id] ?? '0.0000') : null], $rows),
+                'data' => array_map(fn (ProductRecall $r) => [
+                    ...self::row($r),
+                    ...RecallShops::status($closed[$r->id] ?? 0, count($shops)),
+                    'onHand' => $r->product_id !== '' ? ($onHand[$r->product_id] ?? '0.0000') : null,
+                ], $rows),
                 'meta' => ['page' => $page->currentPage(), 'perPage' => $page->perPage(), 'total' => $page->total(), 'lastPage' => $page->lastPage(), 'search' => $table->search(), 'sort' => $table->sort(), 'direction' => $table->direction()],
             ],
             'summary' => [
-                'open' => ProductRecall::query()->where('status', ProductRecallStatus::Open->value)->count(),
-                'closed' => ProductRecall::query()->where('status', ProductRecallStatus::Closed->value)->count(),
+                'open' => RecallShops::where(ProductRecall::query(), $shops, true)->count(),
+                'closed' => RecallShops::where(ProductRecall::query(), $shops, false)->count(),
+                'shops' => count($shops),
             ],
         ];
     }
@@ -63,27 +70,27 @@ final class RecallList
             ->groupBy('branch_id')->map(fn ($rows) => Money::sum($rows->pluck('qty_on_hand'), 4));
         $batches = self::batches($r, $f)->groupBy('branch_id')->map(fn ($rows) => ['qty' => Money::sum($rows->pluck('qty_remaining'), 4), 'count' => $rows->count()]);
         $returned = self::returned($r, $f);
-        $ids = $onHand->keys()->merge($batches->keys())->merge($returned->keys())->unique()->values()->all();
-        $shops = L::shops($ids);
+        $ids = $onHand->keys()->merge($batches->keys())->unique()->values()->all();
+        $shops = L::shops([...$ids, ...$returned->keys()->all()]);
         $supplier = $r->supplier_id !== '' ? Supplier::query()->withTrashed()->find($r->supplier_id, ['id', 'name']) : null;
+        $counted = RecallShops::ids($f->shop);
 
         return [
             'recall' => [
                 ...self::row($r),
+                ...RecallShops::status(RecallShops::closed([(string) $r->id], $counted)[$r->id] ?? 0, count($counted)),
                 'productId' => L::blank($r->product_id),
                 'supplierId' => L::blank($r->supplier_id),
                 'supplier' => $supplier?->name,
                 'returnedQty' => Money::sum($returned->values(), 4),
-                'closedAt' => L::iso($r->closed_at),
-                'note' => L::blank($r->note),
                 'fromPortal' => $r->origin_branch_id === null,
             ],
+            'shops' => RecallShops::states($r, $counted, $returned),
             'stock' => collect($ids)->map(fn (string $id) => [
                 'shop' => L::name($shops, $id) ?? 'Unknown shop',
                 'onHand' => $onHand[$id] ?? null,
                 'batchQty' => $batches[$id]['qty'] ?? null,
                 'batches' => $batches[$id]['count'] ?? 0,
-                'returned' => $returned[$id] ?? null,
             ])->sortBy('shop')->values()->all(),
             'matchesBatches' => $r->batch_code !== '' || $r->expiry_from !== null || $r->expiry_to !== null,
         ];

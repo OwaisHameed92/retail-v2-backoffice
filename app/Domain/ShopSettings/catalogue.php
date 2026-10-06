@@ -147,6 +147,8 @@ return [
             'customers.reminders_quiet_until' => ['label' => 'No reminders before', 'type' => 'time', 'default' => '08:00', 'everyShopOnly' => true, 'help' => 'Shop time.'],
             'customers.reminders_repeat' => ['label' => 'Repeat a reminder', 'type' => 'choice', 'options' => ['Never', '1 day', '3 days', '7 days'], 'default' => 'Never', 'everyShopOnly' => true, 'help' => 'How long after a reminder to send another while the money is still owed.'],
             'customers.reminders_message' => ['label' => 'Reminder message', 'type' => 'multiline', 'max' => 500, 'default' => 'Hi {name}, a reminder that {amount} on your account is due {when}. Thank you — {shop}', 'everyShopOnly' => true, 'help' => 'Use {name}, {amount}, {when} and {shop}: the till fills them in.'],
+            // Till 0.1.52 (UPCOMING-CHANGES 2026-10-06). customers.reminders_from_utc is the till's own (local only).
+            'customers.reminders_due_on_till' => ['label' => 'Due today on the till', 'type' => 'bool', 'default' => 'false', 'everyShopOnly' => true, 'help' => 'Adds a Due today button to the till\'s customer list: the accounts whose pay date is today.'],
         ],
     ],
     'labels' => [

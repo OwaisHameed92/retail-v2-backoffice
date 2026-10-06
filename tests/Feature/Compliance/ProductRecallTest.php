@@ -2,9 +2,12 @@
 
 use App\Domain\Compliance\Actions\SaveProductRecall;
 use App\Domain\Shared\Models\AuditLog;
+use App\Domain\Tenancy\CurrentCompany;
 use App\Domain\Tenancy\Enums\CompanyRole;
 use App\Domain\TillData\Enums\ProductRecallStatus;
+use App\Domain\TillData\Exceptions\ReadOnlyTillRow;
 use App\Domain\TillData\Models\ProductRecall;
+use App\Domain\TillData\Models\ProductRecallBranchState;
 use Illuminate\Support\Facades\DB;
 use Tests\Feature\Cash\CashFixtures as C;
 use Tests\Feature\Sync\PullTestHelpers as Pull;
@@ -13,8 +16,9 @@ use Tests\Feature\TillData\TillFixtures;
 
 /*
  * Module 5.7: product recalls are hub-owned (ownership.json): raised and their text edited on the portal and pulled by
- * every shop's tills, schema-valid; closing, reopening, returns and the note are the tills' (ANSWERS-2026-10-06 Q3).
- * The recall page shows the stock it touches and what each shop returned.
+ * every shop's tills, schema-valid; closing, reopening, returns and the note are the tills' (ANSWERS-2026-10-06 Q3),
+ * per shop from till 0.1.52 (ProductRecallBranchState, no row = open there). The recall page shows each shop's state,
+ * the stock it touches and what each shop returned.
  */
 
 beforeEach(function () {
@@ -26,7 +30,7 @@ beforeEach(function () {
     $this->recalls = fn (bool $bradford = false) => collect(Pull::changes($this->sync->pull(0, bradford: $bradford)))->where('entity', 'ProductRecall')->values();
 });
 
-test('a recall raised on the portal reaches every till\'s pull, schema-valid; an edit sends its text only', function () {
+test('a recall raised on the portal reaches every till\'s pull, schema-valid, without the derived columns; an edit sends its text only', function () {
     // A catalogue product the Leeds till made (the contract sample), so every pulled row is a real one.
     $product = TillFixtures::sample('entities/Product.json');
     $this->sync->push([TillFixtures::envelope('Product', $product, 1)])->assertOk();
@@ -54,8 +58,8 @@ test('a recall raised on the portal reaches every till\'s pull, schema-valid; an
         [$row, $errors] = $schemaErrors($bradford);
         expect($errors)->toBe([])->and($row['op'])->toBe('I')->and($row['payload'])->toMatchArray([
             'productId' => $pie, 'productName' => $name, 'batchCode' => 'L2231', 'expiryFrom' => '2026-10-10',
-            'status' => 'open', 'raisedByUserId' => '', 'rowVersion' => 1, 'returnedQty' => 0, 'note' => '', 'closedAt' => null,
-        ]);
+            'raisedByUserId' => '', 'rowVersion' => 1,
+        ])->and($row['payload'])->not->toHaveKeys(['status', 'closedAt', 'closedByUserId', 'note', 'returnedQty']); // till 0.1.52 derivedColumns
     }
 
     // A till closed it (its push is stored); the portal may still correct the text, and the update leaves the till's
@@ -115,11 +119,57 @@ test('the recall page shows on hand and matching batches per shop', function () 
 
     $p = C::props($this->actingAs($this->owner)->get("/app/compliance/recalls/{$recall->id}?shop=all"));
     expect($p['matchesBatches'])->toBeTrue()
-        ->and(collect($p['stock'])->keyBy('shop')->map(fn ($s) => [$s['onHand'], $s['batchQty'], $s['batches'], $s['returned']])->all())
-        ->toEqual(['Bradford' => ['4.0000', null, 0, null], 'Leeds Kirkgate' => ['10.0000', '6.0000', 1, '6.0000']])
+        ->and(collect($p['stock'])->keyBy('shop')->map(fn ($s) => [$s['onHand'], $s['batchQty'], $s['batches']])->all())
+        ->toEqual(['Bradford' => ['4.0000', null, 0], 'Leeds Kirkgate' => ['10.0000', '6.0000', 1]])
+        ->and(collect($p['shops'])->pluck('returned', 'shop')->all())->toEqual(['Bradford' => null, 'Leeds Kirkgate' => '6.0000'])
         ->and($p['recall']['returnedQty'])->toBe('6.0000')
         ->and($p['recall'])->toMatchArray(['product' => 'Steak pie', 'status' => 'open', 'fromPortal' => true]);
 
     expect(C::props($this->actingAs($this->owner)->get('/app/compliance/recalls?shop=all'))['recalls']['data'][0]['onHand'])->toBe('14.0000')
         ->and(C::props($this->actingAs($this->owner)->get('/app/compliance/recalls?q=pie')->assertOk())['recalls']['meta']['total'])->toBe(1);
+});
+
+test('each shop closes a recall for itself (till 0.1.52): open until every shop has closed it; another company\'s rows never count', function () {
+    $recall = app(SaveProductRecall::class)->handle($this->company, null, ['product_name' => 'Steak pie', 'batch_code' => 'L2231', 'reason' => 'Mould']);
+    $state = fn (string $id, string $branch, array $overrides = []) => Pull::payload('ProductRecallBranchState', $id, [
+        'recallId' => $recall->id, 'status' => 'closed', 'closedByUserId' => '', 'closedAt' => '2026-10-15T08:30:00Z',
+        'note' => 'All 6 sent back', 'isOpen' => false, 'branchId' => $branch, 'isDeleted' => false, 'domainEvents' => [], ...$overrides,
+    ]);
+    $list = fn (string $query = 'shop=all') => C::props($this->actingAs($this->owner)->get("/app/compliance/recalls?{$query}")->assertOk());
+    $leeds = $this->sync->leeds->id;
+
+    // Another business's state row naming the same recall and shop is never counted (company scope).
+    $other = new SyncApiFixtures($this, mapTillIds: false);
+    DB::table('product_recall_branch_states')->insert(['id' => '01K5RBS0000000000000000099', 'company_id' => $other->company->id, 'branch_id' => $this->sync->bradford->id,
+        'recall_id' => $recall->id, 'status' => 'closed', 'closed_by_user_id' => '', 'note' => '', 'row_version' => 1]);
+
+    // Leeds closes it at its till: open in 1 of 2 shops; closed when only Leeds is picked.
+    $this->sync->push([TillFixtures::envelope('ProductRecallBranchState', $state('01K5RBS0000000000000000001', TillFixtures::LEEDS), 1)])->assertOk();
+    expect($list()['recalls']['data'][0])->toMatchArray(['status' => 'open', 'openShops' => 1, 'shops' => 2])
+        ->and($list()['summary'])->toBe(['open' => 1, 'closed' => 0, 'shops' => 2])
+        ->and($list("shop={$leeds}")['recalls']['data'][0])->toMatchArray(['status' => 'closed', 'openShops' => 0, 'shops' => 1])
+        ->and($list('shop=all&status=closed')['recalls']['meta']['total'])->toBe(0)
+        ->and($list("shop={$leeds}&status=closed")['recalls']['meta']['total'])->toBe(1);
+
+    $p = C::props($this->actingAs($this->owner)->get("/app/compliance/recalls/{$recall->id}?shop=all")->assertOk());
+    expect($p['recall'])->toMatchArray(['status' => 'open', 'openShops' => 1, 'shops' => 2])->not->toHaveKeys(['closedAt', 'note'])
+        ->and($p['shops'])->toBe([
+            ['shop' => 'Bradford', 'status' => 'open', 'closedAt' => null, 'closedBy' => null, 'note' => null, 'returned' => null],
+            ['shop' => 'Leeds Kirkgate', 'status' => 'closed', 'closedAt' => '2026-10-15T08:30:00Z', 'closedBy' => null, 'note' => 'All 6 sent back', 'returned' => null],
+        ]);
+
+    // The state is the shop's own: stored read only, never sent to another till.
+    expect(collect(Pull::changes($this->sync->pull(0, bradford: true)))->pluck('entity'))->not->toContain('ProductRecallBranchState')
+        ->and(fn () => app(CurrentCompany::class)->runAs($this->company, fn () => ProductRecallBranchState::query()->sole()->forceFill(['note' => 'x'])->save()))
+        ->toThrow(ReadOnlyTillRow::class);
+
+    // Bradford closes it too: closed everywhere, gone from the overview's open recalls; a reopen (a U) opens it again.
+    $this->sync->push([TillFixtures::envelope('ProductRecallBranchState', $state('01K5RBS0000000000000000002', TillFixtures::BRADFORD), 1)], bradford: true)->assertOk();
+    expect($list()['recalls']['data'][0])->toMatchArray(['status' => 'closed', 'openShops' => 0])
+        ->and(C::props($this->actingAs($this->owner)->get('/app/compliance?shop=all'))['figures']['openRecalls'])->toBe(0);
+
+    $reopen = $state('01K5RBS0000000000000000002', TillFixtures::BRADFORD, ['status' => 'open', 'closedAt' => null, 'isOpen' => true, 'rowVersion' => 2, 'updatedAt' => '2026-10-15T09:00:00Z']);
+    $this->sync->push([TillFixtures::envelope('ProductRecallBranchState', $reopen, 2, ['op' => 'U'])], bradford: true)->assertOk();
+    expect($list()['recalls']['data'][0])->toMatchArray(['status' => 'open', 'openShops' => 1])
+        ->and(C::props($this->actingAs($this->owner)->get('/app/compliance?shop=all'))['figures']['openRecalls'])->toBe(1);
 });

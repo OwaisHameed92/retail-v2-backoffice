@@ -41,7 +41,7 @@ test('replays pull-reply.relay.json: Bradford receives Leeds\'s dispatched trans
     $changes = Pull::changes($bradford);
 
     expect(array_column($changes, 'entityId'))->toBe(array_column($this->relay, 'entityId'))
-        ->and(array_column($changes, 'version'))->toBe([1, 2, 3, 4]);
+        ->and(array_column($changes, 'version'))->toBe([1, 2, 3, 4, 5]);
 
     foreach ($changes as $i => $change) {
         expect($change['payload'])->toEqual($this->relay[$i]['payload'])
@@ -54,11 +54,11 @@ test('replays pull-reply.relay.json: Bradford receives Leeds\'s dispatched trans
 
     // The relay sent twice is still one transfer: the same versions again, nothing after them.
     expect(Pull::summary($this->sync->pull(0, bradford: true)))->toBe(Pull::summary($bradford))
-        ->and(Pull::changes($this->sync->pull(4, bradford: true)))->toBe([]);
+        ->and(Pull::changes($this->sync->pull(5, bradford: true)))->toBe([]);
 
     // Leeds's retry is a duplicate: no new version for anyone.
     ($this->leedsPush)($this->relay);
-    expect(Pull::changes($this->sync->pull(4, bradford: true)))->toBe([]);
+    expect(Pull::changes($this->sync->pull(5, bradford: true)))->toBe([]);
 });
 
 test('a transfer is relayed only once dispatched, every line straight after it; never while requested or when cancelled', function () {

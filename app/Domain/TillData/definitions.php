@@ -31,13 +31,13 @@ return [
      * missing columns and indexes. database/till-schema.json records what each release's migrations made (v1.1:
      * the ten 2026_09_27_1100NN group migrations). For the next contract: new name and a later prefix.
      */
-    'release' => ['name' => '0.1.51', 'migrationPrefix' => '2026_11_24_1000'],
+    'release' => ['name' => '0.1.52', 'migrationPrefix' => '2026_11_25_1000'],
 
     /* Entity groups: the order tables are created in. Every schema entity must be in exactly one group. */
     'groups' => [
         'catalogue' => [
             'Department', 'Category', 'Unit', 'VatRate', 'TaxRule', 'Product', 'ProductBarcode', 'ProductAlias',
-            'ProductUnit', 'ProductSupplier', 'ProductRecall', 'PriceHistory', 'ExchangeRate', 'BranchProduct',
+            'ProductUnit', 'ProductSupplier', 'ProductRecall', 'ProductRecallBranchState', 'PriceHistory', 'ExchangeRate', 'BranchProduct',
             'PriceChangeBatch', 'PriceChangeLine', 'ScalePluItem', 'ShelfLabel', 'TopSellerTile', 'HighValueCountItem',
             'MedicineClassification', 'ProductAllergenMatrix', 'BranchPrice',
         ],
@@ -132,6 +132,7 @@ return [
         'PromotionRedemption.type' => 'PromotionType',
         'PromotionRule.type' => 'PromotionType',
         'Account.type' => 'AccountType',
+        'ProductRecallBranchState.status' => 'ProductRecallStatus',
     ],
 
     /*
@@ -279,7 +280,11 @@ return [
         'ProductAlias' => ['parent' => ['Product', 'productId'], 'scope' => 'company'],
         'ProductUnit' => ['parent' => ['Product', 'productId'], 'scope' => 'company'],
         'ProductSupplier' => ['parent' => ['Product', 'productId'], 'scope' => 'company', 'indexes' => [['company_id', 'supplier_id']]],
-        'ProductRecall' => ['derived' => ['isOpen']],
+        // Till 0.1.52: `ProductRecall.isOpen` left the schema; an older till's value is dropped, never kept in `extra`.
+        'ProductRecall' => ['drop' => ['isOpen']],
+        // Till 0.1.52: a recall is company-wide; each shop's own close / reopen is its branch-owned state row (no row
+        // = open in that shop). isOpen is worked out from status.
+        'ProductRecallBranchState' => ['derived' => ['isOpen'], 'indexes' => [['company_id', 'recall_id', 'branch_id']]],
         'PriceHistory' => ['indexes' => [['company_id', 'product_id', 'at']]],
         'BranchProduct' => ['indexes' => [['company_id', 'branch_id', 'product_id']]],
         // A shop's own price (v1.4 §10.5, SHOP-OR-EVERY-SHOP.md): hub-owned, written by the portal and (v1.4.1) by

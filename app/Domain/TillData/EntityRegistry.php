@@ -166,6 +166,7 @@ use App\Domain\TillData\Models\ProductAlias;
 use App\Domain\TillData\Models\ProductAllergenMatrix;
 use App\Domain\TillData\Models\ProductBarcode;
 use App\Domain\TillData\Models\ProductRecall;
+use App\Domain\TillData\Models\ProductRecallBranchState;
 use App\Domain\TillData\Models\ProductSupplier;
 use App\Domain\TillData\Models\ProductUnit;
 use App\Domain\TillData\Models\PromotionCoupon;
@@ -302,6 +303,7 @@ final class EntityRegistry
                 'reminderAttempts' => ['column' => 'reminder_attempts', 'type' => 'int', 'nullable' => false, 'arg' => null],
                 'lastReminderAt' => ['column' => 'last_reminder_at', 'type' => 'datetime', 'nullable' => true, 'arg' => null],
                 'lastReminderError' => ['column' => 'last_reminder_error', 'type' => 'text', 'nullable' => false, 'arg' => null],
+                'reminderSetupKey' => ['column' => 'reminder_setup_key', 'type' => 'string', 'nullable' => false, 'arg' => 255],
                 'branchId' => ['column' => 'branch_id', 'type' => 'string', 'nullable' => false, 'arg' => 26],
             ],
         ],
@@ -2305,8 +2307,8 @@ final class EntityRegistry
             'tenancy' => false,
             'parent' => null,
             'children' => [],
-            'derived' => ['isOpen', 'isDeleted', 'domainEvents'],
-            'dropped' => [],
+            'derived' => ['isDeleted', 'domainEvents'],
+            'dropped' => ['isOpen'],
             'immutable' => null,
             'tillFields' => [],
             'fields' => [
@@ -2327,6 +2329,28 @@ final class EntityRegistry
                 'closedAt' => ['column' => 'closed_at', 'type' => 'datetime', 'nullable' => true, 'arg' => null],
                 'note' => ['column' => 'note', 'type' => 'text', 'nullable' => false, 'arg' => null],
                 'scope' => ['column' => 'scope', 'type' => 'string', 'nullable' => true, 'arg' => 255],
+            ],
+        ],
+        'ProductRecallBranchState' => [
+            'model' => ProductRecallBranchState::class,
+            'table' => 'product_recall_branch_states',
+            'ownership' => 'branch',
+            'scope' => 'branch',
+            'scopeColumns' => ['branch_id'],
+            'tenancy' => false,
+            'parent' => null,
+            'children' => [],
+            'derived' => ['isOpen', 'isDeleted', 'domainEvents'],
+            'dropped' => [],
+            'immutable' => null,
+            'tillFields' => [],
+            'fields' => [
+                'recallId' => ['column' => 'recall_id', 'type' => 'string', 'nullable' => false, 'arg' => 64],
+                'status' => ['column' => 'status', 'type' => 'enum', 'nullable' => false, 'arg' => ProductRecallStatus::class],
+                'closedByUserId' => ['column' => 'closed_by_user_id', 'type' => 'string', 'nullable' => false, 'arg' => 64],
+                'closedAt' => ['column' => 'closed_at', 'type' => 'datetime', 'nullable' => true, 'arg' => null],
+                'note' => ['column' => 'note', 'type' => 'text', 'nullable' => false, 'arg' => null],
+                'branchId' => ['column' => 'branch_id', 'type' => 'string', 'nullable' => false, 'arg' => 26],
             ],
         ],
         'ProductSupplier' => [

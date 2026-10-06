@@ -1,71 +1,33 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "urn:sspos:web-portal-api:v1:AccountPayDate",
-  "title": "AccountPayDate",
-  "description": "Payload of a AccountPayDate row.",
+  "$id": "urn:sspos:web-portal-api:v1:ProductRecallBranchState",
+  "title": "ProductRecallBranchState",
+  "description": "Payload of a ProductRecallBranchState row.",
   "type": "object",
   "properties": {
-    "customerId": {
+    "recallId": {
       "type": "string"
     },
-    "saleId": {
+    "status": {
+      "enum": [
+        "open",
+        "closed"
+      ]
+    },
+    "closedByUserId": {
       "type": "string"
     },
-    "dueAt": {
-      "type": "string",
+    "closedAt": {
+      "type": [
+        "string",
+        "null"
+      ],
       "format": "date-time"
     },
     "note": {
       "type": "string"
     },
-    "userId": {
-      "type": "string"
-    },
-    "replacedAt": {
-      "type": [
-        "string",
-        "null"
-      ],
-      "format": "date-time"
-    },
-    "reminderSentAt": {
-      "type": [
-        "string",
-        "null"
-      ],
-      "format": "date-time"
-    },
-    "reminderChannel": {
-      "enum": [
-        "none",
-        "whatsApp",
-        "email"
-      ]
-    },
-    "reminderAttempts": {
-      "type": [
-        "string",
-        "integer"
-      ],
-      "pattern": "^-?(?:0|[1-9]\\d*)$"
-    },
-    "lastReminderAt": {
-      "type": [
-        "string",
-        "null"
-      ],
-      "format": "date-time"
-    },
-    "lastReminderError": {
-      "type": "string"
-    },
-    "reminderSetupKey": {
-      "type": "string"
-    },
-    "isCurrent": {
-      "type": "boolean"
-    },
-    "lastTryFailed": {
+    "isOpen": {
       "type": "boolean"
     },
     "branchId": {
@@ -137,20 +99,12 @@
     }
   },
   "required": [
-    "customerId",
-    "saleId",
-    "dueAt",
+    "recallId",
+    "status",
+    "closedByUserId",
+    "closedAt",
     "note",
-    "userId",
-    "replacedAt",
-    "reminderSentAt",
-    "reminderChannel",
-    "reminderAttempts",
-    "lastReminderAt",
-    "lastReminderError",
-    "reminderSetupKey",
-    "isCurrent",
-    "lastTryFailed",
+    "isOpen",
     "branchId",
     "id",
     "companyId",

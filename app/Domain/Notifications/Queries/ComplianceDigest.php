@@ -4,8 +4,8 @@ namespace App\Domain\Notifications\Queries;
 
 use App\Domain\Compliance\Support\ComplianceLookup as L;
 use App\Domain\Compliance\Support\Expiry;
+use App\Domain\Compliance\Support\RecallShops;
 use App\Domain\Reporting\Support\TradingDay;
-use App\Domain\TillData\Enums\ProductRecallStatus;
 use App\Domain\TillData\Models\ComplianceLicence;
 use App\Domain\TillData\Models\ProductRecall;
 use App\Domain\TillData\Models\TrainingRecord;
@@ -61,7 +61,7 @@ final class ComplianceDigest
             $add((string) $t->branch_id, (L::name($staff, $t->user_id) ?? 'Unknown staff').': '.(L::blank($t->topic) ?? 'training'), $t->expires_on);
         }
 
-        $recalls = ProductRecall::query()->where('status', ProductRecallStatus::Open->value)->orderByDesc('raised_at')->get();
+        $recalls = RecallShops::where(ProductRecall::query(), RecallShops::ids(null), true)->orderByDesc('raised_at')->get();
 
         if ($recalls->isNotEmpty()) {
             $out['*'] = [

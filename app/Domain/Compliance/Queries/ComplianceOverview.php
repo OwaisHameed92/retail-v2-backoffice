@@ -6,8 +6,8 @@ use App\Domain\Compliance\Data\ComplianceFilters;
 use App\Domain\Compliance\Support\ComplianceLookup as L;
 use App\Domain\Compliance\Support\Expiry;
 use App\Domain\Compliance\Support\MissedChecks;
+use App\Domain\Compliance\Support\RecallShops;
 use App\Domain\Reporting\Support\TradingDay;
-use App\Domain\TillData\Enums\ProductRecallStatus;
 use App\Domain\TillData\Models\ComplianceLicence;
 use App\Domain\TillData\Models\DiaryCheckDefinition;
 use App\Domain\TillData\Models\IncidentReport;
@@ -41,7 +41,7 @@ final class ComplianceOverview
         $definitions = $f->scope(DiaryCheckDefinition::query())->where('is_active', true)->get();
         $missed = collect(MissedChecks::forDefinitions($definitions, $week->from, $week->to, $now))
             ->map(fn (array $periods) => collect($periods)->where('state', 'missed')->count())->filter();
-        $recalls = ProductRecall::query()->where('status', ProductRecallStatus::Open->value)->orderByDesc('raised_at')->get();
+        $recalls = RecallShops::where(ProductRecall::query(), RecallShops::ids($f->shop), true)->orderByDesc('raised_at')->get();
         $refusals = AgeChecks::refusals($week)->count();
         $checks = AgeChecks::checks($week)->distinct()->count('s.id');
 

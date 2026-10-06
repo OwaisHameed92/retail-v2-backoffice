@@ -78,7 +78,7 @@ test('a customer\'s ledger figures are never taken from the shop\'s version', fu
 
     $row = DB::table('customers')->where('id', $customer['id'])->first();
     expect($row->name)->toBe('Shop')->and((int) $row->points)->toBe(0)
-        ->and(OwnershipRules::derivedColumns('Customer'))->toBe(['balance', 'points']);
+        ->and(OwnershipRules::derivedColumns('Customer'))->toBe(['balance', 'pending_points', 'points']);
 });
 
 test('a historic record or a deleted shop can only be acknowledged; a conflict is settled once', function () {

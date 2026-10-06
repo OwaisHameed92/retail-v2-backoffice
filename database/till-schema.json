@@ -6189,6 +6189,56 @@
                     "indexes": []
                 }
             }
+        },
+        {
+            "release": "0.1.52",
+            "migrations": [
+                "2026_11_25_100000_create_till_0_1_52_tables.php",
+                "2026_11_25_100001_add_till_0_1_52_columns.php"
+            ],
+            "tables": {
+                "account_pay_dates": {
+                    "columns": {
+                        "reminder_setup_key": "string('reminder_setup_key', 255)->nullable()"
+                    },
+                    "indexes": []
+                },
+                "product_recall_branch_states": {
+                    "columns": {
+                        "id": "string('id', 26)->primary()",
+                        "company_id": "string('company_id', 26)",
+                        "branch_id": "string('branch_id', 26)->nullable()",
+                        "recall_id": "string('recall_id', 64)->nullable()",
+                        "status": "string('status', 40)->nullable()",
+                        "closed_by_user_id": "string('closed_by_user_id', 64)->nullable()",
+                        "closed_at": "dateTime('closed_at')->nullable()",
+                        "note": "text('note')->nullable()",
+                        "row_version": "unsignedBigInteger('row_version')->default(0)",
+                        "created_at": "dateTime('created_at')->nullable()",
+                        "updated_at": "dateTime('updated_at')->nullable()",
+                        "deleted_at": "dateTime('deleted_at')->nullable()",
+                        "synced_at": "dateTime('synced_at')->nullable()",
+                        "sync_seq": "unsignedBigInteger('sync_seq')->nullable()",
+                        "extra": "json('extra')->nullable()",
+                        "portal_received_at": "dateTime('portal_received_at')->nullable()"
+                    },
+                    "indexes": {
+                        "product_recall_branch_states_company_id_updated_at_index": [
+                            "company_id",
+                            "updated_at"
+                        ],
+                        "product_recall_branch_states_company_id_branch_id_index": [
+                            "company_id",
+                            "branch_id"
+                        ],
+                        "product_recall_branch_states_79efab21_idx": [
+                            "company_id",
+                            "recall_id",
+                            "branch_id"
+                        ]
+                    }
+                }
+            }
         }
     ]
 }

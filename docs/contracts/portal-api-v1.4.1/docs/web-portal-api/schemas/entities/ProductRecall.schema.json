@@ -73,9 +73,6 @@
     "note": {
       "type": "string"
     },
-    "isOpen": {
-      "type": "boolean"
-    },
     "scope": {
       "type": [
         "string",
@@ -164,7 +161,6 @@
     "closedByUserId",
     "closedAt",
     "note",
-    "isOpen",
     "scope",
     "id",
     "companyId",

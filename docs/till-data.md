@@ -10,16 +10,16 @@ Contract v1.4.1: `docs/contracts/portal-api-v1.4.1/docs/web-portal-api.md` §5�
 |---|---|---|
 | Overrides | `app/Domain/TillData/definitions.php` | hand |
 | Generator | `app/Domain/TillData/Generator/*`, `php artisan till:entities:generate` | hand |
-| Migrations, additive per release | v1.1: `2026_09_27_1100NN_create_till_<group>_tables.php`; v1.3.1: `2026_10_02_10000{0,1}_…_v1_3_1_…`; v1.4.1: `2026_10_06_100000_create_till_v1_4_1_tables.php`, `2026_10_06_100001_add_till_v1_4_1_columns.php` (+ hand `2026_10_06_100002_add_v1_4_1_sync_columns.php`); v1.4.1-b: `2026_10_10_100001_…`; till 0.1.15 pack (release `0.1.15`): `2026_10_25_100001_add_till_0_1_15_columns.php` (`ClockEvent.register_id`, `StoreCreditVoucher.note`); till 0.1.51 pack (release `0.1.51`): `2026_11_24_100000_create_till_0_1_51_tables.php` (`AccountPayDate`), `2026_11_24_100001_add_till_0_1_51_columns.php` (Customer, CustomerTransaction, CustomerOrder, RotaShift) | generated |
+| Migrations, additive per release | v1.1: `2026_09_27_1100NN_create_till_<group>_tables.php`; v1.3.1: `2026_10_02_10000{0,1}_…_v1_3_1_…`; v1.4.1: `2026_10_06_100000_create_till_v1_4_1_tables.php`, `2026_10_06_100001_add_till_v1_4_1_columns.php` (+ hand `2026_10_06_100002_add_v1_4_1_sync_columns.php`); v1.4.1-b: `2026_10_10_100001_…`; till 0.1.15 pack (release `0.1.15`): `2026_10_25_100001_add_till_0_1_15_columns.php` (`ClockEvent.register_id`, `StoreCreditVoucher.note`); till 0.1.51 pack (release `0.1.51`): `2026_11_24_100000_create_till_0_1_51_tables.php` (`AccountPayDate`), `2026_11_24_100001_add_till_0_1_51_columns.php` (Customer, CustomerTransaction, CustomerOrder, RotaShift); till 0.1.52 pack (release `0.1.52`): `2026_11_25_100000_create_till_0_1_52_tables.php` (`ProductRecallBranchState`), `2026_11_25_100001_add_till_0_1_52_columns.php` (`AccountPayDate.reminder_setup_key`) (+ hand `2026_11_25_100002_add_relay_columns_to_account_pay_dates.php`) | generated |
 | Schema lock | `database/till-schema.json`: what each release's migrations made | generated |
-| Models (141) | `app/Domain/TillData/Models/*.php` | generated |
+| Models (142) | `app/Domain/TillData/Models/*.php` | generated |
 | Enums (89) | `app/Domain/TillData/Enums/*.php` | generated |
 | Registry | `app/Domain/TillData/EntityRegistry.php` | generated |
 | Behaviour traits, casts, queries | `app/Domain/TillData/{Concerns,Casts,Queries}` | hand |
 | Applier | `app/Domain/TillData/Actions/ApplySyncChanges.php` + `app/Domain/TillData/Sync/*` | hand |
 | Sync bookkeeping | `2026_09_27_100000_create_till_sync_tables.php`, `…100001_add_till_columns_to_tenancy_tables.php` | hand |
 
-146 schema entities (till 0.1.51 pack). 144 have a registry entry; 141 have their own table and model. `Company`,
+147 schema entities (till 0.1.52 pack). 145 have a registry entry; 142 have their own table and model. `Company`,
 `Branch` and `Register` land on module 1.2's `companies`, `branches` and `registers` tables. The `local` tables of
 `ownership.json` (`SyncState`, `DomainEventRecord`, `ProcessedCommand`, and `EventSubscription` since till 0.1.38;
 `EntityRegistry::LOCAL`) are never synced and never stored: a push of one is acknowledged as `skipped` (v1.3.1's
@@ -183,7 +183,7 @@ must be shared between PHP workers (locks).
    `(entity, id, hub_version)` where `hub_version > since` and `PullVisibility` allows it: hub-owned rows (keyed
    `Setting`/`RolePermission` included; a branch setting, `NewsTitle` and `BranchPrice` only for their branch), the
    relayed branch rows (§10.2: a dispatched transfer + lines to its `toBranchId`, a receipt + lines to the
-   transfer's `fromBranchId`, ledger rows to every other branch), head-office orders drafted for this branch (§10.6)
+   transfer's `fromBranchId`, ledger rows and, from till 0.1.52, pay dates to every other branch), head-office orders drafted for this branch (§10.6)
    and portal edits of its Company / Branch (§6.1); never a row whose `origin_branch_id` is the caller;
    `ORDER BY hub_version LIMIT max + 1`. Then the full rows per entity.
 4. `PullEnvelopes` → `PullPayload::envelope()` (keyed and Company/Branch rows have their own shapes, module 2.9B): `seq` 0, `op` D / I (`createdAt` = `updatedAt`) / U, `version` = `hub_version`, the till's
@@ -209,8 +209,12 @@ become visible in order. Who stamps:
   member. A hub conflict re-queues the row the portal kept, so the overruled shop gets the winner.
 - Customer `balance` / `points` are the ledger's sum (`RecomputeCustomerBalances`, run in every push chunk); they are
   not part of `hub_hash` and never stamp a new version (§10.1). A negative balance is credit held (advances, till
-  0.1.51). A pulled Customer carries `owed` / `creditHeld` worked out from that balance, `earnsPoints` (null = true)
-  and `pendingPoints` (the last pushed value, 0 when none) — `PullPayload::customer()`.
+  0.1.51). A pulled Customer carries `owed` / `creditHeld` worked out from that balance and `earnsPoints` (null =
+  true) — `PullPayload::customer()`.
+- `derivedColumns` (`OwnershipRules::DERIVED_COLUMNS` = ownership.json: Customer balance / pendingPoints / points,
+  ProductRecall status / closedAt / closedByUserId / note / returnedQty, till 0.1.52) are never pulled, on `I` or
+  `U` (`PullPayload::neverSent`), except the ledger sums `balance` / `points` (`PullPayload::LEDGER_SUMS`). Each
+  shop's close / reopen of a recall is its own branch-owned `ProductRecallBranchState` row (no row = open there).
 
 Indexes: `(company_id, hub_version)` on every hub-owned table (`2026_10_05_100000_add_sync_pull_feed.php`; v1.4.1's
 three new hub tables in `2026_10_06_100002_add_v1_4_1_sync_columns.php`; hand

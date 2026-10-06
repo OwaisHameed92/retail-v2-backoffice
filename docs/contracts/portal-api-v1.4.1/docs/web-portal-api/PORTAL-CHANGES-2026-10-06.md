@@ -29,7 +29,7 @@ reports better if it changes; **nothing** = for information.
 | 3 | `CustomerTransaction.tender`, `registerId`, `shiftId` (nullable strings) | new field | 0.1.51 | **must** accept; should store |
 | 4 | `CashMovement.type` + `customerAdvance`, `customerAdvanceRefund` | enum | 0.1.51 | **must** accept; count in expected cash |
 | 5 | `Customer.owed`, `Customer.creditHeld` (read-only figures) | new field | 0.1.51 | **must** accept; never treat as truth |
-| 6 | `Customer.pendingPoints` (integer) | new field | 0.1.28 | **must** accept; see question Q1 |
+| 6 | `Customer.pendingPoints` (integer) | new field | 0.1.28 | **must** accept; till-held; in `derivedColumns` from 0.1.52 (Q1 answered) |
 | 7 | `Customer.earnsPoints` (boolean) | new field | 0.1.32 | **must** accept; missing = `true` |
 | 8 | `CustomerOrder.customerId` (string or null) | new field | 0.1.28 | **must** accept; should link to the customer |
 | 9 | GL account `2260` "Customer account credit" (Liability), seeded on every chart | ledger | 0.1.51 | **must** accept the `Account` row; should report it |
@@ -290,6 +290,8 @@ ledger reports.
   `CustomerPendingPointsAndOrderCustomer`): points a Not Paid (account) sale held back until the account is paid —
   never spendable, not in `points`. A payment releases its share into `points` (a `pointsEarn` row with an empty
   `saleId`, note "Points earned on account payment").
+  From till 0.1.52 it is in `derivedColumns` (`samples/ownership.json`): never written on the till from a pull,
+  never the truth in a push.
 - **`Customer.earnsPoints`** (boolean, required; 0.1.32): `false` = "Collects points" not ticked — their sales write
   no `pointsEarn` row and no loyalty posting; points already held can still be spent. Existing customers `true`; a
   customer added on the form `false` until ticked; an import `true`. **A row that arrives without the field is read as
@@ -482,9 +484,11 @@ Unchanged: `openapi.yaml`, `SSPOS.postman_collection.json`, `SSPOS.postman_envir
 
 ## 11. Ask the till team
 
+**Q1–Q10 answered (till team, 2026-10-06): see `ANSWERS-2026-10-06.md`.** Q3 (recall) and Q7 (credit move) also led to till changes in 0.1.52 — UPCOMING-CHANGES.
+
 | # | Question |
 |---|---|
-| Q1 | `Customer.pendingPoints` is a ledger-like figure but is **not** in `derivedColumns` (only `balance`, `points` are). If the portal sends a `Customer` down, does the till overwrite its `pendingPoints` with the portal's value? What should the portal send — echo the last pushed value? |
+| Q1 | ~~`Customer.pendingPoints` not in `derivedColumns`~~ **Answered (till team, 2026-10-06):** from till 0.1.52 `pendingPoints` is in `derivedColumns` like `balance` / `points` — the till never writes it from a pull and a change to it alone does not push the row. Store what a push says if you like, but never as the truth; sending it down is ignored. |
 | Q2 | `Customer.owed` / `creditHeld` are worked out from `balance` on the till. Confirm the till ignores them in a pull (so the portal may send 0), and whether they should be listed under `derivedColumns`. |
 | Q3 | `ProductRecall` is hub-owned, but close / reopen / note edits are made at the till (open since 2026-10-02 in `UPCOMING-CHANGES.md`). Which side wins when the portal also edits a recall? |
 | Q4 | `SupplierInvoice` update / soft-delete before approval "writes AuditLog rows" — which `action` names? |

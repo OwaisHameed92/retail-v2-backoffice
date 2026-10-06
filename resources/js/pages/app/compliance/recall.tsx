@@ -1,7 +1,7 @@
 import { dash, formatDateTime, formatDay } from '@/components/app/compliance/format';
 import { RecallDialog } from '@/components/app/compliance/recall-dialog';
 import { RecallStatus } from '@/components/app/compliance/recall-status';
-import { type RecallProps } from '@/components/app/compliance/types';
+import { type RecallProps, type RecallShopState } from '@/components/app/compliance/types';
 import { DescriptionList } from '@/components/shared/description-list';
 import { EmptyState } from '@/components/shared/empty-state';
 import { PageHeader } from '@/components/shared/page-header';
@@ -11,18 +11,34 @@ import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import AppLayout from '@/layouts/app-layout';
 import { Head } from '@inertiajs/react';
-import { Boxes, Pencil } from 'lucide-react';
+import { Boxes, Pencil, Store } from 'lucide-react';
 import { useState } from 'react';
 
 const qty = (v: string | null) => (v === null ? dash : <span className="tabular-nums">{number(Number(v))}</span>);
 
+/** When and by whom a shop closed the recall, and its note. */
+function Closed({ state }: { state: RecallShopState }) {
+    if (state.status === 'open') return state.note ? <p className="text-muted-foreground text-xs whitespace-pre-line">{state.note}</p> : dash;
+
+    return (
+        <div className="min-w-0">
+            <p className="tabular-nums">
+                {state.closedAt ? formatDateTime(state.closedAt) : 'Closed'}
+                {state.closedBy && <span className="text-muted-foreground"> · {state.closedBy}</span>}
+            </p>
+            {state.note && <p className="text-muted-foreground mt-0.5 text-xs whitespace-pre-line">{state.note}</p>}
+        </div>
+    );
+}
+
 /**
- * One product recall (module 5.7): what, why, the stock it touches and what each shop sent back. The portal edits its
- * text (compliance.manage); closing, reopening and returns are done at a till, so the status is read only here.
+ * One product recall (module 5.7): what, why, its state in each shop, and the stock it touches there. The portal edits
+ * its text (compliance.manage); each shop closes, reopens and returns stock at its own till (till 0.1.52), so the
+ * states are read only here.
  */
-export default function ComplianceRecall({ recall, stock, matchesBatches, suppliers, productResults, canManage }: RecallProps) {
+export default function ComplianceRecall({ recall, shops, stock, matchesBatches, suppliers, productResults, canManage }: RecallProps) {
     const [editing, setEditing] = useState(false);
-    const anyReturned = stock.some((s) => s.returned !== null);
+    const anyReturned = shops.some((s) => s.returned !== null);
 
     return (
         <AppLayout>
@@ -30,7 +46,7 @@ export default function ComplianceRecall({ recall, stock, matchesBatches, suppli
             <PageHeader
                 title={recall.product ?? 'Recall'}
                 back={{ href: route('app.compliance.recalls'), label: 'Recalls' }}
-                status={<RecallStatus status={recall.status} />}
+                status={<RecallStatus status={recall.status} openShops={recall.openShops} shops={recall.shops} />}
                 description={[
                     recall.reference,
                     `Raised ${formatDateTime(recall.raisedAt)}`,
@@ -52,19 +68,47 @@ export default function ComplianceRecall({ recall, stock, matchesBatches, suppli
                 <div className="grid gap-4 lg:col-span-2">
                     <SectionCard title="Why it is recalled">
                         <p className="text-sm leading-6 whitespace-pre-line">{recall.reason ?? 'No reason given.'}</p>
-                        {recall.note && (
-                            <div className="bg-muted mt-4 rounded-md px-4 py-3 text-sm">
-                                <p className="font-medium">Closing note from a till</p>
-                                <p className="text-muted-foreground mt-1 whitespace-pre-line">{recall.note}</p>
-                            </div>
+                    </SectionCard>
+                    <SectionCard
+                        title="Status in each shop"
+                        description="Each shop closes the recall at its till once the stock is off the shelves. A shop with nothing recorded is still open."
+                        flush
+                    >
+                        {shops.length === 0 ? (
+                            <EmptyState icon={Store} title="No shops" body="Add a shop to see where this recall is open." />
+                        ) : (
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead className="pl-5">Shop</TableHead>
+                                        <TableHead>Status</TableHead>
+                                        <TableHead className={anyReturned ? undefined : 'pr-5'}>Closed</TableHead>
+                                        {anyReturned && <TableHead className="pr-5 text-right">Returned</TableHead>}
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {shops.map((s) => (
+                                        <TableRow key={s.shop}>
+                                            <TableCell className="pl-5 font-medium">{s.shop}</TableCell>
+                                            <TableCell>
+                                                <RecallStatus status={s.status} />
+                                            </TableCell>
+                                            <TableCell className={anyReturned ? 'whitespace-normal' : 'pr-5 whitespace-normal'}>
+                                                <Closed state={s} />
+                                            </TableCell>
+                                            {anyReturned && <TableCell className="pr-5 text-right">{qty(s.returned)}</TableCell>}
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
                         )}
                     </SectionCard>
                     <SectionCard
                         title="Stock in the shops"
                         description={
                             matchesBatches
-                                ? 'On hand of the product, what is left of deliveries with a matching batch or best-before date, and what each shop sent back.'
-                                : 'On hand of the product in each shop, and what each shop sent back.'
+                                ? 'On hand of the product, and what is left of deliveries with a matching batch or best-before date.'
+                                : 'On hand of the product in each shop.'
                         }
                         flush
                     >
@@ -83,18 +127,17 @@ export default function ComplianceRecall({ recall, stock, matchesBatches, suppli
                                 <TableHeader>
                                     <TableRow>
                                         <TableHead className="pl-5">Shop</TableHead>
-                                        <TableHead className={matchesBatches || anyReturned ? 'text-right' : 'pr-5 text-right'}>On hand</TableHead>
-                                        {matchesBatches && <TableHead className={anyReturned ? 'text-right' : 'pr-5 text-right'}>In matching batches</TableHead>}
-                                        {anyReturned && <TableHead className="pr-5 text-right">Returned</TableHead>}
+                                        <TableHead className={matchesBatches ? 'text-right' : 'pr-5 text-right'}>On hand</TableHead>
+                                        {matchesBatches && <TableHead className="pr-5 text-right">In matching batches</TableHead>}
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
                                     {stock.map((s) => (
                                         <TableRow key={s.shop}>
                                             <TableCell className="pl-5 font-medium">{s.shop}</TableCell>
-                                            <TableCell className={matchesBatches || anyReturned ? 'text-right' : 'pr-5 text-right'}>{qty(s.onHand)}</TableCell>
+                                            <TableCell className={matchesBatches ? 'text-right' : 'pr-5 text-right'}>{qty(s.onHand)}</TableCell>
                                             {matchesBatches && (
-                                                <TableCell className={anyReturned ? 'text-right' : 'pr-5 text-right'}>
+                                                <TableCell className="pr-5 text-right">
                                                     {qty(s.batchQty)}
                                                     {s.batches > 0 && (
                                                         <span className="text-muted-foreground ml-1 text-xs">
@@ -103,7 +146,6 @@ export default function ComplianceRecall({ recall, stock, matchesBatches, suppli
                                                     )}
                                                 </TableCell>
                                             )}
-                                            {anyReturned && <TableCell className="pr-5 text-right">{qty(s.returned)}</TableCell>}
                                         </TableRow>
                                     ))}
                                 </TableBody>
@@ -111,7 +153,7 @@ export default function ComplianceRecall({ recall, stock, matchesBatches, suppli
                         )}
                     </SectionCard>
                 </div>
-                <SectionCard title="Details" description="Closed, reopened and returns are done at a till.">
+                <SectionCard title="Details" description="Each shop closes, reopens and returns stock at its own till.">
                     <DescriptionList
                         layout="rows"
                         items={[
@@ -122,7 +164,6 @@ export default function ComplianceRecall({ recall, stock, matchesBatches, suppli
                             { label: 'Notice from', value: recall.source },
                             { label: 'Supplier', value: recall.supplier },
                             { label: 'Returned to supplier', value: Number(recall.returnedQty) > 0 ? number(Number(recall.returnedQty)) : null },
-                            { label: 'Closed', value: recall.closedAt ? formatDateTime(recall.closedAt) : null },
                         ]}
                     />
                 </SectionCard>

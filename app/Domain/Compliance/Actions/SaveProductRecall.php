@@ -19,9 +19,10 @@ use Illuminate\Validation\ValidationException;
  * save goes through the HubOwnedRow model path and every shop's till receives it in its next pull (company-wide,
  * `scope` null). A new recall is open, raised now; its `raisedByUserId` stays blank (a portal user is not a till
  * user: the portal's audit log says who). An edit raises `row_version` by one; a save that changes nothing writes
- * nothing. Only the text fields (FIELDS) are the portal's: closing, reopening, returns and the note are done at a till
- * and never sent in an update (PullPayload::TILL_KEEPS_ON_UPDATE, ANSWERS-2026-10-06 Q3), so a closed recall's text
- * can be corrected too.
+ * nothing. Only the text fields (FIELDS) are the portal's: closing, reopening, returns and the note are done at each
+ * shop's till (ProductRecallBranchState, till 0.1.52); the row's own status / close / return members are
+ * `derivedColumns`, never sent in a pull (PullPayload::neverSent, ANSWERS-2026-10-06 Q3), so a recall's text can always
+ * be corrected.
  */
 final class SaveProductRecall
 {

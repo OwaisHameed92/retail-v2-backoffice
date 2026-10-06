@@ -80,6 +80,7 @@
     "ProductAllergenMatrix": "branch",
     "ProductBarcode": "hub",
     "ProductRecall": "hub",
+    "ProductRecallBranchState": "branch",
     "ProductSupplier": "hub",
     "ProductUnit": "hub",
     "PromotionCoupon": "hub",
@@ -151,6 +152,7 @@
   },
   "rule": "hub = the portal writes it and every till applies it (conflicts: hub wins). branch = the till\u0027s version always wins; the portal reads it and never writes it. local = never leaves the till. relayed = a branch row the portal copies to the other branch it concerns, which holds it read-only (section 10.2). derivedColumns = worked out from a ledger by each side; never taken as the truth from a push, never written from a pull (section 10.1). hubDrafted = a branch table the portal may also write rows into for one shop, which then owns them (section 10.6).",
   "relayed": {
+    "AccountPayDate": "to every other branch of the business (read-only there: a till copies another branch\u0027s pay date to a row of its own; the newest row for a customer and sale counts)",
     "CustomerTransaction": "to every other branch of the business",
     "StockTransfer": "to its toBranchId, once status is dispatched",
     "StockTransferLine": "to the toBranchId of its transfer, with the transfer",
@@ -160,7 +162,15 @@
   "derivedColumns": {
     "Customer": [
       "balance",
+      "pendingPoints",
       "points"
+    ],
+    "ProductRecall": [
+      "closedAt",
+      "closedByUserId",
+      "note",
+      "returnedQty",
+      "status"
     ]
   },
   "hubDrafted": {

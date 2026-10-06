@@ -7,7 +7,10 @@ use App\Domain\Shared\Support\Money;
 use App\Domain\Shared\Support\Redactor;
 use App\Domain\Staff\Support\TillPinHasher;
 use App\Domain\Sync\Enums\IdKind;
+use App\Domain\TillData\EntityRegistry;
 use App\Domain\TillData\Registry\EntityDefinition;
+use App\Domain\TillData\Registry\FieldDefinition;
+use App\Domain\TillData\Sync\OwnershipRules;
 
 /**
  * One stored hub-owned row → one pull envelope in the till's shape (module 2.5, contract §5, §6, §11): camelCase
@@ -20,7 +23,8 @@ use App\Domain\TillData\Registry\EntityDefinition;
  * derived members other than `isDeleted` / `domainEvents` (the till ignores derived members when reading), a
  * blank `User.pinHash` / `User.rfid` (KEPT_WHEN_BLANK), and a `User.pinHash` this till already has or cannot read
  * (sendsPin: only to set or change a PIN, in the till's `pbkdf2$…` format, ANSWERS-2026-10-01 §1). Also never
- * written: `Customer.pendingPoints` (NEVER_SENT), and a recall's close / return members in a `U` (TILL_KEEPS_ON_UPDATE).
+ * written: ownership.json `derivedColumns` (OwnershipRules::DERIVED_COLUMNS, §10.1: `Customer.pendingPoints`, a
+ * recall's close / return members), which the till never writes from a pull, except the ledger sums (LEDGER_SUMS).
  */
 final class PullPayload
 {
@@ -34,22 +38,35 @@ final class PullPayload
     public const KEPT_WHEN_BLANK = ['User' => ['pinHash', 'rfid']];
 
     /**
-     * Members never sent (ANSWERS-2026-10-06 Q1): `Customer.pendingPoints` is each till's own figure (points held on
-     * that till's unpaid sales), so an echo would overwrite another shop's; a missing member keeps the till's value,
-     * a `null` would reject the whole row. What a till pushes is stored, but it is not the truth.
+     * `derivedColumns` that are still sent: a customer's balance and points are the portal's own sum over the ledger
+     * (§10.1, RecomputeCustomerBalances); the till ignores them, older readers show them. Every other derived column
+     * is left out (a missing member keeps the till's value; a `null` would turn the row down): `pendingPoints` is each
+     * till's own figure (ANSWERS-2026-10-06 Q1), a recall's `status` / `closedAt` / `closedByUserId` / `note` /
+     * `returnedQty` belong to each shop's ProductRecallBranchState since till 0.1.52 (Q3), on an `I` as on a `U`.
      */
-    public const NEVER_SENT = ['Customer' => ['pendingPoints']];
-
-    /**
-     * Members left out of a `U` (ANSWERS-2026-10-06 Q3): the tills close, reopen, return and note a recall; the portal
-     * raises it (an `I` sends the whole row) and edits its text only. Left out, each till keeps its own values.
-     */
-    public const TILL_KEEPS_ON_UPDATE = ['ProductRecall' => ['status', 'closedAt', 'closedByUserId', 'note', 'returnedQty']];
+    public const LEDGER_SUMS = ['Customer' => ['balance', 'points']];
 
     /** @return list<string> members a payload of this entity may lack (contract tests relax `required` by these) */
     public static function omittable(string $entity): array
     {
-        return [...self::KEPT_WHEN_BLANK[$entity] ?? [], ...self::NEVER_SENT[$entity] ?? [], ...self::TILL_KEEPS_ON_UPDATE[$entity] ?? []];
+        return [...self::KEPT_WHEN_BLANK[$entity] ?? [], ...self::neverSent($entity)];
+    }
+
+    /** @var array<string, list<string>> */
+    private static array $neverSent = [];
+
+    /** @return list<string> the entity's `derivedColumns` members a pull leaves out */
+    public static function neverSent(string $entity): array
+    {
+        if (isset(self::$neverSent[$entity])) {
+            return self::$neverSent[$entity];
+        }
+
+        $columns = OwnershipRules::derivedColumns($entity);
+        $fields = $columns === [] || ! EntityRegistry::has($entity) ? [] : EntityRegistry::get($entity)->fields;
+        $names = array_keys(array_filter($fields, fn (FieldDefinition $f) => in_array($f->column, $columns, true)));
+
+        return self::$neverSent[$entity] = array_values(array_diff($names, self::LEDGER_SUMS[$entity] ?? []));
     }
 
     /** @var array<string, string> "kind:ourId" → the till's id */
@@ -92,7 +109,7 @@ final class PullPayload
             'registerId' => '',
             'at' => self::dateTime(($row['origin_branch_id'] ?? null) !== null ? $row['synced_at'] : ($row['hub_edited_at'] ?? null))
                 ?? self::dateTime($row['updated_at']) ?? self::dateTime(now('UTC')),
-            'payload' => $this->payload($def, $row, $op),
+            'payload' => $this->payload($def, $row),
             'key' => "{$def->entity}:{$id}:{$version}",
         ];
     }
@@ -101,7 +118,7 @@ final class PullPayload
      * @param  array<string, mixed>  $row
      * @return array<string, mixed>
      */
-    private function payload(EntityDefinition $def, array $row, string $op): array
+    private function payload(EntityDefinition $def, array $row): array
     {
         $payload = [];
 
@@ -156,8 +173,7 @@ final class PullPayload
             }
         }
 
-        $omit = [...self::NEVER_SENT[$def->entity] ?? [], ...($op === 'U' ? self::TILL_KEEPS_ON_UPDATE[$def->entity] ?? [] : [])];
-        $payload = array_diff_key($payload, array_flip($omit));
+        $payload = array_diff_key($payload, array_flip(self::neverSent($def->entity)));
 
         // §10.6: the till writes a head-office order's shop code itself and never reads `receivedQty` from a pull.
         return match ($def->entity) {
@@ -165,6 +181,7 @@ final class PullPayload
             'PurchaseOrderLine' => [...$payload, 'receivedQty' => 0],
             'PromotionRule' => [...$payload, 'isGroupOffer' => self::isGroupOffer($payload)],
             'Customer' => self::customer($payload),
+            'AccountPayDate' => self::payDate($payload),
             default => $payload,
         };
     }
@@ -186,7 +203,7 @@ final class PullPayload
     /**
      * Till 0.1.28–0.1.51 (PORTAL-CHANGES-2026-10-06 §2.1, §2.7): `earnsPoints` is always sent and never defaulted to
      * false (a row from before 0.1.32, or one the portal made, collects points: the till reads a missing value as
-     * true). `pendingPoints` is never sent (NEVER_SENT). `owed` / `creditHeld` are worked out from the balance we send
+     * true). `pendingPoints` is never sent (a derived column, neverSent()). `owed` / `creditHeld` are worked out from the balance we send
      * (the ledger's sum), never stored; the till never reads them (ANSWERS-2026-10-06 Q2).
      *
      * @param  array<string, mixed>  $payload
@@ -202,6 +219,23 @@ final class PullPayload
             'earnsPoints' => $payload['earnsPoints'] ?? true,
             'owed' => $negative ? 0 : self::number($balance),
             'creditHeld' => $negative ? self::number(ltrim($balance, '-')) : 0,
+        ];
+    }
+
+    /**
+     * A relayed pay date (till 0.1.52; PORTAL-CHANGES-2026-10-06 §2.3) carries the till's worked-out members as the
+     * owning till sent them: `isCurrent` = not replaced, `lastTryFailed` = the last reminder try left an error.
+     * `reminderSetupKey` is an opaque hash, passed back as stored.
+     *
+     * @param  array<string, mixed>  $payload
+     * @return array<string, mixed>
+     */
+    private static function payDate(array $payload): array
+    {
+        return [
+            ...$payload,
+            'isCurrent' => ($payload['replacedAt'] ?? null) === null,
+            'lastTryFailed' => (string) ($payload['lastReminderError'] ?? '') !== '',
         ];
     }
 

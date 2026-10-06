@@ -49,6 +49,7 @@ final class ContractSampleCoverage
             'samples/push-request.second-till.json' => ['tests' => [self::PUSH, ['TillData/SampleReplayTest.php', 'gives a second till']]],
             'samples/push-request.settings.json' => ['tests' => [['Sync/SyncPushApiTest.php', 'push-request.settings.json replays over HTTP'], ['TillData/KeyedRowsTest.php', 'replays push-request.settings.json']]],
             'samples/web-order.json' => ['pending' => 'Phase 8 Web orders / click and collect (§12 is a proposal; the portal creates no WebOrder yet)'],
+            'samples/entities/AccountPayDate.json' => ['tests' => [self::STORE, ['Sync/RelayPullTest.php', 'replays pull-reply.relay.json']]],
             'samples/entities/BranchPrice.json' => ['tests' => [self::STORE, ['Sync/BranchPriceSyncTest.php', 'a shop']]],
             'samples/entities/Category.json' => ['tests' => [self::STORE]],
             'samples/entities/Customer.json' => ['tests' => [self::STORE]],

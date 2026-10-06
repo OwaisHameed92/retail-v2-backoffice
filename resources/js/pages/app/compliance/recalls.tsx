@@ -63,10 +63,18 @@ const columns: ColumnDef<RecallRow>[] = [
         meta: { mobile: 'hidden' },
         cell: ({ row }) => <span className="tabular-nums">{formatDateTime(row.original.raisedAt)}</span>,
     },
-    { id: 'status', header: 'Status', meta: { mobile: 'aside' }, cell: ({ row }) => <RecallStatus status={row.original.status} /> },
+    {
+        id: 'status',
+        header: 'Status',
+        meta: { mobile: 'aside' },
+        cell: ({ row }) => <RecallStatus status={row.original.status} openShops={row.original.openShops} shops={row.original.shops} />,
+    },
 ];
 
-/** Product recalls (module 5.7): raised on the portal (or by head office) and sent to every till; affected stock per shop. */
+/**
+ * Product recalls (module 5.7): raised on the portal (or by head office) and sent to every till; each shop closes its
+ * own at the till (till 0.1.52). Status and on hand are for the shop picked, else every shop.
+ */
 export default function ComplianceRecalls({ recalls, summary, suppliers, productResults, canManage, filters, options }: RecallsProps) {
     const { update, loading } = useTableQuery();
     const [open, setOpen] = useState(false);
@@ -76,7 +84,7 @@ export default function ComplianceRecalls({ recalls, summary, suppliers, product
             tab="recalls"
             filters={filters}
             title="Recalls"
-            description={`Product recalls sent to every till, open first. ${summary.open} open, ${summary.closed} closed. On hand is for the shop picked.`}
+            description={`Product recalls sent to every till, open first; each shop closes its own at the till. ${summary.open} open, ${summary.closed} closed${summary.shops > 1 ? ' in every shop' : ''}. Status and on hand are for the shop picked.`}
             actions={
                 canManage && (
                     <Button onClick={() => setOpen(true)}>

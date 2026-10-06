@@ -18,6 +18,7 @@ use Illuminate\Database\Query\Builder;
  * | StockTransfer (+ lines)     | its `toBranchId`, once `dispatched`                                            |
  * | StockTransferReceipt (+ln)  | the `fromBranchId` of its transfer                                             |
  * | CustomerTransaction         | every branch but its own                                                       |
+ * | AccountPayDate (0.1.52)     | every branch but its own                                                       |
  * | PurchaseOrder (+ lines)     | head-office orders drafted on the portal, to their shop, until the shop owns it |
  * | Company / Branch            | every branch / that branch (portal edits only)                                 |
  * | a shop row that moved away  | a `D` to the shop it left (BranchDepartures, read by PullFeed)                 |
@@ -57,7 +58,7 @@ final class PullVisibility
             'StockTransferReceipt', 'StockTransferReceiptLine' => $query->whereExists(
                 fn (Builder $t) => self::transfer($t, $companyId, "{$table}.transfer_id")->where('stock_transfers.from_branch_id', $branchId),
             ),
-            default => $query, // CustomerTransaction: every other branch of the business
+            default => $query, // CustomerTransaction, AccountPayDate: every other branch of the business
         };
     }
 

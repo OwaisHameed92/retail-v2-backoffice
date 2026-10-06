@@ -402,6 +402,10 @@ zone.
   (§10.6). Nothing else that a branch owns may be sent.
 - **Idempotency:** a GET with no side effects; the till's cursor and its `(entity, entityId, version)` check make a
   repeated page harmless.
+- **A field you leave out keeps the till's value** (`HubRowMap.TryRead`; already so in 0.1.51). A field
+  the till does not know is ignored (§17.11). `null` on a required text column reads as `""`; `null` (or a wrong
+  type) on any other required column turns the whole row down. So to change only some columns of a row, send only
+  those columns (plus `id`) — the safe way to edit a row the till also edits (e.g. `ProductRecall` text fields).
 
 ## 9. Errors and status codes
 
@@ -432,8 +436,8 @@ A failure that **ends the run** (no pull afterwards): 401/403, any `licence.*` c
 ## 10. Who owns what (`src/SSPOS.Domain/Sync/SyncOwnershipMap.cs`, `samples/ownership.json`)
 
 `samples/ownership.json` is generated (P4-65, wave E) and lists **every** table in the till's
-database by name: `"hub"`, `"branch"` or (revision 1.4) `"local"` — not just the hub-owned ones (145 names
-today: 30 hub, 112 branch, 3 local). It also carries `relayed` (the branch-owned tables you copy to another
+database by name: `"hub"`, `"branch"` or (revision 1.4) `"local"` — not just the hub-owned ones (149 names
+today: 30 hub, 115 branch, 4 local). It also carries `relayed` (the branch-owned tables you copy to another
 branch, and to which one — §10.2), `derivedColumns` (columns each side works out from a ledger — §10.1) and
 `hubDrafted` (branch-owned tables you may also write rows into for one shop — a head-office purchase order, §10.6).
 It is the full, current answer to "who owns this table"; the table below is a summary, kept short on purpose.
@@ -441,7 +445,7 @@ It is the full, current answer to "who owns this table"; the table below is a su
 | Owner | Entities | Portal may |
 |---|---|---|
 | **Portal** (`HubOwned`, `"hub"` in the file) | Account, BranchPrice, Category, Customer, Department, ExchangeRate, FixedAssetCategory, MedicineClassification, NewsTitle, PaymentType, PriceHistory, Product, ProductAlias, ProductBarcode, ProductRecall, ProductSupplier, ProductUnit, PromotionCoupon, PromotionItem, PromotionRule, Reason, RebateAgreement, Role, RolePermission, Setting, Supplier, TaxRule, Unit, User, VatRate | Create and change them and send them down. The till applies them. If the shop also edited one, the portal's version wins by default and the clash is shown in the shop. `Setting` and `RolePermission` are keyed rows with their own envelope and a deny-list (§10.3). `Customer.balance` / `points` are never taken from you (§10.1). `BranchPrice` is a shop's own price (§10.5). `User.remoteApprovalSecret` never travels and a blank `pinHash` keeps the till's PIN (§10.7). |
-| **Till** (`BranchOwned`, `"branch"` in the file — everything else, 111 tables) | Sale, SaleLine, SalePayment, SaleVat, StockMovement, BranchProduct, Shift, ZReport, CustomerOrder, CustomerOrderPayment, CustomerTransaction, StockTransfer (+ lines, receipts), PurchaseOrder (+ lines), GoodsReceipt (+ lines), AuditLog, JournalEntry/Line, cash, clock events, VatReturn, ComplianceLicence, NewsDelivery/Line, FifoStockLayer, rota/timesheet/wage rows … | **Read only.** Never change these and never send them back to the branch that owns them. The till's version always wins. Two exceptions, both sent down unchanged in the one shop's pull: you **relay** some of them to the other branch they concern (§10.2), and you may **draft a head-office purchase order** (+ lines) for a shop, which the shop then owns (§10.6). |
+| **Till** (`BranchOwned`, `"branch"` in the file — everything else, 115 tables) | Sale, SaleLine, SalePayment, SaleVat, StockMovement, BranchProduct, Shift, ZReport, CustomerOrder, CustomerOrderPayment, CustomerTransaction, StockTransfer (+ lines, receipts), PurchaseOrder (+ lines), GoodsReceipt (+ lines), AuditLog, JournalEntry/Line, cash, clock events, VatReturn, ComplianceLicence, NewsDelivery/Line, FifoStockLayer, rota/timesheet/wage rows … | **Read only.** Never change these and never send them back to the branch that owns them. The till's version always wins. Two exceptions, both sent down unchanged in the one shop's pull: you **relay** some of them to the other branch they concern (§10.2), and you may **draft a head-office purchase order** (+ lines) for a shop, which the shop then owns (§10.6). |
 | **Nobody — local** (`"local"` in the file) | `SyncState` (the branch's own sync cursor), `DomainEventRecord` (the till's event outbox), `ProcessedCommand` (its idempotency store), `EventSubscription` (each handler's cursor into that outbox); also `ChangeLog` (the feed itself) and `SyncParkedRow` (pulled rows waiting for their parent, §8) — neither is an entity | Nothing. Never pushed, never in the history upload, refused in a pull. |
 
 The shop can edit portal-owned rows too (e.g. a price change at the till); those come up in push
@@ -476,7 +480,11 @@ payment at Bradford, points everywhere. Until revision 1.4 each till pushed the 
 2. **`Customer.balance` and `Customer.points` are a cache** (`derivedColumns` in `samples/ownership.json`). In a
    push they are the sending till's own sum at that moment — **do not store them as the truth**; use your own
    sum over the ledger. In a pull the till **never writes them**, whatever you send (you may send your sum; it is
-   ignored). Every other `Customer` column is portal-owned as before.
+   ignored). **`Customer.pendingPoints`** (points a till held back on its own Not Paid sales until they are paid)
+   is in the same list from till 0.1.52: the till keeps its own figure and never writes one from a pull. Every
+   other `Customer` column is portal-owned as before. **`owed`, `creditHeld` and `isAnonymised`** are not
+   columns: the till works them out (from `balance` / `anonymisedAt`) each time it pushes and never reads them from
+   a pull — send them or not, they are ignored.
 3. A change that only moves a customer's balance or points **no longer pushes the `Customer` row** — the
    `CustomerTransaction` row carries it. A `Customer` row is pushed when its details change (name, phone, card,
    credit limit, tier, notes, active, anonymised…). So a shop's account sales never cause a false "changed here
@@ -498,6 +506,12 @@ payment at Bradford, points everywhere. Until revision 1.4 each till pushed the 
 
 Before revision 1.4 no shop has synced customers across branches (the portal is not live yet), so there is
 nothing to reconcile. If you already stored `Customer.balance` from test pushes, recompute it from the ledger.
+
+**`ProductRecall` works the same way from till 0.1.52.** The recall is company-wide (you may create it and edit
+`reason`, `source`, `batchCode`, `expiryFrom`, `expiryTo`), but `returnedQty`, `status`, `closedAt`, `closedByUserId`
+and `note` are `derivedColumns`: never written from a pull, never pushed on their own. Each shop's own close / reopen
+is a branch-owned `ProductRecallBranchState` row (no row = open in that shop); a shop's returned quantity is
+−Σ `StockMovement.qtyDelta` (type supplierReturn, refType "Recall", refId = the recall id) for that branch.
 
 ### 10.2 Relayed rows — stock transfers and the customer ledger (revision 1.4, 2026-09-28)
 
@@ -802,13 +816,13 @@ cancel, expire) but **no web-order message yet**. Proposed:
 ## 13. Entity payloads
 
 **Every entity has a schema.** `schemas/entities/*.schema.json` is generated for every single
-`Entity`-derived type in the till's EF model (141 of them today, plus the keyed `Setting` and `RolePermission` —
-143 files) — walk `src/SSPOS.Infrastructure/Persistence/SsposDbContext.cs`'s `DbSet<T>` properties for the full
-list, or just read the schema folder. Twenty also get a realistic **sample**:
+`Entity`-derived type in the till's EF model (145 of them today, plus the keyed `Setting` and `RolePermission` —
+147 files) — walk `src/SSPOS.Infrastructure/Persistence/SsposDbContext.cs`'s `DbSet<T>` properties for the full
+list, or just read the schema folder. Twenty-one also get a realistic **sample**:
 `samples/entities/{Department, Category, VatRate, Product, ProductBarcode, Customer, Sale, SaleLine,
 SalePayment, SaleVat, StockMovement, CustomerOrder}.json`, the revision 1.4 rows `{Setting, RolePermission,
 StockTransfer, CustomerTransaction}.json` (§10.1–§10.3) and `{BranchPrice, Supplier, PurchaseOrder,
-PurchaseOrderLine}.json` (§10.5, §10.6). Every other entity has a schema only — ask us for a sample of any you
+PurchaseOrderLine}.json` (§10.5, §10.6) and `AccountPayDate.json` (0.1.52). Every other entity has a schema only — ask us for a sample of any you
 need, or build one from its schema; the schema is exhaustive (every column, all required) either way.
 The sample sale is 1 × Warburtons Toastie 800g £1.45 (zero-rated) + 2 × Coca-Cola 500ml £1.85
 (20 %) = £5.15, VAT £0.62, paid by card. Child rows link by id: `saleLine.saleId`,
@@ -876,9 +890,9 @@ The till side is built and speaks HTTPS to your server (§16 lists what is built
 `push-request.second-branch.json`, `push-request.settings.json` (§10.3), `push-reply.json`, `pull-reply.json`,
 `pull-reply.relay.json` (§10.2), `pull-reply.head-office.json` (§10.5, §10.6), `settings-local-only.json` (§10.3
 deny-list), `pull-reply.empty.json`, `hello-reply.json`, `error-reply.401.json`, `error-reply.422.json`,
-`web-order.json` (proposal), `enums.json`, `ownership.json`, `entities/*.json` (20 samples, §13).
+`web-order.json` (proposal), `enums.json`, `ownership.json`, `entities/*.json` (21 samples, §13).
 `docs/web-portal-api/schemas/`: `sync-change`, `push-request`, `push-reply`, `pull-reply`,
-`hello-reply`, `error-reply`, `web-order` `.schema.json`, `entities/*.schema.json` (143).
+`hello-reply`, `error-reply`, `web-order` `.schema.json`, `entities/*.schema.json` (147).
 Regenerate: `SSPOS_WRITE_PORTAL_SAMPLES=1 dotnet test tests/SSPOS.Infrastructure.Tests/SSPOS.Infrastructure.Tests.csproj -c Release --filter-class "*PortalContract*"`
 (this rewrites `samples/` and `schemas/` only; the same test without the variable fails the build when a file no
 longer matches the code, and `PortalRelaySampleTests` / `PortalPullSampleTests` prove the v1.4 pull samples
@@ -2262,7 +2276,7 @@ retried POSTs and secrets), one test per guarantee.
 
 ### 20.1 Everything the shop does comes up
 
-Every till-owned table is pushed — the 112 `"branch"` tables of the 145 names in `samples/ownership.json`, not
+Every till-owned table is pushed — the 115 `"branch"` tables of the 149 names in `samples/ownership.json`, not
 just sales — and so is every portal-owned row the shop edits. So the portal can build **every report the till
 has**, per business, shop, till and person:
 
@@ -2331,7 +2345,7 @@ cases the tests refer to.
 
 ### 21.1 Every table is synced while the shop is online
 
-- **Till:** every change to a till-owned table (the 112 `"branch"` names in `samples/ownership.json`) and every
+- **Till:** every change to a till-owned table (the 115 `"branch"` names in `samples/ownership.json`) and every
   shop edit of a portal-owned row enters the ChangeLog and goes up in the next push — about every 30 seconds, at
   Close Shop and on "Sync now"; a second till's work arrives inside the main till's push (§2 point 2). Every
   portal-owned table (the 30 `"hub"` names), relays (§10.2), settings and role permissions (§10.3), shop prices

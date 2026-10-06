@@ -196,7 +196,10 @@ export interface RecallRow {
     expiryTo: string | null;
     source: string | null;
     reason: string | null;
-    status: 'open' | 'closed' | null;
+    /** Open while a counted shop (the one picked, else every active shop) has not closed it (till 0.1.52, per shop). */
+    status: 'open' | 'closed';
+    openShops: number;
+    shops: number;
     raisedAt: string | null;
     onHand?: string | null;
 }
@@ -208,7 +211,7 @@ export interface RecallFormProps {
 
 export interface RecallsProps extends CompliancePageProps, RecallFormProps {
     recalls: Page<RecallRow>;
-    summary: { open: number; closed: number };
+    summary: { open: number; closed: number; shops: number };
 }
 
 export interface RecallDetail extends RecallRow {
@@ -216,14 +219,23 @@ export interface RecallDetail extends RecallRow {
     supplierId: string | null;
     supplier: string | null;
     returnedQty: string;
-    closedAt: string | null;
-    note: string | null;
     fromPortal: boolean;
+}
+
+/** One shop's own state of a recall (ProductRecallBranchState; no row = open there). */
+export interface RecallShopState {
+    shop: string;
+    status: 'open' | 'closed';
+    closedAt: string | null;
+    closedBy: string | null;
+    note: string | null;
+    returned: string | null;
 }
 
 export interface RecallProps extends CompliancePageProps, RecallFormProps {
     recall: RecallDetail;
-    stock: { shop: string; onHand: string | null; batchQty: string | null; batches: number; returned: string | null }[];
+    shops: RecallShopState[];
+    stock: { shop: string; onHand: string | null; batchQty: string | null; batches: number }[];
     matchesBatches: boolean;
 }
 

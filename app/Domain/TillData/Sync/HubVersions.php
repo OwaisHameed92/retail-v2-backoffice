@@ -32,7 +32,7 @@ final class HubVersions
         'Product', 'ProductUnit', 'BranchPrice', 'ProductBarcode', 'ProductAlias', 'ProductSupplier', 'ProductRecall',
         'MedicineClassification', 'PriceHistory', 'PromotionRule', 'PromotionItem', 'PromotionCoupon',
         'RebateAgreement', 'Customer', 'NewsTitle', 'StockTransfer', 'StockTransferLine', 'StockTransferReceipt',
-        'StockTransferReceiptLine', 'CustomerTransaction', 'PurchaseOrder', 'PurchaseOrderLine',
+        'StockTransferReceiptLine', 'CustomerTransaction', 'AccountPayDate', 'PurchaseOrder', 'PurchaseOrderLine',
     ];
 
     /** Tenancy rows the portal edits and sends (§6.1). Register is not sent. */

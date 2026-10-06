@@ -28,11 +28,12 @@ it('has a registry entry, a table with every mapped column, and a final generate
     $schemas = tillSchemaEntities();
     $entities = array_values(array_diff($schemas, EntityRegistry::LOCAL));
 
-    // Till 0.1.51 pack: 146 schemas (+ AccountPayDate); the `local` ones (EventSubscription since till 0.1.38) are
-    // never synced, never stored, so no registry entry (event_subscriptions stays, additive migrations only).
-    expect($schemas)->toHaveCount(146)
+    // Till 0.1.52 pack: 147 schemas (0.1.51 + AccountPayDate, 0.1.52 + ProductRecallBranchState); the `local` ones
+    // (EventSubscription since till 0.1.38) are never synced, never stored, so no registry entry (event_subscriptions
+    // stays, additive migrations only).
+    expect($schemas)->toHaveCount(147)
         ->and(EntityRegistry::LOCAL)->toBe(['DomainEventRecord', 'EventSubscription', 'ProcessedCommand', 'SyncState'])
-        ->and($entities)->toHaveCount(144)
+        ->and($entities)->toHaveCount(145)
         ->and(EntityRegistry::names())->toEqualCanonicalizing($entities);
 
     foreach ($entities as $entity) {
@@ -122,9 +123,10 @@ it('writes additive migrations: applied releases are never rewritten, the curren
     $v141 = $lock['releases'][2];
     $v141b = $lock['releases'][3];
     $till0115 = $lock['releases'][4];
-    $current = $lock['releases'][5];
+    $till0151 = $lock['releases'][5];
+    $current = $lock['releases'][6];
 
-    expect(array_column($lock['releases'], 'release'))->toBe(['v1.1', 'v1.3.1', 'v1.4.1', 'v1.4.1-b', '0.1.15', '0.1.51'])
+    expect(array_column($lock['releases'], 'release'))->toBe(['v1.1', 'v1.3.1', 'v1.4.1', 'v1.4.1-b', '0.1.15', '0.1.51', '0.1.52'])
         ->and($previous['migrations'])->toBe(['2026_10_02_100000_create_till_v1_3_1_tables.php', '2026_10_02_100001_add_till_v1_3_1_columns.php'])
         ->and($previous['tables']['products']['columns'])->toHaveKeys(['variant3_name', 'hub_hash', 'origin_branch_id', 'portal_received_at'])
         ->and($v141['migrations'])->toBe(['2026_10_06_100000_create_till_v1_4_1_tables.php', '2026_10_06_100001_add_till_v1_4_1_columns.php'])
@@ -146,12 +148,16 @@ it('writes additive migrations: applied releases are never rewritten, the curren
             'store_credit_vouchers' => ['columns' => ['note' => "text('note')->nullable()"], 'indexes' => []],
         ])
         // Till 0.1.51 pack: the AccountPayDate table, then Customer / CustomerTransaction / CustomerOrder / RotaShift columns.
-        ->and($current['migrations'])->toBe(['2026_11_24_100000_create_till_0_1_51_tables.php', '2026_11_24_100001_add_till_0_1_51_columns.php'])
-        ->and(array_keys($current['tables']))->toEqualCanonicalizing(['account_pay_dates', 'customers', 'customer_transactions', 'customer_orders', 'rota_shifts'])
-        ->and(array_keys($current['tables']['customer_transactions']['columns']))->toBe(['tender', 'register_id', 'shift_id'])
-        ->and(array_keys($current['tables']['customers']['columns']))->toBe(['pending_points', 'earns_points']);
+        ->and($till0151['migrations'])->toBe(['2026_11_24_100000_create_till_0_1_51_tables.php', '2026_11_24_100001_add_till_0_1_51_columns.php'])
+        ->and(array_keys($till0151['tables']))->toEqualCanonicalizing(['account_pay_dates', 'customers', 'customer_transactions', 'customer_orders', 'rota_shifts'])
+        ->and(array_keys($till0151['tables']['customer_transactions']['columns']))->toBe(['tender', 'register_id', 'shift_id'])
+        ->and(array_keys($till0151['tables']['customers']['columns']))->toBe(['pending_points', 'earns_points'])
+        // Till 0.1.52 pack: the ProductRecallBranchState table, then AccountPayDate.reminderSetupKey.
+        ->and($current['migrations'])->toBe(['2026_11_25_100000_create_till_0_1_52_tables.php', '2026_11_25_100001_add_till_0_1_52_columns.php'])
+        ->and(array_keys($current['tables']))->toEqualCanonicalizing(['product_recall_branch_states', 'account_pay_dates'])
+        ->and(array_keys($current['tables']['account_pay_dates']['columns']))->toBe(['reminder_setup_key']);
 
-    foreach ([...$lock['releases'][0]['migrations'], ...$previous['migrations'], ...$v141['migrations'], ...$v141b['migrations'], ...$till0115['migrations']] as $applied) {
+    foreach ([...$lock['releases'][0]['migrations'], ...$previous['migrations'], ...$v141['migrations'], ...$v141b['migrations'], ...$till0115['migrations'], ...$till0151['migrations']] as $applied) {
         expect(file_exists(database_path("migrations/{$applied}")))->toBeTrue()
             ->and($produced)->not->toContain("database/migrations/{$applied}");
     }

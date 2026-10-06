@@ -1,32 +1,33 @@
-# SSPOS portal pack - 2026-10-06 (till 0.1.51)
+# SSPOS portal pack - 2026-10-06 (till 0.1.52)
 
-What is new since the 0.1.26 pack (2026-10-01 21:59): read docs/web-portal-api/PORTAL-CHANGES-2026-10-06.md first.
-It covers tills 0.1.27 to 0.1.51 in one place: a summary table (what changed, type, must / should / nothing),
-then one section per area, the schema files changed, and questions for the till team.
-The same changes in contract detail are the 42 entries at the end of docs/web-portal-api/UPCOMING-CHANGES.md,
-from "Customer account payments (2026-10-02)" down to "Reminder failure text (2026-10-06)".
-X-SSPOS-Contract is still 1. No endpoint, envelope or header changed; no field removed or renamed.
-openapi.yaml and the Postman collection are unchanged.
+What is new since the 0.1.51 pack (same day): our answers to your questions Q1-Q10 are in
+docs/web-portal-api/ANSWERS-2026-10-06.md (Roman Urdu, with file names). The contract changes are the last 7
+entries of docs/web-portal-api/UPCOMING-CHANGES.md, from "`Customer.pendingPoints` joins `derivedColumns`" down to
+"Customer credit move, multi-shop". X-SSPOS-Contract is still 1. No endpoint, envelope or header changed; no field
+removed or renamed. openapi.yaml and the Postman collection are unchanged.
 
-Please act on these first:
-1. New branch-owned table AccountPayDate (schemas/entities/AccountPayDate.schema.json).
-2. CustomerTransaction: type values advance / advanceRefund; new nullable fields tender, registerId, shiftId.
-   A customer's balance can now be negative (= credit held). Customer gains pendingPoints, earnsPoints, owed,
-   creditHeld; CustomerOrder gains customerId.
-3. CashMovement.type values customerAdvance / customerAdvanceRefund. Card account money is now inside the shift's
-   expected card total.
-4. Ledger: new account 2260 Customer account credit; account payments, Account tender and refunds split between
-   1100 and 2260; new refTypes CustomerAdvanceRefund, CustomerAccountMove, CustomerCreditReclass, CustomerOpening;
-   one one-time reclass journal per shop on first start of 0.1.51. Late postings are dated in the first open month:
-   match journals by refType + refId, never by date.
-5. EventSubscription is now local (never pushed). Compliance tables now send U and D. A push never sends a blank
-   companyId (rows refused for it are re-sent with the same id and version). Training mode no longer pushes
-   practice data. Licence key mandatory (no built-in trial); the portal address is built into every till.
+Please act on these:
+1. New branch-owned table ProductRecallBranchState (schemas/entities/ProductRecallBranchState.schema.json): each
+   shop's own close / reopen of a company-wide recall. ProductRecall now has derivedColumns returnedQty, status,
+   closedAt, closedByUserId, note - the portal creates recalls and edits only reason / source / batchCode /
+   expiryFrom / expiryTo (your Q3).
+2. AccountPayDate is relayed to every other branch (samples/ownership.json "relayed", samples/pull-reply.relay.json,
+   new sample samples/entities/AccountPayDate.json - your Q9) and gains reminderSetupKey (opaque hash: store it).
+3. Customer.pendingPoints is in derivedColumns (your Q1). owed / creditHeld / isAnonymised are worked out on push
+   and ignored in a pull (your Q2, web-portal-api.md section 10.1).
+4. Settings: customers.reminders_due_on_till (shared); customers.reminders_from_utc (local-only, never pushed).
+5. Error codes: new customers.anonymise_credit_held, order.refund_account_no_customer, order.refund_account_over;
+   customers.advance_off is gone; sale.account_over_limit also comes from Fix sale corrections.
+6. Ledger: in a multi-shop company only the shop with the lowest Branch.id posts the one-time CustomerCreditReclass;
+   a shop that posted one in 0.1.51 posts a CustomerCreditReclassReversal once (your Q7). Match by refType + refId.
+
+Also new in docs/web-portal-api.md: section 8 states that a pulled field you leave out keeps the till's value
+(null on a required non-text column turns the row down); the table counts are corrected (149 names = 30 hub,
+115 branch, 4 local; 147 entity schemas; 21 samples - your Q8).
 
 Then, as needed:
-- docs/web-portal-api/PORTAL-CHANGES-2026-10-02-cash-reports.md - Cash & Shift, Reports and till voids in detail
-  (written after the last pack).
-- docs/web-portal-api/UPCOMING-CHANGES.md - every change in contract detail (not yet folded into the spec).
+- docs/web-portal-api/PORTAL-CHANGES-2026-10-06.md - everything from till 0.1.27 to 0.1.51 in one place.
+- docs/web-portal-api/UPCOMING-CHANGES.md - every change in contract detail.
 - docs/web-portal-api.md - the full contract (section 17 licensing, sections 5-10 sync).
 - docs/web-portal-api/licensing/, schemas/, samples/, openapi.yaml, SSPOS.postman_collection.json.
-- specs/licensing.md - the till's licensing rules (new section 9: licence key mandatory).
+- specs/licensing.md - the till's licensing rules.

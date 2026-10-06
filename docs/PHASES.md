@@ -87,7 +87,7 @@ Contract: v1.4.1 §18.4. Roles: business owner, **shop manager** (one branch onl
 | 4.1 | Portal users and roles (incl. branch-scoped shop manager) | done |
 | 4.2 | Products, barcodes, units, departments, categories, CSV import | done |
 | 4.3 | Prices and promotions (incl. per-shop price screen, `BranchPrice`). EPOS answers 2026-10-01: every offer type incl. `quantityPrice` tiers, days, past-midnight times, style items | done |
-| 4.4 | Customers (ledger-based balance and points, statements, consent). Till 0.1.51 pack: owed / credit held, advances in the ledger, current pay dates and reminder state | done |
+| 4.4 | Customers (ledger-based balance and points, statements, consent). Till 0.1.51 pack: owed / credit held, advances in the ledger, current pay dates and reminder state. Till 0.1.52 pack: pay dates relayed to every shop | done |
 | 4.5 | Suppliers, payment types, reasons, staff users/PINs. EPOS answers 2026-10-01: till `pbkdf2$…` PIN hash, sent only when set/changed | done |
 | 4.6 | Sales and receipts (refunds, voids) | done |
 | 4.7 | Shops and tills (licence read-only, till status, "Ask for more tills") | done |
@@ -105,7 +105,7 @@ Contract: v1.4.1 §18.4. Roles: business owner, **shop manager** (one branch onl
 | 5.4 | Cash and Z (shifts, Z reports, cash office, card settlement, day lock) | done |
 | 5.5 | Accounts and VAT (expenses, VAT return, journals, fixed assets) | done |
 | 5.6 | Staff (clock events, rota, timesheets, wages). EPOS answers 2026-10-01: till overtime rule (8 h/day), holiday estimate 12.07% | done |
-| 5.7 | Compliance (age refusals, incidents, training, diary checks, licences, recalls). EPOS answers 2026-10-06: recalls raised and text-edited on the portal only (close / reopen / returns at a till), returns per shop from stock movements | done |
+| 5.7 | Compliance (age refusals, incidents, training, diary checks, licences, recalls). EPOS answers 2026-10-06: recalls raised and text-edited on the portal only (close / reopen / returns at a till), returns per shop from stock movements. Till 0.1.52 pack: open / closed per shop (`ProductRecallBranchState`) | done |
 | 5.8 | Newspapers (titles, deliveries, returns, vouchers). EPOS answers 2026-10-01: VAT from the linked product, warnings | done |
 | 5.9 | Seasonal events and opening hours. EPOS answers 2026-10-01: one company-scope `shop.trading_hours` line (≤ 200) | done |
 | 5.10 | Pharmacy and parcels (dispensing, medicine classes, parcel carriers) | done |

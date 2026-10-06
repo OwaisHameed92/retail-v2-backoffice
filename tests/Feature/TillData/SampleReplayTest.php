@@ -1,5 +1,6 @@
 <?php
 
+use App\Domain\Sync\Support\PullPayload;
 use App\Domain\Tenancy\CurrentCompany;
 use App\Domain\TillData\EntityRegistry;
 use App\Domain\TillData\Enums\AgeRule;
@@ -181,8 +182,9 @@ it('stores every sample entity with every field exactly as sent', function (stri
     $row = (array) DB::table($def->table)->where('id', $payload['id'])->first();
 
     foreach ($def->fields as $name => $field) {
-        // §10.1: ledger-derived columns (a customer's balance and points) are the portal's own sum, never the till's.
-        if (in_array($field->column, OwnershipRules::derivedColumns($entity), true)) {
+        // §10.1: the ledger sums (a customer's balance and points) are the portal's own, never the till's. Other derived
+        // columns (pendingPoints, a recall's close members) are stored as sent, just never trusted or pulled.
+        if (in_array($field->column, OwnershipRules::derivedColumns($entity), true) && in_array($name, PullPayload::LEDGER_SUMS[$entity] ?? [], true)) {
             expect(Values::same($field, $row[$field->column], Values::toColumn($field, 0)))->toBeTrue("{$entity}.{$name} is the ledger's sum");
 
             continue;

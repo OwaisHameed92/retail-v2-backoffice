@@ -7,11 +7,15 @@ namespace App\Domain\TillData\Sync;
  * these lists equal to the file.
  *
  * - RELAYED: branch-owned rows the portal copies, unchanged, to the other branch they concern (transfers to their
- *   `toBranchId`, receipts back to the `fromBranchId`, the customer ledger to every other branch).
+ *   `toBranchId`, receipts back to the `fromBranchId`, the customer ledger and, from till 0.1.52, account pay dates
+ *   to every other branch).
  * - DRAFTED: branch-owned tables the portal may also write rows into for one shop (a head-office purchase order);
  *   the shop owns every change after that.
- * - DERIVED_COLUMNS: columns each side works out from a ledger: never taken as the truth from a push, never part of
- *   a row's content hash (so a till's cached balance is not an edit), never written from a pull.
+ * - DERIVED_COLUMNS: columns each side works out for itself (a customer's balance, points and, from till 0.1.52,
+ *   pending points; a recall's close / return members, now each shop's own ProductRecallBranchState): never taken as
+ *   the truth from a push, never part of a row's content hash (so a till's cached figure is not an edit), never
+ *   written by the till from a pull. The pull leaves them out (PullPayload), except the ledger sums it sends anyway
+ *   (PullPayload::LEDGER_SUMS).
  *
  * Relayed and drafted tables carry `hub_version` and `origin_branch_id` (2026_10_08_100000): a push stores the
  * sending shop as `origin_branch_id`; relayed rows are then stamped for the pull, a shop's own drafted-table rows
@@ -21,11 +25,16 @@ final class OwnershipRules
 {
     public const RELAYED = [
         'StockTransfer', 'StockTransferLine', 'StockTransferReceipt', 'StockTransferReceiptLine', 'CustomerTransaction',
+        'AccountPayDate',
     ];
 
     public const DRAFTED = ['PurchaseOrder', 'PurchaseOrderLine'];
 
-    public const DERIVED_COLUMNS = ['Customer' => ['balance', 'points']];
+    /** Snake_case columns, in ownership.json's order. */
+    public const DERIVED_COLUMNS = [
+        'Customer' => ['balance', 'pending_points', 'points'],
+        'ProductRecall' => ['closed_at', 'closed_by_user_id', 'note', 'returned_qty', 'status'],
+    ];
 
     /** Columns added to relayed and drafted tables. */
     public const COPY_COLUMNS = ['hub_version', 'origin_branch_id'];
