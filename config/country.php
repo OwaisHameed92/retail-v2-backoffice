@@ -43,8 +43,9 @@ return [
                 ],
             ],
             'address' => [
-                // TenantRules::POSTCODE_PATTERN. Required on the profile: a UK shop always has one (forms still
-                // validate it as today until phase P4).
+                // TenantRules::POSTCODE_PATTERN. Required on the profile: a UK shop always has one. Phase P4: the profile
+                // can only make a form's postcode optional, never newly required, so each GB form keeps its own
+                // required-ness (the tenant, shop and lead forms optional, the trial form required).
                 'postcodeLabel' => 'Postcode',
                 'postcodeRequired' => true,
                 'postcodePattern' => '/^[A-Z]{1,2}[0-9][A-Z0-9]? ?[0-9][A-Z]{2}$/',
@@ -55,6 +56,9 @@ return [
                 // TenantRules::PHONE_PATTERN; the example used by the lead and trial forms.
                 'pattern' => '/^[0-9+()\s-]{7,20}$/',
                 'example' => '07700 900123',
+                // The country calling code (phase P4): "+44 7700 900123", "0044 …" and "07700 …" are one number
+                // for duplicate checks (PhoneDigits) and the AI assistant's phone scrub.
+                'dialCode' => '44',
             ],
             'billing' => [
                 // Monthly fees by GoCardless Direct Debit.
@@ -107,6 +111,8 @@ return [
                 ],
             ],
             'address' => [
+                // Phase P4: optional everywhere (the trial form too), 5 digits when given; the town (city) is
+                // required on forms that have one as soon as an address or postal code is entered.
                 'postcodeLabel' => 'Postal code',
                 'postcodeRequired' => false,
                 'postcodePattern' => '/^\d{5}$/',
@@ -114,9 +120,12 @@ return [
                 'cityRequired' => true,
             ],
             'phone' => [
-                // A mobile: 03XX XXXXXXX, spaces or a dash allowed after the network code.
-                'pattern' => '/^03\d{2}[\s-]?\d{7}$/',
+                // Phase P4: a mobile ("0300 1234567", "+92 300 1234567", "0092 300 1234567") or a landline
+                // ("042 35761234", "+92 42 35761234"): 0, +92 or 0092, then 9 or 10 digits not starting with 0;
+                // spaces and dashes allowed between digits.
+                'pattern' => '/^(?:\+92|0092|0)[\s-]?[1-9](?:[\s-]?\d){8,9}$/',
                 'example' => '0300 1234567',
+                'dialCode' => '92',
             ],
             'billing' => [
                 // Invoices paid by hand (bank transfer, JazzCash, Easypaisa, cash), recorded by an admin (phase P5).

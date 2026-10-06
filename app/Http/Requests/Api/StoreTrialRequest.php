@@ -6,6 +6,7 @@ use App\Domain\Leads\Data\LeadDetails;
 use App\Domain\Leads\Enums\BusinessType as LeadBusinessType;
 use App\Domain\Leads\Enums\LeadSource;
 use App\Domain\Leads\Models\Lead;
+use App\Domain\Shared\Country\ContactRules;
 use App\Domain\Shared\Exceptions\ApiException;
 use App\Domain\Tenancy\Enums\BusinessType;
 use Illuminate\Contracts\Validation\Validator;
@@ -33,9 +34,11 @@ class StoreTrialRequest extends FormRequest
             'businessName' => ['required', 'string', 'max:160'],
             'contactName' => ['required', 'string', 'max:120'],
             'email' => ['required', 'string', 'email', 'max:191'],
-            'phone' => ['required', 'string', 'max:32', 'regex:/^\+?[0-9 ()\-]{7,}$/'],
+            // The UK trial website relies on these GB rules exactly; another profile uses its own phone pattern and an
+            // optional postcode in its format (Pakistan plan P4).
+            'phone' => ['required', 'string', 'max:32', 'regex:'.ContactRules::phonePattern('/^\+?[0-9 ()\-]{7,}$/')],
             'town' => ['required', 'string', 'max:80'],
-            'postcode' => ['required', 'string', 'max:10'],
+            'postcode' => ContactRules::postcode(['required', 'string', 'max:10']),
             'shopsCount' => ['required', 'integer', 'min:1', 'max:'.Lead::MAX_SHOPS],
             'tillsCount' => ['required', 'integer', 'min:1', 'max:'.Lead::MAX_TILLS, 'gte:shopsCount'],
             'businessType' => ['required', 'string', Rule::enum(BusinessType::class)],
@@ -60,9 +63,10 @@ class StoreTrialRequest extends FormRequest
             'email.required' => 'Enter your email address.',
             'email.email' => 'Enter a valid email address, like name@yourshop.co.uk.',
             'phone.required' => 'Enter a phone number so we can call you.',
-            'phone.regex' => 'Enter a valid phone number, like 07700 900123.',
+            'phone.regex' => ContactRules::phoneText('Enter a valid phone number, like 07700 900123.'),
             'town.required' => 'Enter the town your shop is in.',
             'postcode.required' => 'Enter your shop’s postcode.',
+            ...ContactRules::postcodeFormatMessages(),
             'shopsCount.*' => 'Enter between 1 and '.Lead::MAX_SHOPS.' shops.',
             'tillsCount.gte' => 'Enter at least one till for each shop.',
             'tillsCount.*' => 'Enter between 1 and '.Lead::MAX_TILLS.' tills.',

@@ -3,6 +3,7 @@ import { type Option } from '@/components/admin/tenants/types';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { companyNumberLabel, keepsUkStyles, taxIdFor, vatNumberLabel } from '@/lib/country';
+import { postcodeInputProps, postcodeLabel, townHint, townNeededWithAddress } from '@/lib/country-address';
 
 export type CompanyFieldsData = {
     name: string;
@@ -136,11 +137,12 @@ export function CompanyFields<T extends CompanyFieldsData>({ data, setData, erro
             >
                 <Textarea id="address" rows={3} value={data.address} onChange={(e) => setData('address', e.target.value)} />
             </Field>
-            <Field id="town" label="Town" optional error={errors.town}>
+            <Field id="town" label="Town" optional={!townNeededWithAddress()} hint={townHint()} error={errors.town}>
                 <Input id="town" value={data.town} onChange={(e) => setData('town', e.target.value)} aria-invalid={!!errors.town} />
             </Field>
-            <Field id="postcode" label="Postcode" optional error={errors.postcode}>
+            <Field id="postcode" label={postcodeLabel()} optional error={errors.postcode}>
                 <Input
+                    {...postcodeInputProps()}
                     id="postcode"
                     value={data.postcode}
                     onChange={(e) => setData('postcode', e.target.value.toUpperCase())}

@@ -16,6 +16,7 @@ import { vatNumberLabel } from '@/lib/country';
 import { Head, useForm } from '@inertiajs/react';
 import { Check, LoaderCircle, Plus, Store } from 'lucide-react';
 import { type FormEventHandler, useState } from 'react';
+import { postcodeLabel, townHint, townNeededWithAddress } from '@/lib/country-address';
 
 export default function ShopShow({ shop, business, licence, tills, health, requests, requestOptions, can }: ShopShowProps) {
     const [asking, setAsking] = useState(false);
@@ -163,8 +164,8 @@ function ShopDetailsForm({ shop, business, canEdit }: Pick<ShopShowProps, 'shop'
                                 aria-invalid={errors.address ? true : undefined}
                             />
                         </FormField>
-                        {text('town', 'Town', { optional: true })}
-                        {text('postcode', 'Postcode', { optional: true, upper: true })}
+                        {text('town', 'Town', { optional: !townNeededWithAddress(), help: townHint() })}
+                        {text('postcode', postcodeLabel(), { optional: true, upper: true })}
                     </FormGrid>
                 </FormSection>
                 <FormSection title="Receipt">

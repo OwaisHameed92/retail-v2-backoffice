@@ -3,6 +3,7 @@
 namespace App\Http\Requests\App\Setup;
 
 use App\Domain\Setup\Actions\SaveSupplier;
+use App\Domain\Shared\Country\ContactRules;
 use App\Domain\TillData\Enums\SupplierOrderMethod;
 use App\Domain\TillData\Enums\SupplierTermsKind;
 use Illuminate\Validation\Rule;
@@ -24,8 +25,9 @@ class SupplierRequest extends CompanyWideWriteRequest
             'email' => ['nullable', 'email', 'max:190'],
             'address_line1' => ['nullable', 'string', 'max:190'],
             'address_line2' => ['nullable', 'string', 'max:190'],
-            'town' => ['nullable', 'string', 'max:120'],
-            'postcode' => ['nullable', 'string', 'max:12'],
+            // Town and postcode follow the country profile (Pakistan plan P4); GB keeps these exact rules.
+            'town' => ContactRules::town(['nullable', 'string', 'max:120'], ['address_line1', 'address_line2', 'postcode']),
+            'postcode' => ContactRules::postcode(['nullable', 'string', 'max:12']),
             'account_number' => ['nullable', 'string', 'max:60'],
             'vat_number' => ['nullable', 'string', 'max:30'],
             'terms_kind' => ['required', Rule::enum(SupplierTermsKind::class)],
@@ -48,6 +50,8 @@ class SupplierRequest extends CompanyWideWriteRequest
             'name.required' => 'Enter the supplier\'s name.',
             'code.regex' => 'Use letters, digits and dashes only.',
             'payment_terms_days.required' => 'Enter how many days you have to pay.',
+            ...ContactRules::postcodeFormatMessages(),
+            ...ContactRules::townMessages(),
             'minimum_order_value.regex' => 'Enter an amount in pounds, e.g. 50 or 49.99.',
         ];
     }

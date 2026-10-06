@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import AuthLayout from '@/layouts/auth-layout';
+import { phoneText, postcodeInputProps, postcodeLabel, postcodeRequired } from '@/lib/country-address';
 import { Head } from '@inertiajs/react';
 import { CircleAlert, LoaderCircle } from 'lucide-react';
 import { useCallback, useState, type FormEvent, type InputHTMLAttributes } from 'react';
@@ -148,7 +149,7 @@ export default function Trial({ endpoint, turnstileSiteKey, businessTypes, maxSh
                             {input('contactName', { autoComplete: 'name', required: true })}
                         </FormField>
                         <FormField id="phone" label="Phone" error={errors.phone}>
-                            {input('phone', { type: 'tel', autoComplete: 'tel', required: true, placeholder: '07700 900123' })}
+                            {input('phone', { type: 'tel', autoComplete: 'tel', required: true, placeholder: phoneText('07700 900123') })}
                         </FormField>
                         <FormField id="email" label="Email address" error={errors.email} className="sm:col-span-2">
                             {input('email', { type: 'email', autoComplete: 'email', required: true, placeholder: 'you@yourshop.co.uk' })}
@@ -156,8 +157,8 @@ export default function Trial({ endpoint, turnstileSiteKey, businessTypes, maxSh
                         <FormField id="town" label="Town" error={errors.town}>
                             {input('town', { autoComplete: 'address-level2', required: true })}
                         </FormField>
-                        <FormField id="postcode" label="Postcode" error={errors.postcode}>
-                            {input('postcode', { autoComplete: 'postal-code', required: true, className: 'uppercase' })}
+                        <FormField id="postcode" label={postcodeLabel()} optional={!postcodeRequired(true)} error={errors.postcode}>
+                            {input('postcode', { autoComplete: 'postal-code', required: postcodeRequired(true), className: 'uppercase', ...postcodeInputProps() })}
                         </FormField>
                         <FormField id="businessType" label="Type of business" error={errors.businessType} className="sm:col-span-2">
                             <Select value={data.businessType} onValueChange={(value) => set('businessType', value)}>

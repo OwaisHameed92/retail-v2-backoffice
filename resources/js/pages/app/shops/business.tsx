@@ -14,6 +14,7 @@ import { companyNumberLabel, taxIdFor, vatNumberLabel } from '@/lib/country';
 import { Head, useForm } from '@inertiajs/react';
 import { Info, LoaderCircle } from 'lucide-react';
 import { type FormEventHandler } from 'react';
+import { postcodeLabel, townHint, townNeededWithAddress } from '@/lib/country-address';
 
 export default function BusinessDetailsPage({ business, facts, can }: BusinessPageProps) {
     const { data, setData, put, processing, errors, isDirty, reset, setDefaults } = useForm<BusinessForm>(blankNulls(business));
@@ -78,8 +79,8 @@ export default function BusinessDetailsPage({ business, facts, can }: BusinessPa
                                         aria-invalid={errors.address ? true : undefined}
                                     />
                                 </FormField>
-                                {text('town', 'Town', { optional: true })}
-                                {text('postcode', 'Postcode', { optional: true, upper: true })}
+                                {text('town', 'Town', { optional: !townNeededWithAddress(), help: townHint() })}
+                                {text('postcode', postcodeLabel(), { optional: true, upper: true })}
                             </FormGrid>
                         </FormSection>
                         <FormSection title="Receipt">

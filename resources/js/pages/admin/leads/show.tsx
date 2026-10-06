@@ -15,6 +15,7 @@ import { StatusBadge } from '@/components/shared/status-badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import AdminLayout from '@/layouts/admin-layout';
+import { postcodeLabel } from '@/lib/country-address';
 import { Head, Link, usePage } from '@inertiajs/react';
 import { Archive, ArrowRight, BadgeCheck, CalendarClock, CircleX, Store, UserRound } from 'lucide-react';
 
@@ -133,7 +134,7 @@ export default function LeadShow({ lead, notes, duplicates, approval, options, d
                                     ),
                                 },
                                 { label: 'Town', value: lead.town },
-                                { label: 'Postcode', value: lead.postcode },
+                                { label: postcodeLabel(), value: lead.postcode },
                                 { label: 'News and offers', value: lead.consentMarketing ? 'Agreed' : 'Not agreed' },
                             ]}
                         />
