@@ -64,7 +64,7 @@ till's), provincial sales tax for restaurants (PRA, SRB), a card or wallet payme
 
 | Decision | Needed by | Options |
 |---|---|---|
-| Domain | P7 | e.g. `pk.sspos.co.uk` or a `.pk` domain (owner will say) |
+| Domain | P7 | **Decided 2026-10-06:** `pak-pos.sspos.co.uk`, on the same VPS as the UK portal (187.124.113.13) for now: its own app folder, database, Redis prefix/DB, queue workers, cron, backups bucket folder and signing key; nothing shared with the UK at run time |
 | Money display | Decided 2026-10-06 | Whole rupees `Rs 1,250` (stored values keep 2 decimals) and lakh grouping `1,25,000` (plain numbers too); in the PK profile since P0 |
 | Plans and prices in PKR | P5 | setup fee, monthly per till |
 | How customers pay | Decided 2026-10-06 | Bank transfer, JazzCash, Easypaisa, cash (PK profile `billing.manualMethods`, built in P5); gateway later |
