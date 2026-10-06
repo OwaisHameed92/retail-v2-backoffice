@@ -11,6 +11,7 @@ use App\Domain\Licensing\Models\Licence;
 use App\Domain\Plans\Enums\Feature;
 use App\Domain\Tenancy\CurrentCompany;
 use App\Domain\Tenancy\Enums\Ability;
+use App\Domain\Tenancy\Enums\Nation;
 use App\Domain\Tenancy\Models\Branch;
 use App\Domain\Tenancy\Models\Register;
 use Illuminate\Support\Facades\Schema;
@@ -75,7 +76,8 @@ final class GetCompanyOverview implements AiTool
             'id' => $branch->id,
             'code' => $branch->code,
             'name' => $branch->name,
-            'nation' => $branch->nation->value,
+            // Phase P9: the UK nation only where the country profile has nations (not on PK, where it is just the default).
+            ...(Nation::shown() ? ['nation' => $branch->nation->value] : []),
             'isActive' => $branch->is_active,
             'tills' => $tills->get($branch->id, collect())->map(fn (Register $till) => [
                 'id' => $till->id,

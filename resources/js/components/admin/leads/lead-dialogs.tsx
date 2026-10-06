@@ -9,6 +9,7 @@ import { DialogForm } from './dialog-form';
 import { FollowUpFields, dateInputValue, timeInputValue } from './follow-up-fields';
 import { formatDateTimeShort } from './format';
 import { type LeadDetail, type LeadOptions } from './types';
+import { publicHolidays } from '@/lib/country-text';
 
 interface LeadDialogProps {
     lead: LeadDetail;
@@ -57,7 +58,7 @@ export function ContactedDialog({ lead, open, onOpenChange, defaultTime }: LeadD
                     rows={3}
                     autoFocus
                     maxLength={2000}
-                    placeholder="Spoke to the owner, wants to start after the bank holiday."
+                    placeholder={publicHolidays('Spoke to the owner, wants to start after the bank holiday.')}
                     value={form.data.note}
                     onChange={(event) => form.setData('note', event.target.value)}
                 />

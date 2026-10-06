@@ -8,6 +8,7 @@ import { router, useForm } from '@inertiajs/react';
 import { LoaderCircle, Search, X } from 'lucide-react';
 import { type FormEventHandler, useEffect, useRef, useState } from 'react';
 import { type Option, type RecallDetail } from './types';
+import { country } from '@/lib/country';
 
 type RecallValues = {
     reference: string;
@@ -28,6 +29,18 @@ const SOURCES: Option[] = [
     { value: 'Trading Standards', label: 'Trading Standards' },
     { value: 'Head office', label: 'Head office' },
 ];
+
+/** Off GB the UK agencies give way to a neutral "Food authority" (Pakistan plan P9); a stored source is still listed. */
+const OTHER_SOURCES: Option[] = [
+    { value: 'Food authority', label: 'Food authority' },
+    { value: 'Manufacturer', label: 'Manufacturer' },
+    { value: 'Supplier', label: 'Supplier' },
+    { value: 'Head office', label: 'Head office' },
+];
+
+function recallSources(): Option[] {
+    return country().code === 'GB' ? SOURCES : OTHER_SOURCES;
+}
 
 function initial(recall: RecallDetail | null): RecallValues {
     return {
@@ -55,7 +68,8 @@ export function RecallDialog({ recall, suppliers, productResults = [], onClose }
     const { data, setData, post, put, processing, errors } = useForm<RecallValues>(initial(recall));
     const [query, setQuery] = useState('');
     const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
-    const sources = data.source && !SOURCES.some((s) => s.value === data.source) ? [...SOURCES, { value: data.source, label: data.source }] : SOURCES;
+    const offered = recallSources();
+    const sources = data.source && !offered.some((s) => s.value === data.source) ? [...offered, { value: data.source, label: data.source }] : offered;
 
     useEffect(() => () => void (timer.current && clearTimeout(timer.current)), []);
 

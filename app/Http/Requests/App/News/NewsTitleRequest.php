@@ -3,6 +3,7 @@
 namespace App\Http\Requests\App\News;
 
 use App\Domain\News\Support\NewsAccess;
+use App\Domain\Shared\Country\LocalText;
 use App\Domain\TillData\Enums\NewsTitleFrequency;
 use App\Domain\TillData\Models\NewsTitle;
 use Illuminate\Foundation\Http\FormRequest;
@@ -64,7 +65,7 @@ class NewsTitleRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'cover_price.regex' => 'Enter the cover price in pounds, e.g. 1.80.',
+            'cover_price.regex' => LocalText::currency('Enter the cover price in pounds, e.g. 1.80.'),
             'supplier_id.required' => 'Choose the wholesaler that supplies this title.',
         ];
     }

@@ -15,6 +15,7 @@ import AppLayout from '@/layouts/app-layout';
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import { CircleStop, Info, LoaderCircle } from 'lucide-react';
 import { type FormEventHandler } from 'react';
+import { currencyName } from '@/lib/country';
 
 const blank = (today: string, shop: string | null): PromotionValues => ({
     name: '',
@@ -124,7 +125,7 @@ export default function PromotionFormPage({ promotion, options, restrictedShop, 
                     </fieldset>
 
                     {canEdit && (
-                        <StickyFormBar message={isDirty ? 'You have unsaved changes.' : 'Prices are in pounds. Changes reach your tills at their next sync.'}>
+                        <StickyFormBar message={isDirty ? 'You have unsaved changes.' : `Prices are in ${currencyName()}. Changes reach your tills at their next sync.`}>
                             <Button variant="outline" asChild>
                                 <Link href={route('app.promotions.index')}>Cancel</Link>
                             </Button>

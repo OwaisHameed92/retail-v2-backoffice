@@ -6,6 +6,7 @@ import { dateLocale, zonedDateFormat } from '@/lib/country';
 import { Head } from '@inertiajs/react';
 import { type ReactNode } from 'react';
 import { type ChargeStatus, type MedicineClass } from './types';
+import { ukOnly } from '@/lib/country-text';
 
 export const CHARGE: Record<ChargeStatus, { label: string; tone: StatusTone }> = {
     paid: { label: 'NHS charge paid', tone: 'success' },
@@ -34,8 +35,13 @@ export const CLASSES: Record<MedicineClass, { label: string; short: string; tone
     prescriptionOnly: { label: 'Prescription only', short: 'POM', tone: 'danger', help: 'Supplied only against a prescription.' },
 };
 
+/** The charge label as shown: "NHS charge paid" on GB, "Prescription charge paid" elsewhere (Pakistan plan P9). */
+export function chargeLabel(status: ChargeStatus): string {
+    return status === 'paid' ? ukOnly(CHARGE.paid.label, 'Prescription charge paid') : CHARGE[status].label;
+}
+
 export function ChargePill({ status }: { status: ChargeStatus | null }) {
-    return status ? <StatusPill tone={CHARGE[status].tone}>{CHARGE[status].label}</StatusPill> : <span className="text-muted-foreground">—</span>;
+    return status ? <StatusPill tone={CHARGE[status].tone}>{chargeLabel(status)}</StatusPill> : <span className="text-muted-foreground">—</span>;
 }
 
 export function ClassPill({ value }: { value: MedicineClass | null }) {

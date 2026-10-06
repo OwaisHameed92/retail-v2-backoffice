@@ -12,7 +12,7 @@ import { StickyFormBar } from '@/components/shared/sticky-form-bar';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/app-layout';
-import { taxText } from '@/lib/country';
+import { currencyName, taxText } from '@/lib/country';
 import { relativeTime } from '@/lib/relative-time';
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import { Archive, ArchiveRestore, Info, LoaderCircle } from 'lucide-react';
@@ -131,7 +131,7 @@ export default function ProductFormPage({ product, values, options, canManage }:
 
                     {canManage && (
                         <StickyFormBar
-                            message={isDirty ? 'You have unsaved changes.' : 'Prices are in pounds. Changes reach your tills at their next sync.'}
+                            message={isDirty ? 'You have unsaved changes.' : `Prices are in ${currencyName()}. Changes reach your tills at their next sync.`}
                         >
                             <Button variant="outline" asChild>
                                 <Link href={route('app.products.index')}>Cancel</Link>

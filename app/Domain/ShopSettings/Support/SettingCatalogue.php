@@ -4,6 +4,7 @@ namespace App\Domain\ShopSettings\Support;
 
 use App\Domain\Shared\Country\Country;
 use App\Domain\Shared\Country\LocalText;
+use App\Domain\Shared\Country\MoneyFormat;
 use App\Domain\TillData\Sync\SettingSyncPolicy;
 use Illuminate\Validation\ValidationException;
 
@@ -54,6 +55,16 @@ final class SettingCatalogue
             ],
             'shop.company_number' => $company === null ? null : [$company['label'], "Your {$company['label']}, if you are a company."],
         ]);
+        // Phase P9: UK-only words (pence, 5p, Challenge 25, Trading Standards) in neutral terms; same till behaviour.
+        $ids += [
+            'till.keypad_price_in_pence' => [
+                'Type prices without the decimal point',
+                'On: typing 150 on the keypad means '.MoneyFormat::prefix($country).'1.50. Off: type 1.50.',
+            ],
+            'payments.round_cash_to_5p' => ['Round cash totals', 'Cash totals are rounded to the nearest 0.05.'],
+            'compliance.challenge25_age' => ['Ask for ID if they look under', 'Usually 25.'],
+            'compliance.refusal_register_enabled' => ['Refusals register', 'Staff record each refused sale.'],
+        ];
 
         foreach ($sections as &$section) {
             $section['title'] = $country->taxText($section['title']);

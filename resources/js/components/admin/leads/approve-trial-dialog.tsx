@@ -92,6 +92,8 @@ export function ApproveTrialDialog({ lead, approval, open, onOpenChange }: Appro
     const plan = approval.plans.find((option) => option.value === form.data.plan_id);
     const trialDays = approval.plansTrialDays[form.data.plan_id] ?? approval.trialDays;
     const blocked = !lead.email || approval.plans.length === 0;
+    // Pakistan plan P9: no nations off GB (the till's values are the UK's): the column is hidden there.
+    const hasNations = approval.nations.length > 0;
 
     const updateShop = (index: number, patch: Partial<TrialShopInput>, codeTyped = false) => {
         const nextEdited = codeTyped ? edited.map((value, i) => (i === index ? true : value)) : edited;
@@ -181,8 +183,15 @@ export function ApproveTrialDialog({ lead, approval, open, onOpenChange }: Appro
                     </div>
                 </div>
 
-                <div className="hidden grid-cols-[minmax(0,1fr)_6rem_9.5rem_8.5rem_2.25rem] gap-2 px-1 sm:grid" aria-hidden>
-                    {['Shop name', 'Code', 'Nation', 'Tills', ''].map((label) => (
+                <div
+                    className={
+                        hasNations
+                            ? 'hidden grid-cols-[minmax(0,1fr)_6rem_9.5rem_8.5rem_2.25rem] gap-2 px-1 sm:grid'
+                            : 'hidden grid-cols-[minmax(0,1fr)_6rem_8.5rem_2.25rem] gap-2 px-1 sm:grid'
+                    }
+                    aria-hidden
+                >
+                    {(hasNations ? ['Shop name', 'Code', 'Nation', 'Tills', ''] : ['Shop name', 'Code', 'Tills', '']).map((label) => (
                         <span key={label} className="text-muted-foreground text-xs font-medium">
                             {label}
                         </span>
@@ -193,7 +202,11 @@ export function ApproveTrialDialog({ lead, approval, open, onOpenChange }: Appro
                     {shops.map((shop, index) => (
                         <li
                             key={index}
-                            className="grid grid-cols-1 gap-2 rounded-lg border p-3 sm:grid-cols-[minmax(0,1fr)_6rem_9.5rem_8.5rem_2.25rem] sm:items-start sm:border-0 sm:p-0"
+                            className={
+                                hasNations
+                                    ? 'grid grid-cols-1 gap-2 rounded-lg border p-3 sm:grid-cols-[minmax(0,1fr)_6rem_9.5rem_8.5rem_2.25rem] sm:items-start sm:border-0 sm:p-0'
+                                    : 'grid grid-cols-1 gap-2 rounded-lg border p-3 sm:grid-cols-[minmax(0,1fr)_6rem_8.5rem_2.25rem] sm:items-start sm:border-0 sm:p-0'
+                            }
                         >
                             <FormField
                                 id={`shop-${index}-name`}
@@ -226,20 +239,22 @@ export function ApproveTrialDialog({ lead, approval, open, onOpenChange }: Appro
                                     2 to 5 capital letters, used in receipt numbers.
                                 </span>
                             </FormField>
-                            <FormField id={`shop-${index}-nation`} label={<span className="sm:sr-only">Nation</span>}>
-                                <Select value={shop.nation} onValueChange={(value) => updateShop(index, { nation: value as Nation })}>
-                                    <SelectTrigger id={`shop-${index}-nation`}>
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {approval.nations.map((nation) => (
-                                            <SelectItem key={nation.value} value={nation.value}>
-                                                {nation.label}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </FormField>
+                            {hasNations && (
+                                <FormField id={`shop-${index}-nation`} label={<span className="sm:sr-only">Nation</span>}>
+                                    <Select value={shop.nation} onValueChange={(value) => updateShop(index, { nation: value as Nation })}>
+                                        <SelectTrigger id={`shop-${index}-nation`}>
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {approval.nations.map((nation) => (
+                                                <SelectItem key={nation.value} value={nation.value}>
+                                                    {nation.label}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </FormField>
+                            )}
                             <FormField
                                 id={`shop-${index}-tills`}
                                 label={<span className="sm:sr-only">Tills</span>}

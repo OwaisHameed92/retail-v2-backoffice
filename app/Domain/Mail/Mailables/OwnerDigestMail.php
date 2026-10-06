@@ -6,6 +6,7 @@ use App\Domain\Mail\Data\OwnerDigestData;
 use App\Domain\Mail\Support\MailFormat;
 use App\Domain\Mail\Support\MorningSummaryMail;
 use App\Domain\Shared\Country\Country;
+use App\Domain\Shared\Country\LocalText;
 use Carbon\CarbonImmutable;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Headers;
@@ -46,12 +47,12 @@ final class OwnerDigestMail extends BrandedMailable
             day: CarbonImmutable::now(Country::zone())->format('Y-m-d'),
             sections: [
                 ['type' => 'lowStock', 'title' => 'Low and negative stock', 'summary' => '14 products low, 3 out of stock, 1 below zero.',
-                    'items' => ['Leeds: Coca-Cola 500ml, -2 on hand', 'Leeds: Walkers Ready Salted 32.5g, 0 on hand', 'Bradford: Warburtons Toastie 800g, 3 on hand (low at 6)'],
+                    'items' => [LocalText::places('Leeds: Coca-Cola 500ml, -2 on hand'), LocalText::places('Leeds: Walkers Ready Salted 32.5g, 0 on hand'), LocalText::places('Bradford: Warburtons Toastie 800g, 3 on hand (low at 6)')],
                     'more' => 15, 'url' => $portal.'/app/stock?status=low', 'unsubscribeUrl' => $settings],
                 ['type' => 'cashVariance', 'title' => 'Cash variances', 'summary' => '1 difference over your alert amount yesterday.',
-                    'items' => ['Leeds, Till 1: Cash '.MailFormat::money('12.40').' short'], 'more' => 0, 'url' => $portal.'/app/cash/alerts', 'unsubscribeUrl' => $settings],
+                    'items' => [LocalText::places('Leeds, Till 1: Cash ').MailFormat::money('12.40').' short'], 'more' => 0, 'url' => $portal.'/app/cash/alerts', 'unsubscribeUrl' => $settings],
                 ['type' => 'compliance', 'title' => 'Compliance expiries and recalls', 'summary' => '1 licence expiring, 1 open recall.',
-                    'items' => ['Premises licence PL-2231 · Leeds expires 18 Nov 2026 (9 days)', 'Recall: Hovis Seed Sensations batch L2291'],
+                    'items' => [LocalText::places('Premises licence PL-2231 · Leeds expires 18 Nov 2026 (9 days)'), 'Recall: Hovis Seed Sensations batch L2291'],
                     'more' => 0, 'url' => $portal.'/app/compliance', 'unsubscribeUrl' => $settings],
             ],
             settingsUrl: $settings,

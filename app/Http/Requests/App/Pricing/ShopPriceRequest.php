@@ -3,6 +3,7 @@
 namespace App\Http\Requests\App\Pricing;
 
 use App\Domain\Shared\Country\Country;
+use App\Domain\Shared\Country\LocalText;
 use App\Domain\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Http\FormRequest;
@@ -42,7 +43,7 @@ class ShopPriceRequest extends FormRequest
      */
     public function messages(): array
     {
-        return ['price.regex' => 'Enter the price in pounds, e.g. 1.39.'];
+        return ['price.regex' => LocalText::currency('Enter the price in pounds, e.g. 1.39.')];
     }
 
     public function time(string $key): ?CarbonImmutable

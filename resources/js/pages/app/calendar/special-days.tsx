@@ -5,6 +5,7 @@ import { SectionCard } from '@/components/shared/section-card';
 import { StatusPill } from '@/components/shared/status-badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { CalendarX2 } from 'lucide-react';
+import { publicHolidays } from '@/lib/country-text';
 
 /** Module 5.9: the tills' special days (read only: each shop sets them on its till). */
 export default function CalendarSpecialDays({ days, filters, shops, total, limit }: SpecialDaysProps) {
@@ -15,7 +16,7 @@ export default function CalendarSpecialDays({ days, filters, shops, total, limit
             tab="special"
             filters={filters}
             title="Special days"
-            description="Bank holidays, closures and changed hours, as each shop's till holds them. Change them on the till: they arrive here after it syncs."
+            description={publicHolidays("Bank holidays, closures and changed hours, as each shop's till holds them. Change them on the till: they arrive here after it syncs.")}
         >
             <SectionCard
                 title={filters.when === 'past' ? 'Past special days' : filters.when === 'all' ? 'All special days' : 'Upcoming special days'}
@@ -28,7 +29,7 @@ export default function CalendarSpecialDays({ days, filters, shops, total, limit
                         icon={CalendarX2}
                         size="sm"
                         title="No special days"
-                        body="When a till marks a bank holiday, a closure or different hours for a day, it shows here."
+                        body={publicHolidays('When a till marks a bank holiday, a closure or different hours for a day, it shows here.')}
                     />
                 ) : (
                     <Table>

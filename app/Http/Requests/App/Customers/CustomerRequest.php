@@ -41,7 +41,7 @@ class CustomerRequest extends CompanyWideWriteRequest
             'email.email' => LocalText::domains('Enter a valid email address, e.g. name@example.co.uk.'),
             'dob.before' => 'The date of birth must be in the past.',
             'card_no.regex' => 'Use letters, digits and dashes only.',
-            'credit_limit.regex' => 'Enter an amount in pounds, e.g. 50 or 49.99. Use 0 for no account credit.',
+            'credit_limit.regex' => LocalText::currency('Enter an amount in pounds, e.g. 50 or 49.99. Use 0 for no account credit.'),
         ];
     }
 }

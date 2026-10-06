@@ -5,6 +5,7 @@ namespace App\Http\Requests\Admin;
 use App\Domain\Billing\Data\UpfrontPayment;
 use App\Domain\Licensing\Data\BranchLicenceSettings;
 use App\Domain\Licensing\Signing\Sspos\TokenKind;
+use App\Domain\Shared\Country\LocalText;
 use App\Domain\Tenancy\Data\NewTenant;
 use App\Domain\Tenancy\Enums\CompanyStatus;
 use App\Domain\Tenancy\Models\Company;
@@ -53,7 +54,7 @@ class StoreTenantRequest extends FormRequest
         return TenantRules::messages('branch_') + [
             'name.required' => 'Enter the business name.',
             'branch_code.required' => 'Enter a short branch code, for example LDS.',
-            'branch_name.required' => 'Enter the branch name, for example Leeds.',
+            'branch_name.required' => LocalText::places('Enter the branch name, for example Leeds.'),
             'tills.min' => 'A branch needs at least 1 till.',
             'tills.max' => 'Add up to '.NewTenant::MAX_TILLS.' tills now; you can add more later.',
             'owner_name.required' => 'Enter the owner’s name.',

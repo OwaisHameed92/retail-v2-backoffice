@@ -104,6 +104,8 @@ export interface CountryProfile {
     features: { vatReturn: boolean; fbr: boolean } & Record<string, boolean>;
     /** Pakistan plan P5: the methods staff record by hand, sent only where fees are collected by hand (PK). */
     manualMethods?: string[];
+    /** Pakistan plan P9: UK sample places in examples and what replaces them ("Leeds" → "Lahore"), sent only off GB. */
+    samplePlaces?: Record<string, string>;
 }
 
 export interface SharedData {

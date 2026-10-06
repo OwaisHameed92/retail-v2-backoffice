@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { type ColumnDef } from '@tanstack/react-table';
 import { CalendarClock, Clock, Download, TimerOff, TriangleAlert } from 'lucide-react';
+import { ukOnly } from '@/lib/country-text';
 
 function columns(weekly: boolean): ColumnDef<TimesheetRow>[] {
     return [
@@ -247,7 +248,10 @@ export default function StaffTimesheets({ timesheets, summary, wageBands, filter
                 </SectionCard>
                 <SectionCard
                     title="Minimum wage bands"
-                    description="National Minimum and Living Wage by age, as the tills hold them. Read only, for checking rates."
+                    description={ukOnly(
+                        'National Minimum and Living Wage by age, as the tills hold them. Read only, for checking rates.',
+                        'Minimum wage rates by age, as the tills hold them. Read only, for checking rates.',
+                    )}
                     flush
                 >
                     {wageBands.length === 0 ? (

@@ -2,6 +2,7 @@
 
 namespace App\Domain\TillData\Actions;
 
+use App\Domain\Shared\Country\LocalText;
 use App\Domain\Shared\Support\Money;
 use App\Domain\Tenancy\Models\Branch;
 use App\Domain\TillData\Models\BranchPrice;
@@ -29,7 +30,7 @@ final class SetBranchPrice
         ?CarbonImmutable $validTo = null,
     ): BranchPrice {
         if (preg_match('/^\d{1,10}(\.\d{1,2})?$/', trim($price)) !== 1) {
-            throw ValidationException::withMessages(['price' => 'Enter the price in pounds, e.g. 1.39.']);
+            throw ValidationException::withMessages(['price' => LocalText::currency('Enter the price in pounds, e.g. 1.39.')]);
         }
 
         $from = ($validFrom ?? CarbonImmutable::now())->utc()->startOfSecond();

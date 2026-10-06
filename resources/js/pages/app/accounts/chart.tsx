@@ -5,7 +5,7 @@ import { EmptyState } from '@/components/shared/empty-state';
 import { SectionCard } from '@/components/shared/section-card';
 import { StatusPill } from '@/components/shared/status-badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { taxText } from '@/lib/country';
+import { hasVatReturn, taxText } from '@/lib/country';
 import { Link } from '@inertiajs/react';
 import { BookOpen } from 'lucide-react';
 
@@ -50,7 +50,8 @@ export default function AccountsChart({ accounts, filters, options, shopCount }:
                                         <TableRow>
                                             <TableHead className="w-24">Code</TableHead>
                                             <TableHead>Account</TableHead>
-                                            <TableHead className="hidden md:table-cell">{taxText('VAT box')}</TableHead>
+                                            {/* Pakistan plan P9: the VAT return box (HMRC's 9 boxes) only where the VAT return exists. */}
+                                            {hasVatReturn() && <TableHead className="hidden md:table-cell">{taxText('VAT box')}</TableHead>}
                                             <TableHead className="hidden md:table-cell">Shops</TableHead>
                                             <TableHead className="text-right">Movement in period</TableHead>
                                             <TableHead className="text-right">Balance at {filters.to.split('-').reverse().join('/')}</TableHead>
@@ -74,7 +75,7 @@ export default function AccountsChart({ accounts, filters, options, shopCount }:
                                                     </div>
                                                     {a.parentCode && <p className="text-muted-foreground text-xs">Under {a.parentCode}</p>}
                                                 </TableCell>
-                                                <TableCell className="hidden tabular-nums md:table-cell">{a.vatBox ?? '—'}</TableCell>
+                                                {hasVatReturn() && <TableCell className="hidden tabular-nums md:table-cell">{a.vatBox ?? '—'}</TableCell>}
                                                 <TableCell className="text-muted-foreground hidden tabular-nums md:table-cell">
                                                     {a.shops === 0 ? 'Journals only' : `${a.shops} of ${shopCount}`}
                                                 </TableCell>

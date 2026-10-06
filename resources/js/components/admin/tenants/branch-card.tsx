@@ -99,7 +99,8 @@ export function BranchCard({ tenantId, branch, canManage, tillLicences, canManag
                         <div className="text-muted-foreground flex flex-wrap gap-x-4 gap-y-1 text-[13px]">
                             <span className="inline-flex items-center gap-1.5">
                                 <MapPin className="size-3.5" aria-hidden />
-                                {branch.address ? branch.address.split('\n').join(', ') : 'No address'} · {branch.nationLabel}
+                                {branch.address ? branch.address.split('\n').join(', ') : 'No address'}
+                                {branch.nationLabel && <> · {branch.nationLabel}</>}
                             </span>
                             {branch.phone && (
                                 <span className="inline-flex items-center gap-1.5">
