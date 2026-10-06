@@ -77,6 +77,33 @@ export interface CompanyOption {
     name: string;
 }
 
+/** The instance's country profile (Pakistan plan P0), shared by HandleInertiaRequests from config/country.php. */
+export interface CountryProfile {
+    code: 'GB' | 'PK';
+    name: string;
+    /** ISO 4217: "GBP", "PKR". */
+    currency: string;
+    /** "£", "Rs". */
+    currencySymbol: string;
+    /** "Rs 1,250" has a space; "£1,250.00" has none. */
+    currencySymbolSpace: boolean;
+    displayDecimals: number;
+    /** "thousands" (1,234,567) or "lakh" (12,34,567). */
+    grouping: 'thousands' | 'lakh';
+    numberLocale: string;
+    dateLocale: string;
+    /** "Europe/London", "Asia/Karachi". */
+    timezone: string;
+    /** "VAT", "GST". */
+    taxName: string;
+    /** GB: vatNumber, companyNumber. PK: ntn, strn, companyNumber. */
+    taxIds: Record<string, { label: string; example: string }>;
+    address: { postcodeLabel: string; postcodeRequired: boolean; postcodeExample: string; cityRequired: boolean };
+    phoneExample: string;
+    billingCollection: 'gocardless' | 'manual';
+    features: { vatReturn: boolean; fbr: boolean } & Record<string, boolean>;
+}
+
 export interface SharedData {
     name: string;
     quote: { message: string; author: string };
@@ -85,6 +112,7 @@ export interface SharedData {
     companies: CompanyOption[];
     companyRole: CompanyRole | null;
     abilities: Ability[];
+    country: CountryProfile;
     [key: string]: unknown;
 }
 

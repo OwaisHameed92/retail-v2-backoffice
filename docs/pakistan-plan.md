@@ -44,7 +44,7 @@ till side (FBR, Rs, GST, Urdu receipt, PK installer) is the EPOS team's work, as
 
 | # | Phase | What | Est. |
 |---|---|---|---|
-| P0 | **Country foundation** | `config/country.php` with a profile per country (GB, PK): currency code and symbol, display decimals, number locale, time zone, tax name (VAT / GST), tax ids (VAT number / NTN, STRN), company id (Companies House / SECP), address rules (postcode required or not, pattern), phone example and pattern, billing collection (`gocardless` / `manual`), feature flags (`vatReturn`, later `fbr`). A `Country` class (PHP) reads it; shared to every Inertia page as `country`. TS `lib/country.ts`: `formatMoney`, `formatNumber`, `formatDate`, `formatDateTime` that read the shared profile. Tests: GB profile equals today's constants; PK profile values | 2 days |
+| P0 | **Country foundation** (done 2026-10-06, branch `pakistan/p0-foundation`) | `config/country.php` with a profile per country (GB, PK): currency code and symbol, display decimals, number locale, time zone, tax name (VAT / GST), tax ids (VAT number / NTN, STRN), company id (Companies House / SECP), address rules (postcode required or not, pattern), phone example and pattern, billing collection (`gocardless` / `manual`), feature flags (`vatReturn`, later `fbr`). A `Country` class (PHP) reads it; shared to every Inertia page as `country`. TS `lib/country.ts`: `formatMoney`, `formatNumber`, `formatDate`, `formatDateTime` that read the shared profile. Tests: GB profile equals today's constants; PK profile values | 2 days |
 | P1 | **Time zone** | Replace the 66 PHP and 33 TS hard-coded `Europe/London` with the profile's zone (`Country::timezone()`, `config('reporting.timezone')` defaulting to it). Trading days, reports (`rpt_*`), till health, AI budgets, schedules | 2 days |
 | P2 | **Money and numbers** | Every TS formatter and every `£` goes through `lib/country.ts`; PHP through one `MoneyFormat` (mail, CSV, labels, anomaly text, validation messages) | 3 days |
 | P3 | **Tax wording and UK-only features** | "VAT" → the profile's tax name in labels; the HMRC VAT return shown only where `vatReturn` is on; VAT number / Companies House fields per profile (NTN, STRN, SECP for PK) | 2 days |
@@ -65,9 +65,9 @@ till's), provincial sales tax for restaurants (PRA, SRB), a card or wallet payme
 | Decision | Needed by | Options |
 |---|---|---|
 | Domain | P7 | e.g. `pk.sspos.co.uk` or a `.pk` domain (owner will say) |
-| Money display | P2 | **Decided 2026-10-06:** whole rupees `Rs 1,250`, lakh grouping `1,25,000` (numbers too). Stored values stay 2 dp |
+| Money display | Decided 2026-10-06 | Whole rupees `Rs 1,250` (stored values keep 2 decimals) and lakh grouping `1,25,000` (plain numbers too); in the PK profile since P0 |
 | Plans and prices in PKR | P5 | setup fee, monthly per till |
-| How customers pay | P5 | **Decided 2026-10-06:** all of bank transfer, JazzCash, Easypaisa and cash (recorded by hand; gateway later) |
+| How customers pay | Decided 2026-10-06 | Bank transfer, JazzCash, Easypaisa, cash (PK profile `billing.manualMethods`, built in P5); gateway later |
 | First kind of shops | P8 | kiryana, mobile, pharmacy, garments (sets the FBR priority) |
 
 ## Testing

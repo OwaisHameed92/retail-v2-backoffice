@@ -945,3 +945,14 @@ move, multi-shop"). Contract still v1; the pack was copied over the contract fol
 | Settings | `customers.reminders_due_on_till` in the catalogue ("Due today on the till", every shop only). `customers.reminders_from_utc` is local only by the `_utc` rule (`SettingSyncPolicy`, no list change) |
 | Error codes | `customers.anonymise_credit_held`, `order.refund_account_no_customer`, `order.refund_account_over` are till-screen codes, not portal API codes; the portal maps no till error codes, nothing to change. `customers.advance_off` was never referenced |
 | Ledger | `CustomerCreditReclassReversal` (same `refId`, Dr 2260 / Cr 1100) is accepted as free-text `refType`; the reclass and its reversal net to nothing in `Ledger` balances and `RefundFix` flags neither (tested) |
+
+## Country profiles (P0, 2026-10-06; docs/pakistan-plan.md)
+
+| Topic | Decision |
+|---|---|
+| Profile | `config/country.php`: `COUNTRY=GB\|PK` picks one profile per instance; missing, blank or unknown = GB (`Country::resolveCode`). `phpunit.xml` / `phpunit.mysql.xml` pin `COUNTRY=GB` (a shell `COUNTRY=PK` still wins for the PK smoke run). Read it through `App\Domain\Shared\Country\Country` (singleton), never `config()` |
+| GB values | Copied from today's code and pinned by golden tests (`tests/Unit/Shared/CountryProfileTest.php`): `TenantRules` VAT, Companies House, postcode and phone patterns, `Europe/London` (= `MailFormat::TIMEZONE`, `reporting.timezone`), `en-GB`, GoCardless, manual methods = `PaymentMethod::manual()` |
+| Money text | `MoneyFormat::format()` (bcmath, half away from zero, profile decimals). GB = `BillingFormat::money` and the front end's Intl `en-GB` GBP output for every amount: sign before the symbol (`-£5.00`). `MailFormat::money` matches for amounts ≥ 0 only (it writes `£-5.00`); P2 settles callers on `-£5.00` |
+| PK money (owner) | Whole rupees `Rs 1,250` (stored values keep 2 decimals) and lakh grouping `1,25,000`, plain numbers too. CLDR `en-PK` groups in thousands (PHP intl and Node checked), so the grouping is done by `Country::groupDigits` and `lib/country.ts` themselves (`grouping: 'lakh'`); GB keeps Intl's own output untouched |
+| PK billing (owner) | `collection: manual`; methods bank transfer, JazzCash, Easypaisa, cash (`billing.manualMethods`, built in P5) |
+| Front end | Every Inertia page gets `country` (`Country::toFrontend()`: no regex patterns, server validates). `resources/js/lib/country.ts`: `formatMoney`, `formatMoneyWhole`, `formatNumber`, `formatDate`, `formatDateTime`, `formatTime`, `taxName`, `useCountry`; `setCountry()` once in `app.tsx`; GB output equals today's formatters (checked against them; no JS test runner in the repo). Existing callers move in P1/P2 |

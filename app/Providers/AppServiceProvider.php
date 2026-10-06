@@ -12,6 +12,7 @@ use App\Domain\Licensing\Listeners\IssueLicenceForNewTill;
 use App\Domain\Licensing\Listeners\SendWelcomeEmailWithKeys;
 use App\Domain\Licensing\Listeners\SuspendLicenceOfDeactivatedTill;
 use App\Domain\Licensing\Listeners\UnsuspendLicenceOfReactivatedTill;
+use App\Domain\Shared\Country\Country;
 use App\Domain\Tenancy\Events\BranchAdded;
 use App\Domain\Tenancy\Events\BranchDeactivated;
 use App\Domain\Tenancy\Events\BranchReactivated;
@@ -34,6 +35,9 @@ class AppServiceProvider extends ServiceProvider
         // GoCardless Direct Debit (module 1.12). Tests bind FakeGoCardlessClient::install(). Demo businesses
         // (demo:billing) are never sent to GoCardless: DemoSafeGoCardlessClient refuses their calls.
         $this->app->singleton(GoCardlessClient::class, fn () => new DemoSafeGoCardlessClient(new SdkGoCardlessClient));
+
+        // Pakistan plan P0: this instance's country profile (COUNTRY=GB|PK, default GB).
+        $this->app->singleton(Country::class, fn () => Country::fromConfig());
     }
 
     /**
