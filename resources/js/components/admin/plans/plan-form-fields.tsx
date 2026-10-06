@@ -1,7 +1,7 @@
 import { FormField, FormSection as SharedFormSection } from '@/components/shared/form-section';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
-import { currencySymbol, wideCurrencySymbol } from '@/lib/country';
+import { currencySymbol, moneyInputPattern, wideCurrencySymbol } from '@/lib/country';
 import { cn } from '@/lib/utils';
 import { type ComponentProps, type ReactNode } from 'react';
 
@@ -22,7 +22,7 @@ export function MoneyInput({ id, invalid, className, ...props }: ComponentProps<
                 type="text"
                 inputMode="decimal"
                 autoComplete="off"
-                pattern="^\d{1,5}(\.\d{1,2})?$"
+                pattern={moneyInputPattern()}
                 aria-invalid={invalid || undefined}
                 aria-describedby={invalid ? `${id}-error` : `${id}-help`}
                 className={cn(wideCurrencySymbol() ? 'pl-10' : 'pl-7', 'tabular-nums', className)}
