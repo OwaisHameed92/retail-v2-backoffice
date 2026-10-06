@@ -5,6 +5,7 @@ namespace App\Domain\Ai\Support\Portal;
 use App\Domain\Reporting\Dashboard\BusinessDashboardFilters;
 use App\Domain\Reporting\Enums\TradingCompare;
 use App\Domain\Reporting\Enums\TradingPeriod;
+use App\Domain\Shared\Country\LocalText;
 use App\Domain\Shared\Rules\ValidUlid;
 use App\Domain\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
@@ -27,7 +28,7 @@ final class ToolWindow
             'period' => [
                 'type' => 'string',
                 'enum' => array_map(fn (TradingPeriod $p) => $p->value, TradingPeriod::cases()),
-                'description' => 'Trading days to read (UK dates). "custom" uses from and to. Default last7Days.',
+                'description' => 'Trading days to read ('.LocalText::region().' dates). "custom" uses from and to. Default last7Days.',
             ],
             'from' => ['type' => 'string', 'description' => 'First day, YYYY-MM-DD (with period "custom").'],
             'to' => ['type' => 'string', 'description' => 'Last day, YYYY-MM-DD (with period "custom").'],

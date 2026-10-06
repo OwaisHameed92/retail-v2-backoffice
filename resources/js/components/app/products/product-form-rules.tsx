@@ -2,6 +2,7 @@ import { FormField, FormGrid, FormSection } from '@/components/shared/form-secti
 import { Input } from '@/components/ui/input';
 import { CheckRow, MoneyInput, NumberField, OptionSelect } from './fields';
 import { type SectionProps } from './types';
+import { ukOnly } from '@/lib/country-text';
 
 /** Age checks, sale limits and the legal flags the till and reports use. */
 export function RulesSection({ data, setData, errors, options }: SectionProps) {
@@ -39,7 +40,7 @@ export function RulesSection({ data, setData, errors, options }: SectionProps) {
                 <CheckRow id="is_tobacco" checked={data.is_tobacco} onChange={(v) => setData('is_tobacco', v)} label="Tobacco" help="Kept out of promotions and discounts." />
                 <CheckRow id="vape_duty_applies" checked={data.vape_duty_applies} onChange={(v) => setData('vape_duty_applies', v)} label="Vaping duty applies" help="Counted in vaping duty returns." />
                 <CheckRow id="is_lottery" checked={data.is_lottery} onChange={(v) => setData('is_lottery', v)} label="Lottery" help="Sold as a lottery item." />
-                <CheckRow id="is_knife" checked={data.is_knife} onChange={(v) => setData('is_knife', v)} label="Knife or blade" help="Challenge 25 and the refusals log." />
+                <CheckRow id="is_knife" checked={data.is_knife} onChange={(v) => setData('is_knife', v)} label="Knife or blade" help={ukOnly('Challenge 25 and the refusals log.', 'Age check and the refusals log.')} />
                 <CheckRow id="is_hfss" checked={data.is_hfss} onChange={(v) => setData('is_hfss', v)} label="High fat, sugar or salt" help="Kept out of HFSS-restricted promotions." />
                 <CheckRow id="is_banned" checked={data.is_banned} onChange={(v) => setData('is_banned', v)} label="Do not sell" help="The till refuses to sell it." />
             </div>

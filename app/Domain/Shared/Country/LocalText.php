@@ -12,6 +12,9 @@ use Illuminate\Container\Container;
  *     LocalText::phone('0113 496 0123');           // GB as given; PK the profile's example "0300 1234567"
  *     LocalText::region();                         // "UK" (GB), "Pakistan"
  *     LocalText::registration('01234567');         // "Registered in England and Wales, company no. 01234567"
+ *     LocalText::places('for example Leeds');      // GB as given; PK "for example Lahore" (phase P9)
+ *     LocalText::currency('in pounds, like 1.25'); // GB as given; PK "in rupees, like 1.25" (phase P9)
+ *     LocalText::ukOnly('Challenge 25: usually 25.', 'Usually 25.'); // GB the first, elsewhere the second (P9)
  */
 final class LocalText
 {
@@ -51,6 +54,30 @@ final class LocalText
         $label = self::isUk($country) ? 'company no.' : ($country->taxIdFor('company_number')['label'] ?? 'company no.');
 
         return "Registered in {$place}, {$label} {$companyNumber}";
+    }
+
+    /** UK sample places ("Leeds", "LDS") swapped for the profile's own (`samplePlaces`); GB text unchanged. */
+    public static function places(string $gb): string
+    {
+        $country = self::country();
+
+        return $country === null || self::isUk($country) || $country->samplePlaces() === [] ? $gb : strtr($gb, $country->samplePlaces());
+    }
+
+    /** "pounds" in money wording ("Enter an amount in pounds") becomes the profile's currency name off GB ("rupees"). */
+    public static function currency(string $gb): string
+    {
+        $country = self::country();
+
+        return $country === null || self::isUk($country) ? $gb : (string) preg_replace('/\bpounds\b/', $country->currencyName(), $gb);
+    }
+
+    /** The UK text on GB (as always), the neutral or local text elsewhere. */
+    public static function ukOnly(string $gb, string $other): string
+    {
+        $country = self::country();
+
+        return $country === null || self::isUk($country) ? $gb : $other;
     }
 
     private static function country(): ?Country

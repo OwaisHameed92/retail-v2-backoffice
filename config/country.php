@@ -75,6 +75,12 @@ return [
                 // England and Wales, company no. …"). `BILLING_SELLER_REGISTERED_IN` overrides it per instance.
                 'registeredIn' => 'England and Wales',
             ],
+            // Phase P9: the till's Branch `nation` values offered on the shop forms (App\Domain\Tenancy\Enums\Nation,
+            // in this order). Empty = the field is hidden and a shop keeps the column default ("england").
+            'nations' => ['england', 'scotland', 'wales', 'northernIreland'],
+            // Phase P9: UK sample places in examples and previews ("e.g. Leeds", "LDS-01-000482") and what replaces them
+            // on this profile. GB has none: its text is shown as written.
+            'samplePlaces' => [],
         ],
 
         'PK' => [
@@ -144,6 +150,17 @@ return [
             ],
             'legal' => [
                 'registeredIn' => 'Pakistan',
+            ],
+            // Phase P9: the till contract has no Pakistani value for Branch `nation` (England, Scotland, Wales, Northern
+            // Ireland only): the field is hidden and a shop keeps the column default until EPOS answers.
+            'nations' => [],
+            // Longest first where one contains another ("Leeds Road" before "Leeds").
+            'samplePlaces' => [
+                'Leeds Road' => 'Mall Road',
+                'Leeds' => 'Lahore',
+                'Bradford' => 'Karachi',
+                'LDS' => 'LHR',
+                'BFD' => 'KHI',
             ],
         ],
     ],

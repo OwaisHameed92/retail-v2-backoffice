@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Admin;
 
+use App\Domain\Shared\Country\LocalText;
 use App\Domain\Tenancy\Data\BranchDetails;
 use App\Domain\Tenancy\Data\NewTenant;
 use App\Domain\Tenancy\Models\Company;
@@ -36,7 +37,7 @@ class StoreBranchRequest extends FormRequest
     {
         return TenantRules::messages() + [
             'code.required' => 'Enter a short branch code, for example LDS.',
-            'name.required' => 'Enter the branch name, for example Leeds.',
+            'name.required' => LocalText::places('Enter the branch name, for example Leeds.'),
             'tills.max' => 'Add up to '.NewTenant::MAX_TILLS.' tills now; you can add more later.',
         ];
     }

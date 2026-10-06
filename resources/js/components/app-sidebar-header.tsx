@@ -7,6 +7,7 @@ import { type SharedData } from '@/types';
 import { usePage } from '@inertiajs/react';
 import { Sparkles } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { localPlaces } from '@/lib/country-text';
 
 /** Business portal top bar (light, mint wash): menu button, "Ask anything" (the portal assistant, module 6.2, for users with `ai.use`; ⌘K opens it), help, notifications, account menu. */
 export function AppSidebarHeader() {
@@ -36,7 +37,7 @@ export function AppSidebarHeader() {
                 search={
                     canAsk ? (
                         <SearchTrigger
-                            placeholder="Ask anything, e.g. top sellers in Leeds"
+                            placeholder={localPlaces('Ask anything, e.g. top sellers in Leeds')}
                             shortPlaceholder="Ask anything…"
                             icon={Sparkles}
                             onClick={() => setAssistantOpen(true)}

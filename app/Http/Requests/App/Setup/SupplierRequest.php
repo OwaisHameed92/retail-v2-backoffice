@@ -4,6 +4,7 @@ namespace App\Http\Requests\App\Setup;
 
 use App\Domain\Setup\Actions\SaveSupplier;
 use App\Domain\Shared\Country\ContactRules;
+use App\Domain\Shared\Country\LocalText;
 use App\Domain\TillData\Enums\SupplierOrderMethod;
 use App\Domain\TillData\Enums\SupplierTermsKind;
 use Illuminate\Validation\Rule;
@@ -52,7 +53,7 @@ class SupplierRequest extends CompanyWideWriteRequest
             'payment_terms_days.required' => 'Enter how many days you have to pay.',
             ...ContactRules::postcodeFormatMessages(),
             ...ContactRules::townMessages(),
-            'minimum_order_value.regex' => 'Enter an amount in pounds, e.g. 50 or 49.99.',
+            'minimum_order_value.regex' => LocalText::currency('Enter an amount in pounds, e.g. 50 or 49.99.'),
         ];
     }
 }

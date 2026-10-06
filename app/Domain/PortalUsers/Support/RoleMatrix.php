@@ -2,6 +2,7 @@
 
 namespace App\Domain\PortalUsers\Support;
 
+use App\Domain\Billing\Support\ManualCollection;
 use App\Domain\Tenancy\Enums\Ability;
 use App\Domain\Tenancy\Enums\CompanyRole;
 
@@ -77,6 +78,8 @@ final class RoleMatrix
         $rows = [];
 
         foreach (self::LABELS as $key => [$group, $label]) {
+            // Pakistan plan P9: no Direct Debit where fees are paid by hand; the owner still manages the subscription.
+            $label = $key === 'billing.manage' && ManualCollection::active() ? 'Manage the subscription' : $label;
             $rows[] = self::row(Ability::from($key), $group, $label);
         }
 

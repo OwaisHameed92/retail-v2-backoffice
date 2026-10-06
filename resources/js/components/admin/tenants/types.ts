@@ -75,7 +75,8 @@ export interface TenantBranch {
     postcode: string | null;
     receiptFooter: string | null;
     nation: Nation;
-    nationLabel: string;
+    /** Null where the country profile has no nations (PK). */
+    nationLabel: string | null;
     licensedHoursJson: string | null;
     isDrsReturnPoint: boolean;
     areaM2: string | null;

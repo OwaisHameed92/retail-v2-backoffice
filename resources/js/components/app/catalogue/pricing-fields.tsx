@@ -5,6 +5,7 @@ import { Label } from '@/components/ui/label';
 import { taxText } from '@/lib/country';
 import { cn } from '@/lib/utils';
 import { type DepartmentCount, type PriceRuleValues, type YourDepartment } from './types';
+import { ukOnly } from '@/lib/country-text';
 
 const CREATE = '__create';
 
@@ -61,7 +62,7 @@ export function PriceRuleFields({
                             onCheckedChange={(state) => onChange({ ...value, end_in_9: state === true })}
                         />
                         <Label htmlFor="end_in_9" className="font-normal">
-                            Round up to end in 9p
+                            {ukOnly('Round up to end in 9p', 'Round up so the decimals end in 9')}
                         </Label>
                     </div>
                 </FormGrid>

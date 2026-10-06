@@ -3,6 +3,7 @@
 namespace App\Http\Requests\App\Pricing;
 
 use App\Domain\Promotions\Support\PromotionTypes;
+use App\Domain\Shared\Country\LocalText;
 use App\Domain\Tenancy\CurrentCompany;
 use App\Domain\TillData\Enums\PromotionScope;
 use App\Domain\TillData\Enums\PromotionType;
@@ -96,8 +97,8 @@ class PromotionRequest extends FormRequest
     {
         return [
             'percent.regex' => 'Enter a percentage, e.g. 10 or 12.5.',
-            'amount_off.regex' => 'Enter an amount in pounds, e.g. 0.50.',
-            'deal_price.regex' => 'Enter a price in pounds, e.g. 2.00.',
+            'amount_off.regex' => LocalText::currency('Enter an amount in pounds, e.g. 0.50.'),
+            'deal_price.regex' => LocalText::currency('Enter a price in pounds, e.g. 2.00.'),
             'items.*.target_id.required' => 'Choose an item.',
         ];
     }

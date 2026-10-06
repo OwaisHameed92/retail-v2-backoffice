@@ -4,6 +4,7 @@ namespace App\Http\Requests\App;
 
 use App\Domain\Catalogue\Support\ProductFields;
 use App\Domain\Shared\Country\Country;
+use App\Domain\Shared\Country\LocalText;
 use App\Domain\TillData\Enums\AgeRule;
 use App\Domain\TillData\Enums\NegativeStockPolicy;
 use App\Domain\TillData\Enums\UnitType;
@@ -95,7 +96,7 @@ class SaveProductRequest extends CompanyWideWriteRequest
     public function messages(): array
     {
         return [
-            'regex' => 'Enter an amount in pounds, like 1.25.',
+            'regex' => LocalText::currency('Enter an amount in pounds, like 1.25.'),
             'barcodes.*.barcode.regex' => 'A barcode is letters, digits and dashes only.',
             'barcodes.*.barcode.distinct' => 'This barcode is listed twice.',
             'tile_colour_hex.regex' => 'Choose a colour.',

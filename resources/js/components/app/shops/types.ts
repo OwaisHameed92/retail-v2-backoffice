@@ -110,7 +110,8 @@ export interface ShopShowProps {
         name: string;
         code: string;
         isActive: boolean;
-        nation: string;
+        /** Null where the country profile has no nations (PK). */
+        nation: string | null;
         address: string | null;
         town: string | null;
         postcode: string | null;

@@ -2,6 +2,8 @@
 
 namespace App\Domain\Mail\Support;
 
+use App\Domain\Shared\Country\LocalText;
+
 /**
  * The morning summary block of the 07:00 email (module 6.3), as ready-to-print lines for the Markdown template, and
  * the sample shown in the admin email previews. Input: the summary array of OwnerDigestData (SummaryView + narrative).
@@ -78,16 +80,16 @@ final class MorningSummaryMail
             'scope' => 'All 2 shops',
             'total' => [...$shop('', '3120.40', 268, '2890.10', '8.0', null, null), 'average' => '11.64'],
             'shops' => [
-                $shop('Leeds', '2010.25', 171, '1765.60', '13.9', '1702.00', '18.1'),
-                $shop('Bradford', '1110.15', 97, '1124.50', '-1.3', null, null),
+                $shop(LocalText::places('Leeds'), '2010.25', 171, '1765.60', '13.9', '1702.00', '18.1'),
+                $shop(LocalText::places('Bradford'), '1110.15', 97, '1124.50', '-1.3', null, null),
             ],
             'moversUp' => [['name' => 'Coca-Cola 500ml', 'sales' => '84.00', 'before' => '60.00', 'difference' => '24.00']],
             'moversDown' => [['name' => 'Warburtons Toastie 800g', 'sales' => '12.50', 'before' => '30.00', 'difference' => '-17.50']],
             'watch' => [
-                ['kind' => 'refunds', 'text' => 'Bradford: '.MailFormat::money('84').' refunded (6 refunds) yesterday, against a usual '.MailFormat::money('21.5').' a day'],
-                ['kind' => 'stock', 'text' => 'Leeds: Coca-Cola 500ml is low, 4 on hand with 63 sold in the last 7 days'],
+                ['kind' => 'refunds', 'text' => LocalText::places('Bradford: ').MailFormat::money('84').' refunded (6 refunds) yesterday, against a usual '.MailFormat::money('21.5').' a day'],
+                ['kind' => 'stock', 'text' => LocalText::places('Leeds: Coca-Cola 500ml is low, 4 on hand with 63 sold in the last 7 days')],
             ],
-            'narrative' => 'Yesterday your 2 shops took '.MailFormat::money('3120.40').', up 8.0% on the same day last week. Leeds led the way at +13.9%, while Bradford was close to last week at -1.3%. Bradford refunded '.MailFormat::money('84').', against a usual '.MailFormat::money('21.5').' a day, so it is worth a look. Coca-Cola 500ml is running low at Leeds.',
+            'narrative' => 'Yesterday your 2 shops took '.MailFormat::money('3120.40').LocalText::places(', up 8.0% on the same day last week. Leeds led the way at +13.9%, while Bradford was close to last week at -1.3%. Bradford refunded ').MailFormat::money('84').', against a usual '.MailFormat::money('21.5').LocalText::places(' a day, so it is worth a look. Coca-Cola 500ml is running low at Leeds.'),
             'url' => $portal.'/app',
             'unsubscribeUrl' => $settings,
         ];

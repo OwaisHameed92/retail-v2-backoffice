@@ -10,7 +10,7 @@
     $tiny = $h < 28;
 @endphp
 <!DOCTYPE html>
-<html lang="en-GB">
+<html lang="{{ app(\App\Domain\Shared\Country\Country::class)->dateLocale() }}">
 <head>
 <meta charset="utf-8">
 <title>Shelf labels</title>

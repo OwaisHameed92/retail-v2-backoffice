@@ -2,6 +2,7 @@
 
 namespace App\Domain\Mail\Mailables;
 
+use App\Domain\Billing\Support\ManualCollection;
 use App\Domain\Mail\Data\TillKeyData;
 use App\Domain\Mail\Data\WelcomeTenantData;
 use App\Domain\Mail\Support\MailFormat;
@@ -43,8 +44,9 @@ final class WelcomeTenantMail extends BrandedMailable
                 new TillKeyData('Station Road', 'Till 1', 'SSP-2NRX-T7KP-5G0A-DYF6'),
             ],
             trialDays: 7,
-            billingUrl: config('sspos.portal_url').'/app/billing',
-            directDebitDays: 3,
+            // Pakistan plan P9: no Direct Debit section where fees are paid by hand (as the real welcome email).
+            billingUrl: ManualCollection::active() ? null : config('sspos.portal_url').'/app/billing',
+            directDebitDays: ManualCollection::active() ? null : 3,
         ));
     }
 

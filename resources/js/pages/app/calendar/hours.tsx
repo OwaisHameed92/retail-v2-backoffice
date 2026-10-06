@@ -7,6 +7,7 @@ import { StatusPill } from '@/components/shared/status-badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Link } from '@inertiajs/react';
 import { CalendarClock, Info, Store, TriangleAlert } from 'lucide-react';
+import { publicHolidays } from '@/lib/country-text';
 
 function ShopCard({ shop, defaults, canApplyToEveryShop }: { shop: ShopHours; defaults: HoursProps['defaults']; canApplyToEveryShop: boolean }) {
     return (
@@ -43,7 +44,7 @@ function ShopCard({ shop, defaults, canApplyToEveryShop }: { shop: ShopHours; de
                     <div>
                         <h3 className="text-sm font-semibold">Next special days</h3>
                         {shop.specialDays.length === 0 ? (
-                            <p className="text-muted-foreground mt-1 text-sm">None on the till. Bank holidays and closures are set on the till.</p>
+                            <p className="text-muted-foreground mt-1 text-sm">{publicHolidays('None on the till. Bank holidays and closures are set on the till.')}</p>
                         ) : (
                             <ul className="mt-2 grid gap-1.5 text-sm">
                                 {shop.specialDays.map((d) => (
@@ -87,7 +88,7 @@ export default function CalendarHours({ shops, defaults, businessLine, filters }
             tab="hours"
             filters={filters}
             title="Opening hours"
-            description="Opening hours for each shop, bank holidays and closures from the tills, and seasonal events against last year."
+            description={publicHolidays('Opening hours for each shop, bank holidays and closures from the tills, and seasonal events against last year.')}
         >
             <Alert variant="info">
                 <Info />
@@ -99,7 +100,7 @@ export default function CalendarHours({ shops, defaults, businessLine, filters }
                             , taken from {businessLine.shopName}: <span className="font-medium">{businessLine.text}</span>
                         </>
                     ) : null}
-                    . Special days (bank holidays, closures, late openings) are kept on each till and shown here.
+                    {publicHolidays('. Special days (bank holidays, closures, late openings) are kept on each till and shown here.')}
                 </AlertDescription>
             </Alert>
             {businessLine.differs && (

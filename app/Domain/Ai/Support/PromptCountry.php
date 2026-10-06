@@ -35,6 +35,7 @@ final class PromptCountry
             'one UK shop business' => "one shop business in {$name}",
             'a UK shop business' => "a shop business in {$name}",
             'UK convenience shops' => "convenience shops in {$name}",
+            'a UK convenience-store owner' => "a convenience-store owner in {$name}",
             'Money is in pounds as a number (12.5, not "£12.50").' => "Money is in {$country->currencyName()} as a number (12.5, not \"".MoneyFormat::prefix($country).'12.50").',
             '(UK documents write day/month/year)' => "(documents in {$name} write day/month/year)",
             '(for example "£1,234.50" or "+12.5%")' => '(for example "'.MoneyFormat::format('1234.5', $country).'" or "+12.5%")',

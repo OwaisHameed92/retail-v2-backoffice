@@ -9,6 +9,7 @@ import { Head, router } from '@inertiajs/react';
 import { Lock } from 'lucide-react';
 import { type ReactNode } from 'react';
 import { type CalendarFilters, type EventKind, type EventStatus, type ShopOption } from './types';
+import { publicHolidays } from '@/lib/country-text';
 
 export type CalendarTab = 'hours' | 'special' | 'events';
 
@@ -50,6 +51,11 @@ export const KIND_LABELS: Record<EventKind, string> = {
     schoolHoliday: 'School holiday',
     local: 'Local event',
 };
+
+/** The kind's label as shown: "Bank holiday" reads "Public holiday" off GB (Pakistan plan P9). */
+export function eventKindLabel(kind: EventKind): string {
+    return publicHolidays(KIND_LABELS[kind]);
+}
 
 const STATUS: Record<EventStatus, { label: string; tone: StatusTone }> = {
     onNow: { label: 'On now', tone: 'success' },

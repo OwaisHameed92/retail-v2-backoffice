@@ -48,7 +48,7 @@ final class AdminNewLeadMail extends BrandedMailable
             shops: 2,
             tills: 3,
             receivedAt: now()->subMinutes(4),
-            message: 'We are moving from our old EPOS next month and would like to try it in the Leeds shop first.',
+            message: LocalText::places('We are moving from our old EPOS next month and would like to try it in the Leeds shop first.'),
         ));
     }
 

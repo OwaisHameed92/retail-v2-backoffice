@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\App\Setup;
 
+use App\Domain\Shared\Country\LocalText;
 use Illuminate\Validation\Rule;
 
 /**
@@ -42,7 +43,7 @@ class StaffRequest extends CompanyWideWriteRequest
         return [
             'name.required' => 'Enter their name as it shows on the till.',
             'role_id.required' => 'Choose a till role.',
-            'rate_per_hour.regex' => 'Enter an hourly rate in pounds, e.g. 11.44.',
+            'rate_per_hour.regex' => LocalText::currency('Enter an hourly rate in pounds, e.g. 11.44.'),
             'pin.required' => 'Give them a PIN to sign in to the till.',
             'pin.confirmed' => 'The two PINs do not match.',
         ];

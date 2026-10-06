@@ -2,6 +2,7 @@ import { formatMoneyWhole, taxText } from '@/lib/country';
 import { cn } from '@/lib/utils';
 import { ArrowUpRight } from 'lucide-react';
 import { useId, type ReactNode } from 'react';
+import { localPlaces, ukOnly } from '@/lib/country-text';
 
 /*
  * The "product preview" on the sign-in brand panel: dark glass cards built from real UI, set straight in a tidy
@@ -171,14 +172,14 @@ export function CustomerPreview() {
                 title: '3 tills online',
                 badge: 'Live',
                 rows: [
-                    ['Leeds · Till 1', 'Synced now'],
-                    ['Leeds · Till 2', '1 min ago'],
-                    ['Bradford · Till 1', 'Synced now'],
+                    [localPlaces('Leeds · Till 1'), 'Synced now'],
+                    [localPlaces('Leeds · Till 2'), '1 min ago'],
+                    [localPlaces('Bradford · Till 1'), 'Synced now'],
                 ],
             }}
             chips={[
                 { tone: 'amber', text: 'Low stock: 6 items' },
-                { tone: 'green', text: taxText('VAT return ready') },
+                { tone: 'green', text: ukOnly('VAT return ready', taxText('VAT report ready')) },
             ]}
         />
     );

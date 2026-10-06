@@ -1,4 +1,4 @@
-import { eventDates, EventStatusPill, KIND_LABELS, longDay } from '@/components/app/calendar/calendar-page';
+import { eventDates, eventKindLabel, EventStatusPill, longDay } from '@/components/app/calendar/calendar-page';
 import { type EventProps } from '@/components/app/calendar/types';
 import { ChartCard, SegmentedControl } from '@/components/shared/chart-card';
 import { EmptyState } from '@/components/shared/empty-state';
@@ -51,7 +51,7 @@ export default function CalendarEvent(props: EventProps) {
                 title={event.name}
                 status={<EventStatusPill status={event.status} />}
                 back={{ href: route('app.calendar.events'), label: 'Seasonal events' }}
-                description={[eventDates(event.startsOn, event.endsOn), event.kind ? KIND_LABELS[event.kind] : null, event.shop]
+                description={[eventDates(event.startsOn, event.endsOn), event.kind ? eventKindLabel(event.kind) : null, event.shop]
                     .filter(Boolean)
                     .join(' · ')}
                 actions={

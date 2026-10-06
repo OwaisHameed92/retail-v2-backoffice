@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { keepsUkStyles, vatNumberLabel } from '@/lib/country';
 import { postcodeInputProps, postcodeLabel, townHint, townNeededWithAddress } from '@/lib/country-address';
+import { localPlaces } from '@/lib/country-text';
 
 export type BranchFieldsData = {
     code: string;
@@ -41,10 +42,10 @@ export function BranchFields({ prefix = '', data, setField, errors, nations, sho
 
     return (
         <>
-            <Field id={id('name')} label="Branch name" hint="Usually the town or street, e.g. Leeds." error={error('name')}>
+            <Field id={id('name')} label="Branch name" hint={localPlaces('Usually the town or street, e.g. Leeds.')} error={error('name')}>
                 <Input id={id('name')} required value={data.name} onChange={(e) => setField('name', e.target.value)} aria-invalid={!!error('name')} />
             </Field>
-            <Field id={id('code')} label="Branch code" hint="2 to 5 letters, used in receipt numbers like LDS-01-000482." error={error('code')}>
+            <Field id={id('code')} label="Branch code" hint={localPlaces('2 to 5 letters, used in receipt numbers like LDS-01-000482.')} error={error('code')}>
                 <Input
                     id={id('code')}
                     required
@@ -56,20 +57,23 @@ export function BranchFields({ prefix = '', data, setField, errors, nations, sho
                     autoComplete="off"
                 />
             </Field>
-            <Field id={id('nation')} label="Nation" hint="Sets deposit return and licensing rules on the till." error={error('nation')}>
-                <Select value={data.nation} onValueChange={(value) => setField('nation', value as Nation)}>
-                    <SelectTrigger id={id('nation')}>
-                        <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                        {nations.map((nation) => (
-                            <SelectItem key={nation.value} value={nation.value}>
-                                {nation.label}
-                            </SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
-            </Field>
+            {/* Pakistan plan P9: no nations off GB (the till's values are the UK's), so the field is hidden there. */}
+            {nations.length > 0 && (
+                <Field id={id('nation')} label="Nation" hint="Sets deposit return and licensing rules on the till." error={error('nation')}>
+                    <Select value={data.nation} onValueChange={(value) => setField('nation', value as Nation)}>
+                        <SelectTrigger id={id('nation')}>
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {nations.map((nation) => (
+                                <SelectItem key={nation.value} value={nation.value}>
+                                    {nation.label}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </Field>
+            )}
             <Field id={id('phone')} label="Shop phone" optional error={error('phone')}>
                 <Input
                     id={id('phone')}

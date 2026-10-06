@@ -44,12 +44,12 @@ final class AdminTillRequestMail extends BrandedMailable
             businessName: 'Patel News & Booze',
             companyId: '01K5T0Q8C4000000000000C001',
             kind: 'More tills',
-            what: '1 more till for Leeds (LDS)',
+            what: LocalText::places('1 more till for Leeds (LDS)'),
             requestedBy: 'Imran Patel',
             email: LocalText::domains('imran@patelnews.co.uk'),
             phone: LocalText::phone('07700 900123'),
             receivedAt: now()->subMinutes(3),
-            message: 'We are putting a second counter in for the lottery. Can we have it by Friday?',
+            message: LocalText::ukOnly('We are putting a second counter in for the lottery. Can we have it by Friday?', 'We are putting a second counter in. Can we have it by Friday?'),
         ));
     }
 

@@ -56,7 +56,7 @@ final class ShopDetail
                 'name' => $branch->name,
                 'code' => $branch->code,
                 'isActive' => $branch->is_active,
-                'nation' => $branch->nation->label(),
+                'nation' => $branch->nation->shownLabel(),
                 'address' => $branch->address,
                 'town' => $branch->town,
                 'postcode' => $branch->postcode,

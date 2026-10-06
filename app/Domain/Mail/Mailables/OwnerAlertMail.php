@@ -4,6 +4,7 @@ namespace App\Domain\Mail\Mailables;
 
 use App\Domain\Mail\Data\OwnerAlertData;
 use App\Domain\Mail\Support\MailFormat;
+use App\Domain\Shared\Country\LocalText;
 use Carbon\CarbonImmutable;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Headers;
@@ -38,7 +39,7 @@ final class OwnerAlertMail extends BrandedMailable
             recipientName: 'Aisha Khan',
             type: 'tillOffline',
             problem: 'tillOffline',
-            shopName: 'Leeds',
+            shopName: LocalText::places('Leeds'),
             tillName: 'Till 2',
             summary: 'Last heard from 9 Nov 2026, 08:12.',
             since: CarbonImmutable::now()->subHours(4),

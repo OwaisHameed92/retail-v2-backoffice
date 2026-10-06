@@ -1,5 +1,5 @@
 import { CashFilters } from '@/components/app/cash/cash-page';
-import { CHARGE, ChargePill, EXEMPTIONS, PharmacyPageLayout, shopDateTime } from '@/components/app/pharmacy/format';
+import { CHARGE, ChargePill, chargeLabel, EXEMPTIONS, PharmacyPageLayout, shopDateTime } from '@/components/app/pharmacy/format';
 import { type ChargeStatus, type DispensingProps, type DispensingRow } from '@/components/app/pharmacy/types';
 import { FilterSelect } from '@/components/app/setup/fields';
 import { DataTable, useTableQuery } from '@/components/shared/data-table';
@@ -11,6 +11,7 @@ import { money, number, shortDay, weekday } from '@/components/shared/trading/fo
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { type ColumnDef } from '@tanstack/react-table';
 import { BadgeCheck, ClipboardList, ShieldCheck } from 'lucide-react';
+import { ukOnly } from '@/lib/country-text';
 
 const ONLY = ['records', 'summary', 'exemptions', 'shops', 'periods', 'filters', 'options', 'charge', 'exemption'];
 
@@ -76,7 +77,10 @@ export default function PharmacyDispensing(props: DispensingProps) {
         <PharmacyPageLayout
             tab="dispensing"
             title="Dispensing"
-            description="Prescriptions dispensed on your pharmacy tills: NHS charges paid, exemptions and private prescriptions. Patients' details stay on the till."
+            description={ukOnly(
+                "Prescriptions dispensed on your pharmacy tills: NHS charges paid, exemptions and private prescriptions. Patients' details stay on the till.",
+                "Prescriptions dispensed on your pharmacy tills: charges paid, exemptions and private prescriptions. Patients' details stay on the till.",
+            )}
         >
             <StatGrid>
                 <StatCard
@@ -87,7 +91,7 @@ export default function PharmacyDispensing(props: DispensingProps) {
                     tone="primary"
                 />
                 <StatCard
-                    label="NHS charge paid"
+                    label={chargeLabel('paid')}
                     value={number(summary.paid)}
                     hint={`${money(summary.nhsCharges)} taken`}
                     icon={MoneyIcon}
@@ -200,7 +204,7 @@ export default function PharmacyDispensing(props: DispensingProps) {
                             value={charge}
                             onChange={(value) => update({ charge: value, page: undefined })}
                             all="Every charge"
-                            options={(Object.keys(CHARGE) as ChargeStatus[]).map((c) => ({ value: c, label: CHARGE[c].label }))}
+                            options={(Object.keys(CHARGE) as ChargeStatus[]).map((c) => ({ value: c, label: chargeLabel(c) }))}
                             label="Filter by charge"
                         />
                         <FilterSelect

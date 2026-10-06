@@ -12,6 +12,7 @@ import { router } from '@inertiajs/react';
 import { type ColumnDef } from '@tanstack/react-table';
 import { PackageX, Plus } from 'lucide-react';
 import { useState } from 'react';
+import { ukOnly } from '@/lib/country-text';
 
 function dates(r: RecallRow): string | null {
     if (r.expiryFrom && r.expiryTo) return `Best before ${formatDay(r.expiryFrom)} – ${formatDay(r.expiryTo)}`;
@@ -123,7 +124,10 @@ export default function ComplianceRecalls({ recalls, summary, suppliers, product
                         title="No recalls"
                         body={
                             canManage
-                                ? 'Raise a recall when a supplier or the Food Standards Agency withdraws a product. Every till gets it.'
+                                ? ukOnly(
+                                      'Raise a recall when a supplier or the Food Standards Agency withdraws a product. Every till gets it.',
+                                      'Raise a recall when a supplier or the food authority withdraws a product. Every till gets it.',
+                                  )
                                 : 'Recalls raised by the business appear here.'
                         }
                     />

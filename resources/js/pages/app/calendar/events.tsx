@@ -1,4 +1,4 @@
-import { CalendarFilterBar, CalendarPageLayout, eventDates, EventStatusPill, KIND_LABELS } from '@/components/app/calendar/calendar-page';
+import { CalendarFilterBar, CalendarPageLayout, eventDates, eventKindLabel, EventStatusPill } from '@/components/app/calendar/calendar-page';
 import { type EventsProps } from '@/components/app/calendar/types';
 import { EmptyState } from '@/components/shared/empty-state';
 import { SectionCard } from '@/components/shared/section-card';
@@ -49,7 +49,7 @@ export default function CalendarEvents({ events, filters, shops, total, limit }:
                                         <Link href={route('app.calendar.events.show', e.id)} className="grid leading-5">
                                             <span className="font-medium group-hover:underline">{e.name}</span>
                                             <span className="text-muted-foreground text-xs">
-                                                {[e.kind ? KIND_LABELS[e.kind] : null, e.nation, e.isActive ? null : 'Turned off'].filter(Boolean).join(' · ')}
+                                                {[e.kind ? eventKindLabel(e.kind) : null, e.nation, e.isActive ? null : 'Turned off'].filter(Boolean).join(' · ')}
                                             </span>
                                         </Link>
                                     </TableCell>

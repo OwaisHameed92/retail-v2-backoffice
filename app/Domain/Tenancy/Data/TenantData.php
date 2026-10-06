@@ -84,7 +84,7 @@ final class TenantData
             'postcode' => $branch->postcode,
             'receiptFooter' => $branch->receipt_footer,
             'nation' => $branch->nation->value,
-            'nationLabel' => $branch->nation->label(),
+            'nationLabel' => $branch->nation->shownLabel(),
             'licensedHoursJson' => $branch->licensed_hours_json,
             'isDrsReturnPoint' => $branch->is_drs_return_point,
             'areaM2' => $branch->area_m2,

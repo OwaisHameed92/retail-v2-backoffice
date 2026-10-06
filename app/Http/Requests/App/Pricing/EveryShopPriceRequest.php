@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\App\Pricing;
 
+use App\Domain\Shared\Country\LocalText;
 use App\Http\Requests\App\Setup\CompanyWideWriteRequest;
 
 /**
@@ -27,7 +28,7 @@ class EveryShopPriceRequest extends CompanyWideWriteRequest
      */
     public function messages(): array
     {
-        return ['price.regex' => 'Enter the price in pounds, e.g. 1.39.'];
+        return ['price.regex' => LocalText::currency('Enter the price in pounds, e.g. 1.39.')];
     }
 
     /**

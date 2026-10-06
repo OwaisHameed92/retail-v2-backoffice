@@ -33,7 +33,8 @@ export default function ShopShow({ shop, business, licence, tills, health, reque
                 description={address || 'No address yet'}
                 meta={
                     <span>
-                        Code <span className="font-mono">{shop.code}</span> · {shop.nation}
+                        Code <span className="font-mono">{shop.code}</span>
+                        {shop.nation && <> · {shop.nation}</>}
                     </span>
                 }
                 actions={

@@ -37,7 +37,7 @@ final class PortalInvitationMail extends BrandedMailable
             email: LocalText::domains('bilal@khanminimart.co.uk'),
             businessName: 'Khan Mini Mart',
             roleLabel: 'Manager',
-            branchName: 'Leeds Road',
+            branchName: LocalText::places('Leeds Road'),
             inviterName: 'Aisha Khan',
             url: config('sspos.portal_url').'/app/invitations/01J00000000000000000000000/sample-token',
             expiresAt: Carbon::now()->addDays(7),

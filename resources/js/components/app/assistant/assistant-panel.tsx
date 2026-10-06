@@ -11,6 +11,7 @@ import { AssistantComposer, AssistantEmptyState, AssistantUnavailableState, Assi
 import { AssistantTurn } from './assistant-turn';
 import type { AssistantProposal } from './types';
 import { useAssistant } from './use-assistant';
+import { localPlaces } from '@/lib/country-text';
 
 const MAX_QUESTION = 4000;
 
@@ -218,7 +219,7 @@ export function AssistantPanel({
                     busy={busy}
                     disabled={!available}
                     maxLength={MAX_QUESTION}
-                    placeholder={available ? 'e.g. Top sellers in Leeds last week' : 'The assistant is not available'}
+                    placeholder={available ? localPlaces('e.g. Top sellers in Leeds last week') : 'The assistant is not available'}
                 />
 
                 <ConfirmDialog
