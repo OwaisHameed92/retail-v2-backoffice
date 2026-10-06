@@ -4,6 +4,7 @@ namespace App\Domain\Mail\Mailables;
 
 use App\Domain\Mail\Data\SetPasswordData;
 use App\Domain\Mail\Support\MailFormat;
+use App\Domain\Shared\Country\LocalText;
 use Illuminate\Mail\Mailables\Content;
 
 /**
@@ -33,8 +34,8 @@ final class SetPasswordMail extends BrandedMailable
     {
         return new self(new SetPasswordData(
             name: 'Aisha Khan',
-            email: 'aisha@khanminimart.co.uk',
-            url: config('sspos.portal_url').'/reset-password/sample-token?email=aisha%40khanminimart.co.uk',
+            email: LocalText::domains('aisha@khanminimart.co.uk'),
+            url: config('sspos.portal_url').LocalText::domains('/reset-password/sample-token?email=aisha%40khanminimart.co.uk'),
             expiresInMinutes: 60,
             firstTime: true,
             businessName: 'Khan Mini Mart',

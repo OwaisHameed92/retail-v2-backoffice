@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { taxName, taxText } from '@/lib/country';
+import { ukOnly } from '@/lib/country-text';
 import { Link, router, useForm } from '@inertiajs/react';
 import { ArrowLeft, Info, LoaderCircle } from 'lucide-react';
 import { type FormEvent } from 'react';
@@ -68,7 +69,7 @@ export default function AccountsExportMappings({ target, targets, accounts, vat,
             <Alert variant="info">
                 <Info />
                 <AlertDescription>
-                    Suggestions follow {label}&apos;s standard UK chart. Your till already posts {taxName()} on its own line (2200 {taxName()}{' '}
+                    {ukOnly(`Suggestions follow ${label}'s standard UK chart.`, `Suggestions follow ${label}'s default chart of accounts: change any code to match your own.`)} Your till already posts {taxName()} on its own line (2200 {taxName()}{' '}
                     output), so the suggested tax codes do not ask {label} to work {taxName()} out again. Some packages refuse journals to their own{' '}
                     {taxName()} control account: if the import does, map 2200 to a liability account of your own.{' '}
                     {!canEdit && 'Only someone with every shop can change the mapping.'}

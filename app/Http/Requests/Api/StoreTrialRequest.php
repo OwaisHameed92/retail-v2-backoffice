@@ -7,6 +7,7 @@ use App\Domain\Leads\Enums\BusinessType as LeadBusinessType;
 use App\Domain\Leads\Enums\LeadSource;
 use App\Domain\Leads\Models\Lead;
 use App\Domain\Shared\Country\ContactRules;
+use App\Domain\Shared\Country\LocalText;
 use App\Domain\Shared\Exceptions\ApiException;
 use App\Domain\Tenancy\Enums\BusinessType;
 use Illuminate\Contracts\Validation\Validator;
@@ -61,7 +62,7 @@ class StoreTrialRequest extends FormRequest
             'businessName.required' => 'Enter your business name.',
             'contactName.required' => 'Enter your name.',
             'email.required' => 'Enter your email address.',
-            'email.email' => 'Enter a valid email address, like name@yourshop.co.uk.',
+            'email.email' => LocalText::domains('Enter a valid email address, like name@yourshop.co.uk.'),
             'phone.required' => 'Enter a phone number so we can call you.',
             'phone.regex' => ContactRules::phoneText('Enter a valid phone number, like 07700 900123.'),
             'town.required' => 'Enter the town your shop is in.',

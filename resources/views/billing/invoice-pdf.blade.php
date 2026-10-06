@@ -64,7 +64,7 @@
 @endif
 
 <div class="footer">
-    {{ $seller['legalName'] }}@if ($seller['companyNumber']) · Registered in England and Wales, company no. {{ $seller['companyNumber'] }}@endif
+    {{ $seller['legalName'] }}@if ($seller['companyNumber']) · {{ \App\Domain\Shared\Country\LocalText::registration($seller['companyNumber']) }}@endif
     @if ($seller['vatNumber']) · {{ $vatNo }} {{ $seller['vatNumber'] }}@endif
     @if ($seller['email']) · {{ $seller['email'] }}@endif
 </div>

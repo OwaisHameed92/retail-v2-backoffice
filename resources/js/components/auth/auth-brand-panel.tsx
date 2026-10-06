@@ -1,4 +1,5 @@
 import { CustomerPreview, StaffPreview } from '@/components/auth/auth-preview';
+import { country, keepsUkStyles } from '@/lib/country';
 import { cn } from '@/lib/utils';
 import { Link } from '@inertiajs/react';
 import { Fingerprint, Lock, MapPin, ScrollText, ShieldCheck, Store, UsersRound, type LucideIcon } from 'lucide-react';
@@ -50,6 +51,26 @@ const copy: Record<AuthVariant, PanelCopy> = {
     },
 };
 
+/** Pakistan plan P6: off GB the UK-only lines read neutrally (no "UK data hosting" or "GDPR ready"); GB is unchanged. */
+function localised(text: PanelCopy): PanelCopy {
+    if (keepsUkStyles()) {
+        return text;
+    }
+
+    const name = country().name;
+    const swap: Record<string, string> = {
+        'UK data hosting': 'Secure cloud hosting',
+        'GDPR ready': 'Privacy tools built in',
+        'UK convenience stores': `Shops in ${name}`,
+    };
+
+    return {
+        ...text,
+        body: text.body.replace('for UK convenience stores, newsagents and grocers', `for convenience stores and grocers in ${name}`),
+        trust: text.trust.map((item) => ({ ...item, text: swap[item.text] ?? item.text })),
+    };
+}
+
 /** Staggered entrance (with the `motion-safe:animate-auth-rise` class, so reduced-motion users see it at once). */
 const delay = (ms: number) => ({ animationDelay: `${ms}ms` });
 
@@ -59,7 +80,7 @@ const delay = (ms: number) => ({ animationDelay: `${ms}ms` });
  * preview and a quiet trust row. The staff console uses a cooler, less green aurora.
  */
 export function AuthBrandPanel({ variant }: { variant: AuthVariant }) {
-    const text = copy[variant];
+    const text = localised(copy[variant]);
     const staff = variant === 'staff';
     const year = new Date().getFullYear();
 
@@ -120,7 +141,9 @@ export function AuthBrandPanel({ variant }: { variant: AuthVariant }) {
                         </li>
                     ))}
                 </ul>
-                <p className="border-t border-white/10 pt-4 text-xs text-white/55">© {year} Switch &amp; Save. Smart Solutions for Smart Businesses.</p>
+                <p className="border-t border-white/10 pt-4 text-xs text-white/55">
+                    © {year} Switch &amp; Save. Smart Solutions for Smart Businesses.
+                </p>
             </footer>
         </aside>
     );

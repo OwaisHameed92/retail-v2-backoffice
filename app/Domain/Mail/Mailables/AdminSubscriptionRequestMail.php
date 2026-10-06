@@ -4,6 +4,7 @@ namespace App\Domain\Mail\Mailables;
 
 use App\Domain\Mail\Data\TillRequestData;
 use App\Domain\Mail\Support\MailFormat;
+use App\Domain\Shared\Country\LocalText;
 use Illuminate\Mail\Mailables\Address;
 use Illuminate\Mail\Mailables\Content;
 
@@ -45,8 +46,8 @@ final class AdminSubscriptionRequestMail extends BrandedMailable
             kind: 'Cancellation',
             what: 'to cancel the subscription',
             requestedBy: 'Imran Patel',
-            email: 'imran@patelnews.co.uk',
-            phone: '07700 900123',
+            email: LocalText::domains('imran@patelnews.co.uk'),
+            phone: LocalText::phone('07700 900123'),
             receivedAt: now()->subMinutes(3),
             message: 'We are selling the shop at the end of next month.',
         ));

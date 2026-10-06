@@ -3,6 +3,7 @@
 namespace App\Domain\Audit\Support;
 
 use App\Domain\Shared\Country\Country;
+use App\Domain\Shared\Country\LocalText;
 use App\Domain\Shared\Models\AuditLog;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
@@ -51,7 +52,7 @@ final class AuditCsv
     private static function header(bool $tenantView): array
     {
         return array_values(array_filter([
-            'Time (UK)', 'Who', 'Who (detail)', $tenantView ? null : 'Business', 'Action', 'Action code',
+            'Time ('.LocalText::region().')', 'Who', 'Who (detail)', $tenantView ? null : 'Business', 'Action', 'Action code',
             'Record type', 'Record id', 'Changes', 'Details', 'IP address',
         ]));
     }

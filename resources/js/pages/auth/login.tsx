@@ -9,6 +9,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import AuthLayout from '@/layouts/auth-layout';
+import { localDomains } from '@/lib/country-text';
 
 type LoginForm = {
     email: string;
@@ -56,7 +57,7 @@ export default function Login({ status, canResetPassword }: LoginProps) {
                         autoComplete="email"
                         value={data.email}
                         onChange={(e) => setData('email', e.target.value)}
-                        placeholder="you@yourshop.co.uk"
+                        placeholder={localDomains('you@yourshop.co.uk')}
                         aria-invalid={!!errors.email || undefined}
                         aria-describedby={errors.email ? 'email-error' : undefined}
                     />

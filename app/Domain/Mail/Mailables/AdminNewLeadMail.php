@@ -4,6 +4,7 @@ namespace App\Domain\Mail\Mailables;
 
 use App\Domain\Mail\Data\NewLeadData;
 use App\Domain\Mail\Support\MailFormat;
+use App\Domain\Shared\Country\LocalText;
 use Illuminate\Mail\Mailables\Address;
 use Illuminate\Mail\Mailables\Content;
 
@@ -42,8 +43,8 @@ final class AdminNewLeadMail extends BrandedMailable
         return new self(new NewLeadData(
             contactName: 'Imran Patel',
             businessName: 'Patel News & Booze',
-            email: 'imran@patelnews.co.uk',
-            phone: '07700 900123',
+            email: LocalText::domains('imran@patelnews.co.uk'),
+            phone: LocalText::phone('07700 900123'),
             shops: 2,
             tills: 3,
             receivedAt: now()->subMinutes(4),

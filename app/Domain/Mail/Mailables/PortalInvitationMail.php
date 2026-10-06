@@ -4,6 +4,7 @@ namespace App\Domain\Mail\Mailables;
 
 use App\Domain\Mail\Data\PortalInvitationData;
 use App\Domain\Mail\Support\MailFormat;
+use App\Domain\Shared\Country\LocalText;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Support\Carbon;
 
@@ -33,7 +34,7 @@ final class PortalInvitationMail extends BrandedMailable
     {
         return new self(new PortalInvitationData(
             name: 'Bilal Ahmed',
-            email: 'bilal@khanminimart.co.uk',
+            email: LocalText::domains('bilal@khanminimart.co.uk'),
             businessName: 'Khan Mini Mart',
             roleLabel: 'Manager',
             branchName: 'Leeds Road',

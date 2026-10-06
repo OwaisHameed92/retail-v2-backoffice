@@ -14,7 +14,7 @@ use Illuminate\Container\Container;
  * @phpstan-type TaxId array{label: string, pattern: string|null, example: string}
  * @phpstan-type Address array{postcodeLabel: string, postcodeRequired: bool, postcodePattern: string, postcodeExample: string, cityRequired: bool}
  * @phpstan-type Phone array{pattern: string, example: string, dialCode: string}
- * @phpstan-type Profile array{name: string, currency: string, currencySymbol: string, currencyName: string, currencySymbolSpace: bool, displayDecimals: int, grouping: string, numberLocale: string, dateLocale: string, timezone: string, taxName: string, taxIds: array<string, TaxId>, address: Address, phone: Phone, billing: array{collection: string, manualMethods: list<string>}, features: array<string, bool>}
+ * @phpstan-type Profile array{name: string, currency: string, currencySymbol: string, currencyName: string, currencySymbolSpace: bool, displayDecimals: int, grouping: string, numberLocale: string, dateLocale: string, timezone: string, taxName: string, taxIds: array<string, TaxId>, address: Address, phone: Phone, billing: array{collection: string, manualMethods: list<string>}, features: array<string, bool>, legal?: array{registeredIn: string}}
  */
 final class Country
 {
@@ -237,6 +237,12 @@ final class Country
     public function manualPaymentMethods(): array
     {
         return $this->profile['billing']['manualMethods'];
+    }
+
+    /** Where a company of this country is registered, for our own invoices' seller line (phase P6): "England and Wales". */
+    public function registeredIn(): string
+    {
+        return $this->profile['legal']['registeredIn'] ?? $this->name();
     }
 
     /** A country feature flag ("vatReturn", "fbr"); unknown flags are off. */

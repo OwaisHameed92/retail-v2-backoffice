@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import AuthLayout from '@/layouts/auth-layout';
 import { phoneText, postcodeInputProps, postcodeLabel, postcodeRequired } from '@/lib/country-address';
+import { localDomains } from '@/lib/country-text';
 import { Head } from '@inertiajs/react';
 import { CircleAlert, LoaderCircle } from 'lucide-react';
 import { useCallback, useState, type FormEvent, type InputHTMLAttributes } from 'react';
@@ -152,7 +153,7 @@ export default function Trial({ endpoint, turnstileSiteKey, businessTypes, maxSh
                             {input('phone', { type: 'tel', autoComplete: 'tel', required: true, placeholder: phoneText('07700 900123') })}
                         </FormField>
                         <FormField id="email" label="Email address" error={errors.email} className="sm:col-span-2">
-                            {input('email', { type: 'email', autoComplete: 'email', required: true, placeholder: 'you@yourshop.co.uk' })}
+                            {input('email', { type: 'email', autoComplete: 'email', required: true, placeholder: localDomains('you@yourshop.co.uk') })}
                         </FormField>
                         <FormField id="town" label="Town" error={errors.town}>
                             {input('town', { autoComplete: 'address-level2', required: true })}

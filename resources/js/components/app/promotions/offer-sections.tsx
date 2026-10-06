@@ -3,6 +3,7 @@ import { CheckField } from '@/components/app/setup/fields';
 import { type PromotionFormProps, type PromotionValues } from '@/components/app/pricing/types';
 import { FormField, FormGrid, FormSection } from '@/components/shared/form-section';
 import { Input } from '@/components/ui/input';
+import { timeZoneLabel } from '@/lib/country';
 import { DaysPicker, PriceTiersEditor, TYPE_HELP, TypePicker } from './offer-pickers';
 
 export interface OfferSectionProps {
@@ -122,7 +123,7 @@ export function WhenSection({ data, set, errors, options, restricted }: OfferSec
     const pastMidnight = data.time_from !== '' && data.time_to !== '' && data.time_to < data.time_from;
 
     return (
-        <FormSection title="Where and when" description="Dates are whole days; times are UK shop time on each chosen day.">
+        <FormSection title="Where and when" description={`Dates are whole days; times are ${timeZoneLabel()} shop time on each chosen day.`}>
             <FormGrid>
                 <FormField id="branch_id" label="Shops" help={restricted ? 'You manage one shop.' : 'One shop, or every shop.'} error={errors.branch_id}>
                     <OptionSelect

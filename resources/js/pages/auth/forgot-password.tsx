@@ -6,6 +6,7 @@ import { AuthDivider, AuthNotice, AuthSubmit, IconInput } from '@/components/aut
 import { FormField } from '@/components/shared/form-section';
 import TextLink from '@/components/text-link';
 import AuthLayout from '@/layouts/auth-layout';
+import { localDomains } from '@/lib/country-text';
 
 export default function ForgotPassword({ status }: { status?: string }) {
     const { data, setData, post, processing, errors } = useForm({
@@ -35,7 +36,7 @@ export default function ForgotPassword({ status }: { status?: string }) {
                         value={data.email}
                         autoFocus
                         onChange={(e) => setData('email', e.target.value)}
-                        placeholder="you@yourshop.co.uk"
+                        placeholder={localDomains('you@yourshop.co.uk')}
                         aria-invalid={!!errors.email || undefined}
                         aria-describedby={errors.email ? 'email-error' : undefined}
                     />

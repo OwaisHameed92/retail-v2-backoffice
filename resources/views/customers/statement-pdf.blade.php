@@ -115,7 +115,7 @@
         </tr>
         @forelse ($s['rows'] as $row)
             <tr>
-                <td>{{ \Carbon\CarbonImmutable::parse($row['at'])->setTimezone('Europe/London')->format('j M Y H:i') }}</td>
+                <td>{{ \Carbon\CarbonImmutable::parse($row['at'])->setTimezone(\App\Domain\Shared\Country\Country::zone())->format('j M Y H:i') }}</td>
                 <td>{{ $row['typeLabel'] }}@if ($row['note'])<div class="muted small">{{ $row['note'] }}</div>@endif</td>
                 <td>{{ $row['shop'] }}</td>
                 <td class="num">{{ \App\Domain\Shared\Support\Money::isZero($row['amount']) ? '' : $money($row['amount']) }}</td>

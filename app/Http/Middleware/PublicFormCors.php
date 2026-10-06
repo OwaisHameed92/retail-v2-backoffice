@@ -29,7 +29,7 @@ class PublicFormCors
         if ($origin !== null && ! $this->allowed($origin, $request)) {
             $response = $request->isMethod('OPTIONS')
                 ? response()->noContent()
-                : ApiExceptionRenderer::render(new ApiException('cors.origin_not_allowed', 'This website is not allowed to send trial requests yet. Please use the form at switchandsave.co.uk.', 403), $request);
+                : ApiExceptionRenderer::render(new ApiException('cors.origin_not_allowed', 'This website is not allowed to send trial requests yet. Please use the form at '.self::website().'.', 403), $request);
 
             return self::withHeaders($response, $origin);
         }
@@ -65,5 +65,13 @@ class PublicFormCors
 
         return $origin === $request->getSchemeAndHttpHost()
             || in_array($origin, (array) config('sspos.public_form_origins', []), true);
+    }
+
+    /** Our website's host for messages: "switchandsave.co.uk" (`sspos.website_url`, phase P6). */
+    private static function website(): string
+    {
+        $url = (string) config('sspos.website_url', 'https://switchandsave.co.uk');
+
+        return (string) preg_replace('#^www\.#', '', (string) (parse_url($url, PHP_URL_HOST) ?: $url));
     }
 }

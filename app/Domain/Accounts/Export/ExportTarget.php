@@ -2,6 +2,8 @@
 
 namespace App\Domain\Accounts\Export;
 
+use App\Domain\Shared\Country\LocalText;
+
 /**
  * The accounting packages journals can be exported to (gap #8), each with its own CSV import format.
  */
@@ -27,7 +29,7 @@ enum ExportTarget: string
     {
         return match ($this) {
             self::Xero => 'In Xero: Accounting → Manual journals → Import. Each journal is one narration.',
-            self::QuickBooks => 'In QuickBooks Online: Settings → Import data → Journal entries (UK dates, dd/mm/yyyy).',
+            self::QuickBooks => 'In QuickBooks Online: Settings → Import data → Journal entries ('.(LocalText::region() === 'UK' ? 'UK dates, ' : 'dates ').'dd/mm/yyyy).',
             self::Sage50 => 'In Sage 50: File → Import → Audit trail transactions. JD = journal debit, JC = journal credit.',
             self::SageAccounting => 'In Sage Accounting: Settings → Import data → Journals (or Accounting → Journals → Import).',
         };
