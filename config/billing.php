@@ -18,6 +18,9 @@ return [
         'legal_name' => env('BILLING_SELLER_LEGAL_NAME', 'Switch & Save Ltd'),
         'address' => env('BILLING_SELLER_ADDRESS', ''),
         'company_number' => env('BILLING_SELLER_COMPANY_NUMBER', ''),
+        // Where the company is registered, for "Registered in …, company no. …" (phase P6). Empty = the country
+        // profile's place: "England and Wales" on GB, "Pakistan" on PK.
+        'registered_in' => (string) env('BILLING_SELLER_REGISTERED_IN', ''),
         'email' => env('BILLING_SELLER_EMAIL') ?: (env('SSPOS_SUPPORT_EMAIL') ?: 'support@switchandsave.co.uk'),
         'phone' => (string) env('BILLING_SELLER_PHONE', env('SSPOS_SUPPORT_PHONE', '')),
     ],

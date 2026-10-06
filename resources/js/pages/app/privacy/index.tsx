@@ -8,6 +8,7 @@ import { PageHeader } from '@/components/shared/page-header';
 import { SectionCard } from '@/components/shared/section-card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import AppLayout from '@/layouts/app-layout';
+import { ukOnly } from '@/lib/country-text';
 import { Head, Link, router } from '@inertiajs/react';
 import { type ColumnDef } from '@tanstack/react-table';
 import { Info, LockKeyhole } from 'lucide-react';
@@ -52,7 +53,10 @@ export default function PrivacyIndex({ requests, filters, settings, due, pending
             <Head title="Privacy" />
             <PageHeader
                 title="Privacy"
-                description="Your customers' data rights under UK GDPR: copies of their data, erasure, and how long you keep their details."
+                description={ukOnly(
+                    "Your customers' data rights under UK GDPR: copies of their data, erasure, and how long you keep their details.",
+                    "Your customers' data rights: copies of their data, erasure, and how long you keep their details.",
+                )}
             />
 
             <Alert variant="info">

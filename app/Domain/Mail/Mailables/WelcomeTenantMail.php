@@ -5,6 +5,7 @@ namespace App\Domain\Mail\Mailables;
 use App\Domain\Mail\Data\TillKeyData;
 use App\Domain\Mail\Data\WelcomeTenantData;
 use App\Domain\Mail\Support\MailFormat;
+use App\Domain\Shared\Country\LocalText;
 use Illuminate\Mail\Mailables\Content;
 
 /**
@@ -34,7 +35,7 @@ final class WelcomeTenantMail extends BrandedMailable
         return new self(new WelcomeTenantData(
             businessName: 'Khan Mini Mart',
             ownerName: 'Aisha Khan',
-            ownerEmail: 'aisha@khanminimart.co.uk',
+            ownerEmail: LocalText::domains('aisha@khanminimart.co.uk'),
             loginUrl: config('sspos.portal_url').'/login',
             tills: [
                 new TillKeyData('High Street', 'Till 1', 'SSP-7K2Q-9DMF-3XRA-P8T5'),

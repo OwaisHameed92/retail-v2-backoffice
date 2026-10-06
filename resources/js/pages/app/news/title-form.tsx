@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import AppLayout from '@/layouts/app-layout';
 import { taxName, taxText } from '@/lib/country';
+import { ukOnly } from '@/lib/country-text';
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import { Info, Link2, Link2Off, PackageSearch, Save, TriangleAlert } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
@@ -57,8 +58,8 @@ function VatHint({ linked, zeroVatRate }: { linked: LinkedProduct | null; zeroVa
             <TriangleAlert />
             <AlertDescription>
                 {linked
-                    ? `${linked.name} is on ${linked.vat ?? taxText('a VAT rate above 0%')}. Newspapers are zero-rated in the UK: give the product ${zeroName(zeroVatRate)} on its product page.`
-                    : `No product linked, so the till makes no ${taxName()} line for this title. Link a product with ${zeroName(zeroVatRate)}: newspapers are zero-rated in the UK.`}
+                    ? `${linked.name} is on ${linked.vat ?? taxText('a VAT rate above 0%')}. ${ukOnly('Newspapers are zero-rated in the UK: give', `For newspapers with no ${taxName()}, give`)} the product ${zeroName(zeroVatRate)} on its product page.`
+                    : `No product linked, so the till makes no ${taxName()} line for this title. Link a product with ${zeroName(zeroVatRate)}${ukOnly(': newspapers are zero-rated in the UK', ` for newspapers with no ${taxName()}`)}.`}
             </AlertDescription>
         </Alert>
     );

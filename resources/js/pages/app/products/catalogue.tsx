@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import AppLayout from '@/layouts/app-layout';
 import { formatNumber, taxName, taxText } from '@/lib/country';
+import { ukOnly } from '@/lib/country-text';
 import { Head, Link } from '@inertiajs/react';
 import { type ColumnDef } from '@tanstack/react-table';
 import { BookOpenCheck, Info, PackagePlus, Sparkles } from 'lucide-react';
@@ -129,7 +130,7 @@ export default function AddFromCatalogue(props: CatalogueSearchProps) {
             <PageHeader
                 title="Add from catalogue"
                 icon={BookOpenCheck}
-                description="Search thousands of UK products by name or barcode, tick the ones you sell and add them in one go. Products you already have are marked."
+                description={`Search thousands of ${ukOnly('UK ', '')}products by name or barcode, tick the ones you sell and add them in one go. Products you already have are marked.`}
                 back={{ href: route('app.products.index'), label: 'Products' }}
                 actions={
                     <Button variant="outline" asChild>

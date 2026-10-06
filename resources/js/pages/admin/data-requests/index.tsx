@@ -6,6 +6,7 @@ import { EntityCell } from '@/components/shared/entity-cell';
 import { PageHeader } from '@/components/shared/page-header';
 import { StatCard, StatGrid } from '@/components/shared/stat-card';
 import AdminLayout from '@/layouts/admin-layout';
+import { ukOnly } from '@/lib/country-text';
 import { Head, router } from '@inertiajs/react';
 import { type ColumnDef } from '@tanstack/react-table';
 import { CalendarClock, Hourglass, LockKeyhole } from 'lucide-react';
@@ -60,7 +61,7 @@ export default function AdminDataRequests({ requests, filters, counts }: Props) 
             <Head title="Data requests" />
             <PageHeader
                 title="Data requests"
-                description="Customer data exports and erasures made by businesses (UK GDPR). Customer details stay with the business and are not shown here."
+                description={`Customer data exports and erasures made by businesses${ukOnly(' (UK GDPR)', '')}. Customer details stay with the business and are not shown here.`}
             />
 
             <StatGrid columns={3}>

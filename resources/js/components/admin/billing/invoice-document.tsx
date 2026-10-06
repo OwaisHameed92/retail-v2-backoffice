@@ -1,7 +1,7 @@
 import { InvoiceStatusBadge } from '@/components/admin/billing/invoice-status-badge';
 import { type InvoiceDocumentData } from '@/components/admin/billing/types';
 import BrandLogo from '@/components/brand-logo';
-import { taxName, vatNumberPrefix } from '@/lib/country';
+import { companyNumberLabel, keepsUkStyles, taxName, vatNumberPrefix } from '@/lib/country';
 import { cn } from '@/lib/utils';
 
 function Label({ children }: { children: string }) {
@@ -177,7 +177,7 @@ export function InvoiceDocument({ doc }: { doc: InvoiceDocumentData }) {
                 )}
 
                 <footer className="text-muted-foreground border-t pt-4 text-center text-xs">
-                    {[doc.seller.legalName, doc.seller.companyNumber && `Company no. ${doc.seller.companyNumber}`, doc.seller.vatNumber && `${vatNumberPrefix()} ${doc.seller.vatNumber}`, doc.seller.email]
+                    {[doc.seller.legalName, doc.seller.companyNumber && `${keepsUkStyles() ? 'Company no.' : companyNumberLabel()} ${doc.seller.companyNumber}`, doc.seller.vatNumber && `${vatNumberPrefix()} ${doc.seller.vatNumber}`, doc.seller.email]
                         .filter(Boolean)
                         .join(' · ')}
                 </footer>

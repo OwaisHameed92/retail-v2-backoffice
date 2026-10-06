@@ -50,7 +50,7 @@ till side (FBR, Rs, GST, Urdu receipt, PK installer) is the EPOS team's work, as
 | P3 | **Tax wording and UK-only features** (done 2026-10-06, branch `pakistan/p3-tax`) | "VAT" → the profile's tax name in labels; the HMRC VAT return shown only where `vatReturn` is on; VAT number / Companies House fields per profile (NTN, STRN, SECP for PK) | 2 days |
 | P4 | **Address, phone, forms** (done 2026-10-06, branch `pakistan/p4-address`) | Postcode rule and phone pattern per profile (tenant, supplier, lead, trial forms) | 1 day |
 | P5 | **Billing without Direct Debit** | Profile `collection: manual`: monthly and yearly fees become invoices paid by hand (bank transfer, JazzCash, Easypaisa, cash), recorded by an admin; reminders before and after the due date; the same grace and 7-day suspension. GoCardless untouched for GB. Plans and prices per instance (PKR) | 4–5 days |
-| P6 | **Emails and legal text** | Mail templates without UK-only wording; privacy text per country; support contact per instance | 1 day |
+| P6 | **Emails and legal text** (done 2026-10-06, branch `pakistan/p6-content`) | Mail templates without UK-only wording; privacy text per country; support contact per instance | 1 day |
 | P7 | **Pakistan server** | Second VPS, domain, `.env` (`COUNTRY=PK`, `APP_TIMEZONE`), new licence signing key and its certificate from EPOS (public-key handover), Redis, MySQL tuning, nightly and offsite backups (own B2 bucket), no GoCardless | 1 day |
 | P8 | **FBR and till contract** | When EPOS sends the PK contract fields (Sale `fbrInvoiceNumber`, FBR status / QR; Branch `posId`, `ntn`, `strn`; Company `country`, `currency`): store, show on sales and reports, FBR status report | Depends on EPOS |
 

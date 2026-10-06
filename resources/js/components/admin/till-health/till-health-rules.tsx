@@ -1,6 +1,7 @@
 import { type HealthThresholds } from '@/components/till-health/types';
 import { DescriptionList } from '@/components/shared/description-list';
 import { SectionCard } from '@/components/shared/section-card';
+import { timeZoneLabel } from '@/lib/country';
 
 /** "How health is worked out": the thresholds in config/till-health.php, so staff can read a state. */
 export function TillHealthRules({ thresholds: t }: { thresholds: HealthThresholds }) {
@@ -26,7 +27,7 @@ export function TillHealthRules({ thresholds: t }: { thresholds: HealthThreshold
                     },
                     {
                         label: 'Alerts',
-                        value: `Raised on the till’s licence; "Till offline" after ${t.alertOfflineHours} silent trading hours (${t.tradingStart}–${t.tradingEnd} UK). Each clears itself when fixed.`,
+                        value: `Raised on the till’s licence; "Till offline" after ${t.alertOfflineHours} silent trading hours (${t.tradingStart}–${t.tradingEnd} ${timeZoneLabel()}). Each clears itself when fixed.`,
                         wide: true,
                     },
                 ]}

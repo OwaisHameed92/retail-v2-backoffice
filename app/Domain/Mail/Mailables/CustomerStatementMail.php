@@ -6,6 +6,7 @@ use App\Domain\Billing\Support\BillingFormat;
 use App\Domain\Mail\Contracts\RendersAttachment;
 use App\Domain\Mail\Data\CustomerStatementData;
 use App\Domain\Mail\Support\MailFormat;
+use App\Domain\Shared\Country\LocalText;
 use App\Domain\Shared\Country\MoneyFormat;
 use App\Domain\Shared\Support\Money;
 use Illuminate\Mail\Mailables\Address;
@@ -42,7 +43,7 @@ final class CustomerStatementMail extends BrandedMailable
         return new self(new CustomerStatementData(
             businessName: 'Khan Mini Mart',
             businessEmail: 'hello@khanminimart.example',
-            businessPhone: '0113 496 0123',
+            businessPhone: LocalText::phone('0113 496 0123'),
             customerName: 'Aisha Rahman',
             period: '1 Oct – 31 Oct 2026',
             closingBalance: '42.50',

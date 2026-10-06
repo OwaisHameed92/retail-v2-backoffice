@@ -3,6 +3,7 @@
 namespace App\Domain\ShopSettings\Support;
 
 use App\Domain\Shared\Country\Country;
+use App\Domain\Shared\Country\LocalText;
 use App\Domain\TillData\Sync\SettingSyncPolicy;
 use Illuminate\Validation\ValidationException;
 
@@ -59,7 +60,7 @@ final class SettingCatalogue
             $section['description'] = $country->taxText($section['description']);
 
             foreach ($section['settings'] as $key => &$definition) {
-                [$definition['label'], $definition['help']] = $ids[$key] ?? [$country->taxText($definition['label']), $country->taxText($definition['help'])];
+                [$definition['label'], $definition['help']] = $ids[$key] ?? [$country->taxText($definition['label']), LocalText::domains($country->taxText($definition['help']))];
             }
             unset($definition);
         }

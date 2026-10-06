@@ -70,6 +70,11 @@ return [
                 'vatReturn' => true,
                 'fbr' => false,
             ],
+            'legal' => [
+                // Phase P6: where our own company is registered, for the seller line on our invoices ("Registered in
+                // England and Wales, company no. …"). `BILLING_SELLER_REGISTERED_IN` overrides it per instance.
+                'registeredIn' => 'England and Wales',
+            ],
         ],
 
         'PK' => [
@@ -136,6 +141,9 @@ return [
             'features' => [
                 'vatReturn' => false,
                 'fbr' => false,
+            ],
+            'legal' => [
+                'registeredIn' => 'Pakistan',
             ],
         ],
     ],

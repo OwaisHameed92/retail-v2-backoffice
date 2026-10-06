@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\App\Customers;
 
+use App\Domain\Shared\Country\LocalText;
 use App\Http\Requests\App\Setup\CompanyWideWriteRequest;
 
 /**
@@ -37,7 +38,7 @@ class CustomerRequest extends CompanyWideWriteRequest
         return [
             'name.required' => 'Enter the customer\'s name.',
             'phone.regex' => 'Use digits, spaces, + and brackets only.',
-            'email.email' => 'Enter a valid email address, e.g. name@example.co.uk.',
+            'email.email' => LocalText::domains('Enter a valid email address, e.g. name@example.co.uk.'),
             'dob.before' => 'The date of birth must be in the past.',
             'card_no.regex' => 'Use letters, digits and dashes only.',
             'credit_limit.regex' => 'Enter an amount in pounds, e.g. 50 or 49.99. Use 0 for no account credit.',
