@@ -6,6 +6,7 @@ use App\Domain\Admin\Models\Admin;
 use App\Domain\Billing\Support\BillingAccounts;
 use App\Domain\Billing\Support\MandateDeadline;
 use App\Domain\Pharmacy\Support\ServiceModules;
+use App\Domain\Shared\Country\Country;
 use App\Domain\Tenancy\Actions\ResolveCurrentBranch;
 use App\Domain\Tenancy\Actions\ResolveCurrentCompany;
 use App\Domain\Tenancy\Actions\SwitchCurrentCompany;
@@ -64,6 +65,8 @@ class HandleInertiaRequests extends Middleware
                 'user' => $request->user(),
             ],
             'twoFactorEnabled' => (bool) config('security.two_factor.enabled'),
+            // Pakistan plan P0: this instance's country profile (currency, locale, time zone, tax name).
+            'country' => app(Country::class)->toFrontend(),
             'company' => fn () => $this->currentCompany($request)?->only(['id', 'name', 'status']),
             'companies' => fn () => $this->companies($request),
             'companyRole' => fn () => $this->currentCompany($request)?->membership?->role->value,
