@@ -4,5 +4,5 @@
 set -euo pipefail
 BUCKET="${OFFSITE_BUCKET:-sspos-retail-v2-backup}"
 case "$(basename "$1")" in storage-*) dir=storage ;; *) dir=database ;; esac
-rclone copy --no-traverse "$1" "b2:$BUCKET/$dir/"
+rclone copy --no-traverse "$1" "b2:$BUCKET/${OFFSITE_PREFIX:-}$dir/"
 echo "$(date -u +%FT%TZ) offsite ok: $dir/$(basename "$1")"

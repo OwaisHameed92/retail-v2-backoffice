@@ -145,3 +145,25 @@ fails it puts the previous release back and exits 1. The last 5 releases are kep
   retired key keeps verifying for `LICENCE_RETIRED_KEY_KEEP_DAYS` (60).
 - Security updates: `sudo unattended-upgrades` is on by default on Ubuntu; reboot in a quiet hour when needed
   (tills work offline and catch up).
+
+
+## Pakistan instance (pak-pos.sspos.co.uk), same VPS (2026-10-07)
+
+A second copy of this app with `COUNTRY=PK` (docs/pakistan-plan.md). Nothing is shared with the UK at run time:
+
+| Item | UK | Pakistan |
+|---|---|---|
+| App user / folder | `retail`, `/var/www/retail-v2` | `pakpos`, `/var/www/pak-pos` |
+| PHP-FPM pool / socket | `retail-v2`, `/run/php/retail-v2.sock` | `pak-pos` (max 10 children), `/run/php/pak-pos.sock` |
+| Nginx site / logs | `retail-v2-portal`, `retail-v2.*.log` | `pak-pos`, `pak-pos.*.log` (ACME webroot `/var/www/pak-pos/acme`) |
+| Database / users | `retail_v2` | `pak_pos`, users `pak_pos`, `pak_pos_backup` (password only in `.env` / `~pakpos/.pak-pos-backup.cnf`) |
+| Redis | DB 0/1, prefix `retail_v2_` | DB 2/3, prefix `pak_pos_`, cookie `pak_pos_session` |
+| Workers | `retail-v2-queue@1,2` | `pak-pos-queue@1,2` |
+| Cron | `/etc/cron.d/retail-v2` | `/etc/cron.d/pak-pos` (scheduler; backup 02:25 UTC) |
+| Backups | `/var/backups/retail-v2`, B2 `database/`, `storage/` | `/var/backups/pak-pos`, B2 `pak-pos/database/`, `pak-pos/storage/` (`OFFSITE_PREFIX`) |
+| Logrotate | `/etc/logrotate.d/retail-v2` | `/etc/logrotate.d/pak-pos` |
+| Licence signing key | UK key + EPOS certificate | own key `k9fa21394`; handover file sent to EPOS for its certificate (`licence:keys:import-cert`) |
+
+The `.env` was made from the UK one with Pakistan values (new `APP_KEY`, `COUNTRY=PK`, seller name only, no GoCardless,
+no UK bank lines). Deploy: `SERVER=root@187.124.113.13 APP_ROOT=/var/www/pak-pos APP_USER=pakpos HEALTH_URL=https://pak-pos.sspos.co.uk/up bash deploy/push-release.sh`.
+Deploy the UK first, check it, then Pakistan. First admin: `sudo -u pakpos php artisan admin:create <email> --name=…` (password typed in).
