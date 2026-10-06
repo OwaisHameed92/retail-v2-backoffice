@@ -34,11 +34,19 @@ Nothing to do: we collect **{{ $amountDue }}** by Direct Debit on {{ $directDebi
 
 ## How to pay
 
+@if ($data->howToPay)
+{{ $data->howToPay }} Your licences are renewed as soon as the invoice is paid.
+@else
 We take cash, or you can pay by bank transfer. Use **{{ $data->invoiceNumber }}** as the reference so we can match your payment. Your licences are renewed as soon as the invoice is paid.
+@endif
 @if (count($data->bankDetails) > 0)
 
 <x-mail::panel>
+@if ($data->howToPay)
+**Pay to**<br>
+@else
 **Bank transfer**<br>
+@endif
 @foreach ($data->bankDetails as $line)
 {{ $line }}<br>
 @endforeach

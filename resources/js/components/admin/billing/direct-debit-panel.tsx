@@ -33,6 +33,8 @@ export function DirectDebitPanel({ company, directDebit, canManage }: { company:
     const close = (open: boolean) => !open && setAction(null);
     const { mandate, subscription, setupFee, payments } = directDebit;
     const isDirectDebit = directDebit.mode === 'directDebit';
+    // Pakistan plan P5: invoices paid by hand, no Direct Debit at all.
+    const manual = directDebit.manual;
     // Upfront customers that never had Direct Debit only need the mode and the setup fee.
     const showDirectDebit = isDirectDebit || mandate.id !== null || payments.data.length > 0;
     // The setup fee is always paid by hand (owner rule 2026-10-05): invoice it to send it before it is paid.
@@ -43,15 +45,21 @@ export function DirectDebitPanel({ company, directDebit, canManage }: { company:
     return (
         <SectionCard
             title={
-                <span className="inline-flex items-center gap-2">
-                    Direct Debit
-                    {directDebit.enabled && directDebit.environment === 'sandbox' && <StatusPill tone="violet">Sandbox</StatusPill>}
-                </span>
+                manual ? (
+                    'How this business pays'
+                ) : (
+                    <span className="inline-flex items-center gap-2">
+                        Direct Debit
+                        {directDebit.enabled && directDebit.environment === 'sandbox' && <StatusPill tone="violet">Sandbox</StatusPill>}
+                    </span>
+                )
             }
             description={
-                isDirectDebit
-                    ? 'GoCardless collects the monthly or yearly fee; every payment has its own invoice. The setup fee is paid by hand.'
-                    : 'This business pays each period by hand (exception): cash, card or bank transfer.'
+                manual
+                    ? `Every monthly or yearly period is an invoice, emailed and paid by hand (${manual.methodsText}); record each payment on the invoice. The setup fee is paid by hand too.`
+                    : isDirectDebit
+                      ? 'GoCardless collects the monthly or yearly fee; every payment has its own invoice. The setup fee is paid by hand.'
+                      : 'This business pays each period by hand (exception): cash, card or bank transfer.'
             }
             actions={
                 canManage ? (
@@ -113,9 +121,13 @@ export function DirectDebitPanel({ company, directDebit, canManage }: { company:
 
                 <div className={showDirectDebit ? 'grid gap-3 sm:grid-cols-2 xl:grid-cols-4' : 'grid gap-3 sm:grid-cols-2'}>
                     <Tile label="Billing mode">
-                        <span className="font-medium">{isDirectDebit ? 'Direct Debit' : 'Upfront'}</span>
+                        <span className="font-medium">{manual ? 'Invoices paid by hand' : isDirectDebit ? 'Direct Debit' : 'Upfront'}</span>
                         <span className="text-muted-foreground text-sm">
-                            {isDirectDebit ? 'GoCardless, monthly or yearly' : 'Cash, card or bank transfer (exception)'}
+                            {manual
+                                ? `${manual.methodsText.charAt(0).toUpperCase()}${manual.methodsText.slice(1)}`
+                                : isDirectDebit
+                                  ? 'GoCardless, monthly or yearly'
+                                  : 'Cash, card or bank transfer (exception)'}
                         </span>
                     </Tile>
                     <Tile label="Setup fee (upfront)">
@@ -206,7 +218,11 @@ export function DirectDebitPanel({ company, directDebit, canManage }: { company:
                         open={action === 'setup-fee'}
                         onOpenChange={close}
                         title={`Invoice the setup fee of ${setupFee.gross}?`}
-                        description="The invoice (one per instalment) is emailed now. Record the cash, card or bank transfer with Record setup fee payment."
+                        description={
+                            manual
+                                ? `The invoice (one per instalment) is emailed now. Record the payment (${manual.methodsText}) with Record setup fee payment.`
+                                : 'The invoice (one per instalment) is emailed now. Record the cash, card or bank transfer with Record setup fee payment.'
+                        }
                         confirmLabel="Invoice setup fee"
                         onConfirm={() => post(url('setup-fee'))}
                     />

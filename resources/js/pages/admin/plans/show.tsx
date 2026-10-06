@@ -15,6 +15,7 @@ import AdminLayout from '@/layouts/admin-layout';
 import { taxName, taxText } from '@/lib/country';
 import { Head, Link } from '@inertiajs/react';
 import { Archive, CalendarClock, CalendarRange, Check, Clock, Layers, Minus, Pencil } from 'lucide-react';
+import { byHand } from '@/lib/billing-collection';
 
 interface ShowPlanProps {
     plan: PlanRecord;
@@ -87,8 +88,8 @@ export default function ShowPlan({ plan, features, activity }: ShowPlanProps) {
                         value={formatMoney(plan.priceMonthly)}
                         hint={
                             plan.billingType === 'setupAndRecurring'
-                                ? `Per ${plan.pricingMode === 'perBranch' ? 'branch' : 'till'} by Direct Debit · setup fee ${formatMoney(plan.setupFee)} + ${taxName()}`
-                                : `Per ${plan.pricingMode === 'perBranch' ? 'branch' : 'till'} by Direct Debit · no setup fee`
+                                ? `Per ${plan.pricingMode === 'perBranch' ? 'branch' : 'till'} ${byHand('by Direct Debit', 'invoiced')} · setup fee ${formatMoney(plan.setupFee)} + ${taxName()}`
+                                : `Per ${plan.pricingMode === 'perBranch' ? 'branch' : 'till'} ${byHand('by Direct Debit', 'invoiced')} · no setup fee`
                         }
                         icon={MoneyIcon}
                     />
@@ -96,7 +97,7 @@ export default function ShowPlan({ plan, features, activity }: ShowPlanProps) {
                 <StatCard
                     label={plan.billingType === 'setupOnly' ? 'Plan type' : 'Yearly price'}
                     value={plan.billingType === 'setupOnly' ? 'Setup only' : formatMoney(plan.priceYearly)}
-                    hint={plan.billingType === 'setupOnly' ? 'Nothing recurring, no Direct Debit' : yearlyHint(plan)}
+                    hint={plan.billingType === 'setupOnly' ? byHand('Nothing recurring, no Direct Debit', 'Nothing recurring') : yearlyHint(plan)}
                     icon={CalendarRange}
                     tone="success"
                 />

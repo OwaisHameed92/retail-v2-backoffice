@@ -134,7 +134,7 @@ export default function BillingOverview({
 
             <BillingStatesCard data={businesses} />
 
-            <DirectDebitOverview data={directDebit} />
+            {directDebit && <DirectDebitOverview data={directDebit} />}
 
             {nothing ? (
                 <SectionCard>

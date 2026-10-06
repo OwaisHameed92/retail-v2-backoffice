@@ -5,6 +5,7 @@ import { StatusPill, type StatusTone } from '@/components/shared/status-badge';
 import { cn } from '@/lib/utils';
 import { Link, router } from '@inertiajs/react';
 import { ChevronRight, Users } from 'lucide-react';
+import { byHand, manualCollection } from '@/lib/billing-collection';
 
 type FilterGroup = Exclude<BillingStateGroup, 'cancelled'>;
 
@@ -63,12 +64,15 @@ export function BillingStatesCard({ data }: { data: BillingStatesData }) {
     return (
         <SectionCard
             title="Businesses by billing state"
-            description="Who is paid, on trial, waiting for Direct Debit, overdue or suspended. Open one for its Billing status."
+            description={byHand(
+                'Who is paid, on trial, waiting for Direct Debit, overdue or suspended. Open one for its Billing status.',
+                'Who is paid, on trial, overdue or suspended. Open one for its Billing status.',
+            )}
             flush
         >
             <div className="flex flex-wrap gap-2 px-5 py-4 sm:px-6">
                 <Chip active={data.group === null} label="All" count={data.total} onClick={() => filter(null)} />
-                {FILTERS.map((item) => (
+                {FILTERS.filter((item) => !(manualCollection() && item.value === 'waitingForDirectDebit')).map((item) => (
                     <Chip
                         key={item.value}
                         active={data.group === item.value}

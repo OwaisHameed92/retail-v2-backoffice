@@ -102,6 +102,8 @@ export interface CountryProfile {
     phoneExample: string;
     billingCollection: 'gocardless' | 'manual';
     features: { vatReturn: boolean; fbr: boolean } & Record<string, boolean>;
+    /** Pakistan plan P5: the methods staff record by hand, sent only where fees are collected by hand (PK). */
+    manualMethods?: string[];
 }
 
 export interface SharedData {

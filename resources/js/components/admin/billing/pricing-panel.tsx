@@ -10,6 +10,7 @@ import { formatMoney } from '@/lib/country';
 import { useForm } from '@inertiajs/react';
 import { Banknote, LoaderCircle, Tags } from 'lucide-react';
 import { type FormEventHandler, type ReactNode, useState } from 'react';
+import { byHand, manualMethodsText } from '@/lib/billing-collection';
 
 function Tile({ label, children }: { label: string; children: ReactNode }) {
     return (
@@ -42,7 +43,10 @@ export function PricingPanel({ company, directDebit, canManage }: PricingPanelPr
     return (
         <SectionCard
             title="Plan and payments"
-            description="The setup fee is paid by hand (cash, card or bank transfer). The monthly or yearly fee is collected by Direct Debit."
+            description={byHand(
+                'The setup fee is paid by hand (cash, card or bank transfer). The monthly or yearly fee is collected by Direct Debit.',
+                `The setup fee and every monthly or yearly invoice are paid by hand (${manualMethodsText()}).`,
+            )}
             actions={
                 canManage ? (
                     <div className="flex flex-wrap gap-2">
@@ -83,7 +87,7 @@ export function PricingPanel({ company, directDebit, canManage }: PricingPanelPr
                             ? `${upfront.method ?? 'Recorded'}${upfront.recordedAt ? ` · ${formatDate(upfront.recordedAt)}` : ''}`
                             : upfront.status === 'none'
                               ? 'Nothing to pay'
-                              : `${upfront.owed} to pay by cash, card or bank transfer${upfront.nextDue ? ` · next due ${formatDay(upfront.nextDue)}` : ''}`}
+                              : `${upfront.owed} to pay by ${byHand('cash, card or bank transfer', manualMethodsText())}${upfront.nextDue ? ` · next due ${formatDay(upfront.nextDue)}` : ''}`}
                     </span>
                 </Tile>
                 <Tile label={`${cycleLabel} fee`}>
@@ -91,7 +95,7 @@ export function PricingPanel({ company, directDebit, canManage }: PricingPanelPr
                         {pricing.recurringIsZero ? 'Nothing recurring' : `${pricing.recurring} ${byDirectDebit ? 'by Direct Debit' : pricing.per}`}
                     </span>
                     {pricing.recurringIsZero ? (
-                        <span className="text-muted-foreground text-sm">No Direct Debit needed</span>
+                        <span className="text-muted-foreground text-sm">{byHand('No Direct Debit needed', 'Nothing to invoice')}</span>
                     ) : byDirectDebit ? (
                         <>
                             <span className="inline-flex flex-wrap items-center gap-2 text-sm">
@@ -111,7 +115,9 @@ export function PricingPanel({ company, directDebit, canManage }: PricingPanelPr
                             </span>
                         </>
                     ) : (
-                        <span className="text-muted-foreground text-sm">Paid by hand (exception), {pricing.unitsLabel}</span>
+                        <span className="text-muted-foreground text-sm">
+                            {byHand('Paid by hand (exception)', 'An invoice each period, paid by hand')}, {pricing.unitsLabel}
+                        </span>
                     )}
                 </Tile>
             </div>
@@ -162,7 +168,7 @@ export function UpfrontBody({
                         {upfront.invoiced
                             ? `Pays the next unpaid part of ${company.name}'s setup fee (${upfront.owed} still to pay). The paid invoice is emailed as the receipt.`
                             : `${company.name} gets a paid setup fee invoice by email as the receipt.`}{' '}
-                        The setup fee is never taken by Direct Debit.
+                        {byHand('The setup fee is never taken by Direct Debit.', `Paid by ${manualMethodsText()}.`)}
                     </DialogDescription>
                 </DialogHeader>
                 <UpfrontPaymentFields

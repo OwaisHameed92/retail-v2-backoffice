@@ -19,6 +19,8 @@ Set up your Direct Debit now to keep trading. Without it, the account is suspend
 <x-mail::button :url="$data->directDebitUrl">
 Set up Direct Debit
 </x-mail::button>
+@elseif ($data->howToPay)
+{{ $data->howToPay }}
 @else
 We take payment in cash for now. Reply to this email or call us and we will arrange it with you, usually the same day.
 @endif

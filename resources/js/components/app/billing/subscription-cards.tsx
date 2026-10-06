@@ -10,6 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { taxName } from '@/lib/country';
 import { CalendarClock, CircleX, Wallet } from 'lucide-react';
 import { type PortalBillingProps } from './types';
+import { byHand, manualMethodsText } from '@/lib/billing-collection';
 
 const accountTones = { trial: 'info', active: 'success', overdue: 'warning', suspended: 'danger', cancelled: 'neutral' } as const;
 
@@ -76,9 +77,14 @@ export function SubscriptionCard({
 
 /** Module 4.10: the one-off setup fee, in one payment or monthly instalments. */
 export function SetupFeeCard({ setupFee }: { setupFee: NonNullable<PortalBillingProps['setupFee']> }) {
-    const how = setupFee.charged
-        ? 'Each part is its own invoice below. Pay by cash, card or bank transfer; it is never taken by Direct Debit.'
-        : 'Paid by cash, card or bank transfer, never by Direct Debit. Your tills stay on the free trial until it is paid.';
+    const how = byHand(
+        setupFee.charged
+            ? 'Each part is its own invoice below. Pay by cash, card or bank transfer; it is never taken by Direct Debit.'
+            : 'Paid by cash, card or bank transfer, never by Direct Debit. Your tills stay on the free trial until it is paid.',
+        setupFee.charged
+            ? `Each part is its own invoice below. Pay by ${manualMethodsText()}.`
+            : `Paid by ${manualMethodsText()}. Your tills stay on the free trial until it is paid.`,
+    );
 
     return (
         <SectionCard title="Setup fee" description={`${setupFee.total} in total, ${taxName()} included. ${how}`} flush contentClassName="p-0">
@@ -122,7 +128,10 @@ export function PaymentsCard({ payments, collections }: Pick<PortalBillingProps,
     return (
         <SectionCard
             title="Payments"
-            description="Collections scheduled by Direct Debit and every payment we have received from you."
+            description={byHand(
+                'Collections scheduled by Direct Debit and every payment we have received from you.',
+                'Every payment we have received from you.',
+            )}
             flush
             contentClassName="p-0"
         >

@@ -66,6 +66,7 @@
 <div class="footer">
     {{ $seller['legalName'] }}@if ($seller['companyNumber']) · {{ \App\Domain\Shared\Country\LocalText::registration($seller['companyNumber']) }}@endif
     @if ($seller['vatNumber']) · {{ $vatNo }} {{ $seller['vatNumber'] }}@endif
+    @if (! empty($seller['strn'])) · STRN {{ $seller['strn'] }}@endif
     @if ($seller['email']) · {{ $seller['email'] }}@endif
 </div>
 
@@ -100,6 +101,7 @@
             @if ($seller['email'])<div class="muted">{{ $seller['email'] }}</div>@endif
             @if ($seller['phone'])<div class="muted">{{ $seller['phone'] }}</div>@endif
             @if ($seller['vatNumber'])<div class="muted">{{ $vatNo }} {{ $seller['vatNumber'] }}</div>@endif
+            @if (! empty($seller['strn']))<div class="muted">STRN {{ $seller['strn'] }}</div>@endif
         </td>
         <td>
             <div class="label">Bill to</div>
@@ -199,7 +201,11 @@
 @if (! in_array($doc['status'], ['paid', 'void'], true))
     <div class="section box">
         <div class="label">How to pay</div>
+        @if (! empty($doc['howToPay']))
+        {{ $doc['howToPay'] }}
+        @else
         We take cash, or pay by bank transfer quoting&nbsp;<strong>{{ $doc['reference'] ?? 'the invoice number' }}</strong>&nbsp;as the reference.
+        @endif
         Your licences are renewed as soon as the invoice is paid.
         @if (count($doc['bank']) > 0)
             <div style="margin-top: 6px;">

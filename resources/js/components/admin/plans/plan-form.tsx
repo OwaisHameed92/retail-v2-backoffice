@@ -13,12 +13,23 @@ import { cn } from '@/lib/utils';
 import { Link } from '@inertiajs/react';
 import { LoaderCircle } from 'lucide-react';
 import { useState, type FormEventHandler } from 'react';
+import { byHand, manualMethodsText } from '@/lib/billing-collection';
 
 const PLAN_TYPES: { value: PlanBillingType; label: string; description: string }[] = [
     { value: 'setupOnly', label: 'Setup fee only', description: 'One payment by hand. Once paid in full the licence does not expire.' },
     { value: 'setupAndRecurring', label: 'Setup fee + monthly', description: 'Setup fee paid by hand, then a Direct Debit each month or year.' },
     { value: 'recurringOnly', label: 'Monthly only', description: 'No setup fee. A Direct Debit each month or year.' },
 ];
+
+/** Pakistan plan P5: where fees are paid by hand, each period is an invoice instead of a Direct Debit. */
+const MANUAL_DESCRIPTIONS: Partial<Record<PlanBillingType, string>> = {
+    setupAndRecurring: 'Setup fee paid by hand, then an invoice each month or year, paid by hand.',
+    recurringOnly: 'No setup fee. An invoice each month or year, paid by hand.',
+};
+
+function planTypeDescription(type: { value: PlanBillingType; description: string }): string {
+    return byHand(type.description, MANUAL_DESCRIPTIONS[type.value] ?? type.description);
+}
 
 export interface PlanFormData {
     name: string;
@@ -154,7 +165,10 @@ export function PlanForm({
 
                 <FormSection
                     title="Plan type"
-                    description="How the customer pays. The setup fee is always paid by hand (cash, card or bank transfer); the monthly or yearly fee is always collected by Direct Debit."
+                    description={byHand(
+                        'How the customer pays. The setup fee is always paid by hand (cash, card or bank transfer); the monthly or yearly fee is always collected by Direct Debit.',
+                        `How the customer pays. The setup fee and every monthly or yearly invoice are paid by hand (${manualMethodsText()}).`,
+                    )}
                 >
                     <div role="radiogroup" aria-label="Plan type" className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                         {PLAN_TYPES.map((type) => {
@@ -173,7 +187,7 @@ export function PlanForm({
                                     )}
                                 >
                                     <span className="text-sm font-medium">{type.label}</span>
-                                    <span className="text-muted-foreground text-[13px]">{type.description}</span>
+                                    <span className="text-muted-foreground text-[13px]">{planTypeDescription(type)}</span>
                                 </button>
                             );
                         })}
@@ -266,7 +280,10 @@ export function PlanForm({
                                 error={errors.setup_fee}
                                 help={
                                     recurs
-                                        ? 'Paid once per business, by hand, before the Direct Debit starts. Can be changed per customer on their Billing tab.'
+                                        ? byHand(
+                                              'Paid once per business, by hand, before the Direct Debit starts. Can be changed per customer on their Billing tab.',
+                                              'Paid once per business, by hand, before the monthly invoices start. Can be changed per customer on their Billing tab.',
+                                          )
                                         : 'Paid once per business, by hand. Paid in full = a licence that does not expire.'
                                 }
                             >

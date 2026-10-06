@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Domain\Billing\GoCardless\Actions\ReconcileGoCardless;
+use App\Domain\Billing\Support\ManualCollection;
 use Carbon\CarbonImmutable;
 use Illuminate\Console\Command;
 
@@ -18,6 +19,13 @@ class BillingReconcileGoCardlessCommand extends Command
 
     public function handle(ReconcileGoCardless $reconcile): int
     {
+        // Pakistan plan P5: an instance that collects by hand has no Direct Debit, so GoCardless is never called.
+        if (ManualCollection::active()) {
+            $this->info('No Direct Debit on this instance (fees are paid by hand): nothing to reconcile.');
+
+            return self::SUCCESS;
+        }
+
         $dry = (bool) $this->option('dry-run');
         $report = $reconcile->handle(CarbonImmutable::now(), $dry);
 

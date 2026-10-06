@@ -8,6 +8,7 @@ use App\Domain\Billing\Enums\BillingCycle;
 use App\Domain\Billing\Enums\InvoiceKind;
 use App\Domain\Billing\Enums\InvoiceStatus;
 use App\Domain\Shared\Casts\MoneyCast;
+use App\Domain\Shared\Country\Country;
 use App\Domain\Tenancy\Concerns\BelongsToCompany;
 use App\Domain\Tenancy\Concerns\HasPortalUlid;
 use App\Domain\Tenancy\Models\Company;
@@ -59,6 +60,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property CarbonImmutable|null $suspension_triggered_at
  * @property CarbonImmutable|null $reopened_at A Direct Debit failure or chargeback made it owed again (suspension grace counts from here).
  * @property CarbonImmutable|null $licences_renewed_at
+ * @property CarbonImmutable|null $due_soon_reminded_at Manual collection (P5): the "due in a few days" reminder went.
+ * @property CarbonImmutable|null $due_today_reminded_at Manual collection (P5): the "due today" reminder went.
+ * @property CarbonImmutable|null $overdue_reminded_at Manual collection (P5): the "still unpaid" reminder went.
  * @property CarbonImmutable|null $last_sent_at
  * @property int $sent_count
  * @property CarbonImmutable|null $voided_at
@@ -98,6 +102,18 @@ class Invoice extends Model
     /** @var list<string> */
     protected $guarded = [];
 
+    /** Pakistan plan P5: an instance billing in another currency (PKR) stamps it on new invoices; GB keeps "GBP". */
+    protected static function booted(): void
+    {
+        static::creating(function (Invoice $invoice) {
+            $currency = app(Country::class)->currency();
+
+            if ($invoice->currency === 'GBP' && $currency !== 'GBP') {
+                $invoice->currency = $currency;
+            }
+        });
+    }
+
     /**
      * @return array<string, string>
      */
@@ -128,6 +144,9 @@ class Invoice extends Model
             'overdue_at' => 'immutable_datetime',
             'suspension_triggered_at' => 'immutable_datetime',
             'reopened_at' => 'immutable_datetime',
+            'due_soon_reminded_at' => 'immutable_datetime',
+            'due_today_reminded_at' => 'immutable_datetime',
+            'overdue_reminded_at' => 'immutable_datetime',
             'licences_renewed_at' => 'immutable_datetime',
             'last_sent_at' => 'immutable_datetime',
             'voided_at' => 'immutable_datetime',

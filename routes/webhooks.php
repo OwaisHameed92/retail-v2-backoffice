@@ -10,10 +10,10 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::post('webhooks/gocardless', GoCardlessWebhookController::class)
-    ->middleware('throttle:120,1')
+    ->middleware(['billing.direct-debit', 'throttle:120,1'])
     ->name('webhooks.gocardless');
 
-Route::middleware(['web', 'signed', 'throttle:30,1'])->prefix('direct-debit/{company}')->name('direct-debit.')->whereUlid('company')->group(function () {
+Route::middleware(['billing.direct-debit', 'web', 'signed', 'throttle:30,1'])->prefix('direct-debit/{company}')->name('direct-debit.')->whereUlid('company')->group(function () {
     Route::get('setup', [DirectDebitSetupController::class, 'setup'])->name('setup');
     Route::get('done', [DirectDebitSetupController::class, 'done'])->name('done');
 });

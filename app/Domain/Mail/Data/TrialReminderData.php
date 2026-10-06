@@ -19,5 +19,7 @@ final readonly class TrialReminderData
         public ?string $companyId = null,
         /** Direct Debit customers without a mandate (module 1.12): our signed link to set it up. */
         public ?string $directDebitUrl = null,
+        /** Pakistan plan P5 (manual collection): how to pay by hand, in place of the UK "we take payment in cash" text. */
+        public ?string $howToPay = null,
     ) {}
 }

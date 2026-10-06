@@ -12,6 +12,9 @@ class UpdateDraftInvoiceRequest extends BillingRequest
     /** Unit price may be negative for a discount line. */
     private const PRICE_PATTERN = '/^-?\d{1,5}(\.\d{1,2})?$/';
 
+    /** Pakistan plan P5: rupee prices run larger (see BillingRequest::LARGE_MONEY_PATTERN). */
+    private const LARGE_PRICE_PATTERN = '/^-?\d{1,9}(\.\d{1,2})?$/';
+
     protected function prepareForValidation(): void
     {
         $lines = $this->input('lines');
@@ -36,7 +39,7 @@ class UpdateDraftInvoiceRequest extends BillingRequest
             'lines.*.id' => ['nullable', 'string', 'max:26'],
             'lines.*.description' => ['required', 'string', 'max:500'],
             'lines.*.quantity' => ['required', 'string', 'regex:'.self::QUANTITY_PATTERN, 'not_regex:/^0+(\.0+)?$/'],
-            'lines.*.unit_price' => ['required', 'string', 'regex:'.self::PRICE_PATTERN],
+            'lines.*.unit_price' => ['required', 'string', 'regex:'.(self::moneyPattern() === self::MONEY_PATTERN ? self::PRICE_PATTERN : self::LARGE_PRICE_PATTERN)],
         ];
     }
 

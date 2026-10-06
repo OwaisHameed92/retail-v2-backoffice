@@ -2,6 +2,7 @@
 
 namespace App\Domain\Mail\Support;
 
+use App\Domain\Billing\Support\ManualCollection;
 use App\Domain\Mail\Mailables\AccountReactivatedMail;
 use App\Domain\Mail\Mailables\AccountSuspendedMail;
 use App\Domain\Mail\Mailables\AdminNewLeadMail;
@@ -20,6 +21,7 @@ use App\Domain\Mail\Mailables\LicenceRenewedMail;
 use App\Domain\Mail\Mailables\OwnerAlertMail;
 use App\Domain\Mail\Mailables\OwnerAlertResolvedMail;
 use App\Domain\Mail\Mailables\OwnerDigestMail;
+use App\Domain\Mail\Mailables\PaymentReminderMail;
 use App\Domain\Mail\Mailables\PortalInvitationMail;
 use App\Domain\Mail\Mailables\SetPasswordMail;
 use App\Domain\Mail\Mailables\TrialEndedMail;
@@ -58,11 +60,40 @@ final class EmailTemplates
     ];
 
     /**
+     * Pakistan plan P5: emails only an instance that collects fees by hand sends (listed after the invoice email
+     * there, where the Direct Debit emails are left out: they are never sent); a Direct Debit (GB) instance lists
+     * exactly MAILABLES.
+     *
+     * @var list<class-string<BrandedMailable>>
+     */
+    public const MANUAL_BILLING = [PaymentReminderMail::class];
+
+    /** @var list<class-string<BrandedMailable>> */
+    private const DIRECT_DEBIT = [DirectDebitSetupMail::class, DirectDebitFailedMail::class, DirectDebitCancelledMail::class];
+
+    /**
+     * The emails of this instance: MAILABLES, plus MANUAL_BILLING where fees are collected by hand.
+     *
+     * @return list<class-string<BrandedMailable>>
+     */
+    public static function mailables(): array
+    {
+        if (! ManualCollection::active()) {
+            return self::MAILABLES;
+        }
+
+        $list = array_values(array_diff(self::MAILABLES, self::DIRECT_DEBIT));
+        $at = (int) array_search(InvoiceMail::class, $list, true) + 1;
+
+        return [...array_slice($list, 0, $at), ...self::MANUAL_BILLING, ...array_slice($list, $at)];
+    }
+
+    /**
      * @return list<string>
      */
     public static function keys(): array
     {
-        return array_map(fn (string $class) => $class::templateKey(), self::MAILABLES);
+        return array_map(fn (string $class) => $class::templateKey(), self::mailables());
     }
 
     /**
@@ -70,7 +101,7 @@ final class EmailTemplates
      */
     public static function find(string $key): ?string
     {
-        foreach (self::MAILABLES as $class) {
+        foreach (self::mailables() as $class) {
             if ($class::templateKey() === $key) {
                 return $class;
             }
@@ -108,6 +139,6 @@ final class EmailTemplates
             'description' => $class::templateDescription(),
             'audience' => $class::audience(),
             'subject' => $class::sample()->subjectLine(),
-        ], self::MAILABLES);
+        ], self::mailables());
     }
 }

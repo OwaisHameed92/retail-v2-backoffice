@@ -2,6 +2,7 @@
 
 namespace App\Domain\Mail\Mailables;
 
+use App\Domain\Billing\Support\ManualCollection;
 use App\Domain\Mail\Data\TillRequestData;
 use App\Domain\Mail\Support\MailFormat;
 use App\Domain\Shared\Country\LocalText;
@@ -91,6 +92,8 @@ final class AdminSubscriptionRequestMail extends BrandedMailable
         return new Content(markdown: 'mail.admin-subscription-request', with: [
             'facts' => $facts,
             'tenantUrl' => rtrim((string) config('app.url'), '/').'/admin/tenants/'.$this->data->companyId,
+            // Pakistan plan P5: no Direct Debit to move where fees are paid by hand.
+            'manualCollection' => ManualCollection::active(),
         ]);
     }
 }

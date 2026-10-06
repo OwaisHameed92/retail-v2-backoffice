@@ -32,5 +32,10 @@ final readonly class InvoiceMailData
         public ?string $companyId = null,
         /** Collected by Direct Debit on this day (module 1.12): "How to pay" says there is nothing to do. */
         public ?CarbonInterface $directDebitOn = null,
+        /**
+         * Pakistan plan P5 (manual collection): "Pay by bank transfer, JazzCash, Easypaisa or cash, quoting … as the
+         * reference." in place of the UK "We take cash, or you can pay by bank transfer" text. Null on GB.
+         */
+        public ?string $howToPay = null,
     ) {}
 }

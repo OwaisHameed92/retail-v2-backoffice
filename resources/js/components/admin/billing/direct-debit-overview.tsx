@@ -8,7 +8,7 @@ import { Link } from '@inertiajs/react';
 import { CalendarClock, Landmark, ShieldCheck, TriangleAlert, UserX } from 'lucide-react';
 
 /** Direct Debit figures on the Billing overview (module 1.12): mandates, upcoming collections, failures. */
-export function DirectDebitOverview({ data }: { data: BillingOverviewProps['directDebit'] }) {
+export function DirectDebitOverview({ data }: { data: NonNullable<BillingOverviewProps['directDebit']> }) {
     if (!data.enabled && data.activeMandates === 0 && data.upcoming.count === 0 && data.withoutMandate === 0) {
         return null;
     }

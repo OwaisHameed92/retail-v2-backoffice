@@ -49,7 +49,7 @@ till side (FBR, Rs, GST, Urdu receipt, PK installer) is the EPOS team's work, as
 | P2 | **Money and numbers** (done 2026-10-06, branch `pakistan/p2-money`) | Every TS formatter and every `£` goes through `lib/country.ts`; PHP through one `MoneyFormat` (mail, CSV, labels, anomaly text, validation messages) | 3 days |
 | P3 | **Tax wording and UK-only features** (done 2026-10-06, branch `pakistan/p3-tax`) | "VAT" → the profile's tax name in labels; the HMRC VAT return shown only where `vatReturn` is on; VAT number / Companies House fields per profile (NTN, STRN, SECP for PK) | 2 days |
 | P4 | **Address, phone, forms** (done 2026-10-06, branch `pakistan/p4-address`) | Postcode rule and phone pattern per profile (tenant, supplier, lead, trial forms) | 1 day |
-| P5 | **Billing without Direct Debit** | Profile `collection: manual`: monthly and yearly fees become invoices paid by hand (bank transfer, JazzCash, Easypaisa, cash), recorded by an admin; reminders before and after the due date; the same grace and 7-day suspension. GoCardless untouched for GB. Plans and prices per instance (PKR) | 4–5 days |
+| P5 | **Billing without Direct Debit** (done 2026-10-06, branch `pakistan/p5-billing`) | Profile `collection: manual`: monthly and yearly fees become invoices paid by hand (bank transfer, JazzCash, Easypaisa, cash), recorded by an admin; reminders before and after the due date; the same grace and 7-day suspension. GoCardless untouched for GB. Plans and prices per instance (PKR) | 4–5 days |
 | P6 | **Emails and legal text** (done 2026-10-06, branch `pakistan/p6-content`) | Mail templates without UK-only wording; privacy text per country; support contact per instance | 1 day |
 | P7 | **Pakistan server** | Second VPS, domain, `.env` (`COUNTRY=PK`, `APP_TIMEZONE`), new licence signing key and its certificate from EPOS (public-key handover), Redis, MySQL tuning, nightly and offsite backups (own B2 bucket), no GoCardless | 1 day |
 | P8 | **FBR and till contract** | When EPOS sends the PK contract fields (Sale `fbrInvoiceNumber`, FBR status / QR; Branch `posId`, `ntn`, `strn`; Company `country`, `currency`): store, show on sales and reports, FBR status report | Depends on EPOS |
@@ -66,7 +66,7 @@ till's), provincial sales tax for restaurants (PRA, SRB), a card or wallet payme
 |---|---|---|
 | Domain | P7 | e.g. `pk.sspos.co.uk` or a `.pk` domain |
 | Money display | Decided 2026-10-06 | Whole rupees `Rs 1,250` (stored values keep 2 decimals) and lakh grouping `1,25,000` (plain numbers too); in the PK profile since P0 |
-| Plans and prices in PKR | P5 | setup fee, monthly per till |
+| Plans and prices in PKR | Before PK go-live | setup fee, monthly per till: entered by the admin on the PK instance (Admin → Plans); nothing seeded (P5) |
 | How customers pay | Decided 2026-10-06 | Bank transfer, JazzCash, Easypaisa, cash (PK profile `billing.manualMethods`, built in P5); gateway later |
 | First kind of shops | P8 | kiryana, mobile, pharmacy, garments (sets the FBR priority) |
 

@@ -5,6 +5,7 @@ namespace App\Http\Requests\Admin;
 use App\Domain\Admin\Enums\AdminRole;
 use App\Domain\Billing\Data\UpfrontPayment;
 use App\Domain\Billing\Enums\PaymentMethod;
+use App\Domain\Billing\Support\ManualCollection;
 use App\Http\Requests\Admin\Billing\BillingRequest;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -34,7 +35,7 @@ final class UpfrontPaymentRules
     {
         return [
             'upfront_record' => ['sometimes', 'boolean'],
-            'upfront_amount' => ['nullable', 'string', 'regex:'.BillingRequest::MONEY_PATTERN],
+            'upfront_amount' => ['nullable', 'string', 'regex:'.BillingRequest::moneyPattern()],
             'upfront_method' => ['nullable', 'required_if_accepted:upfront_record', Rule::in(array_map(fn (PaymentMethod $method) => $method->value, PaymentMethod::setupFee()))],
             'upfront_reference' => ['nullable', 'string', 'max:120'],
         ];
@@ -48,7 +49,7 @@ final class UpfrontPaymentRules
         return [
             'upfront_amount.regex' => BillingRequest::moneyMessage(),
             'upfront_method.required_if_accepted' => 'Choose how the setup fee was paid.',
-            'upfront_method.in' => 'Choose cash, card or bank transfer.',
+            'upfront_method.in' => ManualCollection::active() ? 'Choose '.ManualCollection::methodsText().'.' : 'Choose cash, card or bank transfer.',
         ];
     }
 

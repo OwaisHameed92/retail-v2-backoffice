@@ -13,6 +13,7 @@ use App\Domain\Billing\Models\BillingAccount;
 use App\Domain\Billing\Models\Invoice;
 use App\Domain\Billing\Support\BillingAccounts;
 use App\Domain\Billing\Support\BillingFormat;
+use App\Domain\Billing\Support\ManualCollection;
 use App\Domain\Shared\Actions\RecordAudit;
 use App\Domain\Shared\Country\MoneyFormat;
 use App\Domain\Shared\Support\Money;
@@ -48,7 +49,7 @@ class RecordUpfrontPayment
     public function handle(Company $company, UpfrontPayment $input): BillingAccount
     {
         if (! in_array($input->method, PaymentMethod::setupFee(), true)) {
-            throw ValidationException::withMessages(['upfront_method' => 'Choose cash, card or bank transfer.']);
+            throw ValidationException::withMessages(['upfront_method' => ManualCollection::active() ? 'Choose '.ManualCollection::methodsText().'.' : 'Choose cash, card or bank transfer.']);
         }
 
         if ($input->setupFee !== null && Money::isNegative($input->setupFee)) {
@@ -100,7 +101,7 @@ class RecordUpfrontPayment
             amount: $invoice->balance,
             receivedAt: $input->receivedAt ?? CarbonImmutable::now(),
             reference: $input->reference ?? 'Setup fee',
-            notes: 'Setup fee (upfront) paid by '.mb_strtolower($input->method->label()),
+            notes: 'Setup fee (upfront) paid by '.$input->method->inSentence(),
             allocations: [$invoice->id => $invoice->balance],
         ));
 

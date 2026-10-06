@@ -10,6 +10,7 @@ use App\Domain\Billing\GoCardless\GoCardlessException;
 use App\Domain\Billing\Models\BillingAccount;
 use App\Domain\Billing\Support\BillingAccounts;
 use App\Domain\Billing\Support\MandateDeadline;
+use App\Domain\Billing\Support\ManualCollection;
 use App\Domain\Demo\Support\DemoBusinesses;
 use App\Domain\Shared\Actions\RecordAudit;
 use App\Domain\Shared\Support\Money;
@@ -36,6 +37,11 @@ class UpdateDirectDebitSettings
     /** @throws ValidationException */
     public function handle(Company $company, DirectDebitSettingsInput $input): BillingAccount
     {
+        // Pakistan plan P5: fees are paid by hand on this instance; there is no Direct Debit to switch to.
+        if (ManualCollection::active() && $input->mode === BillingMode::DirectDebit) {
+            throw ValidationException::withMessages(['billing_mode' => 'Direct Debit is not available here: every invoice is paid by hand.']);
+        }
+
         $account = DB::transaction(function () use ($company, $input) {
             $account = $this->accounts->lock($company);
             $override = $input->setupFeeOverride === null ? null : Money::normalise($input->setupFeeOverride);

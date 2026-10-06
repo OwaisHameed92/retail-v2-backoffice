@@ -16,6 +16,15 @@ abstract class BillingRequest extends FormRequest
     /** Up to 2 decimal places, max 99,999.99 (GB £99,999.99). */
     public const MONEY_PATTERN = '/^\d{1,5}(\.\d{1,2})?$/';
 
+    /** Pakistan plan P5: rupee amounts run larger (a setup fee of Rs 1,50,000); up to 999,999,999.99 (decimal(12,2) safe). */
+    public const LARGE_MONEY_PATTERN = '/^\d{1,9}(\.\d{1,2})?$/';
+
+    /** GB: MONEY_PATTERN as always; another country's currency (PKR) allows larger amounts. */
+    public static function moneyPattern(): string
+    {
+        return app(Country::class)->is(Country::DEFAULT) ? self::MONEY_PATTERN : self::LARGE_MONEY_PATTERN;
+    }
+
     /** GB: "Enter an amount in pounds with up to 2 decimal places, for example 30 or 29.99." */
     public static function moneyMessage(): string
     {

@@ -13,6 +13,7 @@ use App\Domain\Mail\Data\AccountReactivatedData;
 use App\Domain\Mail\Data\AccountSuspendedData;
 use App\Domain\Mail\Data\InvoiceMailData;
 use App\Domain\Mail\Data\LicenceRenewedData;
+use App\Domain\Mail\Data\PaymentReminderData;
 use App\Domain\Mail\Data\RenewedTillData;
 use App\Domain\Mail\Data\TrialEndedData;
 use App\Domain\Mail\Data\TrialReminderData;
@@ -20,8 +21,10 @@ use App\Domain\Mail\Mailables\AccountReactivatedMail;
 use App\Domain\Mail\Mailables\AccountSuspendedMail;
 use App\Domain\Mail\Mailables\InvoiceMail;
 use App\Domain\Mail\Mailables\LicenceRenewedMail;
+use App\Domain\Mail\Mailables\PaymentReminderMail;
 use App\Domain\Mail\Mailables\TrialEndedMail;
 use App\Domain\Mail\Mailables\TrialReminderMail;
+use App\Domain\Mail\Support\MailFormat;
 use App\Domain\Tenancy\Models\Company;
 use App\Models\User;
 use Carbon\CarbonImmutable;
@@ -65,6 +68,7 @@ final class BillingMailer
                 pdfKey: $invoice->id,
                 companyId: $company->id,
                 directDebitOn: $this->directDebitDate($invoice),
+                howToPay: ManualCollection::active() ? ManualCollection::howToPay($invoice->number) : null,
             )));
         }
 
@@ -128,6 +132,10 @@ final class BillingMailer
     public function suspended(Company $company, string $reason, string $amountDue, CarbonImmutable $at): int
     {
         $owners = $this->owners($company);
+        // Pakistan plan P5 (manual collection): how to pay by hand instead of the UK "pay … in cash" default.
+        $howToFix = ManualCollection::active()
+            ? 'Pay the amount due of '.MailFormat::money($amountDue).' by '.ManualCollection::methodsText().', quoting your invoice number as the reference. Your account is reactivated as soon as the payment is recorded, and your tills unlock at their next check-in.'
+            : null;
 
         foreach ($owners as $owner) {
             Mail::to($owner->email)->queue(new AccountSuspendedMail(new AccountSuspendedData(
@@ -135,6 +143,7 @@ final class BillingMailer
                 ownerName: $owner->name,
                 reason: $reason.'.',
                 suspendedAt: $at,
+                howToFix: $howToFix,
                 amountDue: $amountDue,
                 companyId: $company->id,
             )));
@@ -174,6 +183,7 @@ final class BillingMailer
                 priceSummary: $priceSummary,
                 companyId: $company->id,
                 directDebitUrl: $directDebitUrl,
+                howToPay: self::trialHowToPay(),
             )));
         }
 
@@ -193,10 +203,40 @@ final class BillingMailer
                 priceSummary: $priceSummary,
                 companyId: $company->id,
                 directDebitUrl: $directDebitUrl,
+                howToPay: self::trialHowToPay(),
             )));
         }
 
         return $owners->count();
+    }
+
+    /**
+     * Pakistan plan P5 (manual collection): a payment reminder for an unpaid invoice, to the invoice recipients.
+     *
+     * @param  'dueSoon'|'dueToday'|'overdue'  $kind
+     */
+    public function paymentReminder(Invoice $invoice, string $kind, ?CarbonImmutable $locksOn = null): int
+    {
+        /** @var Company $company */
+        $company = $invoice->company;
+        $recipients = $this->invoiceRecipients($company);
+
+        foreach ($recipients as $email => $name) {
+            Mail::to($email)->queue(new PaymentReminderMail(new PaymentReminderData(
+                businessName: $company->name,
+                recipientName: $name,
+                invoiceNumber: (string) $invoice->number,
+                kind: $kind,
+                dueDate: $invoice->due_date ?? BillingDates::today(),
+                balance: $invoice->balance,
+                howToPay: ManualCollection::howToPay($invoice->number),
+                payLines: ManualCollection::payLines(),
+                locksOn: $locksOn,
+                companyId: $company->id,
+            )));
+        }
+
+        return count($recipients);
     }
 
     /**
@@ -205,6 +245,14 @@ final class BillingMailer
     private function owners(Company $company): Collection
     {
         return $this->licenceMailer->owners($company);
+    }
+
+    /** Pakistan plan P5 (manual collection): the trial emails' "how to pay" by hand; null on GB (the UK text). */
+    private static function trialHowToPay(): ?string
+    {
+        return ManualCollection::active()
+            ? 'We email you an invoice before your tills need paying. Pay it by '.ManualCollection::methodsText().', quoting the invoice number as the reference, and your licences are renewed as soon as the payment is recorded.'
+            : null;
     }
 
     /** Number of tills on an invoice (lines with a licence). */

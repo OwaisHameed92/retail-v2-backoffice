@@ -3,6 +3,7 @@ import { InvoiceStatusBadge } from '@/components/admin/billing/invoice-status-ba
 import { AiUsageCard } from '@/components/app/billing/ai-usage-card';
 import { BillingRequestDialog } from '@/components/app/billing/billing-request-dialog';
 import { DirectDebitCard } from '@/components/app/billing/direct-debit-card';
+import { ManualPaymentCard } from '@/components/app/billing/manual-payment-card';
 import { PaymentsCard, SetupFeeCard, SubscriptionCard } from '@/components/app/billing/subscription-cards';
 import { type BillingRequestKind, type PortalBillingProps } from '@/components/app/billing/types';
 import { BillingStatusCard } from '@/components/shared/billing-status-card';
@@ -19,6 +20,7 @@ import { type BreadcrumbItem } from '@/types';
 import { Head, router } from '@inertiajs/react';
 import { CalendarClock, Download, FileText, Landmark, Receipt, Tags } from 'lucide-react';
 import { useState } from 'react';
+import { byHand, manualMethodsText } from '@/lib/billing-collection';
 
 const breadcrumbs: BreadcrumbItem[] = [{ title: 'My subscription', href: '/app/billing' }];
 
@@ -50,7 +52,11 @@ export default function Billing(props: PortalBillingProps) {
                 }
             />
 
-            <DirectDebitCard directDebit={directDebit} pricing={pricing} onChangeBank={canRequest ? () => ask('changeBank') : undefined} />
+            {props.manualPayment ? (
+                <ManualPaymentCard payment={props.manualPayment} />
+            ) : (
+                <DirectDebitCard directDebit={directDebit} pricing={pricing} onChangeBank={canRequest ? () => ask('changeBank') : undefined} />
+            )}
 
             <StatGrid>
                 <StatCard
@@ -78,18 +84,32 @@ export default function Billing(props: PortalBillingProps) {
                             ? `Paid${upfront.method ? ` by ${upfront.method.toLowerCase()}` : ''}${upfront.recordedAt ? ` · ${formatDate(upfront.recordedAt)}` : ''}`
                             : upfront.status === 'none'
                               ? 'Nothing to pay'
-                              : `${upfront.statusLabel} · ${upfront.owed} to pay by cash, card or bank transfer`
+                              : `${upfront.statusLabel} · ${upfront.owed} to pay by ${byHand('cash, card or bank transfer', manualMethodsText())}`
                     }
                     icon={Receipt}
                     tone={upfront.status === 'unpaid' ? 'warning' : 'neutral'}
                 />
-                <StatCard
-                    label="Next collection"
-                    value={directDebit.nextCollection ? directDebit.nextCollection.amount : '—'}
-                    hint={directDebit.nextCollection ? `By Direct Debit on ${formatDay(directDebit.nextCollection.date)}` : 'No collection scheduled'}
-                    icon={CalendarClock}
-                    tone="neutral"
-                />
+                {props.manualPayment ? (
+                    <StatCard
+                        label="Amount due"
+                        value={props.manualPayment.amountDue}
+                        hint={
+                            props.manualPayment.next
+                                ? `${props.manualPayment.next.number ?? 'Invoice'} due on ${formatDay(props.manualPayment.next.dueDate)}`
+                                : 'Nothing to pay right now'
+                        }
+                        icon={CalendarClock}
+                        tone={props.manualPayment.overdue ? 'danger' : 'neutral'}
+                    />
+                ) : (
+                    <StatCard
+                        label="Next collection"
+                        value={directDebit.nextCollection ? directDebit.nextCollection.amount : '—'}
+                        hint={directDebit.nextCollection ? `By Direct Debit on ${formatDay(directDebit.nextCollection.date)}` : 'No collection scheduled'}
+                        icon={CalendarClock}
+                        tone="neutral"
+                    />
+                )}
             </StatGrid>
 
             <SubscriptionCard

@@ -10,6 +10,7 @@ import { taxText } from '@/lib/country';
 import { useForm } from '@inertiajs/react';
 import { LoaderCircle } from 'lucide-react';
 import { type FormEventHandler } from 'react';
+import { byHand, manualCollection, manualMethodsText } from '@/lib/billing-collection';
 
 interface DirectDebitSettingsDialogProps {
     open: boolean;
@@ -52,26 +53,32 @@ function SettingsBody({ onOpenChange, company, directDebit }: DirectDebitSetting
             <form onSubmit={submit} className="grid gap-5" noValidate>
                 <DialogHeader>
                     <DialogTitle>How {company.name} pays</DialogTitle>
-                    <DialogDescription>
-                        Direct Debit (the normal way): GoCardless collects the monthly or yearly fee. Upfront: each period paid by hand, as an
-                        exception.
-                    </DialogDescription>
+                    {manualCollection() ? (
+                        <DialogDescription>Every monthly or yearly invoice is paid by hand ({manualMethodsText()}). Set the setup fee here.</DialogDescription>
+                    ) : (
+                        <DialogDescription>
+                            Direct Debit (the normal way): GoCardless collects the monthly or yearly fee. Upfront: each period paid by hand, as an
+                            exception.
+                        </DialogDescription>
+                    )}
                 </DialogHeader>
 
-                <Field id="dd-mode" label="Billing mode" error={errors.billing_mode}>
-                    <Select value={data.billing_mode} onValueChange={(value) => setData('billing_mode', value as BillingMode)}>
-                        <SelectTrigger id="dd-mode">
-                            <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {options.modes.map((option) => (
-                                <SelectItem key={option.value} value={option.value}>
-                                    {option.label}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                </Field>
+                {!manualCollection() && (
+                    <Field id="dd-mode" label="Billing mode" error={errors.billing_mode}>
+                        <Select value={data.billing_mode} onValueChange={(value) => setData('billing_mode', value as BillingMode)}>
+                            <SelectTrigger id="dd-mode">
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {options.modes.map((option) => (
+                                    <SelectItem key={option.value} value={option.value}>
+                                        {option.label}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </Field>
+                )}
 
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <Field
@@ -114,8 +121,8 @@ function SettingsBody({ onOpenChange, company, directDebit }: DirectDebitSetting
                 </div>
 
                 <p className="text-muted-foreground text-sm">
-                    The setup fee is always paid by hand: cash, card or bank transfer, recorded with{' '}
-                    <span className="font-medium">Record setup fee payment</span>. It is never taken by Direct Debit.
+                    The setup fee is always paid by hand: {byHand('cash, card or bank transfer', manualMethodsText())}, recorded with{' '}
+                    <span className="font-medium">Record setup fee payment</span>.{byHand(' It is never taken by Direct Debit.', '')}
                 </p>
 
                 <DialogFooter className="gap-2">

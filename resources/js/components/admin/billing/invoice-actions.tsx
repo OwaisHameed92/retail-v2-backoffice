@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { router } from '@inertiajs/react';
 import { Ban, Banknote, Download, FilePen, Mail, ReceiptText, Send, Trash2 } from 'lucide-react';
 import { useState } from 'react';
+import { byHand, manualMethodOptions } from '@/lib/billing-collection';
 
 const METHODS: Option<PaymentMethod>[] = [
     { value: 'cash', label: 'Cash' },
@@ -113,7 +114,7 @@ export function InvoiceActions({ invoice }: { invoice: InvoiceDetail }) {
 
             {can.edit && <EditDraftDialog open={dialog === 'edit'} onOpenChange={close} invoice={invoice} />}
             {can.recordPayment && (
-                <RecordPaymentDialog open={dialog === 'pay'} onOpenChange={close} company={invoice.company} methods={METHODS} invoiceId={invoice.id} />
+                <RecordPaymentDialog open={dialog === 'pay'} onOpenChange={close} company={invoice.company} methods={byHand(METHODS, manualMethodOptions<PaymentMethod>())} invoiceId={invoice.id} />
             )}
             {can.credit && (
                 <CreditNoteDialog

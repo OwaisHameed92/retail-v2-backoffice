@@ -2,6 +2,8 @@
 
 namespace App\Domain\Billing\Enums;
 
+use App\Domain\Billing\Support\ManualCollection;
+
 /**
  * How a company pays (module 1.12): the whole period in advance by hand (cash or bank transfer, module 1.8), or a
  * setup fee plus a recurring GoCardless Direct Debit, monthly or yearly.
@@ -14,7 +16,8 @@ enum BillingMode: string
     public function label(): string
     {
         return match ($this) {
-            self::UpfrontCash => 'Upfront (cash or bank transfer)',
+            // Pakistan plan P5: every invoice is paid by hand there ("By hand (bank transfer, JazzCash, Easypaisa or cash)").
+            self::UpfrontCash => ManualCollection::active() ? 'By hand ('.ManualCollection::methodsText().')' : 'Upfront (cash or bank transfer)',
             self::DirectDebit => 'Direct Debit (GoCardless)',
         };
     }

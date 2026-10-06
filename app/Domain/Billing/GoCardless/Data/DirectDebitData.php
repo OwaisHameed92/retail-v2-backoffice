@@ -7,12 +7,14 @@ use App\Domain\Billing\Enums\PaymentMethod;
 use App\Domain\Billing\Enums\SetupFeeMethod;
 use App\Domain\Billing\GoCardless\Contracts\GoCardlessClient;
 use App\Domain\Billing\GoCardless\Models\GoCardlessPayment;
+use App\Domain\Billing\GoCardless\Support\NoDirectDebitClient;
 use App\Domain\Billing\GoCardless\Support\SetupFee;
 use App\Domain\Billing\GoCardless\Support\SubscriptionAmount;
 use App\Domain\Billing\Support\BillingAccounts;
 use App\Domain\Billing\Support\BillingFormat;
 use App\Domain\Billing\Support\CompanyPricing;
 use App\Domain\Billing\Support\MandateDeadline;
+use App\Domain\Billing\Support\ManualCollection;
 use App\Domain\Billing\Support\SetupFeeState;
 use App\Domain\Billing\Support\Vat;
 use App\Domain\Plans\Enums\PricingMode;
@@ -33,7 +35,9 @@ final class DirectDebitData
     public static function for(Company $company): array
     {
         $account = app(BillingAccounts::class)->for($company);
-        $client = app(GoCardlessClient::class);
+        // Pakistan plan P5: where fees are paid by hand there is no Direct Debit; GoCardless is not asked anything.
+        $manual = ManualCollection::active();
+        $client = $manual ? new NoDirectDebitClient : app(GoCardlessClient::class);
         $setup = SetupFee::totals($company, $account);
         $expected = SubscriptionAmount::for($company, $account);
         $query = GoCardlessPayment::withoutCompanyScope()->with('invoice')->where('company_id', $company->id);
@@ -144,6 +148,28 @@ final class DirectDebitData
                 'maxInstalments' => (int) config('billing.direct_debit.max_instalments', 12),
             ],
             'graceDays' => (int) config('billing.direct_debit.mandate_grace_days', 3),
+            ...($manual ? self::manual() : []),
+        ];
+    }
+
+    /**
+     * Pakistan plan P5 (manual collection): the panel shows how the business pays by hand and offers no Direct Debit.
+     *
+     * @return array<string, mixed>
+     */
+    private static function manual(): array
+    {
+        return [
+            'manual' => [
+                'methods' => PaymentMethod::options(manualOnly: true),
+                'methodsText' => ManualCollection::methodsText(),
+                'dueDays' => ManualCollection::dueDays(),
+            ],
+            'options' => [
+                'modes' => array_values(array_filter(BillingMode::options(), fn (array $mode) => $mode['value'] === BillingMode::UpfrontCash->value)),
+                'setupFeeMethods' => SetupFeeMethod::options(),
+                'maxInstalments' => (int) config('billing.direct_debit.max_instalments', 12),
+            ],
         ];
     }
 }

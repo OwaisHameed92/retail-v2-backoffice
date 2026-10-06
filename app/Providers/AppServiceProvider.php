@@ -7,7 +7,9 @@ use App\Domain\Admin\Models\Admin;
 use App\Domain\Billing\GoCardless\Contracts\GoCardlessClient;
 use App\Domain\Billing\GoCardless\Listeners\SyncDirectDebitOnTillChange;
 use App\Domain\Billing\GoCardless\Support\DemoSafeGoCardlessClient;
+use App\Domain\Billing\GoCardless\Support\NoDirectDebitClient;
 use App\Domain\Billing\GoCardless\Support\SdkGoCardlessClient;
+use App\Domain\Billing\Support\ManualCollection;
 use App\Domain\Licensing\Listeners\IssueLicenceForNewTill;
 use App\Domain\Licensing\Listeners\SendWelcomeEmailWithKeys;
 use App\Domain\Licensing\Listeners\SuspendLicenceOfDeactivatedTill;
@@ -34,7 +36,10 @@ class AppServiceProvider extends ServiceProvider
     {
         // GoCardless Direct Debit (module 1.12). Tests bind FakeGoCardlessClient::install(). Demo businesses
         // (demo:billing) are never sent to GoCardless: DemoSafeGoCardlessClient refuses their calls.
-        $this->app->singleton(GoCardlessClient::class, fn () => new DemoSafeGoCardlessClient(new SdkGoCardlessClient));
+        // Pakistan plan P5: an instance that collects fees by hand never talks to GoCardless, whatever token is set.
+        $this->app->singleton(GoCardlessClient::class, fn () => ManualCollection::active()
+            ? new NoDirectDebitClient
+            : new DemoSafeGoCardlessClient(new SdkGoCardlessClient));
 
         // Pakistan plan P0: this instance's country profile (COUNTRY=GB|PK, default GB).
         $this->app->singleton(Country::class, fn () => Country::fromConfig());
