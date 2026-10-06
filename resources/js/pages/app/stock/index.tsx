@@ -3,6 +3,7 @@ import { StockFilters } from '@/components/app/stock/stock-filters';
 import { type StockIndexProps, type StockRow } from '@/components/app/stock/types';
 import { DataTable, type TableParams, useTableQuery } from '@/components/shared/data-table';
 import { EmptyState } from '@/components/shared/empty-state';
+import { MoneyIcon } from '@/components/shared/money-icon';
 import { PageHeader } from '@/components/shared/page-header';
 import { PageTabs } from '@/components/shared/page-tabs';
 import { StatCard, StatGrid } from '@/components/shared/stat-card';
@@ -10,7 +11,7 @@ import { StatusPill } from '@/components/shared/status-badge';
 import AppLayout from '@/layouts/app-layout';
 import { Head, Link, router } from '@inertiajs/react';
 import { type ColumnDef } from '@tanstack/react-table';
-import { AlertTriangle, Boxes, PackageX, PoundSterling } from 'lucide-react';
+import { AlertTriangle, Boxes, PackageX } from 'lucide-react';
 import { useMemo } from 'react';
 
 const ONLY = ['stock', 'summary', 'filters', 'options', 'hasStock'];
@@ -141,7 +142,7 @@ export default function StockIndex({ filters, summary, stock, options, hasStock 
                     hint={
                         summary.costed < summary.lines ? `${number(summary.lines - summary.costed)} lines have no cost price` : 'On hand × cost price'
                     }
-                    icon={PoundSterling}
+                    icon={MoneyIcon}
                     tone="success"
                 />
                 <StatCard

@@ -6,14 +6,16 @@ import { InvoiceStatusBadge } from '@/components/admin/billing/invoice-status-ba
 import { type ActivityRow, type InvoiceDetail } from '@/components/admin/billing/types';
 import { DescriptionList } from '@/components/shared/description-list';
 import { InitialsAvatar } from '@/components/shared/entity-cell';
+import { MoneyIcon } from '@/components/shared/money-icon';
 import { PageHeader } from '@/components/shared/page-header';
 import { SectionCard } from '@/components/shared/section-card';
 import { StatCard, StatGrid } from '@/components/shared/stat-card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import AdminLayout from '@/layouts/admin-layout';
+import { formatMoney } from '@/lib/country';
 import { Head, Link } from '@inertiajs/react';
-import { AlarmClock, Ban, Banknote, CalendarClock, FilePen, PoundSterling, Receipt, Scale } from 'lucide-react';
+import { AlarmClock, Ban, Banknote, CalendarClock, FilePen, Receipt, Scale } from 'lucide-react';
 
 interface InvoiceShowProps {
     invoice: InvoiceDetail;
@@ -27,7 +29,10 @@ function StatusAlert({ invoice }: { invoice: InvoiceDetail }) {
                 <AlarmClock className="size-4" />
                 <AlertTitle>{dueLabel(invoice.dueDate, true) ?? 'Overdue'}</AlertTitle>
                 <AlertDescription>
-                    {invoice.balance} is still owed. {invoice.companyStatus === 'suspended' ? 'The account is suspended until it is paid.' : 'The account is suspended if it stays unpaid.'}
+                    {invoice.balance} is still owed.{' '}
+                    {invoice.companyStatus === 'suspended'
+                        ? 'The account is suspended until it is paid.'
+                        : 'The account is suspended if it stays unpaid.'}
                 </AlertDescription>
             </Alert>
         );
@@ -43,7 +48,10 @@ function StatusAlert({ invoice }: { invoice: InvoiceDetail }) {
                         <>
                             {' '}
                             Replaced by{' '}
-                            <Link href={route('admin.billing.invoices.show', invoice.replacedBy.id)} className="text-primary font-medium hover:underline">
+                            <Link
+                                href={route('admin.billing.invoices.show', invoice.replacedBy.id)}
+                                className="text-primary font-medium hover:underline"
+                            >
                                 {invoice.replacedBy.number}
                             </Link>
                             .
@@ -64,7 +72,10 @@ function StatusAlert({ invoice }: { invoice: InvoiceDetail }) {
                         <>
                             {' '}
                             It replaces{' '}
-                            <Link href={route('admin.billing.invoices.show', invoice.replaces.id)} className="text-primary font-medium hover:underline">
+                            <Link
+                                href={route('admin.billing.invoices.show', invoice.replaces.id)}
+                                className="text-primary font-medium hover:underline"
+                            >
                                 {invoice.replaces.number}
                             </Link>
                             , which is void.
@@ -97,7 +108,10 @@ export default function InvoiceShow({ invoice, activity }: InvoiceShowProps) {
                 media={<InitialsAvatar name={invoice.company.name} shape="square" size="lg" icon={Receipt} />}
                 description={
                     <>
-                        <Link href={route('admin.tenants.show', { company: invoice.company.id, tab: 'billing' })} className="text-foreground font-medium hover:underline">
+                        <Link
+                            href={route('admin.tenants.show', { company: invoice.company.id, tab: 'billing' })}
+                            className="text-foreground font-medium hover:underline"
+                        >
                             {invoice.company.name}
                         </Link>{' '}
                         · {invoice.period}
@@ -117,18 +131,38 @@ export default function InvoiceShow({ invoice, activity }: InvoiceShowProps) {
             <StatusAlert invoice={invoice} />
 
             <StatGrid>
-                <StatCard label="Total" value={invoice.total} hint={invoice.vatRate !== '0.00' ? `Includes VAT at ${invoice.document.vatRate}` : 'No VAT'} icon={PoundSterling} tone="neutral" />
+                <StatCard
+                    label="Total"
+                    value={invoice.total}
+                    hint={invoice.vatRate !== '0.00' ? `Includes VAT at ${invoice.document.vatRate}` : 'No VAT'}
+                    icon={MoneyIcon}
+                    tone="neutral"
+                />
                 <StatCard
                     label="Paid"
                     value={invoice.amountPaid}
-                    hint={invoice.amountCredited !== '£0.00' ? `Plus ${invoice.amountCredited} credited` : invoice.paidAt ? `In full on ${formatDateTimeShort(invoice.paidAt)}` : 'Nothing yet'}
+                    hint={
+                        invoice.amountCredited !== formatMoney(0)
+                            ? `Plus ${invoice.amountCredited} credited`
+                            : invoice.paidAt
+                              ? `In full on ${formatDateTimeShort(invoice.paidAt)}`
+                              : 'Nothing yet'
+                    }
                     icon={Banknote}
                     tone="success"
                 />
                 <StatCard
                     label="Still owed"
                     value={invoice.status === 'void' ? '—' : invoice.balance}
-                    hint={invoice.status === 'paid' ? 'Paid in full' : invoice.status === 'void' ? 'Void' : invoice.status === 'draft' ? 'Once issued' : (due ?? undefined)}
+                    hint={
+                        invoice.status === 'paid'
+                            ? 'Paid in full'
+                            : invoice.status === 'void'
+                              ? 'Void'
+                              : invoice.status === 'draft'
+                                ? 'Once issued'
+                                : (due ?? undefined)
+                    }
                     icon={Scale}
                     tone={invoice.status === 'overdue' ? 'danger' : invoice.isOpen ? 'warning' : 'neutral'}
                 />
@@ -152,7 +186,10 @@ export default function InvoiceShow({ invoice, activity }: InvoiceShowProps) {
                                 {
                                     label: 'Business',
                                     value: (
-                                        <Link href={route('admin.tenants.show', { company: invoice.company.id, tab: 'billing' })} className="text-primary hover:underline">
+                                        <Link
+                                            href={route('admin.tenants.show', { company: invoice.company.id, tab: 'billing' })}
+                                            className="text-primary hover:underline"
+                                        >
                                             {invoice.company.name}
                                         </Link>
                                     ),
@@ -162,12 +199,19 @@ export default function InvoiceShow({ invoice, activity }: InvoiceShowProps) {
                                 { label: 'Tills', value: String(invoice.lines.filter((line) => line.hasLicence).length) },
                                 { label: 'Part-periods', value: invoice.prorated ? 'Charged by the day' : 'Whole period' },
                                 { label: 'Emails to', value: invoice.recipients.length > 0 ? invoice.recipients.join(', ') : null },
-                                { label: 'Last emailed', value: invoice.lastSentAt ? formatDateTimeShort(invoice.lastSentAt) : invoice.number ? 'Never' : null },
+                                {
+                                    label: 'Last emailed',
+                                    value: invoice.lastSentAt ? formatDateTimeShort(invoice.lastSentAt) : invoice.number ? 'Never' : null,
+                                },
                             ]}
                         />
                     </SectionCard>
 
-                    <SectionCard title="Payments" description={invoice.payments.length === 0 ? 'Nothing received on this invoice yet.' : undefined} flush={invoice.payments.length > 0}>
+                    <SectionCard
+                        title="Payments"
+                        description={invoice.payments.length === 0 ? 'Nothing received on this invoice yet.' : undefined}
+                        flush={invoice.payments.length > 0}
+                    >
                         {invoice.payments.length > 0 ? (
                             <ul className="divide-y">
                                 {invoice.payments.map((payment) => (
@@ -184,14 +228,26 @@ export default function InvoiceShow({ invoice, activity }: InvoiceShowProps) {
                                             </span>
                                             <span className="flex shrink-0 items-center gap-2">
                                                 {payment.released && <Badge variant="neutral">Moved to credit</Badge>}
-                                                <span className={payment.released ? 'text-muted-foreground line-through tabular-nums' : 'font-semibold tabular-nums'}>{payment.amount}</span>
+                                                <span
+                                                    className={
+                                                        payment.released
+                                                            ? 'text-muted-foreground tabular-nums line-through'
+                                                            : 'font-semibold tabular-nums'
+                                                    }
+                                                >
+                                                    {payment.amount}
+                                                </span>
                                             </span>
                                         </Link>
                                     </li>
                                 ))}
                             </ul>
                         ) : (
-                            <p className="text-muted-foreground text-sm">{invoice.can.recordPayment ? 'Use “Record payment” when the money comes in.' : 'Payments recorded against it appear here.'}</p>
+                            <p className="text-muted-foreground text-sm">
+                                {invoice.can.recordPayment
+                                    ? 'Use “Record payment” when the money comes in.'
+                                    : 'Payments recorded against it appear here.'}
+                            </p>
                         )}
                     </SectionCard>
 

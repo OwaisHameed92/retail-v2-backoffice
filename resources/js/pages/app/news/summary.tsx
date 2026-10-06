@@ -3,6 +3,7 @@ import { type NewsFigures, type SummaryProps } from '@/components/app/news/types
 import { FilterSelect } from '@/components/app/setup/fields';
 import { ChartCard } from '@/components/shared/chart-card';
 import { EmptyState } from '@/components/shared/empty-state';
+import { MoneyIcon } from '@/components/shared/money-icon';
 import { PageHeader } from '@/components/shared/page-header';
 import { SectionCard } from '@/components/shared/section-card';
 import { StatCard, StatGrid } from '@/components/shared/stat-card';
@@ -13,7 +14,7 @@ import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, Table
 import AppLayout from '@/layouts/app-layout';
 import { cn } from '@/lib/utils';
 import { Head, router } from '@inertiajs/react';
-import { ChevronLeft, ChevronRight, Info, Newspaper, PoundSterling, Ticket, TrendingUp, Undo2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Info, Newspaper, Ticket, TrendingUp, Undo2 } from 'lucide-react';
 
 const HEADS = ['In', 'Sold', 'Returned', 'Sell-through', 'Net cost', 'Sales', 'Margin'];
 
@@ -104,7 +105,7 @@ export default function NewsSummary({ week, shop, byShop, total, titles, trend, 
                     label="Margin"
                     value={money(total.margin)}
                     hint={total.marginPercent === null ? 'After returns credit' : `${percent(total.marginPercent)} of sales, after returns`}
-                    icon={PoundSterling}
+                    icon={MoneyIcon}
                     tone={Number(total.margin) < 0 ? 'danger' : 'success'}
                 />
                 <StatCard

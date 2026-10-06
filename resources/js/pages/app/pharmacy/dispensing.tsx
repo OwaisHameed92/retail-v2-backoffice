@@ -4,12 +4,13 @@ import { type ChargeStatus, type DispensingProps, type DispensingRow } from '@/c
 import { FilterSelect } from '@/components/app/setup/fields';
 import { DataTable, useTableQuery } from '@/components/shared/data-table';
 import { EmptyState } from '@/components/shared/empty-state';
+import { MoneyIcon } from '@/components/shared/money-icon';
 import { SectionCard } from '@/components/shared/section-card';
 import { StatCard, StatGrid } from '@/components/shared/stat-card';
 import { money, number, shortDay, weekday } from '@/components/shared/trading/format';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { type ColumnDef } from '@tanstack/react-table';
-import { BadgeCheck, ClipboardList, PoundSterling, ShieldCheck } from 'lucide-react';
+import { BadgeCheck, ClipboardList, ShieldCheck } from 'lucide-react';
 
 const ONLY = ['records', 'summary', 'exemptions', 'shops', 'periods', 'filters', 'options', 'charge', 'exemption'];
 
@@ -89,7 +90,7 @@ export default function PharmacyDispensing(props: DispensingProps) {
                     label="NHS charge paid"
                     value={number(summary.paid)}
                     hint={`${money(summary.nhsCharges)} taken`}
-                    icon={PoundSterling}
+                    icon={MoneyIcon}
                     tone="success"
                 />
                 <StatCard

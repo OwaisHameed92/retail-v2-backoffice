@@ -1,5 +1,6 @@
 import { SectionCard } from '@/components/shared/section-card';
 import { StatusBadge } from '@/components/shared/status-badge';
+import { formatNumber } from '@/lib/country';
 import { cn } from '@/lib/utils';
 
 export interface AiUsage {
@@ -14,7 +15,7 @@ export interface AiUsage {
     byPerson: { name: string; tokens: number; calls: number }[];
 }
 
-const n = (value: number) => value.toLocaleString('en-GB');
+const n = (value: number) => formatNumber(value);
 
 /** My subscription: this month's AI allowance (module 6.2). The same numbers the assistant is held to. */
 export function AiUsageCard({ usage }: { usage: AiUsage }) {

@@ -11,11 +11,10 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { useBreakpoint } from '@/hooks/use-min-width';
 import AdminLayout from '@/layouts/admin-layout';
+import { formatNumber } from '@/lib/country';
 import { Head, router } from '@inertiajs/react';
 import { FilePlus2, Receipt, SearchX } from 'lucide-react';
 import { useMemo, useState } from 'react';
-
-const number = new Intl.NumberFormat('en-GB');
 
 const CYCLES = [
     { value: 'monthly' as const, label: 'Monthly' },
@@ -39,7 +38,7 @@ export default function InvoiceIndex({ invoices, filters, totals, statuses, coun
                 description={
                     all === 0
                         ? 'Invoices for every customer. One line per till, at its plan price.'
-                        : `${number.format(all)} ${all === 1 ? 'invoice' : 'invoices'} across every customer. Paying one renews the tills on it.`
+                        : `${formatNumber(all)} ${all === 1 ? 'invoice' : 'invoices'} across every customer. Paying one renews the tills on it.`
                 }
                 actions={
                     canManage ? (
@@ -64,7 +63,12 @@ export default function InvoiceIndex({ invoices, filters, totals, statuses, coun
                     onRowClick={(row) => router.visit(route('admin.billing.invoices.show', row.id))}
                     empty={
                         filtered ? (
-                            <EmptyState icon={SearchX} title="No invoices match" body="Try a different search, status, business or date range." tone="neutral" />
+                            <EmptyState
+                                icon={SearchX}
+                                title="No invoices match"
+                                body="Try a different search, status, business or date range."
+                                tone="neutral"
+                            />
                         ) : (
                             <EmptyState
                                 icon={Receipt}
@@ -86,7 +90,7 @@ export default function InvoiceIndex({ invoices, filters, totals, statuses, coun
                 {totals.count > 0 && (
                     <Card className="flex flex-col gap-2 px-5 py-3 text-sm sm:flex-row sm:items-center sm:justify-between">
                         <span className="text-muted-foreground">
-                            Totals for {number.format(totals.count)} {totals.count === 1 ? 'invoice' : 'invoices'}
+                            Totals for {formatNumber(totals.count)} {totals.count === 1 ? 'invoice' : 'invoices'}
                             {filtered ? ' matching the filters' : ''} (void excluded)
                         </span>
                         <dl className="flex gap-6">
@@ -115,7 +119,12 @@ export default function InvoiceIndex({ invoices, filters, totals, statuses, coun
             />
 
             {creating && (
-                <CreateInvoiceDialog open={creating !== null} onOpenChange={(open) => !open && setCreating(null)} company={creating} cycles={CYCLES} />
+                <CreateInvoiceDialog
+                    open={creating !== null}
+                    onOpenChange={(open) => !open && setCreating(null)}
+                    company={creating}
+                    cycles={CYCLES}
+                />
             )}
         </AdminLayout>
     );

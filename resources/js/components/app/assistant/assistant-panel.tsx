@@ -3,7 +3,7 @@ import { showToast } from '@/components/shared/toaster';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from '@/components/ui/sheet';
 import { Skeleton } from '@/components/ui/skeleton';
-import { timeZone } from '@/lib/country';
+import { dateLocale, timeZone } from '@/lib/country';
 import { cn } from '@/lib/utils';
 import { History, Loader2, MessageSquarePlus, Sparkles, Store, Trash2 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
@@ -159,7 +159,7 @@ export function AssistantPanel({
                                                 <span className="block truncate text-sm font-medium">{c.title}</span>
                                                 {c.lastMessageAt && (
                                                     <span className="text-muted-foreground text-xs">
-                                                        {new Date(c.lastMessageAt).toLocaleString('en-GB', {
+                                                        {new Date(c.lastMessageAt).toLocaleString(dateLocale(), {
                                                             timeZone: timeZone(),
                                                             day: 'numeric',
                                                             month: 'short',

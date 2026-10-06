@@ -1,20 +1,22 @@
 import { ago } from '@/components/till-health/format';
 import { type TillHealthSummary } from '@/components/till-health/types';
 import { Card } from '@/components/ui/card';
+import { formatNumber } from '@/lib/country';
 import { cn } from '@/lib/utils';
 import { Link } from '@inertiajs/react';
 import { Activity, ChevronRight } from 'lucide-react';
-
-const number = new Intl.NumberFormat('en-GB');
 
 function Figure({ label, value, tone, href }: { label: string; value: number; tone: 'success' | 'warning' | 'danger'; href?: string }) {
     const body = (
         <>
             <span className="text-muted-foreground flex items-center gap-1.5 text-xs">
-                <span className={cn('size-2 rounded-full', { success: 'bg-success', warning: 'bg-warning', danger: 'bg-danger' }[tone])} aria-hidden />
+                <span
+                    className={cn('size-2 rounded-full', { success: 'bg-success', warning: 'bg-warning', danger: 'bg-danger' }[tone])}
+                    aria-hidden
+                />
                 {label}
             </span>
-            <span className="text-foreground text-2xl font-semibold tracking-tight tabular-nums">{number.format(value)}</span>
+            <span className="text-foreground text-2xl font-semibold tracking-tight tabular-nums">{formatNumber(value)}</span>
         </>
     );
     const className = 'bg-subtle flex flex-col gap-1 rounded-lg border px-3 py-2.5';
@@ -55,11 +57,11 @@ export function TillHealthTile({ summary, href }: { summary: TillHealthSummary; 
                     </div>
                     <p className="text-muted-foreground text-xs">
                         {summary.attention > 0 ? (
-                            <span className="text-danger-foreground font-medium">{number.format(summary.attention)} need attention</span>
+                            <span className="text-danger-foreground font-medium">{formatNumber(summary.attention)} need attention</span>
                         ) : (
                             'Nothing needs attention'
                         )}
-                        {` · ${number.format(summary.shopsSyncing)} of ${number.format(summary.shops)} shops syncing · checked ${ago(summary.checkedAt, 'not yet')}`}
+                        {` · ${formatNumber(summary.shopsSyncing)} of ${formatNumber(summary.shops)} shops syncing · checked ${ago(summary.checkedAt, 'not yet')}`}
                     </p>
                 </>
             )}

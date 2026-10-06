@@ -6,6 +6,7 @@ use App\Domain\Billing\Models\Invoice;
 use App\Domain\Billing\Support\BillingFormat;
 use App\Domain\Licensing\Models\Licence;
 use App\Domain\Shared\Country\Country;
+use App\Domain\Shared\Country\MoneyFormat;
 use App\Domain\Shared\Support\Money;
 use App\Domain\Tenancy\Models\Company;
 use Carbon\CarbonImmutable;
@@ -54,7 +55,7 @@ final class Kpis
         $count = $tenants($now);
 
         return [
-            'tenants' => ['area' => null, 'value' => number_format($count), 'delta' => Change::count($count, $tenants($monthStart), 'since last month')],
+            'tenants' => ['area' => null, 'value' => MoneyFormat::number($count), 'delta' => Change::count($count, $tenants($monthStart), 'since last month')],
             'revenue' => ['area' => 'billing', 'value' => BillingFormat::money($revenue), 'delta' => Change::percent($revenue, $before, 'vs previous 12 weeks')],
         ];
     }
@@ -119,10 +120,10 @@ final class Kpis
 
         return [
             'area' => null,
-            'value' => number_format($now),
+            'value' => MoneyFormat::number($now),
             'delta' => Change::count($now, $lastWeek, 'vs last week'),
             'series' => $series,
-            'footer' => number_format($lastWeek).' at the end of last week',
+            'footer' => MoneyFormat::number($lastWeek).' at the end of last week',
         ];
     }
 
@@ -140,7 +141,7 @@ final class Kpis
 
         return [
             'area' => null,
-            'value' => number_format($series[11]),
+            'value' => MoneyFormat::number($series[11]),
             'delta' => Change::count($series[11], $series[10], 'vs last week'),
             'series' => $series,
             'footer' => $ending === 0 ? 'None end in the next 7 days' : $ending.' end in the next 7 days',

@@ -8,12 +8,11 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import AppLayout from '@/layouts/app-layout';
+import { formatNumber } from '@/lib/country';
 import { cn } from '@/lib/utils';
 import { Head, Link, router } from '@inertiajs/react';
 import { Info, LoaderCircle, Sparkles } from 'lucide-react';
 import { useState } from 'react';
-
-const number = new Intl.NumberFormat('en-GB');
 
 /** Onboarding: pick the kind of shop, keep the departments you stock, and add a ready-made range in one go. */
 export default function StarterPackPage({
@@ -104,7 +103,7 @@ export default function StarterPackPage({
                                 <label key={d.value} className="hover:bg-subtle flex cursor-pointer items-center gap-3 rounded-lg border px-3.5 py-3">
                                     <Checkbox checked={include.includes(d.value)} onCheckedChange={(state) => toggle(d.value, state === true)} />
                                     <span className="flex-1 text-sm font-medium">{d.label}</span>
-                                    <span className="text-muted-foreground text-sm tabular-nums">{number.format(d.count)}</span>
+                                    <span className="text-muted-foreground text-sm tabular-nums">{formatNumber(d.count)}</span>
                                 </label>
                             ))}
                         </div>
@@ -125,7 +124,7 @@ export default function StarterPackPage({
                 <StickyFormBar
                     message={
                         owned > 0 || productCount > 0
-                            ? `Products whose barcode you already have are skipped (${number.format(owned)} of the starter range).`
+                            ? `Products whose barcode you already have are skipped (${formatNumber(owned)} of the starter range).`
                             : 'Every shop gets them at its next sync.'
                     }
                 >
@@ -134,7 +133,7 @@ export default function StarterPackPage({
                     </Button>
                     <Button onClick={submit} disabled={processing || !hasVatRates || total === 0}>
                         {processing ? <LoaderCircle className="size-4 animate-spin" aria-hidden /> : <Sparkles />}
-                        Add {number.format(total)} products
+                        Add {formatNumber(total)} products
                     </Button>
                 </StickyFormBar>
             </div>

@@ -4,13 +4,14 @@ import { TimeFilters, TimePageLayout } from '@/components/app/staff-time/time-pa
 import { type TimesheetRow, type TimesheetsProps } from '@/components/app/staff-time/types';
 import { DataTable, useTableQuery } from '@/components/shared/data-table';
 import { EmptyState } from '@/components/shared/empty-state';
+import { MoneyIcon } from '@/components/shared/money-icon';
 import { SectionCard } from '@/components/shared/section-card';
 import { StatCard, StatGrid } from '@/components/shared/stat-card';
 import { StatusPill } from '@/components/shared/status-badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { type ColumnDef } from '@tanstack/react-table';
-import { CalendarClock, Clock, Download, PoundSterling, TimerOff, TriangleAlert } from 'lucide-react';
+import { CalendarClock, Clock, Download, TimerOff, TriangleAlert } from 'lucide-react';
 
 function columns(weekly: boolean): ColumnDef<TimesheetRow>[] {
     return [
@@ -55,8 +56,14 @@ function columns(weekly: boolean): ColumnDef<TimesheetRow>[] {
             meta: { align: 'right', mobile: 'field' },
             cell: ({ row }) => (
                 <div className="grid justify-items-end gap-0.5">
-                    {row.original.overtimeMinutes ? <Hours minutes={row.original.overtimeMinutes} /> : <span className="text-muted-foreground">—</span>}
-                    {row.original.approval && <span className="text-muted-foreground text-xs">till approved {row.original.approval.overtimeHours} h</span>}
+                    {row.original.overtimeMinutes ? (
+                        <Hours minutes={row.original.overtimeMinutes} />
+                    ) : (
+                        <span className="text-muted-foreground">—</span>
+                    )}
+                    {row.original.approval && (
+                        <span className="text-muted-foreground text-xs">till approved {row.original.approval.overtimeHours} h</span>
+                    )}
                 </div>
             ),
         },
@@ -146,7 +153,13 @@ export default function StaffTimesheets({ timesheets, summary, wageBands, filter
             }
         >
             <StatGrid>
-                <StatCard label="Paid hours" value={duration(summary.paidMinutes)} hint={`${number(summary.people)} people`} icon={Clock} tone="primary" />
+                <StatCard
+                    label="Paid hours"
+                    value={duration(summary.paidMinutes)}
+                    hint={`${number(summary.people)} people`}
+                    icon={Clock}
+                    tone="primary"
+                />
                 <StatCard
                     label="Rota hours"
                     value={duration(summary.plannedMinutes)}
@@ -158,7 +171,7 @@ export default function StaffTimesheets({ timesheets, summary, wageBands, filter
                     label="Wage estimate"
                     value={money(summary.wages)}
                     hint={summary.withoutRate > 0 ? `${summary.withoutRate} with no hourly rate left out` : 'At each person’s hourly rate'}
-                    icon={PoundSterling}
+                    icon={MoneyIcon}
                     tone={summary.withoutRate > 0 ? 'warning' : 'success'}
                 />
                 <StatCard
@@ -177,7 +190,10 @@ export default function StaffTimesheets({ timesheets, summary, wageBands, filter
                 loading={loading}
                 filters={
                     <TimeFilters filters={filters} options={options} update={update}>
-                        <Select value={filters.group} onValueChange={(group) => update({ group: group === 'week' ? undefined : group, page: undefined })}>
+                        <Select
+                            value={filters.group}
+                            onValueChange={(group) => update({ group: group === 'week' ? undefined : group, page: undefined })}
+                        >
                             <SelectTrigger className="h-9 w-full sm:w-36" aria-label="Group by">
                                 <SelectValue />
                             </SelectTrigger>
@@ -220,18 +236,22 @@ export default function StaffTimesheets({ timesheets, summary, wageBands, filter
                 >
                     <p>Paid hours × the hourly rate on the person's staff record (Staff → edit → Hourly rate).</p>
                     <p>
-                        Overtime follows the till's fixed rule: time over 8 hours in a day. It is shown only and paid at the same rate (the till has no
-                        overtime premium or weekly rule). &quot;Till approved&quot; is the overtime a manager approved for the week on the till.
+                        Overtime follows the till's fixed rule: time over 8 hours in a day. It is shown only and paid at the same rate (the till has
+                        no overtime premium or weekly rule). &quot;Till approved&quot; is the overtime a manager approved for the week on the till.
                     </p>
                     <p>
-                        Holiday is an estimate: 12.07% of the hours worked ({duration(summary.holidayMinutes)} in these dates), as the till works it out.
-                        Holiday and absence bookings are not available yet: the till does not record them.
+                        Holiday is an estimate: 12.07% of the hours worked ({duration(summary.holidayMinutes)} in these dates), as the till works it
+                        out. Holiday and absence bookings are not available yet: the till does not record them.
                     </p>
                     <p>Breaks are unpaid. Shifts with a missing clock-out are left out until corrected on the till.</p>
                 </SectionCard>
-                <SectionCard title="Minimum wage bands" description="National Minimum and Living Wage by age, as the tills hold them. Read only, for checking rates." flush>
+                <SectionCard
+                    title="Minimum wage bands"
+                    description="National Minimum and Living Wage by age, as the tills hold them. Read only, for checking rates."
+                    flush
+                >
                     {wageBands.length === 0 ? (
-                        <EmptyState size="sm" icon={PoundSterling} title="No wage bands yet" body="They arrive with the tills' next sync." />
+                        <EmptyState size="sm" icon={MoneyIcon} title="No wage bands yet" body="They arrive with the tills' next sync." />
                     ) : (
                         <ul className="divide-y text-sm">
                             {wageBands.map((b) => (

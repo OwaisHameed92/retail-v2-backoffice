@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Toggle } from '@/components/ui/toggle';
 import AppLayout from '@/layouts/app-layout';
+import { currencySymbol } from '@/lib/country';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { LoaderCircle } from 'lucide-react';
 import { type FormEventHandler } from 'react';
@@ -135,7 +136,10 @@ export default function SupplierForm({ supplier, options, canEdit }: SupplierFor
                                     </SelectContent>
                                 </Select>
                             </FormField>
-                            {text('minimum_order_value', 'Minimum order (£)', { optional: true, help: 'Leave blank for no minimum.' })}
+                            {text('minimum_order_value', `Minimum order (${currencySymbol()})`, {
+                                optional: true,
+                                help: 'Leave blank for no minimum.',
+                            })}
                             <FormField id="terms_kind" label="Payment terms" error={errors.terms_kind}>
                                 <Select value={data.terms_kind} onValueChange={(v) => setData('terms_kind', v)} disabled={!canEdit}>
                                     <SelectTrigger id="terms_kind">

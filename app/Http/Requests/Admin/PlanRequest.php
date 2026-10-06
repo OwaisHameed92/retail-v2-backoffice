@@ -8,6 +8,8 @@ use App\Domain\Plans\Enums\Feature;
 use App\Domain\Plans\Enums\PlanBillingType;
 use App\Domain\Plans\Enums\PricingMode;
 use App\Domain\Plans\Models\Plan;
+use App\Domain\Shared\Country\Country;
+use App\Domain\Shared\Country\MoneyFormat;
 use App\Domain\Shared\Support\Money;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
@@ -18,7 +20,7 @@ use Illuminate\Validation\Rule;
  */
 abstract class PlanRequest extends FormRequest
 {
-    /** Pounds with up to 2 decimal places, max £99,999.99. No floats, no exponents. */
+    /** Up to 2 decimal places, max 99,999.99 (GB £99,999.99). No floats, no exponents. */
     private const MONEY_PATTERN = '/^\d{1,5}(\.\d{1,2})?$/';
 
     public function authorize(): bool
@@ -28,10 +30,10 @@ abstract class PlanRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
-        // Accept "£1,200.00" and plain JSON numbers; the value is validated as a 2 dp string below.
+        // Accept "£1,200.00" (the profile's symbol) and plain JSON numbers; the value is validated as a 2 dp string below.
         $clean = fn (mixed $value) => match (true) {
             is_int($value), is_float($value) => (string) $value,
-            is_string($value) => str_replace(['£', ',', ' '], '', trim($value)),
+            is_string($value) => str_replace([app(Country::class)->symbol(), ',', ' '], '', trim($value)),
             default => $value,
         };
 
@@ -83,7 +85,7 @@ abstract class PlanRequest extends FormRequest
     }
 
     /**
-     * A setup fee plan needs a fee above £0; a recurring plan needs a monthly or yearly price above £0.
+     * A setup fee plan needs a fee above 0; a recurring plan needs a monthly or yearly price above 0.
      *
      * @return list<callable>
      */
@@ -93,16 +95,18 @@ abstract class PlanRequest extends FormRequest
             $type = PlanBillingType::tryFrom((string) $this->input('billing_type'));
             $positive = fn (string $key) => is_string($this->input($key)) && preg_match(self::MONEY_PATTERN, $this->input($key)) === 1 && ! Money::isZero($this->input($key));
 
+            $zero = MoneyFormat::format('0');
+
             if ($type === null || $validator->errors()->isNotEmpty()) {
                 return;
             }
 
             if ($type->hasSetupFee() && ! $positive('setup_fee')) {
-                $validator->errors()->add('setup_fee', 'Enter the setup fee (above £0.00) for this plan type, or choose "Monthly or yearly only".');
+                $validator->errors()->add('setup_fee', 'Enter the setup fee (above '.$zero.') for this plan type, or choose "Monthly or yearly only".');
             }
 
             if ($type->recurs() && ! $positive('price_monthly') && ! $positive('price_yearly')) {
-                $validator->errors()->add('price_monthly', 'Enter a monthly or yearly price above £0.00, or choose "Setup fee only".');
+                $validator->errors()->add('price_monthly', 'Enter a monthly or yearly price above '.$zero.', or choose "Setup fee only".');
             }
         }];
     }

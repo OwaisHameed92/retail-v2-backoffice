@@ -12,13 +12,13 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import AppLayout from '@/layouts/app-layout';
+import { formatNumber } from '@/lib/country';
 import { Head, Link } from '@inertiajs/react';
 import { type ColumnDef } from '@tanstack/react-table';
 import { BookOpenCheck, Info, PackagePlus, Sparkles } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
 const ONLY = ['products', 'filters'];
-const number = new Intl.NumberFormat('en-GB');
 
 function columns(
     selected: Map<string, CatalogueRow>,
@@ -160,7 +160,7 @@ export default function AddFromCatalogue(props: CatalogueSearchProps) {
                         value={filters.department}
                         onChange={(department) => update({ department, page: undefined })}
                         all="Every department"
-                        options={departments.map((d) => ({ value: d.value, label: `${d.label} (${number.format(d.count)})` }))}
+                        options={departments.map((d) => ({ value: d.value, label: `${d.label} (${formatNumber(d.count)})` }))}
                         label="Filter by department"
                         width="sm:w-60"
                     />
@@ -177,7 +177,7 @@ export default function AddFromCatalogue(props: CatalogueSearchProps) {
             />
 
             {selected.size > 0 && (
-                <StickyFormBar message={`${number.format(selected.size)} selected. Your choice is kept while you search.`}>
+                <StickyFormBar message={`${formatNumber(selected.size)} selected. Your choice is kept while you search.`}>
                     <Button variant="outline" onClick={() => setSelected(new Map())}>
                         Clear
                     </Button>

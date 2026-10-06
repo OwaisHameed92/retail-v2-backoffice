@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
+import { currencySymbol, wideCurrencySymbol } from '@/lib/country';
 import { sendJson } from '@/lib/http';
 import { cn } from '@/lib/utils';
 import { useForm } from '@inertiajs/react';
@@ -218,14 +219,16 @@ function PaymentForm({
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <Field id="payment-amount" label="Amount" error={errors.amount}>
                         <div className="relative">
-                            <span className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-sm">£</span>
+                            <span className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-sm">
+                                {currencySymbol()}
+                            </span>
                             <Input
                                 id="payment-amount"
                                 inputMode="decimal"
                                 autoComplete="off"
                                 value={data.amount}
                                 onChange={(event) => setData('amount', event.target.value)}
-                                className="pl-7 tabular-nums"
+                                className={wideCurrencySymbol() ? 'pl-10 tabular-nums' : 'pl-7 tabular-nums'}
                                 aria-invalid={!!errors.amount || (data.amount !== '' && amount === null)}
                                 autoFocus
                             />
@@ -316,7 +319,7 @@ function PaymentForm({
                                         {data.allocation === 'manual' ? (
                                             <div className="relative w-28 shrink-0">
                                                 <span className="text-muted-foreground pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2 text-sm">
-                                                    £
+                                                    {currencySymbol()}
                                                 </span>
                                                 <Input
                                                     inputMode="decimal"
@@ -325,7 +328,9 @@ function PaymentForm({
                                                     onChange={(event) =>
                                                         setData('allocations', { ...data.allocations, [invoice.id]: event.target.value })
                                                     }
-                                                    className="h-8 pl-6 text-right tabular-nums"
+                                                    className={
+                                                        wideCurrencySymbol() ? 'h-8 pl-9 text-right tabular-nums' : 'h-8 pl-6 text-right tabular-nums'
+                                                    }
                                                     aria-label={`Amount for ${invoice.number ?? 'invoice'}`}
                                                 />
                                             </div>

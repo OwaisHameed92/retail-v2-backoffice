@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { formatMoneyAsGiven } from '@/lib/country';
 import { sendJson } from '@/lib/http';
 import { router } from '@inertiajs/react';
 import { LoaderCircle, ScanBarcode, Search } from 'lucide-react';
@@ -67,7 +68,12 @@ export function AddLabelsDialog({ open, onOpenChange, shopId, shopName, departme
         const controller = new AbortController();
         const timer = setTimeout(() => {
             setSearching(true);
-            sendJson<{ products: Found[] }>('GET', route('app.labels.products', { branch_id: shopId, q: search.trim() }), undefined, controller.signal)
+            sendJson<{ products: Found[] }>(
+                'GET',
+                route('app.labels.products', { branch_id: shopId, q: search.trim() }),
+                undefined,
+                controller.signal,
+            )
                 .then((result) => {
                     setFound(result.data?.products ?? []);
                     // A scanned barcode that finds exactly one product is picked straight away.
@@ -143,7 +149,12 @@ export function AddLabelsDialog({ open, onOpenChange, shopId, shopName, departme
 
                     {mode === 'products' && (
                         <div className="grid gap-3">
-                            <FormField id="label-search" label="Find products" help="Type a name or code, or scan a barcode." error={errors.product_ids}>
+                            <FormField
+                                id="label-search"
+                                label="Find products"
+                                help="Type a name or code, or scan a barcode."
+                                error={errors.product_ids}
+                            >
                                 <div className="relative">
                                     <Search className="text-muted-foreground absolute top-1/2 left-3 size-4 -translate-y-1/2" aria-hidden />
                                     <Input
@@ -155,7 +166,12 @@ export function AddLabelsDialog({ open, onOpenChange, shopId, shopName, departme
                                         autoComplete="off"
                                         autoFocus
                                     />
-                                    {searching && <LoaderCircle className="text-muted-foreground absolute top-1/2 right-3 size-4 -translate-y-1/2 animate-spin" aria-hidden />}
+                                    {searching && (
+                                        <LoaderCircle
+                                            className="text-muted-foreground absolute top-1/2 right-3 size-4 -translate-y-1/2 animate-spin"
+                                            aria-hidden
+                                        />
+                                    )}
                                 </div>
                             </FormField>
 
@@ -171,10 +187,12 @@ export function AddLabelsDialog({ open, onOpenChange, shopId, shopName, departme
                                                 <Checkbox checked={Boolean(chosen[product.id])} onCheckedChange={() => toggle(product)} />
                                                 <span className="min-w-0 flex-1">
                                                     <span className="block truncate text-sm font-medium">{product.name}</span>
-                                                    <span className="text-muted-foreground block truncate font-mono text-xs">{product.barcode ?? product.sku ?? '—'}</span>
+                                                    <span className="text-muted-foreground block truncate font-mono text-xs">
+                                                        {product.barcode ?? product.sku ?? '—'}
+                                                    </span>
                                                 </span>
                                                 {product.waiting && <Badge variant="neutral">Waiting</Badge>}
-                                                <span className="text-sm tabular-nums">£{product.price}</span>
+                                                <span className="text-sm tabular-nums">{formatMoneyAsGiven(product.price)}</span>
                                             </label>
                                         </li>
                                     ))}
@@ -186,7 +204,12 @@ export function AddLabelsDialog({ open, onOpenChange, shopId, shopName, departme
                                     {Object.values(chosen).map((product) => (
                                         <Badge key={product.id} variant="outline" className="gap-1">
                                             {product.name}
-                                            <button type="button" className="hover:text-foreground ml-0.5" onClick={() => toggle(product)} aria-label={`Remove ${product.name}`}>
+                                            <button
+                                                type="button"
+                                                className="hover:text-foreground ml-0.5"
+                                                onClick={() => toggle(product)}
+                                                aria-label={`Remove ${product.name}`}
+                                            >
                                                 ×
                                             </button>
                                         </Badge>
@@ -198,7 +221,13 @@ export function AddLabelsDialog({ open, onOpenChange, shopId, shopName, departme
 
                     {mode === 'department' && (
                         <FormField id="department_id" label="Department" help="Every product on sale in it." error={errors.department_id}>
-                            <OptionSelect id="department_id" value={department} options={departments} onChange={setDepartment} invalid={Boolean(errors.department_id)} />
+                            <OptionSelect
+                                id="department_id"
+                                value={department}
+                                options={departments}
+                                onChange={setDepartment}
+                                invalid={Boolean(errors.department_id)}
+                            />
                         </FormField>
                     )}
 
@@ -206,7 +235,11 @@ export function AddLabelsDialog({ open, onOpenChange, shopId, shopName, departme
                         <FormField
                             id="supplier_id"
                             label="Supplier"
-                            help={suppliers.length === 0 ? 'No suppliers yet. Add them under Suppliers.' : 'Every product on sale that this supplier supplies.'}
+                            help={
+                                suppliers.length === 0
+                                    ? 'No suppliers yet. Add them under Suppliers.'
+                                    : 'Every product on sale that this supplier supplies.'
+                            }
                             error={errors.supplier_id}
                         >
                             <OptionSelect
@@ -225,7 +258,11 @@ export function AddLabelsDialog({ open, onOpenChange, shopId, shopName, departme
                             Cancel
                         </Button>
                         <Button type="submit" disabled={!ready || processing}>
-                            {processing ? <LoaderCircle className="size-4 animate-spin" aria-hidden /> : <ScanBarcode className="size-4" aria-hidden />}
+                            {processing ? (
+                                <LoaderCircle className="size-4 animate-spin" aria-hidden />
+                            ) : (
+                                <ScanBarcode className="size-4" aria-hidden />
+                            )}
                             {mode === 'products' && count > 0 ? `Add ${count} ${count === 1 ? 'label' : 'labels'}` : 'Add labels'}
                         </Button>
                     </DialogFooter>

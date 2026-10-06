@@ -29,8 +29,8 @@ class CreditNoteRequest extends BillingRequest
     {
         return [
             'amount.required' => 'Enter the amount to credit.',
-            'amount.regex' => self::MONEY_MESSAGE,
-            'amount.not_regex' => 'Enter an amount above £0.00.',
+            'amount.regex' => self::moneyMessage(),
+            'amount.not_regex' => self::aboveZeroMessage(),
             'reason.required' => 'Enter the reason for the credit.',
         ];
     }

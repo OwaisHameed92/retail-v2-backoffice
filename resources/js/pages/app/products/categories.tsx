@@ -8,6 +8,7 @@ import { SectionCard } from '@/components/shared/section-card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/app-layout';
+import { formatNumber } from '@/lib/country';
 import { cn } from '@/lib/utils';
 import { Head, Link, router } from '@inertiajs/react';
 import { CornerDownRight, FolderPlus, FolderTree, Pencil, Plus, Trash2 } from 'lucide-react';
@@ -20,8 +21,6 @@ interface Props {
 }
 
 type Deleting = { kind: 'department' | 'category'; id: string; name: string } | null;
-
-const number = new Intl.NumberFormat('en-GB');
 
 function Swatch({ colour }: { colour: string }) {
     return <span className="size-3 shrink-0 rounded-full border" style={{ backgroundColor: colour }} aria-hidden />;
@@ -38,8 +37,12 @@ function Flags({ isActive, isVisibleOnTill }: { isActive: boolean; isVisibleOnTi
 
 function Count({ n, href }: { n: number; href: string }) {
     return (
-        <Link href={href} className="text-muted-foreground hover:text-foreground text-sm whitespace-nowrap tabular-nums" onClick={(e) => e.stopPropagation()}>
-            {number.format(n)} {n === 1 ? 'product' : 'products'}
+        <Link
+            href={href}
+            className="text-muted-foreground hover:text-foreground text-sm whitespace-nowrap tabular-nums"
+            onClick={(e) => e.stopPropagation()}
+        >
+            {formatNumber(n)} {n === 1 ? 'product' : 'products'}
         </Link>
     );
 }
@@ -54,19 +57,31 @@ export default function Categories({ departments, options, canManage }: Props) {
             <Swatch colour={category.colourHex} />
             <span className="min-w-0 flex-1 truncate text-sm font-medium">{category.name}</span>
             <Flags isActive={category.isActive} isVisibleOnTill={category.isVisibleOnTill} />
-            <Count n={category.productCount} href={route('app.products.index', { department: department.id, category: category.id, status: 'all' })} />
+            <Count
+                n={category.productCount}
+                href={route('app.products.index', { department: department.id, category: category.id, status: 'all' })}
+            />
             {canManage && (
                 <RowActions
                     label={`Actions for ${category.name}`}
                     actions={[
-                        { label: 'Edit', icon: Pencil, onSelect: () => setTarget({ kind: 'category', category, departmentId: department.id, parentId: category.parentId }) },
+                        {
+                            label: 'Edit',
+                            icon: Pencil,
+                            onSelect: () => setTarget({ kind: 'category', category, departmentId: department.id, parentId: category.parentId }),
+                        },
                         {
                             label: 'Add sub-category',
                             icon: FolderPlus,
                             hidden: depth === 1,
                             onSelect: () => setTarget({ kind: 'category', category: null, departmentId: department.id, parentId: category.id }),
                         },
-                        { label: 'Delete', icon: Trash2, destructive: true, onSelect: () => setDeleting({ kind: 'category', id: category.id, name: category.name }) },
+                        {
+                            label: 'Delete',
+                            icon: Trash2,
+                            destructive: true,
+                            onSelect: () => setDeleting({ kind: 'category', id: category.id, name: category.name }),
+                        },
                     ]}
                 />
             )}
@@ -85,7 +100,12 @@ export default function Categories({ departments, options, canManage }: Props) {
                         canManage ? (
                             <>
                                 {departments.length > 0 && (
-                                    <Button variant="outline" onClick={() => setTarget({ kind: 'category', category: null, departmentId: departments[0].id, parentId: null })}>
+                                    <Button
+                                        variant="outline"
+                                        onClick={() =>
+                                            setTarget({ kind: 'category', category: null, departmentId: departments[0].id, parentId: null })
+                                        }
+                                    >
                                         <FolderPlus />
                                         Add category
                                     </Button>
@@ -105,7 +125,11 @@ export default function Categories({ departments, options, canManage }: Props) {
                         icon={FolderTree}
                         title="No departments yet"
                         body="Departments and categories from your tills appear here after they sync. You can also add them here."
-                        action={canManage ? <Button onClick={() => setTarget({ kind: 'department', department: null })}>Add department</Button> : undefined}
+                        action={
+                            canManage ? (
+                                <Button onClick={() => setTarget({ kind: 'department', department: null })}>Add department</Button>
+                            ) : undefined
+                        }
                     />
                 )}
 
@@ -120,15 +144,25 @@ export default function Categories({ departments, options, canManage }: Props) {
                                 <Flags isActive={department.isActive} isVisibleOnTill={department.isVisibleOnTill} />
                             </span>
                         }
-                        description={`${number.format(department.productCount)} ${department.productCount === 1 ? 'product' : 'products'} · ${department.categories.length} ${department.categories.length === 1 ? 'category' : 'categories'}`}
+                        description={`${formatNumber(department.productCount)} ${department.productCount === 1 ? 'product' : 'products'} · ${department.categories.length} ${department.categories.length === 1 ? 'category' : 'categories'}`}
                         actions={
                             canManage ? (
                                 <RowActions
                                     label={`Actions for ${department.name}`}
                                     actions={[
                                         { label: 'Edit department', icon: Pencil, onSelect: () => setTarget({ kind: 'department', department }) },
-                                        { label: 'Add category', icon: FolderPlus, onSelect: () => setTarget({ kind: 'category', category: null, departmentId: department.id, parentId: null }) },
-                                        { label: 'Delete', icon: Trash2, destructive: true, onSelect: () => setDeleting({ kind: 'department', id: department.id, name: department.name }) },
+                                        {
+                                            label: 'Add category',
+                                            icon: FolderPlus,
+                                            onSelect: () =>
+                                                setTarget({ kind: 'category', category: null, departmentId: department.id, parentId: null }),
+                                        },
+                                        {
+                                            label: 'Delete',
+                                            icon: Trash2,
+                                            destructive: true,
+                                            onSelect: () => setDeleting({ kind: 'department', id: department.id, name: department.name }),
+                                        },
                                     ]}
                                 />
                             ) : undefined
@@ -138,21 +172,17 @@ export default function Categories({ departments, options, canManage }: Props) {
                             <p className="text-muted-foreground px-5 py-4 text-sm">No categories yet. A product needs a category to be filed here.</p>
                         ) : (
                             <ul className="divide-y">
-                                {department.categories.map((category) => [categoryRow(category, department, 0), ...(category.children ?? []).map((child) => categoryRow(child, department, 1))])}
+                                {department.categories.map((category) => [
+                                    categoryRow(category, department, 0),
+                                    ...(category.children ?? []).map((child) => categoryRow(child, department, 1)),
+                                ])}
                             </ul>
                         )}
                     </SectionCard>
                 ))}
             </div>
 
-            {target && (
-                <GroupDialog
-                    key={JSON.stringify(target)}
-                    target={target}
-                    options={options}
-                    onClose={() => setTarget(null)}
-                />
-            )}
+            {target && <GroupDialog key={JSON.stringify(target)} target={target} options={options} onClose={() => setTarget(null)} />}
 
             <ConfirmDialog
                 open={deleting !== null}
@@ -164,8 +194,17 @@ export default function Categories({ departments, options, canManage }: Props) {
                 onConfirm={() =>
                     new Promise((resolve) => {
                         if (!deleting) return resolve(null);
-                        const url = deleting.kind === 'department' ? route('app.products.departments.destroy', deleting.id) : route('app.products.categories.destroy', deleting.id);
-                        router.delete(url, { preserveScroll: true, onFinish: () => { setDeleting(null); resolve(null); } });
+                        const url =
+                            deleting.kind === 'department'
+                                ? route('app.products.departments.destroy', deleting.id)
+                                : route('app.products.categories.destroy', deleting.id);
+                        router.delete(url, {
+                            preserveScroll: true,
+                            onFinish: () => {
+                                setDeleting(null);
+                                resolve(null);
+                            },
+                        });
                     })
                 }
             />

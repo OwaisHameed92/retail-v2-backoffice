@@ -10,6 +10,7 @@ use App\Domain\Catalogue\Import\ImportPlanner;
 use App\Domain\Catalogue\Import\ImportRow;
 use App\Domain\Catalogue\Import\RowInterpreter;
 use App\Domain\Catalogue\Models\ProductImport;
+use App\Domain\Shared\Country\MoneyFormat;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
@@ -49,7 +50,7 @@ final class PreviewProductImport
 
         foreach ((new CsvReader(Storage::disk(StartProductImport::DISK)->path($import->path)))->rows() as $row) {
             if (++$state['total'] > self::MAX_ROWS) {
-                throw ValidationException::withMessages(['mapping' => 'The file has more than '.number_format(self::MAX_ROWS).' rows. Split it into smaller files.']);
+                throw ValidationException::withMessages(['mapping' => 'The file has more than '.MoneyFormat::number(self::MAX_ROWS).' rows. Split it into smaller files.']);
             }
 
             $batch[] = $interpreter->read($row['line'], $row['cells']);

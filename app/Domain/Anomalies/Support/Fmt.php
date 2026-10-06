@@ -3,9 +3,11 @@
 namespace App\Domain\Anomalies\Support;
 
 use App\Domain\Mail\Support\MailFormat;
+use App\Domain\Shared\Country\MoneyFormat;
 
 /**
- * Display text of anomaly facts (module 6.6): pounds "£1,234.50", counts "3 voids", rates "7.5".
+ * Display text of anomaly facts (module 6.6): money "£1,234.50" (MailFormat), counts "3 voids", rates "7.5", grouped
+ * the country profile's way.
  */
 final class Fmt
 {
@@ -22,7 +24,7 @@ final class Fmt
     /** One decimal place: "7.5", "0.0". */
     public static function rate(float $value): string
     {
-        return number_format($value, 1, '.', ',');
+        return MoneyFormat::decimal($value, 1);
     }
 
     /** Pounds from a float statistic (a median of pound amounts), two places. */
@@ -34,6 +36,6 @@ final class Fmt
     /** Whole number with thousands separators. */
     public static function number(float $value): string
     {
-        return number_format($value, 0, '.', ',');
+        return MoneyFormat::decimal($value);
     }
 }

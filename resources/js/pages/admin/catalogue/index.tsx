@@ -13,13 +13,13 @@ import { StatusBadge } from '@/components/shared/status-badge';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import AdminLayout from '@/layouts/admin-layout';
+import { formatNumber } from '@/lib/country';
 import { Head, Link, router } from '@inertiajs/react';
 import { type ColumnDef } from '@tanstack/react-table';
 import { BookOpenCheck, Copy, Inbox, Package, Plus, Sparkles, Upload } from 'lucide-react';
 import { useState } from 'react';
 
 const ONLY = ['products', 'filters', 'counts', 'departments'];
-const number = new Intl.NumberFormat('en-GB');
 
 const columns: ColumnDef<MasterRow>[] = [
     {
@@ -142,21 +142,21 @@ export default function MasterCatalogue({ products, filters, sources, department
             <StatGrid>
                 <StatCard
                     label="Products"
-                    value={number.format(counts.total)}
-                    hint={`${number.format(departments.length)} departments`}
+                    value={formatNumber(counts.total)}
+                    hint={`${formatNumber(departments.length)} departments`}
                     icon={Package}
                     tone="primary"
                 />
                 <StatCard
                     label="Starter set"
-                    value={number.format(counts.bySource.starter ?? 0)}
+                    value={formatNumber(counts.bySource.starter ?? 0)}
                     hint="Demo lines: replace with a licensed file"
                     icon={Sparkles}
                     tone={(counts.bySource.starter ?? 0) > 0 ? 'warning' : 'neutral'}
                 />
                 <StatCard
                     label="Barcodes to review"
-                    value={number.format(counts.pending)}
+                    value={formatNumber(counts.pending)}
                     hint="Sold on tills, not in the catalogue"
                     icon={Inbox}
                     tone={counts.pending > 0 ? 'primary' : 'neutral'}
@@ -164,7 +164,7 @@ export default function MasterCatalogue({ products, filters, sources, department
                 />
                 <StatCard
                     label="Possible duplicates"
-                    value={number.format(counts.duplicates)}
+                    value={formatNumber(counts.duplicates)}
                     hint="Names on more than one barcode"
                     icon={Copy}
                     tone={counts.duplicates > 0 ? 'warning' : 'neutral'}
@@ -193,7 +193,7 @@ export default function MasterCatalogue({ products, filters, sources, department
                             value={filters.department}
                             onChange={(department) => update({ department, page: undefined })}
                             all="Every department"
-                            options={departments.map((d) => ({ value: d.value, label: `${d.label} (${number.format(d.count)})` }))}
+                            options={departments.map((d) => ({ value: d.value, label: `${d.label} (${formatNumber(d.count)})` }))}
                             label="Filter by department"
                             width="sm:w-56"
                         />

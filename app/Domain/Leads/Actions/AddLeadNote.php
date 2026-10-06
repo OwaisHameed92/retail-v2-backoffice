@@ -7,6 +7,7 @@ use App\Domain\Leads\Models\Lead;
 use App\Domain\Leads\Models\LeadNote;
 use App\Domain\Leads\Support\LeadTimeline;
 use App\Domain\Shared\Actions\RecordAudit;
+use App\Domain\Shared\Country\MoneyFormat;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -33,7 +34,7 @@ class AddLeadNote
         }
 
         if (mb_strlen($body) > LeadNote::MAX_LENGTH) {
-            throw ValidationException::withMessages(['body' => 'Keep notes under '.number_format(LeadNote::MAX_LENGTH).' characters.']);
+            throw ValidationException::withMessages(['body' => 'Keep notes under '.MoneyFormat::number(LeadNote::MAX_LENGTH).' characters.']);
         }
 
         return DB::transaction(function () use ($lead, $body) {

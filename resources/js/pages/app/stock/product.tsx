@@ -6,6 +6,7 @@ import { type ProductStockProps } from '@/components/app/stock/types';
 import { DataTable } from '@/components/shared/data-table';
 import { DescriptionList } from '@/components/shared/description-list';
 import { EmptyState } from '@/components/shared/empty-state';
+import { MoneyIcon } from '@/components/shared/money-icon';
 import { PageHeader } from '@/components/shared/page-header';
 import { SectionCard } from '@/components/shared/section-card';
 import { StatCard, StatGrid } from '@/components/shared/stat-card';
@@ -14,7 +15,7 @@ import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/app-layout';
 import { zonedDateFormat } from '@/lib/country';
 import { Head, Link } from '@inertiajs/react';
-import { ArrowLeftRight, Boxes, Layers, PoundSterling, SlidersHorizontal } from 'lucide-react';
+import { ArrowLeftRight, Boxes, Layers, SlidersHorizontal } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
 const NEGATIVE: Record<string, string> = { allow: 'Allowed', warn: 'Allowed with a warning', block: 'Blocked' };
@@ -67,7 +68,7 @@ export default function StockProduct({ product, lines, totals, layers, batches, 
                     label="At today’s cost price"
                     value={money(totals.costValue)}
                     hint="On hand above zero × cost price"
-                    icon={PoundSterling}
+                    icon={MoneyIcon}
                     tone="neutral"
                 />
             </StatGrid>

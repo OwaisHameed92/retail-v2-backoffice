@@ -7,6 +7,7 @@ import { EmptyState } from '@/components/shared/empty-state';
 import { PageTabs } from '@/components/shared/page-tabs';
 import { SectionCard } from '@/components/shared/section-card';
 import { StatCard, StatGrid } from '@/components/shared/stat-card';
+import { formatNumber } from '@/lib/country';
 import { type ColumnDef } from '@tanstack/react-table';
 import { IdCard, Percent, ShieldCheck, ShieldX } from 'lucide-react';
 import { useState } from 'react';
@@ -68,18 +69,12 @@ export default function ComplianceAgeChecks({ summary, byShop, byStaff, byRule, 
             <StatGrid columns={3}>
                 <StatCard
                     label="Age checks passed"
-                    value={summary.checks.toLocaleString('en-GB')}
+                    value={formatNumber(summary.checks)}
                     hint="Sales with an age-restricted item"
                     icon={ShieldCheck}
                     tone="success"
                 />
-                <StatCard
-                    label="Refusals"
-                    value={summary.refusals.toLocaleString('en-GB')}
-                    hint="Sales the till refused"
-                    icon={ShieldX}
-                    tone="neutral"
-                />
+                <StatCard label="Refusals" value={formatNumber(summary.refusals)} hint="Sales the till refused" icon={ShieldX} tone="neutral" />
                 <StatCard
                     label="Refusal rate"
                     value={<Rate value={summary.rate} />}

@@ -2,6 +2,7 @@
 
 namespace App\Domain\Purchasing\Invoices;
 
+use App\Domain\Shared\Country\Country;
 use App\Domain\Shared\Support\Money;
 use Carbon\CarbonImmutable;
 use Throwable;
@@ -146,7 +147,7 @@ final class InvoiceDraft
         } elseif (is_string($value)) {
             $raw = trim($value);
             $negative = str_starts_with($raw, '(') && str_ends_with($raw, ')');
-            $raw = (string) preg_replace('/[£$€%,\s()]/u', '', $raw);
+            $raw = (string) preg_replace('/[£$€%,\s()]/u', '', str_replace(app(Country::class)->symbol(), '', $raw));
             $raw = $negative ? '-'.$raw : $raw;
         } else {
             return null;

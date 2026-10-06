@@ -59,9 +59,9 @@ final class BillingActivity
     private static function money(mixed $value): string
     {
         try {
-            return $value === null ? '£0.00' : BillingFormat::money($value);
+            return BillingFormat::money($value ?? '0');
         } catch (InvalidArgumentException) {
-            return '£0.00';
+            return BillingFormat::money('0');
         }
     }
 

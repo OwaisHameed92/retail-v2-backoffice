@@ -1,10 +1,9 @@
 import { SectionCard } from '@/components/shared/section-card';
 import { StatusBadge } from '@/components/shared/status-badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { formatNumber } from '@/lib/country';
 import { formatMoney } from './fields';
 import { type ImportDetail } from './import-types';
-
-const number = new Intl.NumberFormat('en-GB');
 
 /** The first rows as the import will read them. */
 export function ImportSample({ detail }: { detail: ImportDetail }) {
@@ -64,7 +63,7 @@ export function ImportErrors({ detail, title }: { detail: ImportDetail; title: s
             title={title}
             description={
                 detail.errorsTruncated
-                    ? `The first ${number.format(detail.errors.length)} are listed. Fix them in your file and upload it again.`
+                    ? `The first ${formatNumber(detail.errors.length)} are listed. Fix them in your file and upload it again.`
                     : 'Fix them in your file and upload it again: rows already imported are left as they are.'
             }
             flush

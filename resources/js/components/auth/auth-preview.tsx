@@ -1,3 +1,4 @@
+import { formatMoneyWhole } from '@/lib/country';
 import { cn } from '@/lib/utils';
 import { ArrowUpRight } from 'lucide-react';
 import { useId, type ReactNode } from 'react';
@@ -56,7 +57,14 @@ function Placed({ className, delay, children }: { className: string; delay: numb
 function Dot({ tone, pulse = false }: { tone: Tone; pulse?: boolean }) {
     return (
         <span className="relative flex size-2 shrink-0">
-            {pulse && <span className={cn('absolute inline-flex size-full rounded-full opacity-60 [animation-duration:2.4s] motion-safe:animate-ping', dots[tone])} />}
+            {pulse && (
+                <span
+                    className={cn(
+                        'absolute inline-flex size-full rounded-full opacity-60 [animation-duration:2.4s] motion-safe:animate-ping',
+                        dots[tone],
+                    )}
+                />
+            )}
             <span className={cn('relative inline-flex size-2 rounded-full', dots[tone])} />
         </span>
     );
@@ -151,7 +159,14 @@ function Preview({ metric, list, chips }: PreviewProps) {
 export function CustomerPreview() {
     return (
         <Preview
-            metric={{ label: "Today's sales", value: '£4,812', delta: '12%', sub: 'vs last Tuesday · 3 tills', points: SALES, tone: 'green' }}
+            metric={{
+                label: "Today's sales",
+                value: formatMoneyWhole(4812),
+                delta: '12%',
+                sub: 'vs last Tuesday · 3 tills',
+                points: SALES,
+                tone: 'green',
+            }}
             list={{
                 title: '3 tills online',
                 badge: 'Live',

@@ -2,10 +2,11 @@ import { type BusinessData } from '@/components/app/dashboard/types';
 import { SegmentedControl } from '@/components/shared/chart-card';
 import { number, share } from '@/components/shared/trading/format';
 import { LeadersCard, salesDetail, type LeaderItem } from '@/components/shared/trading/leaders-card';
+import { formatNumber } from '@/lib/country';
 import { FolderTree, Monitor, Package, Store, Users } from 'lucide-react';
 import { useState } from 'react';
 
-const qty = (value: string) => Number(value).toLocaleString('en-GB', { maximumFractionDigits: 3 });
+const qty = (value: string) => formatNumber(Number(value), { maximumFractionDigits: 3 });
 
 /** Sales by shop (all shops) or by till (one shop), DASHBOARD.md §2.3. Selecting a shop switches the portal to it. */
 export function ShopsOrTillsCard({ data, onShop }: { data: BusinessData; onShop: (id: string) => void }) {

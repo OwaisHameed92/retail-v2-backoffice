@@ -1,5 +1,6 @@
 import { StatusBadge, type StatusToneMap } from '@/components/shared/status-badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { formatNumber } from '@/lib/country';
 import { cn } from '@/lib/utils';
 import { type BreakdownRow, type ExpiryStatus, type Schedule } from './types';
 
@@ -57,8 +58,8 @@ export function BreakdownTable({ rows, label, empty }: { rows: BreakdownRow[]; l
                 {rows.map((r) => (
                     <TableRow key={r.key ?? r.label}>
                         <TableCell className="max-w-56 truncate pl-5 font-medium">{r.label}</TableCell>
-                        <TableCell className="text-right tabular-nums">{r.checks.toLocaleString('en-GB')}</TableCell>
-                        <TableCell className="text-right tabular-nums">{r.refusals.toLocaleString('en-GB')}</TableCell>
+                        <TableCell className="text-right tabular-nums">{formatNumber(r.checks)}</TableCell>
+                        <TableCell className="text-right tabular-nums">{formatNumber(r.refusals)}</TableCell>
                         <TableCell className="pr-5 text-right">
                             <Rate value={r.rate} />
                         </TableCell>

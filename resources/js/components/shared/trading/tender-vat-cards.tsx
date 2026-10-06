@@ -3,6 +3,7 @@ import { SectionCard } from '@/components/shared/section-card';
 import { money, number, share } from '@/components/shared/trading/format';
 import { type TenderRow, type VatRow } from '@/components/shared/trading/types';
 import { ChartTooltipBox, toneVar, type ChartTone } from '@/components/shared/trend-chart';
+import { formatNumber } from '@/lib/country';
 import { CreditCard, Percent } from 'lucide-react';
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts';
 
@@ -116,9 +117,7 @@ export function VatCard({ rows }: { rows: VatRow[] }) {
                                 <tr key={`${r.vatRateId}-${r.percentage}`}>
                                     <td className="px-5 py-2.5 sm:px-6">
                                         <span className="font-medium">{r.code || '—'}</span>
-                                        <span className="text-muted-foreground ml-2 tabular-nums">
-                                            {Number(r.percentage).toLocaleString('en-GB')}%
-                                        </span>
+                                        <span className="text-muted-foreground ml-2 tabular-nums">{formatNumber(Number(r.percentage))}%</span>
                                     </td>
                                     <td className="px-3 py-2.5 text-right tabular-nums">{money(r.net)}</td>
                                     <td className="px-5 py-2.5 text-right tabular-nums sm:px-3">{money(r.vat)}</td>

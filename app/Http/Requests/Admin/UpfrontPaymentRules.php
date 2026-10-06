@@ -46,7 +46,7 @@ final class UpfrontPaymentRules
     public static function messages(): array
     {
         return [
-            'upfront_amount.regex' => BillingRequest::MONEY_MESSAGE,
+            'upfront_amount.regex' => BillingRequest::moneyMessage(),
             'upfront_method.required_if_accepted' => 'Choose how the setup fee was paid.',
             'upfront_method.in' => 'Choose cash, card or bank transfer.',
         ];

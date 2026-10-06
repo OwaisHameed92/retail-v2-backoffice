@@ -8,6 +8,7 @@ use App\Domain\Purchasing\Invoices\InvoiceDocuments;
 use App\Domain\Purchasing\Invoices\InvoiceImportAccess;
 use App\Domain\Purchasing\Models\InvoiceImport;
 use App\Domain\Purchasing\Support\HeadOfficeOrders;
+use App\Domain\Shared\Country\MoneyFormat;
 use App\Domain\Shared\Support\Money;
 use App\Domain\Tenancy\CurrentCompany;
 use App\Domain\Tenancy\Models\Branch;
@@ -81,7 +82,7 @@ final class InvoiceReviewPage
         }
 
         return $orders->map(fn (PurchaseOrder $o) => [
-            'id' => $o->id, 'label' => HeadOfficeOrders::reference($o).' · '.($o->status->value ?? '').' · £'.$o->gross_total,
+            'id' => $o->id, 'label' => HeadOfficeOrders::reference($o).' · '.($o->status->value ?? '').' · '.MoneyFormat::format($o->gross_total, ukStyle: MoneyFormat::AS_GIVEN),
         ])->values()->all();
     }
 
@@ -91,7 +92,7 @@ final class InvoiceReviewPage
         return GoodsReceipt::query()->where('branch_id', $shopId)->when($supplierId !== null, fn ($q) => $q->where('supplier_id', $supplierId))
             ->where(fn ($q) => $q->where('status', '!=', GoodsReceiptStatus::Cancelled->value)->orWhere('id', $current))
             ->orderByDesc('received_date')->limit(30)->get()
-            ->map(fn (GoodsReceipt $g) => ['id' => $g->id, 'label' => $g->delivery_note_number.' · '.$g->received_date->format('j M Y').' · £'.$g->gross_amount])
+            ->map(fn (GoodsReceipt $g) => ['id' => $g->id, 'label' => $g->delivery_note_number.' · '.$g->received_date->format('j M Y').' · '.MoneyFormat::format($g->gross_amount, ukStyle: MoneyFormat::AS_GIVEN)])
             ->values()->all();
     }
 

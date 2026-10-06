@@ -5,13 +5,12 @@ import { SectionCard } from '@/components/shared/section-card';
 import { StatusBadge } from '@/components/shared/status-badge';
 import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/app-layout';
+import { formatNumber } from '@/lib/country';
 import { relativeTime } from '@/lib/relative-time';
 import { cn } from '@/lib/utils';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { Download, FileSpreadsheet, LoaderCircle, Upload } from 'lucide-react';
 import { useRef, useState, type FormEventHandler } from 'react';
-
-const number = new Intl.NumberFormat('en-GB');
 
 export default function ProductImports({ imports, fields }: { imports: ImportRow[]; fields: ImportField[] }) {
     const { setData, post, processing, errors, data, progress } = useForm<{ file: File | null }>({ file: null });
@@ -64,7 +63,7 @@ export default function ProductImports({ imports, fields }: { imports: ImportRow
                             <FileSpreadsheet className="text-muted-foreground size-8" aria-hidden />
                             <span className="text-sm font-medium">{data.file ? data.file.name : 'Choose a file or drop it here'}</span>
                             <span className="text-muted-foreground text-sm">
-                                {data.file ? `${number.format(Math.ceil(data.file.size / 1024))} KB` : 'The first line must name the columns.'}
+                                {data.file ? `${formatNumber(Math.ceil(data.file.size / 1024))} KB` : 'The first line must name the columns.'}
                             </span>
                             <input
                                 ref={input}
@@ -86,7 +85,10 @@ export default function ProductImports({ imports, fields }: { imports: ImportRow
                     </form>
                 </SectionCard>
 
-                <SectionCard title="Columns you can import" description="Any order, any column names: you match them on the next step. Empty cells keep what the product already has.">
+                <SectionCard
+                    title="Columns you can import"
+                    description="Any order, any column names: you match them on the next step. Empty cells keep what the product already has."
+                >
                     <dl className="grid grid-cols-1 gap-x-8 gap-y-3 sm:grid-cols-2">
                         {fields.map((field) => (
                             <div key={field.value}>
@@ -104,13 +106,16 @@ export default function ProductImports({ imports, fields }: { imports: ImportRow
                         <ul className="divide-y">
                             {imports.map((row) => (
                                 <li key={row.id}>
-                                    <Link href={route('app.products.imports.show', row.id)} className="hover:bg-subtle flex flex-wrap items-center gap-x-4 gap-y-1 px-5 py-3">
+                                    <Link
+                                        href={route('app.products.imports.show', row.id)}
+                                        className="hover:bg-subtle flex flex-wrap items-center gap-x-4 gap-y-1 px-5 py-3"
+                                    >
                                         <FileSpreadsheet className="text-muted-foreground size-4" aria-hidden />
                                         <span className="min-w-0 flex-1 truncate text-sm font-medium">{row.fileName}</span>
                                         <span className="text-muted-foreground text-sm tabular-nums">
                                             {row.status === 'completed'
-                                                ? `${number.format(row.created)} added · ${number.format(row.updated)} updated · ${number.format(row.failed)} not imported`
-                                                : `${number.format(row.totalRows)} rows`}
+                                                ? `${formatNumber(row.created)} added · ${formatNumber(row.updated)} updated · ${formatNumber(row.failed)} not imported`
+                                                : `${formatNumber(row.totalRows)} rows`}
                                         </span>
                                         <span className="text-muted-foreground text-sm">{row.createdAt ? relativeTime(row.createdAt) : ''}</span>
                                         <StatusBadge status={row.status} label={row.statusLabel} tone={IMPORT_TONES[row.status]} />

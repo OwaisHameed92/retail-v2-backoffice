@@ -6,6 +6,7 @@ import { SectionCard } from '@/components/shared/section-card';
 import { StatusPill, type StatusTone } from '@/components/shared/status-badge';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { formatMoney } from '@/lib/country';
 import { useForm } from '@inertiajs/react';
 import { Banknote, LoaderCircle, Tags } from 'lucide-react';
 import { type FormEventHandler, type ReactNode, useState } from 'react';
@@ -74,7 +75,7 @@ export function PricingPanel({ company, directDebit, canManage }: PricingPanelPr
                 </Tile>
                 <Tile label="Setup fee (upfront)">
                     <span className="inline-flex flex-wrap items-center gap-2 font-medium tabular-nums">
-                        {upfront.status === 'none' ? (upfront.recorded ? upfront.amount : '£0.00') : upfront.total}
+                        {upfront.status === 'none' ? (upfront.recorded ? upfront.amount : formatMoney(0)) : upfront.total}
                         <StatusPill tone={feeTones[upfront.status]}>{upfront.statusLabel}</StatusPill>
                     </span>
                     <span className="text-muted-foreground text-sm">

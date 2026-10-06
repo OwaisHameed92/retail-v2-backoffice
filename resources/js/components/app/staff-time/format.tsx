@@ -1,13 +1,13 @@
 import { StatusPill } from '@/components/shared/status-badge';
-import { zonedDateFormat } from '@/lib/country';
+import { dateFormat, dateLocale, zonedDateFormat } from '@/lib/country';
 import { cn } from '@/lib/utils';
 import { type ShiftFlag, type ShiftStatus } from './types';
 
 export { formatDay } from '@/components/app/pricing/format';
 export { money, number } from '@/components/shared/trading/format';
 
-const time = () => zonedDateFormat('en-GB', { hour: '2-digit', minute: '2-digit' });
-const dayShort = new Intl.DateTimeFormat('en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' });
+const time = () => zonedDateFormat(dateLocale(), { hour: '2-digit', minute: '2-digit' });
+const dayShort = () => dateFormat({ weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' });
 
 /** "14:05" shop time from an ISO UTC instant; null → "—". */
 export function clockTime(iso: string | null): string {
@@ -23,7 +23,7 @@ export function shopDay(iso: string): string {
 
 /** "Mon 5 Oct" from a `Y-m-d` day. */
 export function shortDay(day: string): string {
-    return dayShort.format(new Date(`${day}T12:00:00Z`));
+    return dayShort().format(new Date(`${day}T12:00:00Z`));
 }
 
 /** 450 → "7h 30m"; 0 → "0h". */

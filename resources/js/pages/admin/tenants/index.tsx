@@ -8,6 +8,7 @@ import { StatusBadge } from '@/components/shared/status-badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import AdminLayout from '@/layouts/admin-layout';
+import { formatNumber } from '@/lib/country';
 import { type CompanyStatus } from '@/types';
 import { Head, Link, router } from '@inertiajs/react';
 import { type ColumnDef } from '@tanstack/react-table';
@@ -20,8 +21,6 @@ interface TenantIndexProps {
     counts: Partial<Record<CompanyStatus, number>>;
     canManage: boolean;
 }
-
-const number = new Intl.NumberFormat('en-GB');
 
 const columns: ColumnDef<TenantListRow>[] = [
     {
@@ -50,7 +49,7 @@ const columns: ColumnDef<TenantListRow>[] = [
         header: 'Branches',
         enableSorting: true,
         meta: { align: 'right' },
-        cell: ({ row }) => <span className="tabular-nums">{number.format(row.original.branchesCount)}</span>,
+        cell: ({ row }) => <span className="tabular-nums">{formatNumber(row.original.branchesCount)}</span>,
     },
     {
         id: 'active_registers_count',
@@ -58,7 +57,7 @@ const columns: ColumnDef<TenantListRow>[] = [
         header: 'Tills',
         enableSorting: true,
         meta: { align: 'right' },
-        cell: ({ row }) => <span className="tabular-nums">{number.format(row.original.registersCount)}</span>,
+        cell: ({ row }) => <span className="tabular-nums">{formatNumber(row.original.registersCount)}</span>,
     },
     {
         id: 'owner',
@@ -101,7 +100,7 @@ function StatusFilter({
                 {statuses.map((status) => (
                     <SelectItem key={status.value} value={status.value}>
                         {status.label}
-                        <span className="text-muted-foreground ml-1 tabular-nums">({number.format(counts[status.value] ?? 0)})</span>
+                        <span className="text-muted-foreground ml-1 tabular-nums">({formatNumber(counts[status.value] ?? 0)})</span>
                     </SelectItem>
                 ))}
             </SelectContent>
@@ -119,7 +118,7 @@ export default function TenantIndex({ tenants, filters, statuses, counts, canMan
 
             <PageHeader
                 title="Tenants"
-                description={`${number.format(total)} ${total === 1 ? 'customer business' : 'customer businesses'} with their shops and tills.`}
+                description={`${formatNumber(total)} ${total === 1 ? 'customer business' : 'customer businesses'} with their shops and tills.`}
                 actions={
                     canManage && (
                         <Button asChild>

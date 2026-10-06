@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { country, currencyName } from '@/lib/country';
 import { cn } from '@/lib/utils';
 import { Link } from '@inertiajs/react';
 import { LoaderCircle } from 'lucide-react';
@@ -180,7 +181,10 @@ export function PlanForm({
                     {errors.billing_type && <p className="text-danger-foreground text-[13px]">{errors.billing_type}</p>}
                 </FormSection>
 
-                <FormSection title="Pricing" description="In pounds (GBP), before VAT. A business can have its own pricing on its Billing tab.">
+                <FormSection
+                    title="Pricing"
+                    description={`In ${currencyName()} (${country().currency}), before VAT. A business can have its own pricing on its Billing tab.`}
+                >
                     <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
                         {recurs && (
                             <Field
@@ -377,7 +381,7 @@ export function PlanForm({
                 </FormSection>
             </FormCard>
 
-            <StickyFormBar message={isDirty ? 'You have unsaved changes.' : 'Prices are in pounds, before VAT.'}>
+            <StickyFormBar message={isDirty ? 'You have unsaved changes.' : `Prices are in ${currencyName()}, before VAT.`}>
                 <Button variant="outline" asChild>
                     <Link href={cancelHref}>Cancel</Link>
                 </Button>

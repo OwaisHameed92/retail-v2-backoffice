@@ -10,12 +10,11 @@ import { StatusBadge } from '@/components/shared/status-badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import AdminLayout from '@/layouts/admin-layout';
+import { formatNumber } from '@/lib/country';
 import { cn } from '@/lib/utils';
 import { Head, router, useForm } from '@inertiajs/react';
 import { Download, FileSpreadsheet, LoaderCircle, Upload } from 'lucide-react';
 import { useEffect, useState, type FormEventHandler } from 'react';
-
-const number = new Intl.NumberFormat('en-GB');
 
 function ImportResult({ row }: { row: ImportRow }) {
     const [open, setOpen] = useState(false);
@@ -33,8 +32,8 @@ function ImportResult({ row }: { row: ImportRow }) {
                 </div>
                 <span className="text-muted-foreground text-sm tabular-nums">
                     {busy
-                        ? `${number.format(row.processed)} rows read…`
-                        : `${number.format(row.created)} added · ${number.format(row.updated)} updated · ${number.format(row.unchanged)} unchanged · ${number.format(row.failed)} not loaded`}
+                        ? `${formatNumber(row.processed)} rows read…`
+                        : `${formatNumber(row.created)} added · ${formatNumber(row.updated)} updated · ${formatNumber(row.unchanged)} unchanged · ${formatNumber(row.failed)} not loaded`}
                 </span>
                 <StatusBadge status={row.status} label={row.statusLabel} tone={IMPORT_TONES[row.status]} />
             </div>
@@ -46,7 +45,7 @@ function ImportResult({ row }: { row: ImportRow }) {
                         onClick={() => setOpen(!open)}
                         aria-expanded={open}
                     >
-                        {open ? 'Hide rows not loaded' : `Show rows not loaded (${number.format(row.failed)})`}
+                        {open ? 'Hide rows not loaded' : `Show rows not loaded (${formatNumber(row.failed)})`}
                     </button>
                     {open && (
                         <ul className="text-muted-foreground mt-2 grid max-h-64 gap-1 overflow-auto text-sm">
@@ -119,7 +118,7 @@ export default function MasterImports({ imports, columns }: ImportProps) {
                                 <FileSpreadsheet className="text-muted-foreground size-8" aria-hidden />
                                 <span className="text-sm font-medium">{data.file ? data.file.name : 'Choose a CSV file'}</span>
                                 <span className="text-muted-foreground text-sm">
-                                    {data.file ? `${number.format(Math.ceil(data.file.size / 1024))} KB` : 'The first line must name the columns.'}
+                                    {data.file ? `${formatNumber(Math.ceil(data.file.size / 1024))} KB` : 'The first line must name the columns.'}
                                 </span>
                                 <input
                                     id="file"

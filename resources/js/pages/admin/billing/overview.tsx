@@ -5,14 +5,16 @@ import { formatDate, plural } from '@/components/admin/billing/format';
 import { DueDate, InvoiceNumber } from '@/components/admin/billing/invoice-columns';
 import { type BillingOverviewProps, type InvoiceRow } from '@/components/admin/billing/types';
 import { EmptyState } from '@/components/shared/empty-state';
+import { MoneyIcon } from '@/components/shared/money-icon';
 import { PageHeader } from '@/components/shared/page-header';
 import { SectionCard } from '@/components/shared/section-card';
 import { StatCard, StatGrid } from '@/components/shared/stat-card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import AdminLayout from '@/layouts/admin-layout';
+import { formatMoney } from '@/lib/country';
 import { Head, Link, router } from '@inertiajs/react';
-import { AlarmClock, ArrowRight, Banknote, CalendarClock, CircleCheck, FileClock, FilePen, PauseCircle, PoundSterling, Receipt } from 'lucide-react';
+import { AlarmClock, ArrowRight, Banknote, CalendarClock, CircleCheck, FileClock, FilePen, PauseCircle, Receipt } from 'lucide-react';
 import { type KeyboardEvent } from 'react';
 
 function open(id: string) {
@@ -102,7 +104,7 @@ export default function BillingOverview({
                     label="Cash due"
                     value={stats.cashDue.amount}
                     hint={stats.cashDue.count === 0 ? 'Nothing owed' : `On ${plural(stats.cashDue.count, 'invoice')}`}
-                    icon={PoundSterling}
+                    icon={MoneyIcon}
                     href={route('admin.billing.invoices.index', { status: 'open' })}
                 />
                 <StatCard
@@ -231,7 +233,7 @@ export default function BillingOverview({
                     <SectionCard
                         title="Recent payments"
                         description={
-                            stats.creditHeld !== '£0.00'
+                            stats.creditHeld !== formatMoney(0)
                                 ? `${stats.creditHeld} is held as customer credit.`
                                 : 'Cash, bank transfers and other payments recorded by staff.'
                         }

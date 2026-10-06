@@ -22,10 +22,9 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import AppLayout from '@/layouts/app-layout';
+import { formatNumber } from '@/lib/country';
 import { Head, router } from '@inertiajs/react';
 import { AlertTriangle, ArrowRight, CircleCheck, Download, Info, MinusCircle, PackageCheck, PlusCircle } from 'lucide-react';
-
-const count = new Intl.NumberFormat('en-GB');
 
 /** Transfer discrepancies across shops (module 5.3): received transfers in a period, per route and line by line, at cost. */
 export default function TransferDiscrepancies(props: DiscrepancyProps) {
@@ -63,13 +62,13 @@ export default function TransferDiscrepancies(props: DiscrepancyProps) {
             <StatGrid columns={4}>
                 <StatCard
                     label="Transfers received"
-                    value={count.format(summary.transfers)}
+                    value={formatNumber(summary.transfers)}
                     hint={`${money(summary.sentValue)} sent at cost`}
                     icon={PackageCheck}
                 />
                 <StatCard
                     label="With discrepancies"
-                    value={count.format(summary.discrepant)}
+                    value={formatNumber(summary.discrepant)}
                     hint={
                         summary.transfers > 0
                             ? `${Math.round((summary.discrepant / summary.transfers) * 100)}% of transfers received`
@@ -127,8 +126,8 @@ export default function TransferDiscrepancies(props: DiscrepancyProps) {
                                                 {r.to}
                                             </span>
                                         </TableCell>
-                                        <TableCell className="text-right tabular-nums">{count.format(r.transfers)}</TableCell>
-                                        <TableCell className="text-right tabular-nums">{count.format(r.discrepant)}</TableCell>
+                                        <TableCell className="text-right tabular-nums">{formatNumber(r.transfers)}</TableCell>
+                                        <TableCell className="text-right tabular-nums">{formatNumber(r.discrepant)}</TableCell>
                                         <TableCell className={varianceClass(Number(r.short) > 0 ? '-1' : '0') + ' text-right'}>
                                             {qty(r.short)}
                                         </TableCell>
@@ -145,8 +144,8 @@ export default function TransferDiscrepancies(props: DiscrepancyProps) {
                         title="Lines that differ"
                         description={
                             truncated
-                                ? `The latest ${count.format(lines.length)} of ${count.format(lineCount)}. Export the CSV for all of them.`
-                                : `${count.format(lineCount)} ${lineCount === 1 ? 'line' : 'lines'}, newest receipt first.`
+                                ? `The latest ${formatNumber(lines.length)} of ${formatNumber(lineCount)}. Export the CSV for all of them.`
+                                : `${formatNumber(lineCount)} ${lineCount === 1 ? 'line' : 'lines'}, newest receipt first.`
                         }
                         flush
                     >

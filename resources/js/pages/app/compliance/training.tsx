@@ -5,6 +5,7 @@ import { FilterSelect } from '@/components/app/setup/fields';
 import { DataTable, useTableQuery } from '@/components/shared/data-table';
 import { EmptyState } from '@/components/shared/empty-state';
 import { StatCard, StatGrid } from '@/components/shared/stat-card';
+import { formatNumber } from '@/lib/country';
 import { type ColumnDef } from '@tanstack/react-table';
 import { CalendarClock, CalendarX, GraduationCap, Users } from 'lucide-react';
 
@@ -49,18 +50,18 @@ export default function ComplianceTraining({ records, summary, topics, soonDays,
             description={`Training the shops recorded for their staff (age checks, licensing, food safety…). Expiring soon = within ${soonDays} days.`}
         >
             <StatGrid>
-                <StatCard label="Training records" value={summary.total.toLocaleString('en-GB')} icon={GraduationCap} tone="neutral" />
-                <StatCard label="Staff trained" value={summary.staff.toLocaleString('en-GB')} icon={Users} tone="neutral" />
+                <StatCard label="Training records" value={formatNumber(summary.total)} icon={GraduationCap} tone="neutral" />
+                <StatCard label="Staff trained" value={formatNumber(summary.staff)} icon={Users} tone="neutral" />
                 <StatCard
                     label="Expiring soon"
-                    value={summary.expiring.toLocaleString('en-GB')}
+                    value={formatNumber(summary.expiring)}
                     hint={`Within ${soonDays} days`}
                     icon={CalendarClock}
                     tone={summary.expiring > 0 ? 'warning' : 'success'}
                 />
                 <StatCard
                     label="Expired"
-                    value={summary.expired.toLocaleString('en-GB')}
+                    value={formatNumber(summary.expired)}
                     hint="Retrain these staff"
                     icon={CalendarX}
                     tone={summary.expired > 0 ? 'danger' : 'success'}

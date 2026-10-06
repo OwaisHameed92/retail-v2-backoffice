@@ -1,4 +1,4 @@
-import { zonedDateFormat } from '@/lib/country';
+import { dateLocale, zonedDateFormat } from '@/lib/country';
 
 /** Matches App\Domain\Audit\Support\AuditPresenter::rows(). */
 export interface AuditEntry {
@@ -44,7 +44,7 @@ export interface AuditLogProps {
 }
 
 const timeFormat = () =>
-    zonedDateFormat('en-GB', {
+    zonedDateFormat(dateLocale(), {
         day: 'numeric',
         month: 'short',
         year: 'numeric',
@@ -53,7 +53,7 @@ const timeFormat = () =>
     });
 
 const secondsFormat = () =>
-    zonedDateFormat('en-GB', {
+    zonedDateFormat(dateLocale(), {
         day: 'numeric',
         month: 'short',
         year: 'numeric',

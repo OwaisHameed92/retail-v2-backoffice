@@ -36,7 +36,7 @@ final class TrialReminderMail extends BrandedMailable
             daysLeft: 2,
             trialEndsAt: now()->addDays(2)->startOfDay()->addHours(9),
             tillCount: 3,
-            priceSummary: '£25.00 per till per month',
+            priceSummary: MailFormat::money('25').' per till per month',
         ));
     }
 

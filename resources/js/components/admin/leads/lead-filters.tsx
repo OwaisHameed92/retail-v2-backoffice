@@ -1,11 +1,10 @@
 import { useTableQuery } from '@/components/shared/data-table';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectSeparator, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { formatNumber } from '@/lib/country';
 import { cn } from '@/lib/utils';
 import { UserRound, X } from 'lucide-react';
 import { type LeadIndexProps } from './types';
-
-const number = new Intl.NumberFormat('en-GB');
 
 export const LEAD_INDEX_ONLY = ['leads', 'board', 'filters', 'search', 'counts', 'mine', 'stats', 'view'];
 
@@ -19,7 +18,7 @@ const followUpOptions = [
 type FiltersProps = Pick<LeadIndexProps, 'filters' | 'counts' | 'statuses' | 'options' | 'mine' | 'view'>;
 
 function Count({ value }: { value: number | undefined }) {
-    return <span className="text-muted-foreground ml-1 tabular-nums">({number.format(value ?? 0)})</span>;
+    return <span className="text-muted-foreground ml-1 tabular-nums">({formatNumber(value ?? 0)})</span>;
 }
 
 /** Quick "My leads" toggle, then status (list only), source, assigned and follow-up filters. All live in the URL. */
@@ -42,7 +41,7 @@ export function LeadFilters({ filters, counts, statuses, options, mine, view }: 
             >
                 <UserRound className={cn(onlyMine ? 'text-primary' : 'text-muted-foreground')} />
                 My leads
-                <span className="text-muted-foreground tabular-nums">{number.format(mine)}</span>
+                <span className="text-muted-foreground tabular-nums">{formatNumber(mine)}</span>
             </Button>
 
             {view === 'list' && (

@@ -10,13 +10,13 @@ import { StatCard, StatGrid } from '@/components/shared/stat-card';
 import { StatusBadge } from '@/components/shared/status-badge';
 import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/app-layout';
+import { formatNumber } from '@/lib/country';
 import { Head, Link, router } from '@inertiajs/react';
 import { type ColumnDef } from '@tanstack/react-table';
 import { CheckCircle2, CircleOff, Pencil, Plus, Trash2, Truck } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
 const ONLY = ['suppliers', 'filters', 'counts'];
-const number = new Intl.NumberFormat('en-GB');
 const dash = <span className="text-muted-foreground">—</span>;
 
 export default function Suppliers({ suppliers, filters, counts, canEdit }: SupplierIndexProps) {
@@ -108,9 +108,9 @@ export default function Suppliers({ suppliers, filters, counts, canEdit }: Suppl
             {!canEdit && <ReadOnlyNotice what="Suppliers" />}
 
             <StatGrid columns={3}>
-                <StatCard label="Suppliers" value={number.format(counts.all)} icon={Truck} tone="neutral" />
-                <StatCard label="Active" value={number.format(counts.active)} hint="Shown on the tills" icon={CheckCircle2} tone="success" />
-                <StatCard label="Inactive" value={number.format(counts.inactive)} hint="Kept for past orders" icon={CircleOff} tone="neutral" />
+                <StatCard label="Suppliers" value={formatNumber(counts.all)} icon={Truck} tone="neutral" />
+                <StatCard label="Active" value={formatNumber(counts.active)} hint="Shown on the tills" icon={CheckCircle2} tone="success" />
+                <StatCard label="Inactive" value={formatNumber(counts.inactive)} hint="Kept for past orders" icon={CircleOff} tone="neutral" />
             </StatGrid>
 
             <DataTable

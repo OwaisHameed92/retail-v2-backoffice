@@ -1,14 +1,15 @@
 import { tillHealthColumns } from '@/components/admin/till-health/till-health-columns';
 import { TillHealthRules } from '@/components/admin/till-health/till-health-rules';
-import { ago } from '@/components/till-health/format';
-import { type HealthThresholds, type TillHealthFilter, type TillHealthListRow, type TillHealthSummary } from '@/components/till-health/types';
 import { DataTable, type Paginated } from '@/components/shared/data-table';
 import { EmptyState } from '@/components/shared/empty-state';
 import { PageHeader } from '@/components/shared/page-header';
 import { PageTabs } from '@/components/shared/page-tabs';
 import { StatCard, StatGrid } from '@/components/shared/stat-card';
+import { ago } from '@/components/till-health/format';
+import { type HealthThresholds, type TillHealthFilter, type TillHealthListRow, type TillHealthSummary } from '@/components/till-health/types';
 import { Button } from '@/components/ui/button';
 import AdminLayout from '@/layouts/admin-layout';
+import { formatNumber } from '@/lib/country';
 import { Head, Link, router } from '@inertiajs/react';
 import { Activity, CircleAlert, Clock, Monitor, WifiOff, X } from 'lucide-react';
 import { useMemo } from 'react';
@@ -19,8 +20,6 @@ interface TillHealthIndexProps {
     filters: { filter: TillHealthFilter | null; state: string | null; company: { id: string; name: string } | null };
     thresholds: HealthThresholds;
 }
-
-const number = new Intl.NumberFormat('en-GB');
 
 const tabs: { value: TillHealthFilter | null; label: string; count: (s: TillHealthSummary) => number }[] = [
     { value: null, label: 'All tills', count: (s) => s.tills },
@@ -46,12 +45,17 @@ export default function TillHealthIndex({ tills, summary, filters, thresholds }:
                 description={
                     summary.tills === 0
                         ? 'Online state, app versions, sync and clocks of every till.'
-                        : `${number.format(summary.tills)} ${summary.tills === 1 ? 'till' : 'tills'} in ${number.format(summary.shops)} ${summary.shops === 1 ? 'shop' : 'shops'}. Checked ${ago(summary.checkedAt, 'not yet')}, every ${thresholds.refreshMinutes} minutes.`
+                        : `${formatNumber(summary.tills)} ${summary.tills === 1 ? 'till' : 'tills'} in ${formatNumber(summary.shops)} ${summary.shops === 1 ? 'shop' : 'shops'}. Checked ${ago(summary.checkedAt, 'not yet')}, every ${thresholds.refreshMinutes} minutes.`
                 }
                 tabs={
                     <PageTabs
                         label="Till health filters"
-                        tabs={tabs.map((tab) => ({ label: tab.label, href: href(tab.value), active: filters.filter === tab.value, count: tab.count(summary) }))}
+                        tabs={tabs.map((tab) => ({
+                            label: tab.label,
+                            href: href(tab.value),
+                            active: filters.filter === tab.value,
+                            count: tab.count(summary),
+                        }))}
                     />
                 }
             />
@@ -74,21 +78,21 @@ export default function TillHealthIndex({ tills, summary, filters, thresholds }:
             <StatGrid>
                 <StatCard
                     label="Online"
-                    value={<span className="tabular-nums">{number.format(summary.online)}</span>}
-                    hint={activated > 0 ? `of ${number.format(activated)} activated tills` : 'No activated tills yet'}
+                    value={<span className="tabular-nums">{formatNumber(summary.online)}</span>}
+                    hint={activated > 0 ? `of ${formatNumber(activated)} activated tills` : 'No activated tills yet'}
                     icon={Monitor}
                     tone="success"
                 />
                 <StatCard
                     label="Stale"
-                    value={<span className="tabular-nums">{number.format(summary.stale)}</span>}
+                    value={<span className="tabular-nums">{formatNumber(summary.stale)}</span>}
                     hint="Heard from, but not recently"
                     icon={Clock}
                     tone="warning"
                 />
                 <StatCard
                     label="Offline"
-                    value={<span className="tabular-nums">{number.format(summary.offline)}</span>}
+                    value={<span className="tabular-nums">{formatNumber(summary.offline)}</span>}
                     hint={`No contact for ${thresholds.validateOfflineHours} h, or main till ${thresholds.syncOfflineHours} h`}
                     icon={WifiOff}
                     tone="danger"
@@ -96,7 +100,7 @@ export default function TillHealthIndex({ tills, summary, filters, thresholds }:
                 />
                 <StatCard
                     label="Needs attention"
-                    value={<span className="tabular-nums">{number.format(summary.attention)}</span>}
+                    value={<span className="tabular-nums">{formatNumber(summary.attention)}</span>}
                     hint="Offline, old version, sync or clock"
                     icon={CircleAlert}
                     tone={summary.attention > 0 ? 'danger' : 'neutral'}

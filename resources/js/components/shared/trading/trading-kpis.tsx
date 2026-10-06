@@ -1,8 +1,9 @@
+import { KpiCard, KpiGrid } from '@/components/shared/kpi-card';
+import { MoneyIcon } from '@/components/shared/money-icon';
+import { StatCard } from '@/components/shared/stat-card';
 import { changeDelta, money, moneyShort, number } from '@/components/shared/trading/format';
 import { type SalesDashboardData, type SalesTotals } from '@/components/shared/trading/types';
-import { KpiCard, KpiGrid } from '@/components/shared/kpi-card';
-import { StatCard } from '@/components/shared/stat-card';
-import { Banknote, Percent, PoundSterling, Receipt, ReceiptText, RotateCcw, ShoppingBasket, Tags, TrendingUp, XCircle } from 'lucide-react';
+import { Banknote, Percent, Receipt, ReceiptText, RotateCcw, ShoppingBasket, Tags, TrendingUp, XCircle } from 'lucide-react';
 
 /** "£11,540 previous period" under a headline tile. */
 function previousFooter(previous: string | null, label: string, format: (v: string) => string) {
@@ -38,7 +39,8 @@ function discountHint(totals: SalesTotals): string {
  */
 export function TradingKpis({ data }: { data: SalesDashboardData }) {
     const { headline, totals, changes } = data.kpis;
-    const versus = data.range.compareLabel + (data.range.isToday && data.range.compareFrom ? ` to ${String(data.range.hour + 1).padStart(2, '0')}:00` : '');
+    const versus =
+        data.range.compareLabel + (data.range.isToday && data.range.compareFrom ? ` to ${String(data.range.hour + 1).padStart(2, '0')}:00` : '');
     const label = data.range.compareFrom ? versus : '';
     const empty = totals.transactions === 0 && totals.refundCount === 0;
     // The range ends today: the sparkline's last point (today, or the hour now) is "so far", not a drop.
@@ -49,7 +51,7 @@ export function TradingKpis({ data }: { data: SalesDashboardData }) {
             <KpiGrid>
                 <KpiCard
                     label="Sales (inc VAT)"
-                    icon={PoundSterling}
+                    icon={MoneyIcon}
                     tone="primary"
                     value={empty ? null : moneyShort(headline.gross.value)}
                     emptyText="No sales in this period"

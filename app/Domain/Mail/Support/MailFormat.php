@@ -3,10 +3,11 @@
 namespace App\Domain\Mail\Support;
 
 use App\Domain\Shared\Country\Country;
+use App\Domain\Shared\Country\MoneyFormat;
 use Carbon\CarbonInterface;
 
 /**
- * Formatting used inside email templates: dates in the country profile's time zone, pounds, first names.
+ * Formatting used inside email templates: dates in the country profile's time zone, money in its currency, first names.
  */
 final class MailFormat
 {
@@ -29,10 +30,13 @@ final class MailFormat
         return $date->copy()->setTimezone(Country::zone())->format('j F Y \a\t H:i');
     }
 
-    /** "1234.5" → "£1,234.50" */
+    /**
+     * "1234.5" → "£1,234.50" (GB), "Rs 1,235" (PK). Negatives keep the UK mail style "£-5.00" on GB; other profiles
+     * write "-Rs 5". The amount is rounded to pence first exactly as UK mail always did (number_format of a float).
+     */
     public static function money(string $pounds): string
     {
-        return '£'.number_format((float) $pounds, 2, '.', ',');
+        return MoneyFormat::format(number_format((float) $pounds, 2, '.', ''), ukStyle: MoneyFormat::SIGN_AFTER_SYMBOL);
     }
 
     /** "Aisha Khan" → "Aisha" */

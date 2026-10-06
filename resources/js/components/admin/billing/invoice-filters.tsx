@@ -5,11 +5,11 @@ import { useTableQuery } from '@/components/shared/data-table';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { formatNumber } from '@/lib/country';
 import { Building2, X } from 'lucide-react';
 import { useState } from 'react';
 
 const ONLY = ['invoices', 'filters', 'totals', 'counts'];
-const number = new Intl.NumberFormat('en-GB');
 
 /** Status (with counts), business and issue date filters for the invoice list. All live in the URL. */
 export function InvoiceFilters({ filters, statuses, counts }: Pick<InvoiceIndexProps, 'filters' | 'statuses' | 'counts'>) {
@@ -27,12 +27,12 @@ export function InvoiceFilters({ filters, statuses, counts }: Pick<InvoiceIndexP
                 <SelectContent>
                     <SelectItem value="all">All statuses</SelectItem>
                     <SelectItem value="open">
-                        Unpaid<span className="text-muted-foreground ml-1 tabular-nums">({number.format(openCount)})</span>
+                        Unpaid<span className="text-muted-foreground ml-1 tabular-nums">({formatNumber(openCount)})</span>
                     </SelectItem>
                     {statuses.map((status) => (
                         <SelectItem key={status.value} value={status.value}>
                             {invoiceStatusLabels[status.value as InvoiceStatus]}
-                            <span className="text-muted-foreground ml-1 tabular-nums">({number.format(counts[status.value] ?? 0)})</span>
+                            <span className="text-muted-foreground ml-1 tabular-nums">({formatNumber(counts[status.value] ?? 0)})</span>
                         </SelectItem>
                     ))}
                 </SelectContent>
@@ -42,7 +42,13 @@ export function InvoiceFilters({ filters, statuses, counts }: Pick<InvoiceIndexP
                 <span className="bg-accent inline-flex h-9 max-w-full items-center gap-1 rounded-md border pr-1 pl-3 text-sm">
                     <Building2 className="text-muted-foreground size-4 shrink-0" aria-hidden />
                     <span className="truncate">{filters.company.name}</span>
-                    <Button variant="ghost" size="icon" className="size-7" aria-label={`Stop filtering by ${filters.company.name}`} onClick={() => update({ company: undefined, page: 1 })}>
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="size-7"
+                        aria-label={`Stop filtering by ${filters.company.name}`}
+                        onClick={() => update({ company: undefined, page: 1 })}
+                    >
                         <X className="size-4" />
                     </Button>
                 </span>

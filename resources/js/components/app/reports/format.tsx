@@ -1,14 +1,14 @@
 import { type CellValue, type ColumnType, type ReportFilters } from '@/components/app/reports/types';
 import { StatusBadge } from '@/components/shared/status-badge';
 import { money, number } from '@/components/shared/trading/format';
-import { zonedDateFormat } from '@/lib/country';
+import { dateFormat, dateLocale, formatNumber, zonedDateFormat } from '@/lib/country';
 import { cn } from '@/lib/utils';
 import { TriangleAlert } from 'lucide-react';
 import { type ReactNode } from 'react';
 
-const dateTime = () => zonedDateFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-const date = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' });
-const qty = new Intl.NumberFormat('en-GB', { maximumFractionDigits: 3 });
+const dateTime = () => zonedDateFormat(dateLocale(), { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+const date = () => dateFormat({ day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' });
+const qty = (value: number | string) => formatNumber(value, { maximumFractionDigits: 3 });
 
 /** Right-aligned column types (numbers). */
 export function isNumeric(type: ColumnType): boolean {
@@ -26,15 +26,15 @@ export function cellText(value: CellValue, type: ColumnType): string {
         case 'signedMoney':
             return money(String(value));
         case 'qty':
-            return qty.format(Number(value));
+            return qty(Number(value));
         case 'count':
             return number(Number(value));
         case 'percent':
-            return `${Number(value).toLocaleString('en-GB', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`;
+            return `${formatNumber(Number(value), { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`;
         case 'datetime':
             return dateTime().format(new Date(String(value)));
         case 'date':
-            return date.format(new Date(`${value}T00:00:00Z`));
+            return date().format(new Date(`${value}T00:00:00Z`));
         case 'flag':
             return value === true ? 'Over threshold' : '';
         case 'status':

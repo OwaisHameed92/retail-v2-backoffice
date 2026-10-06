@@ -3,8 +3,9 @@
  * Inertia prop `country` (config/country.php): app.tsx calls `setCountry()` once from the first page, so these plain
  * functions work outside components too; components can read the profile with `useCountry()`.
  *
- * GB output equals today's hard-coded 'en-GB' / 'GBP' / 'Europe/London' formatters (`shared/trading/format.ts`,
- * `admin/billing/money.ts`): "£1,234.50", "-£5.00", "24 Sept 2026". Callers move here in phase P2.
+ * GB output equals the hard-coded 'en-GB' / 'GBP' / 'Europe/London' formatters the pages used before the profiles:
+ * "£1,234.50", "-£5.00", "24 Sept 2026". Since phase P2 every money, number and date formatter of the front end goes
+ * through here (no `Intl.*('en-GB')` or `£` left in components).
  */
 import { type CountryProfile, type SharedData } from '@/types';
 import { usePage } from '@inertiajs/react';
@@ -33,7 +34,7 @@ export const GB_PROFILE: CountryProfile = {
 };
 
 let current: CountryProfile = GB_PROFILE;
-const cache = new Map<string, Intl.NumberFormat | Intl.DateTimeFormat>();
+const cache = new Map<string, Intl.NumberFormat | Intl.DateTimeFormat | Intl.RelativeTimeFormat>();
 
 /** Called once from app.tsx with the first page's `country` prop. */
 export function setCountry(profile: CountryProfile | null | undefined): void {
@@ -91,6 +92,41 @@ export function taxName(): string {
     return current.taxName;
 }
 
+/** "£" (GB), "Rs" (PK): for input prefixes and labels such as `Price (${currencySymbol()})`. */
+export function currencySymbol(): string {
+    return current.currencySymbol;
+}
+
+/** What goes before an amount: "£" (GB), "Rs " (PK). */
+export function moneyPrefix(): string {
+    return current.currencySymbol + (current.currencySymbolSpace ? ' ' : '');
+}
+
+/** True when the symbol is wider than one character ("Rs"): money inputs then need more room for the prefix. */
+export function wideCurrencySymbol(): boolean {
+    return current.currencySymbol.length > 1;
+}
+
+/** The currency in words for text: "pounds" (GB), "rupees" (PK). */
+export function currencyName(): string {
+    return ({ GBP: 'pounds', PKR: 'rupees' } as Record<string, string>)[current.currency] ?? current.currency;
+}
+
+/** True on the default profile (GB), whose screens keep the money styles they always had (see `formatMoneyAsGiven`). */
+export function keepsUkStyles(): boolean {
+    return current.code === GB_PROFILE.code;
+}
+
+/** The profile's locale for numbers: "en-GB", "en-PK". */
+export function numberLocale(): string {
+    return current.numberLocale;
+}
+
+/** The profile's locale for dates and relative times: "en-GB", "en-PK". */
+export function dateLocale(): string {
+    return current.dateLocale;
+}
+
 type Amount = string | number | null | undefined;
 
 const DASH = '—';
@@ -106,11 +142,27 @@ function numberFormat(options: Intl.NumberFormatOptions): Intl.NumberFormat {
     return format;
 }
 
-function dateFormat(options: Intl.DateTimeFormatOptions): Intl.DateTimeFormat {
+/**
+ * An `Intl.DateTimeFormat` in the profile's date locale with the given options (no time zone added: pass
+ * `timeZone: 'UTC'` for calendar days), cached until `setCountry()`. Build it when formatting, never at module load.
+ */
+export function dateFormat(options: Intl.DateTimeFormatOptions): Intl.DateTimeFormat {
     const key = `d|${current.dateLocale}|${JSON.stringify(options)}`;
     let format = cache.get(key) as Intl.DateTimeFormat | undefined;
     if (!format) {
         format = new Intl.DateTimeFormat(current.dateLocale, options);
+        cache.set(key, format);
+    }
+
+    return format;
+}
+
+/** An `Intl.RelativeTimeFormat` in the profile's date locale ("yesterday", "in 3 days"), cached until `setCountry()`. */
+export function relativeTimeFormat(options: Intl.RelativeTimeFormatOptions = {}): Intl.RelativeTimeFormat {
+    const key = `r|${current.dateLocale}|${JSON.stringify(options)}`;
+    let format = cache.get(key) as Intl.RelativeTimeFormat | undefined;
+    if (!format) {
+        format = new Intl.RelativeTimeFormat(current.dateLocale, options);
         cache.set(key, format);
     }
 
@@ -137,13 +189,14 @@ function joinParts(parts: Intl.NumberFormatPart[]): string {
 }
 
 /** Intl currency output with the profile's symbol ("£", "Rs") and spacing, whatever the browser's own symbol. */
-function currency(value: number, decimals: number): string {
+function currency(value: number, decimals: number, options: Intl.NumberFormatOptions = {}): string {
     const parts = numberFormat(
         grouping({
             style: 'currency',
             currency: current.currency,
             minimumFractionDigits: decimals,
             maximumFractionDigits: decimals,
+            ...options,
         }),
     ).formatToParts(value);
 
@@ -167,6 +220,59 @@ export function formatMoney(value: Amount): string {
 /** "£1,235" for big tiles: no decimals. */
 export function formatMoneyWhole(value: Amount): string {
     return value === null || value === undefined ? DASH : currency(Number(value), 0);
+}
+
+/** "£60", "£60.50" (GB): decimals only when the amount has them; PK "Rs 60" (whole rupees). */
+export function formatMoneyTrim(value: Amount): string {
+    return value === null || value === undefined ? DASH : currency(Number(value), current.displayDecimals, { minimumFractionDigits: 0 });
+}
+
+/** Chart axes: "£1.2K", "Rs 1.3M". */
+export function formatMoneyCompact(value: Amount): string {
+    return value === null || value === undefined
+        ? DASH
+        : currency(Number(value), 0, { notation: 'compact', minimumFractionDigits: undefined, maximumFractionDigits: 1 });
+}
+
+/**
+ * A cost or unit price with up to 4 decimal places, at least the profile's display decimals: GB "£0.4575", "£1.50"
+ * (the symbol and the number, as the cost columns always read), PK "Rs 12.5", "Rs 1,250".
+ */
+export function formatCost(value: Amount): string {
+    return value === null || value === undefined
+        ? DASH
+        : moneyPrefix() + formatNumber(value, { minimumFractionDigits: current.displayDecimals, maximumFractionDigits: 4 });
+}
+
+/**
+ * A raw decimal as GB screens have always shown it, the symbol and the text as given ("£1250.5", "£2.50"); any other
+ * profile formats it properly (`formatMoney`: "Rs 1,251"). For places that printed `£${value}`.
+ */
+export function formatMoneyAsGiven(value: string | number | null | undefined): string {
+    if (keepsUkStyles()) {
+        return `${current.currencySymbol}${value ?? ''}`;
+    }
+
+    return value === null || value === undefined || value === '' ? DASH : formatMoney(value);
+}
+
+/**
+ * Exact integer minor units (pence, paisa) as money without floating point sums: GB 123450 → "£1,234.50";
+ * PK → "Rs 1,235" (whole rupees, half away from zero).
+ */
+export function formatMinorUnits(minor: number): string {
+    const abs = Math.abs(minor);
+    if (current.displayDecimals === 2) {
+        return `${minor < 0 ? '-' : ''}${moneyPrefix()}${formatNumber(Math.floor(abs / 100))}.${String(abs % 100).padStart(2, '0')}`;
+    }
+    const whole = Math.round(abs / 100);
+
+    return `${minor < 0 && whole !== 0 ? '-' : ''}${moneyPrefix()}${formatNumber(whole)}`;
+}
+
+/** Text typed as money ("£1,234.5", "Rs 1,250") without the symbol, separators and spaces: "1234.5". */
+export function stripMoney(value: string): string {
+    return value.split(current.currencySymbol).join('').replace(/[,\s]/g, '');
 }
 
 /** "1,234" / "1,234.5" in the profile's locale and grouping (PK "1,25,000"); null → "—". */

@@ -1,10 +1,10 @@
 import { StatusPill, type StatusTone } from '@/components/shared/status-badge';
 import { money, number } from '@/components/shared/trading/format';
-import { zonedDateFormat } from '@/lib/country';
+import { dateLocale, zonedDateFormat } from '@/lib/country';
 import { cn } from '@/lib/utils';
 import { type ConsentState, type Option } from './types';
 
-const shopDate = () => zonedDateFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+const shopDate = () => zonedDateFormat(dateLocale(), { day: 'numeric', month: 'short', year: 'numeric' });
 
 /** "7 Oct 2026" in shop time. */
 export function dayLabel(iso: string | null | undefined): string {

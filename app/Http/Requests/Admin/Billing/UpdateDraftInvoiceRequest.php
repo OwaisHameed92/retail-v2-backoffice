@@ -51,7 +51,7 @@ class UpdateDraftInvoiceRequest extends BillingRequest
             'lines.*.description.required' => 'Describe the line.',
             'lines.*.quantity.regex' => 'Enter a quantity above 0 with up to 4 decimal places.',
             'lines.*.quantity.not_regex' => 'Enter a quantity above 0.',
-            'lines.*.unit_price.regex' => self::MONEY_MESSAGE,
+            'lines.*.unit_price.regex' => self::moneyMessage(),
         ];
     }
 

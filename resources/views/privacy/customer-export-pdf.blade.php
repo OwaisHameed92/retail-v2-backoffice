@@ -19,6 +19,10 @@
 </style>
 </head>
 <body>
+@php
+    // GB: "£" and the amount as stored ("£12.50"), as this export always printed; other profiles: MoneyFormat.
+    $money = fn ($v) => $v === null && ! \App\Domain\Shared\Country\MoneyFormat::keepsUkStyles() ? '' : \App\Domain\Shared\Country\MoneyFormat::format($v, ukStyle: \App\Domain\Shared\Country\MoneyFormat::AS_GIVEN);
+@endphp
     <h1>Personal data held about you</h1>
     <div class="muted">{{ $d['business'] }} · generated {{ $d['generatedAt'] }} (UTC)</div>
     <div class="rule"></div>
@@ -34,7 +38,7 @@
         <tr><td class="k">Tier</td><td>{{ $d['customer']['tier'] ?: '—' }}</td></tr>
         <tr><td class="k">Notes</td><td>{{ $d['customer']['notes'] ?: '—' }}</td></tr>
         <tr><td class="k">Customer since</td><td>{{ $d['customer']['createdAt'] ?? '—' }}</td></tr>
-        <tr><td class="k">Account balance</td><td>£{{ $d['account']['balance'] }} (positive = owed to the shop)</td></tr>
+        <tr><td class="k">Account balance</td><td>{{ $money($d['account']['balance']) }} (positive = owed to the shop)</td></tr>
         <tr><td class="k">Loyalty points</td><td>{{ $d['account']['points'] }}</td></tr>
     </table>
 
@@ -61,7 +65,7 @@
         <table>
             <tr><th>Date (UTC)</th><th>Type</th><th>Shop</th><th class="num">Amount</th><th class="num">Points</th></tr>
             @foreach (array_slice($d['ledger'], -200) as $r)
-                <tr><td>{{ $r['at'] }}</td><td>{{ $r['typeLabel'] }}</td><td>{{ $r['shop'] }}</td><td class="num">£{{ $r['amount'] }}</td><td class="num">{{ $r['points'] }}</td></tr>
+                <tr><td>{{ $r['at'] }}</td><td>{{ $r['typeLabel'] }}</td><td>{{ $r['shop'] }}</td><td class="num">{{ $money($r['amount']) }}</td><td class="num">{{ $r['points'] }}</td></tr>
             @endforeach
         </table>
         @if (count($d['ledger']) > 200)
@@ -76,7 +80,7 @@
         <table>
             <tr><th>Receipt</th><th>Completed (UTC)</th><th>Shop</th><th class="num">Total</th></tr>
             @foreach (array_slice($d['sales'], -200) as $s)
-                <tr><td>{{ $s['receiptNumber'] }}</td><td>{{ $s['completedAt'] ?? '—' }}</td><td>{{ $s['shop'] ?? '—' }}</td><td class="num">£{{ $s['total'] }}</td></tr>
+                <tr><td>{{ $s['receiptNumber'] }}</td><td>{{ $s['completedAt'] ?? '—' }}</td><td>{{ $s['shop'] ?? '—' }}</td><td class="num">{{ $money($s['total']) }}</td></tr>
             @endforeach
         </table>
         @if (count($d['sales']) > 200)

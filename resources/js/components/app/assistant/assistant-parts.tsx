@@ -1,5 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { formatNumber } from '@/lib/country';
 import { cn } from '@/lib/utils';
 import { ArrowUp, Check, Copy, Gauge, type LucideIcon, Plug, PowerOff, ShieldAlert, Sparkles, Square } from 'lucide-react';
 import { type KeyboardEvent, type Ref, useState } from 'react';
@@ -19,7 +20,7 @@ export interface AssistantUsageMeterProps {
 
 export function AssistantUsageMeter({ used, limit, percent, resetsOn }: AssistantUsageMeterProps) {
     return (
-        <div className="space-y-1" title={`${used.toLocaleString('en-GB')} of ${limit.toLocaleString('en-GB')} tokens`}>
+        <div className="space-y-1" title={`${formatNumber(used)} of ${formatNumber(limit)} tokens`}>
             <div className="text-muted-foreground flex justify-between gap-2 text-xs">
                 <span>This month's allowance: {percent}% used</span>
                 <span>Resets {resetsOn}</span>
@@ -33,7 +34,10 @@ export function AssistantUsageMeter({ used, limit, percent, resetsOn }: Assistan
                 aria-label="AI allowance used"
             >
                 <div
-                    className={cn('h-full rounded-full transition-[width]', percent >= 90 ? 'bg-destructive' : percent >= 75 ? 'bg-warning' : 'bg-primary')}
+                    className={cn(
+                        'h-full rounded-full transition-[width]',
+                        percent >= 90 ? 'bg-destructive' : percent >= 75 ? 'bg-warning' : 'bg-primary',
+                    )}
                     style={{ width: `${Math.min(100, Math.max(2, percent))}%` }}
                 />
             </div>

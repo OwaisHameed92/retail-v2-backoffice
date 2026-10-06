@@ -4,6 +4,7 @@ import { Field } from '@/components/admin/tenants/field';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { formatMoneyAsGiven } from '@/lib/country';
 import { useForm } from '@inertiajs/react';
 import { LoaderCircle } from 'lucide-react';
 import { type FormEventHandler } from 'react';
@@ -48,8 +49,10 @@ function PricingBody({ onOpenChange, company, pricing }: PricingDialogProps) {
                     <DialogTitle>Pricing for {company.name}</DialogTitle>
                     <DialogDescription>
                         Leave a field blank to use the plan’s
-                        {plan ? ` (${plan.name}: ${plan.modeLabel.toLowerCase()}, £${plan.monthly} a month, £${plan.yearly} a year)` : ''}. New
-                        invoices and the Direct Debit amount follow it from the next payment.
+                        {plan
+                            ? ` (${plan.name}: ${plan.modeLabel.toLowerCase()}, ${formatMoneyAsGiven(plan.monthly)} a month, ${formatMoneyAsGiven(plan.yearly)} a year)`
+                            : ''}
+                        . New invoices and the Direct Debit amount follow it from the next payment.
                     </DialogDescription>
                 </DialogHeader>
 

@@ -1,4 +1,6 @@
-const rtf = new Intl.RelativeTimeFormat('en-GB', { numeric: 'auto', style: 'narrow' });
+import { relativeTimeFormat } from '@/lib/country';
+
+const rtf = () => relativeTimeFormat({ numeric: 'auto', style: 'narrow' });
 
 /** Compact relative time for lists: "just now", "4m ago", "2h ago", "1d ago", "3w ago". Takes a UTC ISO string or Date. */
 export function relativeTime(value: string | Date, now: Date = new Date()): string {
@@ -27,7 +29,7 @@ export function relativeTime(value: string | Date, now: Date = new Date()): stri
     const amount = Math.floor(abs / size);
 
     if (unit === 'w' && amount > 8) {
-        return rtf.format(-Math.floor(abs / 2592000), 'month');
+        return rtf().format(-Math.floor(abs / 2592000), 'month');
     }
 
     return seconds >= 0 ? `${amount}${unit} ago` : `in ${amount}${unit}`;

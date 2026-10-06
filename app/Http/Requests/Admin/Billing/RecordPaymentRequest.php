@@ -48,11 +48,11 @@ class RecordPaymentRequest extends BillingRequest
             'method.required' => 'Choose how it was paid.',
             'method.in' => 'Choose cash, bank transfer or other.',
             'amount.required' => 'Enter the amount received.',
-            'amount.regex' => self::MONEY_MESSAGE,
-            'amount.not_regex' => 'Enter an amount above £0.00.',
+            'amount.regex' => self::moneyMessage(),
+            'amount.not_regex' => self::aboveZeroMessage(),
             'received_on.required' => 'Enter the date the money was received.',
             'received_on.before_or_equal' => 'The date cannot be in the future.',
-            'allocations.*.regex' => self::MONEY_MESSAGE,
+            'allocations.*.regex' => self::moneyMessage(),
         ];
     }
 

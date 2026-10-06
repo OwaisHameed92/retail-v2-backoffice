@@ -35,7 +35,7 @@
 <body>
 @php
     $money = fn (string $v) => \App\Domain\Billing\Support\BillingFormat::money($v);
-    $points = fn (int $v) => number_format($v);
+    $points = fn (int $v) => \App\Domain\Shared\Country\MoneyFormat::number($v);
     $b = $s['business'];
     $c = $s['customer'];
     $closing = $s['closing']['balance'];

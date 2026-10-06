@@ -5,11 +5,11 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { formatNumber } from '@/lib/country';
 import { sendJson } from '@/lib/http';
 import { Building2, LoaderCircle, Search, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
-const number = new Intl.NumberFormat('en-GB');
 const ONLY = ['licences', 'filters', 'counts'];
 
 interface TenantHit {
@@ -46,7 +46,12 @@ export function BusinessPicker({
         const timer = window.setTimeout(async () => {
             setLoading(true);
             try {
-                const result = await sendJson<{ tenants: TenantHit[] }>('GET', `${route('admin.search')}?q=${encodeURIComponent(query.trim())}`, undefined, controller.signal);
+                const result = await sendJson<{ tenants: TenantHit[] }>(
+                    'GET',
+                    `${route('admin.search')}?q=${encodeURIComponent(query.trim())}`,
+                    undefined,
+                    controller.signal,
+                );
                 setHits(result.data?.tenants ?? []);
             } catch {
                 // Aborted by the next keystroke.
@@ -70,8 +75,17 @@ export function BusinessPicker({
                 </DialogHeader>
                 <div className="relative">
                     <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2" aria-hidden />
-                    <Input autoFocus value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Business name or owner email" className="pl-8" aria-label="Search businesses" />
-                    {loading && <LoaderCircle className="text-muted-foreground absolute top-1/2 right-2.5 size-4 -translate-y-1/2 animate-spin" aria-hidden />}
+                    <Input
+                        autoFocus
+                        value={query}
+                        onChange={(e) => setQuery(e.target.value)}
+                        placeholder="Business name or owner email"
+                        className="pl-8"
+                        aria-label="Search businesses"
+                    />
+                    {loading && (
+                        <LoaderCircle className="text-muted-foreground absolute top-1/2 right-2.5 size-4 -translate-y-1/2 animate-spin" aria-hidden />
+                    )}
                 </div>
                 <ul className="grid max-h-72 gap-1 overflow-y-auto" aria-label="Businesses">
                     {hits.map((hit) => (
@@ -90,7 +104,9 @@ export function BusinessPicker({
                         </li>
                     ))}
                 </ul>
-                {query.trim().length >= 2 && !loading && hits.length === 0 && <p className="text-muted-foreground text-sm">No business matches “{query.trim()}”.</p>}
+                {query.trim().length >= 2 && !loading && hits.length === 0 && (
+                    <p className="text-muted-foreground text-sm">No business matches “{query.trim()}”.</p>
+                )}
                 {query.trim().length < 2 && <p className="text-muted-foreground text-sm">Type at least 2 characters.</p>}
             </DialogContent>
         </Dialog>
@@ -113,7 +129,7 @@ export function LicenceFilters({ filters, statuses, counts, plans }: Pick<Licenc
                     {statuses.map((status) => (
                         <SelectItem key={status.value} value={status.value}>
                             {licenceStatusLabels[status.value]}
-                            <span className="text-muted-foreground ml-1 tabular-nums">({number.format(counts[status.value] ?? 0)})</span>
+                            <span className="text-muted-foreground ml-1 tabular-nums">({formatNumber(counts[status.value] ?? 0)})</span>
                         </SelectItem>
                     ))}
                 </SelectContent>
@@ -137,7 +153,13 @@ export function LicenceFilters({ filters, statuses, counts, plans }: Pick<Licenc
                 <span className="bg-accent inline-flex h-9 max-w-full items-center gap-1 rounded-md border pr-1 pl-3 text-sm">
                     <Building2 className="text-muted-foreground size-4 shrink-0" aria-hidden />
                     <span className="truncate">{filters.company.name}</span>
-                    <Button variant="ghost" size="icon" className="size-7" aria-label={`Stop filtering by ${filters.company.name}`} onClick={() => update({ company: undefined, page: 1 })}>
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="size-7"
+                        aria-label={`Stop filtering by ${filters.company.name}`}
+                        onClick={() => update({ company: undefined, page: 1 })}
+                    >
                         <X className="size-4" />
                     </Button>
                 </span>

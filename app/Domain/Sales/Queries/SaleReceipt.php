@@ -3,6 +3,7 @@
 namespace App\Domain\Sales\Queries;
 
 use App\Domain\Sales\Support\SaleNames;
+use App\Domain\Shared\Country\Country;
 use App\Domain\Shared\Support\Money;
 use App\Domain\Tenancy\CurrentCompany;
 use App\Domain\Tenancy\Enums\Ability;
@@ -160,7 +161,7 @@ final class SaleReceipt
             'reference' => $kind === 'points' ? null : ($p->provider_ref ?: ($p->terminal_txn_id ?: null)),
             'pointsCustomer' => $kind === 'points' ? $names->customer($p->provider_ref ?: null) : null,
             'offline' => (bool) $p->is_offline,
-            'currency' => $p->currency && $p->currency !== 'GBP' && ! Money::isZero($p->foreign_amount ?? '0')
+            'currency' => $p->currency && $p->currency !== app(Country::class)->currency() && ! Money::isZero($p->foreign_amount ?? '0')
                 ? ['code' => $p->currency, 'amount' => self::money($p->foreign_amount), 'rate' => (string) $p->exchange_rate] : null,
         ];
     }

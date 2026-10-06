@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { zonedDateFormat } from '@/lib/country';
+import { currencySymbol, formatMoneyWhole, zonedDateFormat } from '@/lib/country';
 import { Lock, SlidersHorizontal, X } from 'lucide-react';
 import { type FormEvent, useState } from 'react';
 import { type SaleFiltersState, type SalesIndexProps } from './types';
@@ -182,11 +182,11 @@ function MoreFilters({ filters, update }: { filters: SaleFiltersState; update: (
             className="bg-subtle grid grid-cols-1 gap-3 rounded-lg border p-3 sm:grid-cols-[repeat(3,minmax(0,1fr))_auto] sm:items-end"
         >
             <div className="grid gap-1.5">
-                <Label htmlFor="sales-min">Amount from (£)</Label>
+                <Label htmlFor="sales-min">Amount from ({currencySymbol()})</Label>
                 <Input id="sales-min" inputMode="decimal" placeholder="0.00" value={min} onChange={(e) => setMin(e.target.value)} />
             </div>
             <div className="grid gap-1.5">
-                <Label htmlFor="sales-max">Amount to (£)</Label>
+                <Label htmlFor="sales-max">Amount to ({currencySymbol()})</Label>
                 <Input id="sales-max" inputMode="decimal" placeholder="Any" value={max} onChange={(e) => setMax(e.target.value)} />
             </div>
             <div className="grid gap-1.5">
@@ -207,7 +207,9 @@ function MoreFilters({ filters, update }: { filters: SaleFiltersState; update: (
                     Clear
                 </Button>
             </div>
-            <p className="text-muted-foreground text-xs sm:col-span-4">Amounts match refunds too (a £5 refund counts as £5).</p>
+            <p className="text-muted-foreground text-xs sm:col-span-4">
+                Amounts match refunds too (a {formatMoneyWhole(5)} refund counts as {formatMoneyWhole(5)}).
+            </p>
         </form>
     );
 }

@@ -13,6 +13,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import AppLayout from '@/layouts/app-layout';
+import { formatNumber } from '@/lib/country';
 import { cn } from '@/lib/utils';
 import { type SharedData } from '@/types';
 import { Head, Link, router, usePage } from '@inertiajs/react';
@@ -104,17 +105,12 @@ export default function ReorderSuggestions(props: SuggestionsProps) {
             )}
 
             <StatGrid>
-                <StatCard
-                    label="Lines to order"
-                    value={stats.lines.toLocaleString('en-GB')}
-                    icon={ClipboardList}
-                    hint="With at least one case suggested"
-                />
-                <StatCard label="Orders" value={stats.orders.toLocaleString('en-GB')} icon={Truck} hint="One per shop and supplier" tone="neutral" />
+                <StatCard label="Lines to order" value={formatNumber(stats.lines)} icon={ClipboardList} hint="With at least one case suggested" />
+                <StatCard label="Orders" value={formatNumber(stats.orders)} icon={Truck} hint="One per shop and supplier" tone="neutral" />
                 <StatCard label="Suggested cost" value={money(stats.cost)} icon={PackageCheck} hint="Ex VAT, at supplier case cost" tone="success" />
                 <StatCard
                     label="Worth a look"
-                    value={stats.attention.toLocaleString('en-GB')}
+                    value={formatNumber(stats.attention)}
                     icon={AlertTriangle}
                     hint="Running out, selling faster or slower, short life…"
                     tone={stats.attention > 0 ? 'warning' : 'neutral'}
@@ -173,7 +169,7 @@ export default function ReorderSuggestions(props: SuggestionsProps) {
                 <Alert variant="info">
                     <Info />
                     <AlertDescription>
-                        Showing the first {lines.length.toLocaleString('en-GB')} lines. Choose a shop, supplier or department to see the rest.
+                        Showing the first {formatNumber(lines.length)} lines. Choose a shop, supplier or department to see the rest.
                     </AlertDescription>
                 </Alert>
             )}

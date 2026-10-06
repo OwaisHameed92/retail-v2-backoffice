@@ -6,6 +6,7 @@ use App\Domain\Billing\Support\BillingFormat;
 use App\Domain\Mail\Contracts\RendersAttachment;
 use App\Domain\Mail\Data\CustomerStatementData;
 use App\Domain\Mail\Support\MailFormat;
+use App\Domain\Shared\Country\MoneyFormat;
 use App\Domain\Shared\Support\Money;
 use Illuminate\Mail\Mailables\Address;
 use Illuminate\Mail\Mailables\Attachment;
@@ -87,7 +88,7 @@ final class CustomerStatementMail extends BrandedMailable
             'facts' => [
                 'Period' => $this->data->period,
                 $label => BillingFormat::money(ltrim($balance, '-')),
-                'Points' => number_format($this->data->closingPoints),
+                'Points' => MoneyFormat::number($this->data->closingPoints),
             ],
         ]);
     }

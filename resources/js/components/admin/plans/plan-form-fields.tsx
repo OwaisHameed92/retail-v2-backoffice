@@ -1,6 +1,7 @@
 import { FormField, FormSection as SharedFormSection } from '@/components/shared/form-section';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
+import { currencySymbol, wideCurrencySymbol } from '@/lib/country';
 import { cn } from '@/lib/utils';
 import { type ComponentProps, type ReactNode } from 'react';
 
@@ -9,12 +10,12 @@ export function Field(props: { id: string; label: string; help?: ReactNode; erro
     return <FormField {...props} />;
 }
 
-/** Text input with a £ prefix. Keeps the value as a string; the server validates 2 dp. */
+/** Text input with the currency symbol as a prefix. Keeps the value as a string; the server validates 2 dp. */
 export function MoneyInput({ id, invalid, className, ...props }: ComponentProps<'input'> & { invalid?: boolean }) {
     return (
         <div className="relative">
             <span className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-sm" aria-hidden>
-                £
+                {currencySymbol()}
             </span>
             <Input
                 id={id}
@@ -24,7 +25,7 @@ export function MoneyInput({ id, invalid, className, ...props }: ComponentProps<
                 pattern="^\d{1,5}(\.\d{1,2})?$"
                 aria-invalid={invalid || undefined}
                 aria-describedby={invalid ? `${id}-error` : `${id}-help`}
-                className={cn('pl-7 tabular-nums', className)}
+                className={cn(wideCurrencySymbol() ? 'pl-10' : 'pl-7', 'tabular-nums', className)}
                 {...props}
             />
         </div>

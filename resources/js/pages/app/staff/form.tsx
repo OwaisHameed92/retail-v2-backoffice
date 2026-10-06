@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import AppLayout from '@/layouts/app-layout';
+import { currencySymbol } from '@/lib/country';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { CircleAlert, LoaderCircle } from 'lucide-react';
 import { type FormEventHandler } from 'react';
@@ -169,7 +170,13 @@ export default function StaffForm({ member, options, canEdit }: StaffFormProps) 
 
                         <FormSection title="Pay and hours" description="Used by the till's timesheets and wage reports.">
                             <FormGrid>
-                                <FormField id="rate_per_hour" label="Hourly rate (£)" optional help="Used for the wage estimate on Timesheets." error={errors.rate_per_hour}>
+                                <FormField
+                                    id="rate_per_hour"
+                                    label={`Hourly rate (${currencySymbol()})`}
+                                    optional
+                                    help="Used for the wage estimate on Timesheets."
+                                    error={errors.rate_per_hour}
+                                >
                                     <Input
                                         id="rate_per_hour"
                                         inputMode="decimal"

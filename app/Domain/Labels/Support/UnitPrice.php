@@ -2,6 +2,7 @@
 
 namespace App\Domain\Labels\Support;
 
+use App\Domain\Shared\Country\MoneyFormat;
 use App\Domain\TillData\Enums\UnitType;
 use App\Domain\TillData\Models\Product;
 
@@ -95,10 +96,14 @@ final class UnitPrice
         return bccomp($quantity, '0', 4) > 0 ? ['quantity' => $quantity, 'unit' => $base] : null;
     }
 
-    /** "1.5" → "£1.50"; under £1 as pence: "0.17" → "17p". */
+    /** GB "1.5" → "£1.50"; under £1 as pence: "0.17" → "17p". Other profiles: MoneyFormat ("Rs 2"). */
     public static function money(string $amount): string
     {
-        return bccomp($amount, '1', 2) < 0 ? ((int) bcmul($amount, '100', 0)).'p' : '£'.bcadd($amount, '0', 2);
+        if (! MoneyFormat::keepsUkStyles()) {
+            return MoneyFormat::format($amount);
+        }
+
+        return bccomp($amount, '1', 2) < 0 ? ((int) bcmul($amount, '100', 0)).'p' : MoneyFormat::format(bcadd($amount, '0', 2), ukStyle: MoneyFormat::AS_GIVEN);
     }
 
     /** Half up to pence (positive values only). */

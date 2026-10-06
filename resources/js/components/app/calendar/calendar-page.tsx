@@ -4,6 +4,7 @@ import { PageTabs } from '@/components/shared/page-tabs';
 import { StatusPill, type StatusTone } from '@/components/shared/status-badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import AppLayout from '@/layouts/app-layout';
+import { dateFormat } from '@/lib/country';
 import { Head, router } from '@inertiajs/react';
 import { Lock } from 'lucide-react';
 import { type ReactNode } from 'react';
@@ -17,17 +18,17 @@ const TABS: { key: CalendarTab; label: string; route: string }[] = [
     { key: 'events', label: 'Seasonal events', route: 'app.calendar.events' },
 ];
 
-const dayFormat = new Intl.DateTimeFormat('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' });
-const shortFormat = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' });
+const dayFormat = () => dateFormat({ weekday: 'short', day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' });
+const shortFormat = () => dateFormat({ day: 'numeric', month: 'short', timeZone: 'UTC' });
 
 /** "Fri 25 Dec 2026" from "2026-12-25". */
 export function longDay(day: string): string {
-    return dayFormat.format(new Date(`${day}T00:00:00Z`));
+    return dayFormat().format(new Date(`${day}T00:00:00Z`));
 }
 
 /** "20 Dec – 26 Dec 2026", or one day. */
 export function eventDates(from: string, to: string): string {
-    return from === to ? longDay(from) : `${shortFormat.format(new Date(`${from}T00:00:00Z`))} – ${longDay(to)}`;
+    return from === to ? longDay(from) : `${shortFormat().format(new Date(`${from}T00:00:00Z`))} – ${longDay(to)}`;
 }
 
 /** "07:00 – 22:00", with "(next day)" when the shop closes after midnight; "Open 24 hours" for the same time. */

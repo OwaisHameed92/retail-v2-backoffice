@@ -5,13 +5,15 @@ import { type ExceptionLogRow, type ExceptionsProps } from '@/components/app/com
 import { FilterSelect } from '@/components/app/setup/fields';
 import { DataTable, useTableQuery } from '@/components/shared/data-table';
 import { EmptyState } from '@/components/shared/empty-state';
+import { MoneyIcon } from '@/components/shared/money-icon';
 import { SectionCard } from '@/components/shared/section-card';
 import { StatCard, StatGrid } from '@/components/shared/stat-card';
 import { StatusPill } from '@/components/shared/status-badge';
 import { money } from '@/components/shared/trading/format';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { formatNumber } from '@/lib/country';
 import { type ColumnDef } from '@tanstack/react-table';
-import { Ban, Eye, ListX, PoundSterling } from 'lucide-react';
+import { Ban, Eye, ListX } from 'lucide-react';
 
 const columns: ColumnDef<ExceptionLogRow>[] = [
     {
@@ -61,22 +63,10 @@ export default function ComplianceExceptions({ staff, types, summary, log, filte
             </ComplianceFilters>
 
             <StatGrid>
-                <StatCard
-                    label="No sales"
-                    value={summary.noSales.toLocaleString('en-GB')}
-                    hint="Drawer opened without a sale"
-                    icon={Eye}
-                    tone="neutral"
-                />
-                <StatCard
-                    label="Voided lines"
-                    value={summary.voidedLines.toLocaleString('en-GB')}
-                    hint="Removed from a basket"
-                    icon={ListX}
-                    tone="neutral"
-                />
-                <StatCard label="Other exceptions" value={summary.other.toLocaleString('en-GB')} icon={Ban} tone="neutral" />
-                <StatCard label="Exception value" value={money(summary.amount)} hint="Sum of logged amounts" icon={PoundSterling} tone="neutral" />
+                <StatCard label="No sales" value={formatNumber(summary.noSales)} hint="Drawer opened without a sale" icon={Eye} tone="neutral" />
+                <StatCard label="Voided lines" value={formatNumber(summary.voidedLines)} hint="Removed from a basket" icon={ListX} tone="neutral" />
+                <StatCard label="Other exceptions" value={formatNumber(summary.other)} icon={Ban} tone="neutral" />
+                <StatCard label="Exception value" value={money(summary.amount)} hint="Sum of logged amounts" icon={MoneyIcon} tone="neutral" />
             </StatGrid>
 
             <SectionCard

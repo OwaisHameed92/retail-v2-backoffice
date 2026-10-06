@@ -5,6 +5,7 @@ import { PlanStatusBadge, planStatusHelp } from '@/components/admin/plans/plan-s
 import { type FeatureOption, type PlanActivityEntry, type PlanRecord } from '@/components/admin/plans/types';
 import { DescriptionList } from '@/components/shared/description-list';
 import { InitialsAvatar } from '@/components/shared/entity-cell';
+import { MoneyIcon } from '@/components/shared/money-icon';
 import { PageHeader } from '@/components/shared/page-header';
 import { SectionCard } from '@/components/shared/section-card';
 import { StatCard, StatGrid } from '@/components/shared/stat-card';
@@ -12,7 +13,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import AdminLayout from '@/layouts/admin-layout';
 import { Head, Link } from '@inertiajs/react';
-import { Archive, CalendarClock, CalendarRange, Check, Clock, Layers, Minus, Pencil, PoundSterling } from 'lucide-react';
+import { Archive, CalendarClock, CalendarRange, Check, Clock, Layers, Minus, Pencil } from 'lucide-react';
 
 interface ShowPlanProps {
     plan: PlanRecord;
@@ -77,7 +78,7 @@ export default function ShowPlan({ plan, features, activity }: ShowPlanProps) {
                         label="Setup fee"
                         value={formatMoney(plan.setupFee)}
                         hint="Setup fee only, + VAT, paid by hand. Paid in full = a licence that does not expire."
-                        icon={PoundSterling}
+                        icon={MoneyIcon}
                     />
                 ) : (
                     <StatCard
@@ -88,7 +89,7 @@ export default function ShowPlan({ plan, features, activity }: ShowPlanProps) {
                                 ? `Per ${plan.pricingMode === 'perBranch' ? 'branch' : 'till'} by Direct Debit · setup fee ${formatMoney(plan.setupFee)} + VAT`
                                 : `Per ${plan.pricingMode === 'perBranch' ? 'branch' : 'till'} by Direct Debit · no setup fee`
                         }
-                        icon={PoundSterling}
+                        icon={MoneyIcon}
                     />
                 )}
                 <StatCard

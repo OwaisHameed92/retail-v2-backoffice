@@ -11,6 +11,7 @@ use App\Domain\Reporting\Reports\ReportResult;
 use App\Domain\Reporting\Reports\ReportTable;
 use App\Domain\Reporting\ReportTables;
 use App\Domain\Reporting\Support\TradingDay;
+use App\Domain\Shared\Country\MoneyFormat;
 use App\Domain\Shared\Support\Money;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
@@ -88,7 +89,7 @@ final class HourlyReport implements ReportBuilder
         return new ReportResult([
             Figures::of('net', 'Net sales', $net),
             Figures::of('transactions', 'Transactions', $txns, 'count'),
-            Figures::of('busiest', 'Busiest hour', $byHour === [] ? null : (string) $busiest['label'], 'text', hint: $byHour === [] ? null : '£'.number_format((float) $busiest['net'], 2).' net sales'),
+            Figures::of('busiest', 'Busiest hour', $byHour === [] ? null : (string) $busiest['label'], 'text', hint: $byHour === [] ? null : MoneyFormat::format(number_format((float) $busiest['net'], 2, '.', ''), ukStyle: MoneyFormat::SIGN_AFTER_SYMBOL).' net sales'),
             Figures::of('perDay', 'Average day', Figures::average($net, $totalDays), 'money', hint: $totalDays.' days in range'),
         ], [
             new ReportTable('hours', 'By hour', [

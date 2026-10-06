@@ -1,8 +1,7 @@
 import { type CloudMove, type LocalKeyRecord } from '@/components/admin/cloud-link/types';
 import { Badge } from '@/components/ui/badge';
+import { formatNumber } from '@/lib/country';
 import { CircleCheck, CloudUpload, Copy, TriangleAlert } from 'lucide-react';
-
-const number = new Intl.NumberFormat('en-GB');
 
 export function MoveStatusBadge({ move }: { move: CloudMove }) {
     return move.status === 'complete' ? (
@@ -33,7 +32,7 @@ export function UploadProgress({ move }: { move: CloudMove }) {
                 <div className={move.status === 'complete' ? 'bg-success h-full' : 'bg-primary h-full'} style={{ width: `${move.percent}%` }} />
             </div>
             <div className="text-muted-foreground text-xs tabular-nums">
-                {number.format(move.receivedRows)} of {number.format(move.expectedRows)} rows · {move.percent}%
+                {formatNumber(move.receivedRows)} of {formatNumber(move.expectedRows)} rows · {move.percent}%
             </div>
         </div>
     );
@@ -60,4 +59,5 @@ export function LocalKeyBadges({ record }: { record: LocalKeyRecord }) {
     );
 }
 
-export { number as cloudNumber };
+/** Row counts for the Cloud link page, grouped the profile's way. */
+export const cloudNumber = { format: (value: number) => formatNumber(value) };

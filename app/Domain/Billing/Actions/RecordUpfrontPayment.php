@@ -14,6 +14,7 @@ use App\Domain\Billing\Models\Invoice;
 use App\Domain\Billing\Support\BillingAccounts;
 use App\Domain\Billing\Support\BillingFormat;
 use App\Domain\Shared\Actions\RecordAudit;
+use App\Domain\Shared\Country\MoneyFormat;
 use App\Domain\Shared\Support\Money;
 use App\Domain\Tenancy\Models\Company;
 use Carbon\CarbonImmutable;
@@ -51,7 +52,7 @@ class RecordUpfrontPayment
         }
 
         if ($input->setupFee !== null && Money::isNegative($input->setupFee)) {
-            throw ValidationException::withMessages(['upfront_amount' => 'The amount cannot be below £0.00.']);
+            throw ValidationException::withMessages(['upfront_amount' => 'The amount cannot be below '.MoneyFormat::format('0').'.']);
         }
 
         $net = DB::transaction(function () use ($company, $input) {

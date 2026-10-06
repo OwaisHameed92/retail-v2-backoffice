@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { zonedDateFormat } from '@/lib/country';
+import { dateLocale, zonedDateFormat } from '@/lib/country';
 import { cn } from '@/lib/utils';
 
 /** A branch's licence settings as form values (module 1.11). Field names match LicenceFormRules. */
@@ -274,7 +274,7 @@ export function describeLicence(licence: { kind: LicenceKind; lengthLabel: strin
     const kind = licence.kind === 'full' ? 'Full' : 'Trial';
     const length = licence.lengthLabel ?? 'plan trial';
     const from = licence.validFrom
-        ? ` from ${zonedDateFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(licence.validFrom))}`
+        ? ` from ${zonedDateFormat(dateLocale(), { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(licence.validFrom))}`
         : '';
 
     return `${kind} · ${length}${from}`;

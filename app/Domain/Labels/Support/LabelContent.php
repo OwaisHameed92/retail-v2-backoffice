@@ -6,6 +6,7 @@ use App\Domain\Labels\Models\LabelQueueItem;
 use App\Domain\Pricing\Support\ShopPrices;
 use App\Domain\Promotions\Support\PromotionSummary;
 use App\Domain\Shared\Country\Country;
+use App\Domain\Shared\Country\MoneyFormat;
 use App\Domain\Tenancy\Models\Branch;
 use App\Domain\TillData\Models\Product;
 use App\Domain\TillData\Models\ProductBarcode;
@@ -58,12 +59,12 @@ final class LabelContent
                 'productId' => $product->id,
                 'name' => (string) $product->name,
                 'price' => $price,
-                'priceText' => '£'.$price.($weighed ? '/kg' : ''),
+                'priceText' => MoneyFormat::format($price, ukStyle: MoneyFormat::AS_GIVEN).($weighed ? '/kg' : ''),
                 'unitPrice' => $weighed ? null : (UnitPrice::for($product, $price)['text'] ?? null),
                 'barcode' => Barcode::for($barcodes[$product->id] ?? $product->sku),
                 'offer' => $offer === null ? null : PromotionSummary::deal($offer),
                 'offerUntil' => $offer?->effective_to === null ? null : 'Ends '.$offer->effective_to->format('j M'),
-                'pmp' => $product->pmp_price !== null && bccomp((string) $product->pmp_price, '0', 2) > 0 ? 'PMP £'.$product->pmp_price : null,
+                'pmp' => $product->pmp_price !== null && bccomp((string) $product->pmp_price, '0', 2) > 0 ? 'PMP '.MoneyFormat::format($product->pmp_price, ukStyle: MoneyFormat::AS_GIVEN) : null,
                 'deposit' => $product->is_deposit_item && $product->deposit_amount !== null && bccomp((string) $product->deposit_amount, '0', 2) > 0
                     ? '+ '.UnitPrice::money((string) $product->deposit_amount).' deposit' : null,
                 'shop' => (string) ($shops[$item->branch_id] ?? ''),

@@ -1,22 +1,21 @@
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { currencySymbol, formatMoneyAsGiven, formatMoney as profileMoney, wideCurrencySymbol } from '@/lib/country';
 import { cn } from '@/lib/utils';
 import { type ComponentProps, type ReactNode } from 'react';
 import { type Option } from './types';
 
-const money = new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP' });
-
-/** "1.4500" → "£1.45"; costs keep up to 4 decimal places when they have them. */
+/** "1.4500" → "£1.45" (GB), "Rs 1" (PK); GB costs keep up to 4 decimal places when they have them. */
 export function formatMoney(value: string | null | undefined, places: 2 | 4 = 2): string {
     if (value === null || value === undefined || value === '') {
         return '—';
     }
     const number = Number(value);
     if (places === 4 && Math.round(number * 100) / 100 !== number) {
-        return `£${number.toFixed(4).replace(/0{1,2}$/, '')}`;
+        return formatMoneyAsGiven(number.toFixed(4).replace(/0{1,2}$/, ''));
     }
-    return money.format(number);
+    return profileMoney(number);
 }
 
 /** Gross margin on the sell price, after VAT: (net − cost) ÷ net. Null when it cannot be worked out. */
@@ -28,12 +27,12 @@ export function marginPercent(sell: string, cost: string, vatPercent: string | n
     return Math.round(((net - Number(cost)) / net) * 1000) / 10;
 }
 
-/** Text input for pounds: a £ prefix, the value kept as a string (the server checks the decimal places). */
+/** Text input for money: the currency symbol as a prefix, the value kept as a string (the server checks the decimal places). */
 export function MoneyInput({ id, invalid, className, places = 2, ...props }: ComponentProps<'input'> & { invalid?: boolean; places?: 2 | 4 }) {
     return (
         <div className="relative">
             <span className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-sm" aria-hidden>
-                £
+                {currencySymbol()}
             </span>
             <Input
                 id={id}
@@ -43,7 +42,7 @@ export function MoneyInput({ id, invalid, className, places = 2, ...props }: Com
                 pattern={places === 2 ? '^\\d{1,8}(\\.\\d{1,2})?$' : '^\\d{1,8}(\\.\\d{1,4})?$'}
                 aria-invalid={invalid || undefined}
                 aria-describedby={invalid ? `${id}-error` : `${id}-help`}
-                className={cn('pl-7 tabular-nums', className)}
+                className={cn(wideCurrencySymbol() ? 'pl-10' : 'pl-7', 'tabular-nums', className)}
                 {...props}
             />
         </div>
@@ -94,7 +93,11 @@ export function OptionSelect({
     disabled?: boolean;
 }) {
     return (
-        <Select value={value === '' ? (none ? '__none' : undefined) : value} onValueChange={(next) => onChange(next === '__none' ? '' : next)} disabled={disabled}>
+        <Select
+            value={value === '' ? (none ? '__none' : undefined) : value}
+            onValueChange={(next) => onChange(next === '__none' ? '' : next)}
+            disabled={disabled}
+        >
             <SelectTrigger id={id} aria-invalid={invalid || undefined} aria-describedby={invalid ? `${id}-error` : undefined} className="w-full">
                 <SelectValue placeholder={placeholder} />
             </SelectTrigger>

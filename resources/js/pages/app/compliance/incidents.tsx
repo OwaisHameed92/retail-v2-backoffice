@@ -6,6 +6,7 @@ import { DataTable, useTableQuery } from '@/components/shared/data-table';
 import { EmptyState } from '@/components/shared/empty-state';
 import { StatCard, StatGrid } from '@/components/shared/stat-card';
 import { StatusPill } from '@/components/shared/status-badge';
+import { formatNumber } from '@/lib/country';
 import { router } from '@inertiajs/react';
 import { type ColumnDef } from '@tanstack/react-table';
 import { FileWarning, Siren, Tags } from 'lucide-react';
@@ -65,10 +66,10 @@ export default function ComplianceIncidents({ incidents, categories, summary, fi
             description="Theft, abuse, accidents and other incidents the shops recorded on their tills, newest first."
         >
             <StatGrid columns={3}>
-                <StatCard label="Incidents" value={summary.total.toLocaleString('en-GB')} hint="In these dates" icon={FileWarning} tone="neutral" />
+                <StatCard label="Incidents" value={formatNumber(summary.total)} hint="In these dates" icon={FileWarning} tone="neutral" />
                 <StatCard
                     label="Reported to police"
-                    value={summary.police.toLocaleString('en-GB')}
+                    value={formatNumber(summary.police)}
                     hint="With a police reference"
                     icon={Siren}
                     tone="neutral"

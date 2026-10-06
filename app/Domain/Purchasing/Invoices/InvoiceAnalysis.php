@@ -4,6 +4,7 @@ namespace App\Domain\Purchasing\Invoices;
 
 use App\Domain\Purchasing\Enums\InvoiceImportStatus;
 use App\Domain\Purchasing\Models\InvoiceImport;
+use App\Domain\Shared\Country\MoneyFormat;
 use App\Domain\Shared\Support\Money;
 use App\Domain\TillData\Models\Product;
 use App\Domain\TillData\Models\SupplierInvoice;
@@ -53,7 +54,7 @@ final class InvoiceAnalysis
             if ($line['unitPrice'] === null) {
                 $issues[] = self::issue('warning', 'missingPrice', "Line {$n}: no price was read. Enter the price ex VAT.", $n);
             } elseif ($line['lineNet'] !== null && Money::compare(self::abs(Money::sub($calc, $line['lineNet'])), self::LINE_TOLERANCE) > 0) {
-                $issues[] = self::issue('warning', 'lineTotal', "Line {$n}: {$line['quantity']} × £{$line['unitPrice']} is £{$calc}, but the line total says £{$line['lineNet']}.", $n);
+                $issues[] = self::issue('warning', 'lineTotal', "Line {$n}: {$line['quantity']} × ".self::money($line['unitPrice']).' is '.self::money($calc).', but the line total says '.self::money($line['lineNet']).'.', $n);
             }
 
             if ($product === null) {
@@ -72,7 +73,7 @@ final class InvoiceAnalysis
             }
 
             if ($ref !== null && $costPerItem !== null && Money::compare($ref['unitCost'], $costPerItem) !== 0) {
-                $issues[] = self::issue('info', 'orderCost', "Line {$n}: £{$costPerItem} an item, £{$ref['unitCost']} on the ".($reference['source'] === 'delivery' ? 'delivery' : 'order').'.', $n);
+                $issues[] = self::issue('info', 'orderCost', "Line {$n}: ".self::money($costPerItem).' an item, '.self::money($ref['unitCost']).' on the '.($reference['source'] === 'delivery' ? 'delivery' : 'order').'.', $n);
             }
 
             $lines[] = [
@@ -120,13 +121,13 @@ final class InvoiceAnalysis
 
             if ($printed !== null && Money::compare(self::abs(Money::sub($printed, $totals[$key])), $tolerance) > 0) {
                 $label = ['net' => 'net total', 'vat' => 'VAT', 'gross' => 'total'][$key];
-                $issues[] = self::issue('warning', $key.'Total', "The lines add up to £{$totals[$key]} {$label}, but the invoice says £{$printed}.");
+                $issues[] = self::issue('warning', $key.'Total', 'The lines add up to '.self::money($totals[$key])." {$label}, but the invoice says ".self::money($printed).'.');
             }
         }
 
         if (($draft['netTotal'] ?? null) !== null && ($draft['vatTotal'] ?? null) !== null && ($draft['grossTotal'] ?? null) !== null
             && Money::compare(self::abs(Money::sub(Money::add($draft['netTotal'], $draft['vatTotal']), $draft['grossTotal'])), self::LINE_TOLERANCE) > 0) {
-            $issues[] = self::issue('warning', 'invoiceSum', "On the invoice, £{$draft['netTotal']} + £{$draft['vatTotal']} VAT is not £{$draft['grossTotal']}.");
+            $issues[] = self::issue('warning', 'invoiceSum', 'On the invoice, '.self::money($draft['netTotal']).' + '.self::money($draft['vatTotal']).' VAT is not '.self::money($draft['grossTotal']).'.');
         }
 
         if (($draft['supplierId'] ?? null) !== null && ($draft['invoiceNumber'] ?? null) !== null) {
@@ -176,6 +177,12 @@ final class InvoiceAnalysis
     private static function issue(string $level, string $code, string $message, ?int $line = null): array
     {
         return ['level' => $level, 'code' => $code, 'message' => $message, 'line' => $line];
+    }
+
+    /** GB "£12.5" exactly as read; other profiles keep the decimals a cost has ("Rs 12.5"). */
+    private static function money(?string $value): string
+    {
+        return MoneyFormat::cost($value, ukStyle: MoneyFormat::AS_GIVEN);
     }
 
     private static function abs(string $value): string

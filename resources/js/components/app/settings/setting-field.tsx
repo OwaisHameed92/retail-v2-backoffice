@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { currencySymbol, wideCurrencySymbol } from '@/lib/country';
 import { cn } from '@/lib/utils';
 import { Store, Undo2 } from 'lucide-react';
 import { displayValue, type SettingDefinition, type ShopSettingsProps } from './types';
@@ -111,7 +112,8 @@ export function SettingField({ definition, value, onChange, inherited, overrides
                         maxLength={definition.max}
                         placeholder={isShop && inherited?.from === 'everyShop' ? (inherited.value ?? '') : inheritLabel}
                         onChange={(e) => onChange(e.target.value)}
-                        aria-invalid={invalid} aria-describedby={describedBy}
+                        aria-invalid={invalid}
+                        aria-describedby={describedBy}
                     />
                 );
             case 'text':
@@ -122,27 +124,35 @@ export function SettingField({ definition, value, onChange, inherited, overrides
                         maxLength={definition.max}
                         placeholder={isShop && inherited?.from === 'everyShop' ? (inherited.value ?? '') : inheritLabel}
                         onChange={(e) => onChange(e.target.value)}
-                        aria-invalid={invalid} aria-describedby={describedBy}
+                        aria-invalid={invalid}
+                        aria-describedby={describedBy}
                     />
                 );
             default: {
-                const prefix = definition.type === 'money' || definition.unit === '£' ? '£' : null;
-                const suffix = definition.type === 'percent' ? '%' : definition.unit && definition.unit !== '£' ? definition.unit : null;
+                const prefix = definition.type === 'money' || definition.unit === currencySymbol() ? currencySymbol() : null;
+                const suffix = definition.type === 'percent' ? '%' : definition.unit && definition.unit !== currencySymbol() ? definition.unit : null;
 
                 return (
                     <div className="relative">
-                        {prefix && <span className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-sm">{prefix}</span>}
+                        {prefix && (
+                            <span className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-sm">
+                                {prefix}
+                            </span>
+                        )}
                         <Input
                             id={id}
                             inputMode={definition.type === 'int' ? 'numeric' : 'decimal'}
                             value={value}
                             placeholder={inheritLabel}
                             onChange={(e) => onChange(e.target.value)}
-                            className={cn('tabular-nums', prefix && 'pl-7', suffix && 'pr-20')}
-                            aria-invalid={invalid} aria-describedby={describedBy}
+                            className={cn('tabular-nums', prefix && (wideCurrencySymbol() ? 'pl-10' : 'pl-7'), suffix && 'pr-20')}
+                            aria-invalid={invalid}
+                            aria-describedby={describedBy}
                         />
                         {suffix && (
-                            <span className="text-muted-foreground pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-sm">{suffix}</span>
+                            <span className="text-muted-foreground pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-sm">
+                                {suffix}
+                            </span>
                         )}
                     </div>
                 );

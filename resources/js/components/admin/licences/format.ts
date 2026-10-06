@@ -1,6 +1,6 @@
 import { type LicenceStatus } from '@/components/admin/licences/types';
 import { type StatusToneMap } from '@/components/shared/status-badge';
-import { zonedDateFormat } from '@/lib/country';
+import { dateFormat, relativeTimeFormat, zonedDateFormat } from '@/lib/country';
 
 export { formatDate, formatDateTimeShort, plural } from '@/components/admin/tenants/format';
 
@@ -35,7 +35,7 @@ export const licenceStatusHelp: Record<LicenceStatus, string> = {
     revoked: 'Permanently cancelled. The key never works again.',
 };
 
-const relative = new Intl.RelativeTimeFormat('en-GB', { numeric: 'auto' });
+const relative = () => relativeTimeFormat({ numeric: 'auto' });
 
 const UNITS: [Intl.RelativeTimeFormatUnit, number][] = [
     ['year', 365 * 24 * 3600],
@@ -59,11 +59,11 @@ export function formatRelative(iso: string | null | undefined, fallback = 'Never
 
     for (const [unit, size] of UNITS) {
         if (Math.abs(seconds) >= size) {
-            return relative.format(Math.round(seconds / size), unit);
+            return relative().format(Math.round(seconds / size), unit);
         }
     }
 
-    return relative.format(Math.round(seconds / 60), 'minute');
+    return relative().format(Math.round(seconds / 60), 'minute');
 }
 
 /** Whole days from now until the date (negative when past). */
@@ -99,11 +99,11 @@ export function renewalPreview(term: 'month' | 'year', currentEnd: string | null
     return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 }
 
-const longDate = new Intl.DateTimeFormat('en-GB', { timeZone: 'UTC', day: 'numeric', month: 'short', year: 'numeric' });
+const longDate = () => dateFormat({ timeZone: 'UTC', day: 'numeric', month: 'short', year: 'numeric' });
 
 /** "2026-10-24" → "24 Oct 2026" (a calendar date, no time zone shift). */
 export function formatCalendarDate(ymd: string): string {
     const [y, m, d] = ymd.split('-').map(Number);
 
-    return longDate.format(new Date(Date.UTC(y, m - 1, d)));
+    return longDate().format(new Date(Date.UTC(y, m - 1, d)));
 }

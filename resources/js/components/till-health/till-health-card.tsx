@@ -3,6 +3,7 @@ import { SectionCard } from '@/components/shared/section-card';
 import { StatusPill } from '@/components/shared/status-badge';
 import { ago, clockSkewText, ProblemPills, shopDateTime, SyncStateBadge, TillStateBadge } from '@/components/till-health/format';
 import { type HealthThresholds, type ShopHealth, type TillHealth } from '@/components/till-health/types';
+import { formatNumber } from '@/lib/country';
 import { cn } from '@/lib/utils';
 import { Link } from '@inertiajs/react';
 
@@ -67,12 +68,7 @@ export function TillHealthCard({ till, shop, thresholds, listHref }: TillHealthC
         },
         {
             label: 'Waiting rows',
-            value:
-                till.pendingSyncRows === null ? (
-                    <span className="text-muted-foreground">Not reported</span>
-                ) : (
-                    till.pendingSyncRows.toLocaleString('en-GB')
-                ),
+            value: till.pendingSyncRows === null ? <span className="text-muted-foreground">Not reported</span> : formatNumber(till.pendingSyncRows),
         },
         { label: 'Problems', value: <ProblemPills problems={till.problems} /> },
     ];

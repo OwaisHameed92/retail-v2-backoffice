@@ -2,6 +2,7 @@
 
 namespace App\Domain\TillData\Actions;
 
+use App\Domain\Shared\Country\MoneyFormat;
 use App\Domain\Tenancy\CurrentCompany;
 use App\Domain\Tenancy\Models\Branch;
 use App\Domain\Tenancy\Models\Company;
@@ -45,7 +46,7 @@ final class SaveTillSetting
         }
 
         if ($value !== null && mb_strlen($value) > self::MAX_VALUE) {
-            throw ValidationException::withMessages(['value' => 'A setting can be at most '.number_format(self::MAX_VALUE).' characters.']);
+            throw ValidationException::withMessages(['value' => 'A setting can be at most '.MoneyFormat::number(self::MAX_VALUE).' characters.']);
         }
 
         $scopeId = $scope === SettingScope::Company ? $company->id : $branch->id;
