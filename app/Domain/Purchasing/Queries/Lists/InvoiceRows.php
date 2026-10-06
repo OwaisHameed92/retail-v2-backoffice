@@ -3,6 +3,7 @@
 namespace App\Domain\Purchasing\Queries\Lists;
 
 use App\Domain\Purchasing\Support\PurchasingNames;
+use App\Domain\Shared\Country\Country;
 use App\Domain\Shared\Support\Money;
 use App\Domain\TillData\Enums\SupplierInvoiceStatus;
 use App\Domain\TillData\Models\SupplierInvoice;
@@ -45,7 +46,7 @@ final class InvoiceRows extends DocumentRows
 
     protected function rows(array $rows, PurchasingNames $names): array
     {
-        $today = CarbonImmutable::now('Europe/London')->format('Y-m-d');
+        $today = CarbonImmutable::now(Country::zone())->format('Y-m-d');
         $deliveries = DB::table('goods_receipts')->whereIn('id', array_filter(array_map(fn ($r) => $r->goods_receipt_id, $rows)))
             ->pluck('delivery_note_number', 'id');
 
@@ -66,7 +67,7 @@ final class InvoiceRows extends DocumentRows
 
     public function stats(Builder $query): array
     {
-        $today = CarbonImmutable::now('Europe/London')->format('Y-m-d');
+        $today = CarbonImmutable::now(Country::zone())->format('Y-m-d');
         $unpaid = (clone $query)->where('status', '!=', 'draft')->where('balance', '>', 0);
         $overdue = (clone $unpaid)->where('due_date', '<', $today);
 

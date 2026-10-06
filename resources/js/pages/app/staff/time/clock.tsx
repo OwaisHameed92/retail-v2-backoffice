@@ -1,4 +1,4 @@
-import { clockTime, duration, FLAG_LABELS, formatDay, Hours, londonDay, number, ShiftStatusPill } from '@/components/app/staff-time/format';
+import { clockTime, duration, FLAG_LABELS, formatDay, Hours, number, ShiftStatusPill, shopDay } from '@/components/app/staff-time/format';
 import { TimeFilters, TimePageLayout } from '@/components/app/staff-time/time-page';
 import { type ClockProps, type ClockRow } from '@/components/app/staff-time/types';
 import { DataTable, useTableQuery } from '@/components/shared/data-table';
@@ -18,7 +18,9 @@ const columns: ColumnDef<ClockRow>[] = [
         cell: ({ row }) => (
             <div className="grid leading-5">
                 <span className="font-medium">{row.original.person}</span>
-                <span className="text-muted-foreground text-xs">{[row.original.shop, row.original.till].filter(Boolean).join(' · ') || 'Unknown shop'}</span>
+                <span className="text-muted-foreground text-xs">
+                    {[row.original.shop, row.original.till].filter(Boolean).join(' · ') || 'Unknown shop'}
+                </span>
             </div>
         ),
     },
@@ -39,7 +41,7 @@ const columns: ColumnDef<ClockRow>[] = [
         meta: { mobile: 'field', label: 'In and out' },
         cell: ({ row }) => {
             const r = row.original;
-            const overnight = r.clockIn && r.clockOut && londonDay(r.clockIn) !== londonDay(r.clockOut);
+            const overnight = r.clockIn && r.clockOut && shopDay(r.clockIn) !== shopDay(r.clockOut);
 
             return (
                 <div className="grid gap-0.5 text-sm leading-5 tabular-nums">
@@ -77,7 +79,9 @@ const columns: ColumnDef<ClockRow>[] = [
         id: 'breaks',
         header: 'Breaks',
         meta: { align: 'right', mobile: 'hidden' },
-        cell: ({ row }) => <span className="text-muted-foreground tabular-nums">{row.original.breakMinutes ? duration(row.original.breakMinutes) : '—'}</span>,
+        cell: ({ row }) => (
+            <span className="text-muted-foreground tabular-nums">{row.original.breakMinutes ? duration(row.original.breakMinutes) : '—'}</span>
+        ),
     },
     {
         id: 'worked',

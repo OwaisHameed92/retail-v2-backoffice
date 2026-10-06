@@ -2,6 +2,7 @@
 
 namespace App\Domain\Promotions\Support;
 
+use App\Domain\Shared\Country\Country;
 use App\Domain\TillData\Models\Category;
 use App\Domain\TillData\Models\Department;
 use App\Domain\TillData\Models\Product;
@@ -129,6 +130,6 @@ final class PromotionSummary
     /** London today, for status. */
     public static function today(): string
     {
-        return CarbonImmutable::now('Europe/London')->toDateString();
+        return CarbonImmutable::now(Country::zone())->toDateString();
     }
 }

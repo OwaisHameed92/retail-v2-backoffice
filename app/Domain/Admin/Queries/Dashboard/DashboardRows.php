@@ -6,6 +6,7 @@ use App\Domain\Billing\Enums\InvoiceStatus;
 use App\Domain\Billing\Models\Invoice;
 use App\Domain\Licensing\Models\Licence;
 use App\Domain\Plans\Models\Plan;
+use App\Domain\Shared\Country\Country;
 use App\Domain\Shared\Support\Money;
 use App\Domain\Tenancy\Models\Company;
 use Carbon\CarbonImmutable;
@@ -41,7 +42,7 @@ final class DashboardRows
     public static function load(CarbonImmutable $now): self
     {
         $weeks = Buckets::weeks($now, self::HISTORY_WEEKS);
-        $since = $weeks[0]['start']->min(Buckets::monthStart($now)->setTimezone(Buckets::TIMEZONE)->subMonthNoOverflow()->utc());
+        $since = $weeks[0]['start']->min(Buckets::monthStart($now)->setTimezone(Country::zone())->subMonthNoOverflow()->utc());
         $notGoneBefore = fn (string $column) => fn (Builder $q) => $q->whereNull($column)->orWhere($column, '>=', $since);
 
         return new self(

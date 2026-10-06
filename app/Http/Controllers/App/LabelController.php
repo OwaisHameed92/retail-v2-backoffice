@@ -9,6 +9,7 @@ use App\Domain\Labels\Actions\SaveLabelTemplate;
 use App\Domain\Labels\Actions\UpdateLabelQueue;
 use App\Domain\Labels\Queries\LabelProductSearch;
 use App\Domain\Labels\Queries\LabelQueuePage;
+use App\Domain\Shared\Country\Country;
 use App\Domain\Tenancy\CurrentCompany;
 use App\Domain\Tenancy\Models\Branch;
 use App\Http\Controllers\Controller;
@@ -81,7 +82,7 @@ class LabelController extends Controller
     {
         $shop = $request->shop();
         $pdf = $print->handle($shop, $request->ids(), $request->validated('template_id'), (int) $request->validated('skip', 0), $request->boolean('mark_printed'));
-        $name = 'shelf-labels-'.str($shop->name)->slug().'-'.CarbonImmutable::now('Europe/London')->format('Y-m-d-Hi').'.pdf';
+        $name = 'shelf-labels-'.str($shop->name)->slug().'-'.CarbonImmutable::now(Country::zone())->format('Y-m-d-Hi').'.pdf';
 
         return response($pdf, 200, [
             'Content-Type' => 'application/pdf',

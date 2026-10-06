@@ -5,6 +5,7 @@ namespace App\Domain\Promotions\Queries;
 use App\Domain\Promotions\Support\PriceTiers;
 use App\Domain\Promotions\Support\PromotionSummary;
 use App\Domain\Promotions\Support\PromotionTypes;
+use App\Domain\Shared\Country\Country;
 use App\Domain\Tenancy\CurrentCompany;
 use App\Domain\Tenancy\Enums\Ability;
 use App\Domain\Tenancy\Models\Branch;
@@ -29,7 +30,7 @@ final class PromotionForm
     {
         $tenancy = app(CurrentCompany::class);
         $restricted = $tenancy->restrictedBranchId();
-        $today = CarbonImmutable::now('Europe/London')->toDateString();
+        $today = CarbonImmutable::now(Country::zone())->toDateString();
         $items = $rule === null ? collect() : PromotionItem::query()->where('promotion_rule_id', $rule->id)->orderBy('group_no')->orderBy('created_at')->get();
         $num = fn (string $v) => rtrim(rtrim($v, '0'), '.') ?: '0';
 

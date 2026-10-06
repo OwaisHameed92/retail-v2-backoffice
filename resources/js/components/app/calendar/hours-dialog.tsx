@@ -4,6 +4,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { timeZoneLabel } from '@/lib/country';
 import { router, useForm } from '@inertiajs/react';
 import { Copy, LoaderCircle, Pencil, Plus } from 'lucide-react';
 import { useState } from 'react';
@@ -66,7 +67,7 @@ export function HoursDialog({ shop, defaults, canApplyToEveryShop }: HoursDialog
                     <DialogHeader>
                         <DialogTitle>Opening hours · {shop.name}</DialogTitle>
                         <DialogDescription>
-                            Times are UK time. A closing time before the opening time means the shop closes after midnight. The shop&apos;s tills get
+                            Times are {timeZoneLabel()} time. A closing time before the opening time means the shop closes after midnight. The shop&apos;s tills get
                             the hours at their next sync.
                         </DialogDescription>
                     </DialogHeader>

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Domain\Mail\Enums\EmailStatus;
 use App\Domain\Mail\Models\EmailLog;
 use App\Domain\Mail\Support\EmailTemplates;
+use App\Domain\Shared\Country\Country;
 use App\Domain\Shared\Support\TableQuery;
 use App\Http\Controllers\Controller;
 use Illuminate\Database\Eloquent\Builder;
@@ -20,8 +21,6 @@ use Inertia\Response;
  */
 class EmailLogController extends Controller
 {
-    private const TIMEZONE = 'Europe/London';
-
     public function index(Request $request): Response
     {
         $filters = $request->validate([
@@ -70,11 +69,11 @@ class EmailLogController extends Controller
 
         // Dates are picked as UK calendar days and compared in UTC.
         if (filled($filters['from'] ?? null)) {
-            $query->where('created_at', '>=', Carbon::createFromFormat('Y-m-d', (string) $filters['from'], self::TIMEZONE)?->startOfDay()->utc());
+            $query->where('created_at', '>=', Carbon::createFromFormat('Y-m-d', (string) $filters['from'], Country::zone())?->startOfDay()->utc());
         }
 
         if (filled($filters['to'] ?? null)) {
-            $query->where('created_at', '<=', Carbon::createFromFormat('Y-m-d', (string) $filters['to'], self::TIMEZONE)?->endOfDay()->utc());
+            $query->where('created_at', '<=', Carbon::createFromFormat('Y-m-d', (string) $filters['to'], Country::zone())?->endOfDay()->utc());
         }
     }
 

@@ -7,6 +7,7 @@ use App\Domain\Audit\Queries\AuditLogList;
 use App\Domain\Audit\Queries\AuditSearch;
 use App\Domain\Audit\Support\AuditCsv;
 use App\Domain\Shared\Actions\RecordAudit;
+use App\Domain\Shared\Country\Country;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -28,6 +29,6 @@ class AuditLogController extends Controller
         $filters = AuditFilters::fromRequest($request, true);
         $audit->handle('audit_log.exported', null, null, null, array_filter($filters->toArray()));
 
-        return AuditCsv::download(AuditSearch::query($filters, null), false, 'audit-log-'.now('Europe/London')->format('Y-m-d-His').'.csv');
+        return AuditCsv::download(AuditSearch::query($filters, null), false, 'audit-log-'.now(Country::zone())->format('Y-m-d-His').'.csv');
     }
 }

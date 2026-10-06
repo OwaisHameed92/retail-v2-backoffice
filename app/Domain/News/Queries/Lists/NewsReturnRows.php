@@ -4,6 +4,7 @@ namespace App\Domain\News\Queries\Lists;
 
 use App\Domain\Purchasing\Queries\Lists\DocumentRows;
 use App\Domain\Purchasing\Support\PurchasingNames;
+use App\Domain\Shared\Country\Country;
 use App\Domain\Shared\Support\Money;
 use App\Domain\TillData\Enums\NewsDeliveryStatus;
 use App\Domain\TillData\Models\NewsDelivery;
@@ -90,7 +91,7 @@ final class NewsReturnRows extends DocumentRows
 
     public function stats(Builder $query): array
     {
-        $since = CarbonImmutable::now('Europe/London')->subDays(29)->format('Y-m-d');
+        $since = CarbonImmutable::now(Country::zone())->subDays(29)->format('Y-m-d');
         $recent = NewsDeliveryRows::totals((clone $query)->where('delivery_date', '>=', $since));
         $all = NewsDeliveryRows::totals((new NewsDeliveryRows)->scoped($this->shop)->where('delivery_date', '>=', $since));
         $awaiting = clone $query;

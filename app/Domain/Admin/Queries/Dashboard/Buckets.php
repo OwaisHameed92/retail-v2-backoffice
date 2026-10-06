@@ -2,6 +2,7 @@
 
 namespace App\Domain\Admin\Queries\Dashboard;
 
+use App\Domain\Shared\Country\Country;
 use Carbon\CarbonImmutable;
 
 /**
@@ -13,8 +14,6 @@ use Carbon\CarbonImmutable;
  */
 final class Buckets
 {
-    public const TIMEZONE = 'Europe/London';
-
     /**
      * Weeks start on Monday 00:00 London.
      *
@@ -22,7 +21,7 @@ final class Buckets
      */
     public static function weeks(CarbonImmutable $now, int $count = 12, int $offset = 0): array
     {
-        $current = $now->setTimezone(self::TIMEZONE)->startOfWeek(CarbonImmutable::MONDAY)->startOfDay()->subWeeks($offset);
+        $current = $now->setTimezone(Country::zone())->startOfWeek(CarbonImmutable::MONDAY)->startOfDay()->subWeeks($offset);
         $buckets = [];
 
         for ($i = $count - 1; $i >= 0; $i--) {
@@ -40,7 +39,7 @@ final class Buckets
      */
     public static function months(CarbonImmutable $now, int $count, int $offset = 0): array
     {
-        $current = $now->setTimezone(self::TIMEZONE)->startOfMonth()->startOfDay()->subMonthsNoOverflow($offset);
+        $current = $now->setTimezone(Country::zone())->startOfMonth()->startOfDay()->subMonthsNoOverflow($offset);
         $buckets = [];
 
         for ($i = $count - 1; $i >= 0; $i--) {
@@ -63,6 +62,6 @@ final class Buckets
 
     public static function monthStart(CarbonImmutable $now): CarbonImmutable
     {
-        return $now->setTimezone(self::TIMEZONE)->startOfMonth()->startOfDay()->utc();
+        return $now->setTimezone(Country::zone())->startOfMonth()->startOfDay()->utc();
     }
 }

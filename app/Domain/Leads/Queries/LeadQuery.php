@@ -6,12 +6,12 @@ use App\Domain\Leads\Data\LeadFilters;
 use App\Domain\Leads\Enums\LeadStatus;
 use App\Domain\Leads\Models\Lead;
 use App\Domain\Leads\Support\PhoneDigits;
-use App\Domain\Mail\Support\MailFormat;
+use App\Domain\Shared\Country\Country;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
 
 /**
- * The admin lead list and board query: filters, search and the "today" boundaries in Europe/London.
+ * The admin lead list and board query: filters, search and the "today" boundaries in the shops' time zone.
  */
 final class LeadQuery
 {
@@ -88,10 +88,10 @@ final class LeadQuery
         });
     }
 
-    /** 23:59:59 today in Europe/London, as UTC. */
+    /** 23:59:59 today in the shops' time zone, as UTC. */
     public static function endOfToday(CarbonImmutable $now): CarbonImmutable
     {
-        return $now->setTimezone(MailFormat::TIMEZONE)->endOfDay()->utc();
+        return $now->setTimezone(Country::zone())->endOfDay()->utc();
     }
 
     /**

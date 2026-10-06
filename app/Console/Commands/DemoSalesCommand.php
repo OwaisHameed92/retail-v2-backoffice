@@ -23,7 +23,7 @@ class DemoSalesCommand extends Command
 
     protected $signature = 'demo:sales
         {--company= : Business id or exact name (default: the demo tenants)}
-        {--days=60 : Trading days to fill, ending today (Europe/London)}
+        {--days=60 : Trading days to fill, ending today (shop time zone)}
         {--fresh : Remove the business\'s earlier demo sales first}';
 
     protected $description = 'Generate demo till sales for the demo tenants and rebuild their reporting tables (never in production)';

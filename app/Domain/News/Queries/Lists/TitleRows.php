@@ -6,6 +6,7 @@ use App\Domain\News\Queries\NewsTitleForm;
 use App\Domain\News\Support\NewsAccess;
 use App\Domain\Purchasing\Queries\Lists\DocumentRows;
 use App\Domain\Purchasing\Support\PurchasingNames;
+use App\Domain\Shared\Country\Country;
 use App\Domain\Tenancy\CurrentCompany;
 use App\Domain\TillData\Models\NewsTitle;
 use Carbon\CarbonImmutable;
@@ -62,7 +63,7 @@ final class TitleRows extends DocumentRows
     {
         $ids = array_map(fn (NewsTitle $t) => $t->id, $rows);
         $company = app(CurrentCompany::class)->id();
-        $since = CarbonImmutable::now('Europe/London')->subDays(27)->format('Y-m-d');
+        $since = CarbonImmutable::now(Country::zone())->subDays(27)->format('Y-m-d');
         $sold = DB::table('news_delivery_lines as l')->join('news_deliveries as d', 'd.id', '=', 'l.delivery_id')
             ->where('l.company_id', $company)->whereIn('l.title_id', $ids)->where('d.delivery_date', '>=', $since)->whereNull('l.deleted_at')->whereNull('d.deleted_at')
             ->groupBy('l.title_id')->selectRaw('l.title_id, sum(coalesce(l.qty_in, 0)) as qty_in, sum(coalesce(l.qty_sold, 0)) as qty_sold')

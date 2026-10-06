@@ -5,6 +5,7 @@ namespace App\Domain\Mail\Mailables;
 use App\Domain\Mail\Data\OwnerDigestData;
 use App\Domain\Mail\Support\MailFormat;
 use App\Domain\Mail\Support\MorningSummaryMail;
+use App\Domain\Shared\Country\Country;
 use Carbon\CarbonImmutable;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Headers;
@@ -42,7 +43,7 @@ final class OwnerDigestMail extends BrandedMailable
         return new self(new OwnerDigestData(
             businessName: 'Khan Mini Mart',
             recipientName: 'Aisha Khan',
-            day: CarbonImmutable::now('Europe/London')->format('Y-m-d'),
+            day: CarbonImmutable::now(Country::zone())->format('Y-m-d'),
             sections: [
                 ['type' => 'lowStock', 'title' => 'Low and negative stock', 'summary' => '14 products low, 3 out of stock, 1 below zero.',
                     'items' => ['Leeds: Coca-Cola 500ml, -2 on hand', 'Leeds: Walkers Ready Salted 32.5g, 0 on hand', 'Bradford: Warburtons Toastie 800g, 3 on hand (low at 6)'],
@@ -92,7 +93,7 @@ final class OwnerDigestMail extends BrandedMailable
     {
         return new Content(markdown: 'mail.owner-digest', with: [
             'firstName' => MailFormat::firstName($this->data->recipientName),
-            'date' => MailFormat::date(CarbonImmutable::parse($this->data->day, MailFormat::TIMEZONE)),
+            'date' => MailFormat::date(CarbonImmutable::parse($this->data->day, Country::zone())),
             'summary' => $this->data->summary !== null ? MorningSummaryMail::lines($this->data->summary) : null,
         ]);
     }

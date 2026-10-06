@@ -1,20 +1,21 @@
 import { BrandWaves } from '@/components/shell/brand-waves';
+import { zonedDateFormat } from '@/lib/country';
 import { cn } from '@/lib/utils';
 import { Moon, Sun, type LucideIcon } from 'lucide-react';
 import { type ReactNode } from 'react';
 
-const londonHour = (now: Date) => Number(new Intl.DateTimeFormat('en-GB', { hour: 'numeric', hour12: false, timeZone: 'Europe/London' }).format(now));
+const shopHour = (now: Date) => Number(zonedDateFormat('en-GB', { hour: 'numeric', hour12: false }).format(now));
 
-/** "Good morning" / "Good afternoon" / "Good evening" for the current time in Europe/London. */
+/** "Good morning" / "Good afternoon" / "Good evening" for the current time in the profile's time zone. */
 export function greeting(now: Date = new Date()): string {
-    const hour = londonHour(now);
+    const hour = shopHour(now);
 
     return hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
 }
 
-/** The sun until 6pm, then the moon (Europe/London). */
+/** The sun until 6pm, then the moon (the profile's time zone). */
 function greetingIcon(now: Date = new Date()): LucideIcon {
-    const hour = londonHour(now);
+    const hour = shopHour(now);
 
     return hour < 18 ? Sun : Moon;
 }

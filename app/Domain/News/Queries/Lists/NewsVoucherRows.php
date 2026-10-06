@@ -6,6 +6,7 @@ use App\Domain\News\Support\NewsWeek;
 use App\Domain\Purchasing\Data\PurchasingFilters;
 use App\Domain\Purchasing\Queries\Lists\DocumentRows;
 use App\Domain\Purchasing\Support\PurchasingNames;
+use App\Domain\Shared\Country\Country;
 use App\Domain\Shared\Support\Money;
 use App\Domain\TillData\Models\NewsVoucherRedemption;
 use Carbon\CarbonImmutable;
@@ -73,7 +74,7 @@ final class NewsVoucherRows extends DocumentRows
     public function stats(Builder $query): array
     {
         $week = NewsWeek::current();
-        $from = CarbonImmutable::createFromFormat('!Y-m-d', $week->start, 'Europe/London')->utc();
+        $from = CarbonImmutable::createFromFormat('!Y-m-d', $week->start, Country::zone())->utc();
         $thisWeek = (clone $query)->where('redeemed_at', '>=', $from->format('Y-m-d H:i:s'));
         $unclaimed = (clone $query)->whereNull('claimed_at');
         $claimed = (clone $query)->where('claimed_at', '>=', CarbonImmutable::now('UTC')->subDays(30)->format('Y-m-d H:i:s'));

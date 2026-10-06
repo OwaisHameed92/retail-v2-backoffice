@@ -1,8 +1,8 @@
-import { ago, londonDateTime, ProblemPills, SyncStateBadge, TillStateBadge } from '@/components/till-health/format';
-import { type ShopsStatus } from '@/components/till-health/types';
 import { EmptyState } from '@/components/shared/empty-state';
 import { InitialsAvatar } from '@/components/shared/entity-cell';
 import { SectionCard } from '@/components/shared/section-card';
+import { ago, ProblemPills, shopDateTime, SyncStateBadge, TillStateBadge } from '@/components/till-health/format';
+import { type ShopsStatus } from '@/components/till-health/types';
 import { Badge } from '@/components/ui/badge';
 import { Monitor, Star, Store } from 'lucide-react';
 
@@ -36,7 +36,7 @@ export function ShopsStatusCard({ status }: { status: ShopsStatus }) {
                                             </Badge>
                                         </div>
                                         {shop.health && (
-                                            <p className="text-muted-foreground text-[13px]" title={londonDateTime(shop.health.lastContactAt)}>
+                                            <p className="text-muted-foreground text-[13px]" title={shopDateTime(shop.health.lastContactAt)}>
                                                 {shop.health.syncState === 'notLinked'
                                                     ? `Last heard from ${ago(shop.health.lastContactAt, 'never')}`
                                                     : `Last synced ${ago(shop.health.lastSyncAt, 'never')}`}
@@ -48,7 +48,10 @@ export function ShopsStatusCard({ status }: { status: ShopsStatus }) {
                                     <div className="flex shrink-0 flex-wrap items-center gap-2">
                                         <TillStateBadge state={shop.health.state} label={shop.health.stateLabel} />
                                         {shop.health.syncState !== 'notLinked' && (
-                                            <SyncStateBadge state={shop.health.syncState} label={`Sync: ${shop.health.syncStateLabel.toLowerCase()}`} />
+                                            <SyncStateBadge
+                                                state={shop.health.syncState}
+                                                label={`Sync: ${shop.health.syncStateLabel.toLowerCase()}`}
+                                            />
                                         )}
                                     </div>
                                 )}
@@ -74,7 +77,7 @@ export function ShopsStatusCard({ status }: { status: ShopsStatus }) {
                                                         )}
                                                     </div>
                                                     {till.health && till.health.state !== 'notActivated' && (
-                                                        <div className="text-muted-foreground text-xs" title={londonDateTime(till.health.lastSeenAt)}>
+                                                        <div className="text-muted-foreground text-xs" title={shopDateTime(till.health.lastSeenAt)}>
                                                             Seen {ago(till.health.lastSeenAt)}
                                                             {till.health.appVersion && ` · SSPOS ${till.health.appVersion}`}
                                                             {till.health.deviceName && ` · ${till.health.deviceName}`}

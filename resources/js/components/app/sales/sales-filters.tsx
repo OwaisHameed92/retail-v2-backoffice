@@ -5,13 +5,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { zonedDateFormat } from '@/lib/country';
 import { Lock, SlidersHorizontal, X } from 'lucide-react';
 import { type FormEvent, useState } from 'react';
 import { type SaleFiltersState, type SalesIndexProps } from './types';
 
-/** Today in London as `Y-m-d` (the shops' trading day). */
-function londonToday(): string {
-    return new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/London' }).format(new Date());
+/** Today in shop time as `Y-m-d` (the shops' trading day). */
+function shopToday(): string {
+    return zonedDateFormat('en-CA').format(new Date());
 }
 
 function addDays(day: string, days: number): string {
@@ -31,7 +32,7 @@ const PRESETS = [
 ];
 
 function presetRange(preset: string): { from: string; to: string } {
-    const today = londonToday();
+    const today = shopToday();
     switch (preset) {
         case 'today':
             return { from: today, to: today };
@@ -176,7 +177,10 @@ function MoreFilters({ filters, update }: { filters: SaleFiltersState; update: (
     };
 
     return (
-        <form onSubmit={submit} className="bg-subtle grid grid-cols-1 gap-3 rounded-lg border p-3 sm:grid-cols-[repeat(3,minmax(0,1fr))_auto] sm:items-end">
+        <form
+            onSubmit={submit}
+            className="bg-subtle grid grid-cols-1 gap-3 rounded-lg border p-3 sm:grid-cols-[repeat(3,minmax(0,1fr))_auto] sm:items-end"
+        >
             <div className="grid gap-1.5">
                 <Label htmlFor="sales-min">Amount from (£)</Label>
                 <Input id="sales-min" inputMode="decimal" placeholder="0.00" value={min} onChange={(e) => setMin(e.target.value)} />

@@ -6,6 +6,7 @@ import { StatusPill } from '@/components/shared/status-badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import AppLayout from '@/layouts/app-layout';
+import { zonedDateFormat } from '@/lib/country';
 import { Head } from '@inertiajs/react';
 import { Lock } from 'lucide-react';
 import { type ReactNode } from 'react';
@@ -33,8 +34,8 @@ function shopOnly(filters: ComplianceFiltersState): Record<string, string> {
     return filters.shopLocked ? {} : { shop: filters.shop ?? 'all' };
 }
 
-function londonToday(): string {
-    return new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/London' }).format(new Date());
+function shopToday(): string {
+    return zonedDateFormat('en-CA').format(new Date());
 }
 
 function addDays(day: string, days: number): string {
@@ -45,11 +46,11 @@ function addDays(day: string, days: number): string {
 }
 
 const PRESETS: { value: string; label: string; range: () => { from: string; to: string } }[] = [
-    { value: '7', label: 'Last 7 days', range: () => ({ from: addDays(londonToday(), -6), to: londonToday() }) },
-    { value: '30', label: 'Last 30 days', range: () => ({ from: addDays(londonToday(), -29), to: londonToday() }) },
-    { value: '90', label: 'Last 90 days', range: () => ({ from: addDays(londonToday(), -89), to: londonToday() }) },
-    { value: 'month', label: 'This month', range: () => ({ from: `${londonToday().slice(0, 8)}01`, to: londonToday() }) },
-    { value: 'year', label: 'Last 12 months', range: () => ({ from: addDays(londonToday(), -365), to: londonToday() }) },
+    { value: '7', label: 'Last 7 days', range: () => ({ from: addDays(shopToday(), -6), to: shopToday() }) },
+    { value: '30', label: 'Last 30 days', range: () => ({ from: addDays(shopToday(), -29), to: shopToday() }) },
+    { value: '90', label: 'Last 90 days', range: () => ({ from: addDays(shopToday(), -89), to: shopToday() }) },
+    { value: 'month', label: 'This month', range: () => ({ from: `${shopToday().slice(0, 8)}01`, to: shopToday() }) },
+    { value: 'year', label: 'Last 12 months', range: () => ({ from: addDays(shopToday(), -365), to: shopToday() }) },
 ];
 
 interface FiltersProps extends Pick<CompliancePageProps, 'filters' | 'options'> {
@@ -59,7 +60,7 @@ interface FiltersProps extends Pick<CompliancePageProps, 'filters' | 'options'> 
     children?: ReactNode;
 }
 
-/** Dates (presets or custom, London days), shop (pinned for a one-shop user), staff member and page-specific filters. */
+/** Dates (presets or custom, shop days), shop (pinned for a one-shop user), staff member and page-specific filters. */
 export function ComplianceFilters({ filters, options, update, dates = true, staff = true, children }: FiltersProps) {
     const preset = PRESETS.find((p) => {
         const r = p.range();

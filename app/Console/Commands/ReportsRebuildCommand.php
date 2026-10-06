@@ -16,7 +16,7 @@ class ReportsRebuildCommand extends Command
 
     protected $signature = 'reports:rebuild
         {--company=* : Only these business ids}
-        {--from= : First trading day (Y-m-d, Europe/London)}
+        {--from= : First trading day (Y-m-d, shop time zone)}
         {--to= : Last trading day (Y-m-d)}';
 
     protected $description = 'Rebuild the reporting tables (rpt_*) from the raw till rows';

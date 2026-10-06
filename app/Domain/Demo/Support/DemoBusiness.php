@@ -63,7 +63,7 @@ final readonly class DemoBusiness
         return $this->shops[0]['shop'];
     }
 
-    /** A local (Europe/London) time on a day "n days ago" (0 = today), as UTC. */
+    /** A local (shop time zone) time on a day "n days ago" (0 = today), as UTC. */
     public function at(int $daysAgo, int $hour, int $minute = 0, int $second = 0): CarbonImmutable
     {
         return CarbonImmutable::parse($this->today, TradingDay::timezone())->subDays($daysAgo)->setTime($hour, $minute, $second)->utc();

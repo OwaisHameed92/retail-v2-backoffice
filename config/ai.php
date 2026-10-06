@@ -115,7 +115,7 @@ return [
     ],
 
     /*
-    | Monthly token budgets (input + cache writes + cache reads + output), per calendar month in Europe/London.
+    | Monthly token budgets (input + cache writes + cache reads + output), per calendar month in the shops' time zone.
     | `plans` overrides the default by plan code, e.g. 'pro' => 5_000_000. 0 = no AI for that plan.
     | The plan must also include the AI feature: assist_questions (assistant), assist_invoice_scan (invoice import) or
     | assist (morning summary, reorder suggestions, anomaly alerts).

@@ -3,6 +3,7 @@
 namespace App\Domain\Promotions\Queries;
 
 use App\Domain\Promotions\Support\PromotionSummary;
+use App\Domain\Shared\Country\Country;
 use App\Domain\Shared\Support\TableQuery;
 use App\Domain\Tenancy\CurrentCompany;
 use App\Domain\Tenancy\Enums\Ability;
@@ -26,7 +27,7 @@ final class PromotionList
     {
         $tenancy = app(CurrentCompany::class);
         $restricted = $tenancy->restrictedBranchId();
-        $today = CarbonImmutable::now('Europe/London')->toDateString();
+        $today = CarbonImmutable::now(Country::zone())->toDateString();
         $status = in_array($request->query('status'), ['live', 'scheduled', 'ended'], true) ? (string) $request->query('status') : 'all';
         $shop = is_string($request->query('shop')) ? (string) $request->query('shop') : 'all';
         $table = TableQuery::from($request)->searchable(['name', 'coupon_code'])->sortable(['name', 'effective_from', 'effective_to', 'updated_at'])

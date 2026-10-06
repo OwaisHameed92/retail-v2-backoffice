@@ -1,3 +1,5 @@
+import { zonedDateFormat } from '@/lib/country';
+
 /** Matches App\Domain\Audit\Support\AuditPresenter::rows(). */
 export interface AuditEntry {
     id: string;
@@ -41,30 +43,30 @@ export interface AuditLogProps {
     };
 }
 
-const timeFormat = new Intl.DateTimeFormat('en-GB', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-    timeZone: 'Europe/London',
-});
+const timeFormat = () =>
+    zonedDateFormat('en-GB', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+    });
 
-const secondsFormat = new Intl.DateTimeFormat('en-GB', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    timeZone: 'Europe/London',
-});
+const secondsFormat = () =>
+    zonedDateFormat('en-GB', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+    });
 
-/** "24 Sept 2026, 09:41" (Europe/London). */
+/** "24 Sept 2026, 09:41" (the profile's time zone). */
 export function formatAuditTime(iso: string | null, withSeconds = false): string {
     if (!iso) {
         return '—';
     }
 
-    return (withSeconds ? secondsFormat : timeFormat).format(new Date(iso));
+    return (withSeconds ? secondsFormat : timeFormat)().format(new Date(iso));
 }

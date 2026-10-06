@@ -5,13 +5,13 @@ namespace App\Domain\Leads\Queries;
 use App\Domain\Leads\Data\LeadStatsData;
 use App\Domain\Leads\Enums\LeadStatus;
 use App\Domain\Leads\Models\Lead;
-use App\Domain\Mail\Support\MailFormat;
+use App\Domain\Shared\Country\Country;
 use Carbon\CarbonImmutable;
 
 /**
  * Lead numbers for the lead list and the admin dashboard (module 1.9). Archived leads are left out.
  *
- * - newThisWeek: leads received since Monday 00:00 (Europe/London)
+ * - newThisWeek: leads received since Monday 00:00 (shop time zone)
  * - awaitingContact: leads still "new" (nobody has marked them contacted)
  * - followUpsDue: open leads with a follow-up by the end of today (overdue included); `overdueFollowUps` of those
  *   are already late
@@ -25,7 +25,7 @@ final class LeadStats
     public static function compute(?CarbonImmutable $now = null): LeadStatsData
     {
         $now ??= CarbonImmutable::now();
-        $weekStart = $now->setTimezone(MailFormat::TIMEZONE)->startOfWeek(CarbonImmutable::MONDAY)->utc();
+        $weekStart = $now->setTimezone(Country::zone())->startOfWeek(CarbonImmutable::MONDAY)->utc();
         $windowStart = $now->subDays(self::CONVERSION_WINDOW_DAYS);
 
         $received = Lead::query()->where('created_at', '>=', $windowStart)->count();

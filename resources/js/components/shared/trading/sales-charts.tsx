@@ -3,6 +3,7 @@ import { EmptyState } from '@/components/shared/empty-state';
 import { CompareChart, type ComparePoint } from '@/components/shared/trading/compare-chart';
 import { changeDelta, hourLabel, money, moneyAxis, moneyShort, number, shortDay, weekday } from '@/components/shared/trading/format';
 import { type SalesDashboardData } from '@/components/shared/trading/types';
+import { timeZone } from '@/lib/country';
 import { BarChart3, Clock } from 'lucide-react';
 import { useState } from 'react';
 
@@ -60,7 +61,7 @@ export function SalesTrendCard({ data }: { data: SalesDashboardData }) {
     return (
         <ChartCard
             title={byDay ? 'Sales by day' : 'Sales by hour'}
-            subtitle={byDay ? `${metricName[metric]}, ${data.range.days} trading days` : `${metricName[metric]}, Europe/London time`}
+            subtitle={byDay ? `${metricName[metric]}, ${data.range.days} trading days` : `${metricName[metric]}, ${timeZone()} time`}
             icon={BarChart3}
             controls={<SegmentedControl label="Figure" options={metrics} value={metric} onChange={setMetric} />}
             stat={

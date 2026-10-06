@@ -2,6 +2,7 @@
 
 namespace App\Domain\Transfers\Support;
 
+use App\Domain\Shared\Country\Country;
 use App\Domain\Tenancy\CurrentCompany;
 use App\Domain\TillData\Models\StockTransfer;
 use App\Domain\Transfers\Data\TransferFilters;
@@ -11,7 +12,7 @@ use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
 
 /**
- * CSV exports of module 5.3: the filtered transfer list and the discrepancy lines. Dates in Europe/London, money and
+ * CSV exports of module 5.3: the filtered transfer list and the discrepancy lines. Dates in the shops' time zone, money and
  * quantities as plain decimals, and any cell starting with = + - @ is quoted so a spreadsheet never runs it.
  */
 final class TransfersCsv
@@ -82,7 +83,7 @@ final class TransfersCsv
 
     private static function day(mixed $utc): string
     {
-        return is_string($utc) && $utc !== '' ? CarbonImmutable::parse($utc)->setTimezone('Europe/London')->format('Y-m-d H:i') : '';
+        return is_string($utc) && $utc !== '' ? CarbonImmutable::parse($utc)->setTimezone(Country::zone())->format('Y-m-d H:i') : '';
     }
 
     private static function text(mixed $value): string

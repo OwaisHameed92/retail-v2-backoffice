@@ -6,6 +6,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { timeZoneLabel } from '@/lib/country';
 import { Link, useForm } from '@inertiajs/react';
 import { CircleAlert, LoaderCircle } from 'lucide-react';
 import { type ComponentProps, type FormEventHandler, type ReactNode } from 'react';
@@ -211,7 +212,7 @@ export function LeadForm({ initial, options, mode, submitUrl, cancelHref, submit
                             <FormField id="follow_up_date" label="Follow up on" optional error={errors.follow_up_date}>
                                 {text('follow_up_date', 'follow_up_date', { type: 'date' })}
                             </FormField>
-                            <FormField id="follow_up_time" label="At" optional help="UK time. Defaults to 09:00." error={errors.follow_up_time}>
+                            <FormField id="follow_up_time" label="At" optional help={`${timeZoneLabel()} time. Defaults to 09:00.`} error={errors.follow_up_time}>
                                 {text('follow_up_time', 'follow_up_time', { type: 'time', disabled: !data.follow_up_date })}
                             </FormField>
                         </FormGrid>

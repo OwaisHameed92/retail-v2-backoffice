@@ -5,11 +5,12 @@ import { FormField } from '@/components/shared/form-section';
 import { PageHeader } from '@/components/shared/page-header';
 import { SectionCard } from '@/components/shared/section-card';
 import { StatCard, StatGrid } from '@/components/shared/stat-card';
-import { londonDateTime } from '@/components/till-health/format';
+import { shopDateTime } from '@/components/till-health/format';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import AppLayout from '@/layouts/app-layout';
+import { timeZoneCity } from '@/lib/country';
 import { Head, router, usePage } from '@inertiajs/react';
 import { ArrowDownToLine, ArrowUpFromLine, Coins, Download, Mail, Scale, Wallet } from 'lucide-react';
 import { type FormEventHandler, useState } from 'react';
@@ -74,7 +75,7 @@ export default function CustomerStatementPage({ statement, canEmail }: Statement
                 }
             />
 
-            <SectionCard title="Period" description="London dates, inclusive. Up to two years at a time.">
+            <SectionCard title="Period" description={`${timeZoneCity()} dates, inclusive. Up to two years at a time.`}>
                 <form onSubmit={show} className="flex flex-col gap-3 sm:flex-row sm:items-end">
                     <FormField id="from" label="From" error={errors.from} className="sm:w-48">
                         <Input
@@ -150,7 +151,7 @@ export default function CustomerStatementPage({ statement, canEmail }: Statement
                             )}
                             {s.rows.map((row) => (
                                 <TableRow key={row.id}>
-                                    <TableCell className="whitespace-nowrap">{londonDateTime(row.at)}</TableCell>
+                                    <TableCell className="whitespace-nowrap">{shopDateTime(row.at)}</TableCell>
                                     <TableCell>
                                         <div className="grid leading-5">
                                             <span>{row.typeLabel}</span>

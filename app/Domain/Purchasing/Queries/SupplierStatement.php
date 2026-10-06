@@ -2,6 +2,7 @@
 
 namespace App\Domain\Purchasing\Queries;
 
+use App\Domain\Shared\Country\Country;
 use App\Domain\Shared\Support\Money;
 use App\Domain\TillData\Models\Supplier;
 use App\Domain\TillData\Models\SupplierCreditNote;
@@ -116,7 +117,7 @@ final class SupplierStatement
     public static function period(mixed $from, mixed $to): array
     {
         $valid = fn (mixed $d) => is_string($d) && CarbonImmutable::hasFormat($d, 'Y-m-d') ? $d : null;
-        $today = CarbonImmutable::now('Europe/London');
+        $today = CarbonImmutable::now(Country::zone());
         $to = $valid($to) ?? $today->format('Y-m-d');
         $from = $valid($from) ?? $today->subMonthsNoOverflow(3)->startOfMonth()->format('Y-m-d');
 

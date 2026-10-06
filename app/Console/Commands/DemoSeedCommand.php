@@ -18,7 +18,7 @@ class DemoSeedCommand extends Command
 {
     protected $signature = 'demo:seed
         {--company= : Business id or exact name (default: Khan Mini Mart and Singh Family Stores)}
-        {--days=60 : Trading days of sales, ending today (Europe/London)}
+        {--days=60 : Trading days of sales, ending today (shop time zone)}
         {--fresh : Remove the business\'s earlier demo data first}';
 
     protected $description = 'Fill demo businesses with complete, realistic data for every portal page (never in production)';

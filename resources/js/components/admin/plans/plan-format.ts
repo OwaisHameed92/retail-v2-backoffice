@@ -1,6 +1,8 @@
+import { zonedDateFormat } from '@/lib/country';
+
 const gbp = new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP' });
 
-const dateFormat = new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/London', day: 'numeric', month: 'short', year: 'numeric' });
+const dateFormat = () => zonedDateFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 
 /** "1234.5" → "£1,234.50". Display only; amounts stay strings everywhere else. */
 export function formatMoney(amount: string | null | undefined): string {
@@ -20,9 +22,9 @@ export function formatDays(days: number, zero = 'None'): string {
     return `${days} ${days === 1 ? 'day' : 'days'}`;
 }
 
-/** UTC ISO → "24 Sept 2026" in Europe/London. */
+/** UTC ISO → "24 Sept 2026" in the profile's time zone. */
 export function formatDate(iso: string | null): string {
-    return iso ? dateFormat.format(new Date(iso)) : '—';
+    return iso ? dateFormat().format(new Date(iso)) : '—';
 }
 
 /** "Standard Plus!" → "standard-plus". Mirrors the server's code rule. */

@@ -2,13 +2,14 @@
 
 namespace App\Domain\Audit\Support;
 
+use App\Domain\Shared\Country\Country;
 use App\Domain\Shared\Models\AuditLog;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
- * The filtered audit log as CSV, streamed newest first in chunks (no row limit, flat memory). Times are Europe/London.
+ * The filtered audit log as CSV, streamed newest first in chunks (no row limit, flat memory). Times are in the shops' time zone.
  * Cells that a spreadsheet would run as a formula are prefixed with an apostrophe.
  */
 final class AuditCsv
@@ -71,7 +72,7 @@ final class AuditCsv
         $company = is_array($row['company']) ? $row['company'] : null;
 
         $cells = [
-            is_string($row['at']) ? Carbon::parse($row['at'])->setTimezone('Europe/London')->format('Y-m-d H:i:s') : '',
+            is_string($row['at']) ? Carbon::parse($row['at'])->setTimezone(Country::zone())->format('Y-m-d H:i:s') : '',
             $actor['name'],
             (string) ($actor['detail'] ?? ''),
         ];

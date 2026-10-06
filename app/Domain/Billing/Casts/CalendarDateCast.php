@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use InvalidArgumentException;
 
 /**
- * A calendar date with no time or time zone (invoice period, issue and due dates, Europe/London days).
+ * A calendar date with no time or time zone (invoice period, issue and due dates, days in the shops' time zone).
  * Stored as "Y-m-d" on SQLite and MySQL alike, so SQL comparisons with "Y-m-d" strings behave the same;
  * read back as a CarbonImmutable at midnight UTC. Pass a Carbon (its own calendar date is used) or "Y-m-d".
  *

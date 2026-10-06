@@ -5,6 +5,7 @@ namespace App\Http\Requests\Admin\Billing;
 use App\Domain\Billing\Data\NewPayment;
 use App\Domain\Billing\Enums\PaymentMethod;
 use App\Domain\Billing\Support\BillingDates;
+use App\Domain\Shared\Country\Country;
 use Carbon\CarbonImmutable;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Validation\Rule;
@@ -60,7 +61,7 @@ class RecordPaymentRequest extends BillingRequest
         $day = BillingDates::date((string) $this->validated('received_on'));
         $today = BillingDates::today();
         // Today: now. An earlier day: midday London, so the date shows the same everywhere.
-        $receivedAt = $day->equalTo($today) ? CarbonImmutable::now() : CarbonImmutable::parse($day->format('Y-m-d').' 12:00:00', BillingDates::TIMEZONE)->utc();
+        $receivedAt = $day->equalTo($today) ? CarbonImmutable::now() : CarbonImmutable::parse($day->format('Y-m-d').' 12:00:00', Country::zone())->utc();
 
         $allocations = null;
 

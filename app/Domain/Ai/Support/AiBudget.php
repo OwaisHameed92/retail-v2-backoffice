@@ -6,19 +6,18 @@ use App\Domain\Ai\AiContext;
 use App\Domain\Ai\Enums\AiFeature;
 use App\Domain\Ai\Models\AiUsage;
 use App\Domain\Plans\Models\Plan;
+use App\Domain\Shared\Country\Country;
 use App\Domain\Tenancy\Models\Company;
 use Carbon\CarbonImmutable;
 
 /**
- * Monthly token allowance. Months are calendar months in Europe/London; usage rows are UTC.
+ * Monthly token allowance. Months are calendar months in the shops' time zone; usage rows are UTC.
  *
  * Company limit: `ai.budgets.plans.<plan code>` if set, else `ai.budgets.default_monthly_tokens`.
  * Admin calls share one pool: `ai.budgets.admin_monthly_tokens`.
  */
 final class AiBudget
 {
-    public const TIMEZONE = 'Europe/London';
-
     public function limitFor(AiContext $context): int
     {
         if ($context->company === null || $context->isAdmin()) {
@@ -63,15 +62,15 @@ final class AiBudget
         return max(0, $this->limitFor($context) - $this->usedBy($context));
     }
 
-    /** Start of the current Europe/London month, in UTC. */
+    /** Start of the current month in the shops' time zone, in UTC. */
     public function monthStart(): CarbonImmutable
     {
-        return CarbonImmutable::now(self::TIMEZONE)->startOfMonth()->utc();
+        return CarbonImmutable::now(Country::zone())->startOfMonth()->utc();
     }
 
     /** "1 October 2026": when the allowance resets. */
     public function resetsOn(): string
     {
-        return CarbonImmutable::now(self::TIMEZONE)->startOfMonth()->addMonth()->format('j F Y');
+        return CarbonImmutable::now(Country::zone())->startOfMonth()->addMonth()->format('j F Y');
     }
 }

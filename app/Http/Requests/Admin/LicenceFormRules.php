@@ -7,6 +7,7 @@ use App\Domain\Licensing\Data\BranchLicenceSettings;
 use App\Domain\Licensing\Enums\LicenceLengthUnit;
 use App\Domain\Licensing\Signing\Sspos\TokenKind;
 use App\Domain\Plans\Enums\Feature;
+use App\Domain\Shared\Country\Country;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -70,7 +71,7 @@ final class LicenceFormRules
             kind: TokenKind::from((string) $request->input('kind', TokenKind::Trial->value)),
             length: $length === null || $length === '' ? null : (int) $length,
             lengthUnit: LicenceLengthUnit::tryFrom((string) $request->input('length_unit')),
-            validFrom: is_string($validFrom) && $validFrom !== '' ? CarbonImmutable::parse($validFrom, 'Europe/London')->startOfDay()->utc() : null,
+            validFrom: is_string($validFrom) && $validFrom !== '' ? CarbonImmutable::parse($validFrom, Country::zone())->startOfDay()->utc() : null,
             features: is_array($request->input('features')) ? array_values(array_filter($request->input('features'), 'is_string')) : null,
         );
     }

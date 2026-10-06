@@ -2,11 +2,11 @@
 
 namespace App\Http\Requests\Admin\Leads;
 
-use App\Domain\Mail\Support\MailFormat;
+use App\Domain\Shared\Country\Country;
 use Illuminate\Support\Carbon;
 
 /**
- * A follow-up entered as a date and optional time in Europe/London (default 09:00), stored as UTC.
+ * A follow-up entered as a date and optional time in the shops' time zone (default 09:00), stored as UTC.
  */
 final class FollowUpTime
 {
@@ -20,6 +20,6 @@ final class FollowUpTime
 
         $time = is_string($time) && $time !== '' ? $time : self::DEFAULT_TIME;
 
-        return Carbon::createFromFormat('Y-m-d H:i', "{$date} {$time}", MailFormat::TIMEZONE)?->utc();
+        return Carbon::createFromFormat('Y-m-d H:i', "{$date} {$time}", Country::zone())?->utc();
     }
 }

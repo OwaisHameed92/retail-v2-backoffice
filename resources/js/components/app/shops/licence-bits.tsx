@@ -1,4 +1,4 @@
-import { daysUntil, type LicenceKind, londonDate } from '@/components/app/shops/types';
+import { daysUntil, type LicenceKind, shopDate } from '@/components/app/shops/types';
 import { PageTabs } from '@/components/shared/page-tabs';
 import { StatusBadge, StatusPill } from '@/components/shared/status-badge';
 import { cn } from '@/lib/utils';
@@ -15,11 +15,16 @@ export function EndsAtText({ iso, prefix = 'Ends', className }: { iso: string | 
         return <span className={cn('text-muted-foreground', className)}>No end date yet</span>;
     }
     const tone = days < 0 ? 'text-danger-foreground' : days <= 14 ? 'text-warning-foreground' : 'text-muted-foreground';
-    const when = days < 0 ? `${Math.abs(days)} ${Math.abs(days) === 1 ? 'day' : 'days'} ago` : days === 0 ? 'today' : `in ${days} ${days === 1 ? 'day' : 'days'}`;
+    const when =
+        days < 0
+            ? `${Math.abs(days)} ${Math.abs(days) === 1 ? 'day' : 'days'} ago`
+            : days === 0
+              ? 'today'
+              : `in ${days} ${days === 1 ? 'day' : 'days'}`;
 
     return (
         <span className={cn(tone, className)}>
-            {prefix} {londonDate(iso)} · {when}
+            {prefix} {shopDate(iso)} · {when}
         </span>
     );
 }

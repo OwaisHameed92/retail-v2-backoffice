@@ -8,11 +8,12 @@ import { StatCard, StatGrid } from '@/components/shared/stat-card';
 import { StatusPill } from '@/components/shared/status-badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
+import { zonedDateFormat } from '@/lib/country';
 import { cn } from '@/lib/utils';
 import { CalendarClock, CalendarDays, ChevronLeft, ChevronRight, Clock, Info, TimerOff, Users } from 'lucide-react';
 
-function londonToday(): string {
-    return new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/London' }).format(new Date());
+function shopToday(): string {
+    return zonedDateFormat('en-CA').format(new Date());
 }
 
 function DayCell({ cell, today }: { cell: RotaDay | null; today: boolean }) {
@@ -56,7 +57,7 @@ function DayCell({ cell, today }: { cell: RotaDay | null; today: boolean }) {
 
 export default function StaffRota({ week, days, rows, summary, filters, options }: RotaProps) {
     const { update, loading } = useTableQuery({ only: ['week', 'days', 'rows', 'summary', 'filters', 'options'] });
-    const today = londonToday();
+    const today = shopToday();
     const thisWeek = mondayOf(today);
 
     return (
@@ -96,13 +97,25 @@ export default function StaffRota({ week, days, rows, summary, filters, options 
                 description={`${shortDay(days[0])} to ${shortDay(days[6])}`}
                 actions={
                     <div className="flex items-center gap-1.5">
-                        <Button variant="outline" size="icon" aria-label="Previous week" disabled={loading} onClick={() => update({ week: addDays(week, -7) })}>
+                        <Button
+                            variant="outline"
+                            size="icon"
+                            aria-label="Previous week"
+                            disabled={loading}
+                            onClick={() => update({ week: addDays(week, -7) })}
+                        >
                             <ChevronLeft />
                         </Button>
                         <Button variant="outline" size="sm" disabled={loading || week === thisWeek} onClick={() => update({ week: thisWeek })}>
                             This week
                         </Button>
-                        <Button variant="outline" size="icon" aria-label="Next week" disabled={loading} onClick={() => update({ week: addDays(week, 7) })}>
+                        <Button
+                            variant="outline"
+                            size="icon"
+                            aria-label="Next week"
+                            disabled={loading}
+                            onClick={() => update({ week: addDays(week, 7) })}
+                        >
                             <ChevronRight />
                         </Button>
                     </div>

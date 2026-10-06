@@ -4,6 +4,7 @@ namespace App\Domain\Promotions\Actions;
 
 use App\Domain\Labels\Actions\QueueChangedLabels;
 use App\Domain\Shared\Actions\RecordAudit;
+use App\Domain\Shared\Country\Country;
 use App\Domain\TillData\Models\PromotionRule;
 use Carbon\CarbonImmutable;
 
@@ -18,7 +19,7 @@ final class EndPromotion
 
     public function handle(PromotionRule $rule): PromotionRule
     {
-        $today = CarbonImmutable::now('Europe/London')->startOfDay();
+        $today = CarbonImmutable::now(Country::zone())->startOfDay();
         $wasLive = $this->labels->snapshot($rule);
         $before = ['is_active' => $rule->is_active, 'effective_to' => $rule->effective_to?->toDateString()];
 

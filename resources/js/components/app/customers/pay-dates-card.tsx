@@ -1,9 +1,10 @@
 import { SectionCard } from '@/components/shared/section-card';
 import { StatusPill } from '@/components/shared/status-badge';
+import { zonedDateFormat } from '@/lib/country';
 import { dayLabel } from './format';
 import { type PayDate } from './types';
 
-const londonTime = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'Europe/London' });
+const shopTime = () => zonedDateFormat('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
 
 function ReminderState({ reminder }: { reminder: PayDate['reminder'] }) {
     if (reminder.state === 'failed') {
@@ -13,7 +14,7 @@ function ReminderState({ reminder }: { reminder: PayDate['reminder'] }) {
                 <span className="text-muted-foreground text-xs">
                     {reminder.error}
                     {reminder.attempts > 1 && ` · ${reminder.attempts} tries`}
-                    {reminder.at && ` · ${londonTime.format(new Date(reminder.at))}`}
+                    {reminder.at && ` · ${shopTime().format(new Date(reminder.at))}`}
                 </span>
                 {reminder.detail && <span className="text-muted-foreground text-xs whitespace-pre-line">{reminder.detail}</span>}
             </div>
@@ -25,7 +26,7 @@ function ReminderState({ reminder }: { reminder: PayDate['reminder'] }) {
             <div className="grid justify-items-end gap-1 text-right">
                 <StatusPill tone="success">Reminder sent</StatusPill>
                 <span className="text-muted-foreground text-xs">
-                    {[reminder.channel, reminder.at && londonTime.format(new Date(reminder.at))].filter(Boolean).join(' · ')}
+                    {[reminder.channel, reminder.at && shopTime().format(new Date(reminder.at))].filter(Boolean).join(' · ')}
                 </span>
             </div>
         );

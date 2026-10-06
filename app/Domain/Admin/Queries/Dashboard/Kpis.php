@@ -5,6 +5,7 @@ namespace App\Domain\Admin\Queries\Dashboard;
 use App\Domain\Billing\Models\Invoice;
 use App\Domain\Billing\Support\BillingFormat;
 use App\Domain\Licensing\Models\Licence;
+use App\Domain\Shared\Country\Country;
 use App\Domain\Shared\Support\Money;
 use App\Domain\Tenancy\Models\Company;
 use Carbon\CarbonImmutable;
@@ -87,7 +88,7 @@ final class Kpis
     {
         $now = $this->rows->now;
         $monthStart = Buckets::monthStart($now);
-        $lastMonthStart = $monthStart->setTimezone(Buckets::TIMEZONE)->subMonthNoOverflow()->utc();
+        $lastMonthStart = $monthStart->setTimezone(Country::zone())->subMonthNoOverflow()->utc();
         $current = DashboardRows::paidBetween($this->rows->paid, $monthStart, $now->addSecond());
         $last = DashboardRows::paidBetween($this->rows->paid, $lastMonthStart, $monthStart);
         $series = array_map(

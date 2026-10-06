@@ -1,4 +1,4 @@
-import { ago, londonDateTime, SyncStateBadge, TillStateBadge } from '@/components/till-health/format';
+import { ago, shopDateTime, SyncStateBadge, TillStateBadge } from '@/components/till-health/format';
 import { type ShopHealth, type TillHealth } from '@/components/till-health/types';
 import { cn } from '@/lib/utils';
 import { Link } from '@inertiajs/react';
@@ -28,7 +28,7 @@ export function BranchHealthStrip({ health, href }: { health: ShopHealth | null;
                     {health.tillsOffline > 0 && ` · ${health.tillsOffline} offline`}
                 </span>
                 {linked ? (
-                    <span className="text-muted-foreground" title={londonDateTime(health.lastSyncAt)}>
+                    <span className="text-muted-foreground" title={shopDateTime(health.lastSyncAt)}>
                         Push {ago(health.lastPushAt, 'never')} · pull {ago(health.lastPullAt, 'never')}
                     </span>
                 ) : (
@@ -75,7 +75,7 @@ export function TillHealthCell({ health }: { health: TillHealth | undefined | nu
                 )}
             </div>
             {health.state !== 'notActivated' && (
-                <div className="text-muted-foreground text-xs" title={londonDateTime(health.lastSeenAt)}>
+                <div className="text-muted-foreground text-xs" title={shopDateTime(health.lastSeenAt)}>
                     Seen {ago(health.lastSeenAt)}
                     {health.appVersion && ` · v${health.appVersion}`}
                 </div>

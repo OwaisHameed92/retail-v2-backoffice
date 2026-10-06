@@ -1,7 +1,7 @@
-import { FilterSelect } from '@/components/app/setup/fields';
-import { CLASSES, ClassPill, londonDateTime, PharmacyPageLayout } from '@/components/app/pharmacy/format';
+import { CLASSES, ClassPill, PharmacyPageLayout, shopDateTime } from '@/components/app/pharmacy/format';
 import { MedicineDialog, type MedicineTarget } from '@/components/app/pharmacy/medicine-dialog';
 import { type MedicineClass, type MedicineRow, type MedicinesProps } from '@/components/app/pharmacy/types';
+import { FilterSelect } from '@/components/app/setup/fields';
 import { ConfirmDialog } from '@/components/shared/confirm-dialog';
 import { DataTable, useTableQuery } from '@/components/shared/data-table';
 import { EmptyState } from '@/components/shared/empty-state';
@@ -47,7 +47,7 @@ export default function PharmacyMedicines({ rows, counts, class: current, candid
                 id: 'updated',
                 header: 'Changed',
                 meta: { mobile: 'hidden' },
-                cell: ({ row }) => <span className="text-muted-foreground text-sm">{londonDateTime(row.original.updatedAt)}</span>,
+                cell: ({ row }) => <span className="text-muted-foreground text-sm">{shopDateTime(row.original.updatedAt)}</span>,
             },
             ...(canEdit
                 ? [
@@ -64,7 +64,12 @@ export default function PharmacyMedicines({ rows, counts, class: current, candid
                                       onClick={() =>
                                           setDialog({
                                               open: true,
-                                              target: { productId: row.original.productId, product: row.original.product, class: row.original.class, note: row.original.note },
+                                              target: {
+                                                  productId: row.original.productId,
+                                                  product: row.original.product,
+                                                  class: row.original.class,
+                                                  note: row.original.note,
+                                              },
                                           })
                                       }
                                   >
@@ -107,7 +112,9 @@ export default function PharmacyMedicines({ rows, counts, class: current, candid
             {!canEdit && (
                 <Alert variant="info">
                     <Info />
-                    <AlertDescription>Medicine classes apply to every shop. Ask an owner, or a manager of every shop, to change them.</AlertDescription>
+                    <AlertDescription>
+                        Medicine classes apply to every shop. Ask an owner, or a manager of every shop, to change them.
+                    </AlertDescription>
                 </Alert>
             )}
             <StatGrid columns={3}>

@@ -1,5 +1,6 @@
 import { type InvoiceStatus } from '@/components/admin/billing/types';
 import { type StatusToneMap } from '@/components/shared/status-badge';
+import { zonedDateFormat } from '@/lib/country';
 
 export { formatDate, formatDateTimeShort, plural } from '@/components/admin/tenants/format';
 
@@ -42,19 +43,19 @@ export function formatDay(ymd: string | null | undefined, fallback = '—'): str
     return calendar.format(new Date(Date.UTC(y, m - 1, d)));
 }
 
-const londonParts = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/London', year: 'numeric', month: '2-digit', day: '2-digit' });
+const shopParts = () => zonedDateFormat('en-CA', { year: 'numeric', month: '2-digit', day: '2-digit' });
 
-/** Today in London, "YYYY-MM-DD". */
-export function londonToday(now: Date = new Date()): string {
-    return londonParts.format(now);
+/** Today in shop time, "YYYY-MM-DD". */
+export function shopToday(now: Date = new Date()): string {
+    return shopParts().format(now);
 }
 
-/** Whole calendar days from today (London) to the date; negative when past. */
+/** Whole calendar days from today (shop time) to the date; negative when past. */
 export function daysFromToday(ymd: string | null | undefined, now: Date = new Date()): number | null {
     if (!ymd) {
         return null;
     }
-    const [ty, tm, td] = londonToday(now).split('-').map(Number);
+    const [ty, tm, td] = shopToday(now).split('-').map(Number);
     const [y, m, d] = ymd.split('-').map(Number);
 
     return Math.round((Date.UTC(y, m - 1, d) - Date.UTC(ty, tm - 1, td)) / 86_400_000);

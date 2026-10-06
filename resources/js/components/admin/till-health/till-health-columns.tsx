@@ -1,7 +1,7 @@
-import { ago, clockSkewText, londonDateTime, ProblemPills, SyncStateBadge, TillStateBadge } from '@/components/till-health/format';
-import { type TillHealthListRow } from '@/components/till-health/types';
 import { EntityCell } from '@/components/shared/entity-cell';
 import { StatusPill } from '@/components/shared/status-badge';
+import { ago, clockSkewText, ProblemPills, shopDateTime, SyncStateBadge, TillStateBadge } from '@/components/till-health/format';
+import { type TillHealthListRow } from '@/components/till-health/types';
 import { Badge } from '@/components/ui/badge';
 import { relativeTime } from '@/lib/relative-time';
 import { cn } from '@/lib/utils';
@@ -43,7 +43,7 @@ export function tillHealthColumns(): ColumnDef<TillHealthListRow>[] {
             header: 'Last seen',
             enableSorting: true,
             cell: ({ row: { original: row } }) => (
-                <div className="leading-tight whitespace-nowrap" title={londonDateTime(row.lastSeenAt)}>
+                <div className="leading-tight whitespace-nowrap" title={shopDateTime(row.lastSeenAt)}>
                     <div className="tabular-nums">{ago(row.lastSeenAt)}</div>
                     <div className="text-muted-foreground text-xs">
                         {row.lastValidatedAt ? `Licence check ${relativeTime(row.lastValidatedAt)}` : 'No licence check yet'}
@@ -59,7 +59,8 @@ export function tillHealthColumns(): ColumnDef<TillHealthListRow>[] {
                     <div className="flex flex-col items-start gap-1 leading-tight">
                         <SyncStateBadge state={row.syncState} label={row.syncStateLabel} />
                         <span className="text-muted-foreground text-xs">
-                            Push {row.lastPushAt ? relativeTime(row.lastPushAt) : 'never'} · pull {row.lastPullAt ? relativeTime(row.lastPullAt) : 'never'}
+                            Push {row.lastPushAt ? relativeTime(row.lastPushAt) : 'never'} · pull{' '}
+                            {row.lastPullAt ? relativeTime(row.lastPullAt) : 'never'}
                         </span>
                     </div>
                 ) : (

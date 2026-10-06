@@ -1,7 +1,7 @@
 import { FilterSelect } from '@/components/app/setup/fields';
 import { DataTable, type Paginated, useTableQuery } from '@/components/shared/data-table';
 import { EmptyState } from '@/components/shared/empty-state';
-import { londonDateTime } from '@/components/till-health/format';
+import { shopDateTime } from '@/components/till-health/format';
 import { type ColumnDef } from '@tanstack/react-table';
 import { ReceiptText } from 'lucide-react';
 import { useMemo } from 'react';
@@ -32,7 +32,7 @@ export function LedgerTable({
             {
                 id: 'at',
                 header: 'When',
-                cell: ({ row }) => <span className="text-sm whitespace-nowrap">{londonDateTime(row.original.at)}</span>,
+                cell: ({ row }) => <span className="text-sm whitespace-nowrap">{shopDateTime(row.original.at)}</span>,
                 meta: { mobile: 'title' },
             },
             {

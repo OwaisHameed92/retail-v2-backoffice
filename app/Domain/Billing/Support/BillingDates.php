@@ -2,28 +2,34 @@
 
 namespace App\Domain\Billing\Support;
 
+use App\Domain\Shared\Country\Country;
 use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
 use InvalidArgumentException;
 
 /**
- * Calendar dates for billing. Invoice dates and periods are Europe/London calendar days held as
- * CarbonImmutable at midnight UTC (see CalendarDateCast); instants (paid_at, licence expiry) are UTC.
+ * Calendar dates for billing. Invoice dates and periods are calendar days in the shops' time zone (Country::zone()),
+ * held as CarbonImmutable at midnight UTC (see CalendarDateCast); instants (paid_at, licence expiry) are UTC.
  */
 final class BillingDates
 {
+    /**
+     * The GB zone, kept for tests written before phase P1. Code reads Country::zone().
+     *
+     * @deprecated use Country::zone()
+     */
     public const TIMEZONE = 'Europe/London';
 
-    /** Today's date in London. */
+    /** Today's date in the shops' time zone. */
     public static function today(?CarbonInterface $now = null): CarbonImmutable
     {
-        return self::londonDate($now ?? CarbonImmutable::now());
+        return self::localDate($now ?? CarbonImmutable::now());
     }
 
-    /** The London calendar day an instant falls on. */
-    public static function londonDate(CarbonInterface $instant): CarbonImmutable
+    /** The calendar day an instant falls on in the shops' time zone. */
+    public static function localDate(CarbonInterface $instant): CarbonImmutable
     {
-        return self::date($instant->copy()->setTimezone(self::TIMEZONE)->format('Y-m-d'));
+        return self::date($instant->copy()->setTimezone(Country::zone())->format('Y-m-d'));
     }
 
     /** "2026-10-01" → calendar date. */
@@ -35,7 +41,7 @@ final class BillingDates
     /** 23:59:59 London on that calendar day, as UTC (same as licence expiries). */
     public static function endOfDay(CarbonInterface $date): CarbonImmutable
     {
-        return CarbonImmutable::parse($date->format('Y-m-d').' 23:59:59', self::TIMEZONE)->utc();
+        return CarbonImmutable::parse($date->format('Y-m-d').' 23:59:59', Country::zone())->utc();
     }
 
     /** Number of calendar days from $from to $to, inclusive of both (1 Oct – 31 Oct = 31). */

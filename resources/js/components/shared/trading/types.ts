@@ -14,7 +14,7 @@ export interface Option<T extends string> {
     label: string;
 }
 
-/** The date part of both panels' filters (trading days are Europe/London dates "Y-m-d"). */
+/** The date part of both panels' filters (trading days are "Y-m-d" dates in the profile's time zone). */
 export interface PeriodFilters {
     period: TradingPeriod;
     from: string;

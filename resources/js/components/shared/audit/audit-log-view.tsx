@@ -2,6 +2,7 @@ import { DataTable, useTableQuery, type TableParams } from '@/components/shared/
 import { EmptyState } from '@/components/shared/empty-state';
 import { EntityCell } from '@/components/shared/entity-cell';
 import { Button } from '@/components/ui/button';
+import { timeZoneLabel } from '@/lib/country';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { type ColumnDef } from '@tanstack/react-table';
 import { Bot, ChevronLeft, ChevronRight, ScrollText, ShieldCheck, X } from 'lucide-react';
@@ -105,7 +106,7 @@ export function AuditLogView({ entries, filters, options, tenantView, beforeFilt
 
     const pager = (
         <div className="flex flex-wrap items-center justify-between gap-2">
-            <p className="text-muted-foreground text-sm">Newest first · times are UK time</p>
+            <p className="text-muted-foreground text-sm">Newest first · times are {timeZoneLabel()} time</p>
             <div className="flex items-center gap-2">
                 <Select value={String(entries.perPage)} onValueChange={(perPage) => update({ perPage: Number(perPage), ...resetCursor })}>
                     <SelectTrigger className="h-8 w-28" aria-label="Rows per page">

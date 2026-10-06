@@ -12,7 +12,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
  * A branch's sync health (modules 2.2 and 2.5, read by 2.7 Till health). Written only by {@see SyncStatusRecorder}.
- * Counts are for `rows_day` (the Europe/London day of the last push); an older day means nothing arrived today.
+ * Counts are for `rows_day` (the shop-time day of the last push); an older day means nothing arrived today.
  *
  * @property string $id
  * @property string $company_id

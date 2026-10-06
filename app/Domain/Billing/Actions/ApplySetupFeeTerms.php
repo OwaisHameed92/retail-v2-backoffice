@@ -18,6 +18,7 @@ use App\Domain\Licensing\Support\LicenceGuard;
 use App\Domain\Licensing\Support\LicenceTerms;
 use App\Domain\Plans\Enums\PlanBillingType;
 use App\Domain\Shared\Actions\RecordAudit;
+use App\Domain\Shared\Country\Country;
 use App\Domain\Shared\Support\Money;
 use App\Domain\Tenancy\Actions\ActivateCompany;
 use App\Domain\Tenancy\Enums\CompanyStatus;
@@ -102,7 +103,7 @@ class ApplySetupFeeTerms
             return 0;
         }
 
-        $expiresAt = RenewalTerm::endOfLondonDay($target->setTimezone(RenewalTerm::TIMEZONE)->format('Y-m-d'));
+        $expiresAt = RenewalTerm::endOfLocalDay($target->setTimezone(Country::zone())->format('Y-m-d'));
         // A full term is only topped up once it gets below the threshold, so the date does not move every day.
         $below = $state->isSettled()
             ? $now->addYears(max(0, (int) config('billing.setup_only.renew_below_years', 9)))
@@ -166,7 +167,7 @@ class ApplySetupFeeTerms
 
         $until = $account->gc_next_charge_date !== null && $account->hasLiveSubscription()
             ? BillingDates::endOfDay($account->gc_next_charge_date)
-            : RenewalTerm::endOfLondonDay($now->addDays(max(1, MandateDeadline::days()))->setTimezone(RenewalTerm::TIMEZONE)->format('Y-m-d'));
+            : RenewalTerm::endOfLocalDay($now->addDays(max(1, MandateDeadline::days()))->setTimezone(Country::zone())->format('Y-m-d'));
 
         return DB::transaction(function () use ($company, $until, $now) {
             $this->accounts->lock($company);

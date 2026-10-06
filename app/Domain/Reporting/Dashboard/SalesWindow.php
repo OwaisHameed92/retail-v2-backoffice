@@ -21,6 +21,6 @@ interface SalesWindow
 
     public function singleDay(): bool;
 
-    /** The Europe/London hour (0–23) the figures were read at. */
+    /** The shop-time hour (0–23) the figures were read at. */
     public function currentHour(): int;
 }

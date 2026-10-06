@@ -3,6 +3,7 @@
 namespace App\Domain\Demo\Support;
 
 use App\Domain\Reporting\Demo\DemoShop;
+use App\Domain\Shared\Country\Country;
 use Carbon\CarbonImmutable;
 use InvalidArgumentException;
 
@@ -34,7 +35,7 @@ final readonly class DemoJournal
         $register = $shop->registers[0]['id'];
         $entryId = $shop->id("journal|{$key}");
         $this->push->add($shop, 'JournalEntry', $entryId, [
-            'date' => $at->setTimezone('Europe/London')->toDateString(), 'refType' => $refType, 'refId' => $refId, 'memo' => $memo,
+            'date' => $at->setTimezone(Country::zone())->toDateString(), 'refType' => $refType, 'refId' => $refId, 'memo' => $memo,
             'periodId' => '', 'postedAt' => DemoBusiness::iso($at), 'postedByUserId' => $userId, 'registerId' => $register,
             'reversesEntryId' => null, 'reversedByEntryId' => null, 'isReversed' => false,
             'totalDebits' => $debits / 100, 'totalCredits' => $credits / 100, 'branchId' => $shop->branchId,

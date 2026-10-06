@@ -1,6 +1,6 @@
 import { SectionCard } from '@/components/shared/section-card';
 import { Timeline, type TimelineItem } from '@/components/shared/timeline';
-import { londonDateTime } from '@/components/till-health/format';
+import { shopDateTime } from '@/components/till-health/format';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { CircleCheck, CircleSlash, CircleX, ShieldCheck } from 'lucide-react';
 import { ConsentPill, dayLabel } from './format';
@@ -24,7 +24,7 @@ export function ConsentPanel({ consent, name }: { consent: CustomerShowProps['co
                 <strong>{name}</strong> {EVENT_TEXT[event.event]} {event.channel.toLowerCase()} marketing
             </>
         ),
-        time: londonDateTime(event.at),
+        time: shopDateTime(event.at),
         body: (
             <span className="text-muted-foreground text-xs">
                 {event.source}

@@ -1,5 +1,6 @@
 import { type LicenceStatus } from '@/components/admin/licences/types';
 import { type StatusToneMap } from '@/components/shared/status-badge';
+import { zonedDateFormat } from '@/lib/country';
 
 export { formatDate, formatDateTimeShort, plural } from '@/components/admin/tenants/format';
 
@@ -74,20 +75,20 @@ export function daysUntil(iso: string | null | undefined, now: Date = new Date()
     return Math.ceil((new Date(iso).getTime() - now.getTime()) / (24 * 3600 * 1000));
 }
 
-const londonParts = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/London', year: 'numeric', month: '2-digit', day: '2-digit' });
+const shopParts = () => zonedDateFormat('en-CA', { year: 'numeric', month: '2-digit', day: '2-digit' });
 
-/** Today's date in London as "YYYY-MM-DD". */
-export function londonToday(now: Date = new Date()): string {
-    return londonParts.format(now);
+/** Today's date in shop time as "YYYY-MM-DD". */
+export function shopToday(now: Date = new Date()): string {
+    return shopParts().format(now);
 }
 
 /**
  * Preview of RenewalTerm::expiryFrom: from the current end when it is still ahead, else today; +1 month or
- * +1 year without overflow (31 Jan + 1 month = 28/29 Feb). Returns the London date "YYYY-MM-DD".
+ * +1 year without overflow (31 Jan + 1 month = 28/29 Feb). Returns the shop-time date "YYYY-MM-DD".
  */
 export function renewalPreview(term: 'month' | 'year', currentEnd: string | null, now: Date = new Date()): string {
     const base = currentEnd && new Date(currentEnd) > now ? new Date(currentEnd) : now;
-    const [y, m, d] = londonParts.format(base).split('-').map(Number);
+    const [y, m, d] = shopParts().format(base).split('-').map(Number);
     const months = term === 'month' ? 1 : 12;
     const targetMonthIndex = m - 1 + months;
     const year = y + Math.floor(targetMonthIndex / 12);

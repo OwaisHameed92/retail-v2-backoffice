@@ -118,6 +118,17 @@ final class Country
         return $this->profile['timezone'];
     }
 
+    /**
+     * The bound profile's time zone, for code with no Country at hand (phase P1): shop days, trading days, billing
+     * and licence dates, mail and CSV times all go through it.
+     *
+     *     CarbonImmutable::now(Country::zone())->toDateString(); // today in the shops' zone
+     */
+    public static function zone(): string
+    {
+        return app(self::class)->timezone();
+    }
+
     /** "VAT", "GST". */
     public function taxName(): string
     {

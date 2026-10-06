@@ -15,7 +15,7 @@ use Illuminate\Validation\ValidationException;
 
 /**
  * Renews one licence: +1 month, +1 year (from its current end when that is still ahead, so no days are lost)
- * or until a date; always to the end of that day, Europe/London. A trial becomes a paid licence (active), grace
+ * or until a date; always to the end of that day, in the shops' time zone. A trial becomes a paid licence (active), grace
  * and expired licences are active again. Suspended licences stay suspended; issued ones stay issued until
  * activation. Grace days switch to the plan's paid grace. The company's owners get the "licences renewed" email.
  */

@@ -4,8 +4,10 @@
 | Module 2.7 (Till health). Thresholds for online / stale / offline and for the alerts raised by
 | `till-health:refresh` (scheduled every 5 minutes). Contract v1.4.1 DASHBOARD.md §3: a till validates its licence
 | once a day ("alive" = validated within 26 h, "offline" = 3 days); the branch's main till syncs every few seconds
-| to minutes ("red" = no contact for 15 minutes in opening hours). Times are Europe/London.
+| to minutes ("red" = no contact for 15 minutes in opening hours). Times are in the shops' time zone (`timezone`).
 */
+
+use App\Domain\Shared\Country\Country;
 
 return [
     // The main till that syncs the shop: online when it synced (hello, push or pull) within this many minutes.
@@ -39,7 +41,8 @@ return [
         'end' => env('TILL_HEALTH_TRADING_END', '20:00'),
     ],
 
-    'timezone' => 'Europe/London',
+    // The country profile's zone (GB London, PK Karachi); config/country.php loads before this file.
+    'timezone' => Country::fromConfig()->timezone(),
 
     // How often the scheduler refreshes the health rows (minutes); shown on the screens.
     'refresh_minutes' => 5,

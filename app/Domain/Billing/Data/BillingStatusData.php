@@ -12,6 +12,7 @@ use App\Domain\Billing\Support\BillingFormat;
 use App\Domain\Billing\Support\BillingStatus;
 use App\Domain\Billing\Support\MandateDeadline;
 use App\Domain\Billing\Support\SetupFeeState;
+use App\Domain\Shared\Country\Country;
 use App\Domain\Shared\Support\Money;
 use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
@@ -120,7 +121,7 @@ final class BillingStatusData
         $methods = $payments->map(fn (Payment $payment) => mb_strtolower($payment->method->label()))->unique()->values()->all();
         $last = $payments->last();
 
-        return ' by '.implode(' and ', $methods).($payments->count() === 1 ? ' on '.self::day(BillingDates::londonDate($last->received_at)) : '');
+        return ' by '.implode(' and ', $methods).($payments->count() === 1 ? ' on '.self::day(BillingDates::localDate($last->received_at)) : '');
     }
 
     /**
@@ -161,9 +162,9 @@ final class BillingStatusData
         $tills = $portal ? 'your tills' : 'the tills';
         $owed = BillingFormat::money($status->fee->owed());
         $invoice = ($status->unpaid->number ?? 'the invoice').' ('.BillingFormat::money($status->unpaid->balance ?? '0').')';
-        $trialEnds = self::day($status->trialEnd !== null ? BillingDates::londonDate($status->trialEnd) : null);
+        $trialEnds = self::day($status->trialEnd !== null ? BillingDates::localDate($status->trialEnd) : null);
         $reminded = $account->mandate_reminder_for !== null && $account->mandate_deadline_at !== null && $account->mandate_reminder_for->equalTo($account->mandate_deadline_at);
-        $failedOn = self::day($status->failed?->failed_at !== null ? BillingDates::londonDate($status->failed->failed_at) : $status->failed?->charge_date);
+        $failedOn = self::day($status->failed?->failed_at !== null ? BillingDates::localDate($status->failed->failed_at) : $status->failed?->charge_date);
 
         return match ($status->state) {
             BillingStatus::CANCELLED => null,
@@ -198,7 +199,7 @@ final class BillingStatusData
         if (! $status->recurs) {
             $until = $status->paidUntil();
 
-            return ['text' => 'Nothing more to pay. The licence runs to '.self::day($until !== null ? BillingDates::londonDate($until) : null).' and renews itself.', 'date' => null];
+            return ['text' => 'Nothing more to pay. The licence runs to '.self::day($until !== null ? BillingDates::localDate($until) : null).' and renews itself.', 'date' => null];
         }
 
         return ['text' => self::nextCollection($status, ''), 'date' => $status->account->gc_next_charge_date?->format('Y-m-d')];
@@ -216,7 +217,7 @@ final class BillingStatusData
 
     private static function deadline(?CarbonImmutable $deadline): string
     {
-        return $deadline === null ? '—' : $deadline->setTimezone(BillingDates::TIMEZONE)->format('j M Y, H:i');
+        return $deadline === null ? '—' : $deadline->setTimezone(Country::zone())->format('j M Y, H:i');
     }
 
     /**

@@ -8,6 +8,7 @@ use App\Domain\Billing\Support\BillingFormat;
 use App\Domain\Leads\Models\Lead;
 use App\Domain\Licensing\Enums\LicenceAlertType;
 use App\Domain\Licensing\Models\LicenceAlert;
+use App\Domain\Shared\Country\Country;
 use Carbon\CarbonImmutable;
 
 /**
@@ -126,7 +127,7 @@ final class Attention
                 'area' => 'tenants',
                 'label' => 'Trial',
                 'tone' => 'warning',
-                'text' => ($rows->company($companyId)->name ?? 'A business').' · trial ends '.$endsAt->setTimezone(Buckets::TIMEZONE)->format('D j M, H:i'),
+                'text' => ($rows->company($companyId)->name ?? 'A business').' · trial ends '.$endsAt->setTimezone(Country::zone())->format('D j M, H:i'),
                 'at' => $endsAt->subDays(self::TRIAL_DAYS)->utc()->toIso8601String(),
                 'href' => route('admin.tenants.show', $companyId, false),
             ];

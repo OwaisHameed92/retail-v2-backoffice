@@ -2,6 +2,7 @@
 
 namespace App\Domain\Reporting\Support;
 
+use App\Domain\Shared\Country\Country;
 use Carbon\CarbonImmutable;
 use DateTimeImmutable;
 use DateTimeInterface;
@@ -9,17 +10,18 @@ use DateTimeZone;
 
 /**
  * Trading days and hours (contract v1.4.1 DASHBOARD.md §1.3): the calendar date and local hour (0–23) of a UTC
- * instant in the shops' time zone (Europe/London). Worked out in PHP at ingest, never in SQL, so MySQL needs no
- * time-zone tables and BST/GMT changes are handled by PHP's tz database: 23:30Z on a summer day is the next day,
- * hour 0; both 01:00 hours of the last Sunday of October are hour 1.
+ * instant in the shops' time zone: `reporting.timezone`, which defaults to the country profile's zone (GB London, PK
+ * Karachi). Worked out in PHP at ingest, never in SQL, so MySQL needs no time-zone tables and BST/GMT changes are
+ * handled by PHP's tz database: 23:30Z on a summer day is the next day, hour 0; both 01:00 hours of the last Sunday
+ * of October are hour 1.
  */
 final class TradingDay
 {
     public static function timezone(): DateTimeZone
     {
-        $name = config('reporting.timezone', 'Europe/London');
+        $name = config('reporting.timezone');
 
-        return new DateTimeZone(is_string($name) && $name !== '' ? $name : 'Europe/London');
+        return new DateTimeZone(is_string($name) && $name !== '' ? $name : Country::zone());
     }
 
     /**

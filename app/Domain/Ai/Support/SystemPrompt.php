@@ -3,6 +3,7 @@
 namespace App\Domain\Ai\Support;
 
 use App\Domain\Ai\AiContext;
+use App\Domain\Shared\Country\Country;
 use Carbon\CarbonImmutable;
 
 /**
@@ -87,7 +88,8 @@ TXT;
             $lines[] = 'Business: '.self::clean($context->company->name);
         }
 
-        $lines[] = 'Today: '.CarbonImmutable::now('Europe/London')->format('l j F Y').' (UK time)';
+        $country = app(Country::class);
+        $lines[] = 'Today: '.CarbonImmutable::now($country->timezone())->format('l j F Y').' ('.($country->is('GB') ? 'UK' : $country->name()).' time)';
 
         $lines[] = match (true) {
             $context->isAdmin() => 'Asked by: a Switch & Save staff member ('.($context->admin?->role->value ?? 'staff').')',

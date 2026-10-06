@@ -7,6 +7,7 @@ use App\Domain\Ai\MorningSummary\Data\SummaryAudience;
 use App\Domain\Mail\Support\MailFormat;
 use App\Domain\Reporting\Dashboard\DashboardKpis;
 use App\Domain\Reporting\Data\SalesTotals;
+use App\Domain\Shared\Country\Country;
 use Carbon\CarbonImmutable;
 
 /**
@@ -53,7 +54,7 @@ final class SummaryView
 
         return [
             'day' => $facts->day,
-            'dayLabel' => CarbonImmutable::parse($facts->day, MailFormat::TIMEZONE)->format('l j F Y'),
+            'dayLabel' => CarbonImmutable::parse($facts->day, Country::zone())->format('l j F Y'),
             'scope' => self::scope($facts, $shops, $audience),
             'total' => [...array_diff_key($total, ['id' => 1, 'name' => 1]), 'average' => SalesTotals::average($sum['sales'], $sum['txn'])],
             'shops' => $rows,

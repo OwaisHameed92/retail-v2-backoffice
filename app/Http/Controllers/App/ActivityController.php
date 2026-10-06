@@ -7,6 +7,7 @@ use App\Domain\Audit\Queries\AuditLogList;
 use App\Domain\Audit\Queries\AuditSearch;
 use App\Domain\Audit\Support\AuditCsv;
 use App\Domain\Shared\Actions\RecordAudit;
+use App\Domain\Shared\Country\Country;
 use App\Domain\Tenancy\CurrentCompany;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
@@ -32,6 +33,6 @@ class ActivityController extends Controller
         $filters = AuditFilters::fromRequest($request, false);
         $audit->handle('audit_log.exported', null, null, null, array_filter($filters->toArray()), companyId: $companyId);
 
-        return AuditCsv::download(AuditSearch::query($filters, $companyId), true, 'activity-'.now('Europe/London')->format('Y-m-d-His').'.csv');
+        return AuditCsv::download(AuditSearch::query($filters, $companyId), true, 'activity-'.now(Country::zone())->format('Y-m-d-His').'.csv');
     }
 }

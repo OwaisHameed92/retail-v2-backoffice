@@ -12,6 +12,7 @@ import { StatCard, StatGrid } from '@/components/shared/stat-card';
 import { StatusPill } from '@/components/shared/status-badge';
 import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/app-layout';
+import { zonedDateFormat } from '@/lib/country';
 import { Head, Link } from '@inertiajs/react';
 import { ArrowLeftRight, Boxes, Layers, PoundSterling, SlidersHorizontal } from 'lucide-react';
 import { useMemo, useState } from 'react';
@@ -21,7 +22,7 @@ const NEGATIVE: Record<string, string> = { allow: 'Allowed', warn: 'Allowed with
 /** One product's stock (module 5.1): each shop, its own stock levels (editable with stock.manage), cost layers, batches, latest movements. */
 export default function StockProduct({ product, lines, totals, layers, batches, recent, filters, canManage }: ProductStockProps) {
     const [editing, setEditing] = useState(false);
-    const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/London' }).format(new Date());
+    const today = zonedDateFormat('en-CA').format(new Date());
     const columns = useMemo(() => movementColumns({ product: false }), []);
     const shopParam = filters.shopLocked ? {} : filters.shop ? { shop: filters.shop } : {};
     const levels = (value: string | null) => (value === null ? <span className="text-muted-foreground">Not set</span> : qty(value));

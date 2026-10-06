@@ -43,7 +43,7 @@ final class BillingPeriod
         $anchor = self::anchor($company, $licences);
 
         return $anchor !== null && $anchor->greaterThan($now)
-            ? BillingDates::londonDate($anchor)->addDay()
+            ? BillingDates::localDate($anchor)->addDay()
             : BillingDates::today($now);
     }
 

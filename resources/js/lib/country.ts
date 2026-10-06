@@ -50,6 +50,42 @@ export function useCountry(): CountryProfile {
     return usePage<SharedData>().props.country ?? current;
 }
 
+/**
+ * The profile's IANA time zone: "Europe/London" (GB), "Asia/Karachi" (PK). Read it when formatting, never at module
+ * load: the first page's modules are imported before `setCountry()` runs.
+ */
+export function timeZone(): string {
+    return current.timezone;
+}
+
+/** The zone's city for labels: "London" (GB, so "London time" reads as before), "Karachi" (PK). */
+export function timeZoneCity(): string {
+    return (current.timezone.split('/').pop() ?? current.timezone).replace(/_/g, ' ');
+}
+
+/** Who the shop time belongs to, for "… time" labels: "UK" (GB, so "UK time" reads as before), "Pakistan" (PK). */
+export function timeZoneLabel(): string {
+    return current.code === 'GB' ? 'UK' : current.name;
+}
+
+/**
+ * An `Intl.DateTimeFormat` for `locale` in the profile's time zone, built on first use and cached until
+ * `setCountry()`. For formatters that keep their own locale and options (the locale moves to the profile in P2).
+ *
+ *     zonedDateFormat('en-GB', { day: 'numeric', month: 'short' }).format(date); // "24 Sept" in shop time
+ *     zonedDateFormat('en-CA').format(new Date());                              // today as "2026-09-24"
+ */
+export function zonedDateFormat(locale: string, options: Intl.DateTimeFormatOptions = {}): Intl.DateTimeFormat {
+    const key = `z|${locale}|${current.timezone}|${JSON.stringify(options)}`;
+    let format = cache.get(key) as Intl.DateTimeFormat | undefined;
+    if (!format) {
+        format = new Intl.DateTimeFormat(locale, { ...options, timeZone: current.timezone });
+        cache.set(key, format);
+    }
+
+    return format;
+}
+
 /** "VAT" on GB, "GST" on PK. */
 export function taxName(): string {
     return current.taxName;

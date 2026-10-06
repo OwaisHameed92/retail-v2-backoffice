@@ -10,7 +10,7 @@ use Carbon\CarbonImmutable;
  * opening time runs past midnight ("00:00"–"00:00" is open 24 hours). Used by Till health (2.7) for "trading hours"
  * and to write the `shop.trading_hours` setting text.
  *
- *     $hours->window(CarbonImmutable::parse('2026-12-25', 'Europe/London'), 'Europe/London'); // null: closed
+ *     $hours->window(CarbonImmutable::parse('2026-12-25', Country::zone()), Country::zone()); // null: closed
  */
 final readonly class WeeklyHours
 {

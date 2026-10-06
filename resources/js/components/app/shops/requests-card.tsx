@@ -1,7 +1,7 @@
-import { londonDate, type ShopRequestRow } from '@/components/app/shops/types';
+import { shopDate, type ShopRequestRow } from '@/components/app/shops/types';
 import { SectionCard } from '@/components/shared/section-card';
 import { StatusPill } from '@/components/shared/status-badge';
-import { ago, londonDateTime } from '@/components/till-health/format';
+import { ago, shopDateTime } from '@/components/till-health/format';
 import { MessageSquareText, Monitor, Store } from 'lucide-react';
 
 /** What was asked, in one line: "2 more tills for Leeds (LDS)" / "A new shop, Harrogate, with 1 till". */
@@ -34,8 +34,8 @@ export function RequestsCard({ requests }: { requests: ShopRequestRow[] }) {
                                 </span>
                                 <div className="min-w-0">
                                     <p className="text-sm font-medium">{requestText(request)}</p>
-                                    <p className="text-muted-foreground text-xs" title={londonDateTime(request.sentAt)}>
-                                        Sent {londonDate(request.sentAt)}
+                                    <p className="text-muted-foreground text-xs" title={shopDateTime(request.sentAt)}>
+                                        Sent {shopDate(request.sentAt)}
                                         {request.requestedBy && ` by ${request.requestedBy}`}
                                         {request.count > 1 && ` · asked ${request.count} times, last ${ago(request.lastAskedAt)}`}
                                     </p>
@@ -49,7 +49,7 @@ export function RequestsCard({ requests }: { requests: ShopRequestRow[] }) {
                             </div>
                             <div className="shrink-0 pl-11 sm:pl-0">
                                 {request.done ? (
-                                    <StatusPill tone="success">Done {londonDate(request.doneAt)}</StatusPill>
+                                    <StatusPill tone="success">Done {shopDate(request.doneAt)}</StatusPill>
                                 ) : (
                                     <StatusPill tone="info">With our team</StatusPill>
                                 )}
