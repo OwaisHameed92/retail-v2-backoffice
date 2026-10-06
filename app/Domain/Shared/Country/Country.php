@@ -26,9 +26,12 @@ final class Country
     /** The profile picked by `country.code`; GB when that code has no profile. */
     public static function fromConfig(): self
     {
+        // config/reporting.php and config/till-health.php call this while the config is still loading: if country.php
+        // is not loaded yet, read it straight from the file rather than depend on the load order.
+        $config = config('country.profiles') !== null ? (array) config('country') : (array) require config_path('country.php');
         /** @var array<string, Profile> $profiles */
-        $profiles = (array) config('country.profiles', []);
-        $code = self::resolveCode(config('country.code'), array_keys($profiles));
+        $profiles = (array) ($config['profiles'] ?? []);
+        $code = self::resolveCode($config['code'] ?? null, array_keys($profiles));
 
         return new self($code, $profiles[$code]);
     }
