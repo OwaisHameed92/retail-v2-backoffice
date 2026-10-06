@@ -8,6 +8,7 @@ import { Link2, ListPlus, PackageSearch, Plus, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { ProductPicker } from './product-picker';
 import { type DraftLine, type InvoiceAnalysis, type InvoiceIssue, type InvoiceReviewProps } from './types';
+import { taxText } from '@/lib/country';
 
 const MATCHED_BY: Record<string, string> = {
     barcode: 'Barcode',
@@ -199,9 +200,9 @@ export function LinesEditor({ lines, analysis, issues, editable, errors, results
                                     className="h-8 text-right tabular-nums"
                                 />
                             </label>
-                            {input('unitPrice', 'Price ex VAT')}
-                            {input('vatRate', 'VAT %')}
-                            {input('lineNet', 'Line total ex VAT')}
+                            {input('unitPrice', taxText('Price ex VAT'))}
+                            {input('vatRate', taxText('VAT %'))}
+                            {input('lineNet', taxText('Line total ex VAT'))}
                             <div className="grid content-end gap-1 text-right">
                                 <span className="text-muted-foreground text-xs">Cost per item</span>
                                 <span className="text-sm font-medium tabular-nums">{a?.costPerItem ? cost(a.costPerItem) : '—'}</span>

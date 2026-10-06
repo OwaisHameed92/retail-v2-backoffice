@@ -12,6 +12,7 @@ import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
 import AppLayout from '@/layouts/app-layout';
+import { taxName } from '@/lib/country';
 import { cn } from '@/lib/utils';
 import { Head, Link, router } from '@inertiajs/react';
 import { Ban, Building2, Info, Lock, Pencil, Send } from 'lucide-react';
@@ -162,7 +163,9 @@ export default function PurchaseOrderShow({ order, totals, lines, deliveries, in
                                         <TableCell className="text-right tabular-nums">
                                             <div className="grid leading-5">
                                                 <span>{cost(line.unitCost)}</span>
-                                                <span className="text-muted-foreground text-xs">VAT {qty(line.vatPercentage)}%</span>
+                                                <span className="text-muted-foreground text-xs">
+                                                    {taxName()} {qty(line.vatPercentage)}%
+                                                </span>
                                             </div>
                                         </TableCell>
                                         <TableCell className="text-right tabular-nums">{money(line.net)}</TableCell>

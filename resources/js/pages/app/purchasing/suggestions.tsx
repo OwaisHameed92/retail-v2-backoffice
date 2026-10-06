@@ -13,7 +13,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import AppLayout from '@/layouts/app-layout';
-import { formatNumber } from '@/lib/country';
+import { formatNumber, taxName, taxText } from '@/lib/country';
 import { cn } from '@/lib/utils';
 import { type SharedData } from '@/types';
 import { Head, Link, router, usePage } from '@inertiajs/react';
@@ -107,7 +107,13 @@ export default function ReorderSuggestions(props: SuggestionsProps) {
             <StatGrid>
                 <StatCard label="Lines to order" value={formatNumber(stats.lines)} icon={ClipboardList} hint="With at least one case suggested" />
                 <StatCard label="Orders" value={formatNumber(stats.orders)} icon={Truck} hint="One per shop and supplier" tone="neutral" />
-                <StatCard label="Suggested cost" value={money(stats.cost)} icon={PackageCheck} hint="Ex VAT, at supplier case cost" tone="success" />
+                <StatCard
+                    label="Suggested cost"
+                    value={money(stats.cost)}
+                    icon={PackageCheck}
+                    hint={taxText('Ex VAT, at supplier case cost')}
+                    tone="success"
+                />
                 <StatCard
                     label="Worth a look"
                     value={formatNumber(stats.attention)}
@@ -225,7 +231,7 @@ export default function ReorderSuggestions(props: SuggestionsProps) {
                     message={
                         orderedLines === 0
                             ? 'No cases chosen.'
-                            : `${orderedLines} ${orderedLines === 1 ? 'line' : 'lines'} in ${orders.length} ${orders.length === 1 ? 'order' : 'orders'} · ${money(total)} ex VAT`
+                            : `${orderedLines} ${orderedLines === 1 ? 'line' : 'lines'} in ${orders.length} ${orders.length === 1 ? 'order' : 'orders'} · ${money(total)} ex ${taxName()}`
                     }
                 >
                     {edited && (

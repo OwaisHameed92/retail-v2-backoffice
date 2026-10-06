@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { taxText } from '@/lib/country';
 import { useForm } from '@inertiajs/react';
 import { LoaderCircle } from 'lucide-react';
 import { type FormEventHandler } from 'react';
@@ -75,7 +76,7 @@ function SettingsBody({ onOpenChange, company, directDebit }: DirectDebitSetting
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <Field
                         id="dd-setup-fee"
-                        label="Setup fee (upfront, before VAT)"
+                        label={taxText('Setup fee (upfront, before VAT)')}
                         optional
                         error={errors.setup_fee_override}
                         hint={

@@ -10,6 +10,7 @@ use App\Domain\Reporting\Reports\ReportBuilder;
 use App\Domain\Reporting\Reports\ReportOptions;
 use App\Domain\Reporting\Reports\ReportResult;
 use App\Domain\Reporting\Reports\ReportTable;
+use App\Domain\Shared\Country\Country;
 
 /**
  * Sales summary: headline figures against the compare window, net sales by period (with the compare window's
@@ -63,11 +64,11 @@ final class SalesSummaryReport implements ReportBuilder
         $c = $before !== null;
 
         $figures = [
-            Figures::of('net', 'Net sales', $now->net, 'money', $before?->net, $c, hint: 'Excluding VAT, after refunds'),
-            Figures::of('gross', 'Sales inc VAT', $now->gross, 'money', $before?->gross, $c),
-            Figures::of('vat', 'VAT', $now->vat, 'money', $before?->vat, $c),
+            Figures::of('net', 'Net sales', $now->net, 'money', $before?->net, $c, hint: Country::tax('Excluding VAT, after refunds')),
+            Figures::of('gross', Country::tax('Sales inc VAT'), $now->gross, 'money', $before?->gross, $c),
+            Figures::of('vat', Country::tax('VAT'), $now->vat, 'money', $before?->vat, $c),
             Figures::of('transactions', 'Transactions', $now->transactions, 'count', $before?->transactions, $c),
-            Figures::of('averageBasket', 'Average basket', $now->averageBasketExVat(), 'money', $before?->averageBasketExVat(), $c, hint: 'Excluding VAT'),
+            Figures::of('averageBasket', 'Average basket', $now->averageBasketExVat(), 'money', $before?->averageBasketExVat(), $c, hint: Country::tax('Excluding VAT')),
             Figures::of('takings', 'Takings', $now->takings, 'money', $before?->takings, $c, hint: 'Money taken, deposits included'),
             Figures::of('refunds', 'Refunds', $now->refundGross, 'money', $before?->refundGross, $c, 'down', $now->refundCount.' refunds'),
         ];
@@ -88,8 +89,8 @@ final class SalesSummaryReport implements ReportBuilder
             ReportTable::col('label', $heading),
             ...($withShop ? [ReportTable::col('shop', 'Shop')] : []),
             ReportTable::col('transactions', 'Transactions', 'count'),
-            ReportTable::col('gross', 'Sales inc VAT', 'money'),
-            ReportTable::col('vat', 'VAT', 'money'),
+            ReportTable::col('gross', Country::tax('Sales inc VAT'), 'money'),
+            ReportTable::col('vat', Country::tax('VAT'), 'money'),
             ReportTable::col('net', 'Net sales', 'money'),
             ReportTable::col('discount', 'Discounts', 'money'),
             ReportTable::col('refunds', 'Refunds', 'money'),

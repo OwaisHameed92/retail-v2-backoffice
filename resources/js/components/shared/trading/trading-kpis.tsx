@@ -3,6 +3,7 @@ import { MoneyIcon } from '@/components/shared/money-icon';
 import { StatCard } from '@/components/shared/stat-card';
 import { changeDelta, money, moneyShort, number } from '@/components/shared/trading/format';
 import { type SalesDashboardData, type SalesTotals } from '@/components/shared/trading/types';
+import { taxName, taxText } from '@/lib/country';
 import { Banknote, Percent, Receipt, ReceiptText, RotateCcw, ShoppingBasket, Tags, TrendingUp, XCircle } from 'lucide-react';
 
 /** "£11,540 previous period" under a headline tile. */
@@ -50,7 +51,7 @@ export function TradingKpis({ data }: { data: SalesDashboardData }) {
         <div className="flex flex-col gap-4">
             <KpiGrid>
                 <KpiCard
-                    label="Sales (inc VAT)"
+                    label={taxText('Sales (inc VAT)')}
                     icon={MoneyIcon}
                     tone="primary"
                     value={empty ? null : moneyShort(headline.gross.value)}
@@ -61,7 +62,7 @@ export function TradingKpis({ data }: { data: SalesDashboardData }) {
                     footer={previousFooter(headline.gross.previous, label, moneyShort)}
                 />
                 <KpiCard
-                    label="Net sales (ex VAT)"
+                    label={taxText('Net sales (ex VAT)')}
                     icon={TrendingUp}
                     tone="success"
                     value={empty ? null : moneyShort(headline.net.value)}
@@ -83,7 +84,7 @@ export function TradingKpis({ data }: { data: SalesDashboardData }) {
                     footer={previousFooter(headline.transactions.previous, label, number)}
                 />
                 <KpiCard
-                    label="Average basket (ex VAT)"
+                    label={taxText('Average basket (ex VAT)')}
                     icon={ShoppingBasket}
                     tone="violet"
                     value={headline.averageBasket.value === null ? null : money(headline.averageBasket.value)}
@@ -91,12 +92,12 @@ export function TradingKpis({ data }: { data: SalesDashboardData }) {
                     delta={changeDelta(headline.averageBasket.change, label)}
                     series={headline.averageBasket.series}
                     seriesPartial={partial}
-                    footer={headline.averageBasket.secondary ? `${money(headline.averageBasket.secondary)} inc VAT` : undefined}
+                    footer={headline.averageBasket.secondary ? `${money(headline.averageBasket.secondary)} inc ${taxName()}` : undefined}
                 />
             </KpiGrid>
 
             <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3 2xl:grid-cols-6">
-                <StatCard label="VAT" value={moneyShort(totals.vat)} icon={Percent} tone="neutral" delta={changeDelta(changes?.vat, label)} />
+                <StatCard label={taxName()} value={moneyShort(totals.vat)} icon={Percent} tone="neutral" delta={changeDelta(changes?.vat, label)} />
                 <StatCard
                     label="Takings"
                     value={moneyShort(totals.takings)}

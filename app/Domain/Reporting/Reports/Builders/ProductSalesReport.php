@@ -8,6 +8,7 @@ use App\Domain\Reporting\Reports\ReportBuilder;
 use App\Domain\Reporting\Reports\ReportOptions;
 use App\Domain\Reporting\Reports\ReportResult;
 use App\Domain\Reporting\Reports\ReportTable;
+use App\Domain\Shared\Country\Country;
 use App\Domain\Shared\Support\Money;
 
 /**
@@ -43,7 +44,7 @@ final class ProductSalesReport implements ReportBuilder
             new ReportTable('departments', 'By department', [
                 ReportTable::col('name', 'Department'),
                 ReportTable::col('qty', 'Quantity', 'qty'),
-                ReportTable::col('gross', 'Sales inc VAT', 'money'),
+                ReportTable::col('gross', Country::tax('Sales inc VAT'), 'money'),
                 ReportTable::col('net', 'Net sales', 'money'),
                 ReportTable::col('share', 'Share of net', 'percent'),
                 ReportTable::col('cost', 'Cost', 'money'),
@@ -56,7 +57,7 @@ final class ProductSalesReport implements ReportBuilder
                 ReportTable::col('department', 'Department'),
                 ReportTable::col('qty', 'Quantity', 'qty'),
                 ReportTable::col('refundQty', 'Returned', 'qty'),
-                ReportTable::col('gross', 'Sales inc VAT', 'money'),
+                ReportTable::col('gross', Country::tax('Sales inc VAT'), 'money'),
                 ReportTable::col('net', 'Net sales', 'money'),
                 ReportTable::col('cost', 'Cost', 'money'),
                 ReportTable::col('profit', 'Gross profit', 'money'),

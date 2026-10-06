@@ -2,6 +2,8 @@
 
 namespace App\Domain\Catalogue\Import;
 
+use App\Domain\Shared\Country\Country;
+
 /**
  * What a product CSV column can be mapped to, and a first guess from the header names.
  */
@@ -41,7 +43,7 @@ final class ImportColumns
         foreach ($headers as $index => $header) {
             $normal = self::normal($header);
 
-            foreach (self::FIELDS as $field => $definition) {
+            foreach (self::fields() as $field => $definition) {
                 if (! isset($mapping[$field]) && in_array($normal, [...$definition['aliases'], self::normal($definition['label'])], true)) {
                     $mapping[$field] = $index;
                     break;
@@ -77,7 +79,30 @@ final class ImportColumns
      */
     public static function options(): array
     {
-        return array_map(fn (string $field, array $d) => ['value' => $field, 'label' => $d['label'], 'help' => $d['help']], array_keys(self::FIELDS), self::FIELDS);
+        return array_map(fn (string $field, array $d) => ['value' => $field, 'label' => $d['label'], 'help' => $d['help']], array_keys(self::FIELDS), self::fields());
+    }
+
+    /**
+     * FIELDS in this instance's words (Pakistan plan P3): GB exactly as written; elsewhere the profile's tax name
+     * ("GST rate") and currency ("In rupees"), with the tax name's header names ("gst", "gst rate") recognised too.
+     *
+     * @return array<string, array{label: string, help: string, aliases: list<string>}>
+     */
+    public static function fields(): array
+    {
+        $country = app(Country::class);
+
+        if ($country->is(Country::DEFAULT)) {
+            return self::FIELDS;
+        }
+
+        $tax = strtolower($country->taxName());
+
+        return array_map(fn (array $d) => [
+            'label' => $country->taxText($d['label']),
+            'help' => str_replace('In pounds', 'In '.$country->currencyName(), $country->taxText($d['help'])),
+            'aliases' => array_values(array_unique([...$d['aliases'], ...array_map(fn (string $a) => (string) preg_replace('/\bvat\b/', $tax, $a), $d['aliases'])])),
+        ], self::FIELDS);
     }
 
     private static function normal(string $header): string

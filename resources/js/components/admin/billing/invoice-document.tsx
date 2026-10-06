@@ -1,6 +1,7 @@
 import { InvoiceStatusBadge } from '@/components/admin/billing/invoice-status-badge';
 import { type InvoiceDocumentData } from '@/components/admin/billing/types';
 import BrandLogo from '@/components/brand-logo';
+import { taxName, vatNumberPrefix } from '@/lib/country';
 import { cn } from '@/lib/utils';
 
 function Label({ children }: { children: string }) {
@@ -53,7 +54,7 @@ export function InvoiceDocument({ doc }: { doc: InvoiceDocumentData }) {
                         ))}
                         {doc.seller.email && <p className="text-muted-foreground">{doc.seller.email}</p>}
                         {doc.seller.phone && <p className="text-muted-foreground">{doc.seller.phone}</p>}
-                        {doc.seller.vatNumber && <p className="text-muted-foreground">VAT no. {doc.seller.vatNumber}</p>}
+                        {doc.seller.vatNumber && <p className="text-muted-foreground">{vatNumberPrefix()} {doc.seller.vatNumber}</p>}
                     </div>
                     <div className="min-w-0">
                         <Label>Bill to</Label>
@@ -63,7 +64,7 @@ export function InvoiceDocument({ doc }: { doc: InvoiceDocumentData }) {
                         ) : (
                             <p className="text-muted-foreground">No billing address</p>
                         )}
-                        {doc.billTo.vatNumber && <p className="text-muted-foreground">VAT no. {doc.billTo.vatNumber}</p>}
+                        {doc.billTo.vatNumber && <p className="text-muted-foreground">{vatNumberPrefix()} {doc.billTo.vatNumber}</p>}
                     </div>
                     <dl className="grid content-start gap-1">
                         {[
@@ -87,7 +88,7 @@ export function InvoiceDocument({ doc }: { doc: InvoiceDocumentData }) {
                                 <th className="py-2 pr-3 font-semibold">Description</th>
                                 <th className="px-3 py-2 text-right font-semibold">Qty</th>
                                 <th className="px-3 py-2 text-right font-semibold">Unit price</th>
-                                {doc.hasVat && <th className="px-3 py-2 text-right font-semibold">VAT {doc.vatRate}</th>}
+                                {doc.hasVat && <th className="px-3 py-2 text-right font-semibold">{taxName()} {doc.vatRate}</th>}
                                 <th className="py-2 pl-3 text-right font-semibold">Amount</th>
                             </tr>
                         </thead>
@@ -108,7 +109,7 @@ export function InvoiceDocument({ doc }: { doc: InvoiceDocumentData }) {
                 <section className="flex justify-end">
                     <dl className="w-full max-w-xs text-sm">
                         <Row label="Subtotal" value={doc.subtotal} />
-                        {doc.hasVat && <Row label={`VAT at ${doc.vatRate}`} value={doc.vatTotal} />}
+                        {doc.hasVat && <Row label={`${taxName()} at ${doc.vatRate}`} value={doc.vatTotal} />}
                         <Row label="Total" value={doc.total} strong />
                         {doc.hasPayments && <Row label="Paid" value={`−${doc.amountPaid}`} />}
                         {doc.hasCredits && <Row label="Credited" value={`−${doc.amountCredited}`} />}
@@ -176,7 +177,7 @@ export function InvoiceDocument({ doc }: { doc: InvoiceDocumentData }) {
                 )}
 
                 <footer className="text-muted-foreground border-t pt-4 text-center text-xs">
-                    {[doc.seller.legalName, doc.seller.companyNumber && `Company no. ${doc.seller.companyNumber}`, doc.seller.vatNumber && `VAT no. ${doc.seller.vatNumber}`, doc.seller.email]
+                    {[doc.seller.legalName, doc.seller.companyNumber && `Company no. ${doc.seller.companyNumber}`, doc.seller.vatNumber && `${vatNumberPrefix()} ${doc.seller.vatNumber}`, doc.seller.email]
                         .filter(Boolean)
                         .join(' · ')}
                 </footer>

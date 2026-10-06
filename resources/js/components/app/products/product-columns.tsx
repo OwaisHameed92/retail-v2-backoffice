@@ -2,6 +2,7 @@ import { EntityCell } from '@/components/shared/entity-cell';
 import { RowActions } from '@/components/shared/row-actions';
 import { StatusBadge } from '@/components/shared/status-badge';
 import { Badge } from '@/components/ui/badge';
+import { taxName } from '@/lib/country';
 import { router } from '@inertiajs/react';
 import { type ColumnDef } from '@tanstack/react-table';
 import { Archive, ArchiveRestore, Eye, Package, Pencil } from 'lucide-react';
@@ -43,7 +44,11 @@ export function productColumns(canManage: boolean, onArchive: (row: ProductRow) 
             cell: ({ row }) => (
                 <div className="text-right leading-tight tabular-nums">
                     <p className="font-medium">{formatMoney(row.original.sellPrice)}</p>
-                    {row.original.vat && <p className="text-muted-foreground text-xs">VAT {row.original.vat}</p>}
+                    {row.original.vat && (
+                        <p className="text-muted-foreground text-xs">
+                            {taxName()} {row.original.vat}
+                        </p>
+                    )}
                 </div>
             ),
         },

@@ -2,6 +2,7 @@ import { NumberField, OptionSelect } from '@/components/app/products/fields';
 import { FormField, FormGrid } from '@/components/shared/form-section';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
+import { taxText } from '@/lib/country';
 import { cn } from '@/lib/utils';
 import { type DepartmentCount, type PriceRuleValues, type YourDepartment } from './types';
 
@@ -44,7 +45,7 @@ export function PriceRuleFields({
             </div>
             {value.price_rule === 'margin' && (
                 <FormGrid>
-                    <FormField id="margin" label="Margin" help="On the price before VAT." error={errors.margin}>
+                    <FormField id="margin" label="Margin" help={taxText('On the price before VAT.')} error={errors.margin}>
                         <NumberField
                             id="margin"
                             suffix="%"

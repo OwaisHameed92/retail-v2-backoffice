@@ -3,6 +3,7 @@
 namespace App\Domain\Purchasing\Queries\Lists;
 
 use App\Domain\Purchasing\Support\PurchasingNames;
+use App\Domain\Shared\Country\Country;
 use App\Domain\Shared\Support\Money;
 use App\Domain\TillData\Enums\PurchaseReturnStatus;
 use App\Domain\TillData\Models\PurchaseReturn;
@@ -63,7 +64,7 @@ final class ReturnRows extends DocumentRows
 
         return [
             self::stat('Awaiting credit', (clone $sent)->count(), 'count', 'warning', 'Sent back, no credit yet'),
-            self::stat('Value awaiting credit', Money::normalise((clone $sent)->sum('gross_amount') ?: 0), 'money', 'neutral', 'Inc. VAT'),
+            self::stat('Value awaiting credit', Money::normalise((clone $sent)->sum('gross_amount') ?: 0), 'money', 'neutral', Country::tax('Inc. VAT')),
             self::stat('Credited', Money::normalise((clone $query)->where('status', 'credited')->sum('gross_amount') ?: 0), 'money', 'success', 'All time'),
             self::stat('Drafts', (clone $query)->where('status', 'draft')->count(), 'count', 'neutral', 'Not sent yet'),
         ];

@@ -2,6 +2,7 @@
 
 namespace App\Domain\Purchasing\Reorder;
 
+use App\Domain\Shared\Country\Country;
 use App\Domain\Shared\Country\MoneyFormat;
 use App\Domain\Shared\Support\Money;
 use App\Domain\Tenancy\Models\Branch;
@@ -57,7 +58,7 @@ final class ReorderOrderPlan
             }
 
             if (blank($product->vat_rate_id)) {
-                throw ValidationException::withMessages(['lines' => "{$product->name} has no VAT rate. Set one on the product first."]);
+                throw ValidationException::withMessages(['lines' => "{$product->name} ".Country::tax('has no VAT rate. Set one on the product first.')]);
             }
 
             $key = $shop->id.'|'.$supplier->id;
@@ -93,6 +94,6 @@ final class ReorderOrderPlan
     public static function describe(array $orders): string
     {
         return implode('; ', array_map(fn (array $o) => "{$o['shop']->name} from {$o['supplier']->name}: ".count($o['lines'])
-            .' '.(count($o['lines']) === 1 ? 'line' : 'lines').', about '.MoneyFormat::format($o['net'], ukStyle: MoneyFormat::AS_GIVEN).' ex VAT', $orders));
+            .' '.(count($o['lines']) === 1 ? 'line' : 'lines').', about '.MoneyFormat::format($o['net'], ukStyle: MoneyFormat::AS_GIVEN).' '.Country::tax('ex VAT'), $orders));
     }
 }

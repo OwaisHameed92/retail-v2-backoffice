@@ -7,6 +7,7 @@ import { LoaderCircle } from 'lucide-react';
 import { type FormEventHandler } from 'react';
 import { CheckRow, OptionSelect } from './fields';
 import { type CatalogueOptions, type CategoryNode, type DepartmentNode } from './types';
+import { taxText } from '@/lib/country';
 
 export type GroupTarget =
     | { kind: 'department'; department: DepartmentNode | null }
@@ -110,7 +111,7 @@ export function GroupDialog({ target, options, onClose }: { target: GroupTarget;
                                 <Input id="group-colour" maxLength={7} className="font-mono uppercase" value={data.colour_hex} onChange={(e) => setData('colour_hex', e.target.value)} />
                             </div>
                         </FormField>
-                        <FormField id="group-vat" label="Default VAT rate" optional help="For new products filed here." error={errors.default_vat_rate_id}>
+                        <FormField id="group-vat" label={taxText('Default VAT rate')} optional help="For new products filed here." error={errors.default_vat_rate_id}>
                             <OptionSelect id="group-vat" value={data.default_vat_rate_id} options={options.vatRates} none="None" onChange={(v) => setData('default_vat_rate_id', v)} />
                         </FormField>
                         {!isDepartment && (

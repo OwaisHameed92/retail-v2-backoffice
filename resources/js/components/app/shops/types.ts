@@ -139,6 +139,8 @@ export type BusinessForm = {
     name: string;
     legal_name: string;
     vat_number: string;
+    /** PK only: BusinessPage sends it where the country profile has an STRN. */
+    strn?: string;
     company_number: string;
     address: string;
     town: string;

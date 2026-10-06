@@ -1,4 +1,4 @@
-import { formatMoneyWhole } from '@/lib/country';
+import { formatMoneyWhole, taxText } from '@/lib/country';
 import { cn } from '@/lib/utils';
 import { ArrowUpRight } from 'lucide-react';
 import { useId, type ReactNode } from 'react';
@@ -178,7 +178,7 @@ export function CustomerPreview() {
             }}
             chips={[
                 { tone: 'amber', text: 'Low stock: 6 items' },
-                { tone: 'green', text: 'VAT return ready' },
+                { tone: 'green', text: taxText('VAT return ready') },
             ]}
         />
     );

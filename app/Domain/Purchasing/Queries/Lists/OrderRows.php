@@ -5,6 +5,7 @@ namespace App\Domain\Purchasing\Queries\Lists;
 use App\Domain\Purchasing\Data\PurchasingFilters;
 use App\Domain\Purchasing\Support\HeadOfficeOrders;
 use App\Domain\Purchasing\Support\PurchasingNames;
+use App\Domain\Shared\Country\Country;
 use App\Domain\Shared\Support\Money;
 use App\Domain\TillData\Enums\PurchaseOrderStatus;
 use App\Domain\TillData\Models\PurchaseOrder;
@@ -86,7 +87,7 @@ final class OrderRows extends DocumentRows
 
         return [
             self::stat('Open orders', (clone $open)->count(), 'count', 'primary', 'Sent or part received'),
-            self::stat('Value on order', Money::normalise((clone $open)->sum('gross_total') ?: 0), 'money', 'neutral', 'Open orders, inc. VAT'),
+            self::stat('Value on order', Money::normalise((clone $open)->sum('gross_total') ?: 0), 'money', 'neutral', Country::tax('Open orders, inc. VAT')),
             self::stat('With the portal', $drafts->count(), 'count', 'neutral', 'Head-office orders the shop has not taken on yet'),
             self::stat('Awaiting invoice', (clone $query)->where('status', 'received')->count(), 'count', 'warning', 'Received in full'),
         ];

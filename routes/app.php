@@ -254,9 +254,12 @@ Route::middleware(['auth:web', 'verified', 'company', 'two-factor:web'])->group(
         Route::get('profit-and-loss', [AccountsController::class, 'profitAndLoss'])->name('profit-and-loss');
         Route::get('balance-sheet', [AccountsController::class, 'balanceSheet'])->name('balance-sheet');
         Route::get('expenses', [AccountsController::class, 'expenses'])->name('expenses');
-        Route::get('vat', [AccountsController::class, 'vat'])->name('vat');
-        Route::get('vat/print', [AccountsController::class, 'vatPrint'])->name('vat.print');
-        Route::get('vat/csv', [AccountsController::class, 'vatCsv'])->name('vat.csv')->middleware('throttle:30,1');
+        // The HMRC VAT return (boxes 1–9) is UK-only: 404 where the country profile has `vatReturn` off (Pakistan P3).
+        Route::middleware('country.feature:vatReturn')->group(function () {
+            Route::get('vat', [AccountsController::class, 'vat'])->name('vat');
+            Route::get('vat/print', [AccountsController::class, 'vatPrint'])->name('vat.print');
+            Route::get('vat/csv', [AccountsController::class, 'vatCsv'])->name('vat.csv')->middleware('throttle:30,1');
+        });
         Route::get('fixed-assets', [AccountsController::class, 'fixedAssets'])->name('fixed-assets');
         // Gap #8: journals for Xero, QuickBooks and Sage (accounts.export: owner and accountant), preview and CSV, and
         // the account / VAT code mapping per package.

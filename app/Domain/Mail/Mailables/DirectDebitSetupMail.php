@@ -4,6 +4,7 @@ namespace App\Domain\Mail\Mailables;
 
 use App\Domain\Mail\Data\DirectDebitSetupData;
 use App\Domain\Mail\Support\MailFormat;
+use App\Domain\Shared\Country\Country;
 use Illuminate\Mail\Mailables\Content;
 
 final class DirectDebitSetupMail extends BrandedMailable
@@ -59,12 +60,12 @@ final class DirectDebitSetupMail extends BrandedMailable
         $facts = [];
 
         if ($this->data->recurring !== null) {
-            $facts['Your subscription'] = MailFormat::money($this->data->recurring).' '.$this->data->per.' ('.MailFormat::count($this->data->tillCount, 'till').', VAT included)';
+            $facts['Your subscription'] = MailFormat::money($this->data->recurring).' '.$this->data->per.' ('.MailFormat::count($this->data->tillCount, 'till').', '.Country::tax('VAT').' included)';
         }
 
         if ($this->data->setupFee !== null) {
             // Shown for information only: the setup fee is paid by hand, never by this Direct Debit.
-            $facts['Setup fee'] = MailFormat::money($this->data->setupFee).' (VAT included), paid separately by cash, card or bank transfer';
+            $facts['Setup fee'] = MailFormat::money($this->data->setupFee).' ('.Country::tax('VAT').' included), paid separately by cash, card or bank transfer';
         }
 
         return new Content(markdown: 'mail.direct-debit-setup', with: [

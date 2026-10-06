@@ -2,6 +2,7 @@
 
 namespace App\Domain\Tenancy\Data;
 
+use App\Domain\Shared\Country\Country;
 use App\Domain\Tenancy\Enums\CompanyRole;
 use App\Domain\Tenancy\Models\Branch;
 use App\Domain\Tenancy\Models\Company;
@@ -63,7 +64,8 @@ final class TenantData
             'cancelledAt' => $company->cancelled_at?->toIso8601String(),
             'cancellationReason' => $company->cancellation_reason,
             'createdAt' => $company->created_at?->toIso8601String(),
-        ];
+            // Pakistan plan P3: the STRN only where the profile has one (GB props unchanged).
+        ] + (app(Country::class)->taxIdFor('strn') === null ? [] : ['strn' => $company->strn]);
     }
 
     /**

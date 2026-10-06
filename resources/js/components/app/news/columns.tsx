@@ -1,5 +1,6 @@
 import { RowActions, type RowAction } from '@/components/shared/row-actions';
 import { StatusPill } from '@/components/shared/status-badge';
+import { taxText } from '@/lib/country';
 import { cn } from '@/lib/utils';
 import { type ColumnDef } from '@tanstack/react-table';
 import { Archive, ArchiveRestore, Pencil } from 'lucide-react';
@@ -89,7 +90,7 @@ export function newsColumns(kind: NewsKind, showShop: boolean, manage: boolean, 
                         ) : (
                             <div className="grid justify-items-start gap-1 leading-5">
                                 {text(row.original.barcode) && <span className="font-mono text-xs">{row.original.barcode as string}</span>}
-                                <StatusPill tone="warning">No product: no VAT line on the till</StatusPill>
+                                <StatusPill tone="warning">{taxText('No product: no VAT line on the till')}</StatusPill>
                             </div>
                         ),
                 },

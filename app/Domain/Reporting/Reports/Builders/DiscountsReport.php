@@ -11,6 +11,7 @@ use App\Domain\Reporting\Reports\ReportBuilder;
 use App\Domain\Reporting\Reports\ReportOptions;
 use App\Domain\Reporting\Reports\ReportResult;
 use App\Domain\Reporting\Reports\ReportTable;
+use App\Domain\Shared\Country\Country;
 
 /**
  * Discounts by source (`SaleLine.discountSource`, 3.1): offers (promotions), coupons, staff purchases and manual
@@ -30,7 +31,7 @@ final class DiscountsReport implements ReportBuilder
         $c = $before !== null;
 
         $summary = [
-            Figures::of('discount', 'Total discounts', $now->discount, 'money', $before?->discount, $c, 'down', (Figures::percent($now->discount, $now->gross) ?? '0.0').'% of sales inc VAT'),
+            Figures::of('discount', 'Total discounts', $now->discount, 'money', $before?->discount, $c, 'down', (Figures::percent($now->discount, $now->gross) ?? '0.0').Country::tax('% of sales inc VAT')),
             Figures::of('promo', 'Offers', $now->promo, 'money', $before?->promo, $c, 'down'),
             Figures::of('coupon', 'Coupons', $now->coupon, 'money', $before?->coupon, $c, 'down'),
             Figures::of('staff', 'Staff discount', $now->staffDiscount, 'money', $before?->staffDiscount, $c, 'down'),

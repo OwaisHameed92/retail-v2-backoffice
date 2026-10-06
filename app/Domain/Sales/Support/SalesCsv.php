@@ -5,6 +5,7 @@ namespace App\Domain\Sales\Support;
 use App\Domain\Reporting\Support\TradingDay;
 use App\Domain\Sales\Queries\SaleList;
 use App\Domain\Sales\Queries\SaleSearch;
+use App\Domain\Shared\Country\Country;
 use App\Domain\Shared\Support\CsvText;
 use App\Domain\Shared\Support\Money;
 use App\Domain\TillData\Models\Sale;
@@ -26,13 +27,23 @@ final class SalesCsv
     private const CHUNK = 500;
 
     /**
+     * HEADERS in the profile's tax name: GB exactly HEADERS ("VAT"), PK "GST".
+     *
+     * @return list<string>
+     */
+    public static function headers(): array
+    {
+        return array_map(fn (string $header) => Country::tax($header), self::HEADERS);
+    }
+
+    /**
      * @param  resource  $out
      * @param  Builder<Sale>  $query
      * @return int rows written
      */
     public static function write($out, Builder $query): int
     {
-        fputcsv($out, self::HEADERS, escape: '');
+        fputcsv($out, self::headers(), escape: '');
         $count = 0;
 
         SaleSearch::chunk($query, self::CHUNK, function (Collection $sales) use ($out, &$count) {

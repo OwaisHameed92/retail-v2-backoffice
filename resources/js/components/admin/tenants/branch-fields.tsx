@@ -4,6 +4,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { keepsUkStyles, vatNumberLabel } from '@/lib/country';
 
 export type BranchFieldsData = {
     code: string;
@@ -93,7 +94,13 @@ export function BranchFields({ prefix = '', data, setField, errors, nations, sho
                     className="max-w-40 uppercase"
                 />
             </Field>
-            <Field id={id('vat_number')} label="Branch VAT number" optional hint="Only if different from the business." error={error('vat_number')}>
+            <Field
+                id={id('vat_number')}
+                label={keepsUkStyles() ? 'Branch VAT number' : `Branch ${vatNumberLabel()}`}
+                optional
+                hint="Only if different from the business."
+                error={error('vat_number')}
+            >
                 <Input
                     id={id('vat_number')}
                     value={data.vat_number}

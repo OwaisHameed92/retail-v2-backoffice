@@ -46,7 +46,7 @@ final class CustomerExportBundle
             array_map(fn (array $r) => [$r['at'], $r['channel'], $r['event'], $r['source'], $r['shop']], $data['consent']['history']),
         ));
         $zip->addFromString('sales.csv', $this->csv(
-            ['Receipt', 'Completed (UTC)', 'Shop', 'Type', 'Status', 'Total', 'VAT'],
+            ['Receipt', 'Completed (UTC)', 'Shop', 'Type', 'Status', 'Total', Country::tax('VAT')],
             array_map(fn (array $r) => [$r['receiptNumber'], $r['completedAt'], $r['shop'], $r['type'], $r['status'], $r['total'], $r['vat']], $data['sales']),
         ));
         $zip->addFromString('customer-orders.csv', $this->csv(

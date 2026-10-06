@@ -12,6 +12,7 @@ use App\Domain\Anomalies\Support\RobustStats as R;
 use App\Domain\Anomalies\Support\ShopTimes;
 use App\Domain\Reporting\ReportTables;
 use App\Domain\Reporting\Support\Units;
+use App\Domain\Shared\Country\Country;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 
@@ -90,7 +91,7 @@ final class SalesDrop implements Detector
                     .Fmt::pounds($median).' ('.Fmt::number($usualTxn).' sales) on the last '.count($usual).' '.$weekday.'s. '
                     .'A till may not have synced, or the shop may have opened late or shut early.',
                 facts: [
-                    ['label' => 'Sales (inc VAT)', 'value' => Fmt::money($gross), 'usual' => Fmt::pounds($median)],
+                    ['label' => Country::tax('Sales (inc VAT)'), 'value' => Fmt::money($gross), 'usual' => Fmt::pounds($median)],
                     ['label' => 'Transactions', 'value' => (string) $txn, 'usual' => Fmt::number($usualTxn)],
                     ['label' => 'Below usual', 'value' => $down],
                     ['label' => $weekday.'s compared', 'value' => (string) count($usual)],

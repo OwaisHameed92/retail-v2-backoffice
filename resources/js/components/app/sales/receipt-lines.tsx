@@ -1,6 +1,7 @@
 import { SectionCard } from '@/components/shared/section-card';
 import { StatusPill } from '@/components/shared/status-badge';
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { taxName, taxText } from '@/lib/country';
 import { cn } from '@/lib/utils';
 import { Link } from '@inertiajs/react';
 import { Amount, deduction, DISCOUNT_SOURCE, LINE_FLAGS, money, qty, trimRate } from './format';
@@ -85,7 +86,7 @@ export function ReceiptLines({
                         <TableHead>Item</TableHead>
                         <TableHead className="text-right">Qty</TableHead>
                         <TableHead className="text-right">Price</TableHead>
-                        <TableHead className="hidden text-right sm:table-cell">VAT</TableHead>
+                        <TableHead className="hidden text-right sm:table-cell">{taxName()}</TableHead>
                         <TableHead className="text-right">Total</TableHead>
                     </TableRow>
                 </TableHeader>
@@ -136,7 +137,7 @@ export function ReceiptLines({
                     <TableFooter className="bg-subtle">
                         <TableRow className="hover:bg-transparent">
                             <TableCell colSpan={5} className="py-3">
-                                <p className="text-muted-foreground mb-2 text-xs font-medium tracking-wide uppercase">VAT breakdown</p>
+                                <p className="text-muted-foreground mb-2 text-xs font-medium tracking-wide uppercase">{taxText('VAT breakdown')}</p>
                                 <div className="grid gap-1">
                                     {vat.map((row, i) => (
                                         <div key={`${row.code}-${i}`} className="grid grid-cols-4 gap-2 text-sm tabular-nums">
@@ -145,7 +146,9 @@ export function ReceiptLines({
                                                 {trimRate(row.rate)}%
                                             </span>
                                             <span className="text-right">Net {money(row.net)}</span>
-                                            <span className="text-right">VAT {money(row.vat)}</span>
+                                            <span className="text-right">
+                                                {taxName()} {money(row.vat)}
+                                            </span>
                                             <span className="text-right">Gross {money(row.gross)}</span>
                                         </div>
                                     ))}
@@ -168,8 +171,8 @@ export function ReceiptLines({
                     )}
                     {!isZero(totals.deposit) && <TotalRow label="Container deposits (DRS)" value={totals.deposit} muted />}
                     <TotalRow label="Total" value={totals.total} strong />
-                    <TotalRow label="of which VAT" value={totals.vat} muted />
-                    <TotalRow label="Net of VAT" value={totals.net} muted />
+                    <TotalRow label={taxText('of which VAT')} value={totals.vat} muted />
+                    <TotalRow label={taxText('Net of VAT')} value={totals.net} muted />
                 </div>
             </div>
         </SectionCard>

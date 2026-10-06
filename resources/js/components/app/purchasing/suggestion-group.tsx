@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { formatMoneyAsGiven } from '@/lib/country';
+import { formatMoneyAsGiven, taxText } from '@/lib/country';
 import { cn } from '@/lib/utils';
 import { ChevronDown, RotateCcw } from 'lucide-react';
 import { Fragment, useState } from 'react';
@@ -61,7 +61,7 @@ export function SuggestionGroupCard({ group, lines, quantities, editable, showSh
                         <Badge variant="warning">Below the {formatMoneyAsGiven(Number(group.minimumOrder).toFixed(2))} minimum order</Badge>
                     )}
                     <span className="font-medium tabular-nums">{money(total)}</span>
-                    <span className="text-muted-foreground">ex VAT</span>
+                    <span className="text-muted-foreground">{taxText('ex VAT')}</span>
                 </div>
             }
             flush

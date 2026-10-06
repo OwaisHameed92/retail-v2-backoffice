@@ -12,6 +12,7 @@ import { StickyFormBar } from '@/components/shared/sticky-form-bar';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/app-layout';
+import { taxName, taxText } from '@/lib/country';
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import { CircleCheck, ExternalLink, FileText, LoaderCircle, RotateCcw, Save, Trash2, TriangleAlert } from 'lucide-react';
 import { useEffect } from 'react';
@@ -65,7 +66,7 @@ function ReviewForm(props: InvoiceReviewProps) {
                     />
                     <SectionCard
                         title={`Lines (${form.data.lines.length})`}
-                        description={errors.lines ?? 'Quantity of what is sold × items in each, at the price ex VAT. Change a match with Pick.'}
+                        description={errors.lines ?? taxText('Quantity of what is sold × items in each, at the price ex VAT. Change a match with Pick.')}
                         flush
                     >
                         <LinesEditor
@@ -106,7 +107,7 @@ function Confirmed({ props }: { props: InvoiceReviewProps }) {
             <ul className="grid gap-2 text-sm">
                 <li className="flex items-center gap-2">
                     <CircleCheck className="text-success size-4" />
-                    Recorded: {result?.lines ?? 0} lines, {money(result?.net ?? '0')} net, {money(result?.gross ?? '0')} with VAT.
+                    Recorded: {result?.lines ?? 0} lines, {money(result?.net ?? '0')} net, {money(result?.gross ?? '0')} with {taxName()}.
                 </li>
                 {result?.order && (
                     <li className="flex items-center gap-2">

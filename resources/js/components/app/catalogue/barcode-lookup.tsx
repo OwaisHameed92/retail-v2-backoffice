@@ -3,6 +3,7 @@ import { type ProductValues, type SetValue } from '@/components/app/products/typ
 import { SectionCard } from '@/components/shared/section-card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { taxName } from '@/lib/country';
 import { sendJson } from '@/lib/http';
 import { Link } from '@inertiajs/react';
 import { BookOpenCheck, CircleAlert, LoaderCircle, ScanBarcode } from 'lucide-react';
@@ -138,7 +139,7 @@ export function BarcodeLookup({ data, setData }: { data: ProductValues; setData:
                                     {[
                                         product.size,
                                         product.department,
-                                        product.vatRate ? `VAT ${product.vatRate}` : null,
+                                        product.vatRate ? `${taxName()} ${product.vatRate}` : null,
                                         product.rrp ? `RRP ${formatMoney(product.rrp)}` : null,
                                     ]
                                         .filter(Boolean)

@@ -3,6 +3,7 @@ import { type ReportIndexProps, type ReportKey } from '@/components/app/reports/
 import { PageHeader } from '@/components/shared/page-header';
 import { toneCircle, type ChartTone } from '@/components/shared/trend-chart';
 import AppLayout from '@/layouts/app-layout';
+import { taxName } from '@/lib/country';
 import { cn } from '@/lib/utils';
 import { type BreadcrumbItem, type SharedData } from '@/types';
 import { Head, Link, usePage } from '@inertiajs/react';
@@ -39,7 +40,7 @@ export default function ReportsIndex({ reports, filters, context }: ReportIndexP
 
             <PageHeader
                 title="Reports"
-                description={`Sales, VAT, payments, staff, stock and cash for ${where}. Every report can be filtered by dates and shop, exported as CSV and printed.`}
+                description={`Sales, ${taxName()}, payments, staff, stock and cash for ${where}. Every report can be filtered by dates and shop, exported as CSV and printed.`}
             />
 
             {sections.map((section) => (

@@ -28,6 +28,8 @@ export interface Tenant {
     name: string;
     legalName: string | null;
     vatNumber: string | null;
+    /** PK only (TenantData::company sends it where the profile has an STRN). */
+    strn?: string | null;
     companyNumber: string | null;
     address: string | null;
     phone: string | null;

@@ -12,6 +12,7 @@ import { StatCard, StatGrid } from '@/components/shared/stat-card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import AdminLayout from '@/layouts/admin-layout';
+import { taxName, taxText } from '@/lib/country';
 import { Head, Link } from '@inertiajs/react';
 import { Archive, CalendarClock, CalendarRange, Check, Clock, Layers, Minus, Pencil } from 'lucide-react';
 
@@ -77,7 +78,7 @@ export default function ShowPlan({ plan, features, activity }: ShowPlanProps) {
                     <StatCard
                         label="Setup fee"
                         value={formatMoney(plan.setupFee)}
-                        hint="Setup fee only, + VAT, paid by hand. Paid in full = a licence that does not expire."
+                        hint={taxText('Setup fee only, + VAT, paid by hand. Paid in full = a licence that does not expire.')}
                         icon={MoneyIcon}
                     />
                 ) : (
@@ -86,7 +87,7 @@ export default function ShowPlan({ plan, features, activity }: ShowPlanProps) {
                         value={formatMoney(plan.priceMonthly)}
                         hint={
                             plan.billingType === 'setupAndRecurring'
-                                ? `Per ${plan.pricingMode === 'perBranch' ? 'branch' : 'till'} by Direct Debit · setup fee ${formatMoney(plan.setupFee)} + VAT`
+                                ? `Per ${plan.pricingMode === 'perBranch' ? 'branch' : 'till'} by Direct Debit · setup fee ${formatMoney(plan.setupFee)} + ${taxName()}`
                                 : `Per ${plan.pricingMode === 'perBranch' ? 'branch' : 'till'} by Direct Debit · no setup fee`
                         }
                         icon={MoneyIcon}

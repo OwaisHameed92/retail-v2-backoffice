@@ -3,6 +3,7 @@
 namespace App\Http\Requests\App;
 
 use App\Domain\Catalogue\Support\ProductFields;
+use App\Domain\Shared\Country\Country;
 use App\Domain\TillData\Enums\AgeRule;
 use App\Domain\TillData\Enums\NegativeStockPolicy;
 use App\Domain\TillData\Enums\UnitType;
@@ -102,7 +103,7 @@ class SaveProductRequest extends CompanyWideWriteRequest
             'deposit_amount.required_if_accepted' => 'Enter the deposit charged.',
             'department_id.required' => 'Choose a department.',
             'category_id.required' => 'Choose a category.',
-            'vat_rate_id.required' => 'Choose a VAT rate.',
+            'vat_rate_id.required' => Country::tax('Choose a VAT rate.'),
         ];
     }
 

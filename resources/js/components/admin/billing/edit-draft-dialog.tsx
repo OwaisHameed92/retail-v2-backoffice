@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { currencySymbol, wideCurrencySymbol } from '@/lib/country';
+import { currencySymbol, taxName, wideCurrencySymbol } from '@/lib/country';
 import { cn } from '@/lib/utils';
 import { useForm } from '@inertiajs/react';
 import { KeyRound, LoaderCircle, Plus, Trash2 } from 'lucide-react';
@@ -90,9 +90,9 @@ function EditBody({ onOpenChange, invoice }: EditDraftDialogProps) {
                 <DialogHeader>
                     <DialogTitle>Edit draft invoice</DialogTitle>
                     <DialogDescription>
-                        {invoice.period}. Amounts are before VAT
-                        {invoice.vatRate !== '0.00' ? `; VAT is added at ${invoice.vatRate.replace(/\.?0+$/, '')}%` : ''}. A negative price makes a
-                        discount line.
+                        {invoice.period}. Amounts are before {taxName()}
+                        {invoice.vatRate !== '0.00' ? `; ${taxName()} is added at ${invoice.vatRate.replace(/\.?0+$/, '')}%` : ''}. A negative price
+                        makes a discount line.
                     </DialogDescription>
                 </DialogHeader>
 

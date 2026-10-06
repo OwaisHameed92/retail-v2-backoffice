@@ -4,6 +4,7 @@ import { type BalanceSheetProps } from '@/components/app/accounts/types';
 import { formatDay } from '@/components/app/pricing/format';
 import { useTableQuery } from '@/components/shared/data-table';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { taxText } from '@/lib/country';
 import { TriangleAlert } from 'lucide-react';
 
 export default function AccountsBalanceSheet({ assets, liabilities, equity, totals, balanced, refundFix, filters, options }: BalanceSheetProps) {
@@ -31,7 +32,7 @@ export default function AccountsBalanceSheet({ assets, liabilities, equity, tota
             <StatementSection title="Assets" description="Cash, bank, stock and money owed to you." lines={assets} total={totals.assets} totalLabel="Total assets" filters={filters} />
             <StatementSection
                 title="Liabilities"
-                description="VAT, customer deposits and charity money held, and suppliers you owe."
+                description={taxText('VAT, customer deposits and charity money held, and suppliers you owe.')}
                 lines={liabilities}
                 total={totals.liabilities}
                 totalLabel="Total liabilities"

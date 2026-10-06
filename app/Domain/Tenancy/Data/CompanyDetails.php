@@ -2,6 +2,7 @@
 
 namespace App\Domain\Tenancy\Data;
 
+use App\Domain\Shared\Country\Country;
 use App\Domain\Tenancy\Enums\BusinessType;
 use Illuminate\Support\Carbon;
 
@@ -28,6 +29,8 @@ final readonly class CompanyDetails
         public ?string $postcode = null,
         public ?string $ownerName = null,
         public ?string $receiptFooter = null,
+        /** Pakistan plan P3: the STRN, kept only where the country profile has one (never on GB). */
+        public ?string $strn = null,
     ) {}
 
     /**
@@ -51,6 +54,6 @@ final readonly class CompanyDetails
             'postcode' => $this->postcode,
             'owner_name' => $this->ownerName,
             'receipt_footer' => $this->receiptFooter,
-        ];
+        ] + (app(Country::class)->taxIdFor('strn') === null ? [] : ['strn' => $this->strn]);
     }
 }

@@ -31,11 +31,16 @@ final class TenantRules
      */
     public static function company(): array
     {
+        // The business ids follow the country profile (Pakistan plan P3): GB's patterns are VAT_PATTERN and
+        // COMPANY_NUMBER_PATTERN exactly (pinned by CountryProfileTest); PK adds the STRN.
+        $strn = self::taxIdPattern('strn');
+
         return [
             'name' => ['required', 'string', 'max:120'],
             'legal_name' => ['nullable', 'string', 'max:160'],
-            'vat_number' => ['nullable', 'string', 'regex:'.self::VAT_PATTERN],
-            'company_number' => ['nullable', 'string', 'regex:'.self::COMPANY_NUMBER_PATTERN],
+            'vat_number' => ['nullable', 'string', 'regex:'.(self::taxIdPattern('vat_number') ?? self::VAT_PATTERN)],
+            ...($strn === null ? [] : ['strn' => ['nullable', 'string', 'regex:'.$strn]]),
+            'company_number' => ['nullable', 'string', 'regex:'.(self::taxIdPattern('company_number') ?? self::COMPANY_NUMBER_PATTERN)],
             'address' => ['nullable', 'string', 'max:500'],
             'phone' => ['nullable', 'string', 'regex:'.self::PHONE_PATTERN],
             'email' => ['nullable', 'string', 'email', 'max:255'],
@@ -69,7 +74,7 @@ final class TenantRules
             $prefix.'name' => ['required', 'string', 'max:120'],
             $prefix.'address' => ['nullable', 'string', 'max:500'],
             $prefix.'phone' => ['nullable', 'string', 'regex:'.self::PHONE_PATTERN],
-            $prefix.'vat_number' => ['nullable', 'string', 'regex:'.self::VAT_PATTERN],
+            $prefix.'vat_number' => ['nullable', 'string', 'regex:'.(self::taxIdPattern('vat_number') ?? self::VAT_PATTERN)],
             $prefix.'town' => ['nullable', 'string', 'max:80'],
             $prefix.'postcode' => ['nullable', 'string', 'max:10', 'regex:'.self::POSTCODE_PATTERN],
             $prefix.'receipt_footer' => ['nullable', 'string', 'max:200'],
@@ -85,10 +90,19 @@ final class TenantRules
      */
     public static function messages(string $prefix = ''): array
     {
+        $country = app(Country::class);
+        // GB keeps its wording; another profile says "Enter the NTN, for example 1234567-8.".
+        $id = function (string $column, string $gb) use ($country): string {
+            $taxId = $country->taxIdFor($column);
+
+            return $country->is(Country::DEFAULT) || $taxId === null ? $gb : "Enter the {$taxId['label']}, for example {$taxId['example']}.";
+        };
+
         return [
-            'vat_number.regex' => 'Enter a UK VAT number like GB123456789.',
-            $prefix.'vat_number.regex' => 'Enter a UK VAT number like GB123456789.',
-            'company_number.regex' => 'Enter a Companies House number: 8 digits, or 2 letters and 6 digits.',
+            'vat_number.regex' => $id('vat_number', 'Enter a UK VAT number like GB123456789.'),
+            $prefix.'vat_number.regex' => $id('vat_number', 'Enter a UK VAT number like GB123456789.'),
+            ...($country->taxIdFor('strn') === null ? [] : ['strn.regex' => $id('strn', '')]),
+            'company_number.regex' => $id('company_number', 'Enter a Companies House number: 8 digits, or 2 letters and 6 digits.'),
             'phone.regex' => 'Enter a phone number like 0113 496 0000.',
             'postcode.regex' => 'Enter a UK postcode like LS1 6AB.',
             $prefix.'postcode.regex' => 'Enter a UK postcode like LS1 6AB.',
@@ -108,6 +122,7 @@ final class TenantRules
      */
     public static function clean(FormRequest $request, array $prefixes = ['']): array
     {
+        $uk = app(Country::class)->is(Country::DEFAULT);
         $clean = [];
 
         foreach ($request->all() as $key => $value) {
@@ -130,14 +145,22 @@ final class TenantRules
                 $clean[$postcodeKey] = strtoupper((string) preg_replace('/\s+/', ' ', $clean[$postcodeKey]));
             }
 
+            // A UK VAT number typed without "GB" and a short Companies House number: GB only (an NTN or SECP
+            // number is kept as typed).
             $vatKey = $prefix.'vat_number';
-            if (isset($clean[$vatKey]) && preg_match('/^\d{9}(\d{3})?$/', (string) $clean[$vatKey]) === 1) {
+            if ($uk && isset($clean[$vatKey]) && preg_match('/^\d{9}(\d{3})?$/', (string) $clean[$vatKey]) === 1) {
                 $clean[$vatKey] = 'GB'.$clean[$vatKey];
             }
 
             $numberKey = $prefix.'company_number';
-            if (isset($clean[$numberKey]) && preg_match('/^\d{1,7}$/', (string) $clean[$numberKey]) === 1) {
+            if ($uk && isset($clean[$numberKey]) && preg_match('/^\d{1,7}$/', (string) $clean[$numberKey]) === 1) {
                 $clean[$numberKey] = str_pad((string) $clean[$numberKey], 8, '0', STR_PAD_LEFT);
+            }
+
+            // PK STRN: digits only, however it was grouped ("17-00-1234-567-89").
+            $strnKey = $prefix.'strn';
+            if (! $uk && isset($clean[$strnKey])) {
+                $clean[$strnKey] = (string) preg_replace('/[\s-]+/', '', (string) $clean[$strnKey]);
             }
         }
 
@@ -170,7 +193,14 @@ final class TenantRules
             postcode: self::nullableString($request->input('postcode')),
             ownerName: self::nullableString($request->input('owner_name')),
             receiptFooter: self::nullableString($request->input('receipt_footer')),
+            strn: self::nullableString($request->input('strn')),
         );
+    }
+
+    /** The profile's pattern for what a business column holds (`vat_number`, `strn`, `company_number`), if any. */
+    private static function taxIdPattern(string $column): ?string
+    {
+        return app(Country::class)->taxIdFor($column)['pattern'] ?? null;
     }
 
     public static function branchDetails(FormRequest $request, string $prefix = ''): BranchDetails

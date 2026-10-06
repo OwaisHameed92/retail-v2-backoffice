@@ -3,6 +3,7 @@
 namespace App\Domain\Catalogue\Actions;
 
 use App\Domain\Shared\Actions\RecordAudit;
+use App\Domain\Shared\Country\Country;
 use App\Domain\TillData\Models\Category;
 use App\Domain\TillData\Models\Department;
 use App\Domain\TillData\Models\Product;
@@ -61,7 +62,7 @@ final class SaveCategory
         $vat = $attributes['default_vat_rate_id'] ?? null;
 
         if ($vat !== null && ! VatRate::query()->whereKey($vat)->exists()) {
-            $errors['default_vat_rate_id'] = 'Choose a VAT rate.';
+            $errors['default_vat_rate_id'] = Country::tax('Choose a VAT rate.');
         }
 
         $clash = Category::query()->where('department_id', $departmentId)->whereRaw('lower(name) = ?', [mb_strtolower($name)])

@@ -89,7 +89,7 @@ final class SummaryView
         return array_filter([
             'day' => $view['dayLabel'],
             'shops covered' => $view['scope'],
-            'sales yesterday (inc VAT)' => MailFormat::money($t['sales']),
+            Country::tax('sales yesterday (inc VAT)') => MailFormat::money($t['sales']),
             'transactions yesterday' => $t['transactions'],
             'average basket yesterday' => $t['average'] !== null ? MailFormat::money($t['average']) : null,
             'sales on the same weekday last week' => $t['lastWeek'] !== null ? MailFormat::money($t['lastWeek']) : 'no sales recorded',

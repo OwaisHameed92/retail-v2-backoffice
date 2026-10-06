@@ -7,6 +7,7 @@ import { SectionCard } from '@/components/shared/section-card';
 import { StatusBadge, StatusPill } from '@/components/shared/status-badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
+import { taxName } from '@/lib/country';
 import { router } from '@inertiajs/react';
 import { MailPlus, PauseCircle, PlayCircle, ReceiptText, RefreshCw, Settings2, TriangleAlert, XCircle } from 'lucide-react';
 import { type ReactNode, useState } from 'react';
@@ -118,7 +119,7 @@ export function DirectDebitPanel({ company, directDebit, canManage }: { company:
                         </span>
                     </Tile>
                     <Tile label="Setup fee (upfront)">
-                        <span className="font-medium tabular-nums">{setupFee.hasFee ? `${setupFee.gross} incl. VAT` : 'None'}</span>
+                        <span className="font-medium tabular-nums">{setupFee.hasFee ? `${setupFee.gross} incl. ${taxName()}` : 'None'}</span>
                         <span className="text-muted-foreground text-sm">
                             {setupFee.hasFee
                                 ? `${setupFee.override !== null ? 'Custom' : 'Plan fee'} · ${setupFee.instalments > 1 ? `${setupFee.instalments} monthly payments` : 'one payment'} · paid by hand`

@@ -11,7 +11,7 @@ import { changeDelta, money, moneyAxis, number, shortDay } from '@/components/sh
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import AppLayout from '@/layouts/app-layout';
-import { formatNumber } from '@/lib/country';
+import { formatNumber, taxText } from '@/lib/country';
 import { Head, router } from '@inertiajs/react';
 import { BarChart3, Info, Receipt, ShoppingBasket, Wallet } from 'lucide-react';
 
@@ -88,7 +88,7 @@ export default function CalendarEvent(props: EventProps) {
 
                 <StatGrid>
                     <StatCard
-                        label={upcoming ? 'Sales last year' : 'Sales (inc VAT)'}
+                        label={upcoming ? 'Sales last year' : taxText('Sales (inc VAT)')}
                         value={money(upcoming ? totals.gross.previous : totals.gross.current)}
                         delta={delta(totals.gross.change)}
                         hint={upcoming ? lastYearLabel : hint(totals.gross.previous, money)}
@@ -99,7 +99,7 @@ export default function CalendarEvent(props: EventProps) {
                         label={upcoming ? 'Net sales last year' : 'Net sales'}
                         value={money(upcoming ? totals.net.previous : totals.net.current)}
                         delta={delta(totals.net.change)}
-                        hint={upcoming ? 'Excluding VAT' : hint(totals.net.previous, money)}
+                        hint={upcoming ? taxText('Excluding VAT') : hint(totals.net.previous, money)}
                         icon={Wallet}
                         tone="success"
                     />
@@ -115,7 +115,7 @@ export default function CalendarEvent(props: EventProps) {
                         label={upcoming ? 'Average basket last year' : 'Average basket'}
                         value={money(upcoming ? totals.basket.previous : totals.basket.current)}
                         delta={delta(totals.basket.change)}
-                        hint={upcoming ? 'Including VAT' : hint(totals.basket.previous, money)}
+                        hint={upcoming ? taxText('Including VAT') : hint(totals.basket.previous, money)}
                         icon={ShoppingBasket}
                         tone="neutral"
                     />
@@ -124,14 +124,16 @@ export default function CalendarEvent(props: EventProps) {
                 <ChartCard
                     icon={BarChart3}
                     title="Sales day by day"
-                    subtitle={`Including VAT · ${event.name} against ${lastYearLabel.toLowerCase()}`}
+                    subtitle={`${taxText('Including VAT')} · ${event.name} against ${lastYearLabel.toLowerCase()}`}
                 >
                     <CompareChart data={chart} variant="bar" format={money} axisFormat={moneyAxis} currentName="This year" compareName="Last year" />
                 </ChartCard>
 
                 <SectionCard
                     title="Departments"
-                    description="Net sales (ex VAT) by department, with the uplift the till plans for this event (learned from past years or set on the till)."
+                    description={taxText(
+                        'Net sales (ex VAT) by department, with the uplift the till plans for this event (learned from past years or set on the till).',
+                    )}
                     flush
                 >
                     {departments.length === 0 ? (

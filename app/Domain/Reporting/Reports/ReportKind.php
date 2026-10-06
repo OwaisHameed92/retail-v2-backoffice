@@ -12,6 +12,7 @@ use App\Domain\Reporting\Reports\Builders\StaffSalesReport;
 use App\Domain\Reporting\Reports\Builders\StockReport;
 use App\Domain\Reporting\Reports\Builders\TendersReport;
 use App\Domain\Reporting\Reports\Builders\VatReturnReport;
+use App\Domain\Shared\Country\Country;
 
 /**
  * The reports of the tenant portal (module 4.8, `/app/reports/{report}`). Sales figures come from the `rpt_*` tables
@@ -37,7 +38,7 @@ enum ReportKind: string
             self::Products => 'Product and department sales',
             self::Refunds => 'Refunds and voids',
             self::Discounts => 'Discounts',
-            self::Vat => 'VAT report',
+            self::Vat => Country::tax('VAT report'),
             self::Tenders => 'Payments',
             self::Staff => 'Staff sales',
             self::Hourly => 'Busy hours',
@@ -49,11 +50,11 @@ enum ReportKind: string
     public function description(): string
     {
         return match ($this) {
-            self::Sales => 'Sales, VAT and takings by day, week or month, by shop and by till.',
+            self::Sales => Country::tax('Sales, VAT and takings by day, week or month, by shop and by till.'),
             self::Products => 'Quantity, net sales, gross profit and margin per product and department.',
             self::Refunds => 'Refunds and voided baskets by day, by till user and by product.',
             self::Discounts => 'Money given away, by source: offers, coupons, staff and manual discounts.',
-            self::Vat => 'Net, VAT and gross per rate and per period, ready for your VAT return.',
+            self::Vat => Country::tax('Net, VAT and gross per rate and per period, ready for your VAT return.'),
             self::Tenders => 'Takings by payment type (cash, card, vouchers and more) and by period.',
             self::Staff => 'Sales, baskets, refunds and voids per till user.',
             self::Hourly => 'When you trade: a day-by-hour heatmap of sales and transactions.',

@@ -7,6 +7,7 @@ import { SectionCard } from '@/components/shared/section-card';
 import { StatusBadge, StatusPill } from '@/components/shared/status-badge';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { taxName } from '@/lib/country';
 import { CalendarClock, CircleX, Wallet } from 'lucide-react';
 import { type PortalBillingProps } from './types';
 
@@ -80,7 +81,7 @@ export function SetupFeeCard({ setupFee }: { setupFee: NonNullable<PortalBilling
         : 'Paid by cash, card or bank transfer, never by Direct Debit. Your tills stay on the free trial until it is paid.';
 
     return (
-        <SectionCard title="Setup fee" description={`${setupFee.total} in total, VAT included. ${how}`} flush contentClassName="p-0">
+        <SectionCard title="Setup fee" description={`${setupFee.total} in total, ${taxName()} included. ${how}`} flush contentClassName="p-0">
             <div className="overflow-x-auto">
                 <Table>
                     <TableHeader>

@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import AppLayout from '@/layouts/app-layout';
+import { taxText } from '@/lib/country';
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import { Info, Save, Send } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -163,7 +164,7 @@ export default function HeadOfficeOrderForm({ order, shopId, supplierId, shops, 
                     title="Lines"
                     description={
                         errors.lines ??
-                        "Cases × case size + loose units, at the cost ex VAT. Suggestions come from the shop's stock and reorder levels."
+                        taxText("Cases × case size + loose units, at the cost ex VAT. Suggestions come from the shop's stock and reorder levels.")
                     }
                     flush
                 >

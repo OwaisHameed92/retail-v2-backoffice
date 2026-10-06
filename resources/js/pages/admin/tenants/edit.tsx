@@ -9,6 +9,7 @@ import { StickyFormBar } from '@/components/shared/sticky-form-bar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import AdminLayout from '@/layouts/admin-layout';
+import { taxIdFor } from '@/lib/country';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { LoaderCircle } from 'lucide-react';
 import { type FormEventHandler } from 'react';
@@ -21,6 +22,7 @@ export default function EditTenant({ tenant, businessTypes }: { tenant: Tenant; 
         legal_name: tenant.legalName ?? '',
         vat_number: tenant.vatNumber ?? '',
         company_number: tenant.companyNumber ?? '',
+        ...(taxIdFor('strn') ? { strn: tenant.strn ?? '' } : {}),
         email: tenant.email ?? '',
         phone: tenant.phone ?? '',
         contact_name: tenant.contactName ?? '',

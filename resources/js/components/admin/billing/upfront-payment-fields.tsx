@@ -5,6 +5,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { taxName, taxText } from '@/lib/country';
 
 /** OnboardingBilling::options (module 1.13): who may take money, each plan's setup fee, VAT and the deadline. */
 export interface OnboardingBillingOptions {
@@ -35,7 +36,7 @@ function withVat(net: string, vatRate: string | null): string | null {
     const rate = vatRate === null ? 0 : Math.round(Number(vatRate) * 100);
     const vat = Math.round((pence * rate) / 10000);
 
-    return vatRate === null || rate === 0 ? formatPence(pence) : `${formatPence(pence + vat)} incl. VAT`;
+    return vatRate === null || rate === 0 ? formatPence(pence) : `${formatPence(pence + vat)} incl. ${taxName()}`;
 }
 
 interface UpfrontPaymentFieldsProps {
@@ -95,7 +96,7 @@ export function UpfrontPaymentFields({
                     {!amountLocked && (
                         <Field
                             id={`${idPrefix}-amount`}
-                            label="Setup fee (before VAT)"
+                            label={taxText('Setup fee (before VAT)')}
                             optional
                             error={errors.upfront_amount}
                             hint={

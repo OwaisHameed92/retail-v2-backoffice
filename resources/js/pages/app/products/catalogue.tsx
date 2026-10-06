@@ -12,7 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import AppLayout from '@/layouts/app-layout';
-import { formatNumber } from '@/lib/country';
+import { formatNumber, taxName, taxText } from '@/lib/country';
 import { Head, Link } from '@inertiajs/react';
 import { type ColumnDef } from '@tanstack/react-table';
 import { BookOpenCheck, Info, PackagePlus, Sparkles } from 'lucide-react';
@@ -82,7 +82,11 @@ function columns(
             cell: ({ row }) => (
                 <div className="text-right leading-tight tabular-nums">
                     <p className="font-medium">{row.original.rrp ? formatMoney(row.original.rrp) : '—'}</p>
-                    {row.original.vatRate && <p className="text-muted-foreground text-xs">VAT {row.original.vatRate}</p>}
+                    {row.original.vatRate && (
+                        <p className="text-muted-foreground text-xs">
+                            {taxName()} {row.original.vatRate}
+                        </p>
+                    )}
                 </div>
             ),
         },
@@ -140,9 +144,9 @@ export default function AddFromCatalogue(props: CatalogueSearchProps) {
             {!hasVatRates && (
                 <Alert variant="warning">
                     <Info />
-                    <AlertTitle>No VAT rates yet</AlertTitle>
+                    <AlertTitle>{taxText('No VAT rates yet')}</AlertTitle>
                     <AlertDescription>
-                        Your VAT rates arrive from your till at its first sync. Connect a till first, then add products here.
+                        Your {taxName()} rates arrive from your till at its first sync. Connect a till first, then add products here.
                     </AlertDescription>
                 </Alert>
             )}

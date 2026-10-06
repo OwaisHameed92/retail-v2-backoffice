@@ -65,7 +65,7 @@ class ProductImportController extends Controller
             $out = fopen('php://output', 'w');
 
             if ($out !== false) {
-                fputcsv($out, array_map(fn (array $f) => $f['label'], ImportColumns::FIELDS), ',', '"', '');
+                fputcsv($out, array_map(fn (array $f) => $f['label'], ImportColumns::fields()), ',', '"', '');
                 fputcsv($out, ['5000112637922', 'COKE-330', 'Coca-Cola Original 330ml', 'Coke 330ml', 'Coca-Cola', '', 'Drinks', 'Soft drinks', 'S', '0.99', '0.4200', 'PCS', 'none', 'yes', '12', '48', 'yes'], ',', '"', '');
                 fclose($out);
             }

@@ -138,7 +138,7 @@ final class BillingStatusData
         $per = $status->recurring['per'] === 'per year' ? 'a year' : 'a month';
         $amount = Money::isZero($status->recurring['gross']) ? 'Nothing yet (no live tills)' : BillingFormat::money($status->recurring['gross'])." {$per}";
         $unit = $status->recurring['unitPrice'] !== null && $status->recurring['tills'] > 0
-            ? ' ('.$status->recurring['tills'].' '.($status->recurring['tills'] === 1 ? 'till' : 'tills').' × '.BillingFormat::money($status->recurring['unitPrice']).(Money::isZero($status->recurring['vat']) ? '' : ' + VAT').')'
+            ? ' ('.$status->recurring['tills'].' '.($status->recurring['tills'] === 1 ? 'till' : 'tills').' × '.BillingFormat::money($status->recurring['unitPrice']).(Money::isZero($status->recurring['vat']) ? '' : ' + '.Country::tax('VAT')).')'
             : '';
 
         [$mandate, $tone] = match (true) {

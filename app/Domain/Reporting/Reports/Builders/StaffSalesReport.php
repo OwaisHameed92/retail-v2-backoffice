@@ -9,6 +9,7 @@ use App\Domain\Reporting\Reports\ReportBuilder;
 use App\Domain\Reporting\Reports\ReportOptions;
 use App\Domain\Reporting\Reports\ReportResult;
 use App\Domain\Reporting\Reports\ReportTable;
+use App\Domain\Shared\Country\Country;
 use App\Domain\Shared\Support\Money;
 
 /**
@@ -46,13 +47,13 @@ final class StaffSalesReport implements ReportBuilder
         return new ReportResult([
             Figures::of('net', 'Net sales', $net, 'money', $netBefore, $c),
             Figures::of('staff', 'Till users who sold', count(array_filter($users, fn (StaffSales $s) => $s->transactions > 0)), 'count'),
-            Figures::of('averageBasket', 'Average basket', Figures::average($net, $txns), 'money', hint: 'Excluding VAT'),
+            Figures::of('averageBasket', 'Average basket', Figures::average($net, $txns), 'money', hint: Country::tax('Excluding VAT')),
             Figures::of('voids', 'Voids', $voids, 'count', goodWhen: 'down'),
         ], [
             new ReportTable('staff', 'By till user', [
                 ReportTable::col('name', 'Till user'),
                 ReportTable::col('transactions', 'Transactions', 'count'),
-                ReportTable::col('gross', 'Sales inc VAT', 'money'),
+                ReportTable::col('gross', Country::tax('Sales inc VAT'), 'money'),
                 ReportTable::col('net', 'Net sales', 'money'),
                 ReportTable::col('share', 'Share', 'percent'),
                 ReportTable::col('averageBasket', 'Average basket', 'money'),
