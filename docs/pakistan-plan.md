@@ -68,6 +68,7 @@ till's), provincial sales tax for restaurants (PRA, SRB), a card or wallet payme
 | Money display | Decided 2026-10-06 | Whole rupees `Rs 1,250` (stored values keep 2 decimals) and lakh grouping `1,25,000` (plain numbers too); in the PK profile since P0 |
 | Plans and prices in PKR | P5 | setup fee, monthly per till |
 | How customers pay | Decided 2026-10-06 | Bank transfer, JazzCash, Easypaisa, cash (PK profile `billing.manualMethods`, built in P5); gateway later |
+| Seller company and pay accounts | P7 | **Decided 2026-10-06:** the seller on Pakistan invoices is Switch & Save, the same company as the UK, for now (`BILLING_SELLER_*` copied from the UK `.env`). Cash first; bank / JazzCash / Easypaisa account details added later through `.env` only (empty = not shown), no code change |
 | First kind of shops | P8 | kiryana, mobile, pharmacy, garments (sets the FBR priority) |
 
 ## Testing
