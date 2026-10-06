@@ -134,7 +134,12 @@ fails it puts the previous release back and exits 1. The last 5 releases are kep
 - Failed jobs: `php artisan queue:failed`, `php artisan queue:retry all`.
 - Scheduler: `php artisan schedule:list`. Jobs it runs: `licences:refresh`, `billing:run`,
   `billing:reconcile-gocardless`, `till-health:refresh`, `reports:process-dirty`, `licence:keys:prune`, `model:prune`.
-- Backups: nightly 02:15 UTC, 14 days local (`RETENTION_DAYS`), incomplete dumps are rejected. Test a restore into a
+- Backups: nightly 02:15 UTC, 14 days local (`RETENTION_DAYS`), incomplete dumps are rejected. Offsite since 2026-10-06: each dump and
+  storage archive is copied to the private Backblaze B2 bucket `sspos-retail-v2-backup` (`database/`, `storage/`) by
+  `/usr/local/bin/retail-v2-offsite` (deploy/offsite-b2.sh) with rclone remote `b2` in `~retail/.config/rclone/rclone.conf`
+  (chmod 600; an application key limited to that bucket, entered by the owner on the server, never in git or chat).
+  Keep 30 days with the bucket's lifecycle rule (Backblaze → Lifecycle Settings: hide after 30 days, delete 1 day later).
+  Restore: `rclone copy b2:sspos-retail-v2-backup/database/<file> .` then `gunzip -c <file> | mysql retail_v2`. Test a restore into a
   scratch database monthly.
 - Signing key rotation: `php artisan licence:keys:rotate`, then hand-over + `licence:keys:import-cert` as in 3.3. The
   retired key keeps verifying for `LICENCE_RETIRED_KEY_KEEP_DAYS` (60).

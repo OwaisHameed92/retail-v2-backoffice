@@ -6,5 +6,6 @@ PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 # licence:keys:prune, model:prune, the scheduler heartbeat shown on the admin System health card.
 * * * * * __APP_USER__ cd __APP_ROOT__/current && php artisan schedule:run >> /dev/null 2>&1
 
-# Nightly MySQL backup at 02:15 UTC, kept 14 days (deploy/backup-db.sh; settings in the script header).
-15 2 * * * __APP_USER__ /usr/local/bin/retail-v2-backup-db >> /var/log/retail-v2/backup.log 2>&1
+# Nightly MySQL backup at 02:15 UTC, kept 14 days (deploy/backup-db.sh; settings in the script header), then copied
+# to Backblaze B2 by deploy/offsite-b2.sh (installed as /usr/local/bin/retail-v2-offsite; docs/deploy.md "Backups").
+15 2 * * * __APP_USER__ OFFSITE_CMD=/usr/local/bin/retail-v2-offsite /usr/local/bin/retail-v2-backup-db >> /var/log/retail-v2/backup.log 2>&1
