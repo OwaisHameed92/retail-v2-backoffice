@@ -1,7 +1,7 @@
 import { CashFilters } from '@/components/app/cash/cash-page';
-import { FilterSelect } from '@/components/app/setup/fields';
-import { CHARGE, ChargePill, EXEMPTIONS, londonDateTime, PharmacyPageLayout } from '@/components/app/pharmacy/format';
+import { CHARGE, ChargePill, EXEMPTIONS, PharmacyPageLayout, shopDateTime } from '@/components/app/pharmacy/format';
 import { type ChargeStatus, type DispensingProps, type DispensingRow } from '@/components/app/pharmacy/types';
+import { FilterSelect } from '@/components/app/setup/fields';
 import { DataTable, useTableQuery } from '@/components/shared/data-table';
 import { EmptyState } from '@/components/shared/empty-state';
 import { SectionCard } from '@/components/shared/section-card';
@@ -20,7 +20,7 @@ const columns: ColumnDef<DispensingRow>[] = [
         meta: { mobile: 'title' },
         cell: ({ row }) => (
             <div className="grid leading-5">
-                <span className="font-medium">{londonDateTime(row.original.dispensedAt)}</span>
+                <span className="font-medium">{shopDateTime(row.original.dispensedAt)}</span>
                 <span className="text-muted-foreground text-xs">
                     {[row.original.shop, row.original.dispensedBy ? `by ${row.original.dispensedBy}` : null].filter(Boolean).join(' · ')}
                 </span>
@@ -78,8 +78,20 @@ export default function PharmacyDispensing(props: DispensingProps) {
             description="Prescriptions dispensed on your pharmacy tills: NHS charges paid, exemptions and private prescriptions. Patients' details stay on the till."
         >
             <StatGrid>
-                <StatCard label="Prescriptions" value={number(summary.records)} hint={`${number(summary.items)} items dispensed`} icon={ClipboardList} tone="primary" />
-                <StatCard label="NHS charge paid" value={number(summary.paid)} hint={`${money(summary.nhsCharges)} taken`} icon={PoundSterling} tone="success" />
+                <StatCard
+                    label="Prescriptions"
+                    value={number(summary.records)}
+                    hint={`${number(summary.items)} items dispensed`}
+                    icon={ClipboardList}
+                    tone="primary"
+                />
+                <StatCard
+                    label="NHS charge paid"
+                    value={number(summary.paid)}
+                    hint={`${money(summary.nhsCharges)} taken`}
+                    icon={PoundSterling}
+                    tone="success"
+                />
                 <StatCard
                     label="Exempt"
                     value={number(summary.exempt)}
@@ -87,7 +99,13 @@ export default function PharmacyDispensing(props: DispensingProps) {
                     icon={ShieldCheck}
                     tone="neutral"
                 />
-                <StatCard label="Private" value={number(summary.private)} hint={`${money(summary.privateCharges)} charged`} icon={BadgeCheck} tone="neutral" />
+                <StatCard
+                    label="Private"
+                    value={number(summary.private)}
+                    hint={`${money(summary.privateCharges)} charged`}
+                    icon={BadgeCheck}
+                    tone="neutral"
+                />
             </StatGrid>
 
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">

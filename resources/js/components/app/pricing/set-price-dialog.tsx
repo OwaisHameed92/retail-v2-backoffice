@@ -3,6 +3,7 @@ import { FormField, FormGrid } from '@/components/shared/form-section';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { timeZoneCity } from '@/lib/country';
 import { useForm } from '@inertiajs/react';
 import { LoaderCircle } from 'lucide-react';
 import { type FormEventHandler, useEffect } from 'react';
@@ -47,7 +48,8 @@ export function SetPriceDialog({ open, onOpenChange, productId, businessPrice, s
                     <DialogHeader>
                         <DialogTitle>Set a shop price</DialogTitle>
                         <DialogDescription>
-                            Business price {pounds(businessPrice)}. The shop charges this price instead, from when you choose, and its tills get it at their next sync.
+                            Business price {pounds(businessPrice)}. The shop charges this price instead, from when you choose, and its tills get it at
+                            their next sync.
                         </DialogDescription>
                     </DialogHeader>
 
@@ -63,11 +65,23 @@ export function SetPriceDialog({ open, onOpenChange, productId, businessPrice, s
                             />
                         </FormField>
                         <FormField id="price" label="Price" error={errors.price}>
-                            <MoneyInput id="price" value={data.price} invalid={!!errors.price} autoFocus onChange={(e) => setData('price', e.target.value)} />
+                            <MoneyInput
+                                id="price"
+                                value={data.price}
+                                invalid={!!errors.price}
+                                autoFocus
+                                onChange={(e) => setData('price', e.target.value)}
+                            />
                         </FormField>
                     </FormGrid>
                     {units.length > 0 && (
-                        <FormField id="product_unit_id" label="Sold as" optional help="A pack or case has its own price." error={errors.product_unit_id}>
+                        <FormField
+                            id="product_unit_id"
+                            label="Sold as"
+                            optional
+                            help="A pack or case has its own price."
+                            error={errors.product_unit_id}
+                        >
                             <OptionSelect
                                 id="product_unit_id"
                                 value={data.product_unit_id}
@@ -78,8 +92,13 @@ export function SetPriceDialog({ open, onOpenChange, productId, businessPrice, s
                         </FormField>
                     )}
                     <FormGrid>
-                        <FormField id="valid_from" label="Starts" optional help="Empty = now. London time." error={errors.valid_from}>
-                            <Input id="valid_from" type="datetime-local" value={data.valid_from} onChange={(e) => setData('valid_from', e.target.value)} />
+                        <FormField id="valid_from" label="Starts" optional help={`Empty = now. ${timeZoneCity()} time.`} error={errors.valid_from}>
+                            <Input
+                                id="valid_from"
+                                type="datetime-local"
+                                value={data.valid_from}
+                                onChange={(e) => setData('valid_from', e.target.value)}
+                            />
                         </FormField>
                         <FormField id="valid_to" label="Ends" optional help="Empty = until changed." error={errors.valid_to}>
                             <Input id="valid_to" type="datetime-local" value={data.valid_to} onChange={(e) => setData('valid_to', e.target.value)} />

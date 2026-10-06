@@ -6,6 +6,7 @@ use App\Domain\Licensing\Enums\LicenceStatus;
 use App\Domain\Licensing\LicenceState;
 use App\Domain\Licensing\Models\Licence;
 use App\Domain\Licensing\Signing\Sspos\LicenceClaims;
+use App\Domain\Shared\Country\Country;
 use App\Domain\Shared\Support\ApiDate;
 use App\Domain\Shared\Support\AppVersion;
 use Carbon\CarbonImmutable;
@@ -19,8 +20,6 @@ use Carbon\CarbonImmutable;
  */
 final class LicenceReply
 {
-    public const TIMEZONE = 'Europe/London';
-
     public const DEFAULT_MINIMUM_APP_VERSION = '0.1.0';
 
     /**
@@ -175,6 +174,6 @@ final class LicenceReply
 
     private static function day(CarbonImmutable $at): string
     {
-        return $at->setTimezone(self::TIMEZONE)->format('j F Y');
+        return $at->setTimezone(Country::zone())->format('j F Y');
     }
 }

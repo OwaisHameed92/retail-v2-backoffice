@@ -5,9 +5,13 @@
 | time: see docs/reporting.md and contract v1.4.1 DASHBOARD.md §1.3, §4.
 */
 
+use App\Domain\Shared\Country\Country;
+
 return [
     // The shops' time zone. The trading day of a sale is the calendar date of `completedAt` here (DASHBOARD.md §1.3).
-    'timezone' => env('REPORTS_TIMEZONE', 'Europe/London'),
+    // Default: the country profile's zone (GB London, PK Karachi); config/country.php loads before this
+    // file. REPORTS_TIMEZONE overrides it.
+    'timezone' => env('REPORTS_TIMEZONE') ?: Country::fromConfig()->timezone(),
 
     // Queue for the per-business rebuild job dispatched after a push (null = the default queue).
     'queue' => env('REPORTS_QUEUE'),

@@ -1,14 +1,14 @@
 import { EndsAtText, LicenceKindPill, ShopsTabs } from '@/components/app/shops/licence-bits';
 import { RequestDialog } from '@/components/app/shops/request-dialog';
 import { RequestsCard } from '@/components/app/shops/requests-card';
-import { daysUntil, londonDate, type ShopRow, type ShopsIndexProps } from '@/components/app/shops/types';
+import { daysUntil, shopDate, type ShopRow, type ShopsIndexProps } from '@/components/app/shops/types';
 import { EmptyState } from '@/components/shared/empty-state';
 import { InitialsAvatar } from '@/components/shared/entity-cell';
 import { PageHeader } from '@/components/shared/page-header';
 import { SectionCard } from '@/components/shared/section-card';
 import { StatCard, StatGrid } from '@/components/shared/stat-card';
 import { StatusBadge, StatusPill } from '@/components/shared/status-badge';
-import { ago, londonDateTime, SyncStateBadge, TillStateBadge } from '@/components/till-health/format';
+import { ago, shopDateTime, SyncStateBadge, TillStateBadge } from '@/components/till-health/format';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -64,7 +64,7 @@ export default function ShopsIndex({ shops, summary, requests, requestOptions, c
                     />
                     <StatCard
                         label="Next licence end"
-                        value={summary.nextEndsAt ? londonDate(summary.nextEndsAt) : 'None'}
+                        value={summary.nextEndsAt ? shopDate(summary.nextEndsAt) : 'None'}
                         hint={
                             renewalDays === null
                                 ? 'No end date yet'
@@ -158,8 +158,10 @@ function ShopItem({ shop }: { shop: ShopRow }) {
                                         <SyncStateBadge state={health.syncState} label={`Sync ${health.syncStateLabel.toLowerCase()}`} />
                                     )}
                                 </div>
-                                <p className="text-muted-foreground mt-0.5 text-xs" title={londonDateTime(health.lastContactAt)}>
-                                    {health.syncState === 'notLinked' ? `Heard from ${ago(health.lastContactAt, 'never')}` : `Synced ${ago(health.lastSyncAt, 'never')}`}
+                                <p className="text-muted-foreground mt-0.5 text-xs" title={shopDateTime(health.lastContactAt)}>
+                                    {health.syncState === 'notLinked'
+                                        ? `Heard from ${ago(health.lastContactAt, 'never')}`
+                                        : `Synced ${ago(health.lastSyncAt, 'never')}`}
                                 </p>
                             </>
                         ) : (

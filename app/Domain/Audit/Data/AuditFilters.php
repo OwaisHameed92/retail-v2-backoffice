@@ -2,6 +2,7 @@
 
 namespace App\Domain\Audit\Data;
 
+use App\Domain\Shared\Country\Country;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
 
@@ -12,12 +13,10 @@ use Illuminate\Http\Request;
  * - `actor`: `admin:<id>`, `user:<id>`, `staff` (any Switch & Save admin) or `system`;
  * - `company` (admin screen only): a business id;
  * - `action`: an exact action (`licence.suspended`) or a group (`licence.*`);
- * - `subjectType` / `subjectId`; `from` / `to`: days (Y-m-d, Europe/London); `search`: free text.
+ * - `subjectType` / `subjectId`; `from` / `to`: days (Y-m-d, shop time zone); `search`: free text.
  */
 final readonly class AuditFilters
 {
-    public const ZONE = 'Europe/London';
-
     public function __construct(
         public ?string $actor = null,
         public ?string $company = null,
@@ -67,13 +66,13 @@ final readonly class AuditFilters
     /** Start of the `from` day in UTC. */
     public function fromUtc(): ?CarbonImmutable
     {
-        return $this->from !== null ? CarbonImmutable::parse($this->from, self::ZONE)->startOfDay()->utc() : null;
+        return $this->from !== null ? CarbonImmutable::parse($this->from, Country::zone())->startOfDay()->utc() : null;
     }
 
     /** Start of the day after `to`, in UTC (exclusive bound). */
     public function toUtcExclusive(): ?CarbonImmutable
     {
-        return $this->to !== null ? CarbonImmutable::parse($this->to, self::ZONE)->addDay()->startOfDay()->utc() : null;
+        return $this->to !== null ? CarbonImmutable::parse($this->to, Country::zone())->addDay()->startOfDay()->utc() : null;
     }
 
     private static function text(Request $request, string $key, int $max): ?string

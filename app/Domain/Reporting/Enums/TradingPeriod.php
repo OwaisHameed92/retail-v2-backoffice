@@ -7,7 +7,7 @@ use Carbon\CarbonInterface;
 
 /**
  * Date range presets of the trading dashboards (admin 3.2, business 3.3; DASHBOARD.md §2.1), in trading days
- * (Europe/London dates). "This week" is Monday to today (§1.3). `custom` takes `from` / `to` from the request.
+ * (dates in the shops' time zone). "This week" is Monday to today (§1.3). `custom` takes `from` / `to` from the request.
  */
 enum TradingPeriod: string
 {

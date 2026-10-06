@@ -5,6 +5,7 @@ namespace App\Domain\Licensing\Data;
 use App\Domain\Admin\Models\Admin;
 use App\Domain\Licensing\Enums\LicenceStatus;
 use App\Domain\Licensing\Models\Licence;
+use App\Domain\Shared\Country\Country;
 use App\Domain\Shared\Models\AuditLog;
 use App\Domain\Tenancy\Models\Register;
 use App\Models\User;
@@ -17,8 +18,6 @@ use Illuminate\Support\Collection;
  */
 final class LicenceActivity
 {
-    public const TIMEZONE = 'Europe/London';
-
     /**
      * Activity rows of one licence, newest first.
      *
@@ -137,6 +136,6 @@ final class LicenceActivity
             return 'a new date';
         }
 
-        return CarbonImmutable::parse($iso)->setTimezone(self::TIMEZONE)->format('j M Y');
+        return CarbonImmutable::parse($iso)->setTimezone(Country::zone())->format('j M Y');
     }
 }

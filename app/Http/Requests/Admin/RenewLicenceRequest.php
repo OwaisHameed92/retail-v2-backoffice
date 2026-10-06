@@ -4,12 +4,13 @@ namespace App\Http\Requests\Admin;
 
 use App\Domain\Licensing\Data\RenewalTerm;
 use App\Domain\Licensing\Enums\RenewalPeriod;
+use App\Domain\Shared\Country\Country;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 /**
- * Renew one licence or all of a company's licences: +1 month, +1 year or until a date (Europe/London).
+ * Renew one licence or all of a company's licences: +1 month, +1 year or until a date (shop time zone).
  * Authorised by the `can:licences.manage` route middleware.
  */
 class RenewLicenceRequest extends FormRequest
@@ -24,7 +25,7 @@ class RenewLicenceRequest extends FormRequest
      */
     public function rules(): array
     {
-        $today = CarbonImmutable::now(RenewalTerm::TIMEZONE)->format('Y-m-d');
+        $today = CarbonImmutable::now(Country::zone())->format('Y-m-d');
 
         return [
             'term' => ['required', Rule::enum(RenewalPeriod::class)],
@@ -51,7 +52,7 @@ class RenewLicenceRequest extends FormRequest
         $period = RenewalPeriod::from((string) $this->input('term'));
 
         return $period === RenewalPeriod::Until
-            ? RenewalTerm::until(CarbonImmutable::parse((string) $this->input('until'), RenewalTerm::TIMEZONE))
+            ? RenewalTerm::until(CarbonImmutable::parse((string) $this->input('until'), Country::zone()))
             : RenewalTerm::from($period);
     }
 

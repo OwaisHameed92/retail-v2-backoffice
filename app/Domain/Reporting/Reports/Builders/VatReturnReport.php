@@ -13,6 +13,7 @@ use App\Domain\Reporting\Reports\ReportOptions;
 use App\Domain\Reporting\Reports\ReportResult;
 use App\Domain\Reporting\Reports\ReportTable;
 use App\Domain\Reporting\ReportTables;
+use App\Domain\Reporting\Support\TradingDay;
 use App\Domain\Shared\Support\Money;
 use Illuminate\Support\Facades\DB;
 
@@ -61,7 +62,7 @@ final class VatReturnReport implements ReportBuilder
             new ReportTable('rates', 'By VAT rate', $columns, array_map($rateRow, $rates), $total),
             new ReportTable('periods', 'By '.$options->group->value.' and rate', [ReportTable::col('period', 'Period'), ...$columns], $periodRows, ['period' => 'Total', ...$total], empty: 'No VAT in this range.'),
         ], null, [
-            'Figures are sales through your tills, net of refunds, on the day of each sale (Europe/London). Add other income, and your purchases (boxes 4 and 7), before you file.',
+            'Figures are sales through your tills, net of refunds, on the day of each sale ('.TradingDay::timezone()->getName().'). Add other income, and your purchases (boxes 4 and 7), before you file.',
             'Order deposits and charity round-ups are not sales and carry no VAT here; VAT on an order is due when the goods are sold at collection.',
         ]);
     }

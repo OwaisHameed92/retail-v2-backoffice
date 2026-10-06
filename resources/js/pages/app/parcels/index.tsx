@@ -1,7 +1,7 @@
 import { CashFilters } from '@/components/app/cash/cash-page';
-import { FilterSelect } from '@/components/app/setup/fields';
-import { londonDateTime } from '@/components/app/pharmacy/format';
+import { shopDateTime } from '@/components/app/pharmacy/format';
 import { type ParcelDirection, type ParcelRow, type ParcelsProps, type ParcelStatus } from '@/components/app/pharmacy/types';
+import { FilterSelect } from '@/components/app/setup/fields';
 import { DataTable, useTableQuery } from '@/components/shared/data-table';
 import { EmptyState } from '@/components/shared/empty-state';
 import { PageHeader } from '@/components/shared/page-header';
@@ -44,7 +44,7 @@ const columns: ColumnDef<ParcelRow>[] = [
         id: 'registered',
         header: 'Booked in',
         meta: { mobile: 'field' },
-        cell: ({ row }) => <span className="text-sm">{londonDateTime(row.original.registeredAt)}</span>,
+        cell: ({ row }) => <span className="text-sm">{shopDateTime(row.original.registeredAt)}</span>,
     },
     {
         id: 'status',
@@ -57,7 +57,7 @@ const columns: ColumnDef<ParcelRow>[] = [
                     <div className="grid justify-items-start gap-1">
                         <StatusPill tone="success">Handed over</StatusPill>
                         <span className="text-muted-foreground text-xs">
-                            {londonDateTime(p.handedOverAt)}
+                            {shopDateTime(p.handedOverAt)}
                             {p.idCheck ? ` · ID: ${p.idCheck}` : ''}
                         </span>
                     </div>
@@ -99,7 +99,13 @@ export default function ParcelsIndex({ parcels, summary, carriers, carrierOption
                         icon={PackageOpen}
                         tone="neutral"
                     />
-                    <StatCard label="Handed over" value={number(summary.handedOver)} hint="To the carrier or the customer" icon={PackageCheck} tone="success" />
+                    <StatCard
+                        label="Handed over"
+                        value={number(summary.handedOver)}
+                        hint="To the carrier or the customer"
+                        icon={PackageCheck}
+                        tone="success"
+                    />
                     <StatCard
                         label="In the shop now"
                         value={number(summary.waiting)}
@@ -115,7 +121,11 @@ export default function ParcelsIndex({ parcels, summary, carriers, carrierOption
                     flush
                 >
                     {carriers.length === 0 ? (
-                        <EmptyState size="sm" title="No carriers" body="Carriers are added on the till (Parcels, Carriers) and appear here after it syncs." />
+                        <EmptyState
+                            size="sm"
+                            title="No carriers"
+                            body="Carriers are added on the till (Parcels, Carriers) and appear here after it syncs."
+                        />
                     ) : (
                         <Table>
                             <TableHeader>
@@ -151,8 +161,8 @@ export default function ParcelsIndex({ parcels, summary, carriers, carrierOption
                     <Alert variant="warning">
                         <Info />
                         <AlertDescription>
-                            {summary.waitingLong === 1 ? 'One parcel has' : `${summary.waitingLong} parcels have`} been in the shop over {summary.waitingDays}{' '}
-                            days. Most carriers take uncollected parcels back after a week or two.
+                            {summary.waitingLong === 1 ? 'One parcel has' : `${summary.waitingLong} parcels have`} been in the shop over{' '}
+                            {summary.waitingDays} days. Most carriers take uncollected parcels back after a week or two.
                         </AlertDescription>
                     </Alert>
                 )}

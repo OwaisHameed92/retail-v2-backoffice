@@ -1,4 +1,4 @@
-import { formatDay, londonToday } from '@/components/admin/billing/format';
+import { formatDay, shopToday } from '@/components/admin/billing/format';
 import { formatPence, fromPence, toPence } from '@/components/admin/billing/money';
 import { type CompanyRef, type OpenInvoice, type Option, type PaymentMethod } from '@/components/admin/billing/types';
 import { Field } from '@/components/admin/tenants/field';
@@ -115,7 +115,7 @@ function PaymentForm({
     const { data, setData, post, processing, errors, transform } = useForm<FormData>({
         method: methods[0]?.value ?? 'cash',
         amount: startAmount,
-        received_on: londonToday(),
+        received_on: shopToday(),
         reference: '',
         notes: '',
         allocation: manualStart ? 'manual' : 'auto',
@@ -177,7 +177,9 @@ function PaymentForm({
                     <DialogTitle>Record a payment</DialogTitle>
                     <DialogDescription>
                         Money received from <span className="text-foreground font-medium">{company.name}</span>.{' '}
-                        {owed > 0 ? `${formatPence(owed)} is owed on ${ordered.length === 1 ? '1 invoice' : `${ordered.length} invoices`}.` : 'Nothing is owed right now: the payment is kept as credit for the next invoice.'}
+                        {owed > 0
+                            ? `${formatPence(owed)} is owed on ${ordered.length === 1 ? '1 invoice' : `${ordered.length} invoices`}.`
+                            : 'Nothing is owed right now: the payment is kept as credit for the next invoice.'}
                     </DialogDescription>
                 </DialogHeader>
 
@@ -196,7 +198,14 @@ function PaymentForm({
                                         selected ? 'border-primary bg-primary-soft text-foreground' : 'hover:bg-muted/60 text-muted-foreground',
                                     )}
                                 >
-                                    <input type="radio" name="method" value={option.value} checked={selected} onChange={() => setData('method', option.value)} className="sr-only" />
+                                    <input
+                                        type="radio"
+                                        name="method"
+                                        value={option.value}
+                                        checked={selected}
+                                        onChange={() => setData('method', option.value)}
+                                        className="sr-only"
+                                    />
                                     <Icon className={cn('size-5', selected ? 'text-primary' : 'text-muted-foreground')} aria-hidden />
                                     {option.label}
                                 </label>
@@ -226,7 +235,7 @@ function PaymentForm({
                         <Input
                             id="payment-date"
                             type="date"
-                            max={londonToday()}
+                            max={shopToday()}
                             value={data.received_on}
                             onChange={(event) => setData('received_on', event.target.value)}
                             aria-invalid={!!errors.received_on}
@@ -234,8 +243,19 @@ function PaymentForm({
                     </Field>
                 </div>
 
-                <Field id="payment-reference" label="Reference" optional error={errors.reference} hint="Receipt number, bank reference or who handed it over.">
-                    <Input id="payment-reference" value={data.reference} maxLength={100} onChange={(event) => setData('reference', event.target.value)} />
+                <Field
+                    id="payment-reference"
+                    label="Reference"
+                    optional
+                    error={errors.reference}
+                    hint="Receipt number, bank reference or who handed it over."
+                >
+                    <Input
+                        id="payment-reference"
+                        value={data.reference}
+                        maxLength={100}
+                        onChange={(event) => setData('reference', event.target.value)}
+                    />
                 </Field>
 
                 {ordered.length > 0 && (
@@ -285,7 +305,9 @@ function PaymentForm({
                                         <div className="min-w-0 flex-1 leading-tight">
                                             <div className="flex items-center gap-2">
                                                 <span className="font-mono text-[13px] font-medium">{invoice.number}</span>
-                                                {invoice.status === 'overdue' && <span className="text-danger-foreground text-xs font-medium">Overdue</span>}
+                                                {invoice.status === 'overdue' && (
+                                                    <span className="text-danger-foreground text-xs font-medium">Overdue</span>
+                                                )}
                                             </div>
                                             <div className="text-muted-foreground truncate text-xs">
                                                 {invoice.period} · due {formatDay(invoice.dueDate)} · owes {invoice.balanceLabel}
@@ -293,18 +315,24 @@ function PaymentForm({
                                         </div>
                                         {data.allocation === 'manual' ? (
                                             <div className="relative w-28 shrink-0">
-                                                <span className="text-muted-foreground pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2 text-sm">£</span>
+                                                <span className="text-muted-foreground pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2 text-sm">
+                                                    £
+                                                </span>
                                                 <Input
                                                     inputMode="decimal"
                                                     disabled={!checked}
                                                     value={data.allocations[invoice.id] ?? ''}
-                                                    onChange={(event) => setData('allocations', { ...data.allocations, [invoice.id]: event.target.value })}
+                                                    onChange={(event) =>
+                                                        setData('allocations', { ...data.allocations, [invoice.id]: event.target.value })
+                                                    }
                                                     className="h-8 pl-6 text-right tabular-nums"
                                                     aria-label={`Amount for ${invoice.number ?? 'invoice'}`}
                                                 />
                                             </div>
                                         ) : (
-                                            <span className={cn('shrink-0 tabular-nums', row ? 'text-foreground font-medium' : 'text-muted-foreground')}>
+                                            <span
+                                                className={cn('shrink-0 tabular-nums', row ? 'text-foreground font-medium' : 'text-muted-foreground')}
+                                            >
                                                 {row ? formatPence(row.pence) : '—'}
                                             </span>
                                         )}
@@ -348,7 +376,13 @@ function PaymentForm({
                 )}
 
                 <Field id="payment-notes" label="Notes" optional error={errors.notes}>
-                    <Textarea id="payment-notes" rows={2} value={data.notes} maxLength={2000} onChange={(event) => setData('notes', event.target.value)} />
+                    <Textarea
+                        id="payment-notes"
+                        rows={2}
+                        value={data.notes}
+                        maxLength={2000}
+                        onChange={(event) => setData('notes', event.target.value)}
+                    />
                 </Field>
 
                 <DialogFooter className="gap-2">

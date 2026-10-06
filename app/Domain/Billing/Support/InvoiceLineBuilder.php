@@ -43,7 +43,7 @@ final class InvoiceLineBuilder
             if ($prorate) {
                 $ends = $unit['licences']->map(fn (Licence $licence) => LicenceTerms::endsAt($licence));
                 $coveredUntil = $ends->contains(null) ? null : $ends->filter()->min();
-                $coveredUntil = $coveredUntil !== null ? BillingDates::londonDate($coveredUntil) : null;
+                $coveredUntil = $coveredUntil !== null ? BillingDates::localDate($coveredUntil) : null;
 
                 if ($coveredUntil !== null && $coveredUntil->greaterThanOrEqualTo($start)) {
                     if ($coveredUntil->greaterThanOrEqualTo($end)) {

@@ -3,6 +3,7 @@
 namespace App\Domain\News\Queries;
 
 use App\Domain\News\Support\NewsWeek;
+use App\Domain\Shared\Country\Country;
 use App\Domain\Shared\Support\Money;
 use App\Domain\Tenancy\CurrentCompany;
 use App\Domain\Tenancy\Models\Branch;
@@ -113,7 +114,7 @@ final class WeeklySummary
     /** @return array<string, array{count: int, value: string}> */
     private static function vouchers(NewsWeek $week, ?string $shop): array
     {
-        $from = CarbonImmutable::createFromFormat('!Y-m-d', $week->start, 'Europe/London')->utc();
+        $from = CarbonImmutable::createFromFormat('!Y-m-d', $week->start, Country::zone())->utc();
         $to = $from->addWeek();
 
         return DB::table('news_voucher_redemptions')->where('company_id', app(CurrentCompany::class)->id())->whereNull('deleted_at')

@@ -1,29 +1,30 @@
 import { ConfirmDialog } from '@/components/shared/confirm-dialog';
 import { StatusPill } from '@/components/shared/status-badge';
 import { Button } from '@/components/ui/button';
+import { zonedDateFormat } from '@/lib/country';
 import { router } from '@inertiajs/react';
 import { CircleCheck, Store } from 'lucide-react';
 import { type DataRequestRow } from './types';
 
-const londonDateTime = new Intl.DateTimeFormat('en-GB', {
-    timeZone: 'Europe/London',
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-});
+const shopDateTime = () =>
+    zonedDateFormat('en-GB', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+    });
 
-const londonDate = new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/London', day: 'numeric', month: 'short', year: 'numeric' });
+const shopDate = () => zonedDateFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 
-/** "1 Oct 2026, 14:30" in London time; "" when missing. */
+/** "1 Oct 2026, 14:30" in shop time; "" when missing. */
 export function when(iso: string | null | undefined): string {
-    return iso ? londonDateTime.format(new Date(iso)) : '';
+    return iso ? shopDateTime().format(new Date(iso)) : '';
 }
 
-/** "1 Oct 2026" in London time; "" when missing. */
+/** "1 Oct 2026" in shop time; "" when missing. */
 export function day(iso: string | null | undefined): string {
-    return iso ? londonDate.format(new Date(iso)) : '';
+    return iso ? shopDate().format(new Date(iso)) : '';
 }
 
 export function RequestStatus({ row }: { row: Pick<DataRequestRow, 'status' | 'statusLabel'> }) {

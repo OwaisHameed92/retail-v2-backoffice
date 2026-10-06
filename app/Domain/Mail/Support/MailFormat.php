@@ -2,25 +2,31 @@
 
 namespace App\Domain\Mail\Support;
 
+use App\Domain\Shared\Country\Country;
 use Carbon\CarbonInterface;
 
 /**
- * Formatting used inside email templates: Europe/London dates, pounds, first names.
+ * Formatting used inside email templates: dates in the country profile's time zone, pounds, first names.
  */
 final class MailFormat
 {
+    /**
+     * The GB zone, kept for tests written before phase P1. Code reads Country::zone().
+     *
+     * @deprecated use Country::zone()
+     */
     public const TIMEZONE = 'Europe/London';
 
     /** "24 September 2026" */
     public static function date(CarbonInterface $date): string
     {
-        return $date->copy()->setTimezone(self::TIMEZONE)->format('j F Y');
+        return $date->copy()->setTimezone(Country::zone())->format('j F Y');
     }
 
     /** "24 September 2026 at 09:41" */
     public static function dateTime(CarbonInterface $date): string
     {
-        return $date->copy()->setTimezone(self::TIMEZONE)->format('j F Y \a\t H:i');
+        return $date->copy()->setTimezone(Country::zone())->format('j F Y \a\t H:i');
     }
 
     /** "1234.5" → "£1,234.50" */

@@ -4,7 +4,7 @@ import { EmptyState } from '@/components/shared/empty-state';
 import { SectionCard } from '@/components/shared/section-card';
 import { StatusBadge } from '@/components/shared/status-badge';
 import { BranchHealthStrip } from '@/components/till-health/branch-health-strip';
-import { ago, londonDateTime, ProblemPills, TillStateBadge } from '@/components/till-health/format';
+import { ago, ProblemPills, shopDateTime, TillStateBadge } from '@/components/till-health/format';
 import { type ShopHealth } from '@/components/till-health/types';
 import { Badge } from '@/components/ui/badge';
 import { KeyRound, Monitor, Star, TriangleAlert } from 'lucide-react';
@@ -72,7 +72,11 @@ function TillItem({ till }: { till: TillRow }) {
                     </div>
                 </div>
                 <div className="flex flex-wrap items-center gap-1.5 pl-10 sm:pl-0">
-                    {licence ? <LicenceStatusBadge status={licence.status} label={licence.statusLabel} /> : <StatusBadge status="draft" label="No licence" />}
+                    {licence ? (
+                        <LicenceStatusBadge status={licence.status} label={licence.statusLabel} />
+                    ) : (
+                        <StatusBadge status="draft" label="No licence" />
+                    )}
                     {health && <TillStateBadge state={health.state} label={health.stateLabel} />}
                 </div>
             </div>
@@ -91,24 +95,28 @@ function TillItem({ till }: { till: TillRow }) {
                         {licence ? licence.maskedKey : 'None'}
                     </span>
                 </Fact>
-                <Fact label={licence?.isTrial ? 'Trial ends' : 'Licence ends'} title={londonDateTime(licence?.endsAt)}>
+                <Fact label={licence?.isTrial ? 'Trial ends' : 'Licence ends'} title={shopDateTime(licence?.endsAt)}>
                     {licence?.status === 'issued' ? (
                         <span className="text-muted-foreground">Not entered on the till yet</span>
                     ) : (
                         <EndsAtText iso={licence?.endsAt ?? null} prefix="" />
                     )}
                 </Fact>
-                <Fact label="Last licence check" title={londonDateTime(licence?.lastValidatedAt)}>
+                <Fact label="Last licence check" title={shopDateTime(licence?.lastValidatedAt)}>
                     {ago(licence?.lastValidatedAt, 'Never')}
                 </Fact>
                 <Fact label="App version">{health?.appVersion ?? licence?.appVersion ?? <span className="text-muted-foreground">Unknown</span>}</Fact>
-                <Fact label="Last seen" title={londonDateTime(health?.lastSeenAt)}>
-                    {health?.state === 'notActivated' ? <span className="text-muted-foreground">Not activated</span> : ago(health?.lastSeenAt, 'Never')}
+                <Fact label="Last seen" title={shopDateTime(health?.lastSeenAt)}>
+                    {health?.state === 'notActivated' ? (
+                        <span className="text-muted-foreground">Not activated</span>
+                    ) : (
+                        ago(health?.lastSeenAt, 'Never')
+                    )}
                 </Fact>
-                <Fact label="Last push" title={londonDateTime(health?.lastPushAt)}>
+                <Fact label="Last push" title={shopDateTime(health?.lastPushAt)}>
                     {syncs ? ago(health?.lastPushAt, 'Never') : <span className="text-muted-foreground">Via the main till</span>}
                 </Fact>
-                <Fact label="Last pull" title={londonDateTime(health?.lastPullAt)}>
+                <Fact label="Last pull" title={shopDateTime(health?.lastPullAt)}>
                     {syncs ? ago(health?.lastPullAt, 'Never') : <span className="text-muted-foreground">Via the main till</span>}
                 </Fact>
                 {problems.length > 0 && (

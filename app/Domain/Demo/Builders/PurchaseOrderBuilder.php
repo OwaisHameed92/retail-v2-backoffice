@@ -10,6 +10,7 @@ use App\Domain\Demo\Support\DemoStaff;
 use App\Domain\Demo\Support\StockBook;
 use App\Domain\Reporting\Demo\DemoCatalogue;
 use App\Domain\Reporting\Demo\DemoShop;
+use App\Domain\Shared\Country\Country;
 use Carbon\CarbonImmutable;
 use Random\Randomizer;
 
@@ -118,7 +119,7 @@ final class PurchaseOrderBuilder
         $delivered = in_array($state, ['received', 'partReceived'], true);
         $push->add($shop, 'PurchaseOrder', $poId, [
             'supplierId' => $b->id("supplier|{$supplier}"), 'number' => $number, 'status' => $state === 'received' ? 'invoiced' : $state,
-            'expectedDate' => $deliverAt->setTimezone('Europe/London')->toDateString(),
+            'expectedDate' => $deliverAt->setTimezone(Country::zone())->toDateString(),
             'sentAt' => $state === 'draft' ? null : DemoBusiness::iso($sentAt), 'sentByUserId' => $state === 'draft' ? null : $manager,
             'cancelledAt' => $state === 'cancelled' ? DemoBusiness::iso($sentAt->addHours(18)) : null, 'cancelledByUserId' => $state === 'cancelled' ? $manager : null,
             'cancelReason' => $state === 'cancelled' ? 'Depot short of stock, order moved to next week' : null, 'notes' => null,
@@ -180,7 +181,7 @@ final class PurchaseOrderBuilder
         $push->add($shop, 'GoodsReceipt', $grnId, [
             'supplierId' => $b->id("supplier|{$supplier}"), 'supplierName' => DemoPeople::SUPPLIERS[$supplier][0], 'purchaseOrderId' => $poId,
             'deliveryNoteNumber' => 'DN'.str_pad((string) (abs(crc32($grnId)) % 10000000), 7, '0', STR_PAD_LEFT),
-            'receivedDate' => $at->setTimezone('Europe/London')->toDateString(), 'status' => 'posted', 'receivedByUserId' => $manager,
+            'receivedDate' => $at->setTimezone(Country::zone())->toDateString(), 'status' => 'posted', 'receivedByUserId' => $manager,
             'netAmount' => $net / 100, 'vatAmount' => $vat / 100, 'grossAmount' => ($net + $vat) / 100, 'postedAt' => DemoBusiness::iso($at->addMinutes(25)),
             'cancelledAt' => null, 'cancelReason' => null, 'note' => $damagedLine >= 0 ? 'Driver signed for damages' : null, 'branchId' => $shop->branchId,
         ], $at->addMinutes(25), $at);

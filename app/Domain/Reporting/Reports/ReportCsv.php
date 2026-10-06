@@ -2,12 +2,13 @@
 
 namespace App\Domain\Reporting\Reports;
 
+use App\Domain\Shared\Country\Country;
 use Carbon\CarbonImmutable;
 
 /**
  * A report as CSV (module 4.8): a heading block (report, business, shop, till, dates, compare), the headline figures,
  * then every table with its totals row. Numbers are plain decimals (no £ or thousands separators) so a spreadsheet
- * reads them; times in Europe/London. Text cells that a spreadsheet would run as a formula are quoted with '.
+ * reads them; times in the shops' time zone. Text cells that a spreadsheet would run as a formula are quoted with '.
  */
 final class ReportCsv
 {
@@ -89,7 +90,7 @@ final class ReportCsv
         }
 
         return match ($type) {
-            'datetime' => CarbonImmutable::parse((string) $value)->setTimezone('Europe/London')->format('Y-m-d H:i'),
+            'datetime' => CarbonImmutable::parse((string) $value)->setTimezone(Country::zone())->format('Y-m-d H:i'),
             'flag' => $value === true ? 'Yes' : '',
             'status' => match ((string) $value) {
                 'out' => 'Out of stock',

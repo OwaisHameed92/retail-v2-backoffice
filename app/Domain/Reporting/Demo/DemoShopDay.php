@@ -22,7 +22,7 @@ final class DemoShopDay
     public function __construct(private readonly DemoBasketBuilder $builder) {}
 
     /**
-     * @param  string  $day  trading day "Y-m-d" (Europe/London)
+     * @param  string  $day  trading day "Y-m-d" (shop time zone)
      * @return array{changes: list<array<string, mixed>>, sales: int, refunds: int, voids: int}
      */
     public function build(DemoShop $shop, string $day, CarbonImmutable $now): array

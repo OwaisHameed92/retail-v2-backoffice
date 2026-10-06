@@ -1,8 +1,8 @@
-import { ago, clockSkewText, londonDateTime, ProblemPills, SyncStateBadge, TillStateBadge } from '@/components/till-health/format';
-import { type HealthThresholds, type ShopHealth, type TillHealth } from '@/components/till-health/types';
 import { DescriptionList, type DescriptionItem } from '@/components/shared/description-list';
 import { SectionCard } from '@/components/shared/section-card';
 import { StatusPill } from '@/components/shared/status-badge';
+import { ago, clockSkewText, ProblemPills, shopDateTime, SyncStateBadge, TillStateBadge } from '@/components/till-health/format';
+import { type HealthThresholds, type ShopHealth, type TillHealth } from '@/components/till-health/types';
 import { cn } from '@/lib/utils';
 import { Link } from '@inertiajs/react';
 
@@ -15,7 +15,7 @@ interface TillHealthCardProps {
 }
 
 function When({ at, fallback = 'Never' }: { at: string | null; fallback?: string }) {
-    return at ? <span title={londonDateTime(at)}>{ago(at)}</span> : <span className="text-muted-foreground">{fallback}</span>;
+    return at ? <span title={shopDateTime(at)}>{ago(at)}</span> : <span className="text-muted-foreground">{fallback}</span>;
 }
 
 /** Module 2.7: one till's health on the admin licence page (state, contact, sync, versions, clock, backlog). */
@@ -67,7 +67,12 @@ export function TillHealthCard({ till, shop, thresholds, listHref }: TillHealthC
         },
         {
             label: 'Waiting rows',
-            value: till.pendingSyncRows === null ? <span className="text-muted-foreground">Not reported</span> : till.pendingSyncRows.toLocaleString('en-GB'),
+            value:
+                till.pendingSyncRows === null ? (
+                    <span className="text-muted-foreground">Not reported</span>
+                ) : (
+                    till.pendingSyncRows.toLocaleString('en-GB')
+                ),
         },
         { label: 'Problems', value: <ProblemPills problems={till.problems} /> },
     ];

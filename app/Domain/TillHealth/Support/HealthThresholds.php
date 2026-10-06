@@ -2,12 +2,17 @@
 
 namespace App\Domain\TillHealth\Support;
 
+use App\Domain\Shared\Country\Country;
+
 /**
  * The Till health thresholds of config/till-health.php (module 2.7), plus the minimum app version the licence API
  * already sends (`licence.api.minimum_app_version`), so both use one number.
  */
 final readonly class HealthThresholds
 {
+    /** The shops' time zone for trading hours and alert times: by default the country profile's (phase P1). */
+    public string $timezone;
+
     public function __construct(
         public int $syncOnlineMinutes = 15,
         public int $syncOfflineHours = 4,
@@ -20,9 +25,11 @@ final readonly class HealthThresholds
         public string $minimumAppVersion = '0.1.0',
         public string $tradingStart = '08:00',
         public string $tradingEnd = '20:00',
-        public string $timezone = 'Europe/London',
+        ?string $timezone = null,
         public int $refreshMinutes = 5,
-    ) {}
+    ) {
+        $this->timezone = $timezone !== null && $timezone !== '' ? $timezone : Country::zone();
+    }
 
     public static function fromConfig(): self
     {
@@ -40,7 +47,7 @@ final readonly class HealthThresholds
             minimumAppVersion: (string) config('licence.api.minimum_app_version', '0.1.0'),
             tradingStart: (string) ($hours['start'] ?? '08:00'),
             tradingEnd: (string) ($hours['end'] ?? '20:00'),
-            timezone: (string) config('till-health.timezone', 'Europe/London'),
+            timezone: is_string($zone = config('till-health.timezone')) ? $zone : null,
             refreshMinutes: max(1, (int) config('till-health.refresh_minutes', 5)),
         );
     }

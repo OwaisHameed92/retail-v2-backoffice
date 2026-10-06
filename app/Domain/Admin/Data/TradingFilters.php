@@ -11,7 +11,7 @@ use App\Domain\Reporting\Support\TradingRange;
 use Carbon\CarbonImmutable;
 
 /**
- * What the admin trading dashboard shows (module 3.2): trading days `from … to` (Europe/London dates), the compare
+ * What the admin trading dashboard shows (module 3.2): trading days `from … to` (dates in the shops' time zone), the compare
  * window, and the drill-down (every business, one business, or one shop of it). Built only from the admin request
  * (`TradingDashboardRequest`); the scopes are admin scopes, never tenant ones.
  *

@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Admin;
 
+use App\Domain\Shared\Country\Country;
 use App\Domain\Tenancy\Data\BranchDetails;
 use App\Domain\Tenancy\Data\CompanyDetails;
 use App\Domain\Tenancy\Enums\BusinessType;
@@ -163,7 +164,7 @@ final class TenantRules
             email: self::nullableString($request->input('email')),
             contactName: self::nullableString($request->input('contact_name')),
             notes: self::nullableString($request->input('notes')),
-            trialEndsAt: is_string($trialEndsAt) ? Carbon::parse($trialEndsAt, 'Europe/London')->endOfDay()->utc() : null,
+            trialEndsAt: is_string($trialEndsAt) ? Carbon::parse($trialEndsAt, Country::zone())->endOfDay()->utc() : null,
             businessType: BusinessType::tryFrom((string) $request->input('business_type')),
             town: self::nullableString($request->input('town')),
             postcode: self::nullableString($request->input('postcode')),

@@ -3,6 +3,7 @@
 namespace App\Domain\Purchasing\Queries\Lists;
 
 use App\Domain\Purchasing\Support\PurchasingNames;
+use App\Domain\Shared\Country\Country;
 use App\Domain\Shared\Support\Money;
 use App\Domain\TillData\Enums\GoodsReceiptStatus;
 use App\Domain\TillData\Models\GoodsReceipt;
@@ -73,7 +74,7 @@ final class DeliveryRows extends DocumentRows
 
     public function stats(Builder $query): array
     {
-        $since = CarbonImmutable::now('Europe/London')->subDays(30)->format('Y-m-d');
+        $since = CarbonImmutable::now(Country::zone())->subDays(30)->format('Y-m-d');
         $posted = (clone $query)->where('status', 'posted')->where('received_date', '>=', $since);
         $damaged = DB::table('goods_receipt_lines')->whereIn('goods_receipt_id', (clone $query)->where('received_date', '>=', $since)->select('id'))
             ->whereNull('deleted_at')->where('damaged_qty', '>', 0);

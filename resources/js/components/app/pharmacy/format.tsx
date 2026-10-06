@@ -2,6 +2,7 @@ import { PageHeader } from '@/components/shared/page-header';
 import { PageTabs } from '@/components/shared/page-tabs';
 import { StatusPill, type StatusTone } from '@/components/shared/status-badge';
 import AppLayout from '@/layouts/app-layout';
+import { zonedDateFormat } from '@/lib/country';
 import { Head } from '@inertiajs/react';
 import { type ReactNode } from 'react';
 import { type ChargeStatus, type MedicineClass } from './types';
@@ -47,15 +48,25 @@ export function ClassPill({ value }: { value: MedicineClass | null }) {
     );
 }
 
-const dateTime = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Europe/London' });
+const dateTime = () => zonedDateFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 
-/** "29 Sept 2026, 10:00" (London) from an ISO UTC instant. */
-export function londonDateTime(iso: string | null): string {
-    return iso ? dateTime.format(new Date(iso)) : '—';
+/** "29 Sept 2026, 10:00" (shop time) from an ISO UTC instant. */
+export function shopDateTime(iso: string | null): string {
+    return iso ? dateTime().format(new Date(iso)) : '—';
 }
 
 /** The Pharmacy frame: header, the Dispensing | Medicine classes tabs, then the page. */
-export function PharmacyPageLayout({ tab, title, description, children }: { tab: 'dispensing' | 'medicines'; title: string; description: ReactNode; children: ReactNode }) {
+export function PharmacyPageLayout({
+    tab,
+    title,
+    description,
+    children,
+}: {
+    tab: 'dispensing' | 'medicines';
+    title: string;
+    description: ReactNode;
+    children: ReactNode;
+}) {
     return (
         <AppLayout>
             <Head title={`${title} · Pharmacy`} />

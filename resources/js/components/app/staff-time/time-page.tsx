@@ -6,6 +6,7 @@ import { StatusPill } from '@/components/shared/status-badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import AppLayout from '@/layouts/app-layout';
+import { zonedDateFormat } from '@/lib/country';
 import { Head } from '@inertiajs/react';
 import { Lock } from 'lucide-react';
 import { type ReactNode } from 'react';
@@ -30,8 +31,8 @@ function keep(filters: TimeFiltersState): Record<string, string> {
     };
 }
 
-function londonToday(): string {
-    return new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/London' }).format(new Date());
+function shopToday(): string {
+    return zonedDateFormat('en-CA').format(new Date());
 }
 
 export function addDays(day: string, days: number): string {
@@ -48,7 +49,7 @@ export function mondayOf(day: string): string {
 }
 
 function monthRange(offset: number): { from: string; to: string } {
-    const [y, m] = londonToday().split('-').map(Number);
+    const [y, m] = shopToday().split('-').map(Number);
     const first = new Date(Date.UTC(y, m - 1 + offset, 1, 12));
     const last = new Date(Date.UTC(y, m + offset, 0, 12));
 
@@ -56,16 +57,16 @@ function monthRange(offset: number): { from: string; to: string } {
 }
 
 const PRESETS: { value: string; label: string; range: () => { from: string; to: string } }[] = [
-    { value: 'week', label: 'This week', range: () => ({ from: mondayOf(londonToday()), to: addDays(mondayOf(londonToday()), 6) }) },
+    { value: 'week', label: 'This week', range: () => ({ from: mondayOf(shopToday()), to: addDays(mondayOf(shopToday()), 6) }) },
     {
         value: 'lastWeek',
         label: 'Last week',
-        range: () => ({ from: addDays(mondayOf(londonToday()), -7), to: addDays(mondayOf(londonToday()), -1) }),
+        range: () => ({ from: addDays(mondayOf(shopToday()), -7), to: addDays(mondayOf(shopToday()), -1) }),
     },
     {
         value: 'twoWeeks',
         label: 'Last 2 weeks',
-        range: () => ({ from: addDays(mondayOf(londonToday()), -14), to: addDays(mondayOf(londonToday()), -1) }),
+        range: () => ({ from: addDays(mondayOf(shopToday()), -14), to: addDays(mondayOf(shopToday()), -1) }),
     },
     { value: 'month', label: 'This month', range: () => monthRange(0) },
     { value: 'lastMonth', label: 'Last month', range: () => monthRange(-1) },
@@ -78,7 +79,7 @@ interface FiltersProps extends TimePageProps {
     children?: ReactNode;
 }
 
-/** Dates (London days), shop (pinned for a one-shop user), till and person. */
+/** Dates (shop days), shop (pinned for a one-shop user), till and person. */
 export function TimeFilters({ filters, options, update, dates = true, showTill = false, children }: FiltersProps) {
     const preset = PRESETS.find((p) => {
         const r = p.range();

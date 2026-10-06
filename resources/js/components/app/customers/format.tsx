@@ -1,13 +1,14 @@
 import { StatusPill, type StatusTone } from '@/components/shared/status-badge';
 import { money, number } from '@/components/shared/trading/format';
+import { zonedDateFormat } from '@/lib/country';
 import { cn } from '@/lib/utils';
 import { type ConsentState, type Option } from './types';
 
-const londonDate = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Europe/London' });
+const shopDate = () => zonedDateFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 
-/** "7 Oct 2026" in UK time. */
+/** "7 Oct 2026" in shop time. */
 export function dayLabel(iso: string | null | undefined): string {
-    return iso ? londonDate.format(new Date(iso)) : '';
+    return iso ? shopDate().format(new Date(iso)) : '';
 }
 
 export { money, number };

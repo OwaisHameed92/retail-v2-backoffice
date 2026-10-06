@@ -11,7 +11,7 @@ use InvalidArgumentException;
 
 /**
  * What a report reads (DASHBOARD.md §2.1, §5 "SCOPE"): one business (or, for the admin area, every business),
- * optional shops and tills, and trading days `from … to` inclusive (Europe/London dates).
+ * optional shops and tills, and trading days `from … to` inclusive (dates in the shops' time zone).
  *
  * - `tenant()`: the current company (CurrentCompany, fail closed); the models' company scope applies as well. A
  *   shop manager's screen passes their one shop in `branchIds` (module 4.1 enforces it).

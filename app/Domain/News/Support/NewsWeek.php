@@ -2,6 +2,7 @@
 
 namespace App\Domain\News\Support;
 
+use App\Domain\Shared\Country\Country;
 use Carbon\CarbonImmutable;
 
 /**
@@ -14,7 +15,7 @@ final readonly class NewsWeek
 
     public static function current(): self
     {
-        return self::containing(CarbonImmutable::now('Europe/London'));
+        return self::containing(CarbonImmutable::now(Country::zone()));
     }
 
     /** The week of a `Y-m-d` date; the current week when blank or not a date, never later than the current week. */
@@ -26,7 +27,7 @@ final readonly class NewsWeek
             return $current;
         }
 
-        $parsed = CarbonImmutable::createFromFormat('!Y-m-d', $date, 'Europe/London');
+        $parsed = CarbonImmutable::createFromFormat('!Y-m-d', $date, Country::zone());
 
         if ($parsed === null || $parsed->format('Y-m-d') !== $date) {
             return $current;
@@ -46,7 +47,7 @@ final readonly class NewsWeek
 
     public function shift(int $weeks): self
     {
-        return self::containing(CarbonImmutable::createFromFormat('!Y-m-d', $this->start, 'Europe/London')->addWeeks($weeks));
+        return self::containing(CarbonImmutable::createFromFormat('!Y-m-d', $this->start, Country::zone())->addWeeks($weeks));
     }
 
     /** @return array{start: string, end: string, previous: string, next: string|null, current: bool} */

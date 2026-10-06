@@ -1,11 +1,12 @@
 import { type CellValue, type ColumnType, type ReportFilters } from '@/components/app/reports/types';
 import { StatusBadge } from '@/components/shared/status-badge';
 import { money, number } from '@/components/shared/trading/format';
+import { zonedDateFormat } from '@/lib/country';
 import { cn } from '@/lib/utils';
 import { TriangleAlert } from 'lucide-react';
 import { type ReactNode } from 'react';
 
-const dateTime = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Europe/London' });
+const dateTime = () => zonedDateFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 const date = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' });
 const qty = new Intl.NumberFormat('en-GB', { maximumFractionDigits: 3 });
 
@@ -14,7 +15,7 @@ export function isNumeric(type: ColumnType): boolean {
     return ['money', 'signedMoney', 'qty', 'count', 'percent'].includes(type);
 }
 
-/** A cell as text (print and screen): "£1,234.56", "12.5%", "3 Sept 2026 17:05" (London). Null → "—". */
+/** A cell as text (print and screen): "£1,234.56", "12.5%", "3 Sept 2026 17:05" (shop time). Null → "—". */
 export function cellText(value: CellValue, type: ColumnType): string {
     if (value === null || value === '') {
         return '—';
@@ -31,7 +32,7 @@ export function cellText(value: CellValue, type: ColumnType): string {
         case 'percent':
             return `${Number(value).toLocaleString('en-GB', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`;
         case 'datetime':
-            return dateTime.format(new Date(String(value)));
+            return dateTime().format(new Date(String(value)));
         case 'date':
             return date.format(new Date(`${value}T00:00:00Z`));
         case 'flag':
@@ -100,7 +101,9 @@ export function reportQuery(filters: ReportFilters, next: Partial<ReportFilters>
 
 /** A report URL with a query (for links, CSV and print). */
 export function reportUrl(name: 'app.reports.show' | 'app.reports.export' | 'app.reports.print', report: string, query: ReportQuery): string {
-    const params = new URLSearchParams(Object.entries(query).filter((entry): entry is [string, string] => typeof entry[1] === 'string' && entry[1] !== ''));
+    const params = new URLSearchParams(
+        Object.entries(query).filter((entry): entry is [string, string] => typeof entry[1] === 'string' && entry[1] !== ''),
+    );
     const qs = params.toString();
 
     return `${route(name, report)}${qs ? `?${qs}` : ''}`;

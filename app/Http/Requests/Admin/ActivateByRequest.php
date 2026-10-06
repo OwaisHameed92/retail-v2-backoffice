@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Admin;
 
+use App\Domain\Shared\Country\Country;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Http\FormRequest;
 
@@ -33,6 +34,6 @@ class ActivateByRequest extends FormRequest
 
     public function until(): CarbonImmutable
     {
-        return CarbonImmutable::parse((string) $this->input('activate_by'), 'Europe/London');
+        return CarbonImmutable::parse((string) $this->input('activate_by'), Country::zone());
     }
 }

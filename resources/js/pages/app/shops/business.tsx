@@ -1,5 +1,5 @@
 import { ShopsTabs } from '@/components/app/shops/licence-bits';
-import { blankNulls, type BusinessForm, type BusinessPageProps, londonDate } from '@/components/app/shops/types';
+import { blankNulls, type BusinessForm, type BusinessPageProps, shopDate } from '@/components/app/shops/types';
 import { DescriptionList } from '@/components/shared/description-list';
 import { FormCard, FormField, FormGrid, FormSection } from '@/components/shared/form-section';
 import { PageHeader } from '@/components/shared/page-header';
@@ -119,7 +119,7 @@ export default function BusinessDetailsPage({ business, facts, can }: BusinessPa
                             { label: 'Status', value: <StatusBadge status={facts.status} /> },
                             { label: 'Business type', value: facts.businessType },
                             { label: 'Shops', value: `${facts.shops} of ${facts.shopsAllowed} allowed` },
-                            { label: 'Customer since', value: londonDate(facts.customerSince) },
+                            { label: 'Customer since', value: shopDate(facts.customerSince) },
                         ]}
                     />
                 </SectionCard>

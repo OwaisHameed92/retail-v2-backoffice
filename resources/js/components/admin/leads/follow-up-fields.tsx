@@ -1,20 +1,17 @@
 import { FormField, FormGrid } from '@/components/shared/form-section';
 import { Input } from '@/components/ui/input';
+import { timeZoneLabel, zonedDateFormat } from '@/lib/country';
 
-const LONDON = 'Europe/London';
-
-/** "2026-09-25" for an ISO time, or tomorrow when empty (Europe/London). */
+/** "2026-09-25" for an ISO time, or tomorrow when empty (the profile's time zone). */
 export function dateInputValue(iso: string | null | undefined, fallbackDays = 1): string {
     const date = iso ? new Date(iso) : new Date(Date.now() + fallbackDays * 86_400_000);
 
-    return new Intl.DateTimeFormat('en-CA', { timeZone: LONDON, year: 'numeric', month: '2-digit', day: '2-digit' }).format(date);
+    return zonedDateFormat('en-CA', { year: 'numeric', month: '2-digit', day: '2-digit' }).format(date);
 }
 
-/** "14:30" for an ISO time (Europe/London), or the fallback. */
+/** "14:30" for an ISO time (the profile's time zone), or the fallback. */
 export function timeInputValue(iso: string | null | undefined, fallback: string): string {
-    return iso
-        ? new Intl.DateTimeFormat('en-GB', { timeZone: LONDON, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date(iso))
-        : fallback;
+    return iso ? zonedDateFormat('en-GB', { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date(iso)) : fallback;
 }
 
 export function todayInputValue(): string {
@@ -33,7 +30,7 @@ interface FollowUpFieldsProps {
     optional?: boolean;
 }
 
-/** Date + time inputs for a follow-up (UK time). */
+/** Date + time inputs for a follow-up (shop time). */
 export function FollowUpFields({
     idPrefix,
     date,
@@ -57,7 +54,7 @@ export function FollowUpFields({
                     aria-invalid={!!dateError}
                 />
             </FormField>
-            <FormField id={`${idPrefix}-time`} label="Time" help="UK time" error={timeError}>
+            <FormField id={`${idPrefix}-time`} label="Time" help={`${timeZoneLabel()} time`} error={timeError}>
                 <Input
                     id={`${idPrefix}-time`}
                     type="time"

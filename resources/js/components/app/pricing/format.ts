@@ -1,23 +1,24 @@
 import { type StatusToneMap } from '@/components/shared/status-badge';
+import { zonedDateFormat } from '@/lib/country';
 
-const dateTime = new Intl.DateTimeFormat('en-GB', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-    timeZone: 'Europe/London',
-});
-const date = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Europe/London' });
+const dateTime = () =>
+    zonedDateFormat('en-GB', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+    });
+const date = () => zonedDateFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 
-/** "5 Oct 2026, 10:00" in London time, from an ISO UTC string. */
+/** "5 Oct 2026, 10:00" in shop time, from an ISO UTC string. */
 export function formatDateTime(iso: string | null): string {
-    return iso ? dateTime.format(new Date(iso)) : '—';
+    return iso ? dateTime().format(new Date(iso)) : '—';
 }
 
 /** "5 Oct 2026" from a `Y-m-d` date (a calendar day, no time zone shift). */
 export function formatDay(day: string | null): string {
-    return day ? date.format(new Date(`${day}T12:00:00Z`)) : '—';
+    return day ? date().format(new Date(`${day}T12:00:00Z`)) : '—';
 }
 
 export function pounds(value: string | null | undefined): string {

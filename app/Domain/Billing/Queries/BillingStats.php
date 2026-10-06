@@ -7,6 +7,7 @@ use App\Domain\Billing\Models\BillingAccount;
 use App\Domain\Billing\Models\Invoice;
 use App\Domain\Billing\Models\Payment;
 use App\Domain\Billing\Support\BillingDates;
+use App\Domain\Shared\Country\Country;
 use App\Domain\Shared\Support\Money;
 use App\Domain\Tenancy\Enums\CompanyStatus;
 use Carbon\CarbonImmutable;
@@ -42,7 +43,7 @@ final class BillingStats
             && $invoice->due_date !== null
             && $invoice->due_date->betweenIncluded($today, $weekEnd));
 
-        $monthStart = CarbonImmutable::parse($now->setTimezone(BillingDates::TIMEZONE)->format('Y-m-01').' 00:00:00', BillingDates::TIMEZONE)->utc();
+        $monthStart = CarbonImmutable::parse($now->setTimezone(Country::zone())->format('Y-m-01').' 00:00:00', Country::zone())->utc();
         $collected = Payment::withoutCompanyScope()->where('received_at', '>=', $monthStart)->where('received_at', '<=', $now)->pluck('amount');
         $drafts = Invoice::withoutCompanyScope()->where('status', InvoiceStatus::Draft->value)->pluck('total');
 

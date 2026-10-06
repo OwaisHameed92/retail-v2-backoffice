@@ -1,4 +1,4 @@
-/** Matches App\Domain\Calendar\Queries\* and CalendarController (module 5.9). Days are "Y-m-d" London dates; times "HH:MM". */
+/** Matches App\Domain\Calendar\Queries\* and CalendarController (module 5.9). Days are "Y-m-d" shop dates (the profile's time zone); times "HH:MM". */
 
 export interface CalendarFilters {
     shop: string | null;
@@ -99,5 +99,13 @@ export interface EventProps {
     daysCompared: number;
     totals: { gross: Pair<string>; net: Pair<string>; transactions: Pair<number>; basket: Pair<string> };
     days: { day: number; date: string; lastYearDate: string; gross: string | null; lastYearGross: string }[];
-    departments: { id: string | null; name: string; net: string; lastYearNet: string; change: string | null; tillUplift: string | null; learned: boolean }[];
+    departments: {
+        id: string | null;
+        name: string;
+        net: string;
+        lastYearNet: string;
+        change: string | null;
+        tillUplift: string | null;
+        learned: boolean;
+    }[];
 }

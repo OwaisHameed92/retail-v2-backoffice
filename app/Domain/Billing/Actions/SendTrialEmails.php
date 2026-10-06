@@ -66,7 +66,7 @@ class SendTrialEmails
                 continue;
             }
 
-            $daysLeft = (int) BillingDates::today($now)->diffInDays(BillingDates::londonDate($trialEnds), false);
+            $daysLeft = (int) BillingDates::today($now)->diffInDays(BillingDates::localDate($trialEnds), false);
             $price = $this->priceSummary($company, $licences->first()?->plan);
             $account = $this->accounts->for($company);
             // Direct Debit customers without a working mandate get the setup link (module 1.12).

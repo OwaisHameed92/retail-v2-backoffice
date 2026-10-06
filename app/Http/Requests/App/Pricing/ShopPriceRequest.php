@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\App\Pricing;
 
+use App\Domain\Shared\Country\Country;
 use App\Domain\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Http\FormRequest;
@@ -48,6 +49,6 @@ class ShopPriceRequest extends FormRequest
     {
         $value = $this->input($key);
 
-        return is_string($value) && $value !== '' ? CarbonImmutable::parse($value, 'Europe/London')->utc() : null;
+        return is_string($value) && $value !== '' ? CarbonImmutable::parse($value, Country::zone())->utc() : null;
     }
 }

@@ -1,4 +1,5 @@
 import { StatusBadge } from '@/components/shared/status-badge';
+import { zonedDateFormat } from '@/lib/country';
 import { ShieldAlert, ShieldCheck } from 'lucide-react';
 import { type ReactNode } from 'react';
 
@@ -8,7 +9,7 @@ export interface TwoFactorState {
     recoveryCodesLeft: number;
 }
 
-const dateFormat = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Europe/London' });
+const dateFormat = () => zonedDateFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 
 /** The two-factor summary row on a security page: icon, state, since when, codes left, and actions on the right. */
 export function TwoFactorStatus({ state, actions }: { state: TwoFactorState; actions?: ReactNode }) {
@@ -34,7 +35,7 @@ export function TwoFactorStatus({ state, actions }: { state: TwoFactorState; act
                     <p className="text-muted-foreground text-sm">
                         {state.enabled ? (
                             <>
-                                On since {state.confirmedAt ? dateFormat.format(new Date(state.confirmedAt)) : 'set-up'} ·{' '}
+                                On since {state.confirmedAt ? dateFormat().format(new Date(state.confirmedAt)) : 'set-up'} ·{' '}
                                 <span className={state.recoveryCodesLeft <= 2 ? 'text-warning font-medium' : undefined}>
                                     {state.recoveryCodesLeft} recovery {state.recoveryCodesLeft === 1 ? 'code' : 'codes'} left
                                 </span>

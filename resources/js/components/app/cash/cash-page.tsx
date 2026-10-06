@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import AppLayout from '@/layouts/app-layout';
+import { zonedDateFormat } from '@/lib/country';
 import { Head, Link } from '@inertiajs/react';
 import { BarChart3, Lock } from 'lucide-react';
 import { type ReactNode } from 'react';
@@ -29,8 +30,8 @@ function keep(filters: CashFiltersState): Record<string, string> {
     return { from: filters.from, to: filters.to, ...(filters.shopLocked ? {} : { shop: filters.shop ?? 'all' }) };
 }
 
-function londonToday(): string {
-    return new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/London' }).format(new Date());
+function shopToday(): string {
+    return zonedDateFormat('en-CA').format(new Date());
 }
 
 function addDays(day: string, days: number): string {
@@ -41,11 +42,11 @@ function addDays(day: string, days: number): string {
 }
 
 const PRESETS: { value: string; label: string; range: () => { from: string; to: string } }[] = [
-    { value: 'today', label: 'Today', range: () => ({ from: londonToday(), to: londonToday() }) },
-    { value: 'yesterday', label: 'Yesterday', range: () => ({ from: addDays(londonToday(), -1), to: addDays(londonToday(), -1) }) },
-    { value: '7', label: 'Last 7 days', range: () => ({ from: addDays(londonToday(), -6), to: londonToday() }) },
-    { value: '30', label: 'Last 30 days', range: () => ({ from: addDays(londonToday(), -29), to: londonToday() }) },
-    { value: 'month', label: 'This month', range: () => ({ from: `${londonToday().slice(0, 8)}01`, to: londonToday() }) },
+    { value: 'today', label: 'Today', range: () => ({ from: shopToday(), to: shopToday() }) },
+    { value: 'yesterday', label: 'Yesterday', range: () => ({ from: addDays(shopToday(), -1), to: addDays(shopToday(), -1) }) },
+    { value: '7', label: 'Last 7 days', range: () => ({ from: addDays(shopToday(), -6), to: shopToday() }) },
+    { value: '30', label: 'Last 30 days', range: () => ({ from: addDays(shopToday(), -29), to: shopToday() }) },
+    { value: 'month', label: 'This month', range: () => ({ from: `${shopToday().slice(0, 8)}01`, to: shopToday() }) },
 ];
 
 interface FiltersProps extends CashPageProps {
@@ -54,7 +55,7 @@ interface FiltersProps extends CashPageProps {
     children?: ReactNode;
 }
 
-/** Dates (presets or custom, London trading days), shop (pinned for a one-shop user) and till. */
+/** Dates (presets or custom, shop trading days), shop (pinned for a one-shop user) and till. */
 export function CashFilters({ filters, options, update, showTill = true, children }: FiltersProps) {
     const preset = PRESETS.find((p) => {
         const r = p.range();

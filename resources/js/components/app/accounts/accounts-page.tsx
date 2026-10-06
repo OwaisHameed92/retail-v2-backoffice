@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import AppLayout from '@/layouts/app-layout';
+import { zonedDateFormat } from '@/lib/country';
 import { cn } from '@/lib/utils';
 import { type SharedData } from '@/types';
 import { Head, usePage } from '@inertiajs/react';
@@ -40,8 +41,8 @@ function keep(filters: AccountsFiltersState): Record<string, string> {
     };
 }
 
-function londonToday(): string {
-    return new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/London' }).format(new Date());
+function shopToday(): string {
+    return zonedDateFormat('en-CA').format(new Date());
 }
 
 function monthStart(day: string, addMonths = 0): string {
@@ -65,16 +66,16 @@ function quarterStart(day: string, add = 0): string {
 }
 
 const PRESETS: { value: string; label: string; range: () => { from: string; to: string } }[] = [
-    { value: 'month', label: 'This month', range: () => ({ from: monthStart(londonToday()), to: londonToday() }) },
-    { value: 'lastMonth', label: 'Last month', range: () => ({ from: monthStart(londonToday(), -1), to: monthEnd(monthStart(londonToday(), -1)) }) },
-    { value: 'quarter', label: 'This quarter', range: () => ({ from: quarterStart(londonToday()), to: londonToday() }) },
+    { value: 'month', label: 'This month', range: () => ({ from: monthStart(shopToday()), to: shopToday() }) },
+    { value: 'lastMonth', label: 'Last month', range: () => ({ from: monthStart(shopToday(), -1), to: monthEnd(monthStart(shopToday(), -1)) }) },
+    { value: 'quarter', label: 'This quarter', range: () => ({ from: quarterStart(shopToday()), to: shopToday() }) },
     {
         value: 'lastQuarter',
         label: 'Last quarter',
-        range: () => ({ from: quarterStart(londonToday(), -1), to: monthEnd(monthStart(quarterStart(londonToday()), -1)) }),
+        range: () => ({ from: quarterStart(shopToday(), -1), to: monthEnd(monthStart(quarterStart(shopToday()), -1)) }),
     },
-    { value: 'year', label: 'This year', range: () => ({ from: `${londonToday().slice(0, 4)}-01-01`, to: londonToday() }) },
-    { value: '12', label: 'Last 12 months', range: () => ({ from: monthStart(londonToday(), -11), to: londonToday() }) },
+    { value: 'year', label: 'This year', range: () => ({ from: `${shopToday().slice(0, 4)}-01-01`, to: shopToday() }) },
+    { value: '12', label: 'Last 12 months', range: () => ({ from: monthStart(shopToday(), -11), to: shopToday() }) },
 ];
 
 interface FiltersProps extends AccountsPageProps {
@@ -86,7 +87,7 @@ interface FiltersProps extends AccountsPageProps {
     children?: ReactNode;
 }
 
-/** Dates (presets or custom, London dates of the journal), and the shop (pinned for a one-shop user). */
+/** Dates (presets or custom, shop dates of the journal), and the shop (pinned for a one-shop user). */
 export function AccountsFilters({ filters, options, update, asAt = false, dates = true, children }: FiltersProps) {
     const preset = PRESETS.find((p) => {
         const r = p.range();

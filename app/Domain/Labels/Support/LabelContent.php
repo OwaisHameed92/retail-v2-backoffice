@@ -5,6 +5,7 @@ namespace App\Domain\Labels\Support;
 use App\Domain\Labels\Models\LabelQueueItem;
 use App\Domain\Pricing\Support\ShopPrices;
 use App\Domain\Promotions\Support\PromotionSummary;
+use App\Domain\Shared\Country\Country;
 use App\Domain\Tenancy\Models\Branch;
 use App\Domain\TillData\Models\Product;
 use App\Domain\TillData\Models\ProductBarcode;
@@ -50,7 +51,7 @@ final class LabelContent
             $own = ($later ? ShopPrices::live([$product->id], [$item->branch_id], $at) : $liveNow)[$product->id][$item->branch_id][''] ?? null;
             $price = (string) ($own->price ?? $product->sell_price);
             $weighed = $product->is_weighed || $product->unit_type?->value === 'kg';
-            $offer = self::offer($rules, $ruleItems, $product, $item->branch_id, $at->setTimezone('Europe/London')->toDateString());
+            $offer = self::offer($rules, $ruleItems, $product, $item->branch_id, $at->setTimezone(Country::zone())->toDateString());
 
             $labels[] = [
                 'id' => $item->id,
@@ -66,7 +67,7 @@ final class LabelContent
                 'deposit' => $product->is_deposit_item && $product->deposit_amount !== null && bccomp((string) $product->deposit_amount, '0', 2) > 0
                     ? '+ '.UnitPrice::money((string) $product->deposit_amount).' deposit' : null,
                 'shop' => (string) ($shops[$item->branch_id] ?? ''),
-                'date' => $at->setTimezone('Europe/London')->format('d/m/y'),
+                'date' => $at->setTimezone(Country::zone())->format('d/m/y'),
                 'copies' => max(1, $item->copies),
             ];
         }

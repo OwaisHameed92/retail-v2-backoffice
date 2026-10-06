@@ -5,7 +5,7 @@ namespace App\Domain\Reporting\Reports;
 /**
  * One table of a report, the same shape on screen, in print and in the CSV. Column types: `text`, `money` (pounds,
  * 2 dp), `signedMoney` (red when negative: variances), `qty` (up to 4 dp), `count`, `percent` (1 dp), `date`
- * ("Y-m-d"), `datetime` (ISO UTC, shown in Europe/London), `status` (ok / low / out), `flag` (true = alert). Values
+ * ("Y-m-d"), `datetime` (ISO UTC, shown in the shops' time zone), `status` (ok / low / out), `flag` (true = alert). Values
  * are strings / ints / bools, never floats; null = "—".
  */
 final readonly class ReportTable

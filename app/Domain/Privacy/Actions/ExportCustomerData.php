@@ -8,6 +8,7 @@ use App\Domain\Privacy\Models\DataRequest;
 use App\Domain\Privacy\Queries\CustomerDataExport;
 use App\Domain\Privacy\Support\CustomerExportBundle;
 use App\Domain\Shared\Actions\RecordAudit;
+use App\Domain\Shared\Country\Country;
 use App\Domain\Tenancy\CurrentCompany;
 use App\Domain\Tenancy\Models\Company;
 use App\Domain\TillData\Models\Customer;
@@ -57,7 +58,7 @@ final class ExportCustomerData
 
             return [
                 'path' => $path,
-                'filename' => 'customer-data-'.substr($customer->id, -6).'-'.$now->setTimezone('Europe/London')->format('Y-m-d').'.zip',
+                'filename' => 'customer-data-'.substr($customer->id, -6).'-'.$now->setTimezone(Country::zone())->format('Y-m-d').'.zip',
                 'request' => $request,
             ];
         });

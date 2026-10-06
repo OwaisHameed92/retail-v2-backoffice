@@ -9,6 +9,7 @@ use App\Domain\Mail\Models\EmailLog;
 use App\Domain\Notifications\Models\AlertNotification;
 use App\Domain\Purchasing\Actions\PurgeInvoiceImportFiles;
 use App\Domain\Purchasing\Models\InvoiceImport;
+use App\Domain\Shared\Country\Country;
 use App\Domain\Shared\Support\SchedulerHeartbeat;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
@@ -42,7 +43,7 @@ Schedule::command('till-health:refresh')->everyFiveMinutes()->onOneServer()->wit
 // Owner alerts (module 7.8): urgent emails two minutes after each health refresh; the daily digest at 07:00 London;
 // bell entries after 90 days.
 Schedule::command('alerts:check')->cron('2-59/5 * * * *')->onOneServer()->withoutOverlapping(10);
-Schedule::command('alerts:digest')->dailyAt('07:00')->timezone('Europe/London')->onOneServer()->withoutOverlapping(60);
+Schedule::command('alerts:digest')->dailyAt('07:00')->timezone(Country::zone())->onOneServer()->withoutOverlapping(60);
 // Morning summary (module 6.3): the stored summaries and their AI narratives after `ai.retention_days`.
 Schedule::command('model:prune', ['--model' => [MorningSummary::class]])->dailyAt('02:40')->onOneServer();
 Schedule::command('model:prune', ['--model' => [AlertNotification::class]])->dailyAt('03:15')->onOneServer();
@@ -55,7 +56,7 @@ Schedule::command('reports:process-dirty')->everyMinute()->onOneServer()->withou
 Schedule::command('privacy:retention', ['--apply'])->dailyAt('03:30')->onOneServer()->withoutOverlapping();
 
 // Shelf labels (gap #6): queue labels for offers that start today or ended yesterday.
-Schedule::command('labels:queue-offers')->dailyAt('00:10')->timezone('Europe/London')->onOneServer()->withoutOverlapping(60);
+Schedule::command('labels:queue-offers')->dailyAt('00:10')->timezone(Country::zone())->onOneServer()->withoutOverlapping(60);
 
 // Admin dashboard (module 1.9): a heartbeat so System health can show the scheduler is running.
 Schedule::call(fn () => SchedulerHeartbeat::beat())->everyMinute()->name('scheduler:heartbeat')->onOneServer();
@@ -67,5 +68,5 @@ Schedule::command('model:prune', ['--model' => [InvoiceImport::class]])->dailyAt
 // Anomaly alerts (module 6.6): hourly checks of today (sales gaps, out-of-hours sales) and the daily checks of
 // yesterday before the 07:00 digest; findings kept 24 months.
 Schedule::command('anomalies:detect')->hourlyAt(15)->onOneServer()->withoutOverlapping(30);
-Schedule::command('anomalies:detect', ['--daily'])->dailyAt('06:30')->timezone('Europe/London')->onOneServer()->withoutOverlapping(60);
+Schedule::command('anomalies:detect', ['--daily'])->dailyAt('06:30')->timezone(Country::zone())->onOneServer()->withoutOverlapping(60);
 Schedule::command('model:prune', ['--model' => [Anomaly::class]])->dailyAt('03:50')->onOneServer();

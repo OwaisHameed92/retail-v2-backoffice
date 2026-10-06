@@ -1,4 +1,5 @@
 import { type StatusToneMap } from '@/components/shared/status-badge';
+import { zonedDateFormat } from '@/lib/country';
 import { type BusinessType, type LeadSource, type LeadStatus } from './types';
 
 export { formatDate, formatDateTimeShort, plural, toDateInput } from '@/components/admin/tenants/format';
@@ -45,19 +46,17 @@ export const businessTypeLabels: Record<BusinessType, string> = {
     other: 'Other',
 };
 
-const LONDON = 'Europe/London';
+const dayKey = (date: Date) => zonedDateFormat('en-CA', { year: 'numeric', month: '2-digit', day: '2-digit' }).format(date);
 
-const dayKey = (date: Date) => new Intl.DateTimeFormat('en-CA', { timeZone: LONDON, year: 'numeric', month: '2-digit', day: '2-digit' }).format(date);
+const timeFormat = () => zonedDateFormat('en-GB', { hour: '2-digit', minute: '2-digit' });
 
-const timeFormat = new Intl.DateTimeFormat('en-GB', { timeZone: LONDON, hour: '2-digit', minute: '2-digit' });
+const shortDate = () => zonedDateFormat('en-GB', { day: 'numeric', month: 'short' });
 
-const shortDate = new Intl.DateTimeFormat('en-GB', { timeZone: LONDON, day: 'numeric', month: 'short' });
-
-const weekday = new Intl.DateTimeFormat('en-GB', { timeZone: LONDON, weekday: 'short' });
+const weekday = () => zonedDateFormat('en-GB', { weekday: 'short' });
 
 export type FollowUpState = 'overdue' | 'today' | 'upcoming';
 
-/** Where a follow-up stands right now (Europe/London days). */
+/** Where a follow-up stands right now (days in the profile's time zone). */
 export function followUpState(iso: string, now: Date = new Date()): FollowUpState {
     const at = new Date(iso);
     if (at.getTime() < now.getTime()) {
@@ -67,18 +66,18 @@ export function followUpState(iso: string, now: Date = new Date()): FollowUpStat
     return dayKey(at) === dayKey(now) ? 'today' : 'upcoming';
 }
 
-/** "Today 14:30", "Tomorrow 09:00", "Fri 09:00", "3 Oct 09:00" (Europe/London). */
+/** "Today 14:30", "Tomorrow 09:00", "Fri 09:00", "3 Oct 09:00" (the profile's time zone). */
 export function formatFollowUp(iso: string, now: Date = new Date()): string {
     const at = new Date(iso);
-    const time = timeFormat.format(at);
+    const time = timeFormat().format(at);
     const days = Math.round((Date.parse(dayKey(at)) - Date.parse(dayKey(now))) / 86_400_000);
 
     if (days === 0) return `Today ${time}`;
     if (days === 1) return `Tomorrow ${time}`;
     if (days === -1) return `Yesterday ${time}`;
-    if (days > 1 && days < 7) return `${weekday.format(at)} ${time}`;
+    if (days > 1 && days < 7) return `${weekday().format(at)} ${time}`;
 
-    return `${shortDate.format(at)} ${time}`;
+    return `${shortDate().format(at)} ${time}`;
 }
 
 /** "07700 900123" → "tel:07700900123". */

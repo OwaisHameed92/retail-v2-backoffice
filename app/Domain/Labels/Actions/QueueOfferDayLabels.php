@@ -5,6 +5,7 @@ namespace App\Domain\Labels\Actions;
 use App\Domain\Labels\Enums\LabelReason;
 use App\Domain\Labels\Support\PromotionProducts;
 use App\Domain\Promotions\Support\PromotionSummary;
+use App\Domain\Shared\Country\Country;
 use App\Domain\TillData\Models\PromotionRule;
 use Carbon\CarbonImmutable;
 
@@ -19,7 +20,7 @@ final class QueueOfferDayLabels
 
     public function handle(?CarbonImmutable $today = null): int
     {
-        $today = ($today ?? CarbonImmutable::now('Europe/London'))->setTimezone('Europe/London')->startOfDay();
+        $today = ($today ?? CarbonImmutable::now(Country::zone()))->setTimezone(Country::zone())->startOfDay();
         $queued = 0;
 
         PromotionRule::withoutCompanyScope()->where('is_active', true)

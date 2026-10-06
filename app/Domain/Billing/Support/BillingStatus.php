@@ -10,6 +10,7 @@ use App\Domain\Billing\GoCardless\Support\SubscriptionAmount;
 use App\Domain\Billing\Models\BillingAccount;
 use App\Domain\Billing\Models\Invoice;
 use App\Domain\Licensing\Actions\RenewCompanyLicences;
+use App\Domain\Shared\Country\Country;
 use App\Domain\Shared\Support\Money;
 use App\Domain\Tenancy\Enums\CompanyStatus;
 use App\Domain\Tenancy\Models\Company;
@@ -114,7 +115,7 @@ final readonly class BillingStatus
 
             $grace = CompanyPricing::for($company, $account)->plan->trial_grace_days ?? 0;
 
-            return $make($trialOn ? self::TRIAL : self::SETUP_FEE_DUE, locksOn: $trialOn ? BillingDates::londonDate($trialEnd->addDays(max(0, $grace))) : null, trialEnd: $trialEnd);
+            return $make($trialOn ? self::TRIAL : self::SETUP_FEE_DUE, locksOn: $trialOn ? BillingDates::localDate($trialEnd->addDays(max(0, $grace))) : null, trialEnd: $trialEnd);
         }
 
         if ($fee->status === SetupFeeState::PART_PAID) {
@@ -206,7 +207,7 @@ final readonly class BillingStatus
     /** The London day of the first daily billing run (06:00) at or after an instant. */
     public static function firstRunAt(CarbonImmutable $instant, bool $strictlyAfter = false): CarbonImmutable
     {
-        $london = $instant->setTimezone(BillingDates::TIMEZONE);
+        $london = $instant->setTimezone(Country::zone());
         $run = $london->setTime(6, 0);
         $late = $strictlyAfter ? $london->greaterThanOrEqualTo($run) : $london->greaterThan($run);
 

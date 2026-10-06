@@ -1,3 +1,4 @@
+import { zonedDateFormat } from '@/lib/country';
 import { type CompanyRole } from '@/types';
 
 /** Matches `PortalUsers\Data\PortalUsersPage::for()` (module 4.1). */
@@ -61,8 +62,8 @@ export interface PortalUsersProps {
 /** "Every shop" in the shop picker (the form sends an empty branch_id). */
 export const EVERY_SHOP = 'all';
 
-const dateFormat = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Europe/London' });
+const dateFormat = () => zonedDateFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 
 export function formatDate(iso: string | null): string {
-    return iso ? dateFormat.format(new Date(iso)) : 'Not known';
+    return iso ? dateFormat().format(new Date(iso)) : 'Not known';
 }

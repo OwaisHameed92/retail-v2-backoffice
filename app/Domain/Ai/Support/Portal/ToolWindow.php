@@ -12,7 +12,7 @@ use Illuminate\Validation\Rule;
 
 /**
  * The date range and shop of a portal assistant tool (module 6.2), resolved exactly like the dashboard and the
- * reports (trading days in Europe/London, TradingRange clamps a custom range), so figures match the linked pages.
+ * reports (trading days in the shops' time zone, TradingRange clamps a custom range), so figures match the linked pages.
  */
 final class ToolWindow
 {

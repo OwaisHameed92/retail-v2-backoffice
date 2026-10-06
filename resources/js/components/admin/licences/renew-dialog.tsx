@@ -1,10 +1,11 @@
+import { formatCalendarDate, renewalPreview, shopToday } from '@/components/admin/licences/format';
 import { Field } from '@/components/admin/tenants/field';
-import { formatCalendarDate, londonToday, renewalPreview } from '@/components/admin/licences/format';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { timeZone } from '@/lib/country';
 import { cn } from '@/lib/utils';
 import { useForm } from '@inertiajs/react';
 import { CalendarCheck, LoaderCircle } from 'lucide-react';
@@ -47,7 +48,7 @@ function RenewDialogBody({ onOpenChange, title, description, url, currentEnd, co
     });
 
     const preview = data.term === 'until' ? data.until || null : renewalPreview(data.term, currentEnd);
-    const today = londonToday();
+    const today = shopToday();
 
     const submit: FormEventHandler = (event) => {
         event.preventDefault();
@@ -89,7 +90,7 @@ function RenewDialogBody({ onOpenChange, title, description, url, currentEnd, co
                 </fieldset>
 
                 {data.term === 'until' && (
-                    <Field id="renew-until" label="Valid until" error={errors.until} hint="Europe/London. The licence runs to 23:59 that day.">
+                    <Field id="renew-until" label="Valid until" error={errors.until} hint={`${timeZone()}. The licence runs to 23:59 that day.`}>
                         <Input
                             id="renew-until"
                             type="date"
@@ -111,7 +112,12 @@ function RenewDialogBody({ onOpenChange, title, description, url, currentEnd, co
                 {errors.term && <p className="text-destructive text-sm">{errors.term}</p>}
 
                 <div className="flex items-start gap-3">
-                    <Checkbox id="renew-notify" checked={data.notify} onCheckedChange={(checked) => setData('notify', checked === true)} className="mt-0.5" />
+                    <Checkbox
+                        id="renew-notify"
+                        checked={data.notify}
+                        onCheckedChange={(checked) => setData('notify', checked === true)}
+                        className="mt-0.5"
+                    />
                     <div className="grid gap-1">
                         <Label htmlFor="renew-notify">Email the owner</Label>
                         <p className="text-muted-foreground text-sm">Sends the “licences renewed” email with the new expiry date.</p>

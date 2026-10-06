@@ -1,4 +1,5 @@
 import { StatusBadge, StatusPill, type StatusTone } from '@/components/shared/status-badge';
+import { zonedDateFormat } from '@/lib/country';
 import { type HealthProblem, type SyncState, type TillState } from './types';
 
 export const tillStateTones: Record<TillState, StatusTone> = {
@@ -73,11 +74,11 @@ export function ago(iso: string | null | undefined, fallback = 'Never'): string 
     return relative.format(Math.round(seconds / 60), 'minute');
 }
 
-const dateTime = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Europe/London' });
+const dateTime = () => zonedDateFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 
-/** "7 Oct 2026, 12:04" in UK time. */
-export function londonDateTime(iso: string | null | undefined): string {
-    return iso ? dateTime.format(new Date(iso)) : '';
+/** "7 Oct 2026, 12:04" in shop time. */
+export function shopDateTime(iso: string | null | undefined): string {
+    return iso ? dateTime().format(new Date(iso)) : '';
 }
 
 /** "2 min fast", "40 s slow", "In step" (till clock minus portal time). */
@@ -95,6 +96,11 @@ export function clockSkewText(seconds: number | null): string {
 }
 
 /** How the states are decided, for help text. */
-export function thresholdsText(t: { syncOnlineMinutes: number; validateOnlineHours: number; validateOfflineHours: number; syncOfflineHours: number }): string {
+export function thresholdsText(t: {
+    syncOnlineMinutes: number;
+    validateOnlineHours: number;
+    validateOfflineHours: number;
+    syncOfflineHours: number;
+}): string {
     return `Online: the main till synced within ${t.syncOnlineMinutes} minutes, or any other till checked in within ${t.validateOnlineHours} hours. Offline: no sync for ${t.syncOfflineHours} hours and no check-in for ${t.validateOnlineHours} hours (main till), or no check-in for ${t.validateOfflineHours} hours (other tills).`;
 }

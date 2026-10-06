@@ -2,6 +2,7 @@
 
 namespace App\Domain\Sync\Support;
 
+use App\Domain\Shared\Country\Country;
 use App\Domain\Shared\Exceptions\ApiException;
 use App\Domain\Shared\Support\Ulid;
 use App\Domain\Sync\Data\SyncCaller;
@@ -76,7 +77,7 @@ final class SyncStatusRecorder
      */
     private function counts(SyncCaller $caller, int $accepted, int $rejected): array
     {
-        $today = now('Europe/London')->toDateString();
+        $today = now(Country::zone())->toDateString();
         $row = DB::table('sync_branch_status')->where('branch_id', $caller->branch->id)->first(['rows_day', 'rows_accepted_today', 'rows_rejected_today']);
         $same = $row !== null && substr((string) $row->rows_day, 0, 10) === $today;
 

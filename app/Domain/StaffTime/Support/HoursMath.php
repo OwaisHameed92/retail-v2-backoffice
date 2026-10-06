@@ -16,7 +16,7 @@ use Carbon\CarbonImmutable;
  *   overtime premium, no weekly rule and no setting; the week's approved figure is `TimesheetApproval.overtimeHours`;
  * - Holiday: an estimate of 12.07% of the hours worked, as the till's timesheet screen shows (not booked or synced);
  * - Rota: a planned shift's London wall-clock start and end (end at or before start = the next day) to real minutes,
- *   less its break. Converting through Europe/London makes clock-change nights 1 hour shorter or longer.
+ *   less its break. Converting through the shops' time zone makes clock-change nights 1 hour shorter or longer.
  */
 final class HoursMath
 {

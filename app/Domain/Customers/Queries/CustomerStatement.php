@@ -3,6 +3,7 @@
 namespace App\Domain\Customers\Queries;
 
 use App\Domain\Billing\Support\BillingDates;
+use App\Domain\Shared\Country\Country;
 use App\Domain\Shared\Support\Money;
 use App\Domain\Tenancy\Models\Company;
 use App\Domain\TillData\Models\Customer;
@@ -34,8 +35,8 @@ final class CustomerStatement
     /** @return array<string, mixed> */
     public static function for(Company $company, Customer $customer, string $from, string $to): array
     {
-        $start = CarbonImmutable::parse($from.' 00:00:00', BillingDates::TIMEZONE);
-        $end = CarbonImmutable::parse($to.' 00:00:00', BillingDates::TIMEZONE)->addDay();
+        $start = CarbonImmutable::parse($from.' 00:00:00', Country::zone());
+        $end = CarbonImmutable::parse($to.' 00:00:00', Country::zone())->addDay();
         $branches = CustomerDetail::branches();
         $opening = CustomerLedger::totals($customer->id, $start);
         $running = $opening;

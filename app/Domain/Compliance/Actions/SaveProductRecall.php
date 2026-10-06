@@ -3,6 +3,7 @@
 namespace App\Domain\Compliance\Actions;
 
 use App\Domain\Shared\Actions\RecordAudit;
+use App\Domain\Shared\Country\Country;
 use App\Domain\Tenancy\CurrentCompany;
 use App\Domain\Tenancy\Models\Company;
 use App\Domain\TillData\Enums\ProductRecallStatus;
@@ -117,7 +118,7 @@ final class SaveProductRecall
         }
 
         if (! $recall->exists && ($values['reference'] ?? '') === '') {
-            $values['reference'] = 'RC-'.CarbonImmutable::now('Europe/London')->format('ymd').'-'.strtoupper(substr(bin2hex(random_bytes(2)), 0, 4));
+            $values['reference'] = 'RC-'.CarbonImmutable::now(Country::zone())->format('ymd').'-'.strtoupper(substr(bin2hex(random_bytes(2)), 0, 4));
         }
 
         return $values;

@@ -1,23 +1,24 @@
 import { StatusPill } from '@/components/shared/status-badge';
+import { zonedDateFormat } from '@/lib/country';
 import { cn } from '@/lib/utils';
 import { type ShiftFlag, type ShiftStatus } from './types';
 
 export { formatDay } from '@/components/app/pricing/format';
 export { money, number } from '@/components/shared/trading/format';
 
-const time = new Intl.DateTimeFormat('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/London' });
+const time = () => zonedDateFormat('en-GB', { hour: '2-digit', minute: '2-digit' });
 const dayShort = new Intl.DateTimeFormat('en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' });
 
-/** "14:05" London time from an ISO UTC instant; null → "—". */
+/** "14:05" shop time from an ISO UTC instant; null → "—". */
 export function clockTime(iso: string | null): string {
-    return iso ? time.format(new Date(iso)) : '—';
+    return iso ? time().format(new Date(iso)) : '—';
 }
 
-const dayKey = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/London' });
+const dayKey = () => zonedDateFormat('en-CA');
 
-/** The London `Y-m-d` of an ISO UTC instant. */
-export function londonDay(iso: string): string {
-    return dayKey.format(new Date(iso));
+/** The shop-time `Y-m-d` of an ISO UTC instant. */
+export function shopDay(iso: string): string {
+    return dayKey().format(new Date(iso));
 }
 
 /** "Mon 5 Oct" from a `Y-m-d` day. */
