@@ -61,8 +61,11 @@ Checklist (2 vCPU / 4 GB RAM / 40 GB SSD is plenty to start; UK region; the serv
   in the password manager next to the DB password. Losing it means re-issuing every licence key and sync key and
   rotating the signing key. To rotate deliberately: move the old value to `APP_PREVIOUS_KEYS`, set a new
   `APP_KEY`, then `php artisan licence:keys:rotate` (docs/DECISIONS.md, "APP_KEY").
-- `QUEUE_CONNECTION=database` and `CACHE_STORE=database` work with no extra service. With Redis, switch both to
-  `redis`. `reports:process-dirty` (every minute) re-queues any lost report rebuild, so a worker restart loses nothing.
+- `QUEUE_CONNECTION=database` and `CACHE_STORE=database` work with no extra service. With Redis, switch both (and
+  `SESSION_DRIVER`) to `redis`, set `REDIS_PREFIX=retail_v2_` and run the workers as `queue:work redis`. The live
+  server runs on Redis since 2026-10-06 (Stage 1: `maxmemory 1gb`, `noeviction`, AOF on; MySQL
+  `innodb_buffer_pool_size=6G`, slow query log over 1 s in `/var/log/mysql/slow.log`, from
+  `/etc/mysql/mysql.conf.d/zz-retail-v2-tuning.cnf`). `reports:process-dirty` (every minute) re-queues any lost report rebuild, so a worker restart loses nothing.
 - `LICENCE_ALLOW_UNCERTIFIED=false`: production signs licence tokens only with the owner's signer certificate.
 - Mail must be a real SMTP relay: welcome emails carry licence keys and invoices go out by email.
 - After any `.env` change: `cd /var/www/retail-v2/current && php artisan optimize && php artisan queue:restart`

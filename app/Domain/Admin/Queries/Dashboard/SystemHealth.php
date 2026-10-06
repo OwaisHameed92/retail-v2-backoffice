@@ -7,6 +7,7 @@ use App\Domain\Shared\Support\SchedulerHeartbeat;
 use App\Domain\TillHealth\Queries\TillHealthSummary;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Queue;
 use Throwable;
 
 /**
@@ -92,12 +93,14 @@ final class SystemHealth
             return $item('healthy', 'Run straight away (sync)');
         }
 
-        if ($driver !== 'database') {
+        if (! in_array($driver, ['database', 'redis'], true)) {
             return $item('unknown', 'Not monitored yet');
         }
 
         try {
-            $waiting = DB::table((string) config("queue.connections.{$connection}.table", 'jobs'))->count();
+            $waiting = $driver === 'redis'
+                ? Queue::connection($connection)->size((string) config("queue.connections.{$connection}.queue", 'default'))
+                : DB::table((string) config("queue.connections.{$connection}.table", 'jobs'))->count();
             $failed = DB::table((string) config('queue.failed.table', 'failed_jobs'))->count();
         } catch (Throwable) {
             return $item('unknown', 'Queue tables not found');

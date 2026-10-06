@@ -3,6 +3,7 @@
 use App\Domain\Admin\Queries\Dashboard\SystemHealth;
 use App\Domain\Shared\Support\SchedulerHeartbeat;
 use Carbon\CarbonImmutable;
+use Illuminate\Contracts\Queue\Queue;
 
 function healthOf(string $key): array
 {
@@ -31,4 +32,13 @@ test('the database queue shows its backlog and failed jobs', function () {
     DB::table('failed_jobs')->insert(['uuid' => 'x-1', 'connection' => 'database', 'queue' => 'default', 'payload' => '{}', 'exception' => 'boom', 'failed_at' => now()]);
 
     expect(healthOf('queue'))->toMatchArray(['state' => 'degraded', 'detail' => '0 waiting, 1 failed']);
+});
+
+test('the redis queue shows its backlog from the queue itself', function () {
+    config(['queue.default' => 'redis']);
+    $queue = Mockery::mock(Queue::class);
+    $queue->shouldReceive('size')->with('default')->andReturn(3);
+    Illuminate\Support\Facades\Queue::shouldReceive('connection')->with('redis')->andReturn($queue);
+
+    expect(healthOf('queue'))->toMatchArray(['state' => 'healthy', 'detail' => '3 waiting']);
 });
