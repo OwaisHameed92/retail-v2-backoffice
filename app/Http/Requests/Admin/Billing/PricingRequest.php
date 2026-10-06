@@ -28,8 +28,8 @@ class PricingRequest extends BillingRequest
     {
         return [
             'pricing_mode' => ['nullable', Rule::enum(PricingMode::class)],
-            'price_monthly' => ['nullable', 'string', 'regex:'.self::MONEY_PATTERN],
-            'price_yearly' => ['nullable', 'string', 'regex:'.self::MONEY_PATTERN],
+            'price_monthly' => ['nullable', 'string', 'regex:'.self::moneyPattern()],
+            'price_yearly' => ['nullable', 'string', 'regex:'.self::moneyPattern()],
         ];
     }
 

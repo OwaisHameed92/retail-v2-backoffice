@@ -85,6 +85,25 @@ export interface PortalBillingProps {
         doneAt: string | null;
     }[];
     canRequest: boolean;
+    /** Pakistan plan P5: only where fees are paid by hand (App\Domain\Billing\Data\ManualPayment). */
+    manualPayment?: ManualPayment;
+}
+
+/** How to pay by hand (Pakistan plan P5): what is owed, the next invoice and the accounts to pay into. */
+export interface ManualPayment {
+    methods: string[];
+    /** "bank transfer, JazzCash, Easypaisa or cash". */
+    methodsText: string;
+    amountDue: string;
+    hasAmountDue: boolean;
+    overdue: boolean;
+    next: { id: string; number: string | null; dueDate: string | null; balance: string; overdue: boolean } | null;
+    reference: string | null;
+    /** Bank name, "Account title …", "IBAN …"; empty when not set up. */
+    bank: string[];
+    jazzCash: string | null;
+    easypaisa: string | null;
+    cash: boolean;
 }
 
 export type BillingRequestKind = 'cancel' | 'changeBank';

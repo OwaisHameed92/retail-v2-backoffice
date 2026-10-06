@@ -15,6 +15,7 @@ use App\Domain\Billing\Queries\BillingStateOverview;
 use App\Domain\Billing\Queries\BillingStats;
 use App\Domain\Billing\Support\BillingDates;
 use App\Domain\Billing\Support\BillingFormat;
+use App\Domain\Billing\Support\ManualCollection;
 use App\Domain\Tenancy\Enums\CompanyStatus;
 use App\Http\Controllers\Controller;
 use Carbon\CarbonImmutable;
@@ -63,7 +64,8 @@ class BillingOverviewController extends Controller
                     'since' => $account->billing_suspended_at?->toIso8601String(),
                     'invoiceId' => $account->suspension_invoice_id,
                 ])->values(),
-            'directDebit' => [
+            // Pakistan plan P5: no Direct Debit figures where fees are paid by hand.
+            'directDebit' => ManualCollection::active() ? null : [
                 ...DirectDebitStats::for($now, $client->enabled()),
                 'environment' => $client->environment(),
                 'next' => DirectDebitStats::nextCollections(),
@@ -73,7 +75,8 @@ class BillingOverviewController extends Controller
             'settings' => [
                 'suspendAfterDays' => (int) config('billing.suspend_after_days', 7),
                 'generateDaysBefore' => (int) config('billing.generate.days_before', 7),
-                'autoIssue' => (bool) config('billing.generate.auto_issue', false),
+                // Manual collection (P5) always issues and emails period invoices (IssueManualInvoices).
+                'autoIssue' => ManualCollection::active() || (bool) config('billing.generate.auto_issue', false),
             ],
             'canManage' => $request->user('admin')?->hasAbility(AdminRole::BILLING_MANAGE) ?? false,
         ]);

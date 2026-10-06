@@ -27,6 +27,7 @@ import { cn } from '@/lib/utils';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { CircleAlert, LoaderCircle } from 'lucide-react';
 import { type FormEventHandler } from 'react';
+import { byHand } from '@/lib/billing-collection';
 
 interface CreateTenantProps {
     nations: Option<Nation>[];
@@ -355,7 +356,10 @@ export default function CreateTenant({ nations, maxTills, plans, defaultPlanId, 
                         </p>
                     </FormSection>
 
-                    <FormSection title="Billing" description="Direct Debit, and what the business paid today.">
+                    <FormSection
+                        title="Billing"
+                        description={byHand('Direct Debit, and what the business paid today.', 'Invoices paid by hand, and what the business paid today.')}
+                    >
                         <div className="grid gap-4 sm:col-span-2">
                             <OnboardingBillingNote options={billing} />
                             {billing.canRecord && (

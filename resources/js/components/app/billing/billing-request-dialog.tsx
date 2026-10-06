@@ -6,6 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useForm } from '@inertiajs/react';
 import { type FormEventHandler } from 'react';
 import { type BillingRequestKind } from './types';
+import { manualCollection } from '@/lib/billing-collection';
 
 const COPY: Record<BillingRequestKind, { title: string; description: string; submit: string; message: string; help: string }> = {
     cancel: {
@@ -30,7 +31,15 @@ const COPY: Record<BillingRequestKind, { title: string; description: string; sub
 export function BillingRequestDialog({ kind, open, onOpenChange }: { kind: BillingRequestKind; open: boolean; onOpenChange: (open: boolean) => void }) {
     const form = useForm<{ kind: BillingRequestKind; message: string; phone: string; confirm: boolean }>({ kind, message: '', phone: '', confirm: false });
     const { data, setData, errors, processing } = form;
-    const copy = COPY[kind];
+    // Pakistan plan P5: no Direct Debit to carry on where every invoice is paid by hand.
+    const copy =
+        kind === 'cancel' && manualCollection()
+            ? {
+                  ...COPY.cancel,
+                  description:
+                      'We will call you to agree the date and settle any balance. Nothing changes until then: your tills keep working and invoices carry on until we stop them.',
+              }
+            : COPY[kind];
 
     const submit: FormEventHandler = (e) => {
         e.preventDefault();

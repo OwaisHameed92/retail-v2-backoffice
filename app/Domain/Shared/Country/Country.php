@@ -280,6 +280,8 @@ final class Country
             'phoneExample' => $this->phone()['example'],
             'billingCollection' => $this->billingCollection(),
             'features' => $this->profile['features'],
+            // Phase P5: the methods staff record by hand, only where fees are collected by hand (PK); GB is unchanged.
+            ...($this->billingCollection() === 'manual' ? ['manualMethods' => $this->manualPaymentMethods()] : []),
         ];
     }
 }

@@ -11,6 +11,7 @@ use App\Domain\Plans\Models\Plan;
 use App\Domain\Shared\Country\Country;
 use App\Domain\Shared\Country\MoneyFormat;
 use App\Domain\Shared\Support\Money;
+use App\Http\Requests\Admin\Billing\BillingRequest;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -70,9 +71,9 @@ abstract class PlanRequest extends FormRequest
             'description' => ['nullable', 'string', 'max:500'],
             'pricing_mode' => ['required', Rule::enum(PricingMode::class)],
             'billing_type' => ['nullable', Rule::enum(PlanBillingType::class)],
-            'price_monthly' => ['required', 'string', 'regex:'.self::MONEY_PATTERN],
-            'price_yearly' => ['required', 'string', 'regex:'.self::MONEY_PATTERN],
-            'setup_fee' => ['required', 'string', 'regex:'.self::MONEY_PATTERN],
+            'price_monthly' => ['required', 'string', 'regex:'.self::moneyPattern()],
+            'price_yearly' => ['required', 'string', 'regex:'.self::moneyPattern()],
+            'setup_fee' => ['required', 'string', 'regex:'.self::moneyPattern()],
             'trial_days' => ['required', 'integer', 'min:0', 'max:90'],
             'trial_grace_days' => ['required', 'integer', 'min:0', 'max:30'],
             'grace_days' => ['required', 'integer', 'min:0', 'max:60'],
@@ -93,7 +94,7 @@ abstract class PlanRequest extends FormRequest
     {
         return [function ($validator) {
             $type = PlanBillingType::tryFrom((string) $this->input('billing_type'));
-            $positive = fn (string $key) => is_string($this->input($key)) && preg_match(self::MONEY_PATTERN, $this->input($key)) === 1 && ! Money::isZero($this->input($key));
+            $positive = fn (string $key) => is_string($this->input($key)) && preg_match(self::moneyPattern(), $this->input($key)) === 1 && ! Money::isZero($this->input($key));
 
             $zero = MoneyFormat::format('0');
 
@@ -116,7 +117,8 @@ abstract class PlanRequest extends FormRequest
      */
     public function messages(): array
     {
-        $money = 'Enter an amount in pounds with up to 2 decimal places, for example 30 or 29.99.';
+        // GB: "Enter an amount in pounds with up to 2 decimal places, for example 30 or 29.99." (PK: "in rupees").
+        $money = BillingRequest::moneyMessage();
 
         return [
             'code.regex' => 'Use lower-case letters, numbers and single hyphens only, for example "standard" or "pro-2026".',
@@ -172,5 +174,11 @@ abstract class PlanRequest extends FormRequest
     protected function ignoredPlan(): ?Plan
     {
         return null;
+    }
+
+    /** GB: up to 99,999.99 as always; another country's currency (PKR) allows larger amounts. */
+    private static function moneyPattern(): string
+    {
+        return app(Country::class)->is(Country::DEFAULT) ? self::MONEY_PATTERN : BillingRequest::LARGE_MONEY_PATTERN;
     }
 }

@@ -80,8 +80,8 @@ Route::middleware(['auth:web', 'verified', 'company', 'two-factor:web'])->group(
     Route::prefix('billing')->name('billing')->middleware('company.can:billing.view')->group(function () {
         Route::get('/', [BillingController::class, 'index']);
         Route::middleware('company.can:billing.manage')->group(function () {
-            Route::post('direct-debit', [BillingController::class, 'startDirectDebit'])->name('.direct-debit')->middleware('throttle:10,1');
-            Route::get('direct-debit/return', [BillingController::class, 'directDebitReturn'])->name('.direct-debit.return');
+            Route::post('direct-debit', [BillingController::class, 'startDirectDebit'])->name('.direct-debit')->middleware(['billing.direct-debit', 'throttle:10,1']);
+            Route::get('direct-debit/return', [BillingController::class, 'directDebitReturn'])->name('.direct-debit.return')->middleware('billing.direct-debit');
             // Module 4.10: ask Switch & Save to cancel or to change the bank account (an admin alert; nothing changes here).
             Route::post('requests', [BillingController::class, 'request'])->name('.requests.store')->middleware('throttle:10,1');
         });

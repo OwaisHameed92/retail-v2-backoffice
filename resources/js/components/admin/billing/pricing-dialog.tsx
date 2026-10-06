@@ -8,6 +8,7 @@ import { formatMoneyAsGiven, taxText } from '@/lib/country';
 import { useForm } from '@inertiajs/react';
 import { LoaderCircle } from 'lucide-react';
 import { type FormEventHandler } from 'react';
+import { byHand } from '@/lib/billing-collection';
 
 interface PricingDialogProps {
     open: boolean;
@@ -52,7 +53,7 @@ function PricingBody({ onOpenChange, company, pricing }: PricingDialogProps) {
                         {plan
                             ? ` (${plan.name}: ${plan.modeLabel.toLowerCase()}, ${formatMoneyAsGiven(plan.monthly)} a month, ${formatMoneyAsGiven(plan.yearly)} a year)`
                             : ''}
-                        . New invoices and the Direct Debit amount follow it from the next payment.
+                        {byHand('. New invoices and the Direct Debit amount follow it from the next payment.', '. New invoices follow it from the next period.')}
                     </DialogDescription>
                 </DialogHeader>
 

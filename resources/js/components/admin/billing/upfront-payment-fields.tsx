@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { taxName, taxText } from '@/lib/country';
+import { manualCollection, manualMethodsText } from '@/lib/billing-collection';
 
 /** OnboardingBilling::options (module 1.13): who may take money, each plan's setup fee, VAT and the deadline. */
 export interface OnboardingBillingOptions {
@@ -83,10 +84,17 @@ export function UpfrontPaymentFields({
                     />
                     <div className="grid gap-1">
                         <Label htmlFor={`${idPrefix}-record`}>The setup fee is paid now</Label>
-                        <p className="text-muted-foreground text-sm">
-                            Records the setup fee (upfront) as a paid invoice: cash, card or bank transfer. Leave unticked if it is not paid yet; the
-                            tills then stay on the trial until it is recorded. It is never taken by Direct Debit.
-                        </p>
+                        {manualCollection() ? (
+                            <p className="text-muted-foreground text-sm">
+                                Records the setup fee (upfront) as a paid invoice: {manualMethodsText()}. Leave unticked if it is not paid yet;
+                                the tills then stay on the trial until it is recorded.
+                            </p>
+                        ) : (
+                            <p className="text-muted-foreground text-sm">
+                                Records the setup fee (upfront) as a paid invoice: cash, card or bank transfer. Leave unticked if it is not paid yet;
+                                the tills then stay on the trial until it is recorded. It is never taken by Direct Debit.
+                            </p>
+                        )}
                     </div>
                 </div>
             )}
@@ -146,6 +154,16 @@ export default UpfrontPaymentFields;
 
 /** The "Billing" copy above the upfront fields at onboarding: the Direct Debit the owner sets up, and who can take money. */
 export function OnboardingBillingNote({ options }: { options: OnboardingBillingOptions }) {
+    if (manualCollection()) {
+        return (
+            <p className="text-muted-foreground text-sm">
+                Every period is an invoice emailed to the business and paid by hand ({manualMethodsText()}); record each payment on its
+                Billing tab. The setup fee is paid by hand too.
+                {!options.canRecord && ' Only owner and accounts staff can record the setup fee payment; until they do, the tills stay on the trial.'}
+            </p>
+        );
+    }
+
     return (
         <p className="text-muted-foreground text-sm">
             The owner sets up their Direct Debit from Billing in the portal (the welcome email links to it) within {options.deadlineDays}{' '}

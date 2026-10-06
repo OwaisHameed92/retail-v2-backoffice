@@ -2,6 +2,7 @@
 
 namespace App\Domain\Mail\Mailables;
 
+use App\Domain\Billing\Support\ManualCollection;
 use App\Domain\Mail\Contracts\RendersAttachment;
 use App\Domain\Mail\Data\InvoiceMailData;
 use App\Domain\Mail\Support\MailFormat;
@@ -45,7 +46,11 @@ final class InvoiceMail extends BrandedMailable
             balance: '90.00',
             status: 'issued',
             tillCount: 3,
-            bankDetails: ['Switch & Save Ltd', 'Sort code 12-34-56', 'Account 12345678'],
+            bankDetails: ManualCollection::active()
+                ? ['Meezan Bank', 'Account title Switch & Save', 'IBAN PK36MEZN0000000000000000', 'JazzCash 0300 1234567', 'Easypaisa 0345 1234567']
+                : ['Switch & Save Ltd', 'Sort code 12-34-56', 'Account 12345678'],
+            // Pakistan plan P5 (manual collection): paid by hand; GB keeps the UK "How to pay" text.
+            howToPay: ManualCollection::active() ? ManualCollection::howToPay('INV-000042') : null,
         ));
     }
 

@@ -55,6 +55,7 @@ export function InvoiceDocument({ doc }: { doc: InvoiceDocumentData }) {
                         {doc.seller.email && <p className="text-muted-foreground">{doc.seller.email}</p>}
                         {doc.seller.phone && <p className="text-muted-foreground">{doc.seller.phone}</p>}
                         {doc.seller.vatNumber && <p className="text-muted-foreground">{vatNumberPrefix()} {doc.seller.vatNumber}</p>}
+                        {doc.seller.strn && <p className="text-muted-foreground">STRN {doc.seller.strn}</p>}
                     </div>
                     <div className="min-w-0">
                         <Label>Bill to</Label>
@@ -151,10 +152,14 @@ export function InvoiceDocument({ doc }: { doc: InvoiceDocumentData }) {
                 {doc.status !== 'paid' && doc.status !== 'void' ? (
                     <section className="bg-subtle rounded-lg border px-4 py-3 text-sm">
                         <Label>How to pay</Label>
-                        <p>
-                            We take cash, or pay by bank transfer quoting <span className="font-semibold">{doc.reference ?? 'the invoice number'}</span> as the reference.
-                            The licences are renewed as soon as the invoice is paid.
-                        </p>
+                        {doc.howToPay ? (
+                            <p>{doc.howToPay} The licences are renewed as soon as the invoice is paid.</p>
+                        ) : (
+                            <p>
+                                We take cash, or pay by bank transfer quoting <span className="font-semibold">{doc.reference ?? 'the invoice number'}</span> as the reference.
+                                The licences are renewed as soon as the invoice is paid.
+                            </p>
+                        )}
                         {doc.bank.length > 0 && (
                             <p className="mt-2 grid tabular-nums">
                                 {doc.bank.map((line) => (
@@ -177,7 +182,7 @@ export function InvoiceDocument({ doc }: { doc: InvoiceDocumentData }) {
                 )}
 
                 <footer className="text-muted-foreground border-t pt-4 text-center text-xs">
-                    {[doc.seller.legalName, doc.seller.companyNumber && `${keepsUkStyles() ? 'Company no.' : companyNumberLabel()} ${doc.seller.companyNumber}`, doc.seller.vatNumber && `${vatNumberPrefix()} ${doc.seller.vatNumber}`, doc.seller.email]
+                    {[doc.seller.legalName, doc.seller.companyNumber && `${keepsUkStyles() ? 'Company no.' : companyNumberLabel()} ${doc.seller.companyNumber}`, doc.seller.vatNumber && `${vatNumberPrefix()} ${doc.seller.vatNumber}`, doc.seller.strn && `STRN ${doc.seller.strn}`, doc.seller.email]
                         .filter(Boolean)
                         .join(' · ')}
                 </footer>

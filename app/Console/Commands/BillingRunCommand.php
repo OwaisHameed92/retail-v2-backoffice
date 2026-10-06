@@ -19,6 +19,10 @@ class BillingRunCommand extends Command
     {
         $result = $run->handle();
 
+        if (array_key_exists('paymentReminders', $result)) {
+            return $this->manual($result);
+        }
+
         $this->info('Billing run finished.');
         $this->line("  Invoices created: {$result['invoicesCreated']}");
         $this->line("  Invoices now overdue: {$result['invoicesOverdue']}");
@@ -29,6 +33,25 @@ class BillingRunCommand extends Command
         $this->line("  Direct Debit setup reminders: {$result['mandateReminders']}");
         $this->line("  Setup-only licences extended: {$result['setupOnlyLicences']}");
         $this->line("  Direct Debit reminders sent: {$result['directDebitReminders']}");
+
+        return self::SUCCESS;
+    }
+
+    /**
+     * Pakistan plan P5 (manual collection): no Direct Debit lines; payment reminders instead.
+     *
+     * @param  array<string, int>  $result
+     */
+    private function manual(array $result): int
+    {
+        $this->info('Billing run finished.');
+        $this->line("  Invoices issued: {$result['invoicesCreated']}");
+        $this->line("  Invoices now overdue: {$result['invoicesOverdue']}");
+        $this->line("  Businesses suspended: {$result['companiesSuspended']}");
+        $this->line("  Trial reminders sent: {$result['trialReminders']}");
+        $this->line("  Trial ended emails sent: {$result['trialEnded']}");
+        $this->line("  Setup-only licences extended: {$result['setupOnlyLicences']}");
+        $this->line("  Payment reminders sent: {$result['paymentReminders']}");
 
         return self::SUCCESS;
     }

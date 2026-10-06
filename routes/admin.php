@@ -276,11 +276,11 @@ Route::middleware(['auth:admin', AdminIsActive::class, BlockAdminWhileImpersonat
         // GoCardless Direct Debit (module 1.12).
         Route::prefix('tenants/{company}/direct-debit')->name('tenants.direct-debit.')->group(function () {
             Route::put('/', [DirectDebitController::class, 'settings'])->name('settings');
-            Route::post('setup-email', [DirectDebitController::class, 'sendSetup'])->name('setup-email')->middleware('throttle:10,1');
+            Route::post('setup-email', [DirectDebitController::class, 'sendSetup'])->name('setup-email')->middleware(['billing.direct-debit', 'throttle:10,1']);
             Route::post('setup-fee', [DirectDebitController::class, 'chargeSetupFee'])->name('setup-fee');
-            Route::post('payments/{payment}/retry', [DirectDebitController::class, 'retryPayment'])->name('retry')->middleware('throttle:10,1');
-            Route::post('subscription/sync', [DirectDebitController::class, 'syncSubscription'])->name('sync');
-            Route::post('subscription/{action}', [DirectDebitController::class, 'subscription'])->name('subscription')->whereIn('action', ['pause', 'resume', 'cancel']);
+            Route::post('payments/{payment}/retry', [DirectDebitController::class, 'retryPayment'])->name('retry')->middleware(['billing.direct-debit', 'throttle:10,1']);
+            Route::post('subscription/sync', [DirectDebitController::class, 'syncSubscription'])->name('sync')->middleware('billing.direct-debit');
+            Route::post('subscription/{action}', [DirectDebitController::class, 'subscription'])->name('subscription')->whereIn('action', ['pause', 'resume', 'cancel'])->middleware('billing.direct-debit');
         });
     });
 

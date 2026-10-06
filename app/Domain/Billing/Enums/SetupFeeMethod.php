@@ -2,6 +2,8 @@
 
 namespace App\Domain\Billing\Enums;
 
+use App\Domain\Billing\Support\ManualCollection;
+
 /**
  * How the setup fee is collected. Owner rule (2026-10-05): ALWAYS by hand (cash, card or bank transfer, recorded by an
  * admin), optionally in monthly instalments. `directDebit` is kept only so old rows still load; nothing reads it as
@@ -15,7 +17,7 @@ enum SetupFeeMethod: string
     public function label(): string
     {
         return match ($this) {
-            self::Manual => 'By hand (cash, card or bank transfer)',
+            self::Manual => ManualCollection::active() ? 'By hand ('.ManualCollection::methodsText().')' : 'By hand (cash, card or bank transfer)',
             self::DirectDebit => 'Direct Debit (no longer used)',
         };
     }

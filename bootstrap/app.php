@@ -5,6 +5,7 @@ use App\Http\Middleware\AssignTraceId;
 use App\Http\Middleware\EnsureCompanyAbility;
 use App\Http\Middleware\EnsureCompanyMember;
 use App\Http\Middleware\EnsureCountryFeature;
+use App\Http\Middleware\EnsureDirectDebit;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\RequireTwoFactor;
 use App\Http\Middleware\SecurityHeaders;
@@ -60,6 +61,8 @@ return Application::configure(basePath: dirname(__DIR__))
             'two-factor' => RequireTwoFactor::class,
             // A country-only feature (`country.feature:vatReturn`): 404 where the profile has it off (P3).
             'country.feature' => EnsureCountryFeature::class,
+            // A Direct Debit route: 404 where fees are collected by hand (Pakistan plan P5).
+            'billing.direct-debit' => EnsureDirectDebit::class,
         ]);
 
         // Guests on /admin go to the admin login; everyone else to the tenant login.

@@ -17,7 +17,7 @@ class CreditNoteRequest extends BillingRequest
     public function rules(): array
     {
         return [
-            'amount' => ['required', 'string', 'regex:'.self::MONEY_PATTERN, 'not_regex:/^0+(\.0+)?$/'],
+            'amount' => ['required', 'string', 'regex:'.self::moneyPattern(), 'not_regex:/^0+(\.0+)?$/'],
             'reason' => ['required', 'string', 'max:500'],
         ];
     }

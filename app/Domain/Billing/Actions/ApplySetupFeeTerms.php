@@ -9,6 +9,7 @@ use App\Domain\Billing\Support\BillingAccounts;
 use App\Domain\Billing\Support\BillingDates;
 use App\Domain\Billing\Support\CompanyPricing;
 use App\Domain\Billing\Support\MandateDeadline;
+use App\Domain\Billing\Support\ManualCollection;
 use App\Domain\Billing\Support\SetupFeeState;
 use App\Domain\Licensing\Actions\RenewCompanyLicences;
 use App\Domain\Licensing\Actions\RenewLicence;
@@ -40,6 +41,9 @@ use Illuminate\Validation\ValidationException;
  *   (SyncSubscription waits for it). When that happens after the trial ended, trial tills get their trial moved to
  *   the first collection (or the Direct Debit deadline) so the customer is not locked out while it is collected
  *   (bridgeTrial, also used by ApplyMandate for a mandate set up late).
+ * - Recurring plans on a manual-collection instance (Pakistan plan P5, no Direct Debit): once the setup fee (or its
+ *   first instalment) is paid, StartManualBilling issues the first period invoice when it is due and moves an ended
+ *   trial to that invoice's due date.
  *
  * Returns how many licences got a new date.
  */
@@ -66,6 +70,10 @@ class ApplySetupFeeTerms
 
         if (self::planType($company) === PlanBillingType::SetupOnly) {
             return $this->setupOnly($company, $state, $now);
+        }
+
+        if (ManualCollection::active()) {
+            return $justPaid && $state->isStarted() ? app(StartManualBilling::class)->handle($company, $now) : 0;
         }
 
         if (! $state->isStarted() || ! $account->isDirectDebit()) {

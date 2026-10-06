@@ -6,6 +6,7 @@ use App\Domain\Plans\Enums\Feature;
 use App\Domain\Plans\Enums\PlanBillingType;
 use App\Domain\Plans\Enums\PricingMode;
 use App\Domain\Plans\Models\Plan;
+use App\Domain\Shared\Country\Country;
 use App\Domain\Shared\Support\Money;
 
 /**
@@ -72,7 +73,8 @@ final readonly class PlanInput
             'price_monthly' => $this->priceMonthly,
             'price_yearly' => $this->priceYearly,
             'setup_fee' => $this->setupFee,
-            'currency' => Plan::CURRENCY,
+            // The instance's currency (Pakistan plan P5: PKR plans on PK); GB: Plan::CURRENCY ("GBP") as before.
+            'currency' => app(Country::class)->currency(),
             'trial_days' => $this->trialDays,
             'trial_grace_days' => $this->trialGraceDays,
             'grace_days' => $this->graceDays,

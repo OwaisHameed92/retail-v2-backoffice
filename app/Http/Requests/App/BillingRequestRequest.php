@@ -4,6 +4,7 @@ namespace App\Http\Requests\App;
 
 use App\Domain\Billing\Actions\SendBillingRequest;
 use App\Domain\Billing\Enums\BillingRequestKind;
+use App\Domain\Billing\Support\ManualCollection;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -23,7 +24,8 @@ class BillingRequestRequest extends FormRequest
         $cancel = $this->input('kind') === BillingRequestKind::Cancel->value;
 
         return [
-            'kind' => ['required', Rule::enum(BillingRequestKind::class)],
+            // Pakistan plan P5: no Direct Debit bank account to change where fees are paid by hand.
+            'kind' => ['required', ManualCollection::active() ? Rule::in([BillingRequestKind::Cancel->value]) : Rule::enum(BillingRequestKind::class)],
             // A reason helps us, but only a cancellation asks for one (and a tick to confirm it).
             'message' => [$cancel ? 'required' : 'nullable', 'string', 'max:'.SendBillingRequest::MAX_MESSAGE],
             'phone' => ['nullable', 'string', 'max:30'],

@@ -120,3 +120,60 @@ Demo businesses are safe on the live server: nothing is ever sent to GoCardless 
 (logged as "Not sent (demo)"). `--fresh` removes every demo business (and only those) first. In production add
 `--force`. To remove any one business for good: `php artisan tenant:purge "<name or id>"` (shows what goes, asks first).
 
+
+## Pakistan (manual collection)
+
+A Pakistan instance (`COUNTRY=PK`, profile `billing.collection` = `manual`; phase P5) has **no Direct Debit at all**:
+no mandate, no setup deadline, no "Set up Direct Debit" banner or email, and GoCardless is never called (whatever
+token is set). Everything above about Direct Debit applies to the UK only; the UK is unchanged.
+
+| Money | How it is paid | Who records it |
+|---|---|---|
+| **Setup fee (upfront)** | Bank transfer, JazzCash, Easypaisa or cash. Once, or in monthly instalments. | An admin with `billing.manage`. |
+| **Monthly or yearly fee** | **An invoice for each period, paid by hand**: bank transfer, JazzCash, Easypaisa or cash. | An admin (Invoice → Record payment), with the transaction id as the reference. |
+
+Plans and prices are per instance: the admin creates PKR plans (Admin → Plans). Amounts show in whole rupees
+("Rs 2,500"); a setup fee up to Rs 99,99,99,999 is accepted.
+
+### Normal journey (setup fee + monthly, or monthly only)
+
+| When | Customer | Admin | Till |
+|---|---|---|---|
+| Onboarded | Welcome email (no Direct Debit section). | Records the setup fee if it was paid there and then. | Trial. |
+| Setup fee recorded | Paid invoice by email. | Billing tab: "Setup fee: Paid". | If the trial is already over (or ends within 7 days), the first monthly invoice is issued at once and the trial runs to its due date, so the till unlocks now. |
+| 7 days before the tills run out (`BILLING_GENERATE_DAYS_BEFORE`) | Invoice by email, with how to pay (bank account, JazzCash, Easypaisa) and the invoice number to quote. | The invoice is issued automatically (no draft). | No change. |
+| 3 days before the due date | Reminder email "due on …". | — | — |
+| Due date (`BILLING_MANUAL_DUE_DAYS` = 7 days after issue, so normally the period start) | Reminder email "due today". | — | Paid tills run to the end of the last paid period. |
+| Paid (admin records it: bank transfer, JazzCash, Easypaisa, cash) | "Licences renewed" email. | Invoice paid. | **Active** to the end of that period at the next check-in. |
+
+The monthly invoices do not start until the setup fee (or its first instalment) is paid, as the UK Direct Debit does.
+A monthly-only plan starts at once (its first invoice comes 7 days before the trial ends). A setup-only plan is the
+same as in the UK.
+
+### When it is not paid
+
+| Day after the due date | Customer | Admin | Till |
+|---|---|---|---|
+| 1 | — | Invoice **Overdue**, business overdue. | Paid date passed: **grace** for the plan's payment grace days, then **expired**. |
+| 3 (`BILLING_MANUAL_REMIND_AFTER_DAYS`) | "Invoice … is overdue" email with the day the account is suspended. | — | — |
+| 8 (unpaid more than `BILLING_SUSPEND_AFTER_DAYS` = 7, as in the UK) | "Account suspended" email, with how to pay by hand. | Business **Suspended** ("Invoice … unpaid"). | **Suspended** at its next check-in. |
+| Paid | "Account active again" email. | Suspension lifted at once. | **Active** at its next check-in. |
+
+### How to pay (per instance, empty = hidden)
+
+`BILLING_PAY_BANK_NAME`, `BILLING_PAY_BANK_ACCOUNT_TITLE`, `BILLING_PAY_BANK_IBAN` (shown as "Meezan Bank", "Account
+title …", "IBAN …"), `BILLING_PAY_JAZZCASH`, `BILLING_PAY_EASYPAISA`. They appear on every invoice (PDF and email), the
+reminders and the portal page My subscription → **How to pay** (amount due, next invoice, the accounts). The UK
+`BILLING_BANK_*` (sort code) lines are not used.
+
+### Daily job
+
+`billing:run` (06:00 Karachi): setup-only licences, period invoices (issued and emailed), overdue, suspensions, trial
+emails and the payment reminders. `billing:reconcile-gocardless` does nothing. `demo:billing` (the UK Direct Debit
+showcase) refuses to run.
+
+### Our seller details (owner 2026-10-06)
+
+The Pakistan instance never shows the UK company. Only the `BILLING_SELLER_*` values set in its `.env` appear on
+invoices and emails: at least the trading name "Switch & Save". No "Registered in …" line without a company number;
+the NTN (`BILLING_SELLER_NTN` or `BILLING_VAT_NUMBER`) and STRN (`BILLING_SELLER_STRN`) appear, labelled, once set.

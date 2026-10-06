@@ -5,6 +5,7 @@ namespace App\Http\Requests\Admin\Billing;
 use App\Domain\Billing\Data\NewPayment;
 use App\Domain\Billing\Enums\PaymentMethod;
 use App\Domain\Billing\Support\BillingDates;
+use App\Domain\Billing\Support\ManualCollection;
 use App\Domain\Shared\Country\Country;
 use Carbon\CarbonImmutable;
 use Illuminate\Contracts\Validation\ValidationRule;
@@ -29,13 +30,13 @@ class RecordPaymentRequest extends BillingRequest
     {
         return [
             'method' => ['required', Rule::in(array_map(fn (PaymentMethod $method) => $method->value, PaymentMethod::manual()))],
-            'amount' => ['required', 'string', 'regex:'.self::MONEY_PATTERN, 'not_regex:/^0+(\.0+)?$/'],
+            'amount' => ['required', 'string', 'regex:'.self::moneyPattern(), 'not_regex:/^0+(\.0+)?$/'],
             'received_on' => ['required', 'date_format:Y-m-d', 'after_or_equal:2020-01-01', 'before_or_equal:'.BillingDates::today()->format('Y-m-d')],
             'reference' => ['nullable', 'string', 'max:100'],
             'notes' => ['nullable', 'string', 'max:2000'],
             'allocation' => ['required', Rule::in(['auto', 'manual'])],
             'allocations' => ['nullable', 'array', 'max:50'],
-            'allocations.*' => ['nullable', 'string', 'regex:'.self::MONEY_PATTERN],
+            'allocations.*' => ['nullable', 'string', 'regex:'.self::moneyPattern()],
         ];
     }
 
@@ -46,7 +47,7 @@ class RecordPaymentRequest extends BillingRequest
     {
         return [
             'method.required' => 'Choose how it was paid.',
-            'method.in' => 'Choose cash, bank transfer or other.',
+            'method.in' => ManualCollection::active() ? 'Choose '.ManualCollection::methodsText().'.' : 'Choose cash, bank transfer or other.',
             'amount.required' => 'Enter the amount received.',
             'amount.regex' => self::moneyMessage(),
             'amount.not_regex' => self::aboveZeroMessage(),

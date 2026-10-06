@@ -4,7 +4,7 @@ import { type Paginated } from '@/components/shared/data-table';
 
 export type InvoiceStatus = 'draft' | 'issued' | 'partiallyPaid' | 'paid' | 'overdue' | 'void';
 
-export type PaymentMethod = 'cash' | 'card' | 'bankTransfer' | 'other' | 'online' | 'directDebit';
+export type PaymentMethod = 'cash' | 'card' | 'bankTransfer' | 'other' | 'online' | 'directDebit' | 'jazzCash' | 'easypaisa';
 
 export type BillingCycle = 'monthly' | 'yearly';
 
@@ -59,6 +59,8 @@ export interface InvoiceDocumentData {
         vatNumber: string | null;
         email: string | null;
         phone: string | null;
+        /** Pakistan plan P5: our STRN, off GB only. */
+        strn?: string | null;
     };
     billTo: { name: string; address: string[]; emails: string[]; companyNumber: string | null; vatNumber: string | null };
     hasVat: boolean;
@@ -80,6 +82,8 @@ export interface InvoiceDocumentData {
     voidReason: string | null;
     bank: string[];
     reference: string | null;
+    /** Pakistan plan P5 (manual collection): how to pay by hand, instead of the UK cash / bank transfer sentence. */
+    howToPay?: string;
 }
 
 export interface ActivityRow {
@@ -232,7 +236,7 @@ export interface DirectDebitPaymentRow {
 /** DirectDebitData::for: the Direct Debit part of the tenant Billing tab (module 1.12). */
 export interface DirectDebitData {
     enabled: boolean;
-    environment: 'sandbox' | 'live';
+    environment: 'sandbox' | 'live' | 'none';
     mode: BillingMode;
     setupFee: {
         /** Decimal strings (net). */
@@ -274,6 +278,8 @@ export interface DirectDebitData {
     payments: { data: DirectDebitPaymentRow[]; total: number };
     options: { modes: Option<BillingMode>[]; setupFeeMethods: Option<SetupFeeMethod>[]; maxInstalments: number };
     graceDays: number;
+    /** Pakistan plan P5: only where fees are paid by hand. */
+    manual?: { methods: Option<PaymentMethod>[]; methodsText: string; dueDays: number };
     /** Module 1.13: pricing mode and prices (plan and this company's override). */
     pricing: {
         mode: PricingMode;
@@ -370,6 +376,7 @@ export interface BillingOverviewProps {
     recentPayments: PaymentRow[];
     suspended: { companyId: string; name: string; since: string | null; invoiceId: string | null }[];
     settings: { suspendAfterDays: number; generateDaysBefore: number; autoIssue: boolean };
+    /** Null where fees are paid by hand (Pakistan plan P5). */
     directDebit: {
         enabled: boolean;
         environment: 'sandbox' | 'live';
@@ -387,6 +394,6 @@ export interface BillingOverviewProps {
             invoiceNumber: string | null;
             statusLabel: string;
         }[];
-    };
+    } | null;
     canManage: boolean;
 }

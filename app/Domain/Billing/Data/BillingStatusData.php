@@ -11,6 +11,7 @@ use App\Domain\Billing\Support\BillingDates;
 use App\Domain\Billing\Support\BillingFormat;
 use App\Domain\Billing\Support\BillingStatus;
 use App\Domain\Billing\Support\MandateDeadline;
+use App\Domain\Billing\Support\ManualCollection;
 use App\Domain\Billing\Support\SetupFeeState;
 use App\Domain\Shared\Country\Country;
 use App\Domain\Shared\Country\MoneyFormat;
@@ -103,7 +104,7 @@ final class BillingStatusData
                 'status' => 'partPaid',
                 'tone' => 'info',
             ],
-            default => ['text' => "{$total} — not paid yet (cash, card or bank transfer".($fee->parts > 1 ? ", in {$fee->parts} instalments" : '').')', 'status' => 'unpaid', 'tone' => 'warning'],
+            default => ['text' => ManualCollection::active() ? ManualStatusText::setupFeeUnpaid($status) : "{$total} — not paid yet (cash, card or bank transfer".($fee->parts > 1 ? ", in {$fee->parts} instalments" : '').')', 'status' => 'unpaid', 'tone' => 'warning'],
         };
     }
 
@@ -119,7 +120,7 @@ final class BillingStatusData
             return '';
         }
 
-        $methods = $payments->map(fn (Payment $payment) => mb_strtolower($payment->method->label()))->unique()->values()->all();
+        $methods = $payments->map(fn (Payment $payment) => $payment->method->inSentence())->unique()->values()->all();
         $last = $payments->last();
 
         return ' by '.implode(' and ', $methods).($payments->count() === 1 ? ' on '.self::day(BillingDates::localDate($last->received_at)) : '');
@@ -130,6 +131,10 @@ final class BillingStatusData
      */
     private static function recurring(BillingStatus $status): array
     {
+        if (ManualCollection::active()) {
+            return ManualStatusText::recurring($status);
+        }
+
         if (! $status->recurs) {
             return ['text' => 'None — no monthly or yearly fee on this plan', 'status' => 'none', 'tone' => 'neutral'];
         }
@@ -157,6 +162,10 @@ final class BillingStatusData
      */
     private static function next(BillingStatus $status, bool $portal): ?array
     {
+        if (ManualCollection::active()) {
+            return ManualStatusText::next($status, $portal);
+        }
+
         $account = $status->account;
         $locks = self::day($status->locksOn);
         $date = $status->locksOn?->format('Y-m-d');

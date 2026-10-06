@@ -13,6 +13,7 @@ use App\Domain\Billing\Support\BillingFormat;
 use App\Domain\Billing\Support\BillingStatus;
 use App\Domain\Billing\Support\CompanyPricing;
 use App\Domain\Billing\Support\MandateDeadline;
+use App\Domain\Billing\Support\ManualCollection;
 use App\Domain\Billing\Support\SetupFeeState;
 use App\Domain\Shared\Support\Money;
 use App\Domain\Tenancy\Models\Company;
@@ -73,6 +74,8 @@ final class PortalBilling
             // Module 4.10: account, payments, collections, setup fee and requests; only the owner sends requests.
             ...PortalSubscription::for($company, $account, $amount['tills']),
             'canRequest' => $canManage && ! $company->isCancelled(),
+            // Pakistan plan P5: how to pay each invoice by hand; only where fees are collected by hand.
+            ...(ManualCollection::active() ? ['manualPayment' => ManualPayment::for()] : []),
         ];
     }
 
@@ -85,7 +88,8 @@ final class PortalBilling
 
         return [
             'directDebit' => $account->isDirectDebit(),
-            'available' => app(GoCardlessClient::class)->enabled(),
+            // Pakistan plan P5: no Direct Debit where fees are paid by hand (GoCardless is not asked).
+            'available' => ManualCollection::active() ? false : app(GoCardlessClient::class)->enabled(),
             'mandate' => [
                 'usable' => $usable,
                 'status' => $account->gc_mandate_status?->value,

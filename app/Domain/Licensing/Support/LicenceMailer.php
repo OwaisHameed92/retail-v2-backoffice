@@ -2,6 +2,7 @@
 
 namespace App\Domain\Licensing\Support;
 
+use App\Domain\Billing\Support\ManualCollection;
 use App\Domain\Licensing\Data\IssuedLicence;
 use App\Domain\Licensing\Models\Licence;
 use App\Domain\Mail\Data\LicenceKeyData;
@@ -37,6 +38,11 @@ final class LicenceMailer
         // Module 1.13: a new business with something to pay each cycle sets up its Direct Debit in the portal.
         $plan = $issued[0]->licence->plan ?? DefaultPlan::for($company);
         $recurs = $plan !== null && (! Money::isZero($plan->price_monthly) || ! Money::isZero($plan->price_yearly));
+
+        // Pakistan plan P5: no Direct Debit to set up where fees are paid by hand (each period is an emailed invoice).
+        if (ManualCollection::active()) {
+            $recurs = false;
+        }
 
         Mail::to($owner->email)->queue(new WelcomeTenantMail(new WelcomeTenantData(
             businessName: $company->name,

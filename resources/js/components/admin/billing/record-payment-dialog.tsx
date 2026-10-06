@@ -12,7 +12,7 @@ import { currencySymbol, wideCurrencySymbol } from '@/lib/country';
 import { sendJson } from '@/lib/http';
 import { cn } from '@/lib/utils';
 import { useForm } from '@inertiajs/react';
-import { Banknote, CircleCheck, Landmark, LoaderCircle, Wallet } from 'lucide-react';
+import { Banknote, CircleCheck, Landmark, LoaderCircle, Smartphone, Wallet } from 'lucide-react';
 import { type FormEventHandler, useEffect, useMemo, useState } from 'react';
 
 interface RecordPaymentDialogProps {
@@ -38,7 +38,14 @@ type FormData = {
     allocations: Record<string, string>;
 };
 
-const methodIcons: Partial<Record<PaymentMethod, typeof Banknote>> = { cash: Banknote, bankTransfer: Landmark, other: Wallet };
+const methodIcons: Partial<Record<PaymentMethod, typeof Banknote>> = {
+    cash: Banknote,
+    bankTransfer: Landmark,
+    other: Wallet,
+    // Pakistan plan P5: mobile wallets.
+    jazzCash: Smartphone,
+    easypaisa: Smartphone,
+};
 
 /** Record money received: amount, method, date, reference, and which invoices it pays (oldest first by default). */
 export function RecordPaymentDialog(props: RecordPaymentDialogProps) {

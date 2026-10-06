@@ -10,28 +10,39 @@
 |
 */
 
+use App\Domain\Shared\Country\Country;
+
+// Pakistan plan P5 (owner 2026-10-06): the UK defaults below apply on GB only. Off GB an unset key is empty and its
+// line is hidden (the instance shows only what its .env sets, never the UK company).
+$uk = Country::fromConfig()->is(Country::DEFAULT);
+
 return [
 
     // Who the invoices are from. Shown on every invoice and PDF.
     'seller' => [
         'name' => env('BILLING_SELLER_NAME', 'Switch & Save'),
-        'legal_name' => env('BILLING_SELLER_LEGAL_NAME', 'Switch & Save Ltd'),
+        'legal_name' => env('BILLING_SELLER_LEGAL_NAME', $uk ? 'Switch & Save Ltd' : ''),
         'address' => env('BILLING_SELLER_ADDRESS', ''),
         'company_number' => env('BILLING_SELLER_COMPANY_NUMBER', ''),
         // Where the company is registered, for "Registered in …, company no. …" (phase P6). Empty = the country
         // profile's place: "England and Wales" on GB, "Pakistan" on PK.
         'registered_in' => (string) env('BILLING_SELLER_REGISTERED_IN', ''),
-        'email' => env('BILLING_SELLER_EMAIL') ?: (env('SSPOS_SUPPORT_EMAIL') ?: 'support@switchandsave.co.uk'),
+        'email' => env('BILLING_SELLER_EMAIL') ?: (env('SSPOS_SUPPORT_EMAIL') ?: ($uk ? 'support@switchandsave.co.uk' : '')),
         'phone' => (string) env('BILLING_SELLER_PHONE', env('SSPOS_SUPPORT_PHONE', '')),
+        // Pakistan plan P5: our own NTN and STRN, printed (labelled) on PK invoices when set; empty = hidden. The NTN
+        // falls back to BILLING_VAT_NUMBER (the NTN slot since P3). Never used on GB.
+        'ntn' => (string) env('BILLING_SELLER_NTN', ''),
+        'strn' => (string) env('BILLING_SELLER_STRN', ''),
     ],
 
     // VAT. Turn off while we are not VAT registered: invoices then carry no VAT at all. A company can also be
     // billed without VAT from its billing settings.
     'vat' => [
-        'enabled' => (bool) env('BILLING_VAT_ENABLED', true),
+        // Off GB (PK): off unless BILLING_VAT_ENABLED says otherwise (GST registration is set per instance).
+        'enabled' => (bool) env('BILLING_VAT_ENABLED', $uk),
         'number' => env('BILLING_VAT_NUMBER', ''),
-        // Percent, as a decimal string.
-        'rate' => (string) env('BILLING_VAT_RATE', '20.00'),
+        // Percent, as a decimal string. Off GB: 0 unless BILLING_VAT_RATE is set.
+        'rate' => (string) env('BILLING_VAT_RATE', $uk ? '20.00' : '0.00'),
     ],
 
     // Shown on invoices under "How to pay". Leave empty to hide the bank details.
@@ -91,6 +102,27 @@ return [
         'max_instalments' => 12,
         // How far back the daily reconcile compares payments with GoCardless.
         'reconcile_days' => 45,
+    ],
+
+    // Manual collection (Pakistan plan P5): only where the country profile's `billing.collection` is "manual" (PK).
+    // Every monthly or yearly period is an invoice paid by hand (bank transfer, JazzCash, Easypaisa, cash) and
+    // recorded by an admin; GoCardless is never used. Unused on GB (Direct Debit).
+    'manual' => [
+        // A period invoice is due this many days after it is issued. billing:run issues it
+        // `generate.days_before` (7) days before the period starts, so it is normally due on the period start.
+        'due_days' => (int) env('BILLING_MANUAL_DUE_DAYS', 7),
+        // Reminder emails: this many days before the due date, on the due date, and this many days after it.
+        'remind_before_days' => (int) env('BILLING_MANUAL_REMIND_BEFORE_DAYS', 3),
+        'remind_after_days' => (int) env('BILLING_MANUAL_REMIND_AFTER_DAYS', 3),
+        // How to pay, on invoices, emails and the portal Billing page. Empty values are hidden.
+        'pay' => [
+            'bank_name' => (string) env('BILLING_PAY_BANK_NAME', ''),
+            'bank_account_title' => (string) env('BILLING_PAY_BANK_ACCOUNT_TITLE', ''),
+            'bank_iban' => (string) env('BILLING_PAY_BANK_IBAN', ''),
+            // Mobile account numbers (or till ids) customers send JazzCash / Easypaisa payments to.
+            'jazzcash' => (string) env('BILLING_PAY_JAZZCASH', ''),
+            'easypaisa' => (string) env('BILLING_PAY_EASYPAISA', ''),
+        ],
     ],
 
 ];

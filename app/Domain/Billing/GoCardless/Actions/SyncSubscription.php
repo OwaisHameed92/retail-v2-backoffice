@@ -11,6 +11,7 @@ use App\Domain\Billing\GoCardless\Support\SubscriptionAmount;
 use App\Domain\Billing\Models\BillingAccount;
 use App\Domain\Billing\Support\BillingAccounts;
 use App\Domain\Billing\Support\BillingFormat;
+use App\Domain\Billing\Support\ManualCollection;
 use App\Domain\Billing\Support\SetupFeeState;
 use App\Domain\Demo\Support\DemoBusinesses;
 use App\Domain\Shared\Actions\RecordAudit;
@@ -40,6 +41,11 @@ class SyncSubscription
      */
     public function handle(Company $company, string $reason = 'manual'): string
     {
+        // Pakistan plan P5: no Direct Debit where fees are paid by hand; GoCardless is never called.
+        if (ManualCollection::active()) {
+            return 'noMandate';
+        }
+
         if (DemoBusinesses::isDemo($company)) {
             return 'demo'; // never sent to GoCardless (demo:billing)
         }

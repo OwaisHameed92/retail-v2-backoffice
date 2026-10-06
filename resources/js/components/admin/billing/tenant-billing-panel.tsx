@@ -20,6 +20,7 @@ import { taxName, taxText } from '@/lib/country';
 import { Link, router } from '@inertiajs/react';
 import { AlarmClock, ArrowRight, Banknote, CalendarRange, FilePlus2, PauseCircle, PiggyBank, Receipt, Scale, Settings2 } from 'lucide-react';
 import { type KeyboardEvent, useState } from 'react';
+import { byHand } from '@/lib/billing-collection';
 
 interface TenantBillingPanelProps {
     tenant: { id: string; name: string; status: string; legalName?: string | null; address?: string | null };
@@ -236,7 +237,7 @@ export function TenantBillingPanel({ tenant, billing }: TenantBillingPanelProps)
                                 icon={Banknote}
                                 size="sm"
                                 title="No payments yet"
-                                body="Cash and bank transfers appear here once recorded."
+                                body={byHand('Cash and bank transfers appear here once recorded.', 'Payments appear here once recorded.')}
                                 action={
                                     canManage ? (
                                         <Button size="sm" variant="outline" onClick={() => setDialog('payment')}>

@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Domain\Billing\Data\BillingStatusData;
 use App\Domain\Billing\Support\BillingStatus;
+use App\Domain\Billing\Support\ManualCollection;
 use App\Domain\Demo\Billing\BuildDemoBillingBusiness;
 use App\Domain\Demo\Billing\DemoBillingScenario;
 use App\Domain\Tenancy\Actions\PurgeCompany;
@@ -28,6 +29,13 @@ class DemoBillingCommand extends Command
 
     public function handle(BuildDemoBillingBusiness $build, PurgeCompany $purge): int
     {
+        // Pakistan plan P5: the showcase is the UK Direct Debit flow; an instance that collects by hand has none.
+        if (ManualCollection::active()) {
+            $this->error('The billing showcase shows the UK Direct Debit cases. This instance collects fees by hand (invoices paid by bank transfer, JazzCash, Easypaisa or cash), so there is nothing to show.');
+
+            return self::FAILURE;
+        }
+
         if ($this->laravel->environment('production') && ! $this->option('force')) {
             $this->error('This is production: add --force to make demo businesses here.');
             $this->line('It is safe: demo businesses are never sent to GoCardless and never get an email (logged as "Not sent (demo)").');
