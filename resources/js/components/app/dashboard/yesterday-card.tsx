@@ -1,6 +1,7 @@
 import { SectionCard } from '@/components/shared/section-card';
 import { money, number } from '@/components/shared/trading/format';
 import { Skeleton } from '@/components/ui/skeleton';
+import { taxText } from '@/lib/country';
 import { cn } from '@/lib/utils';
 import {
     AlertTriangle,
@@ -129,7 +130,7 @@ export function YesterdayCard({ data }: { data: YesterdayGlance }) {
             <div className="space-y-6">
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                     <div className="space-y-1">
-                        <p className="text-muted-foreground text-sm">Sales (inc VAT)</p>
+                        <p className="text-muted-foreground text-sm">{taxText('Sales (inc VAT)')}</p>
                         <p className="text-2xl font-semibold tracking-tight tabular-nums">{money(total.sales)}</p>
                         <p className="text-muted-foreground text-sm">
                             {number(total.transactions)} {total.transactions === 1 ? 'sale' : 'sales'}

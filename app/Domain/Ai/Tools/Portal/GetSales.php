@@ -11,6 +11,7 @@ use App\Domain\Reporting\Data\HourSales;
 use App\Domain\Reporting\Data\SalesTotals;
 use App\Domain\Reporting\Queries\SalesReport;
 use App\Domain\Reporting\Reports\ReportKind;
+use App\Domain\Shared\Country\Country;
 use App\Domain\Tenancy\Enums\Ability;
 
 /**
@@ -28,9 +29,9 @@ final class GetSales extends PortalReadTool
 
     public function description(): string
     {
-        return 'Sales for a period: net (ex VAT), gross, VAT, takings, transactions, average basket, refunds, voids, '
+        return Country::tax('Sales for a period: net (ex VAT), gross, VAT, takings, transactions, average basket, refunds, voids, '
             .'discounts and gross profit, with the change against a compare window. Optional breakdown by shop, till, '
-            .'day or hour of the day (busy hours). Use it for any "how much did we sell / takings / busiest hour" question.';
+            .'day or hour of the day (busy hours). Use it for any "how much did we sell / takings / busiest hour" question.');
     }
 
     public function inputSchema(): array

@@ -92,6 +92,54 @@ export function taxName(): string {
     return current.taxName;
 }
 
+/**
+ * Display text in the profile's tax name (phase P3): GB returns it unchanged, PK "Sales (inc VAT)" → "Sales (inc GST)".
+ * For words shown to people only (never keys, columns or contract fields). Call it when rendering, never at module
+ * load: the first page's modules are imported before `setCountry()` runs.
+ */
+export function taxText(text: string): string {
+    return current.taxName === 'VAT' ? text : text.replace(/\bVAT\b/g, current.taxName);
+}
+
+/** True where the HMRC VAT return (boxes 1–9) is offered: GB. Its pages answer 404 elsewhere. */
+export function hasVatReturn(): boolean {
+    return current.features.vatReturn === true;
+}
+
+type TaxId = { label: string; example: string };
+
+/** Business columns → the taxIds keys they may hold, first found wins (as `Country::taxIdFor`). */
+const TAX_ID_COLUMNS: Record<'vat_number' | 'strn' | 'company_number', string[]> = {
+    vat_number: ['vatNumber', 'ntn'],
+    strn: ['strn'],
+    company_number: ['companyNumber'],
+};
+
+/**
+ * The tax id a business column holds, null when the profile has none: `vat_number` is the VAT number (GB) or the NTN
+ * (PK), `strn` the STRN (PK only), `company_number` the Companies House (GB) or SECP (PK) number.
+ */
+export function taxIdFor(column: keyof typeof TAX_ID_COLUMNS): TaxId | null {
+    const key = TAX_ID_COLUMNS[column].find((k) => current.taxIds[k] !== undefined);
+
+    return key ? current.taxIds[key] : null;
+}
+
+/** The `vat_number` field's label: "VAT number" (GB), "NTN" (PK). */
+export function vatNumberLabel(): string {
+    return taxIdFor('vat_number')?.label ?? `${current.taxName} number`;
+}
+
+/** The `company_number` field's label: "Company number" (GB, as the forms always read), "SECP registration number" (PK). */
+export function companyNumberLabel(): string {
+    return keepsUkStyles() ? 'Company number' : (taxIdFor('company_number')?.label ?? 'Company number');
+}
+
+/** What documents print before a stored VAT number: "VAT no." (GB, as before), "NTN" (PK). */
+export function vatNumberPrefix(): string {
+    return keepsUkStyles() ? 'VAT no.' : vatNumberLabel();
+}
+
 /** "£" (GB), "Rs" (PK): for input prefixes and labels such as `Price (${currencySymbol()})`. */
 export function currencySymbol(): string {
     return current.currencySymbol;

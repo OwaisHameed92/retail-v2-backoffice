@@ -1,6 +1,7 @@
 import { CheckRow, MoneyInput, OptionSelect } from '@/components/app/products/fields';
 import { FormField, FormGrid, FormSection } from '@/components/shared/form-section';
 import { Input } from '@/components/ui/input';
+import { taxName, taxText } from '@/lib/country';
 import { type ReactNode } from 'react';
 import { type MasterOptions, type MasterValues } from './types';
 
@@ -111,7 +112,7 @@ export function MasterFields({ data, setData, errors, options, withBarcode = tru
                             ))}
                         </datalist>
                     </FormField>
-                    <FormField id="vat_rate" label="VAT" optional error={errors.vat_rate}>
+                    <FormField id="vat_rate" label={taxName()} optional error={errors.vat_rate}>
                         <OptionSelect
                             id="vat_rate"
                             value={data.vat_rate}
@@ -120,7 +121,7 @@ export function MasterFields({ data, setData, errors, options, withBarcode = tru
                             onChange={(v) => setData('vat_rate', v)}
                         />
                     </FormField>
-                    <FormField id="rrp" label="RRP" optional help="Recommended price including VAT." error={errors.rrp}>
+                    <FormField id="rrp" label="RRP" optional help={taxText('Recommended price including VAT.')} error={errors.rrp}>
                         <MoneyInput id="rrp" value={data.rrp} invalid={!!errors.rrp} onChange={(e) => setData('rrp', e.target.value)} />
                     </FormField>
                     <FormField id="age_rule" label="Age check" error={errors.age_rule}>

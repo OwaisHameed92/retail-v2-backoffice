@@ -3,6 +3,7 @@ import { SectionCard } from '@/components/shared/section-card';
 import { cn } from '@/lib/utils';
 import { CircleAlert, CircleCheck, CircleX, Info } from 'lucide-react';
 import { type InvoiceAnalysis, type InvoiceDraft } from './types';
+import { taxName } from '@/lib/country';
 
 const ICONS = { error: CircleX, warning: CircleAlert, info: Info };
 const TONES = { error: 'text-destructive', warning: 'text-warning', info: 'text-info' };
@@ -39,7 +40,7 @@ export function ChecksCard({ analysis, draft }: { analysis: InvoiceAnalysis; dra
                     </thead>
                     <tbody>
                         <Row label="Net" lines={analysis.totals.net} printed={draft.netTotal} />
-                        <Row label="VAT" lines={analysis.totals.vat} printed={draft.vatTotal} />
+                        <Row label={taxName()} lines={analysis.totals.vat} printed={draft.vatTotal} />
                         <Row label="Total" lines={analysis.totals.gross} printed={draft.grossTotal} />
                     </tbody>
                 </table>

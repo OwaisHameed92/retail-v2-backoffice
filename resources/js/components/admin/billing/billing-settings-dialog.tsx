@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { taxName, taxText } from '@/lib/country';
 import { useForm } from '@inertiajs/react';
 import { LoaderCircle } from 'lucide-react';
 import { type FormEventHandler } from 'react';
@@ -119,9 +120,11 @@ function SettingsBody({ onOpenChange, company, billing }: BillingSettingsDialogP
                 <div className="flex items-start gap-3">
                     <Checkbox id="billing-vat" checked={data.vat_applies} onCheckedChange={(checked) => setData('vat_applies', checked === true)} className="mt-0.5" disabled={!vatEnabled} />
                     <div className="grid gap-1">
-                        <Label htmlFor="billing-vat">Charge VAT</Label>
+                        <Label htmlFor="billing-vat">{taxText('Charge VAT')}</Label>
                         <p className="text-muted-foreground text-sm">
-                            {vatEnabled ? `Adds VAT at ${vatRate} to this business’s invoices.` : 'VAT is switched off for all invoices (we are not VAT registered).'}
+                            {vatEnabled
+                                ? `Adds ${taxName()} at ${vatRate} to this business’s invoices.`
+                                : taxText('VAT is switched off for all invoices (we are not VAT registered).')}
                         </p>
                     </div>
                 </div>

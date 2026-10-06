@@ -9,7 +9,7 @@ Hi {{ $firstName }}, here is how **{{ $data->businessName }}** traded yesterday.
 @endif
 
 <x-mail::table>
-| Shop | Sales (inc VAT) | vs last week | vs last year |
+| Shop | {{ \App\Domain\Shared\Country\Country::tax('Sales (inc VAT)') }} | vs last week | vs last year |
 | :--- | ---: | ---: | ---: |
 @foreach ($summary['rows'] as $row)
 | {!! $row['total'] ? '**' : '' !!}{{ \App\Domain\Mail\Support\MailFormat::plain($row['name']) }}{!! $row['total'] ? '**' : '' !!} | {{ $row['sales'] }} | {{ $row['week'] }} | {{ $row['year'] }} |

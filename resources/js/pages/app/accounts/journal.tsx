@@ -9,6 +9,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import AppLayout from '@/layouts/app-layout';
+import { taxName } from '@/lib/country';
 import { Head, Link } from '@inertiajs/react';
 import { Receipt, TriangleAlert } from 'lucide-react';
 
@@ -40,7 +41,7 @@ export default function AccountsJournal({ entry }: JournalProps) {
                         <TriangleAlert />
                         <AlertTitle>Posted before the refund fix</AlertTitle>
                         <AlertDescription>
-                            The till journalled this refund like a sale (before version 0.1.15): sales, VAT and cash went up instead of down. The till does
+                            The till journalled this refund like a sale (before version 0.1.15): sales, {taxName()} and cash went up instead of down. The till does
                             not re-post it. The trial balance, profit and loss and balance sheet can show it turned the right way round.
                         </AlertDescription>
                     </Alert>

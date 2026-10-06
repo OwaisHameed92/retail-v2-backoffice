@@ -2,6 +2,7 @@
 
 namespace App\Domain\Catalogue\Support;
 
+use App\Domain\Shared\Country\Country;
 use App\Domain\TillData\Models\Category;
 use App\Domain\TillData\Models\Department;
 use App\Domain\TillData\Models\Product;
@@ -47,7 +48,7 @@ final class CatalogueRules
         }
 
         if (! VatRate::query()->whereKey((string) $value('vat_rate_id'))->exists()) {
-            $errors['vat_rate_id'] = 'Choose a VAT rate.';
+            $errors['vat_rate_id'] = Country::tax('Choose a VAT rate.');
         }
 
         $sku = $attributes['sku'] ?? null;

@@ -10,6 +10,7 @@ import { TradingSkeleton } from '@/components/shared/trading/trading-skeleton';
 import { WelcomeBanner } from '@/components/shared/welcome-banner';
 import { ShopsStatusCard } from '@/components/till-health/shops-status-card';
 import AppLayout from '@/layouts/app-layout';
+import { taxText } from '@/lib/country';
 import { cn } from '@/lib/utils';
 import { type BreadcrumbItem, type SharedData } from '@/types';
 import { Deferred, Head, router, usePage } from '@inertiajs/react';
@@ -79,7 +80,7 @@ export default function Dashboard(props: BusinessDashboardProps) {
                     <EmptyState
                         icon={LockKeyhole}
                         title="Sales figures are not part of your role"
-                        body="Owners, managers and accountants see sales, takings and VAT here. Ask the business owner if you need them."
+                        body={taxText('Owners, managers and accountants see sales, takings and VAT here. Ask the business owner if you need them.')}
                         size="sm"
                     />
                 </SectionCard>

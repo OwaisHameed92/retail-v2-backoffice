@@ -6,6 +6,7 @@ import { EmptyState } from '@/components/shared/empty-state';
 import { StatCard, StatGrid } from '@/components/shared/stat-card';
 import { StatusPill } from '@/components/shared/status-badge';
 import { money, number } from '@/components/shared/trading/format';
+import { taxName, taxText } from '@/lib/country';
 import { type ColumnDef } from '@tanstack/react-table';
 import { Receipt, ReceiptText, Wallet } from 'lucide-react';
 
@@ -34,7 +35,7 @@ const columns: ColumnDef<ExpenseRow>[] = [
                 <span className="flex flex-wrap gap-1.5">
                     {row.original.voided && <StatusPill tone="neutral">Voided{row.original.voidReason ? `: ${row.original.voidReason}` : ''}</StatusPill>}
                     {!row.original.voided && !row.original.vatReceipt && Number(row.original.vat ?? 0) !== 0 && (
-                        <StatusPill tone="warning">No VAT receipt</StatusPill>
+                        <StatusPill tone="warning">{taxText('No VAT receipt')}</StatusPill>
                     )}
                 </span>
             </div>
@@ -54,7 +55,10 @@ const columns: ColumnDef<ExpenseRow>[] = [
     { id: 'net', accessorKey: 'net', header: 'Net', enableSorting: true, meta: { align: 'right', mobile: 'hidden' }, cell: ({ row }) => <Amount value={row.original.net} /> },
     {
         id: 'vat',
-        header: 'VAT',
+        // A getter: the column list is built at module load, before the country profile is set.
+        get header() {
+            return taxName();
+        },
         meta: { align: 'right', mobile: 'hidden' },
         cell: ({ row }) => (
             <div className="grid justify-items-end leading-5">
@@ -84,12 +88,18 @@ export default function AccountsExpenses({ expenses, totals, filters, options }:
             description="Expenses recorded on your tills. The shop records, edits and voids them on the till; here they are read only."
         >
             <StatGrid columns={3}>
-                <StatCard label="Expenses" value={money(totals.gross)} hint={`${number(totals.count)} not voided · ${money(totals.net)} before VAT`} icon={Wallet} />
-                <StatCard label="VAT you can reclaim" value={money(totals.reclaimableVat)} hint="Where the shop holds a VAT receipt" icon={ReceiptText} tone="success" />
+                <StatCard label="Expenses" value={money(totals.gross)} hint={`${number(totals.count)} not voided · ${money(totals.net)} before ${taxName()}`} icon={Wallet} />
                 <StatCard
-                    label="VAT without a receipt"
+                    label={taxText('VAT you can reclaim')}
+                    value={money(totals.reclaimableVat)}
+                    hint={taxText('Where the shop holds a VAT receipt')}
+                    icon={ReceiptText}
+                    tone="success"
+                />
+                <StatCard
+                    label={taxText('VAT without a receipt')}
                     value={money(totals.unreclaimedVat)}
-                    hint="Not counted in the VAT return"
+                    hint={taxText('Not counted in the VAT return')}
                     icon={Receipt}
                     tone="warning"
                 />

@@ -2,6 +2,8 @@
 
 namespace App\Domain\Shops\Data;
 
+use App\Domain\Shared\Country\Country;
+
 /**
  * What the owner may change about the business from the portal (module 4.7). The till's Company members (name,
  * legal name, VAT and company numbers, address, phone, email) reach every till in the pull; town, postcode and
@@ -9,8 +11,11 @@ namespace App\Domain\Shops\Data;
  */
 final readonly class BusinessDetails
 {
-    /** The columns a portal save may write. */
-    public const COLUMNS = ['name', 'legal_name', 'vat_number', 'company_number', 'address', 'town', 'postcode', 'phone', 'email', 'receipt_footer'];
+    /**
+     * The columns a portal save may write. `strn` (Pakistan plan P3) only where the country profile has an STRN: the
+     * rules (TenantRules::company) and toAttributes() leave it out on GB.
+     */
+    public const COLUMNS = ['name', 'legal_name', 'vat_number', 'company_number', 'address', 'town', 'postcode', 'phone', 'email', 'receipt_footer', 'strn'];
 
     public function __construct(
         public string $name,
@@ -23,6 +28,7 @@ final readonly class BusinessDetails
         public ?string $phone = null,
         public ?string $email = null,
         public ?string $receiptFooter = null,
+        public ?string $strn = null,
     ) {}
 
     /**
@@ -44,6 +50,7 @@ final readonly class BusinessDetails
             phone: $text('phone'),
             email: $text('email') === null ? null : mb_strtolower((string) $text('email')),
             receiptFooter: $text('receipt_footer'),
+            strn: $text('strn'),
         );
     }
 
@@ -63,6 +70,6 @@ final readonly class BusinessDetails
             'phone' => $this->phone,
             'email' => $this->email,
             'receipt_footer' => $this->receiptFooter,
-        ];
+        ] + (app(Country::class)->taxIdFor('strn') === null ? [] : ['strn' => $this->strn]);
     }
 }

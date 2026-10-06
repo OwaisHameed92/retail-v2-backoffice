@@ -36,6 +36,7 @@
 @php
     $money = fn (string $v) => \App\Domain\Billing\Support\BillingFormat::money($v);
     $points = fn (int $v) => \App\Domain\Shared\Country\MoneyFormat::number($v);
+    $vatNo = app(\App\Domain\Shared\Country\Country::class)->vatNumberPrefix();
     $b = $s['business'];
     $c = $s['customer'];
     $closing = $s['closing']['balance'];
@@ -47,7 +48,7 @@
     {{ $b['name'] }}@if ($b['address']) · {{ $b['address'] }}@endif
     @if ($b['phone']) · {{ $b['phone'] }}@endif
     @if ($b['email']) · {{ $b['email'] }}@endif
-    @if ($b['vatNumber']) · VAT no. {{ $b['vatNumber'] }}@endif
+    @if ($b['vatNumber']) · {{ $vatNo }} {{ $b['vatNumber'] }}@endif
 </div>
 
 <table class="header">

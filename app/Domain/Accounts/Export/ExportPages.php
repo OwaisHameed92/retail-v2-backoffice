@@ -5,6 +5,7 @@ namespace App\Domain\Accounts\Export;
 use App\Domain\Accounts\Data\AccountsFilters;
 use App\Domain\Accounts\Support\AccountChart;
 use App\Domain\Accounts\Support\RefundFix;
+use App\Domain\Shared\Country\Country;
 use App\Domain\TillData\Models\JournalLine;
 use App\Domain\TillData\Models\VatRate;
 
@@ -75,7 +76,7 @@ final class ExportPages
         $vatDefaults = ExportDefaults::vat($target);
         $vatRows = [];
 
-        foreach ([...$vatNames, ExportDefaults::NO_VAT => 'No VAT rate on the line'] as $code => $name) {
+        foreach ([...$vatNames, ExportDefaults::NO_VAT => Country::tax('No VAT rate on the line')] as $code => $name) {
             $vatRows[] = [
                 'code' => (string) $code,
                 'name' => $name,

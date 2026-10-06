@@ -2,12 +2,15 @@ import { Field, Textarea } from '@/components/admin/tenants/field';
 import { type Option } from '@/components/admin/tenants/types';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { companyNumberLabel, keepsUkStyles, taxIdFor, vatNumberLabel } from '@/lib/country';
 
 export type CompanyFieldsData = {
     name: string;
     legal_name: string;
     vat_number: string;
     company_number: string;
+    /** PK only (the profile's STRN); absent where the profile has no STRN (GB). */
+    strn?: string;
     email: string;
     phone: string;
     contact_name: string;
@@ -28,6 +31,9 @@ interface CompanyFieldsProps<T extends CompanyFieldsData> {
 
 /** Business details shared by the create wizard and the edit page. Rendered inside a FormSection grid. */
 export function CompanyFields<T extends CompanyFieldsData>({ data, setData, errors, businessTypes }: CompanyFieldsProps<T>) {
+    // Pakistan plan P3: the business ids come from the country profile (GB: VAT number and Companies House, as before).
+    const strn = taxIdFor('strn');
+
     return (
         <>
             <Field id="name" label="Business name" hint="As the customer knows it, e.g. Khan Mini Mart." error={errors.name}>
@@ -48,7 +54,13 @@ export function CompanyFields<T extends CompanyFieldsData>({ data, setData, erro
                     aria-invalid={!!errors.legal_name}
                 />
             </Field>
-            <Field id="vat_number" label="VAT number" optional hint="For example GB123456789." error={errors.vat_number}>
+            <Field
+                id="vat_number"
+                label={vatNumberLabel()}
+                optional
+                hint={`For example ${taxIdFor('vat_number')?.example}.`}
+                error={errors.vat_number}
+            >
                 <Input
                     id="vat_number"
                     value={data.vat_number}
@@ -57,7 +69,25 @@ export function CompanyFields<T extends CompanyFieldsData>({ data, setData, erro
                     autoComplete="off"
                 />
             </Field>
-            <Field id="company_number" label="Company number" optional hint="Companies House, 8 characters." error={errors.company_number}>
+            {strn && (
+                <Field id="strn" label={strn.label} optional hint={`For example ${strn.example}.`} error={errors.strn}>
+                    <Input
+                        id="strn"
+                        value={data.strn ?? ''}
+                        onChange={(e) => setData('strn', e.target.value)}
+                        aria-invalid={!!errors.strn}
+                        autoComplete="off"
+                        inputMode="numeric"
+                    />
+                </Field>
+            )}
+            <Field
+                id="company_number"
+                label={companyNumberLabel()}
+                optional
+                hint={keepsUkStyles() ? 'Companies House, 8 characters.' : `For example ${taxIdFor('company_number')?.example}.`}
+                error={errors.company_number}
+            >
                 <Input
                     id="company_number"
                     value={data.company_number}

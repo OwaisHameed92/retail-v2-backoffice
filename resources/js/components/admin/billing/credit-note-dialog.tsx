@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { currencySymbol, wideCurrencySymbol } from '@/lib/country';
+import { currencySymbol, taxText, wideCurrencySymbol } from '@/lib/country';
 import { useForm } from '@inertiajs/react';
 import { LoaderCircle } from 'lucide-react';
 import { type FormEventHandler } from 'react';
@@ -48,9 +48,9 @@ function CreditBody({ onOpenChange, invoice }: CreditNoteDialogProps) {
 
                 <Field
                     id="credit-amount"
-                    label="Amount, VAT included"
+                    label={taxText('Amount, VAT included')}
                     error={errors.amount ?? (over ? `The most you can credit is ${formatPence(max)}.` : undefined)}
-                    hint={invoice.vatRate !== '0.00' ? 'Split into net and VAT at the invoice’s rate.' : undefined}
+                    hint={invoice.vatRate !== '0.00' ? taxText('Split into net and VAT at the invoice’s rate.') : undefined}
                 >
                     <div className="relative">
                         <span className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-sm">

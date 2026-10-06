@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import AppLayout from '@/layouts/app-layout';
-import { formatNumber } from '@/lib/country';
+import { formatNumber, taxName } from '@/lib/country';
 import { cn } from '@/lib/utils';
 import { Head, Link, router } from '@inertiajs/react';
 import { Info, LoaderCircle, Sparkles } from 'lucide-react';
@@ -65,7 +65,7 @@ export default function StarterPackPage({
                         <Info />
                         <AlertTitle>Connect a till first</AlertTitle>
                         <AlertDescription>
-                            Your VAT rates arrive from your till at its first sync. Once it has synced, come back to add your starter pack.
+                            Your {taxName()} rates arrive from your till at its first sync. Once it has synced, come back to add your starter pack.
                         </AlertDescription>
                     </Alert>
                 )}

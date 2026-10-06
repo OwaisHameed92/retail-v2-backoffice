@@ -81,7 +81,7 @@ final class DeliveryRows extends DocumentRows
 
         return [
             self::stat('Deliveries', (clone $posted)->count(), 'count', 'primary', 'Posted, last 30 days'),
-            self::stat('Goods in value', Money::normalise((clone $posted)->sum('gross_amount') ?: 0), 'money', 'neutral', 'Last 30 days, inc. VAT'),
+            self::stat('Goods in value', Money::normalise((clone $posted)->sum('gross_amount') ?: 0), 'money', 'neutral', Country::tax('Last 30 days, inc. VAT')),
             self::stat('Lines with damage', $damaged->count(), 'count', 'warning', 'Last 30 days'),
             self::stat('Still open', (clone $query)->where('status', 'draft')->count(), 'count', 'neutral', 'Being booked in'),
         ];

@@ -3,6 +3,7 @@
 namespace App\Domain\Purchasing\Queries\Lists;
 
 use App\Domain\Purchasing\Support\PurchasingNames;
+use App\Domain\Shared\Country\Country;
 use App\Domain\Shared\Support\Money;
 use App\Domain\TillData\Models\SupplierCreditNote;
 use Illuminate\Database\Eloquent\Builder;
@@ -70,7 +71,7 @@ final class CreditNoteRows extends DocumentRows
     {
         return [
             self::stat('Credit notes', (clone $query)->count(), 'count', 'primary'),
-            self::stat('Credited', Money::normalise((clone $query)->sum('gross_amount') ?: 0), 'money', 'success', 'Inc. VAT'),
+            self::stat('Credited', Money::normalise((clone $query)->sum('gross_amount') ?: 0), 'money', 'success', Country::tax('Inc. VAT')),
             self::stat('Not yet used', Money::normalise((clone $query)->where('balance', '>', 0)->sum('balance') ?: 0), 'money', 'neutral', 'Not set against an invoice'),
         ];
     }

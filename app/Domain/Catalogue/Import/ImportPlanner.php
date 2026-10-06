@@ -2,6 +2,7 @@
 
 namespace App\Domain\Catalogue\Import;
 
+use App\Domain\Shared\Country\Country;
 use App\Domain\TillData\Models\Product;
 use App\Domain\TillData\Models\ProductBarcode;
 
@@ -54,7 +55,7 @@ final class ImportPlanner
     private function check(ImportRow $row, ?Product $product): void
     {
         if ($row->vat !== null && $this->lookups->vatId($row->vat) === null) {
-            $row->errors[] = "VAT rate \"{$row->vat}\" is not one of your VAT rates.";
+            $row->errors[] = Country::tax('VAT rate')." \"{$row->vat}\" ".Country::tax('is not one of your VAT rates.');
         }
 
         if ($product !== null) {
@@ -75,7 +76,7 @@ final class ImportPlanner
         $categoryId = $this->lookups->categoryId($departmentId, $row->category);
 
         if ($row->vat === null && $this->lookups->defaultVat($departmentId, $categoryId) === null) {
-            $row->errors[] = 'A new product needs a VAT rate (no default VAT rate is set).';
+            $row->errors[] = Country::tax('A new product needs a VAT rate (no default VAT rate is set).');
         }
     }
 }

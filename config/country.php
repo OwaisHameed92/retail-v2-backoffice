@@ -85,17 +85,21 @@ return [
             'timezone' => 'Asia/Karachi',
             'taxName' => 'GST',
             'taxIds' => [
-                // Provisional patterns; phase P3 settles the forms.
+                // Phase P3, lenient on purpose (FBR formats vary): TenantRules strips spaces first, and STRN dashes too.
+                // NTN (stored in `vat_number`): 7 digits with an optional check digit ("1234567", "1234567-8"), or a
+                // sole trader's 13-digit CNIC ("35202-1234567-1", dashes optional).
                 'ntn' => [
                     'label' => 'NTN',
-                    'pattern' => '/^\d{7}-?\d$/',
+                    'pattern' => '/^(\d{7}(-?\d)?|\d{5}-?\d{7}-?\d)$/',
                     'example' => '1234567-8',
                 ],
+                // STRN (sales tax registration, column `strn`): 13 digits.
                 'strn' => [
                     'label' => 'STRN',
                     'pattern' => '/^\d{13}$/',
                     'example' => '1234567890123',
                 ],
+                // SECP company registration (`company_number`): 7 digits.
                 'companyNumber' => [
                     'label' => 'SECP registration number',
                     'pattern' => '/^\d{7}$/',

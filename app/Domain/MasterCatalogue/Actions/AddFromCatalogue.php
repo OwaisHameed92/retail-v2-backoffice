@@ -10,6 +10,7 @@ use App\Domain\MasterCatalogue\Data\PriceRule;
 use App\Domain\MasterCatalogue\Models\MasterProduct;
 use App\Domain\MasterCatalogue\Support\Gtin;
 use App\Domain\Shared\Actions\RecordAudit;
+use App\Domain\Shared\Country\Country;
 use App\Domain\Tenancy\CurrentCompany;
 use App\Domain\TillData\Models\Department;
 use App\Domain\TillData\Models\ProductBarcode;
@@ -48,7 +49,7 @@ final class AddFromCatalogue
         $companyId = (string) $this->tenancy->require()->id;
 
         if (! VatRate::query()->exists()) {
-            throw ValidationException::withMessages(['items' => 'Your VAT rates arrive from your till at its first sync. Connect a till first, then add products.']);
+            throw ValidationException::withMessages(['items' => Country::tax('Your VAT rates arrive from your till at its first sync. Connect a till first, then add products.')]);
         }
 
         $this->checkDepartments($departments);

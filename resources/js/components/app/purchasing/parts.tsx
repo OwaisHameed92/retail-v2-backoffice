@@ -1,5 +1,6 @@
 import { EmptyState } from '@/components/shared/empty-state';
 import { SectionCard } from '@/components/shared/section-card';
+import { taxName } from '@/lib/country';
 import { cn } from '@/lib/utils';
 import { Link } from '@inertiajs/react';
 import { ChevronRight, Link2 } from 'lucide-react';
@@ -41,7 +42,7 @@ export function Totals({
         <div className="ml-auto w-full max-w-72 px-4 py-3">
             {extra?.map((e) => row(e.label, e.value))}
             {row('Net', net)}
-            {row('VAT', vat)}
+            {row(taxName(), vat)}
             {row('Total', gross, true)}
         </div>
     );

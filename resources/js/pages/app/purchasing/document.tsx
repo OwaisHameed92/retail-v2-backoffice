@@ -18,6 +18,7 @@ import { SectionCard } from '@/components/shared/section-card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import AppLayout from '@/layouts/app-layout';
+import { taxText } from '@/lib/country';
 import { cn } from '@/lib/utils';
 import { Head } from '@inertiajs/react';
 import { Eye, ListX } from 'lucide-react';
@@ -78,7 +79,7 @@ export default function PurchasingDocument({ kind, document, facts, columns, lin
                     .join(' · ')}
                 actions={
                     <div className="text-right">
-                        <p className="text-muted-foreground text-xs">Total inc. VAT</p>
+                        <p className="text-muted-foreground text-xs">{taxText('Total inc. VAT')}</p>
                         <p className="text-2xl font-semibold tabular-nums">{money(totals.gross)}</p>
                     </div>
                 }

@@ -12,6 +12,7 @@ import { StickyFormBar } from '@/components/shared/sticky-form-bar';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/app-layout';
+import { taxText } from '@/lib/country';
 import { relativeTime } from '@/lib/relative-time';
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import { Archive, ArchiveRestore, Info, LoaderCircle } from 'lucide-react';
@@ -96,10 +97,10 @@ export default function ProductFormPage({ product, values, options, canManage }:
                 {canManage && missing && (
                     <Alert variant="warning">
                         <Info />
-                        <AlertTitle>{options.vatRates.length === 0 ? 'No VAT rates yet' : 'No departments yet'}</AlertTitle>
+                        <AlertTitle>{options.vatRates.length === 0 ? taxText('No VAT rates yet') : 'No departments yet'}</AlertTitle>
                         <AlertDescription>
                             {options.vatRates.length === 0 ? (
-                                'Your VAT rates arrive from your till at its first sync. Connect a till first, then add products here.'
+                                taxText('Your VAT rates arrive from your till at its first sync. Connect a till first, then add products here.')
                             ) : (
                                 <span>
                                     Add a department and a category first.{' '}

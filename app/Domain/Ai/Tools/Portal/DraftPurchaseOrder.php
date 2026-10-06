@@ -10,6 +10,7 @@ use App\Domain\Ai\Enums\ToolKind;
 use App\Domain\Ai\Exceptions\AiActionFailed;
 use App\Domain\Purchasing\Actions\SaveHeadOfficeOrder;
 use App\Domain\Purchasing\Queries\PurchasingPage;
+use App\Domain\Shared\Country\Country;
 use App\Domain\Shared\Country\MoneyFormat;
 use App\Domain\Shared\Rules\ValidUlid;
 use App\Domain\Shared\Support\Money;
@@ -105,7 +106,7 @@ final class DraftPurchaseOrder implements AiWriteTool
 
         return new AiProposal(
             preview: "Draft a head-office order for {$shop->name} from {$supplier->name}: {$text}. Cost about ".MoneyFormat::format(Money::round($total, 2), ukStyle: MoneyFormat::AS_GIVEN)
-                .' ex VAT. It is saved as a draft; nothing is sent to the supplier.',
+                .' '.Country::tax('ex VAT').'. It is saved as a draft; nothing is sent to the supplier.',
             input: [
                 'shop_id' => $shop->id,
                 'supplier_id' => $supplier->id,

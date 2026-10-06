@@ -11,6 +11,7 @@ use App\Domain\Reporting\Reports\ReportResult;
 use App\Domain\Reporting\Reports\ReportTable;
 use App\Domain\Reporting\ReportTables;
 use App\Domain\Reporting\Support\TradingDay;
+use App\Domain\Shared\Country\Country;
 use App\Domain\Shared\Country\MoneyFormat;
 use App\Domain\Shared\Support\Money;
 use Carbon\CarbonImmutable;
@@ -105,6 +106,6 @@ final class HourlyReport implements ReportBuilder
                 ReportTable::col('net', 'Net sales', 'money'),
                 ReportTable::col('averageNet', 'Average day', 'money'),
             ], $weekRows),
-        ], ['type' => 'heatmap', 'hours' => $hours, 'rows' => $heat], ['Hours are shop time ('.TradingDay::timezone()->getName().'), when each sale was completed. Sales exclude VAT.']);
+        ], ['type' => 'heatmap', 'hours' => $hours, 'rows' => $heat], ['Hours are shop time ('.TradingDay::timezone()->getName().'), when each sale was completed. '.Country::tax('Sales exclude VAT.')]);
     }
 }

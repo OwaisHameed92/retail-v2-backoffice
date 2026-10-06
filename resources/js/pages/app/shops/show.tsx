@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import AppLayout from '@/layouts/app-layout';
+import { vatNumberLabel } from '@/lib/country';
 import { Head, useForm } from '@inertiajs/react';
 import { Check, LoaderCircle, Plus, Store } from 'lucide-react';
 import { type FormEventHandler, useState } from 'react';
@@ -143,7 +144,7 @@ function ShopDetailsForm({ shop, business, canEdit }: Pick<ShopShowProps, 'shop'
                     <FormGrid>
                         {text('name', 'Shop name')}
                         {text('phone', 'Phone', { optional: true, type: 'tel' })}
-                        {text('vat_number', 'VAT number', {
+                        {text('vat_number', vatNumberLabel(), {
                             optional: true,
                             upper: true,
                             help: business.vatNumber ? `Leave blank if the shop uses the business's ${business.vatNumber}.` : undefined,

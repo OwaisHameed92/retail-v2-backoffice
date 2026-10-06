@@ -3,6 +3,7 @@
 namespace App\Domain\Catalogue\Actions;
 
 use App\Domain\Shared\Actions\RecordAudit;
+use App\Domain\Shared\Country\Country;
 use App\Domain\TillData\Models\Department;
 use App\Domain\TillData\Models\VatRate;
 use Illuminate\Support\Arr;
@@ -38,7 +39,7 @@ final class SaveDepartment
         $vat = $attributes['default_vat_rate_id'] ?? null;
 
         if ($vat !== null && ! VatRate::query()->whereKey($vat)->exists()) {
-            throw ValidationException::withMessages(['default_vat_rate_id' => 'Choose a VAT rate.']);
+            throw ValidationException::withMessages(['default_vat_rate_id' => Country::tax('Choose a VAT rate.')]);
         }
 
         $department->forceFill([...$attributes, 'name' => $name]);

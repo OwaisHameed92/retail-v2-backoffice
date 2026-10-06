@@ -46,6 +46,8 @@
 </head>
 <body>
 @php
+    $vatNo = app(\App\Domain\Shared\Country\Country::class)->vatNumberPrefix();
+    $tax = app(\App\Domain\Shared\Country\Country::class)->taxName();
     $badgeClass = match ($doc['status']) {
         'paid' => 'badge-paid',
         'overdue' => 'badge-overdue',
@@ -63,7 +65,7 @@
 
 <div class="footer">
     {{ $seller['legalName'] }}@if ($seller['companyNumber']) · Registered in England and Wales, company no. {{ $seller['companyNumber'] }}@endif
-    @if ($seller['vatNumber']) · VAT no. {{ $seller['vatNumber'] }}@endif
+    @if ($seller['vatNumber']) · {{ $vatNo }} {{ $seller['vatNumber'] }}@endif
     @if ($seller['email']) · {{ $seller['email'] }}@endif
 </div>
 
@@ -97,7 +99,7 @@
             @endforeach
             @if ($seller['email'])<div class="muted">{{ $seller['email'] }}</div>@endif
             @if ($seller['phone'])<div class="muted">{{ $seller['phone'] }}</div>@endif
-            @if ($seller['vatNumber'])<div class="muted">VAT no. {{ $seller['vatNumber'] }}</div>@endif
+            @if ($seller['vatNumber'])<div class="muted">{{ $vatNo }} {{ $seller['vatNumber'] }}</div>@endif
         </td>
         <td>
             <div class="label">Bill to</div>
@@ -105,7 +107,7 @@
             @foreach ($billTo['address'] as $line)
                 <div>{{ $line }}</div>
             @endforeach
-            @if ($billTo['vatNumber'])<div class="muted">VAT no. {{ $billTo['vatNumber'] }}</div>@endif
+            @if ($billTo['vatNumber'])<div class="muted">{{ $vatNo }} {{ $billTo['vatNumber'] }}</div>@endif
         </td>
         <td>
             <table class="facts">
@@ -127,7 +129,7 @@
             <th class="num">Unit price</th>
             @if ($doc['hasVat'])
                 <th class="num">Net</th>
-                <th class="num">VAT {{ $doc['vatRate'] }}</th>
+                <th class="num">{{ $tax }} {{ $doc['vatRate'] }}</th>
             @endif
             <th class="num">Amount</th>
         </tr>
@@ -151,7 +153,7 @@
 <table class="totals">
     <tr><td class="k">Subtotal</td><td class="v">{{ $doc['subtotal'] }}</td></tr>
     @if ($doc['hasVat'])
-        <tr><td class="k">VAT at {{ $doc['vatRate'] }}</td><td class="v">{{ $doc['vatTotal'] }}</td></tr>
+        <tr><td class="k">{{ $tax }} at {{ $doc['vatRate'] }}</td><td class="v">{{ $doc['vatTotal'] }}</td></tr>
     @endif
     <tr class="grand"><td class="k">Total</td><td class="v">{{ $doc['total'] }}</td></tr>
     @if ($doc['hasPayments'])

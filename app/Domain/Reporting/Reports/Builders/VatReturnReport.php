@@ -14,6 +14,7 @@ use App\Domain\Reporting\Reports\ReportResult;
 use App\Domain\Reporting\Reports\ReportTable;
 use App\Domain\Reporting\ReportTables;
 use App\Domain\Reporting\Support\TradingDay;
+use App\Domain\Shared\Country\Country;
 use App\Domain\Shared\Support\Money;
 use Illuminate\Support\Facades\DB;
 
@@ -35,12 +36,15 @@ final class VatReturnReport implements ReportBuilder
         [$net, $vat, $gross] = self::sum($rates);
         $before = $compare === null ? null : self::sum($this->vat->byRate($compare));
         $c = $before !== null;
+        $country = app(Country::class);
+        // The HMRC box numbers only where the VAT return exists (GB); the figures themselves suit any sales tax.
+        $boxes = $country->feature('vatReturn');
 
         $columns = [
             ReportTable::col('code', 'Rate'),
-            ReportTable::col('percentage', 'VAT %', 'percent'),
+            ReportTable::col('percentage', $country->taxText('VAT %'), 'percent'),
             ReportTable::col('net', 'Net', 'money'),
-            ReportTable::col('vat', 'VAT', 'money'),
+            ReportTable::col('vat', $country->taxName(), 'money'),
             ReportTable::col('gross', 'Gross', 'money'),
         ];
         $rateRow = fn (VatRateTotals $r) => ['code' => $r->code !== '' ? $r->code : 'Unnamed rate', 'percentage' => $r->percentage, 'net' => $r->net, 'vat' => $r->vat, 'gross' => $r->gross];
@@ -55,15 +59,15 @@ final class VatReturnReport implements ReportBuilder
         }
 
         return new ReportResult([
-            Figures::of('box1', 'VAT due on sales', $vat, 'money', $before[1] ?? null, $c, hint: 'VAT return box 1 (tills only)'),
-            Figures::of('box6', 'Sales excluding VAT', $net, 'money', $before[0] ?? null, $c, hint: 'VAT return box 6 (tills only)'),
-            Figures::of('gross', 'Sales including VAT', $gross, 'money', $before[2] ?? null, $c),
+            Figures::of('box1', $country->taxText('VAT due on sales'), $vat, 'money', $before[1] ?? null, $c, hint: $boxes ? 'VAT return box 1 (tills only)' : 'Tills only'),
+            Figures::of('box6', $country->taxText('Sales excluding VAT'), $net, 'money', $before[0] ?? null, $c, hint: $boxes ? 'VAT return box 6 (tills only)' : 'Tills only'),
+            Figures::of('gross', $country->taxText('Sales including VAT'), $gross, 'money', $before[2] ?? null, $c),
         ], [
-            new ReportTable('rates', 'By VAT rate', $columns, array_map($rateRow, $rates), $total),
-            new ReportTable('periods', 'By '.$options->group->value.' and rate', [ReportTable::col('period', 'Period'), ...$columns], $periodRows, ['period' => 'Total', ...$total], empty: 'No VAT in this range.'),
+            new ReportTable('rates', $country->taxText('By VAT rate'), $columns, array_map($rateRow, $rates), $total),
+            new ReportTable('periods', 'By '.$options->group->value.' and rate', [ReportTable::col('period', 'Period'), ...$columns], $periodRows, ['period' => 'Total', ...$total], empty: $country->taxText('No VAT in this range.')),
         ], null, [
-            'Figures are sales through your tills, net of refunds, on the day of each sale ('.TradingDay::timezone()->getName().'). Add other income, and your purchases (boxes 4 and 7), before you file.',
-            'Order deposits and charity round-ups are not sales and carry no VAT here; VAT on an order is due when the goods are sold at collection.',
+            'Figures are sales through your tills, net of refunds, on the day of each sale ('.TradingDay::timezone()->getName().'). Add other income, and your purchases'.($boxes ? ' (boxes 4 and 7)' : '').', before you file.',
+            $country->taxText('Order deposits and charity round-ups are not sales and carry no VAT here; VAT on an order is due when the goods are sold at collection.'),
         ]);
     }
 

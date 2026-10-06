@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { taxName, taxText } from '@/lib/country';
 import { Link, router, useForm } from '@inertiajs/react';
 import { ArrowLeft, Info, LoaderCircle } from 'lucide-react';
 import { type FormEvent } from 'react';
@@ -67,9 +68,10 @@ export default function AccountsExportMappings({ target, targets, accounts, vat,
             <Alert variant="info">
                 <Info />
                 <AlertDescription>
-                    Suggestions follow {label}&apos;s standard UK chart. Your till already posts VAT on its own line (2200 VAT output), so the
-                    suggested tax codes do not ask {label} to work VAT out again. Some packages refuse journals to their own VAT control account: if
-                    the import does, map 2200 to a liability account of your own. {!canEdit && 'Only someone with every shop can change the mapping.'}
+                    Suggestions follow {label}&apos;s standard UK chart. Your till already posts {taxName()} on its own line (2200 {taxName()}{' '}
+                    output), so the suggested tax codes do not ask {label} to work {taxName()} out again. Some packages refuse journals to their own{' '}
+                    {taxName()} control account: if the import does, map 2200 to a liability account of your own.{' '}
+                    {!canEdit && 'Only someone with every shop can change the mapping.'}
                 </AlertDescription>
             </Alert>
 
@@ -109,14 +111,16 @@ export default function AccountsExportMappings({ target, targets, accounts, vat,
                 </SectionCard>
 
                 <SectionCard
-                    title="VAT codes"
-                    description="The tax code on each line, by the till's VAT rate. Sales lines use the first; purchases and costs the second."
+                    title={taxText('VAT codes')}
+                    description={taxText(
+                        "The tax code on each line, by the till's VAT rate. Sales lines use the first; purchases and costs the second.",
+                    )}
                     flush
                 >
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead>Our VAT rate</TableHead>
+                                <TableHead>{taxText('Our VAT rate')}</TableHead>
                                 <TableHead className="w-56">On sales</TableHead>
                                 <TableHead className="w-56">On purchases</TableHead>
                             </TableRow>

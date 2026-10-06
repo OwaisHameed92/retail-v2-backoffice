@@ -10,12 +10,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import AppLayout from '@/layouts/app-layout';
+import { companyNumberLabel, taxIdFor, vatNumberLabel } from '@/lib/country';
 import { Head, useForm } from '@inertiajs/react';
 import { Info, LoaderCircle } from 'lucide-react';
 import { type FormEventHandler } from 'react';
 
 export default function BusinessDetailsPage({ business, facts, can }: BusinessPageProps) {
     const { data, setData, put, processing, errors, isDirty, reset, setDefaults } = useForm<BusinessForm>(blankNulls(business));
+    const strn = taxIdFor('strn');
 
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
@@ -27,7 +29,7 @@ export default function BusinessDetailsPage({ business, facts, can }: BusinessPa
             <Input
                 id={key}
                 type={props.type ?? 'text'}
-                value={data[key]}
+                value={data[key] ?? ''}
                 disabled={!can.edit}
                 onChange={(e) => setData(key, props.upper ? e.target.value.toUpperCase() : e.target.value)}
                 aria-invalid={errors[key] ? true : undefined}
@@ -57,8 +59,9 @@ export default function BusinessDetailsPage({ business, facts, can }: BusinessPa
                             <FormGrid>
                                 {text('name', 'Trading name')}
                                 {text('legal_name', 'Legal name', { optional: true, help: 'As registered, if different.' })}
-                                {text('vat_number', 'VAT number', { optional: true, upper: true })}
-                                {text('company_number', 'Company number', { optional: true, upper: true })}
+                                {text('vat_number', vatNumberLabel(), { optional: true, upper: true })}
+                                {strn && text('strn', strn.label, { optional: true })}
+                                {text('company_number', companyNumberLabel(), { optional: true, upper: true })}
                             </FormGrid>
                         </FormSection>
                         <FormSection title="Contact">

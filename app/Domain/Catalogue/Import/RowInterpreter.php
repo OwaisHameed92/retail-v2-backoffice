@@ -50,7 +50,7 @@ final class RowInterpreter
 
         foreach (['name' => 255, 'short_name' => 40, 'brand' => 120, 'description' => 2000, 'unit_code' => 20] as $field => $max) {
             if (($value = $cell($field)) !== null) {
-                mb_strlen($value) > $max ? $errors[] = ImportColumns::FIELDS[$field]['label']." must be {$max} characters or fewer." : $attributes[$field] = $value;
+                mb_strlen($value) > $max ? $errors[] = ImportColumns::fields()[$field]['label']." must be {$max} characters or fewer." : $attributes[$field] = $value;
             }
         }
 
@@ -61,14 +61,14 @@ final class RowInterpreter
         foreach (['sell_price' => 2, 'cost_price' => 4, 'min_stock_qty' => 4, 'reorder_qty' => 4] as $field => $places) {
             if (($value = $cell($field)) !== null) {
                 $number = self::decimal($value, $places);
-                $number === null ? $errors[] = ImportColumns::FIELDS[$field]['label']." \"{$value}\" is not an amount with up to {$places} decimal places." : $attributes[$field] = $number;
+                $number === null ? $errors[] = ImportColumns::fields()[$field]['label']." \"{$value}\" is not an amount with up to {$places} decimal places." : $attributes[$field] = $number;
             }
         }
 
         foreach (['track_stock', 'is_active'] as $field) {
             if (($value = $cell($field)) !== null) {
                 $bool = self::bool($value);
-                $bool === null ? $errors[] = ImportColumns::FIELDS[$field]['label']." \"{$value}\" should be yes or no." : $attributes[$field] = $bool;
+                $bool === null ? $errors[] = ImportColumns::fields()[$field]['label']." \"{$value}\" should be yes or no." : $attributes[$field] = $bool;
             }
         }
 
@@ -82,7 +82,7 @@ final class RowInterpreter
 
         foreach (['department' => $department, 'category' => $category] as $field => $value) {
             if ($value !== null && mb_strlen($value) > 100) {
-                $errors[] = ImportColumns::FIELDS[$field]['label'].' must be 100 characters or fewer.';
+                $errors[] = ImportColumns::fields()[$field]['label'].' must be 100 characters or fewer.';
             }
         }
 

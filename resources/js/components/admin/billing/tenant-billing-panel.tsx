@@ -16,6 +16,7 @@ import { StatCard, StatGrid } from '@/components/shared/stat-card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { taxName, taxText } from '@/lib/country';
 import { Link, router } from '@inertiajs/react';
 import { AlarmClock, ArrowRight, Banknote, CalendarRange, FilePlus2, PauseCircle, PiggyBank, Receipt, Scale, Settings2 } from 'lucide-react';
 import { type KeyboardEvent, useState } from 'react';
@@ -308,9 +309,9 @@ export function TenantBillingPanel({ tenant, billing }: TenantBillingPanelProps)
                             { label: 'Billing', value: settings.cycle === 'yearly' ? 'Yearly' : 'Monthly' },
                             { label: 'Payment terms', value: settings.paymentTermsDays === 0 ? 'On receipt' : `${settings.paymentTermsDays} days` },
                             {
-                                label: 'VAT',
+                                label: taxName(),
                                 value: !billing.vatEnabled
-                                    ? 'Not charged (not VAT registered)'
+                                    ? taxText('Not charged (not VAT registered)')
                                     : settings.vatApplies
                                       ? `Charged at ${billing.vatRate}`
                                       : 'Not charged',

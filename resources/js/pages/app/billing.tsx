@@ -14,7 +14,7 @@ import { StatCard, StatGrid } from '@/components/shared/stat-card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import AppLayout from '@/layouts/app-layout';
-import { formatMoney } from '@/lib/country';
+import { formatMoney, taxName } from '@/lib/country';
 import { type BreadcrumbItem } from '@/types';
 import { Head, router } from '@inertiajs/react';
 import { CalendarClock, Download, FileText, Landmark, Receipt, Tags } from 'lucide-react';
@@ -56,7 +56,7 @@ export default function Billing(props: PortalBillingProps) {
                 <StatCard
                     label="Plan"
                     value={plan ?? 'Standard'}
-                    hint={pricing.unitPrice ? `${pricing.unitPrice} per ${pricing.unit} ${pricing.per}, before VAT` : pricing.modeLabel}
+                    hint={pricing.unitPrice ? `${pricing.unitPrice} per ${pricing.unit} ${pricing.per}, before ${taxName()}` : pricing.modeLabel}
                     icon={Tags}
                 />
                 <StatCard
@@ -65,7 +65,7 @@ export default function Billing(props: PortalBillingProps) {
                     hint={
                         pricing.isZero
                             ? 'Nothing to pay each cycle'
-                            : `${pricing.unitsLabel}${pricing.vatApplies ? `, incl. ${pricing.vat} VAT` : ''}`
+                            : `${pricing.unitsLabel}${pricing.vatApplies ? `, incl. ${pricing.vat} ${taxName()}` : ''}`
                     }
                     icon={MoneyIcon}
                     tone="success"

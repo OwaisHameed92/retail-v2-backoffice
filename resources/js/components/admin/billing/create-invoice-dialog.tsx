@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
+import { taxName } from '@/lib/country';
 import { sendJson } from '@/lib/http';
 import { cn } from '@/lib/utils';
 import { useForm } from '@inertiajs/react';
@@ -176,7 +177,9 @@ function CreateInvoiceBody({ onOpenChange, company, periodStart, cycle, cycles }
                                 </div>
                                 {preview.hasVat && (
                                     <div className="flex justify-between">
-                                        <dt className="text-muted-foreground">VAT at {preview.vatRate}</dt>
+                                        <dt className="text-muted-foreground">
+                                            {taxName()} at {preview.vatRate}
+                                        </dt>
                                         <dd className="tabular-nums">{preview.vatTotal}</dd>
                                     </div>
                                 )}

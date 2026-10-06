@@ -29,6 +29,41 @@ final class SettingCatalogue
     {
         /** @var array<string, Section> $sections */
         $sections = self::$sections ??= require dirname(__DIR__).'/catalogue.php';
+        $country = app(Country::class);
+
+        return $country->is(Country::DEFAULT) ? $sections : self::localised($sections, $country);
+    }
+
+    /**
+     * The catalogue's words for another country (Pakistan plan P3): the tax name ("GST") and the business ids (NTN,
+     * SECP) instead of the UK's. GB reads the catalogue exactly as written.
+     *
+     * @param  array<string, Section>  $sections
+     * @return array<string, Section>
+     */
+    private static function localised(array $sections, Country $country): array
+    {
+        $vat = $country->taxIdFor('vat_number');
+        $company = $country->taxIdFor('company_number');
+        // [label, help] of the business-id settings.
+        $ids = array_filter([
+            'shop.vat_number' => $vat === null ? null : [
+                $vat['label'].' on receipts',
+                "Printed on receipts and {$country->taxName()} invoices, for example {$vat['example']}.",
+            ],
+            'shop.company_number' => $company === null ? null : [$company['label'], "Your {$company['label']}, if you are a company."],
+        ]);
+
+        foreach ($sections as &$section) {
+            $section['title'] = $country->taxText($section['title']);
+            $section['description'] = $country->taxText($section['description']);
+
+            foreach ($section['settings'] as $key => &$definition) {
+                [$definition['label'], $definition['help']] = $ids[$key] ?? [$country->taxText($definition['label']), $country->taxText($definition['help'])];
+            }
+            unset($definition);
+        }
+        unset($section);
 
         return $sections;
     }

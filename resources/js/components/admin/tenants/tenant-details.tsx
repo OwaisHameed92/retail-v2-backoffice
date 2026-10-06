@@ -3,10 +3,13 @@ import { type Tenant } from '@/components/admin/tenants/types';
 import { DescriptionList } from '@/components/shared/description-list';
 import { SectionCard } from '@/components/shared/section-card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { companyNumberLabel, taxIdFor, vatNumberLabel } from '@/lib/country';
 import { CircleAlert, CirclePause } from 'lucide-react';
 
 /** Status notice (suspended/cancelled) and the business details card. */
 export function TenantDetails({ tenant }: { tenant: Tenant }) {
+    const strn = taxIdFor('strn');
+
     return (
         <>
             {tenant.status === 'suspended' && (
@@ -37,8 +40,9 @@ export function TenantDetails({ tenant }: { tenant: Tenant }) {
                             ),
                         },
                         { label: 'Phone', value: tenant.phone },
-                        { label: 'VAT number', value: tenant.vatNumber },
-                        { label: 'Company number', value: tenant.companyNumber },
+                        { label: vatNumberLabel(), value: tenant.vatNumber },
+                        ...(strn ? [{ label: strn.label, value: tenant.strn ?? null }] : []),
+                        { label: companyNumberLabel(), value: tenant.companyNumber },
                         {
                             label: 'Registered address',
                             value: (tenant.address || tenant.town || tenant.postcode) && (

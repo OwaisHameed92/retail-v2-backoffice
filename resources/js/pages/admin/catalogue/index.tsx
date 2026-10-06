@@ -13,7 +13,7 @@ import { StatusBadge } from '@/components/shared/status-badge';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import AdminLayout from '@/layouts/admin-layout';
-import { formatNumber } from '@/lib/country';
+import { formatNumber, taxName } from '@/lib/country';
 import { Head, Link, router } from '@inertiajs/react';
 import { type ColumnDef } from '@tanstack/react-table';
 import { BookOpenCheck, Copy, Inbox, Package, Plus, Sparkles, Upload } from 'lucide-react';
@@ -55,7 +55,11 @@ const columns: ColumnDef<MasterRow>[] = [
         cell: ({ row }) => (
             <div className="text-right leading-tight tabular-nums">
                 <p className="font-medium">{row.original.rrp ? formatMoney(row.original.rrp) : '—'}</p>
-                {row.original.vatRate && <p className="text-muted-foreground text-xs">VAT {row.original.vatRate}</p>}
+                {row.original.vatRate && (
+                    <p className="text-muted-foreground text-xs">
+                        {taxName()} {row.original.vatRate}
+                    </p>
+                )}
             </div>
         ),
     },

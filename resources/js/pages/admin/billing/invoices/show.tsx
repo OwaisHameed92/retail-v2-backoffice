@@ -13,7 +13,7 @@ import { StatCard, StatGrid } from '@/components/shared/stat-card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import AdminLayout from '@/layouts/admin-layout';
-import { formatMoney } from '@/lib/country';
+import { formatMoney, taxName } from '@/lib/country';
 import { Head, Link } from '@inertiajs/react';
 import { AlarmClock, Ban, Banknote, CalendarClock, FilePen, Receipt, Scale } from 'lucide-react';
 
@@ -134,7 +134,7 @@ export default function InvoiceShow({ invoice, activity }: InvoiceShowProps) {
                 <StatCard
                     label="Total"
                     value={invoice.total}
-                    hint={invoice.vatRate !== '0.00' ? `Includes VAT at ${invoice.document.vatRate}` : 'No VAT'}
+                    hint={invoice.vatRate !== '0.00' ? `Includes ${taxName()} at ${invoice.document.vatRate}` : `No ${taxName()}`}
                     icon={MoneyIcon}
                     tone="neutral"
                 />

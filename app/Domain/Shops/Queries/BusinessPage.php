@@ -3,6 +3,7 @@
 namespace App\Domain\Shops\Queries;
 
 use App\Domain\Licensing\Data\LicenceData;
+use App\Domain\Shared\Country\Country;
 use App\Domain\Tenancy\CurrentCompany;
 use App\Domain\Tenancy\Enums\Ability;
 use App\Domain\Tenancy\Models\Branch;
@@ -32,7 +33,8 @@ final class BusinessPage
                 'phone' => $company->phone,
                 'email' => $company->email,
                 'receipt_footer' => $company->receipt_footer,
-            ],
+                // Pakistan plan P3: the STRN only where the profile has one (GB props unchanged).
+            ] + (app(Country::class)->taxIdFor('strn') === null ? [] : ['strn' => $company->strn]),
             'facts' => [
                 'status' => $company->status->value,
                 'businessType' => $company->business_type?->label(),

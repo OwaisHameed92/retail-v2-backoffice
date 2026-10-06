@@ -8,7 +8,8 @@ use App\Domain\Shared\Country\MoneyFormat;
 /**
  * The AI prompts' country wording (Pakistan plan P2). The prompts are written for the UK and stay byte-identical on
  * GB (they are frozen and cached). On any other profile the UK-only phrases (the shops' country, money in pounds with
- * the £ sign, UK dates and UK time) are swapped for the profile's, still frozen per instance:
+ * the £ sign, UK dates and UK time) are swapped for the profile's, and "VAT" for its tax name ("GST", phase P3), still
+ * frozen per instance:
  *
  *     PromptCountry::localise(SystemPrompt::TENANT); // GB: unchanged; PK: "… with the Rs sign, in whole rupees …"
  */
@@ -26,7 +27,7 @@ final class PromptCountry
         $money = self::moneyRule($country);
         $example = MoneyFormat::format('1234.5', $country).($country->grouping() === 'lakh' ? ' or '.MoneyFormat::format('123450', $country) : '');
 
-        return strtr($gbText, [
+        return $country->taxText(strtr($gbText, [
             'Show money in pounds with the £ sign and two decimal places, for example £1,234.50.' => "{$money}, for example {$example}.",
             'Show money in pounds with the £ sign and two decimal places.' => "{$money}.",
             'Write dates the UK way, for example 3 October 2026. Times are UK time.' => "Write dates like 3 October 2026. Times are {$name} time.",
@@ -37,7 +38,7 @@ final class PromptCountry
             'Money is in pounds as a number (12.5, not "£12.50").' => "Money is in {$country->currencyName()} as a number (12.5, not \"".MoneyFormat::prefix($country).'12.50").',
             '(UK documents write day/month/year)' => "(documents in {$name} write day/month/year)",
             '(for example "£1,234.50" or "+12.5%")' => '(for example "'.MoneyFormat::format('1234.5', $country).'" or "+12.5%")',
-        ]);
+        ]));
     }
 
     /** "Show money in rupees with the Rs sign, in whole rupees, with lakh grouping". */

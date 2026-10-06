@@ -2,6 +2,8 @@
 
 namespace App\Domain\Shared\Country;
 
+use Illuminate\Container\Container;
+
 /**
  * The country profile of this instance (config/country.php, `COUNTRY=GB|PK`). One codebase, one instance per
  * country: a missing, blank or unknown code is GB. Bound as a singleton; read it with `app(Country::class)`.
@@ -17,6 +19,13 @@ namespace App\Domain\Shared\Country;
 final class Country
 {
     public const DEFAULT = 'GB';
+
+    /** Business columns → the taxIds keys they may hold, first found wins (see `taxIdFor`). */
+    private const TAX_ID_COLUMNS = [
+        'vat_number' => ['vatNumber', 'ntn'],
+        'strn' => ['strn'],
+        'company_number' => ['companyNumber'],
+    ];
 
     /**
      * @param  Profile  $profile
@@ -145,6 +154,27 @@ final class Country
     }
 
     /**
+     * Display text in the profile's tax name (phase P3): GB returns it unchanged ("Sales (inc VAT)"), PK swaps the word
+     * "VAT" for "GST" ("Sales (inc GST)"). For words shown to people only: code, columns, contract fields, CSV values
+     * and accounting-package tax codes keep "VAT".
+     */
+    public function taxText(string $text): string
+    {
+        return $this->taxName() === 'VAT' ? $text : (string) preg_replace('/\bVAT\b/', $this->taxName(), $text);
+    }
+
+    /**
+     * `taxText()` with the bound profile, for code with no Country at hand: `Country::tax('Choose a VAT rate.')`.
+     * Outside a booted app (plain unit tests of enums) the text is returned as written, i.e. GB.
+     */
+    public static function tax(string $text): string
+    {
+        $container = Container::getInstance();
+
+        return $container->bound(self::class) ? $container->make(self::class)->taxText($text) : $text;
+    }
+
+    /**
      * Business tax and registration ids, keyed by field: GB vatNumber, companyNumber; PK ntn, strn, companyNumber.
      *
      * @return array<string, TaxId>
@@ -152,6 +182,29 @@ final class Country
     public function taxIds(): array
     {
         return $this->profile['taxIds'];
+    }
+
+    /**
+     * The tax id a business column holds (phase P3), null when the profile has none: `vat_number` is the VAT number
+     * (GB) or the NTN (PK), `strn` the STRN (PK only), `company_number` the Companies House or SECP number.
+     *
+     * @return TaxId|null
+     */
+    public function taxIdFor(string $column): ?array
+    {
+        foreach (self::TAX_ID_COLUMNS[$column] ?? [] as $key) {
+            if (isset($this->profile['taxIds'][$key])) {
+                return $this->profile['taxIds'][$key];
+            }
+        }
+
+        return null;
+    }
+
+    /** What documents print before a stored `vat_number`: "VAT no." on GB (as always), the id's label elsewhere ("NTN"). */
+    public function vatNumberPrefix(): string
+    {
+        return $this->is(self::DEFAULT) ? 'VAT no.' : ($this->taxIdFor('vat_number')['label'] ?? $this->taxName());
     }
 
     /**

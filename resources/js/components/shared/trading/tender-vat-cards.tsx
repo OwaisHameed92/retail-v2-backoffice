@@ -3,7 +3,7 @@ import { SectionCard } from '@/components/shared/section-card';
 import { money, number, share } from '@/components/shared/trading/format';
 import { type TenderRow, type VatRow } from '@/components/shared/trading/types';
 import { ChartTooltipBox, toneVar, type ChartTone } from '@/components/shared/trend-chart';
-import { formatNumber } from '@/lib/country';
+import { formatNumber, taxName, taxText } from '@/lib/country';
 import { CreditCard, Percent } from 'lucide-react';
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts';
 
@@ -98,9 +98,9 @@ export function VatCard({ rows }: { rows: VatRow[] }) {
     const sum = (key: 'net' | 'vat' | 'gross') => rows.reduce((total, r) => total + Math.round(Number(r[key]) * 100), 0) / 100;
 
     return (
-        <SectionCard title="VAT by rate" description="Net of refunds, as on the till's VAT summary" flush className="min-w-0">
+        <SectionCard title={taxText('VAT by rate')} description={taxText("Net of refunds, as on the till's VAT summary")} flush className="min-w-0">
             {rows.length === 0 ? (
-                <EmptyState icon={Percent} title="No VAT yet" body="Standard, reduced and zero-rated sales show here." size="sm" />
+                <EmptyState icon={Percent} title={taxText('No VAT yet')} body="Standard, reduced and zero-rated sales show here." size="sm" />
             ) : (
                 <div className="overflow-x-auto">
                     <table className="w-full text-sm">
@@ -108,7 +108,7 @@ export function VatCard({ rows }: { rows: VatRow[] }) {
                             <tr className="text-muted-foreground border-b text-left text-xs">
                                 <th className="px-5 py-2.5 font-medium sm:px-6">Rate</th>
                                 <th className="px-3 py-2.5 text-right font-medium">Net</th>
-                                <th className="px-5 py-2.5 text-right font-medium sm:px-3">VAT</th>
+                                <th className="px-5 py-2.5 text-right font-medium sm:px-3">{taxName()}</th>
                                 <th className="hidden px-6 py-2.5 text-right font-medium sm:table-cell">Gross</th>
                             </tr>
                         </thead>

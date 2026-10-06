@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Toggle } from '@/components/ui/toggle';
 import AppLayout from '@/layouts/app-layout';
-import { currencySymbol } from '@/lib/country';
+import { currencySymbol, vatNumberLabel } from '@/lib/country';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { LoaderCircle } from 'lucide-react';
 import { type FormEventHandler } from 'react';
@@ -96,7 +96,7 @@ export default function SupplierForm({ supplier, options, canEdit }: SupplierFor
                                 upper: true,
                             })}
                             {text('account_number', 'Your account number', { optional: true })}
-                            {text('vat_number', 'VAT number', { optional: true, upper: true })}
+                            {text('vat_number', vatNumberLabel(), { optional: true, upper: true })}
                         </FormGrid>
                         <CheckField
                             id="is_active"

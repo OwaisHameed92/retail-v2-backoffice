@@ -5,6 +5,7 @@ import { EmptyState } from '@/components/shared/empty-state';
 import { SectionCard } from '@/components/shared/section-card';
 import { StatusPill } from '@/components/shared/status-badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { taxText } from '@/lib/country';
 import { Link } from '@inertiajs/react';
 import { BookOpen } from 'lucide-react';
 
@@ -43,13 +44,13 @@ export default function AccountsChart({ accounts, filters, options, shopCount }:
 
                     return (
                         rows.length > 0 && (
-                            <SectionCard key={g.type} title={g.title} description={g.description} flush>
+                            <SectionCard key={g.type} title={g.title} description={taxText(g.description)} flush>
                                 <Table>
                                     <TableHeader>
                                         <TableRow>
                                             <TableHead className="w-24">Code</TableHead>
                                             <TableHead>Account</TableHead>
-                                            <TableHead className="hidden md:table-cell">VAT box</TableHead>
+                                            <TableHead className="hidden md:table-cell">{taxText('VAT box')}</TableHead>
                                             <TableHead className="hidden md:table-cell">Shops</TableHead>
                                             <TableHead className="text-right">Movement in period</TableHead>
                                             <TableHead className="text-right">Balance at {filters.to.split('-').reverse().join('/')}</TableHead>

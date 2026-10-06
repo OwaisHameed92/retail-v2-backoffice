@@ -4,6 +4,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Link } from '@inertiajs/react';
 import { MoneyInput, OptionSelect, marginPercent } from './fields';
 import { type SectionProps } from './types';
+import { taxName, taxText } from '@/lib/country';
 
 /** Name, till and receipt names, brand, code, description. */
 export function BasicsSection({ data, setData, errors }: SectionProps) {
@@ -100,20 +101,20 @@ export function PricingSection({ data, setData, errors, options }: SectionProps)
     const margin = marginPercent(data.sell_price, data.cost_price, vat?.percentage);
 
     return (
-        <FormSection title="Price and VAT" description="The price every shop charges, including VAT. Shop-by-shop prices are set separately.">
+        <FormSection title={taxText('Price and VAT')} description={taxText('The price every shop charges, including VAT. Shop-by-shop prices are set separately.')}>
             <FormGrid columns={3}>
-                <FormField id="sell_price" label="Sell price" help="Including VAT." error={errors.sell_price}>
+                <FormField id="sell_price" label="Sell price" help={taxText('Including VAT.')} error={errors.sell_price}>
                     <MoneyInput id="sell_price" required value={data.sell_price} invalid={!!errors.sell_price} onChange={(e) => setData('sell_price', e.target.value)} />
                 </FormField>
                 <FormField
                     id="cost_price"
                     label="Cost price"
-                    help={margin === null ? 'Excluding VAT, up to 4 decimal places.' : <span className="tabular-nums">Margin {margin}% after VAT.</span>}
+                    help={margin === null ? taxText('Excluding VAT, up to 4 decimal places.') : <span className="tabular-nums">Margin {margin}% after {taxName()}.</span>}
                     error={errors.cost_price}
                 >
                     <MoneyInput id="cost_price" places={4} required value={data.cost_price} invalid={!!errors.cost_price} onChange={(e) => setData('cost_price', e.target.value)} />
                 </FormField>
-                <FormField id="vat_rate_id" label="VAT rate" error={errors.vat_rate_id}>
+                <FormField id="vat_rate_id" label={taxText('VAT rate')} error={errors.vat_rate_id}>
                     <OptionSelect id="vat_rate_id" value={data.vat_rate_id} options={options.vatRates} invalid={!!errors.vat_rate_id} onChange={(value) => setData('vat_rate_id', value)} />
                 </FormField>
                 <FormField id="trade_price" label="Trade price" optional help="For trade customers." error={errors.trade_price}>

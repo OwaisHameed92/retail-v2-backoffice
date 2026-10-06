@@ -3,6 +3,7 @@
 namespace App\Domain\Accounts\Export;
 
 use App\Domain\Shared\Actions\RecordAudit;
+use App\Domain\Shared\Country\Country;
 use App\Domain\Tenancy\CurrentCompany;
 use App\Domain\Tenancy\Models\Company;
 use Illuminate\Support\Facades\DB;
@@ -49,7 +50,7 @@ final class SaveExportMappings
 
                 if ($pair !== ($before->ownVat[$code] ?? null)) {
                     $this->put(AccountingExportMapping::KIND_VAT, $target, (string) $code, $pair[0] ?? null, $pair[1] ?? null);
-                    $changed[] = 'VAT '.$code;
+                    $changed[] = Country::tax('VAT').' '.$code;
                 }
             }
 

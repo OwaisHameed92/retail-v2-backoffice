@@ -5,6 +5,7 @@ import { StatusPill } from '@/components/shared/status-badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { taxName } from '@/lib/country';
 import { cn } from '@/lib/utils';
 import { ListPlus, PackagePlus, Plus, Search, Trash2 } from 'lucide-react';
 import { cost, money, qty } from './format';
@@ -66,7 +67,7 @@ export function LinesEditor({
                     <TableHead className="w-24">Case size</TableHead>
                     <TableHead className="w-24">Loose</TableHead>
                     <TableHead className="w-32">Unit cost</TableHead>
-                    <TableHead className="w-40">VAT</TableHead>
+                    <TableHead className="w-40">{taxName()}</TableHead>
                     <TableHead className="text-right">Net</TableHead>
                     <TableHead className="w-10">
                         <span className="sr-only">Remove</span>

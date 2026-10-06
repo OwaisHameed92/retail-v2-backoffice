@@ -4,6 +4,7 @@ namespace App\Domain\Purchasing\Invoices;
 
 use App\Domain\Purchasing\Enums\InvoiceImportStatus;
 use App\Domain\Purchasing\Models\InvoiceImport;
+use App\Domain\Shared\Country\Country;
 use App\Domain\Shared\Country\MoneyFormat;
 use App\Domain\Shared\Support\Money;
 use App\Domain\TillData\Models\Product;
@@ -52,7 +53,7 @@ final class InvoiceAnalysis
             $ref = $line['productId'] !== null ? ($reference['lines'][$line['productId']] ?? null) : null;
 
             if ($line['unitPrice'] === null) {
-                $issues[] = self::issue('warning', 'missingPrice', "Line {$n}: no price was read. Enter the price ex VAT.", $n);
+                $issues[] = self::issue('warning', 'missingPrice', "Line {$n}: no price was read. ".Country::tax('Enter the price ex VAT.'), $n);
             } elseif ($line['lineNet'] !== null && Money::compare(self::abs(Money::sub($calc, $line['lineNet'])), self::LINE_TOLERANCE) > 0) {
                 $issues[] = self::issue('warning', 'lineTotal', "Line {$n}: {$line['quantity']} × ".self::money($line['unitPrice']).' is '.self::money($calc).', but the line total says '.self::money($line['lineNet']).'.', $n);
             }
@@ -64,7 +65,7 @@ final class InvoiceAnalysis
             }
 
             if ($product !== null && $rate !== null && $productRate !== null && Money::compare($rate, $productRate) !== 0) {
-                $issues[] = self::issue('info', 'vatRate', "Line {$n}: VAT {$rate}% on the invoice, {$productRate}% on {$product->name}.", $n);
+                $issues[] = self::issue('info', 'vatRate', "Line {$n}: ".Country::tax('VAT')." {$rate}% on the invoice, {$productRate}% on {$product->name}.", $n);
             }
 
             if ($ref !== null && Money::compare($ref['units'], $units) !== 0) {
@@ -120,14 +121,14 @@ final class InvoiceAnalysis
             $printed = $draft[$field] ?? null;
 
             if ($printed !== null && Money::compare(self::abs(Money::sub($printed, $totals[$key])), $tolerance) > 0) {
-                $label = ['net' => 'net total', 'vat' => 'VAT', 'gross' => 'total'][$key];
+                $label = ['net' => 'net total', 'vat' => Country::tax('VAT'), 'gross' => 'total'][$key];
                 $issues[] = self::issue('warning', $key.'Total', 'The lines add up to '.self::money($totals[$key])." {$label}, but the invoice says ".self::money($printed).'.');
             }
         }
 
         if (($draft['netTotal'] ?? null) !== null && ($draft['vatTotal'] ?? null) !== null && ($draft['grossTotal'] ?? null) !== null
             && Money::compare(self::abs(Money::sub(Money::add($draft['netTotal'], $draft['vatTotal']), $draft['grossTotal'])), self::LINE_TOLERANCE) > 0) {
-            $issues[] = self::issue('warning', 'invoiceSum', 'On the invoice, '.self::money($draft['netTotal']).' + '.self::money($draft['vatTotal']).' VAT is not '.self::money($draft['grossTotal']).'.');
+            $issues[] = self::issue('warning', 'invoiceSum', 'On the invoice, '.self::money($draft['netTotal']).' + '.self::money($draft['vatTotal']).' '.Country::tax('VAT').' is not '.self::money($draft['grossTotal']).'.');
         }
 
         if (($draft['supplierId'] ?? null) !== null && ($draft['invoiceNumber'] ?? null) !== null) {

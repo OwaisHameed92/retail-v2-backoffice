@@ -2,6 +2,8 @@
 
 namespace App\Domain\Plans\Enums;
 
+use App\Domain\Shared\Country\Country;
+
 /**
  * Product features a plan or a branch licence can switch on. The values are **exactly the till's 11 feature
  * names** (`Feature.cs`, contract v1.4.1 ANSWERS §6): they go into the licence token as they are, so they are
@@ -29,7 +31,7 @@ enum Feature: string
             self::Loyalty => 'Loyalty',
             self::Promotions => 'Promotions',
             self::Purchasing => 'Purchasing',
-            self::Accounts => 'Accounts and VAT',
+            self::Accounts => Country::tax('Accounts and VAT'),
             self::MultiBranch => 'Multi-branch',
             self::SecondScreen => 'Second screen',
             self::LabelPrinting => 'Label printing',
@@ -46,7 +48,7 @@ enum Feature: string
             self::Loyalty => 'Customer points, balances and rewards at the till.',
             self::Promotions => 'Multi-buys, meal deals, coupons and price promotions.',
             self::Purchasing => 'Suppliers, purchase orders, deliveries and supplier invoices.',
-            self::Accounts => 'Expenses, VAT returns, profit and loss, and journals.',
+            self::Accounts => Country::tax('Expenses, VAT returns, profit and loss, and journals.'),
             self::MultiBranch => 'Run several shops from one account, with transfers and branch reports.',
             self::SecondScreen => 'A customer-facing display showing the basket and offers.',
             self::LabelPrinting => 'Shelf-edge labels and barcode labels from the till.',

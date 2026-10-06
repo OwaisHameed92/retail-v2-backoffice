@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import AppLayout from '@/layouts/app-layout';
-import { zonedDateFormat } from '@/lib/country';
+import { hasVatReturn, taxName, taxText, zonedDateFormat } from '@/lib/country';
 import { cn } from '@/lib/utils';
 import { type SharedData } from '@/types';
 import { Head, usePage } from '@inertiajs/react';
@@ -186,13 +186,14 @@ interface LayoutProps {
 /** The Accounts frame: header, the section tabs, then the page. */
 export function AccountsPageLayout({ tab, filters, title, description, actions, children }: LayoutProps) {
     const { abilities } = usePage<SharedData>().props;
-    const tabs = TABS.filter((t) => t.key !== 'export' || (abilities ?? []).includes('accounts.export'));
+    // The HMRC VAT return is UK-only (country feature vatReturn): its routes answer 404 elsewhere.
+    const tabs = TABS.filter((t) => (t.key !== 'export' || (abilities ?? []).includes('accounts.export')) && (t.key !== 'vat' || hasVatReturn()));
 
     return (
         <AppLayout>
             <Head title={title ?? 'Accounts'} />
             <PageHeader
-                title="Accounts and VAT"
+                title={taxText('Accounts and VAT')}
                 description={description}
                 actions={actions}
                 tabs={
@@ -222,7 +223,7 @@ export function RefundFixNotice({ summary, fix, update }: { summary: RefundFixSu
             <AlertTitle>{summary.entries === 1 ? '1 refund was' : `${summary.entries} refunds were`} posted before the refund fix</AlertTitle>
             <AlertDescription>
                 <p>
-                    Till versions before 0.1.15 journalled a refund like a sale, so sales, VAT and cash went up instead of down (
+                    Till versions before 0.1.15 journalled a refund like a sale, so sales, {taxName()} and cash went up instead of down (
                     {money(summary.sales)} of sales on the wrong side). The till does not re-post old entries.{' '}
                     {!update
                         ? 'Each one is marked in the list below; the trial balance, profit and loss and balance sheet can show them corrected.'

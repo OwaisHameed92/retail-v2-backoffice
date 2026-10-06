@@ -8,6 +8,7 @@ use App\Domain\Ai\Models\AiConversation;
 use App\Domain\Ai\Support\AiGate;
 use App\Domain\Ai\Support\Portal\PortalPresenter;
 use App\Domain\Ai\Tools\ToolRegistry;
+use App\Domain\Shared\Country\Country;
 use App\Domain\Tenancy\Models\Branch;
 
 /**
@@ -57,7 +58,7 @@ final class PortalAssistantStatus
             'usage' => $company === null ? null : array_intersect_key(AiUsageSummary::for($company), array_flip(['used', 'limit', 'percent', 'resetsOn'])),
             'shop' => $restricted === null ? null : (Branch::query()->withTrashed()->find($restricted)->name ?? 'Your shop'),
             // The empty state shows four, the first that the user's tools can answer.
-            'examples' => array_slice(array_values(array_intersect_key(self::EXAMPLES, array_flip($tools))), 0, self::EXAMPLE_COUNT),
+            'examples' => array_map(Country::tax(...), array_slice(array_values(array_intersect_key(self::EXAMPLES, array_flip($tools))), 0, self::EXAMPLE_COUNT)),
             'conversations' => AiConversation::query()->ownedBy($context)->orderByDesc('last_message_at')->limit(30)->get()
                 ->map(fn (AiConversation $c) => PortalPresenter::conversation($c))->values()->all(),
         ];

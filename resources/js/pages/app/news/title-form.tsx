@@ -10,6 +10,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import AppLayout from '@/layouts/app-layout';
+import { taxName, taxText } from '@/lib/country';
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import { Info, Link2, Link2Off, PackageSearch, Save, TriangleAlert } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
@@ -43,7 +44,7 @@ function ProductLine({ product, action }: { product: LinkedProduct; action: Reac
 }
 
 /** Add or change a news title (module 5.8). The tills of the shop(s) it is for get it at their next sync. */
-const zeroName = (rate: TitleFormProps['zeroVatRate']) => (rate ? `${rate.name} (0%, receipt letter ${rate.code})` : 'a 0% VAT rate');
+const zeroName = (rate: TitleFormProps['zeroVatRate']) => (rate ? `${rate.name} (0%, receipt letter ${rate.code})` : taxText('a 0% VAT rate'));
 
 /** ANSWERS-2026-10-01 §5: no linked product = no VAT line on the till; UK newspapers are zero-rated. */
 function VatHint({ linked, zeroVatRate }: { linked: LinkedProduct | null; zeroVatRate: TitleFormProps['zeroVatRate'] }) {
@@ -56,8 +57,8 @@ function VatHint({ linked, zeroVatRate }: { linked: LinkedProduct | null; zeroVa
             <TriangleAlert />
             <AlertDescription>
                 {linked
-                    ? `${linked.name} is on ${linked.vat ?? 'a VAT rate above 0%'}. Newspapers are zero-rated in the UK: give the product ${zeroName(zeroVatRate)} on its product page.`
-                    : `No product linked, so the till makes no VAT line for this title. Link a product with ${zeroName(zeroVatRate)}: newspapers are zero-rated in the UK.`}
+                    ? `${linked.name} is on ${linked.vat ?? taxText('a VAT rate above 0%')}. Newspapers are zero-rated in the UK: give the product ${zeroName(zeroVatRate)} on its product page.`
+                    : `No product linked, so the till makes no ${taxName()} line for this title. Link a product with ${zeroName(zeroVatRate)}: newspapers are zero-rated in the UK.`}
             </AlertDescription>
         </Alert>
     );
@@ -162,7 +163,7 @@ export default function NewsTitleForm({ title, defaultShopId, linkedProduct, sea
                                     options={frequencies.map((f) => ({ value: f, label: FREQUENCIES[f] ?? f }))}
                                 />
                             </FormField>
-                            <FormField id="cover_price" label="Cover price" error={form.errors.cover_price} help="What the customer pays, inc. VAT.">
+                            <FormField id="cover_price" label="Cover price" error={form.errors.cover_price} help={taxText('What the customer pays, inc. VAT.')}>
                                 <MoneyInput
                                     id="cover_price"
                                     value={form.data.cover_price}
@@ -214,7 +215,7 @@ export default function NewsTitleForm({ title, defaultShopId, linkedProduct, sea
 
                     <FormSection
                         title="Till product"
-                        description="Link the product the till scans for this title. A title has no VAT of its own: the till uses the linked product's VAT rate."
+                        description={taxText("Link the product the till scans for this title. A title has no VAT of its own: the till uses the linked product's VAT rate.")}
                     >
                         <div className="grid gap-3">
                             <VatHint linked={linked} zeroVatRate={zeroVatRate} />

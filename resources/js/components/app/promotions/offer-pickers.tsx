@@ -2,7 +2,7 @@ import { type Option, type PriceTierValues } from '@/components/app/pricing/type
 import { MoneyInput, NumberField } from '@/components/app/products/fields';
 import { Button } from '@/components/ui/button';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import { formatMoneyWhole } from '@/lib/country';
+import { formatMoneyWhole, taxName } from '@/lib/country';
 import { cn } from '@/lib/utils';
 import { Plus, Trash2 } from 'lucide-react';
 
@@ -88,8 +88,8 @@ export function PriceTiersEditor({
     return (
         <div className="grid gap-3">
             <p className="text-muted-foreground text-sm">
-                Each tier is a quantity and the total price for that many, including VAT. The till picks the tiers that save the customer most; any
-                left over sell at the shelf price.
+                Each tier is a quantity and the total price for that many, including {taxName()}. The till picks the tiers that save the customer
+                most; any left over sell at the shelf price.
             </p>
             {error && (
                 <p id="price_tiers-error" className="text-destructive text-sm">

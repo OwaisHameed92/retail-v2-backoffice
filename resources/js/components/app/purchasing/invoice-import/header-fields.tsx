@@ -2,6 +2,7 @@ import { OptionSelect } from '@/components/app/products/fields';
 import { FormCard, FormField, FormGrid, FormSection } from '@/components/shared/form-section';
 import { Input } from '@/components/ui/input';
 import { type InvoiceDraft, type InvoiceReviewProps } from './types';
+import { taxName, vatNumberLabel } from '@/lib/country';
 
 interface HeaderFieldsProps {
     data: InvoiceDraft;
@@ -65,7 +66,7 @@ export function HeaderFields({ data, editable, errors, suppliers, orders, delive
                     {text('invoiceNumber', 'Invoice or delivery note number', { mono: true })}
                     {text('invoiceDate', 'Date', { type: 'date' })}
                     {text('orderReference', 'Order reference', { optional: true, mono: true, help: 'Your order number, when the supplier prints it.' })}
-                    {text('supplierVatNumber', 'Supplier VAT number', { optional: true, mono: true })}
+                    {text('supplierVatNumber', `Supplier ${vatNumberLabel()}`, { optional: true, mono: true })}
                 </FormGrid>
             </FormSection>
 
@@ -97,7 +98,7 @@ export function HeaderFields({ data, editable, errors, suppliers, orders, delive
             <FormSection title="Totals as printed" description="Leave a total empty if the document does not show it.">
                 <FormGrid columns={3}>
                     {text('netTotal', 'Net total', { optional: true })}
-                    {text('vatTotal', 'VAT', { optional: true })}
+                    {text('vatTotal', taxName(), { optional: true })}
                     {text('grossTotal', 'Total to pay', { optional: true })}
                 </FormGrid>
             </FormSection>

@@ -4,7 +4,7 @@ import { Field } from '@/components/admin/tenants/field';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { formatMoneyAsGiven } from '@/lib/country';
+import { formatMoneyAsGiven, taxText } from '@/lib/country';
 import { useForm } from '@inertiajs/react';
 import { LoaderCircle } from 'lucide-react';
 import { type FormEventHandler } from 'react';
@@ -73,7 +73,7 @@ function PricingBody({ onOpenChange, company, pricing }: PricingDialogProps) {
                 </Field>
 
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                    <Field id="pricing-monthly" label="Monthly price per unit" optional error={errors.price_monthly} hint="Before VAT.">
+                    <Field id="pricing-monthly" label="Monthly price per unit" optional error={errors.price_monthly} hint={taxText('Before VAT.')}>
                         <MoneyInput
                             id="pricing-monthly"
                             placeholder={plan?.monthly}
@@ -82,7 +82,7 @@ function PricingBody({ onOpenChange, company, pricing }: PricingDialogProps) {
                             onChange={(event) => setData('price_monthly', event.target.value)}
                         />
                     </Field>
-                    <Field id="pricing-yearly" label="Yearly price per unit" optional error={errors.price_yearly} hint="Before VAT.">
+                    <Field id="pricing-yearly" label="Yearly price per unit" optional error={errors.price_yearly} hint={taxText('Before VAT.')}>
                         <MoneyInput
                             id="pricing-yearly"
                             placeholder={plan?.yearly}

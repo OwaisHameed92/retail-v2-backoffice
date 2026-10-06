@@ -3,6 +3,7 @@
 namespace App\Domain\Purchasing\Queries;
 
 use App\Domain\Purchasing\Support\PurchasingNames;
+use App\Domain\Shared\Country\Country;
 use App\Domain\Shared\Support\Money;
 use App\Domain\TillData\Models\GoodsReceipt;
 use App\Domain\TillData\Models\GoodsReceiptLine;
@@ -84,7 +85,7 @@ final class DocumentDetail
             ['label' => 'Balance', 'value' => $i->balance, 'format' => 'money'],
             ['label' => 'Approved', 'value' => $i->approved_at?->toIso8601ZuluString(), 'format' => 'datetime'],
             ['label' => 'Disputed', 'value' => $i->dispute_reason ?: null, 'format' => 'text'],
-        ], ['qty' => 'Qty', 'unitCost' => 'Unit cost', 'net' => 'Net', 'vat' => 'VAT'],
+        ], ['qty' => 'Qty', 'unitCost' => 'Unit cost', 'net' => 'Net', 'vat' => Country::tax('VAT')],
             array_map(fn (SupplierInvoiceLine $l) => [
                 'id' => $l->id, 'product' => $names->product($l->product_id, $l->description), 'note' => $l->product_id !== null ? ($l->description ?: null) : null,
                 'flag' => $l->has_qty_variance ? 'Quantity differs from the delivery' : ($l->has_price_variance ? 'Price differs from the order' : null),
@@ -110,7 +111,7 @@ final class DocumentDetail
             ['label' => 'Reason', 'value' => $c->reason ?: null, 'format' => 'text'],
             ['label' => 'Used', 'value' => $c->applied_amount, 'format' => 'money'],
             ['label' => 'Not yet used', 'value' => $c->balance, 'format' => 'money'],
-        ], ['qty' => 'Qty', 'unitCost' => 'Unit cost', 'net' => 'Net', 'vat' => 'VAT'],
+        ], ['qty' => 'Qty', 'unitCost' => 'Unit cost', 'net' => 'Net', 'vat' => Country::tax('VAT')],
             array_map(fn (SupplierCreditNoteLine $l) => [
                 'id' => $l->id, 'product' => $names->product($l->product_id, $l->description), 'note' => null, 'flag' => null,
                 'qty' => $l->qty, 'unitCost' => $l->unit_cost, 'net' => $l->line_net, 'vat' => $l->line_vat,
@@ -136,7 +137,7 @@ final class DocumentDetail
             ['label' => 'Credit note', 'value' => $r->credit_note_number ?: null, 'format' => 'text'],
             ['label' => 'Credited', 'value' => $r->credited_at?->toIso8601ZuluString(), 'format' => 'datetime'],
             ['label' => 'Cancelled', 'value' => $r->cancelled_at?->toIso8601ZuluString(), 'format' => 'datetime'],
-        ], ['reason' => 'Reason', 'qty' => 'Qty', 'unitCost' => 'Unit cost', 'net' => 'Net', 'vat' => 'VAT'],
+        ], ['reason' => 'Reason', 'qty' => 'Qty', 'unitCost' => 'Unit cost', 'net' => 'Net', 'vat' => Country::tax('VAT')],
             array_map(fn (PurchaseReturnLine $l) => [
                 'id' => $l->id, 'product' => $names->product($l->product_id, $l->product_name), 'note' => $l->note ?: null,
                 'flag' => $l->from_stock ? null : 'Not taken from stock', 'reason' => $l->reason?->value,

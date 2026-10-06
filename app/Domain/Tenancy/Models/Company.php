@@ -30,6 +30,7 @@ use Illuminate\Support\Carbon;
  * @property string|null $legal_name
  * @property string|null $vat_number
  * @property string|null $company_number
+ * @property string|null $strn Pakistan plan P3: the STRN on a PK instance (null on GB)
  * @property string|null $address
  * @property string|null $phone
  * @property string|null $email
@@ -74,6 +75,7 @@ class Company extends Model
         'legal_name',
         'vat_number',
         'company_number',
+        'strn',
         'address',
         'phone',
         'email',

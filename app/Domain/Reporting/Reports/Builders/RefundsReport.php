@@ -12,6 +12,7 @@ use App\Domain\Reporting\Reports\ReportBuilder;
 use App\Domain\Reporting\Reports\ReportOptions;
 use App\Domain\Reporting\Reports\ReportResult;
 use App\Domain\Reporting\Reports\ReportTable;
+use App\Domain\Shared\Country\Country;
 
 /**
  * Refunds and voids (DASHBOARD.md §1.5, 3.1 "Voids"): refunds shown positive, on the day they were given; voided
@@ -31,7 +32,7 @@ final class RefundsReport implements ReportBuilder
         $c = $before !== null;
 
         $summary = [
-            Figures::of('refundGross', 'Refunds', $now->refundGross, 'money', $before?->refundGross, $c, 'down', 'Inc VAT'),
+            Figures::of('refundGross', 'Refunds', $now->refundGross, 'money', $before?->refundGross, $c, 'down', Country::tax('Inc VAT')),
             Figures::of('refundCount', 'Refunds given', $now->refundCount, 'count', $before?->refundCount, $c, 'down'),
             Figures::of('refundRate', 'Refunds as % of sales', Figures::percent($now->refundGross, $now->gross), 'percent', $before === null ? null : Figures::percent($before->refundGross, $before->gross), $c, 'down'),
             Figures::of('voidTotal', 'Voided baskets', $now->voidTotal, 'money', $before?->voidTotal, $c, 'down', 'Never completed, not in sales'),
@@ -41,8 +42,8 @@ final class RefundsReport implements ReportBuilder
         $columns = fn (string $heading) => [
             ReportTable::col('label', $heading),
             ReportTable::col('refundCount', 'Refunds', 'count'),
-            ReportTable::col('refundGross', 'Refunded inc VAT', 'money'),
-            ReportTable::col('refundNet', 'Refunded ex VAT', 'money'),
+            ReportTable::col('refundGross', Country::tax('Refunded inc VAT'), 'money'),
+            ReportTable::col('refundNet', Country::tax('Refunded ex VAT'), 'money'),
             ReportTable::col('voidCount', 'Voids', 'count'),
             ReportTable::col('voidTotal', 'Voided value', 'money'),
         ];
@@ -60,7 +61,7 @@ final class RefundsReport implements ReportBuilder
         $tables[] = new ReportTable('staff', 'By till user', [
             ReportTable::col('label', 'Till user'),
             ReportTable::col('refundCount', 'Refunds', 'count'),
-            ReportTable::col('refundGross', 'Refunded inc VAT', 'money'),
+            ReportTable::col('refundGross', Country::tax('Refunded inc VAT'), 'money'),
             ReportTable::col('voidCount', 'Voids', 'count'),
         ], array_map(fn ($s) => ['label' => $s->name, 'refundCount' => $s->refundCount, 'refundGross' => $s->refundGross, 'voidCount' => $s->voidCount], $staff), null, 'The user who served the refund or voided the basket.', 'No refunds or voids by anyone.');
 
@@ -69,12 +70,12 @@ final class RefundsReport implements ReportBuilder
             ReportTable::col('name', 'Product'),
             ReportTable::col('department', 'Department'),
             ReportTable::col('refundQty', 'Returned', 'qty'),
-            ReportTable::col('refundNet', 'Refunded ex VAT', 'money'),
+            ReportTable::col('refundNet', Country::tax('Refunded ex VAT'), 'money'),
         ], array_map(fn (array $p) => ['name' => $p['name'], 'department' => $p['department'], 'refundQty' => $p['refund_qty'], 'refundNet' => $p['refund_net']], $refunded), null, $options->export ? null : 'Top 20; the CSV holds every refunded product.', 'No products were refunded.');
 
         return new ReportResult($summary, $tables, [
             'type' => 'series',
-            'metric' => 'Refunds inc VAT',
+            'metric' => Country::tax('Refunds inc VAT'),
             'points' => array_map(fn (array $r) => ['label' => $r['label'], 'value' => $r['refundGross'], 'compare' => null, 'compareLabel' => null], $tables[0]->rows),
         ]);
     }

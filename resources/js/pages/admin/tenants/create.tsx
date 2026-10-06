@@ -22,6 +22,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import AdminLayout from '@/layouts/admin-layout';
+import { taxIdFor } from '@/lib/country';
 import { cn } from '@/lib/utils';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { CircleAlert, LoaderCircle } from 'lucide-react';
@@ -78,6 +79,7 @@ export default function CreateTenant({ nations, maxTills, plans, defaultPlanId, 
         legal_name: '',
         vat_number: '',
         company_number: '',
+        ...(taxIdFor('strn') ? { strn: '' } : {}),
         email: '',
         phone: '',
         contact_name: '',

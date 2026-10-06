@@ -1,6 +1,7 @@
 import { formatMoney, MoneyInput } from '@/components/app/products/fields';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { taxText } from '@/lib/country';
 import { router } from '@inertiajs/react';
 import { LoaderCircle, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
@@ -79,7 +80,7 @@ export function AddDialog({ rows, yours, initialRule, onRemove, onClose, onAdded
                             <thead className="bg-subtle text-muted-foreground sticky top-0 text-left text-xs">
                                 <tr>
                                     <th className="px-3 py-2 font-medium">Product</th>
-                                    <th className="w-28 px-3 py-2 font-medium">Cost (ex VAT)</th>
+                                    <th className="w-28 px-3 py-2 font-medium">{taxText('Cost (ex VAT)')}</th>
                                     <th className="w-28 px-3 py-2 font-medium">Sell price</th>
                                     <th className="w-10 px-2 py-2">
                                         <span className="sr-only">Remove</span>
