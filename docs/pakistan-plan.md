@@ -64,10 +64,10 @@ till's), provincial sales tax for restaurants (PRA, SRB), a card or wallet payme
 
 | Decision | Needed by | Options |
 |---|---|---|
-| Domain | P7 | e.g. `pk.sspos.co.uk` or a `.pk` domain |
-| Money display | P2 | `Rs 1,250` (whole rupees) or `Rs 1,250.00`; grouping `125,000` or lakh style `1,25,000` |
+| Domain | P7 | e.g. `pk.sspos.co.uk` or a `.pk` domain (owner will say) |
+| Money display | P2 | **Decided 2026-10-06:** whole rupees `Rs 1,250`, lakh grouping `1,25,000` (numbers too). Stored values stay 2 dp |
 | Plans and prices in PKR | P5 | setup fee, monthly per till |
-| How customers pay | P5 | bank transfer, JazzCash, Easypaisa, cash; gateway later |
+| How customers pay | P5 | **Decided 2026-10-06:** all of bank transfer, JazzCash, Easypaisa and cash (recorded by hand; gateway later) |
 | First kind of shops | P8 | kiryana, mobile, pharmacy, garments (sets the FBR priority) |
 
 ## Testing
