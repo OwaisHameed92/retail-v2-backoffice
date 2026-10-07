@@ -3,9 +3,9 @@
 namespace App\Http\Controllers\Admin\Billing;
 
 use App\Domain\Billing\Actions\DeleteDraftInvoice;
+use App\Domain\Billing\Actions\EmailInvoice;
 use App\Domain\Billing\Actions\IssueCreditNote;
 use App\Domain\Billing\Actions\IssueInvoice;
-use App\Domain\Billing\Actions\SendInvoice;
 use App\Domain\Billing\Actions\UpdateDraftInvoice;
 use App\Domain\Billing\Actions\VoidInvoice;
 use App\Domain\Billing\Enums\InvoiceStatus;
@@ -49,12 +49,14 @@ class InvoiceActionController extends Controller
         return back()->with('success', $message);
     }
 
-    public function send(string $invoice, SendInvoice $send): RedirectResponse
+    /** "Email to customer" / "Send again": an admin's own send, never held (P11); sends held copies first. */
+    public function send(string $invoice, EmailInvoice $send): RedirectResponse
     {
         $model = $this->findInvoice($invoice);
+        $first = $model->sent_count === 0;
         $count = $send->handle($model);
 
-        return back()->with('success', "{$model->number} sent again to ".($count === 1 ? '1 address' : "{$count} addresses").'.');
+        return back()->with('success', "{$model->number} ".($first ? 'emailed' : 'sent again').' to '.($count === 1 ? '1 address' : "{$count} addresses").'.');
     }
 
     public function void(VoidInvoiceRequest $request, string $invoice, VoidInvoice $void): RedirectResponse

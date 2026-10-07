@@ -119,7 +119,7 @@ final class ManualStatusText
     private static function openInvoice(BillingStatus $status): ?Invoice
     {
         return Invoice::withoutCompanyScope()->where('company_id', $status->company->id)->open()
-            ->where('kind', '!=', InvoiceKind::SetupFee->value)->orderBy('due_date')->orderBy('sequence')->first();
+            ->whereNotIn('kind', InvoiceKind::setupFeeValues())->orderBy('due_date')->orderBy('sequence')->first();
     }
 
     private static function day(?CarbonInterface $date): string

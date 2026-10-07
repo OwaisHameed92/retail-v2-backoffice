@@ -5,6 +5,7 @@ namespace App\Domain\Plans\Data;
 use App\Domain\Plans\Enums\Feature;
 use App\Domain\Plans\Enums\PlanBillingType;
 use App\Domain\Plans\Enums\PricingMode;
+use App\Domain\Plans\Enums\SetupFeeMode;
 use App\Domain\Plans\Models\Plan;
 use App\Domain\Shared\Country\Country;
 use App\Domain\Shared\Support\Money;
@@ -46,6 +47,8 @@ final readonly class PlanInput
         public PricingMode $pricingMode = PricingMode::PerTill,
         /** Null = what the prices imply. Setup only clears the prices; recurring only clears the setup fee. */
         ?PlanBillingType $billingType = null,
+        /** P11: once per business or for each till; null = keep the plan's (a new plan: once per business). */
+        public ?SetupFeeMode $setupFeeMode = null,
     ) {
         $monthly = Money::normalise($priceMonthly);
         $yearly = Money::normalise($priceYearly);
@@ -73,6 +76,7 @@ final readonly class PlanInput
             'price_monthly' => $this->priceMonthly,
             'price_yearly' => $this->priceYearly,
             'setup_fee' => $this->setupFee,
+            ...($this->setupFeeMode !== null ? ['setup_fee_mode' => $this->setupFeeMode] : []),
             // The instance's currency (Pakistan plan P5: PKR plans on PK); GB: Plan::CURRENCY ("GBP") as before.
             'currency' => app(Country::class)->currency(),
             'trial_days' => $this->trialDays,

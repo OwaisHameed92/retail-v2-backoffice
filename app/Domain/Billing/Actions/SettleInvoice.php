@@ -8,6 +8,7 @@ use App\Domain\Billing\Models\Invoice;
 use App\Domain\Billing\Models\InvoiceLine;
 use App\Domain\Billing\Support\BillingDates;
 use App\Domain\Billing\Support\BillingMailer;
+use App\Domain\Billing\Support\SetupFeeTills;
 use App\Domain\Licensing\Actions\RenewCompanyLicences;
 use App\Domain\Licensing\Actions\RenewLicence;
 use App\Domain\Licensing\Data\RenewalTerm;
@@ -34,6 +35,7 @@ class SettleInvoice
         private readonly RenewLicence $renewLicence,
         private readonly BillingMailer $mailer,
         private readonly ActivateCompany $activateCompany,
+        private readonly UnlockAddedTills $unlockAddedTills,
         private readonly RecordAudit $audit,
     ) {}
 
@@ -53,11 +55,14 @@ class SettleInvoice
             ]);
         }
 
-        $renewed = $this->renewLicences($invoice, $now);
+        // P11: an added till's setup fee renews nothing itself; it lets go of the tills it held (UnlockAddedTills).
+        $renewed = $invoice->kind === InvoiceKind::TillSetupFee
+            ? $this->unlockAddedTills->handle($invoice, $now)
+            : $this->renewLicences($invoice, $now);
 
         $company = $invoice->company;
         // A paid setup fee (the upfront payment, module 1.13) does not end the trial; a paid period does.
-        if ($company !== null && $company->status === CompanyStatus::Trial && $invoice->kind !== InvoiceKind::SetupFee) {
+        if ($company !== null && $company->status === CompanyStatus::Trial && ! $invoice->kind->isSetupFee()) {
             try {
                 $this->activateCompany->handle($company);
             } catch (ValidationException) {
@@ -112,9 +117,11 @@ class SettleInvoice
 
         if ($expiresAt->greaterThan($now)) {
             $term = RenewalTerm::until($expiresAt);
+            // P11: tills waiting for their added-till setup fee stay on their trial until it is paid.
+            $held = SetupFeeTills::heldLicenceIds($invoice->company_id);
 
             foreach ($this->lineLicences($invoice) as $id => $licence) {
-                if ($licence === null || $licence->isRevoked() || $licence->company_id !== $invoice->company_id) {
+                if ($licence === null || $licence->isRevoked() || $licence->company_id !== $invoice->company_id || in_array($licence->id, $held, true)) {
                     $skipped[] = $id;
 
                     continue;

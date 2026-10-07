@@ -16,7 +16,9 @@ use App\Domain\Billing\Support\CompanyPricing;
 use App\Domain\Billing\Support\MandateDeadline;
 use App\Domain\Billing\Support\ManualCollection;
 use App\Domain\Billing\Support\SetupFeeState;
+use App\Domain\Billing\Support\SetupFeeTills;
 use App\Domain\Billing\Support\Vat;
+use App\Domain\Licensing\Support\DefaultPlan;
 use App\Domain\Plans\Enums\PricingMode;
 use App\Domain\Shared\Support\Money;
 use App\Domain\Tenancy\Models\Company;
@@ -101,6 +103,13 @@ final class DirectDebitData
                 'instalments' => $account->setup_fee_instalments,
                 'invoicedAt' => $account->setup_fee_invoiced_at?->toIso8601String(),
                 'vatRate' => Money::isZero(Vat::rateFor($account)) ? null : Vat::rateFor($account),
+                // P11: per-till setup fee, the tills covered and the tills waiting for their setup fee.
+                'perTill' => SetupFeeTills::perTill($company),
+                'tillFeePlan' => Money::normalise(DefaultPlan::for($company)->setup_fee ?? '0.00'),
+                'tillFeeOverride' => $account->till_setup_fee_override,
+                'tills' => SetupFeeTills::count($company),
+                'coveredTills' => $account->setup_fee_covered_tills,
+                'heldTills' => count(SetupFeeTills::heldLicenceIds($company->id)),
             ],
             'mandate' => [
                 'id' => $account->gc_mandate_id,

@@ -1,3 +1,5 @@
+import { type HeldEmailRow } from '@/components/admin/emails/types';
+import { type AddedTillFeeOptions } from '@/components/admin/tenants/added-till-fee-field';
 import { type CloudMove, type LocalKeyRecord } from '@/components/admin/cloud-link/types';
 import { type ShopHealth, type TillHealth } from '@/components/till-health/types';
 import { type TenantBillingData } from '@/components/admin/billing/types';
@@ -154,5 +156,20 @@ export interface TenantShowProps {
     licenceOptions: LicenceOptions;
     /** Module 2.8: this business's moves to the cloud and reported local keys. */
     cloudLink: { moves: CloudMove[]; keys: LocalKeyRecord[] };
+    /** P11: the setup fee of tills being added (per-till plans). */
+    tillSetupFee: AddedTillFeeOptions;
+    /** P11: held emails and the first emails' buttons. Null without billing.manage (tab hidden). */
+    emails: TenantEmailsData | null;
     can: { manage: boolean; impersonate: boolean; manageLicences: boolean };
+}
+
+/** TenantEmails::for (P11): the business page's Emails tab. */
+export interface TenantEmailsData {
+    held: HeldEmailRow[];
+    recent: HeldEmailRow[];
+    welcomeHeld: boolean;
+    passwordHeld: boolean;
+    welcomeSentAt: string | null;
+    /** Labels of the email kinds not sent automatically. */
+    manualCategories: string[];
 }

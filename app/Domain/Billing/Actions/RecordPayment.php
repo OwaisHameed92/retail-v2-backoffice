@@ -4,7 +4,6 @@ namespace App\Domain\Billing\Actions;
 
 use App\Domain\Billing\Data\NewPayment;
 use App\Domain\Billing\Data\RecordedPayment;
-use App\Domain\Billing\Enums\InvoiceKind;
 use App\Domain\Billing\Models\Invoice;
 use App\Domain\Billing\Models\Payment;
 use App\Domain\Billing\Support\Actor;
@@ -128,7 +127,8 @@ class RecordPayment
         $unsuspended = $this->releaseHolds->handle($company);
 
         // A setup fee (upfront) invoice paid: unlock what it holds back (setup-only licence, the Direct Debit).
-        if (array_filter($result->paidInvoices, fn (Invoice $invoice) => $invoice->kind === InvoiceKind::SetupFee) !== []) {
+        // P11: an added till's setup fee too (a setup-only plan gives the till its full licence).
+        if (array_filter($result->paidInvoices, fn (Invoice $invoice) => $invoice->kind->isSetupFee()) !== []) {
             $this->setupFeeTerms->handle($company, justPaid: true);
         }
 

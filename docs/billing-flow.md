@@ -177,3 +177,63 @@ showcase) refuses to run.
 The Pakistan instance never shows the UK company. Only the `BILLING_SELLER_*` values set in its `.env` appear on
 invoices and emails: at least the trading name "Switch & Save". No "Registered in …" line without a company number;
 the NTN (`BILLING_SELLER_NTN` or `BILLING_VAT_NUMBER`) and STRN (`BILLING_SELLER_STRN`) appear, labelled, once set.
+
+## Per-till setup fee (owner 2026-10-07, P11)
+
+A plan's setup fee is charged **once per business** (every plan until the owner changes it) or **for each till**
+(Admin → Plans → plan → "Setup fee charged: For each till").
+
+| When | Per business (as before) | Per till |
+|---|---|---|
+| New business (wizard, trial approval) | The plan's fee. | The plan's fee × the tills, pre-filled ("£600.00 per till × 3 tills"). The admin may type less, or 0. |
+| Business's own amount | Billing tab → Payment settings → Setup fee (the business's total). | The same, plus "Setup fee per added till" for tills added later. |
+| A till added later (Add till, Add branch, or adding tills for a till request) | No charge. | A "Setup fee (added tills)" invoice for the new till(s): the per-till fee, pre-filled in the Add till / Add branch dialog, editable (0 = no charge). Emailed like any invoice; paid by cash, card or bank transfer (Pakistan: bank transfer, JazzCash, Easypaisa, cash) with Record payment. |
+| The new till | Gets what the other tills have. | Stays on its **trial** until that invoice is paid (setup only: never the 10-year licence; monthly: a paid period does not renew it). Paid: setup only → the full licence at once; monthly → it runs to the date the other tills are paid to, then renews with them. Voiding the invoice waives it. |
+| Monthly fee | Per till, as before. | Per till, as before. |
+
+**Tills already paid for are never charged again.** The billing account counts the tills a setup fee covers (shown in
+Payment settings). A business that paid one setup fee for its tills keeps them covered when its plan changes to per
+till: only tills added afterwards are charged.
+
+After deploying P11, run once on each server (safe to run again):
+
+    php artisan billing:backfill-setup-fee-coverage --dry-run   # shows each business and its covered tills
+    php artisan billing:backfill-setup-fee-coverage
+
+It marks the current tills of every business whose setup fee is paid (or recorded as nothing to pay) as covered —
+e.g. Istanbul Market (plan "Setup only", 2 tills, £1,200 + VAT paid as one invoice) → 2 covered. Without it the tills
+a business already has also count as covered, so nobody is overcharged either way.
+
+## Emails the admin controls (owner 2026-10-07, P11)
+
+Admin → Settings → **Emails** (owner and accounts) has "Send automatically" for each kind of email to businesses. Off:
+the email is **held** — logged as "Held", listed with the exact values it would send (recipient, subject, amounts,
+due date, tills, licence keys by their last 4 characters) — until an admin previews it and presses **Send**, or
+**Discard**. Billing carries on the same (invoices, reminders' dates, suspensions, Direct Debit); only the emails wait.
+
+| Kind | Emails |
+|---|---|
+| Invoices and receipts | Invoices when issued, paid invoices (receipts), setup fee invoices (added tills too) |
+| Reminders and notices | Payment reminders (Pakistan manual billing), trial reminder and ended, Direct Debit setup / failed / cancelled, account suspended / active again, licences renewed |
+| Set password link | The first "set your password" link (onboarding, a user added by an admin) |
+| Welcome and licence keys | The welcome email with every till's key |
+| Owner alerts and digests | Urgent shop alerts and their "resolved" emails, the digest, anomaly alerts |
+
+Always sent: a password reset or sign-in code someone asks for, portal invitations and customer statements a
+business sends, licence keys an admin emails from a licence, our own staff emails and staff copies.
+
+Where to send held emails:
+
+| Where | What |
+|---|---|
+| Business page → **Emails** tab | Its held emails with their values, **Send all held emails** (after checking plan, fees, tills, amounts), Send / Discard / Preview each, **Send welcome email** (the held one with the keys), **Send set-password link** (the held ones with a new link, else a new link to every owner). |
+| Admin → Settings → Emails | Every held email, newest first. |
+| Invoice page | "Email held: not sent yet" and **Email to customer** (sends it as the invoice stands now). |
+
+Every send and discard is in the audit log. An admin's own send is never held.
+
+From the server (same settings):
+
+    php artisan emails:auto                 # show
+    php artisan emails:auto --off=all       # hold every kind until an admin sends it
+    php artisan emails:auto --on=invoices   # one kind back to automatic

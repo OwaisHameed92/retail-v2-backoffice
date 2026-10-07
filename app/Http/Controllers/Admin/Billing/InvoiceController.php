@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin\Billing;
 
 use App\Domain\Admin\Enums\AdminRole;
+use App\Domain\Billing\Actions\EmailInvoice;
 use App\Domain\Billing\Data\InvoiceData;
 use App\Domain\Billing\Enums\InvoiceStatus;
 use App\Domain\Billing\Models\Invoice;
@@ -67,6 +68,8 @@ class InvoiceController extends Controller
         return Inertia::render('admin/billing/invoices/show', [
             'invoice' => InvoiceData::detail($model, $canManage, CarbonImmutable::now()),
             'activity' => InvoiceData::activity($model),
+            // P11: emails of this invoice held because invoices are not sent automatically.
+            'heldEmails' => count(EmailInvoice::held($model)),
         ]);
     }
 

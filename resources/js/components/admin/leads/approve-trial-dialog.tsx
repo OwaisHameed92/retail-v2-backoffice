@@ -1,6 +1,7 @@
 import {
     emptyUpfront,
     OnboardingBillingNote,
+    onboardingPlanFee,
     UpfrontPaymentFields,
     type UpfrontPaymentValue,
 } from '@/components/admin/billing/upfront-payment-fields';
@@ -376,7 +377,8 @@ export function ApproveTrialDialog({ lead, approval, open, onOpenChange }: Appro
                         onChange={(key, value) => form.setData(key, value as never)}
                         errors={errors}
                         options={approval.billing}
-                        planFee={approval.billing.setupFees[form.data.plan_id] ?? '0.00'}
+                        planFee={onboardingPlanFee(approval.billing, form.data.plan_id, totalTills).fee}
+                        planFeeNote={onboardingPlanFee(approval.billing, form.data.plan_id, totalTills).note}
                         idPrefix="approve-upfront"
                     />
                 )}

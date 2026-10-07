@@ -3,6 +3,7 @@
 namespace App\Domain\Mail\Mailables;
 
 use App\Domain\Mail\Data\DirectDebitCancelledData;
+use App\Domain\Mail\Enums\EmailCategory;
 use App\Domain\Mail\Support\MailFormat;
 use Illuminate\Mail\Mailables\Content;
 
@@ -34,6 +35,11 @@ final class DirectDebitCancelledMail extends BrandedMailable
             graceUntil: now()->addDays(3)->startOfDay(),
             setupUrl: config('app.url').'/direct-debit/example',
         ));
+    }
+
+    public function emailCategory(): EmailCategory
+    {
+        return EmailCategory::Reminders;
     }
 
     public function subjectLine(): string

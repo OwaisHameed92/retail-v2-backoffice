@@ -7,6 +7,7 @@ use App\Domain\Plans\Data\PlanInput;
 use App\Domain\Plans\Enums\Feature;
 use App\Domain\Plans\Enums\PlanBillingType;
 use App\Domain\Plans\Enums\PricingMode;
+use App\Domain\Plans\Enums\SetupFeeMode;
 use App\Domain\Plans\Models\Plan;
 use App\Domain\Shared\Country\Country;
 use App\Domain\Shared\Country\MoneyFormat;
@@ -74,6 +75,8 @@ abstract class PlanRequest extends FormRequest
             'price_monthly' => ['required', 'string', 'regex:'.self::moneyPattern()],
             'price_yearly' => ['required', 'string', 'regex:'.self::moneyPattern()],
             'setup_fee' => ['required', 'string', 'regex:'.self::moneyPattern()],
+            // P11: optional, so older clients keep the plan's mode (a new plan: once per business).
+            'setup_fee_mode' => ['sometimes', 'nullable', Rule::enum(SetupFeeMode::class)],
             'trial_days' => ['required', 'integer', 'min:0', 'max:90'],
             'trial_grace_days' => ['required', 'integer', 'min:0', 'max:30'],
             'grace_days' => ['required', 'integer', 'min:0', 'max:60'],
@@ -139,6 +142,7 @@ abstract class PlanRequest extends FormRequest
             'price_monthly' => 'monthly price',
             'price_yearly' => 'yearly price',
             'setup_fee' => 'setup fee',
+            'setup_fee_mode' => 'setup fee charged',
             'trial_days' => 'trial length',
             'trial_grace_days' => 'trial grace',
             'grace_days' => 'payment grace',
@@ -167,6 +171,7 @@ abstract class PlanRequest extends FormRequest
             setupFee: $this->string('setup_fee')->value(),
             pricingMode: PricingMode::from($this->string('pricing_mode')->value()),
             billingType: PlanBillingType::tryFrom($this->string('billing_type')->value()),
+            setupFeeMode: SetupFeeMode::tryFrom($this->string('setup_fee_mode')->value()),
         );
     }
 

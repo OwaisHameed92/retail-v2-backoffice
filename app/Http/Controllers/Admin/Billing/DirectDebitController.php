@@ -10,6 +10,7 @@ use App\Domain\Billing\GoCardless\Actions\SyncSubscription;
 use App\Domain\Billing\GoCardless\Actions\UpdateDirectDebitSettings;
 use App\Domain\Billing\GoCardless\GoCardlessException;
 use App\Domain\Billing\Support\BillingFormat;
+use App\Domain\Mail\Support\EmailControl;
 use App\Domain\Shared\Support\Money;
 use App\Domain\Tenancy\Models\Company;
 use App\Http\Controllers\Controller;
@@ -32,7 +33,7 @@ class DirectDebitController extends Controller
 
     public function sendSetup(Company $company, SendMandateSetupEmail $send): RedirectResponse
     {
-        $sent = $send->handle($company);
+        $sent = EmailControl::manually(fn () => $send->handle($company)); // P11: an admin's own send, never held
 
         if ($company->is_demo) {
             return back()->with('success', 'Demo business: the setup email is logged under Emails as "Not sent (demo)". Nothing was sent.');

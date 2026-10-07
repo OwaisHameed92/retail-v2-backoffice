@@ -5,6 +5,7 @@ namespace App\Domain\Mail\Mailables;
 use App\Domain\Billing\Support\ManualCollection;
 use App\Domain\Mail\Data\TillKeyData;
 use App\Domain\Mail\Data\WelcomeTenantData;
+use App\Domain\Mail\Enums\EmailCategory;
 use App\Domain\Mail\Support\MailFormat;
 use App\Domain\Shared\Country\LocalText;
 use Illuminate\Mail\Mailables\Content;
@@ -48,6 +49,11 @@ final class WelcomeTenantMail extends BrandedMailable
             billingUrl: ManualCollection::active() ? null : config('sspos.portal_url').'/app/billing',
             directDebitDays: ManualCollection::active() ? null : 3,
         ));
+    }
+
+    public function emailCategory(): EmailCategory
+    {
+        return EmailCategory::Welcome;
     }
 
     public function subjectLine(): string

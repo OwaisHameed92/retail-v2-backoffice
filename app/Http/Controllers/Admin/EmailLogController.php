@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Domain\Mail\Enums\EmailStatus;
 use App\Domain\Mail\Models\EmailLog;
+use App\Domain\Mail\Models\HeldEmail;
 use App\Domain\Mail\Support\EmailTemplates;
 use App\Domain\Shared\Country\Country;
 use App\Domain\Shared\Support\TableQuery;
@@ -48,7 +49,7 @@ class EmailLogController extends Controller
                 'to' => $filters['to'] ?? null,
             ],
             'templateOptions' => $this->templateOptions(),
-            'statusOptions' => EmailStatus::options(),
+            'statusOptions' => EmailStatus::options(withHeld: HeldEmail::query()->exists()),
             'summary' => $this->summary(),
         ]);
     }

@@ -58,6 +58,10 @@ class UpdateDirectDebitSettings
                 'setup_fee_instalments' => max(1, min((int) config('billing.direct_debit.max_instalments', 12), $input->instalments)),
             ]);
 
+            if ($input->tillFeeGiven) {
+                $account->till_setup_fee_override = $input->tillSetupFeeOverride === null ? null : Money::normalise($input->tillSetupFeeOverride);
+            }
+
             // Module 1.13: switching to Direct Debit starts the setup deadline (unless it already runs or is met).
             if ($input->mode === BillingMode::DirectDebit && $account->mandate_deadline_at === null && ! $account->hasUsableMandate()) {
                 $account->mandate_deadline_at = MandateDeadline::fromNow();

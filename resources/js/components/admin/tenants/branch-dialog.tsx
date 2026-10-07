@@ -1,6 +1,7 @@
 import { revealLicenceKeys } from '@/components/admin/licences/reveal-keys';
 import { type IssuedKeysReply } from '@/components/admin/licences/types';
 import { BranchFields, type BranchFieldsData } from '@/components/admin/tenants/branch-fields';
+import { AddedTillFeeField } from '@/components/admin/tenants/added-till-fee-field';
 import { TillCountPicker } from '@/components/admin/tenants/till-count-picker';
 import { type Nation, type Option, type TenantBranch } from '@/components/admin/tenants/types';
 import { showToast } from '@/components/shared/toaster';
@@ -21,7 +22,7 @@ interface BranchDialogProps {
     maxTills: number;
 }
 
-type BranchForm = BranchFieldsData & { tills: number };
+type BranchForm = BranchFieldsData & { tills: number; till_setup_fee: string };
 
 function initial(branch?: TenantBranch | null): BranchForm {
     return {
@@ -38,6 +39,7 @@ function initial(branch?: TenantBranch | null): BranchForm {
         postcode: branch?.postcode ?? '',
         receipt_footer: branch?.receiptFooter ?? '',
         tills: 1,
+        till_setup_fee: '',
     };
 }
 
@@ -80,7 +82,7 @@ function BranchDialogBody({ onOpenChange, tenantId, branch, nations, maxTills }:
             keys: result.data.keys,
             title: `${data.name || 'Branch'} added: ${result.data.keys.length === 1 ? 'licence key' : 'licence keys'} created`,
         });
-        router.reload({ only: ['branches', 'stats', 'licensing', 'activity'] });
+        router.reload({ only: ['branches', 'stats', 'licensing', 'activity', 'billing', 'tillSetupFee', 'emails'] });
     };
 
     const submit: FormEventHandler = (e) => {
@@ -125,6 +127,15 @@ function BranchDialogBody({ onOpenChange, tenantId, branch, nations, maxTills }:
                             onChange={(value) => setData('tills', value)}
                             error={errors.tills}
                         />
+                        <div className="mt-5 empty:hidden">
+                            <AddedTillFeeField
+                                id="branch-setup-fee"
+                                adding={data.tills}
+                                value={data.till_setup_fee}
+                                onChange={(value) => setData('till_setup_fee', value)}
+                                error={errors.till_setup_fee}
+                            />
+                        </div>
                     </div>
                 )}
 

@@ -4,12 +4,16 @@ namespace App\Http\Controllers\Admin;
 
 use App\Domain\Admin\Enums\AdminRole;
 use App\Domain\Billing\Actions\OnboardTenant;
+use App\Domain\Billing\Data\AddedTillFee;
 use App\Domain\Billing\Data\OnboardingBilling;
 use App\Domain\Billing\Data\TenantBilling;
 use App\Domain\Licensing\Data\LicenceData;
 use App\Domain\Licensing\Data\LicenceFormData;
 use App\Domain\Licensing\Data\TenantLicences;
 use App\Domain\Licensing\Support\DefaultPlan;
+use App\Domain\Mail\Data\TenantEmails;
+use App\Domain\Mail\Enums\EmailCategory;
+use App\Domain\Mail\Support\EmailControl;
 use App\Domain\Shared\Models\AuditLog;
 use App\Domain\Shared\Support\TableQuery;
 use App\Domain\Sync\Data\SyncKeyData;
@@ -108,6 +112,12 @@ class TenantController extends Controller
 
         $keys = $company->licences()->withoutGlobalScopes()->count();
 
+        // P11: with "Welcome and licence keys" not sent automatically, the email waits on the business's Emails tab.
+        if ($keys > 0 && ! EmailControl::sendsAutomatically(EmailCategory::Welcome)) {
+            return redirect()->route('admin.tenants.show', ['company' => $company, 'tab' => 'emails'])
+                ->with('success', "{$company->name} is set up. Its welcome email with the licence keys is held: check the business, then send it here.");
+        }
+
         return redirect()->route('admin.tenants.show', $company)
             ->with('success', $keys > 0
                 ? "{$company->name} is set up. The owner gets a welcome email with the licence keys (and a set-password email if they are new)."
@@ -137,6 +147,9 @@ class TenantController extends Controller
             'tenant' => TenantData::company($company),
             'licensing' => TenantLicences::for($company, CarbonImmutable::now()),
             'billing' => $billingAccess ? TenantBilling::for($company, true) : null,
+            // P11: the setup fee of tills being added (Add till / Add branch dialogs), and the held emails panel.
+            'tillSetupFee' => AddedTillFee::for($company, $admin),
+            'emails' => $billingAccess ? TenantEmails::for($company) : null,
             'plans' => LicenceData::planOptions(),
             'stats' => [
                 'branches' => $branches->where('is_active', true)->count(),

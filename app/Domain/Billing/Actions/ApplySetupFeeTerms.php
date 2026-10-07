@@ -11,6 +11,7 @@ use App\Domain\Billing\Support\CompanyPricing;
 use App\Domain\Billing\Support\MandateDeadline;
 use App\Domain\Billing\Support\ManualCollection;
 use App\Domain\Billing\Support\SetupFeeState;
+use App\Domain\Billing\Support\SetupFeeTills;
 use App\Domain\Licensing\Actions\RenewCompanyLicences;
 use App\Domain\Licensing\Actions\RenewLicence;
 use App\Domain\Licensing\Data\RenewalTerm;
@@ -120,8 +121,10 @@ class ApplySetupFeeTerms
         $renewed = DB::transaction(function () use ($company, $expiresAt, $below, $now) {
             $this->accounts->lock($company);
             $renewed = 0;
+            // P11: a till waiting for its added-till setup fee stays on its trial until that is paid.
+            $held = SetupFeeTills::heldLicenceIds($company->id);
 
-            foreach (RenewCompanyLicences::renewable($company)->get() as $licence) {
+            foreach (RenewCompanyLicences::renewable($company)->whereNotIn('id', $held)->get() as $licence) {
                 if ($licence->isRevoked() || ($licence->expires_at !== null && $licence->expires_at->greaterThanOrEqualTo($below))) {
                     continue;
                 }
@@ -181,7 +184,7 @@ class ApplySetupFeeTerms
             $this->accounts->lock($company);
             $moved = 0;
 
-            foreach (RenewCompanyLicences::renewable($company)->get() as $licence) {
+            foreach (RenewCompanyLicences::renewable($company)->whereNotIn('id', SetupFeeTills::heldLicenceIds($company->id))->get() as $licence) {
                 /** @var Licence $licence */
                 if ($licence->expires_at !== null || $licence->activated_at === null || ($licence->trial_ends_at !== null && $licence->trial_ends_at->greaterThanOrEqualTo($until))) {
                     continue;

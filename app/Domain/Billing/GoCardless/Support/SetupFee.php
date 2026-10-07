@@ -4,6 +4,7 @@ namespace App\Domain\Billing\GoCardless\Support;
 
 use App\Domain\Billing\Models\BillingAccount;
 use App\Domain\Billing\Support\InvoiceMaths;
+use App\Domain\Billing\Support\SetupFeeTills;
 use App\Domain\Billing\Support\Vat;
 use App\Domain\Licensing\Support\DefaultPlan;
 use App\Domain\Shared\Support\Money;
@@ -11,15 +12,24 @@ use App\Domain\Tenancy\Models\Company;
 
 /**
  * The setup fee of a company: its override, else its plan's `setup_fee` (net, pounds), with VAT per the billing
- * settings. Instalments split the VAT-inclusive total into equal monthly parts (the last one takes the pennies
+ * settings. A plan that charges it for each till (P11 `perTill`) asks the fee times the business's tills. Instalments split the VAT-inclusive total into equal monthly parts (the last one takes the pennies
  * left over), so they always add up to the quoted gross.
  */
 final class SetupFee
 {
-    /** The plan's fee (net). "0.00" without a plan. */
+    /** The plan's fee (net): per business, or per till times the tills (P11). "0.00" without a plan. */
     public static function planFee(Company $company): string
     {
-        return Money::normalise(DefaultPlan::for($company)->setup_fee ?? '0.00');
+        $plan = DefaultPlan::for($company);
+        $fee = Money::normalise($plan->setup_fee ?? '0.00');
+
+        return $plan !== null && $plan->setupFeePerTill() ? Money::mul($fee, SetupFeeTills::count($company)) : $fee;
+    }
+
+    /** P11: the setup fee for one till added later (net): the business's own per-till fee, else the plan's. */
+    public static function perTillFee(Company $company, BillingAccount $account): string
+    {
+        return $account->till_setup_fee_override ?? Money::normalise(DefaultPlan::for($company)->setup_fee ?? '0.00');
     }
 
     /** The fee this company pays (net): the override when set, else the plan's. */

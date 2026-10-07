@@ -1,6 +1,7 @@
 import {
     emptyUpfront,
     OnboardingBillingNote,
+    onboardingPlanFee,
     UpfrontPaymentFields,
     type OnboardingBillingOptions,
     type UpfrontPaymentValue,
@@ -368,7 +369,8 @@ export default function CreateTenant({ nations, maxTills, plans, defaultPlanId, 
                                     onChange={(key, value) => setData(key, value as never)}
                                     errors={errors}
                                     options={billing}
-                                    planFee={billing.setupFees[data.plan_id] ?? '0.00'}
+                                    planFee={onboardingPlanFee(billing, data.plan_id, data.tills).fee}
+                                    planFeeNote={onboardingPlanFee(billing, data.plan_id, data.tills).note}
                                 />
                             )}
                         </div>

@@ -77,9 +77,13 @@ export default function ShowPlan({ plan, features, activity }: ShowPlanProps) {
             <StatGrid>
                 {plan.billingType === 'setupOnly' ? (
                     <StatCard
-                        label="Setup fee"
+                        label={plan.setupFeeMode === 'perTill' ? 'Setup fee per till' : 'Setup fee'}
                         value={formatMoney(plan.setupFee)}
-                        hint={taxText('Setup fee only, + VAT, paid by hand. Paid in full = a licence that does not expire.')}
+                        hint={taxText(
+                            plan.setupFeeMode === 'perTill'
+                                ? 'Setup fee only, for each till (tills added later too), + VAT, paid by hand. Paid in full = a licence that does not expire.'
+                                : 'Setup fee only, + VAT, paid by hand. Paid in full = a licence that does not expire.',
+                        )}
                         icon={MoneyIcon}
                     />
                 ) : (
@@ -88,7 +92,7 @@ export default function ShowPlan({ plan, features, activity }: ShowPlanProps) {
                         value={formatMoney(plan.priceMonthly)}
                         hint={
                             plan.billingType === 'setupAndRecurring'
-                                ? `Per ${plan.pricingMode === 'perBranch' ? 'branch' : 'till'} ${byHand('by Direct Debit', 'invoiced')} · setup fee ${formatMoney(plan.setupFee)} + ${taxName()}`
+                                ? `Per ${plan.pricingMode === 'perBranch' ? 'branch' : 'till'} ${byHand('by Direct Debit', 'invoiced')} · setup fee ${formatMoney(plan.setupFee)}${plan.setupFeeMode === 'perTill' ? ' per till' : ''} + ${taxName()}`
                                 : `Per ${plan.pricingMode === 'perBranch' ? 'branch' : 'till'} ${byHand('by Direct Debit', 'invoiced')} · no setup fee`
                         }
                         icon={MoneyIcon}

@@ -3,6 +3,7 @@
 namespace App\Domain\Mail\Mailables;
 
 use App\Domain\Mail\Data\DirectDebitSetupData;
+use App\Domain\Mail\Enums\EmailCategory;
 use App\Domain\Mail\Support\MailFormat;
 use App\Domain\Shared\Country\Country;
 use Illuminate\Mail\Mailables\Content;
@@ -38,6 +39,11 @@ final class DirectDebitSetupMail extends BrandedMailable
             per: 'per month',
             tillCount: 2,
         ));
+    }
+
+    public function emailCategory(): EmailCategory
+    {
+        return EmailCategory::Reminders;
     }
 
     public function subjectLine(): string

@@ -1,6 +1,6 @@
 import { type StatusToneMap } from '@/components/shared/status-badge';
 
-export type EmailStatus = 'queued' | 'sent' | 'failed' | 'suppressed';
+export type EmailStatus = 'queued' | 'sent' | 'failed' | 'suppressed' | 'held' | 'discarded';
 
 /** A row from App\Http\Controllers\Admin\EmailLogController::row(). */
 export interface EmailLogRow {
@@ -58,4 +58,34 @@ export const emailStatusTones: StatusToneMap = {
     sent: 'success',
     failed: 'danger',
     suppressed: 'neutral',
+    held: 'warning',
+    discarded: 'neutral',
 };
+
+/** HeldEmailData::row (P11): an email waiting for an admin, with the values it will send. */
+export interface HeldEmailRow {
+    id: string;
+    company: { id: string; name: string } | null;
+    category: string;
+    categoryLabel: string;
+    template: string;
+    templateLabel: string;
+    to: string;
+    subject: string | null;
+    facts: { label: string; value: string }[];
+    /** Why it cannot be sent as it is (a void invoice…); discard it. */
+    problem: string | null;
+    status: 'held' | 'sent' | 'discarded';
+    createdAt: string | null;
+    actionedAt: string | null;
+    actionedBy: string | null;
+}
+
+/** Admin → Settings → Emails (P11). */
+export interface EmailCategorySetting {
+    value: string;
+    label: string;
+    description: string;
+    sendAutomatically: boolean;
+    held: number;
+}

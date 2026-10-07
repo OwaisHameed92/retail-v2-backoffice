@@ -3,6 +3,7 @@
 namespace App\Domain\Mail\Mailables;
 
 use App\Domain\Mail\Data\DirectDebitFailedData;
+use App\Domain\Mail\Enums\EmailCategory;
 use App\Domain\Mail\Support\MailFormat;
 use Illuminate\Mail\Mailables\Content;
 
@@ -36,6 +37,11 @@ final class DirectDebitFailedMail extends BrandedMailable
             reason: 'The bank account had insufficient funds.',
             bankDetails: ['Switch & Save Ltd', 'Sort code 00-00-00', 'Account 00000000'],
         ));
+    }
+
+    public function emailCategory(): EmailCategory
+    {
+        return EmailCategory::Reminders;
     }
 
     public function subjectLine(): string

@@ -3,6 +3,7 @@
 namespace App\Domain\Mail\Mailables;
 
 use App\Domain\Mail\Data\OwnerAlertData;
+use App\Domain\Mail\Enums\EmailCategory;
 use App\Domain\Mail\Support\MailFormat;
 use App\Domain\Shared\Country\LocalText;
 use Carbon\CarbonImmutable;
@@ -47,6 +48,11 @@ final class OwnerAlertResolvedMail extends BrandedMailable
             settingsUrl: config('sspos.portal_url').'/app/settings/notifications',
             resolvedAt: CarbonImmutable::now(),
         ));
+    }
+
+    public function emailCategory(): EmailCategory
+    {
+        return EmailCategory::OwnerAlerts;
     }
 
     public function subjectLine(): string
