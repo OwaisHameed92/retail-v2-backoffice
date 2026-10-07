@@ -3,6 +3,7 @@
 use App\Domain\Admin\Enums\AdminRole;
 use App\Domain\Billing\Actions\DeleteDraftInvoice;
 use App\Domain\Billing\Actions\IssueInvoice;
+use App\Domain\Billing\Enums\InvoiceKind;
 use App\Domain\Billing\Enums\InvoiceStatus;
 use App\Domain\Billing\Models\CreditNote;
 use App\Domain\Billing\Models\Invoice;
@@ -228,4 +229,14 @@ test('the credit note route accepts "£15" and flashes the note number', functio
         ->assertSessionHasErrors(['amount', 'reason']);
 
     expect($this->fresh($invoice)->balance)->toBe('75.00');
+});
+
+test('"void and re-issue" keeps the kind of invoice: a void setup fee is re-drafted as a setup fee', function () {
+    $invoice = $this->issuedFor($this->company);
+    $invoice->forceFill(['kind' => InvoiceKind::SetupFee])->save();
+
+    [, $draft] = $this->voidIt($invoice->fresh(), 'Setup fee for two tills', redraft: true);
+
+    expect($draft->kind)->toBe(InvoiceKind::SetupFee)
+        ->and($draft->currency)->toBe($invoice->currency);
 });

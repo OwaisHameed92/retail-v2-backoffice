@@ -110,6 +110,9 @@ class VoidInvoice
     {
         $draft = new Invoice([
             'status' => InvoiceStatus::Draft,
+            // The corrected draft is the same kind of invoice: a void setup fee is re-issued as a setup fee.
+            'kind' => $void->kind,
+            'currency' => $void->currency,
             'cycle' => $void->cycle,
             'period_start' => $void->period_start,
             'period_end' => $void->period_end,
