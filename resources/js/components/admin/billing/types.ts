@@ -205,9 +205,54 @@ export interface TenantBillingData {
     openInvoices: OpenInvoice[];
     options: { cycles: Option<BillingCycle>[]; methods: Option<PaymentMethod>[] };
     directDebit: DirectDebitData;
+    /** Change plan (owner 2026-10-07): the active plans; null without billing.manage. */
+    planChange: PlanChangeOptions | null;
     vatEnabled: boolean;
     vatRate: string;
     canManage: boolean;
+}
+
+/** PlanChangePreview::options. Money is formatted. */
+export interface PlanChangeOptions {
+    currentPlanId: string | null;
+    plans: {
+        id: string;
+        name: string;
+        typeLabel: string;
+        setupFee: string | null;
+        monthly: string | null;
+        yearly: string | null;
+        features: string[];
+        current: boolean;
+    }[];
+}
+
+/** PlanChangePreview::toArray: what a plan change does, in plain words (writes nothing). */
+export interface PlanChangePreviewData {
+    from: { id: string; name: string; typeLabel: string } | null;
+    to: { id: string; name: string; typeLabel: string };
+    blocked: string | null;
+    features: { gained: string[]; lost: string[]; customShops: { name: string; features: string[] }[]; lines: string[] };
+    setupFee: {
+        applies: boolean;
+        kind: 'setupFee' | 'tillSetupFee' | null;
+        /** Net decimal strings ("1200.00"). */
+        suggested: string | null;
+        amount: string | null;
+        gross: string | null;
+        tills: number;
+        covered: number;
+        uncovered: number;
+        perTill: boolean;
+        vatRate: string | null;
+        taxName: string;
+        lines: string[];
+    };
+    recurring: { title: string; lines: string[] };
+    licences: { lines: string[] };
+    invoices: { title: string; amount: string; when: string }[];
+    notes: string[];
+    email: string;
 }
 
 export type BillingMode = 'upfrontCash' | 'directDebit';

@@ -2,19 +2,12 @@
 
 namespace App\Domain\Billing\Actions;
 
-use App\Domain\Billing\Enums\InvoiceKind;
-use App\Domain\Billing\Enums\InvoiceStatus;
 use App\Domain\Billing\GoCardless\Support\SetupFee;
-use App\Domain\Billing\Models\BillingAccount;
 use App\Domain\Billing\Models\Invoice;
-use App\Domain\Billing\Models\InvoiceLine;
-use App\Domain\Billing\Support\Actor;
 use App\Domain\Billing\Support\BillingAccounts;
-use App\Domain\Billing\Support\BillingDates;
 use App\Domain\Billing\Support\BillingFormat;
-use App\Domain\Billing\Support\InvoiceMaths;
+use App\Domain\Billing\Support\SetupFeeInvoices;
 use App\Domain\Billing\Support\SetupFeeTills;
-use App\Domain\Billing\Support\Vat;
 use App\Domain\Licensing\Models\Licence;
 use App\Domain\Shared\Actions\RecordAudit;
 use App\Domain\Shared\Support\Money;
@@ -97,7 +90,7 @@ class ChargeAddedTills
                 return null;
             }
 
-            $invoice = $this->draft($company, $account, $charged, $net);
+            $invoice = SetupFeeInvoices::tillsDraft($company, $account, $charged, $net);
 
             $this->audit->handle('billing.till_setup_fee_invoiced', $account, null, [
                 'tills' => $chargeable,
@@ -108,69 +101,5 @@ class ChargeAddedTills
         });
 
         return $draft === null ? null : $this->issueInvoice->handle($draft, send: true);
-    }
-
-    /**
-     * One draft invoice with a line per till; the net is split evenly (the last line takes the pennies left).
-     *
-     * @param  list<Licence>  $licences
-     */
-    private function draft(Company $company, BillingAccount $account, array $licences, string $net): Invoice
-    {
-        $today = BillingDates::today();
-        $vatRate = Vat::rateFor($account);
-        $count = count($licences);
-        $each = Money::round(bcdiv(Money::parse($net), (string) $count, 6));
-        $left = $net;
-        $lines = [];
-
-        foreach ($licences as $i => $licence) {
-            $lineNet = $i === $count - 1 ? $left : $each;
-            $left = Money::sub($left, $lineNet);
-            $vat = InvoiceMaths::vatOn($lineNet, $vatRate);
-            $lines[] = ['licence' => $licence, 'net' => $lineNet, 'vat' => $vat, 'gross' => Money::add($lineNet, $vat)];
-        }
-
-        $totals = InvoiceMaths::totals($lines);
-
-        $invoice = new Invoice([
-            'status' => InvoiceStatus::Draft,
-            'kind' => InvoiceKind::TillSetupFee,
-            'cycle' => $account->cycle,
-            'period_start' => $today,
-            'period_end' => $today,
-            'vat_rate' => $vatRate,
-            'subtotal' => $totals['subtotal'],
-            'vat_total' => $totals['vat_total'],
-            'total' => $totals['total'],
-            'balance' => $totals['total'],
-            'created_by_admin_id' => Actor::adminId(),
-        ]);
-        $invoice->company_id = $company->id;
-        $invoice->save();
-
-        foreach ($lines as $position => $line) {
-            /** @var Licence $licence */
-            $licence = $line['licence'];
-            $licence->loadMissing(['branch', 'register']);
-
-            $row = new InvoiceLine([
-                'position' => $position + 1,
-                'description' => 'Setup fee · '.($licence->register->name ?? 'Till').' ('.($licence->branch->name ?? 'Branch').')',
-                'quantity' => '1.0000',
-                'unit_price' => $line['net'],
-                'net' => $line['net'],
-                'vat' => $line['vat'],
-                'gross' => $line['gross'],
-                'licence_id' => $licence->id,
-                'register_id' => $licence->register_id,
-                'plan_id' => $licence->plan_id,
-            ]);
-            $row->company_id = $company->id;
-            $row->invoice_id = $invoice->id;
-            $row->save();
-        }
-
-        return $invoice;
     }
 }

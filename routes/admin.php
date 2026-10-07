@@ -20,6 +20,7 @@ use App\Http\Controllers\Admin\Billing\InvoiceActionController;
 use App\Http\Controllers\Admin\Billing\InvoiceController;
 use App\Http\Controllers\Admin\Billing\PaymentController;
 use App\Http\Controllers\Admin\Billing\TenantBillingController;
+use App\Http\Controllers\Admin\Billing\TenantPlanChangeController;
 use App\Http\Controllers\Admin\Billing\TenantPricingController;
 use App\Http\Controllers\Admin\Catalogue\ContributionController;
 use App\Http\Controllers\Admin\Catalogue\MasterCatalogueController;
@@ -260,6 +261,12 @@ Route::middleware(['auth:admin', AdminIsActive::class, BlockAdminWhileImpersonat
             Route::post('send-held', [HeldEmailController::class, 'sendAll'])->name('send-held')->middleware('throttle:10,1');
             Route::post('welcome', [HeldEmailController::class, 'welcome'])->name('welcome')->middleware('throttle:10,1');
             Route::post('password-link', [HeldEmailController::class, 'passwordLink'])->name('password-link')->middleware('throttle:10,1');
+        });
+
+        // Change plan (owner 2026-10-07): Billing tab → "Change plan". The preview writes nothing; POST applies it.
+        Route::prefix('tenants/{company}/plan-change')->name('tenants.plan-change.')->group(function () {
+            Route::get('/', [TenantPlanChangeController::class, 'preview'])->name('preview')->middleware('throttle:120,1');
+            Route::post('/', [TenantPlanChangeController::class, 'store'])->name('store')->middleware('throttle:10,1');
         });
     });
 
