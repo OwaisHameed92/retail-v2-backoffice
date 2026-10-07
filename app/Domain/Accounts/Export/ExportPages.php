@@ -63,7 +63,7 @@ final class ExportPages
         ]);
         sort($codes, SORT_STRING);
 
-        $vatNames = ExportDefaults::VAT_CODES;
+        $vatNames = ExportDefaults::vatCodes();
 
         foreach (VatRate::query()->orderBy('code')->get(['code', 'name', 'percentage']) as $rate) {
             $code = (string) $rate->code;

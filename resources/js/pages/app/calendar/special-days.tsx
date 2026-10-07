@@ -4,8 +4,9 @@ import { EmptyState } from '@/components/shared/empty-state';
 import { SectionCard } from '@/components/shared/section-card';
 import { StatusPill } from '@/components/shared/status-badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { CalendarX2 } from 'lucide-react';
+import { hasModule } from '@/lib/country-modules';
 import { publicHolidays } from '@/lib/country-text';
+import { CalendarX2 } from 'lucide-react';
 
 /** Module 5.9: the tills' special days (read only: each shop sets them on its till). */
 export default function CalendarSpecialDays({ days, filters, shops, total, limit }: SpecialDaysProps) {
@@ -16,7 +17,9 @@ export default function CalendarSpecialDays({ days, filters, shops, total, limit
             tab="special"
             filters={filters}
             title="Special days"
-            description={publicHolidays("Bank holidays, closures and changed hours, as each shop's till holds them. Change them on the till: they arrive here after it syncs.")}
+            description={publicHolidays(
+                "Bank holidays, closures and changed hours, as each shop's till holds them. Change them on the till: they arrive here after it syncs.",
+            )}
         >
             <SectionCard
                 title={filters.when === 'past' ? 'Past special days' : filters.when === 'all' ? 'All special days' : 'Upcoming special days'}
@@ -38,7 +41,7 @@ export default function CalendarSpecialDays({ days, filters, shops, total, limit
                                 <TableHead>Day</TableHead>
                                 {showShop && <TableHead>Shop</TableHead>}
                                 <TableHead>Opening</TableHead>
-                                <TableHead className="hidden md:table-cell">Alcohol sales</TableHead>
+                                {hasModule('alcoholLicensing') && <TableHead className="hidden md:table-cell">Alcohol sales</TableHead>}
                                 <TableHead className="hidden lg:table-cell">Notes</TableHead>
                             </TableRow>
                         </TableHeader>
@@ -59,9 +62,11 @@ export default function CalendarSpecialDays({ days, filters, shops, total, limit
                                             <span className="tabular-nums">{d.opens ? hoursText(d.opens, d.closes) : 'Usual hours'}</span>
                                         )}
                                     </TableCell>
-                                    <TableCell className="text-muted-foreground hidden tabular-nums md:table-cell">
-                                        {d.licensedOpens ? hoursText(d.licensedOpens, d.licensedCloses) : 'Usual hours'}
-                                    </TableCell>
+                                    {hasModule('alcoholLicensing') && (
+                                        <TableCell className="text-muted-foreground hidden tabular-nums md:table-cell">
+                                            {d.licensedOpens ? hoursText(d.licensedOpens, d.licensedCloses) : 'Usual hours'}
+                                        </TableCell>
+                                    )}
                                     <TableCell className="text-muted-foreground hidden max-w-xs truncate lg:table-cell">{d.notes ?? '—'}</TableCell>
                                 </TableRow>
                             ))}

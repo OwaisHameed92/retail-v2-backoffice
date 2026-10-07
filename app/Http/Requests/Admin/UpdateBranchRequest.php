@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests\Admin;
 
+use App\Domain\Shared\Country\CountryModules;
 use App\Domain\Tenancy\Data\BranchDetails;
+use App\Domain\Tenancy\Models\Branch;
 use App\Domain\Tenancy\Models\Company;
 use Illuminate\Foundation\Http\FormRequest;
 
@@ -48,6 +50,13 @@ class UpdateBranchRequest extends FormRequest
 
     public function details(): BranchDetails
     {
-        return TenantRules::branchDetails($this);
+        $company = $this->route('company');
+        $branch = $this->route('branch');
+        // Phase P10: the stored branch, so fields the country profile hides keep their values (not read on GB).
+        $hides = ! CountryModules::on(CountryModules::DEPOSIT_RETURN) || ! CountryModules::on(CountryModules::ALCOHOL_LICENSING);
+        $stored = $hides && $company instanceof Company && is_string($branch)
+            ? Branch::withoutCompanyScope()->whereBelongsTo($company)->find($branch) : null;
+
+        return TenantRules::branchDetails($this, '', $stored);
     }
 }

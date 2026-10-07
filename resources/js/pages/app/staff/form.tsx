@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import AppLayout from '@/layouts/app-layout';
 import { currencySymbol } from '@/lib/country';
+import { hasModule } from '@/lib/country-modules';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { CircleAlert, LoaderCircle } from 'lucide-react';
 import { type FormEventHandler } from 'react';
@@ -207,7 +208,7 @@ export default function StaffForm({ member, options, canEdit }: StaffFormProps) 
 
                         <FormSection title="On the till" description="How the till treats them once they sign in.">
                             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                                {FLAGS.map((f) => (
+                                {FLAGS.filter((f) => f.key !== 'is_personal_licence_holder' || hasModule('alcoholLicensing')).map((f) => (
                                     <CheckField
                                         key={f.key}
                                         id={f.key}

@@ -8,6 +8,7 @@ import { type FormEventHandler } from 'react';
 import { CheckRow, OptionSelect } from './fields';
 import { type CatalogueOptions, type CategoryNode, type DepartmentNode } from './types';
 import { taxText } from '@/lib/country';
+import { visibleAgeRules } from '@/lib/country-modules';
 
 export type GroupTarget =
     | { kind: 'department'; department: DepartmentNode | null }
@@ -116,7 +117,7 @@ export function GroupDialog({ target, options, onClose }: { target: GroupTarget;
                         </FormField>
                         {!isDepartment && (
                             <FormField id="group-age" label="Default age check" error={errors.age_rule_default}>
-                                <OptionSelect id="group-age" value={data.age_rule_default} options={options.ageRules} onChange={(v) => setData('age_rule_default', v)} />
+                                <OptionSelect id="group-age" value={data.age_rule_default} options={visibleAgeRules(options.ageRules, data.age_rule_default)} onChange={(v) => setData('age_rule_default', v)} />
                             </FormField>
                         )}
                     </FormGrid>

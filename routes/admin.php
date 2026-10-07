@@ -96,7 +96,8 @@ Route::middleware(['auth:admin', AdminIsActive::class, BlockAdminWhileImpersonat
         Route::get('/', [MasterCatalogueController::class, 'index'])->name('index');
         Route::get('create', [MasterCatalogueController::class, 'create'])->name('create');
         Route::post('/', [MasterCatalogueController::class, 'store'])->name('store')->middleware('throttle:120,1');
-        Route::post('starter', [MasterCatalogueController::class, 'starter'])->name('starter')->middleware('throttle:5,1');
+        // The starter set is ~600 UK convenience products: 404 where the country profile hides it (P10, PK).
+        Route::post('starter', [MasterCatalogueController::class, 'starter'])->name('starter')->middleware(['country.feature:ukStarterSet', 'throttle:5,1']);
         Route::get('imports', [MasterImportController::class, 'index'])->name('imports.index');
         Route::get('imports/template', [MasterImportController::class, 'template'])->name('imports.template');
         Route::post('imports', [MasterImportController::class, 'store'])->name('imports.store')->middleware('throttle:10,1');

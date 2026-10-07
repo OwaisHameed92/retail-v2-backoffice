@@ -1,6 +1,7 @@
 import { DialogForm } from '@/components/admin/leads/dialog-form';
 import { FormField } from '@/components/shared/form-section';
 import { Input } from '@/components/ui/input';
+import { hasModule } from '@/lib/country-modules';
 import { useForm } from '@inertiajs/react';
 import { type FormEventHandler } from 'react';
 import { CheckField } from './fields';
@@ -88,7 +89,7 @@ export function PaymentTypeDialog({ row, open, onOpenChange }: { row: PaymentTyp
             <fieldset className="grid gap-3">
                 <legend className="mb-2 text-sm font-semibold">What it is</legend>
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                    {KIND.map(({ flag, label, help }) => (
+                    {KIND.filter(({ flag }) => flag !== 'is_drs_refund' || hasModule('depositReturn')).map(({ flag, label, help }) => (
                         <CheckField key={flag} id={`pt-${flag}`} label={label} help={help} checked={data[flag]} onChange={(v) => setData(flag, v)} />
                     ))}
                 </div>

@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input';
 import { taxName, taxText } from '@/lib/country';
 import { type ReactNode } from 'react';
 import { type MasterOptions, type MasterValues } from './types';
+import { visibleAgeRules } from '@/lib/country-modules';
 
 interface Props {
     data: MasterValues;
@@ -125,7 +126,7 @@ export function MasterFields({ data, setData, errors, options, withBarcode = tru
                         <MoneyInput id="rrp" value={data.rrp} invalid={!!errors.rrp} onChange={(e) => setData('rrp', e.target.value)} />
                     </FormField>
                     <FormField id="age_rule" label="Age check" error={errors.age_rule}>
-                        <OptionSelect id="age_rule" value={data.age_rule} options={options.ageRules} onChange={(v) => setData('age_rule', v)} />
+                        <OptionSelect id="age_rule" value={data.age_rule} options={visibleAgeRules(options.ageRules, data.age_rule)} onChange={(v) => setData('age_rule', v)} />
                     </FormField>
                     <FormField id="image_url" label="Image address" optional help="https:// only." error={errors.image_url}>
                         <Input

@@ -2,6 +2,7 @@ import { FormField, FormGrid, FormSection } from '@/components/shared/form-secti
 import { Input } from '@/components/ui/input';
 import { CheckRow, MoneyInput, NumberField, OptionSelect } from './fields';
 import { type SectionProps } from './types';
+import { hasModule, visibleAgeRules } from '@/lib/country-modules';
 import { ukOnly } from '@/lib/country-text';
 
 /** Age checks, sale limits and the legal flags the till and reports use. */
@@ -10,7 +11,7 @@ export function RulesSection({ data, setData, errors, options }: SectionProps) {
         <FormSection title="Age checks and rules" description="The till asks for ID and applies limits from these.">
             <FormGrid>
                 <FormField id="age_rule" label="Age check" error={errors.age_rule}>
-                    <OptionSelect id="age_rule" value={data.age_rule} options={options.ageRules} onChange={(v) => setData('age_rule', v)} />
+                    <OptionSelect id="age_rule" value={data.age_rule} options={visibleAgeRules(options.ageRules, data.age_rule)} onChange={(v) => setData('age_rule', v)} />
                 </FormField>
                 <FormField id="max_qty_per_sale" label="Most per sale" optional help="Empty for no limit." error={errors.max_qty_per_sale}>
                     <NumberField id="max_qty_per_sale" inputMode="numeric" value={data.max_qty_per_sale} invalid={!!errors.max_qty_per_sale} onChange={(e) => setData('max_qty_per_sale', e.target.value)} />
@@ -22,7 +23,7 @@ export function RulesSection({ data, setData, errors, options }: SectionProps) {
                 </FormField>
             )}
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <CheckRow id="is_alcohol" checked={data.is_alcohol} onChange={(v) => setData('is_alcohol', v)} label="Alcohol" help="Licensing hours and alcohol duty reports.">
+                <CheckRow id="is_alcohol" checked={data.is_alcohol} onChange={(v) => setData('is_alcohol', v)} label="Alcohol" help={hasModule('alcoholLicensing') ? 'Licensing hours and alcohol duty reports.' : 'Strength and volume for the till.'}>
                     <FormGrid>
                         <FormField id="abv_percent" label="Strength (ABV)" optional error={errors.abv_percent}>
                             <NumberField id="abv_percent" suffix="%" value={data.abv_percent} invalid={!!errors.abv_percent} onChange={(e) => setData('abv_percent', e.target.value)} />
@@ -32,16 +33,22 @@ export function RulesSection({ data, setData, errors, options }: SectionProps) {
                         </FormField>
                     </FormGrid>
                 </CheckRow>
-                <CheckRow id="is_deposit_item" checked={data.is_deposit_item} onChange={(v) => setData('is_deposit_item', v)} label="Deposit return item" help="Adds the deposit to each sale.">
-                    <FormField id="deposit_amount" label="Deposit" error={errors.deposit_amount}>
-                        <MoneyInput id="deposit_amount" value={data.deposit_amount} invalid={!!errors.deposit_amount} onChange={(e) => setData('deposit_amount', e.target.value)} />
-                    </FormField>
-                </CheckRow>
+                {hasModule('depositReturn') && (
+                    <CheckRow id="is_deposit_item" checked={data.is_deposit_item} onChange={(v) => setData('is_deposit_item', v)} label="Deposit return item" help="Adds the deposit to each sale.">
+                        <FormField id="deposit_amount" label="Deposit" error={errors.deposit_amount}>
+                            <MoneyInput id="deposit_amount" value={data.deposit_amount} invalid={!!errors.deposit_amount} onChange={(e) => setData('deposit_amount', e.target.value)} />
+                        </FormField>
+                    </CheckRow>
+                )}
                 <CheckRow id="is_tobacco" checked={data.is_tobacco} onChange={(v) => setData('is_tobacco', v)} label="Tobacco" help="Kept out of promotions and discounts." />
-                <CheckRow id="vape_duty_applies" checked={data.vape_duty_applies} onChange={(v) => setData('vape_duty_applies', v)} label="Vaping duty applies" help="Counted in vaping duty returns." />
-                <CheckRow id="is_lottery" checked={data.is_lottery} onChange={(v) => setData('is_lottery', v)} label="Lottery" help="Sold as a lottery item." />
+                {hasModule('vapingDuty') && (
+                    <CheckRow id="vape_duty_applies" checked={data.vape_duty_applies} onChange={(v) => setData('vape_duty_applies', v)} label="Vaping duty applies" help="Counted in vaping duty returns." />
+                )}
+                {hasModule('lottery') && <CheckRow id="is_lottery" checked={data.is_lottery} onChange={(v) => setData('is_lottery', v)} label="Lottery" help="Sold as a lottery item." />}
                 <CheckRow id="is_knife" checked={data.is_knife} onChange={(v) => setData('is_knife', v)} label="Knife or blade" help={ukOnly('Challenge 25 and the refusals log.', 'Age check and the refusals log.')} />
-                <CheckRow id="is_hfss" checked={data.is_hfss} onChange={(v) => setData('is_hfss', v)} label="High fat, sugar or salt" help="Kept out of HFSS-restricted promotions." />
+                {hasModule('hfss') && (
+                    <CheckRow id="is_hfss" checked={data.is_hfss} onChange={(v) => setData('is_hfss', v)} label="High fat, sugar or salt" help="Kept out of HFSS-restricted promotions." />
+                )}
                 <CheckRow id="is_banned" checked={data.is_banned} onChange={(v) => setData('is_banned', v)} label="Do not sell" help="The till refuses to sell it." />
             </div>
             <FormGrid>

@@ -5,6 +5,7 @@ import { FormField, FormGrid, FormSection } from '@/components/shared/form-secti
 import { Input } from '@/components/ui/input';
 import { timeZoneLabel } from '@/lib/country';
 import { DaysPicker, PriceTiersEditor, TYPE_HELP, TypePicker } from './offer-pickers';
+import { hasModule } from '@/lib/country-modules';
 
 export interface OfferSectionProps {
     data: PromotionValues;
@@ -169,7 +170,9 @@ export function WhenSection({ data, set, errors, options, restricted }: OfferSec
             <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                 <CheckField id="allow_stack" label="Can combine with other offers" checked={data.allow_stack} onChange={(v) => set('allow_stack', v)} />
                 <CheckField id="is_exclusive" label="Exclusive" help="No other offer on the same items." checked={data.is_exclusive} onChange={(v) => set('is_exclusive', v)} />
-                <CheckField id="is_hfss_safe" label="Allowed on HFSS food" help="Only if it is not a volume offer on less healthy food." checked={data.is_hfss_safe} onChange={(v) => set('is_hfss_safe', v)} />
+                {hasModule('hfss') && (
+                    <CheckField id="is_hfss_safe" label="Allowed on HFSS food" help="Only if it is not a volume offer on less healthy food." checked={data.is_hfss_safe} onChange={(v) => set('is_hfss_safe', v)} />
+                )}
                 <CheckField id="requires_coupon" label="Needs a coupon code" checked={data.requires_coupon} onChange={(v) => set('requires_coupon', v)} />
             </div>
             {data.requires_coupon && (

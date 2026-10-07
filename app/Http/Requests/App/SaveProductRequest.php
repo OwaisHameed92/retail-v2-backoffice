@@ -4,6 +4,7 @@ namespace App\Http\Requests\App;
 
 use App\Domain\Catalogue\Support\ProductFields;
 use App\Domain\Shared\Country\Country;
+use App\Domain\Shared\Country\CountryModules;
 use App\Domain\Shared\Country\LocalText;
 use App\Domain\TillData\Enums\AgeRule;
 use App\Domain\TillData\Enums\NegativeStockPolicy;
@@ -23,6 +24,17 @@ class SaveProductRequest extends CompanyWideWriteRequest
 
     private const COST = 'regex:/^\d{1,8}(\.\d{1,4})?$/';
 
+    /**
+     * Phase P10: product fields of a UK till module. Where the country profile hides the module the form does not
+     * show them, they are not validated and SaveProduct leaves them as stored (a new product gets the defaults).
+     */
+    public const MODULE_FIELDS = [
+        CountryModules::DEPOSIT_RETURN => ['is_deposit_item', 'deposit_amount'],
+        CountryModules::LOTTERY => ['is_lottery'],
+        CountryModules::HFSS => ['is_hfss'],
+        CountryModules::VAPING_DUTY => ['vape_duty_applies'],
+    ];
+
     protected function prepareForValidation(): void
     {
         $clean = [];
@@ -38,6 +50,14 @@ class SaveProductRequest extends CompanyWideWriteRequest
      * @return array<string, mixed>
      */
     public function rules(): array
+    {
+        return Arr::except($this->allRules(), CountryModules::hiddenFields(self::MODULE_FIELDS));
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function allRules(): array
     {
         return [
             'name' => ['required', 'string', 'max:255'],
@@ -113,7 +133,7 @@ class SaveProductRequest extends CompanyWideWriteRequest
      */
     public function productAttributes(): array
     {
-        return Arr::only($this->validated(), ProductFields::EDITABLE);
+        return Arr::except(Arr::only($this->validated(), ProductFields::EDITABLE), CountryModules::hiddenFields(self::MODULE_FIELDS));
     }
 
     /**

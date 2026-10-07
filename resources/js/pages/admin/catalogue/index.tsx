@@ -14,6 +14,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import AdminLayout from '@/layouts/admin-layout';
 import { formatNumber, taxName } from '@/lib/country';
+import { hasModule } from '@/lib/country-modules';
 import { Head, Link, router } from '@inertiajs/react';
 import { type ColumnDef } from '@tanstack/react-table';
 import { BookOpenCheck, Copy, Inbox, Package, Plus, Sparkles, Upload } from 'lucide-react';
@@ -100,7 +101,8 @@ export default function MasterCatalogue({ products, filters, sources, department
             ),
         );
 
-    const starterButton = (
+    // Pakistan plan P10: the starter set is UK products, not offered where the country profile hides it.
+    const starterButton = hasModule('ukStarterSet') ? (
         <ConfirmDialog
             trigger={
                 <Button variant="outline">
@@ -114,7 +116,7 @@ export default function MasterCatalogue({ products, filters, sources, department
             processing={loading}
             onConfirm={loadStarter}
         />
-    );
+    ) : null;
 
     return (
         <AdminLayout>
@@ -215,8 +217,12 @@ export default function MasterCatalogue({ products, filters, sources, department
                         <EmptyState
                             icon={BookOpenCheck}
                             title="The catalogue is empty"
-                            body="Load the starter set to get going, then load a licensed supplier file or add products by hand."
-                            action={starterButton}
+                            body={
+                                starterButton
+                                    ? 'Load the starter set to get going, then load a licensed supplier file or add products by hand.'
+                                    : 'Load a licensed supplier file or add products by hand to get going.'
+                            }
+                            action={starterButton ?? undefined}
                         />
                     )
                 }

@@ -3,6 +3,7 @@
 namespace App\Domain\ShopSettings\Support;
 
 use App\Domain\Shared\Country\Country;
+use App\Domain\Shared\Country\CountryModules;
 use App\Domain\Shared\Country\LocalText;
 use App\Domain\Shared\Country\MoneyFormat;
 use App\Domain\TillData\Sync\SettingSyncPolicy;
@@ -20,6 +21,12 @@ use Illuminate\Validation\ValidationException;
 final class SettingCatalogue
 {
     public const TYPES = ['bool', 'int', 'money', 'percent', 'decimal', 'text', 'multiline', 'choice', 'time'];
+
+    /** Phase P10: settings of a UK till module, left out where the country profile hides it (the tills keep them). */
+    private const MODULE_SETTINGS = [
+        CountryModules::DEPOSIT_RETURN => ['receipt.show_drs_lines'],
+        CountryModules::LOTTERY => ['customers.loyalty_points_on_lottery'],
+    ];
 
     /** @var array<string, Section>|null */
     private static ?array $sections = null;
@@ -66,9 +73,13 @@ final class SettingCatalogue
             'compliance.refusal_register_enabled' => ['Refusals register', 'Staff record each refused sale.'],
         ];
 
+        $hidden = CountryModules::hiddenFields(self::MODULE_SETTINGS);
+
         foreach ($sections as &$section) {
             $section['title'] = $country->taxText($section['title']);
             $section['description'] = $country->taxText($section['description']);
+            // Not shown and not saved from the portal (normalise() refuses an unknown key); the tills' values stay.
+            $section['settings'] = array_diff_key($section['settings'], array_flip($hidden));
 
             foreach ($section['settings'] as $key => &$definition) {
                 [$definition['label'], $definition['help']] = $ids[$key] ?? [$country->taxText($definition['label']), LocalText::domains($country->taxText($definition['help']))];
