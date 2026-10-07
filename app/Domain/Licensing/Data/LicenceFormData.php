@@ -7,6 +7,7 @@ use App\Domain\Licensing\Actions\UpdateBranchLimits;
 use App\Domain\Licensing\Api\Support\LicenceToken;
 use App\Domain\Licensing\Enums\LicenceLengthUnit;
 use App\Domain\Licensing\Signing\Sspos\TokenKind;
+use App\Domain\Licensing\Support\PlanFeatures;
 use App\Domain\Plans\Enums\Feature;
 use App\Domain\Plans\Models\Plan;
 use App\Domain\Tenancy\Enums\BusinessType;
@@ -24,9 +25,10 @@ final class LicenceFormData
     /**
      * @return array<string, mixed>
      */
-    public static function branch(Branch $branch): array
+    public static function branch(Branch $branch, ?Plan $plan): array
     {
         $settings = BranchLicenceSettings::of($branch);
+        $planFeatures = PlanFeatures::forBranch($plan);
 
         return [
             'maxRegisters' => $settings->maxRegisters,
@@ -36,6 +38,9 @@ final class LicenceFormData
             'lengthLabel' => $settings->lengthLabel(),
             'validFrom' => $settings->validFrom?->toIso8601String(),
             'features' => $settings->featureValues(),
+            // Fix 2026-10-07: the plan's features (what null means) and whether the branch has its own that differ.
+            'planFeatures' => array_map(fn (Feature $feature) => $feature->value, $planFeatures),
+            'featuresCustom' => PlanFeatures::isCustom($branch, $plan),
             'tillsInUse' => TenantLimits::activeTills($branch->id),
             'keysInUse' => IssueLicence::keysInUse($branch->id),
             'keysActivated' => LicenceToken::registersInUse($branch->id),

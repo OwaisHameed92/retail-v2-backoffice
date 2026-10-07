@@ -196,6 +196,7 @@ Route::middleware(['auth:admin', AdminIsActive::class, BlockAdminWhileImpersonat
             Route::post('{company}/registers/{register}/licence', [TenantLicenceController::class, 'issueForRegister'])->name('registers.licence');
             // Licence form (module 1.11): a branch's licence settings and the company's branch limits.
             Route::put('{company}/branches/{branch}/licence', [BranchLicenceController::class, 'update'])->name('branches.licence');
+            Route::delete('{company}/branches/{branch}/licence/features', [BranchLicenceController::class, 'usePlanFeatures'])->name('branches.licence.features.reset');
             Route::put('{company}/branch-limits', [BranchLicenceController::class, 'limits'])->name('branch-limits');
             // Module 2.1: a branch's sync key. Generate answers JSON (the key is shown once).
             Route::post('{company}/branches/{branch}/sync-key', [BranchSyncKeyController::class, 'generate'])->name('branches.sync-key.generate');

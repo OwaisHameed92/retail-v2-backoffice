@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin\Licences;
 
 use App\Domain\Licensing\Actions\UpdateBranchLicence;
 use App\Domain\Licensing\Actions\UpdateBranchLimits;
+use App\Domain\Licensing\Actions\UseBranchPlanFeatures;
 use App\Domain\Tenancy\Models\Company;
 use App\Http\Controllers\Admin\TenantBranchController;
 use App\Http\Controllers\Controller;
@@ -22,6 +23,14 @@ class BranchLicenceController extends Controller
         $model = $update->handle(TenantBranchController::find($company, $branch), $request->settings());
 
         return back()->with('success', "Licence settings for {$model->name} saved. Its tills get the new key details at their next check-in.");
+    }
+
+    /** "Use the plan's features": the branch follows its plan again; its tills get the plan's at next check-in. */
+    public function usePlanFeatures(Company $company, string $branch, UseBranchPlanFeatures $usePlan): RedirectResponse
+    {
+        $model = $usePlan->handle(TenantBranchController::find($company, $branch));
+
+        return back()->with('success', "{$model->name} now uses the plan's features. Its tills get them at their next check-in.");
     }
 
     public function limits(BranchLimitsRequest $request, Company $company, UpdateBranchLimits $update): RedirectResponse

@@ -115,19 +115,21 @@ export default function CreateTenant({ nations, maxTills, plans, defaultPlanId, 
         length: '',
         length_unit: '',
         valid_from: '',
+        // Fix 2026-10-07: the plan's features unless "Customise for this shop" (then sent; else null = follow the plan).
         features: planDefaults[initialPlanId]?.features ?? [],
+        custom_features: false,
         multi_branch: planDefaults[initialPlanId]?.multiBranch ?? false,
         max_branches: planDefaults[initialPlanId]?.multiBranch ? 2 : 1,
     });
 
     transform((values) => ({ ...values, ...licencePayload(values), max_branches: values.multi_branch ? values.max_branches : 1 }));
 
-    // A plan brings its features and multi-branch default; tills allowed never below the tills added.
+    // A plan brings its features (unless customised) and multi-branch default; tills allowed never below the tills added.
     const changePlan = (planId: string) => {
         setData((current) => ({
             ...current,
             plan_id: planId,
-            features: planDefaults[planId]?.features ?? current.features,
+            features: current.custom_features ? current.features : (planDefaults[planId]?.features ?? current.features),
             multi_branch: planDefaults[planId]?.multiBranch ?? current.multi_branch,
         }));
     };
@@ -299,6 +301,7 @@ export default function CreateTenant({ nations, maxTills, plans, defaultPlanId, 
                                 showStart={false}
                                 tillsInUse={data.tills}
                                 trialDays={planDefaults[data.plan_id]?.trialDays}
+                                planFeatures={planDefaults[data.plan_id]?.features ?? []}
                             />
                         </div>
                         <div className="flex items-start gap-3 sm:col-span-2">

@@ -7,6 +7,8 @@ use App\Domain\Licensing\Api\Support\LicenceToken;
 use App\Domain\Licensing\Enums\LicenceStatus;
 use App\Domain\Licensing\LicenceState;
 use App\Domain\Licensing\Models\Licence;
+use App\Domain\Licensing\Support\DefaultPlan;
+use App\Domain\Licensing\Support\PlanFeatures;
 use App\Domain\Plans\Enums\Feature;
 use App\Domain\Plans\Models\Plan;
 use App\Domain\Tenancy\Models\Register;
@@ -89,6 +91,9 @@ final class LicenceData
             'existingIds' => $licence->existing_ids,
             'updatedAt' => self::date($licence->updated_at),
             'seat' => self::seat($licence),
+            // Fix 2026-10-07: the branch has its own features that differ from the business's plan.
+            'branchFeaturesCustom' => $licence->branch !== null && $licence->company !== null
+                && PlanFeatures::isCustom($licence->branch, DefaultPlan::for($licence->company)),
         ];
     }
 

@@ -139,6 +139,7 @@ class TenantController extends Controller
         // Billing is for owner and accounts only (billing.manage), reading included: no tab data for others.
         $billingAccess = $admin?->hasAbility(AdminRole::BILLING_MANAGE) ?? false;
 
+        $plan = DefaultPlan::for($company);
         $syncKeys = SyncKeyData::forBranches($company, $branches);
         // Module 2.7: each shop's and till's health, worked out now for this business only.
         $health = CompanyHealth::for($company->id, CarbonImmutable::now());
@@ -158,7 +159,7 @@ class TenantController extends Controller
                 'users' => $members->filter(fn (User $u) => (bool) $u->getRelation('membership')->is_active)->count(),
             ],
             'branches' => $branches->map(fn (Branch $branch) => TenantData::branch($branch) + [
-                'licence' => LicenceFormData::branch($branch),
+                'licence' => LicenceFormData::branch($branch, $plan),
                 'syncKey' => $syncKeys[$branch->id],
                 'health' => [
                     'shop' => $health['branches'][$branch->id] ?? null,

@@ -3,6 +3,7 @@
 namespace App\Domain\Tenancy\Actions;
 
 use App\Domain\Licensing\Data\BranchLicenceSettings;
+use App\Domain\Licensing\Support\DefaultPlan;
 use App\Domain\Shared\Actions\RecordAudit;
 use App\Domain\Tenancy\CurrentCompany;
 use App\Domain\Tenancy\Data\BranchDetails;
@@ -19,7 +20,8 @@ use Illuminate\Validation\ValidationException;
  *
  * Module 1.11: refused past the company's branches allowed, or for a second branch without multi-branch. The
  * branch gets licence settings: the given ones, else a copy of the company's first active branch's (kind,
- * length, start, features), else the defaults; tills allowed is at least the tills added.
+ * length, start, features), else the defaults; tills allowed is at least the tills added. Features equal to the
+ * company's plan (as it is now) are stored as null, so the branch follows the plan (a stale form cannot pin them).
  */
 class AddBranch
 {
@@ -53,7 +55,7 @@ class AddBranch
             BranchCodes::ensureUnique($attributes['code']);
 
             $settings = $licence ?? $this->inherited();
-            $settings = $settings->withMaxRegisters(max(1, $tills, $settings->maxRegisters));
+            $settings = $settings->withMaxRegisters(max(1, $tills, $settings->maxRegisters))->followingPlan(DefaultPlan::for($locked));
 
             $branch = new Branch($attributes);
             $branch->forceFill($settings->toAttributes());

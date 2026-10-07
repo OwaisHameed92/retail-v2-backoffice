@@ -16,15 +16,27 @@ interface ApproveLicenceSectionProps {
     errors: Record<string, string | undefined>;
     options: LicenceOptions;
     trialDays: number;
+    /** The chosen plan's features. */
+    planFeatures: string[];
 }
 
 /**
  * The licence form in "Approve trial" (module 1.11): tills allowed per shop (at least its tills), and the kind,
  * length and features every key carries. Folded by default: the plan's defaults are usually right.
  */
-export function ApproveLicenceSection({ shops, onTillsAllowed, values, setValue, errors, options, trialDays }: ApproveLicenceSectionProps) {
+export function ApproveLicenceSection({
+    shops,
+    onTillsAllowed,
+    values,
+    setValue,
+    errors,
+    options,
+    trialDays,
+    planFeatures,
+}: ApproveLicenceSectionProps) {
     const [open, setOpen] = useState(false);
-    const summary = `${values.kind === 'full' ? 'Full' : 'Trial'} · ${values.length === '' ? `${trialDays}-day trial` : `${values.length} ${values.length_unit}`} · ${values.features.length} features`;
+    const features = values.custom_features ? `${values.features.length} custom features` : 'plan features';
+    const summary = `${values.kind === 'full' ? 'Full' : 'Trial'} · ${values.length === '' ? `${trialDays}-day trial` : `${values.length} ${values.length_unit}`} · ${features}`;
 
     return (
         <Collapsible open={open} onOpenChange={setOpen} className="grid gap-3 rounded-xl border p-4">
@@ -71,6 +83,7 @@ export function ApproveLicenceSection({ shops, onTillsAllowed, values, setValue,
                     showTills={false}
                     showStart={false}
                     trialDays={trialDays}
+                    planFeatures={planFeatures}
                     idPrefix="approve-licence"
                 />
             </CollapsibleContent>

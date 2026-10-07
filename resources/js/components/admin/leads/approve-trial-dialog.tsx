@@ -71,7 +71,9 @@ export function ApproveTrialDialog({ lead, approval, open, onOpenChange }: Appro
         length: '',
         length_unit: '',
         valid_from: '',
+        // Fix 2026-10-07: sent only when customised; else null = the shops follow the plan.
         features: approval.planDefaults[initialPlan]?.features ?? [],
+        custom_features: false,
         ...emptyUpfront,
     };
     const form = useForm<ApproveForm>(initial);
@@ -337,7 +339,7 @@ export function ApproveTrialDialog({ lead, approval, open, onOpenChange }: Appro
                             form.setData((current) => ({
                                 ...current,
                                 plan_id: value,
-                                features: approval.planDefaults[value]?.features ?? current.features,
+                                features: current.custom_features ? current.features : (approval.planDefaults[value]?.features ?? current.features),
                             }))
                         }
                     >
@@ -364,6 +366,7 @@ export function ApproveTrialDialog({ lead, approval, open, onOpenChange }: Appro
                 errors={errors}
                 options={approval.licenceOptions}
                 trialDays={trialDays}
+                planFeatures={approval.planDefaults[form.data.plan_id]?.features ?? []}
             />
 
             <section aria-labelledby="approve-billing" className="grid gap-3">
