@@ -1,5 +1,6 @@
 <?php
 
+use App\Domain\Billing\Actions\ReversePayment;
 use App\Domain\Billing\Data\NewInvoice;
 use App\Domain\Billing\Queries\BillingStats;
 use Carbon\CarbonImmutable;
@@ -127,4 +128,14 @@ test('sums are exact over many small amounts', function () {
 
     expect(BillingStats::for(CarbonImmutable::now())['collectedThisMonth'])->toBe(['count' => 30, 'amount' => '3.00'])
         ->and(BillingStats::for(CarbonImmutable::now())['creditHeld'])->toBe('3.00');
+});
+
+test('collected this month leaves out a reversed payment', function () {
+    $company = $this->payingTenant('Reversal Stores', 1, 'RVS');
+    $kept = $this->pay($company, '30.00');
+    $taken = $this->pay($company, '20.00');
+    app(ReversePayment::class)->handle($taken->payment, 'Re-recorded on a corrected invoice');
+
+    expect(BillingStats::for(CarbonImmutable::now())['collectedThisMonth'])->toBe(['count' => 1, 'amount' => '30.00'])
+        ->and($kept->payment->amount)->toBe('30.00');
 });
