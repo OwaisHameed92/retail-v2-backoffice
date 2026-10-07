@@ -4,6 +4,7 @@ namespace App\Domain\Mail\Mailables;
 
 use App\Domain\Mail\Data\LicenceRenewedData;
 use App\Domain\Mail\Data\RenewedTillData;
+use App\Domain\Mail\Enums\EmailCategory;
 use App\Domain\Mail\Support\MailFormat;
 use Illuminate\Mail\Mailables\Content;
 
@@ -45,6 +46,11 @@ final class LicenceRenewedMail extends BrandedMailable
             amountPaid: '75.00',
             reference: 'INV-0042',
         ));
+    }
+
+    public function emailCategory(): EmailCategory
+    {
+        return EmailCategory::Reminders;
     }
 
     public function subjectLine(): string

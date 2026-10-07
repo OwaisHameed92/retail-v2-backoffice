@@ -3,6 +3,7 @@
 namespace App\Domain\Mail\Mailables;
 
 use App\Domain\Mail\Data\OwnerDigestData;
+use App\Domain\Mail\Enums\EmailCategory;
 use App\Domain\Mail\Support\MailFormat;
 use App\Domain\Mail\Support\MorningSummaryMail;
 use App\Domain\Shared\Country\Country;
@@ -59,6 +60,11 @@ final class OwnerDigestMail extends BrandedMailable
             unsubscribeUrl: $settings,
             summary: MorningSummaryMail::sample($portal, $settings),
         ));
+    }
+
+    public function emailCategory(): EmailCategory
+    {
+        return EmailCategory::OwnerAlerts;
     }
 
     public function subjectLine(): string

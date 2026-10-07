@@ -161,7 +161,7 @@ final readonly class BillingStatus
     private static function oldestUnpaid(Company $company): ?Invoice
     {
         return Invoice::withoutCompanyScope()->where('company_id', $company->id)->open()
-            ->where('kind', '!=', InvoiceKind::SetupFee->value)
+            ->whereNotIn('kind', InvoiceKind::setupFeeValues())
             ->orderBy('due_date')->orderBy('sequence')->first();
     }
 

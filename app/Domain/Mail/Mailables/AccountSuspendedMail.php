@@ -3,6 +3,7 @@
 namespace App\Domain\Mail\Mailables;
 
 use App\Domain\Mail\Data\AccountSuspendedData;
+use App\Domain\Mail\Enums\EmailCategory;
 use App\Domain\Mail\Support\MailFormat;
 use Illuminate\Mail\Mailables\Content;
 
@@ -34,6 +35,11 @@ final class AccountSuspendedMail extends BrandedMailable
             suspendedAt: now()->startOfDay()->addHours(9),
             amountDue: '75.00',
         ));
+    }
+
+    public function emailCategory(): EmailCategory
+    {
+        return EmailCategory::Reminders;
     }
 
     public function subjectLine(): string

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Domain\Admin\Models\Admin;
+use App\Domain\Mail\Support\EmailControl;
 use App\Domain\Security\Actions\ResetPortalUserTwoFactor;
 use App\Domain\Tenancy\Actions\AddCompanyUser;
 use App\Domain\Tenancy\Actions\ChangeCompanyUserRole;
@@ -47,7 +48,8 @@ class TenantUserController extends Controller
     public function sendPasswordLink(Company $company, int $user, ResendPasswordSetupLink $sendLink): RedirectResponse
     {
         $member = self::find($company, $user);
-        $sendLink->handle($member, $company);
+        // P11: an admin's own send is never held, whatever the "Set password link" setting.
+        EmailControl::manually(fn () => $sendLink->handle($member, $company));
 
         return back()->with('success', "We emailed {$member->email} a link to set their password.");
     }

@@ -8,6 +8,7 @@ import { BranchDialog } from '@/components/admin/tenants/branch-dialog';
 import { formatDate, plural } from '@/components/admin/tenants/format';
 import { TenantActions } from '@/components/admin/tenants/tenant-actions';
 import { TenantDetails } from '@/components/admin/tenants/tenant-details';
+import { TenantEmailsPanel } from '@/components/admin/tenants/tenant-emails-panel';
 import { type TenantBranch, type TenantShowProps } from '@/components/admin/tenants/types';
 import { UsersPanel } from '@/components/admin/tenants/users-panel';
 import { EmptyState } from '@/components/shared/empty-state';
@@ -23,9 +24,9 @@ import { Head } from '@inertiajs/react';
 import { CalendarDays, MonitorSmartphone, Plus, SlidersHorizontal, Store, Users } from 'lucide-react';
 import { useState } from 'react';
 
-type TabValue = 'branches' | 'users' | 'activity' | 'licences' | 'cloud' | 'billing';
+type TabValue = 'branches' | 'users' | 'activity' | 'licences' | 'cloud' | 'billing' | 'emails';
 
-const TAB_VALUES: TabValue[] = ['branches', 'users', 'activity', 'licences', 'cloud', 'billing'];
+const TAB_VALUES: TabValue[] = ['branches', 'users', 'activity', 'licences', 'cloud', 'billing', 'emails'];
 
 function initialTab(canBill: boolean): TabValue {
     if (typeof window === 'undefined') {
@@ -33,7 +34,7 @@ function initialTab(canBill: boolean): TabValue {
     }
     const tab = new URLSearchParams(window.location.search).get('tab') as TabValue | null;
 
-    return tab && TAB_VALUES.includes(tab) && (tab !== 'billing' || canBill) ? tab : 'branches';
+    return tab && TAB_VALUES.includes(tab) && ((tab !== 'billing' && tab !== 'emails') || canBill) ? tab : 'branches';
 }
 
 export default function TenantShow({
@@ -51,6 +52,7 @@ export default function TenantShow({
     branchLimits,
     licenceOptions,
     cloudLink,
+    emails,
     can,
 }: TenantShowProps) {
     const [tab, setTab] = useState<TabValue>(() => initialTab(billing !== null));
@@ -90,6 +92,16 @@ export default function TenantShow({
         },
         // Billing is for owner and accounts only (billing.manage): no data, no tab.
         ...(billing ? [{ value: 'billing', label: 'Billing' } satisfies PageTab] : []),
+        // P11: held emails and the first emails' buttons (owner and accounts).
+        ...(emails
+            ? [
+                  {
+                      value: 'emails',
+                      label: 'Emails',
+                      badge: emails.held.length > 0 ? <Badge variant="warning">{emails.held.length} held</Badge> : undefined,
+                  } satisfies PageTab,
+              ]
+            : []),
     ];
 
     return (
@@ -214,6 +226,7 @@ export default function TenantShow({
                     {tab === 'licences' && <TenantLicencesPanel tenant={tenant} licensing={licensing} plans={plans} canManage={can.manageLicences} />}
                     {tab === 'cloud' && <TenantCloudPanel moves={cloudLink.moves} keys={cloudLink.keys} canClear={can.manageLicences} />}
                     {tab === 'billing' && billing && <TenantBillingPanel tenant={tenant} billing={billing} />}
+                    {tab === 'emails' && emails && <TenantEmailsPanel tenant={tenant} emails={emails} />}
                 </div>
             </div>
 

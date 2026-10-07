@@ -18,6 +18,7 @@ class StoreBranchRequest extends FormRequest
     protected function prepareForValidation(): void
     {
         $this->merge(TenantRules::clean($this));
+        $this->merge(AddedTillFeeRules::clean($this));
     }
 
     /**
@@ -27,7 +28,7 @@ class StoreBranchRequest extends FormRequest
     {
         return TenantRules::branch('', $this->company()?->id) + [
             'tills' => ['required', 'integer', 'min:0', 'max:'.NewTenant::MAX_TILLS],
-        ];
+        ] + AddedTillFeeRules::rules();
     }
 
     /**
@@ -39,7 +40,7 @@ class StoreBranchRequest extends FormRequest
             'code.required' => 'Enter a short branch code, for example LDS.',
             'name.required' => LocalText::places('Enter the branch name, for example Leeds.'),
             'tills.max' => 'Add up to '.NewTenant::MAX_TILLS.' tills now; you can add more later.',
-        ];
+        ] + AddedTillFeeRules::messages();
     }
 
     public function company(): ?Company
@@ -52,5 +53,11 @@ class StoreBranchRequest extends FormRequest
     public function details(): BranchDetails
     {
         return TenantRules::branchDetails($this);
+    }
+
+    /** P11: the admin's setup fee for the added tills (billing admins only); null = the usual fee. */
+    public function tillSetupFee(): ?string
+    {
+        return AddedTillFeeRules::amount($this);
     }
 }

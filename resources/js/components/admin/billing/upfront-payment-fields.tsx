@@ -5,14 +5,16 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { taxName, taxText } from '@/lib/country';
 import { manualCollection, manualMethodsText } from '@/lib/billing-collection';
+import { taxName, taxText } from '@/lib/country';
 
 /** OnboardingBilling::options (module 1.13): who may take money, each plan's setup fee, VAT and the deadline. */
 export interface OnboardingBillingOptions {
     canRecord: boolean;
-    /** Plan id → setup fee (net, decimal string). */
+    /** Plan id → setup fee (net, decimal string; per till on a per-till plan). */
     setupFees: Record<string, string>;
+    /** P11: plan id → the setup fee is charged for each till. */
+    setupFeePerTill?: Record<string, boolean>;
     vatRate: string | null;
     deadlineDays: number;
     methods: { value: string; label: string }[];
@@ -26,6 +28,26 @@ export type UpfrontPaymentValue = {
 };
 
 export const emptyUpfront: UpfrontPaymentValue = { upfront_record: false, upfront_amount: '', upfront_method: 'cash', upfront_reference: '' };
+
+/**
+ * P11: the setup fee a new business pays on a plan (net): the plan's fee, or fee × tills on a per-till plan, with a
+ * note ("£600.00 per till × 3 tills") for the hint.
+ */
+export function onboardingPlanFee(options: OnboardingBillingOptions, planId: string, tills: number): { fee: string; note: string | null } {
+    const fee = options.setupFees[planId] ?? '0.00';
+    const pence = toPence(fee);
+
+    if (!options.setupFeePerTill?.[planId] || pence === null) {
+        return { fee, note: null };
+    }
+
+    const count = Math.max(0, tills);
+
+    return {
+        fee: ((pence * count) / 100).toFixed(2),
+        note: `${formatPence(pence)} per till × ${count} ${count === 1 ? 'till' : 'tills'}`,
+    };
+}
 
 /** "£238.80 incl. VAT" for a net amount, worked in pence. */
 function withVat(net: string, vatRate: string | null): string | null {
@@ -45,8 +67,10 @@ interface UpfrontPaymentFieldsProps {
     onChange: <K extends keyof UpfrontPaymentValue>(key: K, value: UpfrontPaymentValue[K]) => void;
     errors: Partial<Record<keyof UpfrontPaymentValue, string>>;
     options: OnboardingBillingOptions;
-    /** The plan's setup fee (net) the amount defaults to. */
+    /** The plan's setup fee (net) the amount defaults to (per-till plans: fee × tills). */
     planFee: string;
+    /** P11: how the plan's fee is made up, e.g. "£600.00 per till × 3 tills". */
+    planFeeNote?: string | null;
     /** Show the "Took an upfront payment" checkbox (onboarding); off on the Billing tab dialog. */
     toggle?: boolean;
     /** The setup fee is already invoiced (instalments): the amount is fixed, only method and reference are asked. */
@@ -65,6 +89,7 @@ export function UpfrontPaymentFields({
     errors,
     options,
     planFee,
+    planFeeNote = null,
     toggle = true,
     amountLocked = false,
     idPrefix = 'upfront',
@@ -86,8 +111,8 @@ export function UpfrontPaymentFields({
                         <Label htmlFor={`${idPrefix}-record`}>The setup fee is paid now</Label>
                         {manualCollection() ? (
                             <p className="text-muted-foreground text-sm">
-                                Records the setup fee (upfront) as a paid invoice: {manualMethodsText()}. Leave unticked if it is not paid yet;
-                                the tills then stay on the trial until it is recorded.
+                                Records the setup fee (upfront) as a paid invoice: {manualMethodsText()}. Leave unticked if it is not paid yet; the
+                                tills then stay on the trial until it is recorded.
                             </p>
                         ) : (
                             <p className="text-muted-foreground text-sm">
@@ -108,9 +133,10 @@ export function UpfrontPaymentFields({
                             optional
                             error={errors.upfront_amount}
                             hint={
-                                total
-                                    ? `Received: ${total}. Empty = the plan’s fee; 0 = nothing to pay.`
-                                    : 'Empty = the plan’s fee; 0 = nothing to pay.'
+                                (total ? `Received: ${total}. ` : '') +
+                                (planFeeNote
+                                    ? `Empty = the plan’s fee (${planFeeNote}); 0 = nothing to pay.`
+                                    : 'Empty = the plan’s fee; 0 = nothing to pay.')
                             }
                         >
                             <MoneyInput
@@ -157,8 +183,8 @@ export function OnboardingBillingNote({ options }: { options: OnboardingBillingO
     if (manualCollection()) {
         return (
             <p className="text-muted-foreground text-sm">
-                Every period is an invoice emailed to the business and paid by hand ({manualMethodsText()}); record each payment on its
-                Billing tab. The setup fee is paid by hand too.
+                Every period is an invoice emailed to the business and paid by hand ({manualMethodsText()}); record each payment on its Billing tab.
+                The setup fee is paid by hand too.
                 {!options.canRecord && ' Only owner and accounts staff can record the setup fee payment; until they do, the tills stay on the trial.'}
             </p>
         );

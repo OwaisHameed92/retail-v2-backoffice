@@ -5,6 +5,7 @@ namespace App\Domain\Mail\Mailables;
 use App\Domain\Billing\Support\ManualCollection;
 use App\Domain\Mail\Contracts\RendersAttachment;
 use App\Domain\Mail\Data\InvoiceMailData;
+use App\Domain\Mail\Enums\EmailCategory;
 use App\Domain\Mail\Support\MailFormat;
 use Illuminate\Mail\Mailables\Attachment;
 use Illuminate\Mail\Mailables\Content;
@@ -52,6 +53,11 @@ final class InvoiceMail extends BrandedMailable
             // Pakistan plan P5 (manual collection): paid by hand; GB keeps the UK "How to pay" text.
             howToPay: ManualCollection::active() ? ManualCollection::howToPay('INV-000042') : null,
         ));
+    }
+
+    public function emailCategory(): EmailCategory
+    {
+        return EmailCategory::Invoices;
     }
 
     public function subjectLine(): string

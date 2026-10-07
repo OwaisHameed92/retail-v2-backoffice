@@ -28,7 +28,9 @@ use App\Http\Controllers\Admin\CloudLinkController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\DataRequestController;
 use App\Http\Controllers\Admin\EmailLogController;
+use App\Http\Controllers\Admin\EmailSettingsController;
 use App\Http\Controllers\Admin\EmailTemplateController;
+use App\Http\Controllers\Admin\HeldEmailController;
 use App\Http\Controllers\Admin\ImpersonationController;
 use App\Http\Controllers\Admin\Leads\LeadActionController;
 use App\Http\Controllers\Admin\Leads\LeadApprovalController;
@@ -242,6 +244,23 @@ Route::middleware(['auth:admin', AdminIsActive::class, BlockAdminWhileImpersonat
         Route::get('templates/{template}/preview', [EmailTemplateController::class, 'preview'])->name('templates.preview')->where('template', '[a-z0-9-]+');
         Route::post('templates/{template}/test', [EmailTemplateController::class, 'sendTest'])->name('templates.test')->where('template', '[a-z0-9-]+')
             ->middleware(['can:sendTest,'.EmailLog::class, 'throttle:10,1']);
+    });
+
+    // P11 (owner 2026-10-07): which tenant emails go by themselves, and the held ones (send, discard, preview; per
+    // business: send all, welcome email, set-password link). Owner and accounts (billing.manage).
+    Route::middleware('can:'.AdminRole::BILLING_MANAGE)->group(function () {
+        Route::get('settings/emails', [EmailSettingsController::class, 'show'])->name('settings.emails');
+        Route::put('settings/emails', [EmailSettingsController::class, 'update'])->name('settings.emails.update');
+        Route::prefix('emails/held')->name('emails.held.')->whereUlid('held')->group(function () {
+            Route::post('{held}/send', [HeldEmailController::class, 'send'])->name('send')->middleware('throttle:60,1');
+            Route::post('{held}/discard', [HeldEmailController::class, 'discard'])->name('discard');
+            Route::get('{held}/preview', [HeldEmailController::class, 'preview'])->name('preview');
+        });
+        Route::prefix('tenants/{company}/emails')->name('tenants.emails.')->group(function () {
+            Route::post('send-held', [HeldEmailController::class, 'sendAll'])->name('send-held')->middleware('throttle:10,1');
+            Route::post('welcome', [HeldEmailController::class, 'welcome'])->name('welcome')->middleware('throttle:10,1');
+            Route::post('password-link', [HeldEmailController::class, 'passwordLink'])->name('password-link')->middleware('throttle:10,1');
+        });
     });
 
     // Cash billing (module 1.8): owner and accounts only (billing.manage), reading included (owner decision

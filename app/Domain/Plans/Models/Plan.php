@@ -7,6 +7,7 @@ use App\Domain\Plans\Enums\Feature;
 use App\Domain\Plans\Enums\PlanBillingType;
 use App\Domain\Plans\Enums\PlanStatus;
 use App\Domain\Plans\Enums\PricingMode;
+use App\Domain\Plans\Enums\SetupFeeMode;
 use App\Domain\Shared\Casts\MoneyCast;
 use App\Domain\Tenancy\Scopes\CompanyScope;
 use Carbon\CarbonInterface;
@@ -36,6 +37,7 @@ use Illuminate\Support\Collection;
  * @property string $price_monthly
  * @property string $price_yearly
  * @property string $setup_fee
+ * @property SetupFeeMode $setup_fee_mode P11: once per business (default) or for each till.
  * @property string $currency
  * @property int $trial_days
  * @property int $trial_grace_days
@@ -71,6 +73,7 @@ class Plan extends Model
         'price_monthly',
         'price_yearly',
         'setup_fee',
+        'setup_fee_mode',
         'currency',
         'trial_days',
         'trial_grace_days',
@@ -86,6 +89,7 @@ class Plan extends Model
         'currency' => self::CURRENCY,
         'pricing_mode' => 'perTill',
         'setup_fee' => '0.00',
+        'setup_fee_mode' => 'perBusiness',
         'trial_days' => self::DEFAULT_TRIAL_DAYS,
         'trial_grace_days' => self::DEFAULT_TRIAL_GRACE_DAYS,
         'grace_days' => self::DEFAULT_GRACE_DAYS,
@@ -106,6 +110,7 @@ class Plan extends Model
             'price_monthly' => MoneyCast::class,
             'price_yearly' => MoneyCast::class,
             'setup_fee' => MoneyCast::class,
+            'setup_fee_mode' => SetupFeeMode::class,
             'trial_days' => 'integer',
             'trial_grace_days' => 'integer',
             'grace_days' => 'integer',
@@ -135,6 +140,12 @@ class Plan extends Model
     public function billingType(): PlanBillingType
     {
         return $this->billing_type ?? PlanBillingType::infer((string) $this->setup_fee, (string) $this->price_monthly, (string) $this->price_yearly);
+    }
+
+    /** P11: the setup fee is charged for each till (also tills added later). */
+    public function setupFeePerTill(): bool
+    {
+        return $this->setup_fee_mode === SetupFeeMode::PerTill && $this->billingType()->hasSetupFee();
     }
 
     public function hasFeature(Feature $feature): bool

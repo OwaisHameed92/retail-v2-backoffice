@@ -3,6 +3,7 @@
 namespace App\Domain\Mail\Mailables;
 
 use App\Domain\Mail\Data\AnomalyAlertData;
+use App\Domain\Mail\Enums\EmailCategory;
 use App\Domain\Mail\Support\MailFormat;
 use App\Domain\Shared\Country\LocalText;
 use Illuminate\Mail\Mailables\Content;
@@ -47,6 +48,11 @@ final class AnomalyAlertMail extends BrandedMailable
             unsubscribeUrl: $portal.'/app/settings/notifications',
             settingsUrl: $portal.'/app/settings/notifications',
         ));
+    }
+
+    public function emailCategory(): EmailCategory
+    {
+        return EmailCategory::OwnerAlerts;
     }
 
     public function subjectLine(): string

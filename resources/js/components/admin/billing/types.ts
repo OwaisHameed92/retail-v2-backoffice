@@ -250,6 +250,15 @@ export interface DirectDebitData {
         invoicedAt: string | null;
         /** VAT rate on this business's invoices ("20.00"), null without VAT. */
         vatRate: string | null;
+        /** P11: the plan charges the setup fee for each till. */
+        perTill: boolean;
+        /** P11: the plan's setup fee per till (net) and this business's own, for tills added later. */
+        tillFeePlan: string;
+        tillFeeOverride: string | null;
+        /** P11: tills now, tills a setup fee covers (null = not tracked: all of them), tills waiting for their fee. */
+        tills: number;
+        coveredTills: number | null;
+        heldTills: number;
     };
     mandate: {
         id: string | null;

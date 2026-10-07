@@ -1,5 +1,6 @@
 import { revealLicenceKeys } from '@/components/admin/licences/reveal-keys';
 import { type IssuedKeysReply } from '@/components/admin/licences/types';
+import { AddedTillFeeField } from '@/components/admin/tenants/added-till-fee-field';
 import { Field } from '@/components/admin/tenants/field';
 import { type TenantBranch, type TenantRegister } from '@/components/admin/tenants/types';
 import { showToast } from '@/components/shared/toaster';
@@ -54,10 +55,11 @@ function RegisterDialogBody({ onOpenChange, tenantId, branch, register }: Regist
         errors,
         setError,
         clearErrors,
-    } = useForm<{ name: string; code: string; is_main_till: boolean }>({
+    } = useForm<{ name: string; code: string; is_main_till: boolean; till_setup_fee: string }>({
         name: register?.name ?? '',
         code: register?.code ?? '',
         is_main_till: false,
+        till_setup_fee: '',
     });
     const [adding, setAdding] = useState(false);
     const processing = saving || adding;
@@ -70,9 +72,9 @@ function RegisterDialogBody({ onOpenChange, tenantId, branch, register }: Regist
         setAdding(false);
 
         if (!result.ok || !result.data) {
-            const { name, code, is_main_till, ...other } = result.errors;
-            setError({ name, code, is_main_till });
-            if (!name && !code && !is_main_till) {
+            const { name, code, is_main_till, till_setup_fee, ...other } = result.errors;
+            setError({ name, code, is_main_till, till_setup_fee });
+            if (!name && !code && !is_main_till && !till_setup_fee) {
                 showToast(Object.values(other)[0] ?? result.message ?? 'The till could not be added.', 'error');
             }
 
@@ -82,7 +84,7 @@ function RegisterDialogBody({ onOpenChange, tenantId, branch, register }: Regist
         onOpenChange(false);
         showToast(result.data.message, result.data.keys.length > 0 ? 'success' : 'error');
         revealLicenceKeys({ keys: result.data.keys, title: `${result.data.keys[0]?.tillName ?? 'Till'} added: licence key created` });
-        router.reload({ only: ['branches', 'stats', 'licensing', 'activity'] });
+        router.reload({ only: ['branches', 'stats', 'licensing', 'activity', 'billing', 'tillSetupFee', 'emails'] });
     };
 
     const submit: FormEventHandler = (e) => {
@@ -140,6 +142,16 @@ function RegisterDialogBody({ onOpenChange, tenantId, branch, register }: Regist
                         />
                     </Field>
                 </div>
+
+                {!editing && (
+                    <AddedTillFeeField
+                        id="register-setup-fee"
+                        adding={1}
+                        value={data.till_setup_fee}
+                        onChange={(value) => setData('till_setup_fee', value)}
+                        error={errors.till_setup_fee}
+                    />
+                )}
 
                 {!editing && hasActive && (
                     <div className="flex items-start gap-3">

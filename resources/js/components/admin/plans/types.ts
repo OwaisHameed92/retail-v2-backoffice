@@ -33,6 +33,9 @@ export interface PlanRecord {
     priceMonthly: string;
     priceYearly: string;
     setupFee: string;
+    /** P11: the setup fee is charged once per business or for each till (also tills added later). */
+    setupFeeMode: 'perBusiness' | 'perTill';
+    setupFeeModeLabel: string;
     currency: string;
     trialDays: number;
     trialGraceDays: number;

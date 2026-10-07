@@ -3,6 +3,7 @@
 namespace App\Domain\Mail\Mailables;
 
 use App\Domain\Mail\Data\SetPasswordData;
+use App\Domain\Mail\Enums\EmailCategory;
 use App\Domain\Mail\Support\MailFormat;
 use App\Domain\Shared\Country\LocalText;
 use Illuminate\Mail\Mailables\Content;
@@ -40,6 +41,12 @@ final class SetPasswordMail extends BrandedMailable
             firstTime: true,
             businessName: 'Khan Mini Mart',
         ));
+    }
+
+    public function emailCategory(): ?EmailCategory
+    {
+        // Only the first-time link sent at onboarding; a reset the user asked for always goes.
+        return $this->data->firstTime ? EmailCategory::SetPassword : null;
     }
 
     public function subjectLine(): string

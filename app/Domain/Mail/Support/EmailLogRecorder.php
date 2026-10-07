@@ -74,6 +74,20 @@ final class EmailLogRecorder
         return $log;
     }
 
+    /**
+     * P11: an email held because its category is not sent automatically; an admin sends or discards it later.
+     *
+     * @param  list<string>  $to
+     * @param  array<string, mixed>  $meta
+     */
+    public function held(array $to, string $mailable, string $template, ?string $subject, ?string $companyId, array $meta = []): EmailLog
+    {
+        $log = $this->queued($to, $mailable, $template, $subject, $companyId, $meta);
+        $log->forceFill(['status' => EmailStatus::Held])->save();
+
+        return $log;
+    }
+
     public function sent(string $id, Email $message, ?string $messageId): void
     {
         EmailLog::query()->whereKey($id)->update([

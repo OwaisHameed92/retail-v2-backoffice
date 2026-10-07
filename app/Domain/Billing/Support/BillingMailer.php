@@ -48,31 +48,42 @@ final class BillingMailer
         /** @var Company $company */
         $company = $invoice->company;
         $recipients = $this->invoiceRecipients($company);
-        $tills = $invoice->lines->whereNotNull('licence_id')->count();
 
         foreach ($recipients as $email => $name) {
-            Mail::to($email)->queue(new InvoiceMail(new InvoiceMailData(
-                businessName: $company->name,
-                recipientName: $name,
-                invoiceNumber: (string) $invoice->number,
-                periodLabel: BillingDates::range($invoice->period_start, $invoice->period_end),
-                issueDate: $invoice->issue_date ?? BillingDates::today(),
-                dueDate: $invoice->due_date ?? BillingDates::today(),
-                total: $invoice->total,
-                balance: $invoice->balance,
-                status: $invoice->status->value,
-                tillCount: $tills > 0 ? $tills : $invoice->lines->count(),
-                resent: $resent,
-                bankDetails: InvoiceDocument::bankLines(),
-                pdfRenderer: InvoicePdf::class,
-                pdfKey: $invoice->id,
-                companyId: $company->id,
-                directDebitOn: $this->directDebitDate($invoice),
-                howToPay: ManualCollection::active() ? ManualCollection::howToPay($invoice->number) : null,
-            )));
+            Mail::to($email)->queue($this->invoiceMail($invoice, $name, $resent));
         }
 
         return count($recipients);
+    }
+
+    /**
+     * The invoice email for one recipient, from the invoice as it is now (also used when a held one is sent, P11).
+     */
+    public function invoiceMail(Invoice $invoice, ?string $name, bool $resent = false): InvoiceMail
+    {
+        /** @var Company $company */
+        $company = $invoice->company;
+        $tills = $invoice->lines->whereNotNull('licence_id')->count();
+
+        return new InvoiceMail(new InvoiceMailData(
+            businessName: $company->name,
+            recipientName: $name,
+            invoiceNumber: (string) $invoice->number,
+            periodLabel: BillingDates::range($invoice->period_start, $invoice->period_end),
+            issueDate: $invoice->issue_date ?? BillingDates::today(),
+            dueDate: $invoice->due_date ?? BillingDates::today(),
+            total: $invoice->total,
+            balance: $invoice->balance,
+            status: $invoice->status->value,
+            tillCount: $tills > 0 ? $tills : $invoice->lines->count(),
+            resent: $resent,
+            bankDetails: InvoiceDocument::bankLines(),
+            pdfRenderer: InvoicePdf::class,
+            pdfKey: $invoice->id,
+            companyId: $company->id,
+            directDebitOn: $this->directDebitDate($invoice),
+            howToPay: ManualCollection::active() ? ManualCollection::howToPay($invoice->number) : null,
+        ));
     }
 
     /** The day GoCardless collects this invoice, while that payment is still on its way (module 1.12). */

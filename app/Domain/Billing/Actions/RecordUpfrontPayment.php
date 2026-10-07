@@ -14,6 +14,7 @@ use App\Domain\Billing\Models\Invoice;
 use App\Domain\Billing\Support\BillingAccounts;
 use App\Domain\Billing\Support\BillingFormat;
 use App\Domain\Billing\Support\ManualCollection;
+use App\Domain\Billing\Support\SetupFeeTills;
 use App\Domain\Shared\Actions\RecordAudit;
 use App\Domain\Shared\Country\MoneyFormat;
 use App\Domain\Shared\Support\Money;
@@ -137,6 +138,7 @@ class RecordUpfrontPayment
         $account->upfront_method = $method;
         $account->upfront_recorded_at = CarbonImmutable::now();
         $account->setup_fee_invoiced_at ??= CarbonImmutable::now();
+        SetupFeeTills::coverAll($company, $account); // P11: the tills this setup fee was for
         $account->save();
 
         $this->audit->handle('billing.upfront_recorded', $account, null, [

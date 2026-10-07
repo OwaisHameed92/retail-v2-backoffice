@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Domain\Billing\Actions\ChargeAddedTills;
+use App\Domain\Licensing\Data\IssuedLicence;
 use App\Domain\Licensing\Data\LicenceData;
 use App\Domain\Licensing\Support\IssuedKeys;
 use App\Domain\Tenancy\Actions\AddRegister;
@@ -26,7 +28,7 @@ class TenantRegisterController extends Controller
      * Adds a till; its licence is issued with it (module 1.3). Asked for JSON (the admin dialog), the reply carries
      * the new plain key for the one-time "Licence key created" dialog; the key is in no other response.
      */
-    public function store(StoreRegisterRequest $request, Company $company, string $branch, AddRegister $addRegister, IssuedKeys $issuedKeys): RedirectResponse|JsonResponse
+    public function store(StoreRegisterRequest $request, Company $company, string $branch, AddRegister $addRegister, IssuedKeys $issuedKeys, ChargeAddedTills $chargeAddedTills): RedirectResponse|JsonResponse
     {
         $register = $addRegister->handle(
             TenantBranchController::find($company, $branch),
@@ -34,15 +36,19 @@ class TenantRegisterController extends Controller
             $request->input('code'),
             $request->boolean('is_main_till'),
         );
-        $keys = LicenceData::issuedKeys($issuedKeys->pullForCompany($company->id));
+        $issued = $issuedKeys->pullForCompany($company->id);
+        $keys = LicenceData::issuedKeys($issued);
+        // P11: a per-till setup fee plan invoices the added till (it stays on trial until that is paid).
+        $invoice = $chargeAddedTills->handle($company, array_map(fn (IssuedLicence $item) => $item->licence, $issued), $request->tillSetupFee());
+        $fee = $invoice !== null ? " Setup fee invoice {$invoice->number} raised: the till stays on its trial until it is paid." : '';
 
         if ($request->expectsJson() && ! $request->header('X-Inertia')) {
-            $message = $keys === [] ? "{$register->name} added. It has no licence yet: create an active plan, then issue it." : "{$register->name} added.";
+            $message = $keys === [] ? "{$register->name} added. It has no licence yet: create an active plan, then issue it." : "{$register->name} added.{$fee}";
 
             return response()->json(['message' => $message, 'keys' => $keys])->withHeaders(['Cache-Control' => 'no-store']);
         }
 
-        return back()->with('success', "{$register->name} added.");
+        return back()->with('success', "{$register->name} added.{$fee}");
     }
 
     public function update(UpdateRegisterRequest $request, Company $company, string $register, UpdateRegister $updateRegister): RedirectResponse

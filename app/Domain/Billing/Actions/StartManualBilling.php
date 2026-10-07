@@ -4,6 +4,7 @@ namespace App\Domain\Billing\Actions;
 
 use App\Domain\Billing\Support\BillingAccounts;
 use App\Domain\Billing\Support\BillingDates;
+use App\Domain\Billing\Support\SetupFeeTills;
 use App\Domain\Licensing\Actions\RenewCompanyLicences;
 use App\Domain\Licensing\Models\Licence;
 use App\Domain\Licensing\Support\LicenceGuard;
@@ -44,7 +45,8 @@ class StartManualBilling
             $this->accounts->lock($company);
             $moved = 0;
 
-            foreach (RenewCompanyLicences::renewable($company)->get() as $licence) {
+            // P11: a till waiting for its added-till setup fee is not moved.
+            foreach (RenewCompanyLicences::renewable($company)->whereNotIn('id', SetupFeeTills::heldLicenceIds($company->id))->get() as $licence) {
                 /** @var Licence $licence */
                 if ($licence->expires_at !== null || $licence->activated_at === null || ($licence->trial_ends_at !== null && $licence->trial_ends_at->greaterThanOrEqualTo($until))) {
                     continue;

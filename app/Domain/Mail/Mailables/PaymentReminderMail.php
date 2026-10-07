@@ -3,6 +3,7 @@
 namespace App\Domain\Mail\Mailables;
 
 use App\Domain\Mail\Data\PaymentReminderData;
+use App\Domain\Mail\Enums\EmailCategory;
 use App\Domain\Mail\Support\MailFormat;
 use Illuminate\Mail\Mailables\Content;
 
@@ -42,6 +43,11 @@ final class PaymentReminderMail extends BrandedMailable
             howToPay: 'Pay by bank transfer, JazzCash, Easypaisa or cash, quoting INV-000042 as the reference.',
             payLines: ['Meezan Bank', 'Account title Switch & Save', 'IBAN PK36MEZN0000000000000000', 'JazzCash 0300 1234567', 'Easypaisa 0345 1234567'],
         ));
+    }
+
+    public function emailCategory(): EmailCategory
+    {
+        return EmailCategory::Reminders;
     }
 
     public function subjectLine(): string

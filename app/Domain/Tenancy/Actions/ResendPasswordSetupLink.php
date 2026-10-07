@@ -3,6 +3,8 @@
 namespace App\Domain\Tenancy\Actions;
 
 use App\Domain\Mail\Actions\SendPasswordSetupLink;
+use App\Domain\Mail\Enums\EmailCategory;
+use App\Domain\Mail\Support\EmailControl;
 use App\Domain\Shared\Actions\RecordAudit;
 use App\Domain\Tenancy\Models\Company;
 use App\Models\User;
@@ -22,6 +24,9 @@ class ResendPasswordSetupLink
     {
         $this->sendPasswordSetupLink->handle($user, $company->name, $company->id);
 
-        $this->audit->handle('company.user_password_link_sent', $user, null, null, ['email' => $user->email], companyId: $company->id);
+        // P11: an automatic link held because "Set password link" is not sent automatically says so.
+        $held = ! EmailControl::isManual() && ! EmailControl::sendsAutomatically(EmailCategory::SetPassword);
+
+        $this->audit->handle('company.user_password_link_sent', $user, null, null, ['email' => $user->email] + ($held ? ['held' => true] : []), companyId: $company->id);
     }
 }

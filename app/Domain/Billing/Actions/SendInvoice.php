@@ -5,6 +5,8 @@ namespace App\Domain\Billing\Actions;
 use App\Domain\Billing\Enums\InvoiceStatus;
 use App\Domain\Billing\Models\Invoice;
 use App\Domain\Billing\Support\BillingMailer;
+use App\Domain\Mail\Enums\EmailCategory;
+use App\Domain\Mail\Support\EmailControl;
 use App\Domain\Shared\Actions\RecordAudit;
 use Carbon\CarbonImmutable;
 use Illuminate\Validation\ValidationException;
@@ -32,6 +34,8 @@ class SendInvoice
         }
 
         $invoice->loadMissing(['company', 'lines']);
+        // P11: with "Invoices and receipts" not sent automatically, an automatic send is held for an admin.
+        $held = ! EmailControl::isManual() && ! EmailControl::sendsAutomatically(EmailCategory::Invoices);
         $sent = $this->mailer->invoice($invoice, $resent);
 
         if ($sent === 0) {
@@ -41,7 +45,7 @@ class SendInvoice
         // A demo business's email is only logged (BrandedMailable), so its invoice does not count as emailed.
         $demo = (bool) ($invoice->company->is_demo ?? false);
 
-        if (! $demo) {
+        if (! $demo && ! $held) {
             $invoice->sent_count++;
             $invoice->last_sent_at = CarbonImmutable::now();
             $invoice->save();
@@ -52,6 +56,7 @@ class SendInvoice
             'recipients' => $sent,
             'resent' => $resent,
             ...($demo ? ['suppressed' => 'demo'] : []),
+            ...($held && ! $demo ? ['held' => true] : []),
         ]);
 
         return $sent;

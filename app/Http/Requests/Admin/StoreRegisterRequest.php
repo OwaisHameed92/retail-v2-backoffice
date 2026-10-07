@@ -18,6 +18,7 @@ class StoreRegisterRequest extends FormRequest
     protected function prepareForValidation(): void
     {
         $this->merge(TenantRules::clean($this));
+        $this->merge(AddedTillFeeRules::clean($this));
     }
 
     /**
@@ -29,7 +30,7 @@ class StoreRegisterRequest extends FormRequest
             'name' => ['nullable', 'string', 'max:60'],
             'code' => ['nullable', 'string', 'regex:'.Register::CODE_PATTERN],
             'is_main_till' => ['boolean'],
-        ];
+        ] + AddedTillFeeRules::rules();
     }
 
     /**
@@ -37,6 +38,12 @@ class StoreRegisterRequest extends FormRequest
      */
     public function messages(): array
     {
-        return ['code.regex' => 'Use two digits from 01 to 99.'];
+        return ['code.regex' => 'Use two digits from 01 to 99.'] + AddedTillFeeRules::messages();
+    }
+
+    /** P11: the admin's setup fee for the added tills (billing admins only); null = the usual fee. */
+    public function tillSetupFee(): ?string
+    {
+        return AddedTillFeeRules::amount($this);
     }
 }

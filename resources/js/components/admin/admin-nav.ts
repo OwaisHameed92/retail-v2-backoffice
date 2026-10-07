@@ -153,7 +153,15 @@ export const adminNavItems: AdminNavItem[] = [
         ability: 'audit.view',
         group: 'Settings',
     },
-    { title: 'Settings', icon: Settings, group: 'Settings' },
+    // P11: which tenant emails go by themselves, and the held ones.
+    {
+        title: 'Email settings',
+        icon: Settings,
+        route: 'admin.settings.emails',
+        activePattern: 'admin.settings.*',
+        ability: 'billing.manage',
+        group: 'Settings',
+    },
 ];
 
 /** True when the current route matches the item's active pattern(s). */

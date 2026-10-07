@@ -8,12 +8,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { byHand, manualMethodsText } from '@/lib/billing-collection';
 import { country, currencyName, taxName } from '@/lib/country';
 import { cn } from '@/lib/utils';
 import { Link } from '@inertiajs/react';
 import { LoaderCircle } from 'lucide-react';
 import { useState, type FormEventHandler } from 'react';
-import { byHand, manualMethodsText } from '@/lib/billing-collection';
 
 const PLAN_TYPES: { value: PlanBillingType; label: string; description: string }[] = [
     { value: 'setupOnly', label: 'Setup fee only', description: 'One payment by hand. Once paid in full the licence does not expire.' },
@@ -40,6 +40,7 @@ export interface PlanFormData {
     price_monthly: string;
     price_yearly: string;
     setup_fee: string;
+    setup_fee_mode: 'perBusiness' | 'perTill';
     trial_days: string;
     trial_grace_days: string;
     grace_days: string;
@@ -63,6 +64,7 @@ export function planFormDefaults(
         price_monthly: plan?.priceMonthly ?? '',
         price_yearly: plan?.priceYearly ?? '',
         setup_fee: plan?.setupFee ?? '0.00',
+        setup_fee_mode: plan?.setupFeeMode ?? 'perBusiness',
         trial_days: String(plan?.trialDays ?? defaults?.trialDays ?? 7),
         trial_grace_days: String(plan?.trialGraceDays ?? defaults?.trialGraceDays ?? 3),
         grace_days: String(plan?.graceDays ?? defaults?.graceDays ?? 7),
@@ -275,16 +277,46 @@ export function PlanForm({
                         )}
                         {hasSetupFee && (
                             <Field
+                                id="setup_fee_mode"
+                                label="Setup fee charged"
+                                error={errors.setup_fee_mode}
+                                help={
+                                    data.setup_fee_mode === 'perTill'
+                                        ? 'For each till: a new business pays it times its tills, and every till added later gets its own setup fee invoice (the till stays on its trial until it is paid).'
+                                        : 'Once per business, whatever its number of tills. Tills added later are not charged.'
+                                }
+                            >
+                                <Select
+                                    value={data.setup_fee_mode}
+                                    onValueChange={(value) => setData('setup_fee_mode', value as PlanFormData['setup_fee_mode'])}
+                                >
+                                    <SelectTrigger id="setup_fee_mode">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="perBusiness">Once per business</SelectItem>
+                                        <SelectItem value="perTill">For each till</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </Field>
+                        )}
+                        {hasSetupFee && (
+                            <Field
                                 id="setup_fee"
-                                label="Setup fee (upfront)"
+                                label={data.setup_fee_mode === 'perTill' ? 'Setup fee per till (upfront)' : 'Setup fee (upfront)'}
                                 error={errors.setup_fee}
                                 help={
-                                    recurs
+                                    data.setup_fee_mode === 'perTill'
                                         ? byHand(
-                                              'Paid once per business, by hand, before the Direct Debit starts. Can be changed per customer on their Billing tab.',
-                                              'Paid once per business, by hand, before the monthly invoices start. Can be changed per customer on their Billing tab.',
+                                              'Paid by hand for each till. Never by Direct Debit. Can be changed per customer on their Billing tab.',
+                                              'Paid by hand for each till. Can be changed per customer on their Billing tab.',
                                           )
-                                        : 'Paid once per business, by hand. Paid in full = a licence that does not expire.'
+                                        : recurs
+                                          ? byHand(
+                                                'Paid once per business, by hand, before the Direct Debit starts. Can be changed per customer on their Billing tab.',
+                                                'Paid once per business, by hand, before the monthly invoices start. Can be changed per customer on their Billing tab.',
+                                            )
+                                          : 'Paid once per business, by hand. Paid in full = a licence that does not expire.'
                                 }
                             >
                                 <MoneyInput

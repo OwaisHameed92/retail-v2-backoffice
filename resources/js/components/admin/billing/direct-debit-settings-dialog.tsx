@@ -6,11 +6,11 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { byHand, manualCollection, manualMethodsText } from '@/lib/billing-collection';
 import { taxText } from '@/lib/country';
 import { useForm } from '@inertiajs/react';
 import { LoaderCircle } from 'lucide-react';
 import { type FormEventHandler } from 'react';
-import { byHand, manualCollection, manualMethodsText } from '@/lib/billing-collection';
 
 interface DirectDebitSettingsDialogProps {
     open: boolean;
@@ -23,6 +23,7 @@ type FormData = {
     billing_mode: BillingMode;
     setup_fee_override: string;
     setup_fee_instalments: string;
+    till_setup_fee_override: string;
 };
 
 /** How the business pays its recurring fee (Direct Debit, or upfront as an exception) and its setup fee: amount, instalments. */
@@ -41,7 +42,9 @@ function SettingsBody({ onOpenChange, company, directDebit }: DirectDebitSetting
         billing_mode: directDebit.mode,
         setup_fee_override: setupFee.override ?? '',
         setup_fee_instalments: String(setupFee.instalments),
+        till_setup_fee_override: setupFee.tillFeeOverride ?? '',
     });
+    const covered = setupFee.coveredTills ?? setupFee.tills;
 
     const submit: FormEventHandler = (event) => {
         event.preventDefault();
@@ -54,7 +57,9 @@ function SettingsBody({ onOpenChange, company, directDebit }: DirectDebitSetting
                 <DialogHeader>
                     <DialogTitle>How {company.name} pays</DialogTitle>
                     {manualCollection() ? (
-                        <DialogDescription>Every monthly or yearly invoice is paid by hand ({manualMethodsText()}). Set the setup fee here.</DialogDescription>
+                        <DialogDescription>
+                            Every monthly or yearly invoice is paid by hand ({manualMethodsText()}). Set the setup fee here.
+                        </DialogDescription>
                     ) : (
                         <DialogDescription>
                             Direct Debit (the normal way): GoCardless collects the monthly or yearly fee. Upfront: each period paid by hand, as an
@@ -119,6 +124,34 @@ function SettingsBody({ onOpenChange, company, directDebit }: DirectDebitSetting
                         />
                     </Field>
                 </div>
+
+                {setupFee.perTill && (
+                    <div className="grid gap-2 rounded-lg border p-4">
+                        <Field
+                            id="dd-till-setup-fee"
+                            label={taxText('Setup fee per added till (before VAT)')}
+                            optional
+                            error={errors.till_setup_fee_override}
+                            hint={`This plan charges the setup fee for each till. Each till added later is invoiced this amount (it can still be changed when the till is added). Empty uses the plan’s ${formatPence(toPence(setupFee.tillFeePlan) ?? 0)}.`}
+                        >
+                            <MoneyInput
+                                id="dd-till-setup-fee"
+                                placeholder={setupFee.tillFeePlan}
+                                value={data.till_setup_fee_override}
+                                invalid={!!errors.till_setup_fee_override}
+                                onChange={(event) => setData('till_setup_fee_override', event.target.value)}
+                            />
+                        </Field>
+                        <p className="text-muted-foreground text-sm tabular-nums">
+                            {Math.min(covered, setupFee.tills)} of {setupFee.tills} {setupFee.tills === 1 ? 'till is' : 'tills are'} covered by a
+                            setup fee
+                            {setupFee.coveredTills === null ? ' (every till the business has)' : ''}
+                            {setupFee.heldTills > 0
+                                ? `; ${setupFee.heldTills} ${setupFee.heldTills === 1 ? 'till waits' : 'tills wait'} for its setup fee invoice to be paid.`
+                                : '.'}
+                        </p>
+                    </div>
+                )}
 
                 <p className="text-muted-foreground text-sm">
                     The setup fee is always paid by hand: {byHand('cash, card or bank transfer', manualMethodsText())}, recorded with{' '}

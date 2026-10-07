@@ -3,6 +3,8 @@
 namespace App\Domain\Mail\Mailables;
 
 use App\Domain\Demo\Support\DemoBusinesses;
+use App\Domain\Mail\Enums\EmailCategory;
+use App\Domain\Mail\Support\EmailControl;
 use App\Domain\Mail\Support\EmailLogRecorder;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Mail\Factory as MailFactory;
@@ -43,6 +45,12 @@ abstract class BrandedMailable extends Mailable implements ShouldBeEncrypted, Sh
     /** A test send from the admin template screen: subject gets a "[Test]" prefix. */
     public bool $isTest = false;
 
+    /** P11: an admin sends it (a held email released, or a "Send" button): never held. */
+    public bool $manualSend = false;
+
+    /** P11: the hold check ran when it was queued, so the queue worker does not run it again. */
+    public bool $holdChecked = false;
+
     /** Stable key used in the log and the admin template list, e.g. "welcome-tenant". */
     abstract public static function templateKey(): string;
 
@@ -65,6 +73,15 @@ abstract class BrandedMailable extends Mailable implements ShouldBeEncrypted, Sh
     abstract public function subjectLine(): string;
 
     public function companyId(): ?string
+    {
+        return null;
+    }
+
+    /**
+     * P11: the category whose "Send automatically" setting decides whether it goes by itself (Admin → Settings →
+     * Emails). Null = always sent (user-initiated mail, tenant-sent mail, staff mail).
+     */
+    public function emailCategory(): ?EmailCategory
     {
         return null;
     }
@@ -120,7 +137,7 @@ abstract class BrandedMailable extends Mailable implements ShouldBeEncrypted, Sh
      */
     public function queue(Queue $queue)
     {
-        if ($this->suppress()) {
+        if ($this->suppress() || $this->hold()) {
             return null;
         }
 
@@ -136,7 +153,7 @@ abstract class BrandedMailable extends Mailable implements ShouldBeEncrypted, Sh
      */
     public function later($delay, Queue $queue)
     {
-        if ($this->suppress()) {
+        if ($this->suppress() || $this->hold()) {
             return null;
         }
 
@@ -151,7 +168,7 @@ abstract class BrandedMailable extends Mailable implements ShouldBeEncrypted, Sh
      */
     public function send($mailer): ?SentMessage
     {
-        if ($this->suppress()) {
+        if ($this->suppress() || $this->hold()) {
             return null;
         }
 
@@ -209,6 +226,21 @@ abstract class BrandedMailable extends Mailable implements ShouldBeEncrypted, Sh
         }
 
         return true;
+    }
+
+    /**
+     * P11: a categorised email whose category the owner switched off is held (logged "Held") instead of sent, unless
+     * an admin is sending it. Checked once per message (a queued one is not checked again by the worker).
+     */
+    private function hold(): bool
+    {
+        if ($this->isTest || $this->manualSend || $this->holdChecked) {
+            return false;
+        }
+
+        $this->holdChecked = true;
+
+        return EmailControl::shouldHold($this, $this->recipientAddresses());
     }
 
     /** Open the log row once per message (queued jobs keep the id when they are unserialised). */

@@ -3,6 +3,7 @@
 namespace App\Domain\Mail\Mailables;
 
 use App\Domain\Mail\Data\AccountReactivatedData;
+use App\Domain\Mail\Enums\EmailCategory;
 use App\Domain\Mail\Support\MailFormat;
 use Illuminate\Mail\Mailables\Content;
 
@@ -33,6 +34,11 @@ final class AccountReactivatedMail extends BrandedMailable
             tillCount: 3,
             activeUntil: now()->addMonth()->startOfDay(),
         ));
+    }
+
+    public function emailCategory(): EmailCategory
+    {
+        return EmailCategory::Reminders;
     }
 
     public function subjectLine(): string

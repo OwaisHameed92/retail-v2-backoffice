@@ -12,6 +12,7 @@ use App\Domain\Billing\Support\Actor;
 use App\Domain\Billing\Support\BillingAccounts;
 use App\Domain\Billing\Support\BillingDates;
 use App\Domain\Billing\Support\InvoiceMaths;
+use App\Domain\Billing\Support\SetupFeeTills;
 use App\Domain\Billing\Support\Vat;
 use App\Domain\Shared\Actions\RecordAudit;
 use App\Domain\Tenancy\Models\Company;
@@ -121,6 +122,12 @@ class ChargeSetupFee
             }
 
             $account->setup_fee_invoiced_at = CarbonImmutable::now();
+            // P11: this setup fee covers the tills the business has now (per till: it was worked out for them), and
+            // a per-till fee is kept as the business's amount, so tills added later never change what it shows.
+            if ($account->setup_fee_override === null && SetupFeeTills::perTill($company)) {
+                $account->setup_fee_override = SetupFee::net($company, $account);
+            }
+            SetupFeeTills::coverAll($company, $account);
             $account->save();
 
             $this->audit->handle('billing.setup_fee_invoiced', $account, null, [

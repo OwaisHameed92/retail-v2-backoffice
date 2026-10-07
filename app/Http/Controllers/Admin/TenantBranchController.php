@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Domain\Billing\Actions\ChargeAddedTills;
+use App\Domain\Licensing\Data\IssuedLicence;
 use App\Domain\Licensing\Data\LicenceData;
 use App\Domain\Licensing\Support\IssuedKeys;
 use App\Domain\Tenancy\Actions\AddBranch;
@@ -26,20 +28,24 @@ class TenantBranchController extends Controller
      * Adds a branch with its first tills; their licences are issued with them (module 1.3). Asked for JSON (the
      * admin dialog), the reply carries the new plain keys for the one-time "Licence key created" dialog.
      */
-    public function store(StoreBranchRequest $request, Company $company, AddBranch $addBranch, IssuedKeys $issuedKeys): RedirectResponse|JsonResponse
+    public function store(StoreBranchRequest $request, Company $company, AddBranch $addBranch, IssuedKeys $issuedKeys, ChargeAddedTills $chargeAddedTills): RedirectResponse|JsonResponse
     {
         $branch = $addBranch->handle($company, $request->details(), $request->integer('tills'));
-        $keys = LicenceData::issuedKeys($issuedKeys->pullForCompany($company->id));
+        $issued = $issuedKeys->pullForCompany($company->id);
+        $keys = LicenceData::issuedKeys($issued);
+        // P11: a per-till setup fee plan invoices the added tills (they stay on trial until that is paid).
+        $invoice = $chargeAddedTills->handle($company, array_map(fn (IssuedLicence $item) => $item->licence, $issued), $request->tillSetupFee());
+        $fee = $invoice !== null ? " Setup fee invoice {$invoice->number} raised: the new tills stay on their trial until it is paid." : '';
 
         if ($request->expectsJson() && ! $request->header('X-Inertia')) {
             $message = $keys === [] && $request->integer('tills') > 0
                 ? "Branch {$branch->name} added. Its tills have no licences yet: create an active plan, then issue them."
-                : "Branch {$branch->name} added.";
+                : "Branch {$branch->name} added.{$fee}";
 
             return response()->json(['message' => $message, 'keys' => $keys])->withHeaders(['Cache-Control' => 'no-store']);
         }
 
-        return back()->with('success', "Branch {$branch->name} added.");
+        return back()->with('success', "Branch {$branch->name} added.{$fee}");
     }
 
     public function update(UpdateBranchRequest $request, Company $company, string $branch, UpdateBranch $updateBranch): RedirectResponse
