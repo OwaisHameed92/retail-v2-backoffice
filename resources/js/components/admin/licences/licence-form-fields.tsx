@@ -1,8 +1,6 @@
+import { LicenceFeatureFields } from '@/components/admin/licences/licence-feature-fields';
 import { type LengthUnit, type LicenceKind, type LicenceOptions } from '@/components/admin/licences/types';
 import { FormField } from '@/components/shared/form-section';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { dateLocale, zonedDateFormat } from '@/lib/country';
@@ -15,7 +13,10 @@ export type LicenceFormValues = {
     length: string;
     length_unit: LengthUnit | '';
     valid_from: string;
+    /** Ticked features; sent only when `custom_features` (else null = follow the plan). */
     features: string[];
+    /** "Customise for this shop": off = the plan's features, and the branch keeps following the plan. */
+    custom_features: boolean;
 };
 
 interface LicenceFormFieldsProps {
@@ -31,6 +32,8 @@ interface LicenceFormFieldsProps {
     tillsInUse?: number;
     /** The plan's trial length, for the "blank length" hint. */
     trialDays?: number;
+    /** The chosen plan's features (shown under "From the plan"). */
+    planFeatures?: string[];
     idPrefix?: string;
 }
 
@@ -47,15 +50,10 @@ export function LicenceFormFields({
     showStart = true,
     tillsInUse,
     trialDays,
+    planFeatures = [],
     idPrefix = 'licence',
 }: LicenceFormFieldsProps) {
     const id = (name: string) => `${idPrefix}-${name}`;
-    const selected = new Set(values.features);
-    const toggle = (value: string, on: boolean) =>
-        setValue(
-            'features',
-            options.features.map((feature) => feature.value).filter((item) => (item === value ? on : selected.has(item))),
-        );
     const featureError = errors.features ?? Object.entries(errors).find(([key]) => key.startsWith('features.'))?.[1];
 
     return (
@@ -173,91 +171,45 @@ export function LicenceFormFields({
                 )}
             </div>
 
-            <fieldset className="grid gap-3">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                    <legend className="text-sm font-medium">Features</legend>
-                    <div className="flex gap-1">
-                        <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            onClick={() =>
-                                setValue(
-                                    'features',
-                                    options.features.map((f) => f.value),
-                                )
-                            }
-                        >
-                            All
-                        </Button>
-                        <Button type="button" variant="ghost" size="sm" onClick={() => setValue('features', [])}>
-                            None
-                        </Button>
-                    </div>
-                </div>
-                <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                    {options.features.map((feature) => (
-                        <li key={feature.value}>
-                            <label
-                                htmlFor={id(`feature-${feature.value}`)}
-                                className="hover:bg-subtle flex cursor-pointer items-start gap-3 rounded-lg border p-3 transition-colors"
-                            >
-                                <Checkbox
-                                    id={id(`feature-${feature.value}`)}
-                                    checked={selected.has(feature.value)}
-                                    onCheckedChange={(checked) => toggle(feature.value, checked === true)}
-                                    className="mt-0.5"
-                                />
-                                <span className="grid min-w-0 gap-1">
-                                    <span className="flex flex-wrap items-center gap-2 text-sm font-medium">
-                                        {feature.label}
-                                        {feature.tillName ? (
-                                            <code className="text-muted-foreground font-mono text-[11px] font-normal">{feature.tillName}</code>
-                                        ) : (
-                                            <Badge variant="neutral">Portal only</Badge>
-                                        )}
-                                    </span>
-                                    <span className="text-muted-foreground text-[13px] leading-5">{feature.description}</span>
-                                </span>
-                            </label>
-                        </li>
-                    ))}
-                </ul>
-                {featureError ? (
-                    <p className="text-danger-foreground text-[13px]">{featureError}</p>
-                ) : (
-                    <p className="text-muted-foreground text-[13px]">
-                        The till gets each feature under the name shown. Multi-branch is set for the whole business.
-                    </p>
-                )}
-            </fieldset>
+            <LicenceFeatureFields
+                features={values.features}
+                custom={values.custom_features}
+                planFeatures={planFeatures}
+                options={options.features}
+                onChange={(custom, features) => {
+                    setValue('custom_features', custom);
+                    setValue('features', features);
+                }}
+                error={featureError}
+                id={id}
+            />
         </div>
     );
 }
 
-/** The form values of a branch's saved settings. `planFeatures` fills in "the plan's" (null). */
-export function licenceValues(
-    licence: {
-        maxRegisters: number;
-        kind: LicenceKind;
-        length: number | null;
-        lengthUnit: LengthUnit | null;
-        validFrom: string | null;
-        features: string[] | null;
-    },
-    planFeatures: string[] = [],
-): LicenceFormValues {
+/** The form values of a branch's saved settings: customised only when its own features differ from the plan's. */
+export function licenceValues(licence: {
+    maxRegisters: number;
+    kind: LicenceKind;
+    length: number | null;
+    lengthUnit: LengthUnit | null;
+    validFrom: string | null;
+    features: string[] | null;
+    planFeatures: string[];
+    featuresCustom: boolean;
+}): LicenceFormValues {
     return {
         max_registers: licence.maxRegisters,
         kind: licence.kind,
         length: licence.length === null ? '' : String(licence.length),
         length_unit: licence.lengthUnit ?? '',
         valid_from: licence.validFrom ? toShopDate(licence.validFrom) : '',
-        features: licence.features ?? planFeatures,
+        features: licence.featuresCustom && licence.features !== null ? licence.features : licence.planFeatures,
+        custom_features: licence.featuresCustom,
     };
 }
 
-/** Values for the server: blank length/unit/start as null. */
+/** Values for the server: blank length/unit/start as null; features null (follow the plan) unless customised. */
 export function licencePayload(values: LicenceFormValues): Record<string, unknown> {
     return {
         max_registers: values.max_registers,
@@ -265,7 +217,7 @@ export function licencePayload(values: LicenceFormValues): Record<string, unknow
         length: values.length === '' ? null : Number(values.length),
         length_unit: values.length === '' || values.length_unit === '' ? null : values.length_unit,
         valid_from: values.length === '' || values.valid_from === '' ? null : values.valid_from,
-        features: values.features,
+        features: values.custom_features ? values.features : null,
     };
 }
 

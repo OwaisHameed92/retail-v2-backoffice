@@ -5,6 +5,7 @@ namespace App\Domain\Licensing\Actions;
 use App\Domain\Licensing\Data\BranchLicenceSettings;
 use App\Domain\Licensing\Models\Licence;
 use App\Domain\Licensing\Support\BranchLicenceTerm;
+use App\Domain\Licensing\Support\DefaultPlan;
 use App\Domain\Shared\Actions\RecordAudit;
 use App\Domain\Tenancy\CurrentCompany;
 use App\Domain\Tenancy\Models\Branch;
@@ -19,7 +20,8 @@ use Illuminate\Validation\ValidationException;
  * onto the licences and, when the kind, length or start changed, their dates are set again (BranchLicenceTerm).
  * Each till then gets its new token at its next validate, because the claims changed.
  *
- * Tills allowed cannot go below the tills in use (active tills, or live keys of active tills if more).
+ * Tills allowed cannot go below the tills in use (active tills, or live keys of active tills if more). Features
+ * equal to the company's plan (as it is now) are stored as null: the branch follows the plan.
  */
 class UpdateBranchLicence
 {
@@ -35,8 +37,11 @@ class UpdateBranchLicence
     {
         $settings->validate();
 
-        return $this->tenancy->runAs($branch->company()->firstOrFail(), fn () => DB::transaction(function () use ($branch, $settings) {
+        $company = $branch->company()->firstOrFail();
+
+        return $this->tenancy->runAs($company, fn () => DB::transaction(function () use ($branch, $settings, $company) {
             $branch = Branch::query()->lockForUpdate()->findOrFail($branch->getKey());
+            $settings = $settings->followingPlan(DefaultPlan::for($company));
             $before = BranchLicenceSettings::of($branch);
             // Every active till has (or gets) a key, so its active tills count as in use too.
             $inUse = max(IssueLicence::keysInUse($branch->id), TenantLimits::activeTills($branch->id));

@@ -1,3 +1,4 @@
+import { BranchCustomFeatures } from '@/components/admin/licences/custom-features';
 import { daysUntil, formatDate, formatDateTimeShort, formatRelative } from '@/components/admin/licences/format';
 import { LicenceActions } from '@/components/admin/licences/licence-actions';
 import { LicenceActivity } from '@/components/admin/licences/licence-activity';
@@ -251,6 +252,9 @@ export default function LicenceShow({ licence, timeline, activity, alerts, plans
                                             </li>
                                         ))}
                                     </ul>
+                                )}
+                                {licence.branchFeaturesCustom && (
+                                    <BranchCustomFeatures tenantId={licence.company.id} branch={licence.branch} canManage={can.manage} />
                                 )}
                             </DetailRow>
                             <DetailRow label="Grace">

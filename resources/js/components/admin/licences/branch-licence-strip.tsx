@@ -1,4 +1,5 @@
 import { BranchLicenceDialog } from '@/components/admin/licences/branch-licence-dialog';
+import { CustomFeaturesBadge, UsePlanFeaturesButton } from '@/components/admin/licences/custom-features';
 import { describeLicence } from '@/components/admin/licences/licence-form-fields';
 import { type LicenceOptions } from '@/components/admin/licences/types';
 import { type TenantBranch } from '@/components/admin/tenants/types';
@@ -19,7 +20,7 @@ export function BranchLicenceStrip({ tenantId, branch, options, canManage }: Bra
     const [open, setOpen] = useState(false);
     const licence = branch.licence;
     const full = licence.keysInUse >= licence.maxRegisters;
-    const featureCount = licence.features === null ? null : licence.features.length;
+    const featureCount = licence.featuresCustom && licence.features !== null ? licence.features.length : null;
 
     return (
         <div className="bg-subtle flex flex-col gap-2 border-t px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5">
@@ -37,12 +38,16 @@ export function BranchLicenceStrip({ tenantId, branch, options, canManage }: Bra
                 <span className="text-muted-foreground">
                     {featureCount === null ? 'Plan features' : `${featureCount} ${featureCount === 1 ? 'feature' : 'features'}`}
                 </span>
+                {licence.featuresCustom && <CustomFeaturesBadge />}
             </div>
             {canManage && (
-                <Button variant="outline" size="sm" className="self-start sm:self-auto" onClick={() => setOpen(true)}>
-                    <SlidersHorizontal />
-                    Licence settings
-                </Button>
+                <div className="flex flex-wrap items-center gap-1 self-start sm:self-auto">
+                    {licence.featuresCustom && <UsePlanFeaturesButton tenantId={tenantId} branchId={branch.id} branchName={branch.name} />}
+                    <Button variant="outline" size="sm" onClick={() => setOpen(true)}>
+                        <SlidersHorizontal />
+                        Licence settings
+                    </Button>
+                </div>
             )}
             <BranchLicenceDialog open={open} onOpenChange={setOpen} tenantId={tenantId} branch={branch} options={options} />
         </div>

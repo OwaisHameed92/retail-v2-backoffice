@@ -72,6 +72,8 @@ export interface LicenceDetail extends LicenceRow {
     updatedAt: string | null;
     /** "Till n of N" (module 1.11). */
     seat: { position: number | null; allowed: number; keysInUse: number; activated: number };
+    /** The branch has its own features that differ from the business's plan (fix 2026-10-07). */
+    branchFeaturesCustom: boolean;
 }
 
 export interface TimelineEvent {
@@ -226,6 +228,10 @@ export interface BranchLicence {
     validFrom: string | null;
     /** Feature values; null = the plan's. */
     features: string[] | null;
+    /** The plan's features (what null means), without multi-branch. */
+    planFeatures: string[];
+    /** The branch has its own features that differ from the plan's. */
+    featuresCustom: boolean;
     tillsInUse: number;
     keysInUse: number;
     keysActivated: number;

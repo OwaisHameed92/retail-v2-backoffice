@@ -4,7 +4,9 @@ namespace App\Domain\Licensing\Data;
 
 use App\Domain\Licensing\Enums\LicenceLengthUnit;
 use App\Domain\Licensing\Signing\Sspos\TokenKind;
+use App\Domain\Licensing\Support\PlanFeatures;
 use App\Domain\Plans\Enums\Feature;
+use App\Domain\Plans\Models\Plan;
 use App\Domain\Tenancy\Models\Branch;
 use Carbon\CarbonImmutable;
 use Illuminate\Validation\ValidationException;
@@ -16,7 +18,8 @@ use Illuminate\Validation\ValidationException;
  *
  * - `length` null = the plan's trial on first activation (trial only; a full licence needs a length).
  * - `validFrom` null = each till's first activation.
- * - `features` null = the plan's. Multi-branch is not here: it is the company's (UpdateBranchLimits).
+ * - `features` null = the plan's. Multi-branch is not here: it is the company's (UpdateBranchLimits). Saving
+ *   stores null when the list equals the plan's at save time (`followingPlan`), so the branch keeps following it.
  */
 final readonly class BranchLicenceSettings
 {
@@ -59,6 +62,22 @@ final readonly class BranchLicenceSettings
     public function withMaxRegisters(int $maxRegisters): self
     {
         return new self($maxRegisters, $this->kind, $this->length, $this->lengthUnit, $this->validFrom, $this->features);
+    }
+
+    /**
+     * @param  iterable<Feature|string>|null  $features
+     */
+    public function withFeatures(?iterable $features): self
+    {
+        return new self($this->maxRegisters, $this->kind, $this->length, $this->lengthUnit, $this->validFrom, $features);
+    }
+
+    /** These settings with features null (follow the plan) when they equal the plan's. */
+    public function followingPlan(?Plan $plan): self
+    {
+        $features = PlanFeatures::toStore($this->features, $plan);
+
+        return $features === $this->features ? $this : $this->withFeatures($features);
     }
 
     public function hasLength(): bool

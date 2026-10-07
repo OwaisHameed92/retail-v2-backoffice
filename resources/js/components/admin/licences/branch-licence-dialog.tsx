@@ -52,6 +52,7 @@ function BranchLicenceDialogBody({ onOpenChange, tenantId, branch, options }: Br
                     errors={errors}
                     options={options}
                     tillsInUse={branch.licence.keysInUse}
+                    planFeatures={branch.licence.planFeatures}
                 />
 
                 <Alert variant="info">
