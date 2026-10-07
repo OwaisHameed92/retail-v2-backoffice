@@ -44,7 +44,8 @@ final class BillingStats
             && $invoice->due_date->betweenIncluded($today, $weekEnd));
 
         $monthStart = CarbonImmutable::parse($now->setTimezone(Country::zone())->format('Y-m-01').' 00:00:00', Country::zone())->utc();
-        $collected = Payment::withoutCompanyScope()->where('received_at', '>=', $monthStart)->where('received_at', '<=', $now)->pluck('amount');
+        // Money we kept: a reversed payment (chargeback, or re-recorded on a corrected invoice) is not collected.
+        $collected = Payment::withoutCompanyScope()->where('received_at', '>=', $monthStart)->where('received_at', '<=', $now)->whereNull('reversed_at')->pluck('amount');
         $drafts = Invoice::withoutCompanyScope()->where('status', InvoiceStatus::Draft->value)->pluck('total');
 
         return [
