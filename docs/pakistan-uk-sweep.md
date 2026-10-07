@@ -27,7 +27,8 @@ portal is live, so GB output stays byte-identical (golden tests in `tests/Featur
 
 **74 hits** (one hit = one UK thing at one place in the code; the same text on many pages counts once):
 **48 fixed** behind the country profile, **16 modules or features listed for an owner decision**, **10 instance or
-data items** that are not code. GB is unchanged in every case.
+data items** that are not code. GB is unchanged in every case. The owner decided the 16 on 2026-10-07: P10 hid five
+modules and the starter set on PK and changed "end in 9" and the export tax codes there; the rest are kept (see below).
 
 ### Fixed (GB unchanged, PK neutral or local)
 
@@ -73,29 +74,33 @@ data items** that are not code. GB is unchanged in every case.
 | 47 | Admin → Emails → New till request preview | "…a second counter in for the lottery." | `AdminTillRequestMail::sample()` | Neutral message off GB |
 | 48 | Invoice, customer statement, privacy export and label sheet PDFs | `<html lang="en-GB">` | `resources/views/{billing,customers,privacy,labels}/*.blade.php` | The profile's `dateLocale()` ("en-PK") |
 
-### For the owner to decide (kept as they are; till features)
+### For the owner to decide (decided 2026-10-07, done in P10)
 
-These are UK legal concepts built into the till's data model (contract fields and enums). They are not hidden or removed:
-hiding a module is the owner's call. UK wording was neutralised where it was trivial (above).
+These are UK legal concepts built into the till's data model (contract fields and enums). P9 left them as they were; the
+owner then took the recommendations (2026-10-07) and phase P10 (branch `pakistan/p10-modules`) built them. "Hidden" means
+the portal only: profile flags in `features` (`CountryModules`: GB on, PK off) hide the fields, settings, permission row
+and menu entry, and the portal routes answer 404. Till data still syncs and is stored exactly as before (never rejected
+or altered, nothing different sent to tills), and a portal form that no longer shows a field keeps its stored value (a
+new row gets the default). GB is unchanged (golden tests in `tests/Feature/Shared/CountryModulesGbTest.php`).
 
-| # | Module or feature | What is UK-specific | Where | Recommendation |
+| # | Module or feature | What is UK-specific | Where | Decision (2026-10-07) and what P10 did |
 |---|---|---|---|---|
-| 1 | Deposit return scheme (DRS) | Product "Deposit return item", payment type "Deposit return", receipt setting "Bottle deposit lines", branch "Deposit return point", sale lines "Container deposit (DRS)" | product form rules, payment types, till settings, branch dialog, sale receipt | **Hide on PK** (no DRS in Pakistan); till fields stay at their defaults |
-| 2 | Age-restricted sales rules | Till `AgeRule` labels: "Tobacco (born on or after 1 Jan 2009 refused)" (the UK generational ban), Lottery 18, Nicotine and vapes 18, Knives 18, Fireworks 18, Solvents 18, Energy drinks 16, Paracetamol 16; Challenge 25 prompt | product form, catalogue, compliance → age checks, till settings | **Needs a PK version** from EPOS (Pakistani age rules); until then keep |
-| 3 | Lottery | Product flag "Lottery", age rule, loyalty "Points on lottery", compliance licence "National Lottery retailer agreement" (data) | product form, till settings | **Hide on PK** (no UK-style shop lottery) |
-| 4 | Alcohol licensing | "Licensing hours and alcohol duty reports", staff "Personal licence holder", branch "Licensed hours" | product form, staff form, branch dialog | **Hide on PK** |
-| 5 | HFSS and vaping duty | "High fat, sugar or salt" (HFSS promotion rules), "Allowed on HFSS food", "Vaping duty applies" | product form rules, offer form | **Hide on PK** |
-| 6 | Pharmacy dispensing | NHS England prescription model: charges, exemptions (HC2 low income, war pension, prepayment certificate, "Free in this nation"…), GSL / P / POM classes | Pharmacy pages | **Needs a PK version** (DRAP schedules); hide on PK until then |
-| 7 | Newspapers and magazines | UK wholesaler model (sale or return, vouchers, zero-rated papers) | News pages | **Keep** (sale-or-return magazines and papers exist in Pakistan; wording is generic since P6) |
+| 1 | Deposit return scheme (DRS) | Product "Deposit return item", payment type "Deposit return", receipt setting "Bottle deposit lines", branch "Deposit return point", sale lines "Container deposit (DRS)" | product form rules, payment types, till settings, branch dialog, sale receipt | **Hidden on PK, done** (`depositReturn`). Product "Deposit return item" and its deposit, payment type kind "Deposit return", till setting `receipt.show_drs_lines`, branch "Deposit return point" (admin dialog and card), the shelf-label "Deposit" option. A sale line with a deposit from a till still shows (so the receipt adds up) as "Container deposit", without "(DRS)" |
+| 2 | Age-restricted sales rules | Till `AgeRule` labels: "Tobacco (born on or after 1 Jan 2009 refused)" (the UK generational ban), Lottery 18, Nicotine and vapes 18, Knives 18, Fireworks 18, Solvents 18, Energy drinks 16, Paracetamol 16; Challenge 25 prompt | product form, catalogue, compliance → age checks, till settings | **Keep** until EPOS has Pakistani rules (only the lottery rule is hidden from the pick lists, see 3) |
+| 3 | Lottery | Product flag "Lottery", age rule, loyalty "Points on lottery", compliance licence "National Lottery retailer agreement" (data) | product form, till settings | **Hidden on PK, done** (`lottery`). Product flag "Lottery", the "Lottery (18)" age rule in the product, category and master catalogue pick lists (still shown when it is the stored value), till setting `customers.loyalty_points_on_lottery`. Compliance licence names are till data (kept, 12) |
+| 4 | Alcohol licensing | "Licensing hours and alcohol duty reports", staff "Personal licence holder", branch "Licensed hours" | product form, staff form, branch dialog | **Hidden on PK, done** (`alcoholLicensing`). Staff "Personal licence holder", branch "Licensed hours" (admin edit dialog), the special days "Alcohol sales" column; the product "Alcohol" flag stays (age checks) with the help "Strength and volume for the till." instead of licensing hours and alcohol duty |
+| 5 | HFSS and vaping duty | "High fat, sugar or salt" (HFSS promotion rules), "Allowed on HFSS food", "Vaping duty applies" | product form rules, offer form | **Hidden on PK, done** (`hfss`, `vapingDuty`). Product "High fat, sugar or salt" and "Vaping duty applies", offer "Allowed on HFSS food" |
+| 6 | Pharmacy dispensing | NHS England prescription model: charges, exemptions (HC2 low income, war pension, prepayment certificate, "Free in this nation"…), GSL / P / POM classes | Pharmacy pages | **Hidden on PK until a DRAP version exists, done** (`pharmacy`). No menu entry (`ServiceModules::pharmacy()` false), `/app/pharmacy*` 404 (`country.feature:pharmacy`), no `pharmacy.view` row in the permissions table. Dispensing records and medicine classes from tills are stored as before |
+| 7 | Newspapers and magazines | UK wholesaler model (sale or return, vouchers, zero-rated papers) | News pages | **Keep** (owner) |
 | 8 | HMRC VAT return | 9-box helper, "Amount (£)", MTD | Accounts → VAT return | **Keep hidden on PK** (404 since P3); FBR sales tax summary comes with P8 |
-| 9 | Accounting export defaults | Xero / QuickBooks / Sage UK tax codes ("No VAT", "20% (VAT on Income)") | Accounts → Export | **Needs a PK version** (default tax codes for Pakistani accountants) |
-| 10 | Master catalogue starter set | "Adds about 600 UK convenience products from the demo catalogue" (UK brands and barcodes) | Admin → Catalogue | **Hide "Load starter set" on PK** or build a PK set |
-| 11 | Minimum wage bands | UK National Minimum / Living Wage bands held by the till | Staff → Timesheets | **Keep** (wording neutral now; rates are the till's data) |
-| 12 | Compliance licence types | UK licence names come from the tills' data | Compliance → Licences | **Keep** (data) |
-| 13 | Calendar event kinds | "School holiday", seasonal events with a UK `nation` | Calendar | **Keep** (till data; "Bank holiday" reads "Public holiday" on PK) |
-| 14 | Till keypad in pence / cash rounding to 5p | Behaviour assumes pence | Till settings | **EPOS question** (wording neutral now) |
-| 15 | Catalogue price rule "end in 9" | Rounds the pence to end in 9 (1.29); on PK prices show in whole rupees | Add from catalogue | **Owner**: PK probably wants whole rupees ending in 9 (a behaviour change) |
-| 16 | Supplier payment methods | "Direct Debit" as a supplier payment method (till data) | Purchasing → Payments | **Keep** (generic bank term) |
+| 9 | Accounting export defaults | Xero / QuickBooks / Sage UK tax codes ("No VAT", "20% (VAT on Income)") | Accounts → Export | **Done**: off GB every package suggests neutral Pakistani codes: standard "GST 18% (sales)" / "GST 18% (purchases)", reduced "GST reduced rate (sales)" / "(purchases)", zero "Zero rated", exempt "GST exempt", outside the scope and lines without a rate "No GST"; the mapping screen names the till codes "Standard 18%", "Reduced rate", "Zero rated", "Exempt", "Outside the scope of GST". GB keeps the Xero / QuickBooks / Sage codes. A business still maps its own |
+| 10 | Master catalogue starter set | "Adds about 600 UK convenience products from the demo catalogue" (UK brands and barcodes) | Admin → Catalogue | **Hidden on PK, done** (`ukStarterSet`). No "Load starter set" button on Admin → Catalogue, `POST /admin/catalogue/starter` 404, `php artisan catalogue:starter` refused. A PK starter set would be new work |
+| 11 | Minimum wage bands | UK National Minimum / Living Wage bands held by the till | Staff → Timesheets | **Keep** (owner) |
+| 12 | Compliance licence types | UK licence names come from the tills' data | Compliance → Licences | **Keep** (owner) |
+| 13 | Calendar event kinds | "School holiday", seasonal events with a UK `nation` | Calendar | **Keep** (owner) |
+| 14 | Till keypad in pence / cash rounding to 5p | Behaviour assumes pence | Till settings | **EPOS question** (unchanged) |
+| 15 | Catalogue price rule "end in 9" | Rounds the pence to end in 9 (1.29); on PK prices show in whole rupees | Add from catalogue | **Done**: off GB "Round up to whole rupees ending in 9": the price goes up to the smallest whole amount ending in 9 that is not below it (123.40 → 129, 129 → 129, 129.01 → 139, 1,201 → 1,209). GB keeps "end in 9p" (1.23 → 1.29). `PriceRule` and the review preview (`previewPrice`) |
+| 16 | Supplier payment methods | "Direct Debit" as a supplier payment method (till data) | Purchasing → Payments | **Keep** (owner) |
 
 ### Not code: instance settings and data
 
@@ -107,7 +112,7 @@ hiding a module is the owner's call. UK wording was neutralised where it was tri
 | 4 | Plans in GBP ("Pounds sterling (GBP)") | `PlanSeeder` | Local only; PK plans are created in PKR by the admin (P5) |
 | 5 | Product, supplier, customer and shop names, ledger account names, licence types, wage band labels, news titles | Till data | Out of scope (the till's data as sent) |
 | 6 | Mail sample products (Walkers, Warburtons, Hovis) | admin email previews | Sample text only (admin), kept |
-| 7 | Accounting tax codes "No VAT" on the export page | `ExportDefaults` | Kept by P3 (accounting-package codes) |
+| 7 | Accounting tax codes "No VAT" on the export page | `ExportDefaults` | Kept by P3 (accounting-package codes); since P10 Pakistani defaults off GB (owner list 9) |
 | 8 | Report CSV "Time (Pakistan)" | audit and activity exports | Already local (P6) |
 | 9 | `Branch.nation = "england"` stored for PK shops | `branches.nation` default | See EPOS question 1 |
 | 10 | Staff `preferred_culture` default `en-GB` | `Staff/Actions/SaveStaffMember` | Till field, not shown; EPOS question 4 |
@@ -132,3 +137,12 @@ hiding a module is the owner's call. UK wording was neutralised where it was tri
 pages and in the AI overview, every rerouted message, till setting, permission label, AI prompt and tool description,
 mail samples, `lang="en-GB"`) and PK (`country-pk`: nation hidden and the till value kept, wording, mail previews free of
 UK terms, and a crawl of 38 main portal and 6 admin pages failing on a deny-list of UK terms in their props).
+
+P10 (`tests/Feature/Shared/CountryModulesGbTest.php`, `CountryModulesPkTest.php`, fixtures `CountryModulesFixtures.php`):
+GB golden (every module on and the shared `features` unchanged; pharmacy menu, pages, medicine class save and
+permission row; the two till settings shown and saved; product, staff, payment type, offer and branch flags saved; the
+starter set loads; "end in 9p"; the UK export tax codes) and PK (`country-pk`: flags off and shared; pharmacy 404 even for
+a pharmacy, no menu ability or permission row; the two settings hidden, refused and kept; hidden product, staff,
+payment type, offer and branch values kept on save and defaults for new rows; a till push of every hidden field
+(Product, PaymentType, PromotionRule, MedicineClassification, Setting, Branch) stored exactly as sent; starter set 404
+and command refused; whole-rupee "end in 9"; Pakistani tax codes).

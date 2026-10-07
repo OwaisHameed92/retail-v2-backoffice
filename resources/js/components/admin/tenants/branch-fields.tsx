@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { keepsUkStyles, vatNumberLabel } from '@/lib/country';
 import { postcodeInputProps, postcodeLabel, townHint, townNeededWithAddress } from '@/lib/country-address';
+import { hasModule } from '@/lib/country-modules';
 import { localPlaces } from '@/lib/country-text';
 
 export type BranchFieldsData = {
@@ -45,7 +46,12 @@ export function BranchFields({ prefix = '', data, setField, errors, nations, sho
             <Field id={id('name')} label="Branch name" hint={localPlaces('Usually the town or street, e.g. Leeds.')} error={error('name')}>
                 <Input id={id('name')} required value={data.name} onChange={(e) => setField('name', e.target.value)} aria-invalid={!!error('name')} />
             </Field>
-            <Field id={id('code')} label="Branch code" hint={localPlaces('2 to 5 letters, used in receipt numbers like LDS-01-000482.')} error={error('code')}>
+            <Field
+                id={id('code')}
+                label="Branch code"
+                hint={localPlaces('2 to 5 letters, used in receipt numbers like LDS-01-000482.')}
+                error={error('code')}
+            >
                 <Input
                     id={id('code')}
                     required
@@ -143,19 +149,21 @@ export function BranchFields({ prefix = '', data, setField, errors, nations, sho
                     onChange={(e) => setField('receipt_footer', e.target.value)}
                 />
             </Field>
-            <div className="flex items-start gap-3 sm:col-span-2">
-                <Checkbox
-                    id={id('is_drs_return_point')}
-                    checked={data.is_drs_return_point}
-                    onCheckedChange={(checked) => setField('is_drs_return_point', checked === true)}
-                    className="mt-0.5"
-                />
-                <div className="grid gap-1">
-                    <Label htmlFor={id('is_drs_return_point')}>Deposit return point</Label>
-                    <p className="text-muted-foreground text-sm">The shop takes back drinks containers under the deposit return scheme.</p>
+            {hasModule('depositReturn') && (
+                <div className="flex items-start gap-3 sm:col-span-2">
+                    <Checkbox
+                        id={id('is_drs_return_point')}
+                        checked={data.is_drs_return_point}
+                        onCheckedChange={(checked) => setField('is_drs_return_point', checked === true)}
+                        className="mt-0.5"
+                    />
+                    <div className="grid gap-1">
+                        <Label htmlFor={id('is_drs_return_point')}>Deposit return point</Label>
+                        <p className="text-muted-foreground text-sm">The shop takes back drinks containers under the deposit return scheme.</p>
+                    </div>
                 </div>
-            </div>
-            {showLicensedHours && (
+            )}
+            {showLicensedHours && hasModule('alcoholLicensing') && (
                 <Field
                     id={id('licensed_hours_json')}
                     label="Licensed hours"

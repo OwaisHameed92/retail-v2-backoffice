@@ -6,15 +6,16 @@ import { type LicenceOptions, type TillLicence } from '@/components/admin/licenc
 import { RegisterDialog } from '@/components/admin/tenants/register-dialog';
 import { type TenantBranch, type TenantRegister } from '@/components/admin/tenants/types';
 import { ConfirmDialog } from '@/components/shared/confirm-dialog';
-import { BranchHealthStrip, TillHealthCell } from '@/components/till-health/branch-health-strip';
 import { EmptyState } from '@/components/shared/empty-state';
 import { InitialsAvatar } from '@/components/shared/entity-cell';
 import { StatusBadge } from '@/components/shared/status-badge';
+import { BranchHealthStrip, TillHealthCell } from '@/components/till-health/branch-health-strip';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { hasModule } from '@/lib/country-modules';
 import { cn } from '@/lib/utils';
 import { Link, router } from '@inertiajs/react';
 import {
@@ -108,7 +109,7 @@ export function BranchCard({ tenantId, branch, canManage, tillLicences, canManag
                                     {branch.phone}
                                 </span>
                             )}
-                            {branch.isDrsReturnPoint && (
+                            {branch.isDrsReturnPoint && hasModule('depositReturn') && (
                                 <span className="inline-flex items-center gap-1.5">
                                     <Recycle className="size-3.5" aria-hidden />
                                     Deposit return point

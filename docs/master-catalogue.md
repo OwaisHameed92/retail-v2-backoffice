@@ -19,6 +19,8 @@ still finds the product it was merged into. A UPC-A and its EAN-13 (leading 0) a
 `php artisan catalogue:starter` (or "Load starter set" on `/admin/catalogue`) loads the ~600 lines of the demo
 catalogue (`DemoProducts`). Most of those barcodes are generated (valid check digits, not real products): every row
 shows as "Starter set" until a licensed file replaces it. Running it again leaves rows an admin or import changed.
+The set is UK products: a Pakistan instance (`COUNTRY=PK`, profile flag `ukStarterSet` off) has no button, the route
+answers 404 and the command is refused (Pakistan plan P10).
 
 ## Loading a bigger dataset
 

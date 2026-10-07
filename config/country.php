@@ -69,6 +69,16 @@ return [
             'features' => [
                 'vatReturn' => true,
                 'fbr' => false,
+                // Phase P10 (owner 2026-10-07): UK till modules the portal shows (App\Domain\Shared\Country\CountryModules).
+                // Off = hidden in the portal (pages, form fields, settings, portal actions) and their routes 404; till
+                // data still syncs and is stored exactly as before. A module missing here counts as on.
+                'depositReturn' => true,
+                'lottery' => true,
+                'alcoholLicensing' => true,
+                'hfss' => true,
+                'vapingDuty' => true,
+                'ukStarterSet' => true,
+                'pharmacy' => true,
             ],
             'legal' => [
                 // Phase P6: where our own company is registered, for the seller line on our invoices ("Registered in
@@ -147,6 +157,15 @@ return [
             'features' => [
                 'vatReturn' => false,
                 'fbr' => false,
+                // Phase P10: no deposit return scheme, UK-style shop lottery, UK alcohol licensing, HFSS or vaping duty in
+                // Pakistan; the master catalogue starter set is UK products; pharmacy waits for a DRAP version.
+                'depositReturn' => false,
+                'lottery' => false,
+                'alcoholLicensing' => false,
+                'hfss' => false,
+                'vapingDuty' => false,
+                'ukStarterSet' => false,
+                'pharmacy' => false,
             ],
             'legal' => [
                 'registeredIn' => 'Pakistan',

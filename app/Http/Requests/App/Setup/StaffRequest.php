@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests\App\Setup;
 
+use App\Domain\Shared\Country\CountryModules;
 use App\Domain\Shared\Country\LocalText;
+use App\Domain\TillData\Models\TillUser;
 use Illuminate\Validation\Rule;
 
 /**
@@ -11,6 +13,18 @@ use Illuminate\Validation\Rule;
  */
 class StaffRequest extends CompanyWideWriteRequest
 {
+    /** Phase P10: where the country profile hides alcohol licensing, the form has no "Personal licence holder": keep it. */
+    protected function prepareForValidation(): void
+    {
+        $id = $this->route('staff');
+
+        $this->merge(CountryModules::keep(
+            [CountryModules::ALCOHOL_LICENSING => ['is_personal_licence_holder']],
+            fn () => is_string($id) ? TillUser::query()->find($id) : null,
+            ['is_personal_licence_holder' => false],
+        ));
+    }
+
     /**
      * @return array<string, mixed>
      */

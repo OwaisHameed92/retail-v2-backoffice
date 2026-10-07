@@ -2,6 +2,7 @@
 
 namespace App\Domain\Pharmacy\Support;
 
+use App\Domain\Shared\Country\CountryModules;
 use App\Domain\Tenancy\Enums\Ability;
 use App\Domain\Tenancy\Enums\BusinessType;
 use App\Domain\Tenancy\Models\Company;
@@ -16,7 +17,8 @@ use App\Domain\TillData\Models\ParcelCarrier;
  * - Pharmacy: business type Pharmacy, or any dispensing record or medicine class.
  * - Parcels: every business type except salons, clothing and footwear shops and cash and carries, or any carrier or
  *   parcel on a till.
- * The menu hides what a business does not use (HandleInertiaRequests) and the pages answer 404.
+ * The menu hides what a business does not use (HandleInertiaRequests) and the pages answer 404. Pharmacy is also off
+ * where the country profile hides it (Pakistan plan P10: the NHS England model, until a DRAP version exists).
  */
 final class ServiceModules
 {
@@ -25,6 +27,10 @@ final class ServiceModules
 
     public static function pharmacy(Company $company): bool
     {
+        if (! CountryModules::on(CountryModules::PHARMACY)) {
+            return false;
+        }
+
         return $company->business_type === BusinessType::Pharmacy
             || DispensingRecord::withoutCompanyScope()->where('company_id', $company->id)->exists()
             || MedicineClassification::withoutCompanyScope()->where('company_id', $company->id)->exists();

@@ -2,6 +2,8 @@
 
 namespace App\Domain\Accounts\Export;
 
+use App\Domain\Shared\Country\Country;
+
 /**
  * Suggested mappings for each package (gap #8), used for any code the business has not mapped itself.
  *
@@ -16,6 +18,24 @@ namespace App\Domain\Accounts\Export;
  */
 final class ExportDefaults
 {
+    /**
+     * Pakistan plan P10 (owner 2026-10-07): the default tax codes off GB, the same neutral labels for every package
+     * (the UK packages' VAT codes mean nothing to a Pakistani accountant). A business still maps its own.
+     *
+     * @var array<string, array{0: string, 1: string}>
+     */
+    private const PK_VAT = [
+        'S' => ['GST 18% (sales)', 'GST 18% (purchases)'],
+        'R' => ['GST reduced rate (sales)', 'GST reduced rate (purchases)'],
+        'Z' => ['Zero rated', 'Zero rated'],
+        'E' => ['GST exempt', 'GST exempt'],
+        'O' => ['No GST', 'No GST'],
+        '-' => ['No GST', 'No GST'],
+    ];
+
+    /** The till's VAT code names off GB (P10): Pakistan's standard GST rate is 18%. */
+    private const PK_VAT_CODES = ['S' => 'Standard 18%', 'R' => 'Reduced rate', 'Z' => 'Zero rated', 'E' => 'Exempt', 'O' => 'Outside the scope of GST'];
+
     /** The till's VAT codes (VatRate.code) shown on the mapping screen even before a till sends them. */
     public const VAT_CODES = ['S' => 'Standard 20%', 'R' => 'Reduced 5%', 'Z' => 'Zero rated', 'E' => 'Exempt', 'O' => 'Outside the scope of VAT'];
 
@@ -47,6 +67,16 @@ final class ExportDefaults
     /** @return array<string, array{0: string, 1: string}> our VAT code (or NO_VAT) => [sales, purchases] */
     public static function vat(ExportTarget $target): array
     {
-        return self::VAT[$target->value];
+        return app(Country::class)->is(Country::DEFAULT) ? self::VAT[$target->value] : self::PK_VAT;
+    }
+
+    /**
+     * The names of the till's VAT codes on the mapping screen: VAT_CODES on GB, the Pakistani ones elsewhere (P10).
+     *
+     * @return array<string, string>
+     */
+    public static function vatCodes(): array
+    {
+        return app(Country::class)->is(Country::DEFAULT) ? self::VAT_CODES : self::PK_VAT_CODES;
     }
 }

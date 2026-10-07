@@ -2,6 +2,7 @@ import { SectionCard } from '@/components/shared/section-card';
 import { StatusPill } from '@/components/shared/status-badge';
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { taxName, taxText } from '@/lib/country';
+import { hasModule } from '@/lib/country-modules';
 import { cn } from '@/lib/utils';
 import { Link } from '@inertiajs/react';
 import { Amount, deduction, DISCOUNT_SOURCE, LINE_FLAGS, money, qty, trimRate } from './format';
@@ -25,7 +26,7 @@ function LineDeductions({ line }: { line: ReceiptLine }) {
         rows.push({ label: 'Coupon', amount: line.couponDiscount });
     }
     if (!isZero(line.deposit)) {
-        rows.push({ label: 'Container deposit (DRS)', amount: `-${line.deposit}` });
+        rows.push({ label: hasModule('depositReturn') ? 'Container deposit (DRS)' : 'Container deposit', amount: `-${line.deposit}` });
     }
 
     return rows.length === 0 ? null : (
@@ -169,7 +170,13 @@ export function ReceiptLines({
                             muted
                         />
                     )}
-                    {!isZero(totals.deposit) && <TotalRow label="Container deposits (DRS)" value={totals.deposit} muted />}
+                    {!isZero(totals.deposit) && (
+                        <TotalRow
+                            label={hasModule('depositReturn') ? 'Container deposits (DRS)' : 'Container deposits'}
+                            value={totals.deposit}
+                            muted
+                        />
+                    )}
                     <TotalRow label="Total" value={totals.total} strong />
                     <TotalRow label={taxText('of which VAT')} value={totals.vat} muted />
                     <TotalRow label={taxText('Net of VAT')} value={totals.net} muted />

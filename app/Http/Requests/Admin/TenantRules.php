@@ -4,6 +4,7 @@ namespace App\Http\Requests\Admin;
 
 use App\Domain\Shared\Country\ContactRules;
 use App\Domain\Shared\Country\Country;
+use App\Domain\Shared\Country\CountryModules;
 use App\Domain\Tenancy\Data\BranchDetails;
 use App\Domain\Tenancy\Data\CompanyDetails;
 use App\Domain\Tenancy\Enums\BusinessType;
@@ -70,7 +71,7 @@ final class TenantRules
             $code[] = Rule::unique('branches', 'code')->where('company_id', $companyId)->ignore($ignoreBranchId);
         }
 
-        return [
+        $rules = [
             $prefix.'code' => $code,
             $prefix.'name' => ['required', 'string', 'max:120'],
             $prefix.'address' => ['nullable', 'string', 'max:500'],
@@ -84,6 +85,12 @@ final class TenantRules
             $prefix.'is_drs_return_point' => ['boolean'],
             $prefix.'area_m2' => ['nullable', 'numeric', 'min:0', 'max:99999999.99', 'decimal:0,2'],
         ];
+
+        // Phase P10: fields the country profile hides are not read from the request (branchDetails), so not checked.
+        return array_diff_key($rules, array_flip(CountryModules::hiddenFields([
+            CountryModules::DEPOSIT_RETURN => [$prefix.'is_drs_return_point'],
+            CountryModules::ALCOHOL_LICENSING => [$prefix.'licensed_hours_json'],
+        ])));
     }
 
     /**
@@ -207,9 +214,16 @@ final class TenantRules
         return app(Country::class)->taxIdFor($column)['pattern'] ?? null;
     }
 
-    public static function branchDetails(FormRequest $request, string $prefix = ''): BranchDetails
+    /**
+     * `$stored` is the branch being edited. Where the country profile hides deposit return or alcohol licensing (P10),
+     * the forms have no "Deposit return point" or "Licensed hours": an edit keeps the stored values, a new branch gets
+     * the defaults (not a return point, no licensed hours), whatever the request carries.
+     */
+    public static function branchDetails(FormRequest $request, string $prefix = '', ?Branch $stored = null): BranchDetails
     {
         $area = $request->input($prefix.'area_m2');
+        $keepDrs = ! CountryModules::on(CountryModules::DEPOSIT_RETURN);
+        $keepHours = ! CountryModules::on(CountryModules::ALCOHOL_LICENSING);
 
         return new BranchDetails(
             code: (string) $request->input($prefix.'code'),
@@ -218,8 +232,8 @@ final class TenantRules
             address: self::nullableString($request->input($prefix.'address')),
             phone: self::nullableString($request->input($prefix.'phone')),
             vatNumber: self::nullableString($request->input($prefix.'vat_number')),
-            licensedHoursJson: self::nullableString($request->input($prefix.'licensed_hours_json')),
-            isDrsReturnPoint: $request->boolean($prefix.'is_drs_return_point'),
+            licensedHoursJson: $keepHours ? $stored?->licensed_hours_json : self::nullableString($request->input($prefix.'licensed_hours_json')),
+            isDrsReturnPoint: $keepDrs ? (bool) $stored?->is_drs_return_point : $request->boolean($prefix.'is_drs_return_point'),
             areaM2: $area === null || $area === '' ? null : (string) $area,
             town: self::nullableString($request->input($prefix.'town')),
             postcode: self::nullableString($request->input($prefix.'postcode')),

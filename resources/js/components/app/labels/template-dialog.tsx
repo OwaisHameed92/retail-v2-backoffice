@@ -6,6 +6,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { formatMoney, formatMoneyAsGiven, keepsUkStyles } from '@/lib/country';
+import { hasModule } from '@/lib/country-modules';
 import { useForm } from '@inertiajs/react';
 import { LoaderCircle } from 'lucide-react';
 import { type FormEventHandler, useEffect, useMemo } from 'react';
@@ -139,7 +140,7 @@ export function TemplateDialog({ open, onOpenChange, template, stocks, shop, sho
                     <div className="grid gap-5 sm:grid-cols-[1fr_14rem]">
                         <fieldset className="grid gap-3">
                             <legend className="mb-1 text-sm font-medium">Show on each label</legend>
-                            {OPTION_LABELS.map((option) => (
+                            {OPTION_LABELS.filter((option) => option.key !== 'show_drs' || hasModule('depositReturn')).map((option) => (
                                 <div key={option.key} className="flex items-start gap-2">
                                     <Checkbox
                                         id={`opt-${option.key}`}

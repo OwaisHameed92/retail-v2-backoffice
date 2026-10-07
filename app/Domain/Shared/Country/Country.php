@@ -267,10 +267,28 @@ final class Country
         return $this->profile['samplePlaces'] ?? [];
     }
 
-    /** A country feature flag ("vatReturn", "fbr"); unknown flags are off. */
+    /**
+     * A country feature flag ("vatReturn", "fbr", or a P10 module such as "pharmacy"); unknown flags are off, except a
+     * CountryModules module, which is on unless the profile turns it off (the UK default).
+     */
     public function feature(string $name): bool
     {
-        return $this->profile['features'][$name] ?? false;
+        return $this->profile['features'][$name] ?? in_array($name, CountryModules::ALL, true);
+    }
+
+    /**
+     * The flags shared with the front end: every flag except the P10 modules that are on, so GB shares exactly
+     * `vatReturn` and `fbr` as before and PK adds the modules it hides (`pharmacy: false`…).
+     *
+     * @return array<string, bool>
+     */
+    private function frontendFeatures(): array
+    {
+        return array_filter(
+            $this->profile['features'],
+            fn (bool $on, string $name) => ! $on || ! in_array($name, CountryModules::ALL, true),
+            ARRAY_FILTER_USE_BOTH,
+        );
     }
 
     /**
@@ -301,7 +319,8 @@ final class Country
             ],
             'phoneExample' => $this->phone()['example'],
             'billingCollection' => $this->billingCollection(),
-            'features' => $this->profile['features'],
+            // Phase P10: the modules a profile hides are added (off GB only); see `frontendFeatures()`.
+            'features' => $this->frontendFeatures(),
             // Phase P5: the methods staff record by hand, only where fees are collected by hand (PK); GB is unchanged.
             ...($this->billingCollection() === 'manual' ? ['manualMethods' => $this->manualPaymentMethods()] : []),
             // Phase P9: the sample places that replace the UK ones in page examples, only where there are some (PK).

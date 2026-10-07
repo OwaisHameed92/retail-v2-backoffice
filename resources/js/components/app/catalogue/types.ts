@@ -1,6 +1,7 @@
 import { type MasterRow } from '@/components/admin/catalogue/types';
 import { type CatalogueOptions } from '@/components/app/products/types';
 import { type Paginated } from '@/components/shared/data-table';
+import { keepsUkStyles } from '@/lib/country';
 
 export type CatalogueRow = MasterRow & { inCatalogue: boolean };
 
@@ -56,7 +57,10 @@ export interface LookupResult {
         | null;
 }
 
-/** The price PriceRule (PHP) gives a product, for the review step's preview. Null = no price. */
+/**
+ * The price PriceRule (PHP) gives a product, for the review step's preview. Null = no price. "End in 9" is 9p on GB;
+ * off GB (P10) the smallest whole amount ending in 9 that is not below the price (123.40 → 129, 1,201 → 1,209).
+ */
 export function previewPrice(rule: PriceRuleValues, typed: string, cost: string, rrp: string | null, vatPercent: string | null): string | null {
     if (typed !== '' && Number(typed) > 0) {
         return Number(typed).toFixed(2);
@@ -65,6 +69,11 @@ export function previewPrice(rule: PriceRuleValues, typed: string, cost: string,
     if (rule.price_rule === 'margin' && cost !== '' && Number(cost) > 0 && margin < 100) {
         const net = Number(cost) / (1 - margin / 100);
         let pence = Math.ceil(Math.round(net * (1 + Number.parseFloat(vatPercent ?? '0') / 100) * 1000000) / 10000);
+        if (rule.end_in_9 && !keepsUkStyles()) {
+            const whole = Math.floor((pence + 99) / 100);
+
+            return (whole % 10 === 9 ? whole : Math.floor(whole / 10) * 10 + 9).toFixed(2);
+        }
         if (rule.end_in_9 && pence % 10 !== 9) {
             pence = Math.floor(pence / 10) * 10 + 9;
         }

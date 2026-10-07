@@ -439,8 +439,9 @@ Route::middleware(['auth:web', 'verified', 'company', 'two-factor:web'])->group(
     });
 
     // Module 5.10: pharmacy (dispensing read only; medicine classes are hub-owned: catalogue.manage, not one-shop) and
-    // parcels (read only). Businesses that do not use them get 404 (ServiceModules).
-    Route::prefix('pharmacy')->name('pharmacy.')->middleware('company.can:pharmacy.view')->group(function () {
+    // parcels (read only). Businesses that do not use them get 404 (ServiceModules), and so does every business where
+    // the country profile hides pharmacy (P10, PK).
+    Route::prefix('pharmacy')->name('pharmacy.')->middleware(['country.feature:pharmacy', 'company.can:pharmacy.view'])->group(function () {
         Route::get('/', [PharmacyController::class, 'dispensing'])->name('dispensing');
         Route::get('medicines', [PharmacyController::class, 'medicines'])->name('medicines');
         Route::middleware(['company.can:catalogue.manage', 'throttle:60,1'])->group(function () {

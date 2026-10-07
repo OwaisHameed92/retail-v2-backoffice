@@ -3,6 +3,7 @@
 namespace App\Domain\PortalUsers\Support;
 
 use App\Domain\Billing\Support\ManualCollection;
+use App\Domain\Shared\Country\CountryModules;
 use App\Domain\Tenancy\Enums\Ability;
 use App\Domain\Tenancy\Enums\CompanyRole;
 
@@ -84,6 +85,11 @@ final class RoleMatrix
         }
 
         foreach (Ability::cases() as $ability) {
+            // Pakistan plan P10: no pharmacy row where the country profile hides the module.
+            if ($ability === Ability::PharmacyView && ! CountryModules::on(CountryModules::PHARMACY)) {
+                continue;
+            }
+
             if (! array_key_exists($ability->value, self::LABELS)) {
                 $rows[] = self::row($ability, 'Other', $ability->value);
             }

@@ -2,10 +2,10 @@ import { NumberField, OptionSelect } from '@/components/app/products/fields';
 import { FormField, FormGrid } from '@/components/shared/form-section';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
-import { taxText } from '@/lib/country';
+import { currencyName, taxText } from '@/lib/country';
+import { ukOnly } from '@/lib/country-text';
 import { cn } from '@/lib/utils';
 import { type DepartmentCount, type PriceRuleValues, type YourDepartment } from './types';
-import { ukOnly } from '@/lib/country-text';
 
 const CREATE = '__create';
 
@@ -62,7 +62,7 @@ export function PriceRuleFields({
                             onCheckedChange={(state) => onChange({ ...value, end_in_9: state === true })}
                         />
                         <Label htmlFor="end_in_9" className="font-normal">
-                            {ukOnly('Round up to end in 9p', 'Round up so the decimals end in 9')}
+                            {ukOnly('Round up to end in 9p', `Round up to whole ${currencyName()} ending in 9`)}
                         </Label>
                     </div>
                 </FormGrid>

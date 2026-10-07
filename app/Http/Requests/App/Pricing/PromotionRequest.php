@@ -3,6 +3,7 @@
 namespace App\Http\Requests\App\Pricing;
 
 use App\Domain\Promotions\Support\PromotionTypes;
+use App\Domain\Shared\Country\CountryModules;
 use App\Domain\Shared\Country\LocalText;
 use App\Domain\Tenancy\CurrentCompany;
 use App\Domain\TillData\Enums\PromotionScope;
@@ -41,6 +42,14 @@ class PromotionRequest extends FormRequest
             $clean[$key] = is_string($value) ? (trim($value) === '' ? null : trim($value)) : $value;
         }
         $this->replace($clean);
+
+        // Phase P10: where the country profile hides HFSS rules, the form has no "Allowed on HFSS food": keep it.
+        $id = $this->route('promotion');
+        $this->merge(CountryModules::keep(
+            [CountryModules::HFSS => ['is_hfss_safe']],
+            fn () => is_string($id) ? PromotionRule::query()->find($id) : null,
+            ['is_hfss_safe' => false],
+        ));
     }
 
     /**
