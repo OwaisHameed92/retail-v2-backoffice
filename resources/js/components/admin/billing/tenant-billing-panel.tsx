@@ -131,7 +131,13 @@ export function TenantBillingPanel({ tenant, billing }: TenantBillingPanelProps)
                 />
             </StatGrid>
 
-            <PricingPanel company={company} directDebit={billing.directDebit} canManage={canManage} />
+            <PricingPanel
+                company={company}
+                directDebit={billing.directDebit}
+                canManage={canManage}
+                planChange={billing.planChange}
+                cancelled={cancelled}
+            />
 
             <DirectDebitPanel company={company} directDebit={billing.directDebit} canManage={canManage} />
 

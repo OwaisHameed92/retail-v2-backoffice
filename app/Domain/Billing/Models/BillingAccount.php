@@ -43,6 +43,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property CarbonImmutable|null $setup_fee_invoiced_at
  * @property int|null $setup_fee_covered_tills P11: tills a setup fee accounts for; null = untracked (see SetupFeeTills).
  * @property string|null $till_setup_fee_override P11: setup fee per added till (net); null = the plan's.
+ * @property CarbonImmutable|null $recurring_starts_on Change plan: the first recurring period's start (a calendar day), which the next Direct Debit subscription collects from.
  * @property string|null $gc_customer_id
  * @property string|null $gc_billing_request_id
  * @property string|null $gc_setup_url
@@ -118,6 +119,7 @@ class BillingAccount extends Model
             'setup_fee_invoiced_at' => 'immutable_datetime',
             'setup_fee_covered_tills' => 'integer',
             'till_setup_fee_override' => MoneyCast::class,
+            'recurring_starts_on' => CalendarDateCast::class,
             'gc_setup_url' => 'encrypted',
             'gc_setup_url_expires_at' => 'immutable_datetime',
             'gc_setup_sent_at' => 'immutable_datetime',

@@ -22,6 +22,7 @@ use App\Domain\Mail\Mailables\OwnerAlertMail;
 use App\Domain\Mail\Mailables\OwnerAlertResolvedMail;
 use App\Domain\Mail\Mailables\OwnerDigestMail;
 use App\Domain\Mail\Mailables\PaymentReminderMail;
+use App\Domain\Mail\Mailables\PlanChangedMail;
 use App\Domain\Mail\Mailables\PortalInvitationMail;
 use App\Domain\Mail\Mailables\SetPasswordMail;
 use App\Domain\Mail\Mailables\TrialEndedMail;
@@ -48,6 +49,7 @@ final class EmailTemplates
         LicenceRenewedMail::class,
         AccountSuspendedMail::class,
         AccountReactivatedMail::class,
+        PlanChangedMail::class,
         AdminNewLeadMail::class,
         LeadRejectedMail::class,
         CustomerStatementMail::class,

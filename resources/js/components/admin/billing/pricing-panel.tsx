@@ -1,6 +1,7 @@
+import { ChangePlanDialog } from '@/components/admin/billing/change-plan-dialog';
 import { formatDate, formatDay } from '@/components/admin/billing/format';
 import { PricingDialog } from '@/components/admin/billing/pricing-dialog';
-import { type CompanyRef, type DirectDebitData, type SetupFeeStatus } from '@/components/admin/billing/types';
+import { type CompanyRef, type DirectDebitData, type PlanChangeOptions, type SetupFeeStatus } from '@/components/admin/billing/types';
 import { emptyUpfront, type OnboardingBillingOptions, UpfrontPaymentFields } from '@/components/admin/billing/upfront-payment-fields';
 import { SectionCard } from '@/components/shared/section-card';
 import { StatusPill, type StatusTone } from '@/components/shared/status-badge';
@@ -8,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { formatMoney } from '@/lib/country';
 import { useForm } from '@inertiajs/react';
-import { Banknote, LoaderCircle, Tags } from 'lucide-react';
+import { ArrowRightLeft, Banknote, LoaderCircle, Tags } from 'lucide-react';
 import { type FormEventHandler, type ReactNode, useState } from 'react';
 import { byHand, manualMethodsText } from '@/lib/billing-collection';
 
@@ -25,6 +26,10 @@ interface PricingPanelProps {
     company: CompanyRef;
     directDebit: DirectDebitData;
     canManage: boolean;
+    /** Change plan (owner 2026-10-07); null hides it. */
+    planChange?: PlanChangeOptions | null;
+    /** The business is cancelled: its plan cannot change. */
+    cancelled?: boolean;
 }
 
 const feeTones: Record<SetupFeeStatus, StatusTone> = { none: 'neutral', unpaid: 'warning', partPaid: 'info', paid: 'success' };
@@ -33,8 +38,8 @@ const feeTones: Record<SetupFeeStatus, StatusTone> = { none: 'neutral', unpaid: 
  * Tenant Billing tab (owner rules 2026-10-05): the plan type and pricing, the setup fee (upfront, always paid by hand)
  * and the monthly or yearly fee (always by Direct Debit) with the mandate and the next collection.
  */
-export function PricingPanel({ company, directDebit, canManage }: PricingPanelProps) {
-    const [dialog, setDialog] = useState<'pricing' | 'upfront' | null>(null);
+export function PricingPanel({ company, directDebit, canManage, planChange = null, cancelled = false }: PricingPanelProps) {
+    const [dialog, setDialog] = useState<'pricing' | 'upfront' | 'plan' | null>(null);
     const close = (open: boolean) => !open && setDialog(null);
     const { pricing, upfront, mandate, subscription, planType } = directDebit;
     const cycleLabel = pricing.per === 'per year' ? 'Yearly' : 'Monthly';
@@ -60,6 +65,12 @@ export function PricingPanel({ company, directDebit, canManage }: PricingPanelPr
                             <Tags />
                             Change pricing
                         </Button>
+                        {planChange && !cancelled && (
+                            <Button size="sm" variant="outline" onClick={() => setDialog('plan')}>
+                                <ArrowRightLeft />
+                                Change plan
+                            </Button>
+                        )}
                     </div>
                 ) : undefined
             }
@@ -125,6 +136,7 @@ export function PricingPanel({ company, directDebit, canManage }: PricingPanelPr
             {canManage && (
                 <>
                     <PricingDialog open={dialog === 'pricing'} onOpenChange={close} company={company} pricing={pricing} />
+                    {planChange && <ChangePlanDialog open={dialog === 'plan'} onOpenChange={close} company={company} options={planChange} />}
                     <Dialog open={dialog === 'upfront'} onOpenChange={close}>
                         {dialog === 'upfront' && <UpfrontBody company={company} directDebit={directDebit} onOpenChange={close} />}
                     </Dialog>

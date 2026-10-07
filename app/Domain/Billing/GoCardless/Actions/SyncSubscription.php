@@ -77,7 +77,9 @@ class SyncSubscription
                 return 'setupFeeUnpaid';
             }
 
-            $this->store($company, $this->create($company, $account, $pence, $amount['start'], null), 'billing.dd_subscription_created', $account, $reason);
+            // Change plan (setup only → recurring): the first period was invoiced at the change; collect it from then.
+            $start = $account->recurring_starts_on ?? $amount['start'];
+            $this->store($company, $this->create($company, $account, $pence, $start, null), 'billing.dd_subscription_created', $account, $reason);
 
             return 'created';
         }
@@ -177,6 +179,7 @@ class SyncSubscription
         DB::transaction(function () use ($company, $subscription, $action, $before, $reason, $meta) {
             $account = $this->accounts->lock($company);
             ApplySubscription::fill($account, $subscription);
+            $account->recurring_starts_on = null; // a subscription exists now: its own dates take over
             $account->save();
 
             $this->audit->handle($action, $account, [

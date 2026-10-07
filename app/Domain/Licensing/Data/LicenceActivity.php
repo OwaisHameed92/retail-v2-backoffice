@@ -66,6 +66,7 @@ final class LicenceActivity
             'licence.unsuspended' => 'Lifted the suspension'.$of.' (now '.strtolower($status($after['status'] ?? '')).')',
             'licence.revoked' => 'Revoked the licence'.$of.$reason(),
             'licence.renewed' => 'Renewed the licence'.$of.' until '.self::date($after['expires_at'] ?? null),
+            'licence.expiry_changed' => 'Set the paid date'.$of.' to '.self::date($after['expires_at'] ?? null).$reason(),
             'licence.plan_changed' => 'Moved the licence'.$of.' from '.($meta['from_plan_name'] ?? $before['plan'] ?? 'its plan').' to '.($meta['to_plan_name'] ?? $after['plan'] ?? 'a new plan'),
             'licence.status_changed' => 'Licence'.$of.' moved from '.strtolower($status($before['status'] ?? '')).' to '.strtolower($status($after['status'] ?? '')),
             'licence.key_emailed' => 'Emailed the key'.$of.' to the owner',

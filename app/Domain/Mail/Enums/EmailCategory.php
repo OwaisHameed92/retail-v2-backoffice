@@ -33,7 +33,7 @@ enum EmailCategory: string
     {
         return match ($this) {
             self::Invoices => 'Every invoice when it is issued, paid invoices sent as receipts, setup fee invoices (also for added tills).',
-            self::Reminders => 'Payment and trial reminders, trial ended, Direct Debit setup, failed and cancelled, account suspended and active again, licences renewed.',
+            self::Reminders => 'Payment and trial reminders, trial ended, Direct Debit setup, failed and cancelled, account suspended and active again, licences renewed, plan changed.',
             self::SetPassword => 'The link a new owner or user gets to set their first password. A password reset the user asks for always goes.',
             self::Welcome => 'The welcome email with every till’s licence key, sent when a business is set up.',
             self::OwnerAlerts => 'Urgent shop alerts, their “resolved” follow-ups, the daily or weekly digest and anomaly alerts to the business’s owners.',

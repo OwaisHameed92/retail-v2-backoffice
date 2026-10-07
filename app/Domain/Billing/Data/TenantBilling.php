@@ -96,6 +96,8 @@ final class TenantBilling
                 'methods' => PaymentMethod::options(manualOnly: true),
             ],
             'directDebit' => DirectDebitData::for($company),
+            // Change plan (owner 2026-10-07): the plans the business can be moved to.
+            'planChange' => $canManage ? PlanChangePreview::options($company) : null,
             'vatEnabled' => Vat::enabled(),
             'vatRate' => BillingFormat::percent(Vat::rate()),
             'canManage' => $canManage,

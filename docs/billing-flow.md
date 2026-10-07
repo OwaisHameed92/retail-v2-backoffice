@@ -75,6 +75,7 @@ All of these are audited.
 | Extend a licence | Licence → Renew |
 | Lift a suspension | Tenant → Unsuspend |
 | Send the Direct Debit setup email again | Billing tab → Send setup email |
+| Move the business to another plan (preview first) | Billing tab → Change plan |
 
 ## What the till is told
 
@@ -204,6 +205,47 @@ It marks the current tills of every business whose setup fee is paid (or recorde
 e.g. Istanbul Market (plan "Setup only", 2 tills, £1,200 + VAT paid as one invoice) → 2 covered. Without it the tills
 a business already has also count as covered, so nobody is overcharged either way.
 
+## Changing a business's plan (owner 2026-10-07)
+
+Admin → business → **Billing** → **Change plan** (owner and accounts, `billing.manage`). Pick an active plan; the
+dialog shows a **preview** in plain words, and **nothing changes until you press Confirm change**:
+
+| Part | What the preview says (and what Confirm does) |
+|---|---|
+| Features | What the business gains and loses. Shops that follow the plan get its features; a shop with its own features (Licence form) **keeps them**, and is listed. |
+| Setup fee | Tills already covered by a paid setup fee (P11 covered tills) are **never charged again**. When the new plan has a setup fee and some tills are not covered (or none were ever paid), a setup fee invoice is made for them, pre-filled from the plan (once per business, or per till). The admin can change the amount, or type 0 to waive it. Paid by hand, as today. |
+| Monthly or yearly fee | The new plan's price for the tills the business has. From a setup-only plan it **starts today**: the first period runs from today and is invoiced now. Between two recurring plans the new price applies from the next period (time already paid is not charged again). To a setup-only plan it stops. The business's own prices (Change pricing) stay, except on a setup-only plan. |
+| How it is collected | UK: by Direct Debit. A business with a mandate is collected on it (the subscription is created, its amount changed, or cancelled). Without a mandate the Direct Debit setup starts as for a new business: banner, the link in the email and a new deadline (`BILLING_MANDATE_DEADLINE_DAYS`); no suspension before it. Pakistan: an invoice each period, paid by hand. |
+| Licences | Every till moves to the new plan and picks up its features and dates at its next check-in (a new token). From setup only to a recurring plan, tills paid by the setup fee stay valid **to the end of the first period**, then renew as each period is paid: no till locks at the change. To a setup-only plan: the 10-year licence at once when the setup fee is fully paid for every till; otherwise the tills keep their current paid date until the setup fee is paid. |
+| Invoices | Every invoice the change creates, with its amount and when it is due. |
+| Email | The owners get "Your plan has changed" (Reminders and notices: **held** while that kind is not sent automatically). |
+
+Open invoices (an unpaid setup fee, a monthly invoice already issued) stay owed; the preview lists them so the admin
+can void any that should not be paid. Audited (`billing.plan_changed`, before and after).
+
+### Examples
+
+**Setup only → Setup + monthly.** Patel News paid its £1,200 setup fee for 2 tills; its tills are licensed to 2036.
+On 24 Oct the admin moves it to Setup + monthly (£12 a till a month). No setup fee (both tills covered). The monthly
+fee starts today: invoice for 24 Oct – 23 Nov, £28.80 with VAT. The tills stay valid to 23 Nov.
+
+- With a Direct Debit mandate: GoCardless collects that invoice on the first day it can (here 28 Oct), then monthly.
+- Without one: the owner sees "Set up your Direct Debit — 3 days left" and gets the link by email. Set up in time,
+  the first collection takes that invoice; not set up by the deadline, the account is suspended as for any new
+  Direct Debit business.
+- Pakistan: the invoice is issued and emailed now, due in 7 days, paid by bank transfer, JazzCash, Easypaisa or cash;
+  the next one comes 7 days before 23 Nov.
+
+**Monthly only → Setup + monthly.** Khan Mini Mart pays £25 a till a month by Direct Debit and never paid a setup fee.
+Moving it to Setup + monthly (£1,200 setup fee, £12 a till) charges the setup fee: £1,200 pre-filled, the admin types
+£500 (or 0 to waive it). One setup fee invoice, £600 with VAT, emailed now, paid by hand. The Direct Debit amount
+changes to £28.80 from the next payment GoCardless has not created yet. Paid dates do not change.
+
+**Setup + monthly → Setup only.** Patel News paid its setup fee and pays monthly by Direct Debit. Moving it to Setup
+only: the Direct Debit subscription is cancelled and every till gets the licence to 2036 at once. Had a till not been
+covered (a per-till plan), that till would get a "Setup fee (added tills)" invoice and keep its current paid date until
+it is paid.
+
 ## Emails the admin controls (owner 2026-10-07, P11)
 
 Admin → Settings → **Emails** (owner and accounts) has "Send automatically" for each kind of email to businesses. Off:
@@ -214,7 +256,7 @@ due date, tills, licence keys by their last 4 characters) — until an admin pre
 | Kind | Emails |
 |---|---|
 | Invoices and receipts | Invoices when issued, paid invoices (receipts), setup fee invoices (added tills too) |
-| Reminders and notices | Payment reminders (Pakistan manual billing), trial reminder and ended, Direct Debit setup / failed / cancelled, account suspended / active again, licences renewed |
+| Reminders and notices | Payment reminders (Pakistan manual billing), trial reminder and ended, Direct Debit setup / failed / cancelled, account suspended / active again, licences renewed, plan changed |
 | Set password link | The first "set your password" link (onboarding, a user added by an admin) |
 | Welcome and licence keys | The welcome email with every till's key |
 | Owner alerts and digests | Urgent shop alerts and their "resolved" emails, the digest, anomaly alerts |
