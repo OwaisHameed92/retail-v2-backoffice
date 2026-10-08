@@ -99,6 +99,9 @@ return [
                 'licenceCountry' => null,
                 // The till app's name on portal pages and alerts.
                 'appName' => 'SSPOS',
+                // Owner 2026-10-08: product prices up to £99,999.99, the UK till's own limit (forms and imports used to
+                // allow 99,999,999.99, which the till could not take).
+                'priceDigits' => 5,
             ],
         ],
 

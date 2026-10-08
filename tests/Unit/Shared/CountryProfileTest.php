@@ -147,6 +147,8 @@ it('shares the GB profile with the front end', function () {
         'phoneExample' => '07700 900123',
         'billingCollection' => 'gocardless',
         'features' => ['vatReturn' => true, 'fbr' => false],
+        // Owner 2026-10-08: UK product prices up to £99,999.99 (the UK till's limit); the browser check reads it.
+        'priceDigits' => 5,
     ]);
 });
 
