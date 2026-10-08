@@ -121,19 +121,20 @@ it('says GST instead of VAT on a PK instance', function () {
         ->and($pk->taxText('Net, VAT and gross per rate'))->toBe('Net, GST and gross per rate')
         ->and($pk->taxText('vat_rate_id stays'))->toBe('vat_rate_id stays')
         ->and(Country::tax('Choose a VAT rate.'))->toBe('Choose a GST rate.')
-        ->and($pk->vatNumberPrefix())->toBe('NTN')
-        ->and($pk->taxIdFor('vat_number')['label'] ?? null)->toBe('NTN')
-        ->and($pk->taxIdFor('strn')['label'] ?? null)->toBe('STRN')
-        ->and($pk->taxIdFor('company_number')['label'] ?? null)->toBe('SECP registration number')
+        // Pak POS pack 2026-10-07 (EPOS: STRN = vatNumber, NTN = companyNumber) supersedes P3's NTN / STRN / SECP split.
+        ->and($pk->vatNumberPrefix())->toBe('STRN')
+        ->and($pk->taxIdFor('vat_number')['label'] ?? null)->toBe('STRN')
+        ->and($pk->taxIdFor('strn'))->toBeNull()
+        ->and($pk->taxIdFor('company_number')['label'] ?? null)->toBe('NTN')
         ->and(SalesCsv::headers())->toContain('GST')->not->toContain('VAT')
         ->and(ReportKind::Vat->label())->toBe('GST report')
         ->and(Feature::Accounts->label())->toBe('Accounts and GST')
         ->and(ImportColumns::fields()['vat']['label'])->toBe('GST rate')
         ->and(ImportColumns::fields()['sell_price']['help'])->toBe("In rupees, including GST. Every shop's price.")
         ->and(ImportColumns::guess(['Barcode', 'GST rate']))->toBe(['barcode' => 0, 'vat' => 1])
-        ->and(SettingCatalogue::find('shop.vat_number')['label'] ?? null)->toBe('NTN on receipts')
-        ->and(SettingCatalogue::find('shop.vat_number')['help'] ?? null)->toBe('Printed on receipts and GST invoices, for example 1234567-8.')
-        ->and(SettingCatalogue::find('shop.company_number')['label'] ?? null)->toBe('SECP registration number')
+        ->and(SettingCatalogue::find('shop.vat_number')['label'] ?? null)->toBe('STRN on receipts')
+        ->and(SettingCatalogue::find('shop.vat_number')['help'] ?? null)->toBe('Printed on receipts and GST invoices, for example 1234567890123.')
+        ->and(SettingCatalogue::find('shop.company_number')['label'] ?? null)->toBe('NTN')
         ->and(SettingCatalogue::find('shop.vat_registered')['label'] ?? null)->toBe('GST registered');
 })->group('country-pk');
 
@@ -160,53 +161,59 @@ it('answers 404 for the HMRC VAT return on PK and hides it in the page props', f
         ->where('country.taxName', 'GST'));
 })->group('country-pk');
 
-it('labels and validates NTN, STRN and SECP numbers on the PK tenant form', function () {
+it('labels and validates the STRN (vat_number) and NTN (company_number) on the PK tenant form', function () {
+    // Pak POS pack 2026-10-07: the ids live where the till reads them; `companies.strn` is no longer used on PK.
     asPakistanTaxInstance();
     $this->actingAs($this->admin(), 'admin');
     $company = $this->tenant();
 
     expect(TenantRules::messages())->toMatchArray([
-        'vat_number.regex' => 'Enter the NTN, for example 1234567-8.',
-        'strn.regex' => 'Enter the STRN, for example 1234567890123.',
-        'company_number.regex' => 'Enter the SECP registration number, for example 0123456.',
-    ]);
+        'vat_number.regex' => 'Enter the STRN, for example 1234567890123.',
+        'company_number.regex' => 'Enter the NTN, for example 1234567-8.',
+    ])->and(TenantRules::messages())->not->toHaveKey('strn.regex')
+        ->and(TenantRules::company())->not->toHaveKey('strn');
 
-    $this->put("/admin/tenants/{$company->id}", ['name' => 'Karachi Mart', 'vat_number' => 'GB123456789', 'strn' => '123', 'company_number' => '12'])
+    $this->put("/admin/tenants/{$company->id}", ['name' => 'Karachi Mart', 'vat_number' => 'GB123456789', 'company_number' => '12'])
         ->assertSessionHasErrors([
-            'vat_number' => 'Enter the NTN, for example 1234567-8.',
-            'strn' => 'Enter the STRN, for example 1234567890123.',
-            'company_number' => 'Enter the SECP registration number, for example 0123456.',
+            'vat_number' => 'Enter the STRN, for example 1234567890123.',
+            'company_number' => 'Enter the NTN, for example 1234567-8.',
         ]);
 
-    // Lenient: an NTN without its check digit, or a sole trader's CNIC.
-    foreach (['1234567', '12345678', '35202-1234567-1', '3520212345671'] as $ntn) {
-        $this->put("/admin/tenants/{$company->id}", ['name' => 'Karachi Mart', 'vat_number' => $ntn])->assertSessionHasNoErrors();
+    // Lenient: an NTN with or without its check digit; an STRN however it is grouped.
+    foreach (['1234567', '12345678', '1234567-8'] as $ntn) {
+        $this->put("/admin/tenants/{$company->id}", ['name' => 'Karachi Mart', 'company_number' => $ntn])->assertSessionHasNoErrors();
     }
 
-    $this->put("/admin/tenants/{$company->id}", ['name' => 'Karachi Mart', 'vat_number' => '1234567-8', 'strn' => '17-00-1234-567-89', 'company_number' => '0123456'])
+    $this->put("/admin/tenants/{$company->id}", ['name' => 'Karachi Mart', 'vat_number' => '17-00-1234-567-89', 'company_number' => '1234567-8', 'strn' => '9999999999999'])
         ->assertSessionHasNoErrors();
 
     $fresh = $company->fresh();
-    expect($fresh?->vat_number)->toBe('1234567-8')
-        ->and($fresh?->strn)->toBe('1700123456789')
-        ->and($fresh?->company_number)->toBe('0123456');
+    expect($fresh?->vat_number)->toBe('1700123456789')
+        ->and($fresh?->company_number)->toBe('1234567-8')
+        ->and($fresh?->strn)->toBeNull();
 
     $this->get("/admin/tenants/{$company->id}/edit")->assertInertia(fn (Assert $page) => $page
-        ->where('tenant.strn', '1700123456789')
-        ->where('country.taxIds.ntn.label', 'NTN')
-        ->where('country.taxIds.strn.label', 'STRN')
-        ->where('country.taxIds.companyNumber.label', 'SECP registration number'));
+        ->missing('tenant.strn')
+        ->where('tenant.vatNumber', '1700123456789')
+        ->where('country.taxIds.vatNumber.label', 'STRN')
+        ->where('country.taxIds.companyNumber.label', 'NTN')
+        ->missing('country.taxIds.strn'));
 })->group('country-pk');
 
-it('lets a PK owner keep the STRN on the business page', function () {
+it('offers a STRN still in companies.strn in the STRN field, saved to vat_number, on the PK business page', function () {
     asPakistanTaxInstance();
     $company = $this->tenant();
+    $company->forceFill(['vat_number' => '1234567-8', 'strn' => '1234567890123'])->saveQuietly(); // as P3 stored them
     $owner = $this->ownerOf($company);
-    $form = ['name' => 'Karachi Mart', 'legal_name' => '', 'vat_number' => '1234567-8', 'strn' => '1234567890123', 'company_number' => '', 'address' => '', 'town' => '', 'postcode' => '', 'phone' => '', 'email' => '', 'receipt_footer' => ''];
 
-    $this->actingAs($owner)->put('/app/shops/business', ['strn' => 'abc'] + $form)->assertSessionHasErrors(['strn' => 'Enter the STRN, for example 1234567890123.']);
+    $this->actingAs($owner)->get('/app/shops/business')->assertInertia(fn (Assert $page) => $page
+        ->where('business.vat_number', '1234567890123')->missing('business.strn'));
+
+    $form = ['name' => 'Karachi Mart', 'legal_name' => '', 'vat_number' => '1234567890123', 'company_number' => '1234567-8', 'address' => '', 'town' => '', 'postcode' => '', 'phone' => '', 'email' => '', 'receipt_footer' => ''];
+    $this->actingAs($owner)->put('/app/shops/business', ['vat_number' => 'abc'] + $form)->assertSessionHasErrors(['vat_number' => 'Enter the STRN, for example 1234567890123.']);
     $this->actingAs($owner)->put('/app/shops/business', $form)->assertSessionHasNoErrors();
 
-    expect($company->fresh()?->strn)->toBe('1234567890123');
-    $this->actingAs($owner)->get('/app/shops/business')->assertInertia(fn (Assert $page) => $page->where('business.strn', '1234567890123'));
+    expect($company->fresh()?->vat_number)->toBe('1234567890123')
+        ->and($company->fresh()?->company_number)->toBe('1234567-8')
+        ->and($company->fresh()?->strn)->toBe('1234567890123'); // kept, no longer read or written
 })->group('country-pk');

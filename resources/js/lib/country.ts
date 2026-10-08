@@ -116,8 +116,8 @@ const TAX_ID_COLUMNS: Record<'vat_number' | 'strn' | 'company_number', string[]>
 };
 
 /**
- * The tax id a business column holds, null when the profile has none: `vat_number` is the VAT number (GB) or the NTN
- * (PK), `strn` the STRN (PK only), `company_number` the Companies House (GB) or SECP (PK) number.
+ * The tax id a business column holds, null when the profile has none: `vat_number` is the VAT number (GB) or the STRN
+ * (PK), `company_number` the Companies House number (GB) or the NTN (PK); `strn` is none today (Pak POS pack).
  */
 export function taxIdFor(column: keyof typeof TAX_ID_COLUMNS): TaxId | null {
     const key = TAX_ID_COLUMNS[column].find((k) => current.taxIds[k] !== undefined);
@@ -125,17 +125,17 @@ export function taxIdFor(column: keyof typeof TAX_ID_COLUMNS): TaxId | null {
     return key ? current.taxIds[key] : null;
 }
 
-/** The `vat_number` field's label: "VAT number" (GB), "NTN" (PK). */
+/** The `vat_number` field's label: "VAT number" (GB), "STRN" (PK). */
 export function vatNumberLabel(): string {
     return taxIdFor('vat_number')?.label ?? `${current.taxName} number`;
 }
 
-/** The `company_number` field's label: "Company number" (GB, as the forms always read), "SECP registration number" (PK). */
+/** The `company_number` field's label: "Company number" (GB, as the forms always read), "NTN" (PK). */
 export function companyNumberLabel(): string {
     return keepsUkStyles() ? 'Company number' : (taxIdFor('company_number')?.label ?? 'Company number');
 }
 
-/** What documents print before a stored VAT number: "VAT no." (GB, as before), "NTN" (PK). */
+/** What documents print before a stored VAT number: "VAT no." (GB, as before), "STRN" (PK). */
 export function vatNumberPrefix(): string {
     return keepsUkStyles() ? 'VAT no.' : vatNumberLabel();
 }

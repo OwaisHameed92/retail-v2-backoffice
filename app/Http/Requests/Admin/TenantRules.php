@@ -34,7 +34,7 @@ final class TenantRules
     public static function company(): array
     {
         // The business ids follow the country profile (Pakistan plan P3): GB's patterns are VAT_PATTERN and
-        // COMPANY_NUMBER_PATTERN exactly (pinned by CountryProfileTest); PK adds the STRN.
+        // COMPANY_NUMBER_PATTERN exactly (pinned by CountryProfileTest). A profile with a separate STRN id adds it (none today).
         $strn = self::taxIdPattern('strn');
 
         return [
@@ -168,10 +168,9 @@ final class TenantRules
                 $clean[$numberKey] = str_pad((string) $clean[$numberKey], 8, '0', STR_PAD_LEFT);
             }
 
-            // PK STRN: digits only, however it was grouped ("17-00-1234-567-89").
-            $strnKey = $prefix.'strn';
-            if (! $uk && isset($clean[$strnKey])) {
-                $clean[$strnKey] = (string) preg_replace('/[\s-]+/', '', (string) $clean[$strnKey]);
+            // PK STRN (`vat_number` since the Pak POS pack): digits only, however it was grouped ("17-00-1234-567-89").
+            if (! $uk && isset($clean[$vatKey])) {
+                $clean[$vatKey] = (string) preg_replace('/[\s-]+/', '', (string) $clean[$vatKey]);
             }
         }
 

@@ -51,7 +51,7 @@ final class LocalText
     {
         $country = self::country() ?? Country::fromConfig();
         $place = trim((string) config('billing.seller.registered_in')) ?: $country->registeredIn();
-        $label = self::isUk($country) ? 'company no.' : ($country->taxIdFor('company_number')['label'] ?? 'company no.');
+        $label = self::isUk($country) ? 'company no.' : ($country->sellerIdLabel('companyNumber') ?? $country->taxIdFor('company_number')['label'] ?? 'company no.');
 
         return "Registered in {$place}, {$label} {$companyNumber}";
     }

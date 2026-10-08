@@ -119,25 +119,20 @@ return [
             'timezone' => 'Asia/Karachi',
             'taxName' => 'GST',
             'taxIds' => [
-                // Phase P3, lenient on purpose (FBR formats vary): TenantRules strips spaces first, and STRN dashes too.
-                // NTN (stored in `vat_number`): 7 digits with an optional check digit ("1234567", "1234567-8"), or a
-                // sole trader's 13-digit CNIC ("35202-1234567-1", dashes optional).
-                'ntn' => [
-                    'label' => 'NTN',
-                    'pattern' => '/^(\d{7}(-?\d)?|\d{5}-?\d{7}-?\d)$/',
-                    'example' => '1234567-8',
-                ],
-                // STRN (sales tax registration, column `strn`): 13 digits.
-                'strn' => [
+                // Pak POS pack 2026-10-07 (supersedes P3's NTN / STRN / SECP split): the ids live where the Pak POS till
+                // reads them. `vat_number` (Company / Branch `vatNumber`, `shop.vat_number`) is the STRN, `company_number`
+                // (Company `companyNumber`, `shop.company_number`) the NTN. No SECP field for now; `companies.strn` is no
+                // longer read or written on PK. Lenient on purpose: TenantRules strips spaces and dashes from the STRN.
+                'vatNumber' => [
                     'label' => 'STRN',
                     'pattern' => '/^\d{13}$/',
                     'example' => '1234567890123',
                 ],
-                // SECP company registration (`company_number`): 7 digits.
+                // NTN: 7 digits with an optional check digit ("1234567", "1234567-8").
                 'companyNumber' => [
-                    'label' => 'SECP registration number',
-                    'pattern' => '/^\d{7}$/',
-                    'example' => '0123456',
+                    'label' => 'NTN',
+                    'pattern' => '/^\d{7}(-?\d)?$/',
+                    'example' => '1234567-8',
                 ],
             ],
             'address' => [
@@ -178,6 +173,8 @@ return [
             ],
             'legal' => [
                 'registeredIn' => 'Pakistan',
+                // Our own seller block (BILLING_SELLER_*): its ids keep their own names, whatever the customer columns hold.
+                'sellerIds' => ['companyNumber' => 'SECP registration number', 'vatNumber' => 'NTN'],
             ],
             // Phase P9: the till contract has no Pakistani value for Branch `nation` (England, Scotland, Wales, Northern
             // Ireland only): the field is hidden and a shop keeps the column default until EPOS answers.

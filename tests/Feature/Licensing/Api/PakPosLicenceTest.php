@@ -104,3 +104,16 @@ test('the PK signer certificate is imported as on the UK (licence:keys:import-ce
     expect(PakPosContract::tokenPayload($activate->json())->signerCert ?? null)->toBe($cert)
         ->and($activate->json('country'))->toBe('PK');
 })->group('country-pk');
+
+test('PK: the licence company.vatNumber is the STRN (vat_number), as the Pak POS till reads it; our own ids keep their names', function () {
+    CountryModulesFixtures::pakistan();
+    $this->company->forceFill(['vat_number' => '1700123456789', 'company_number' => '1234567-8', 'strn' => null])->saveQuietly();
+    $this->licence->branch->forceFill(['vat_number' => null])->saveQuietly();
+
+    $payload = PakPosContract::tokenPayload($this->activateTill()->assertOk()->json());
+
+    expect($payload->company->vatNumber ?? null)->toBe('1700123456789')
+        ->and(app(Country::class)->vatNumberPrefix())->toBe('STRN')
+        ->and(app(Country::class)->sellerIdLabel('vatNumber'))->toBe('NTN')
+        ->and(app(Country::class)->toFrontend()['sellerIds'])->toBe(['companyNumber' => 'SECP registration number', 'vatNumber' => 'NTN']);
+})->group('country-pk');
