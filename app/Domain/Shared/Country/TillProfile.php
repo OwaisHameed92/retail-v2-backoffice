@@ -86,7 +86,7 @@ final class TillProfile
         return 'regex:/^\d{1,'.self::priceDigits().'}(\.\d{1,2})?$/';
     }
 
-    /** The highest product price: "99999999.99" (GB forms), "9999999.99" (PK). */
+    /** The highest product price: "99999.99" (GB, the UK till's limit since 2026-10-08), "9999999.99" (PK). */
     public static function priceMax(): string
     {
         return str_repeat('9', self::priceDigits()).'.99';

@@ -27,24 +27,26 @@ function pakPriceOk(string $rule, string $price): bool
     return Validator::make(['price' => $price], ['price' => [$rule]])->passes();
 }
 
-test('GB golden: every age rule offered, 8-digit prices, the profile shares nothing new, versions compared as before', function () {
+test('GB golden: every age rule offered, prices up to 99,999.99 (owner 2026-10-08, the UK till limit), versions compared as before', function () {
     $frontend = app(Country::class)->toFrontend();
 
-    expect($frontend)->not->toHaveKey('ageRules')->not->toHaveKey('priceDigits')
+    expect($frontend)->not->toHaveKey('ageRules')
+        ->and($frontend['priceDigits'])->toBe(5)
         ->and(TillProfile::ageRules())->toBeNull()
         ->and(array_column(ComplianceLookup::ageRules(), 'value'))->toBe(array_values(array_map(fn (AgeRule $r) => $r->value, array_filter(AgeRule::cases(), fn (AgeRule $r) => $r !== AgeRule::None))))
         ->and(ImportColumns::fields()['age_rule']['help'])->toBe('16, 18 or a till age rule such as tobaccoGenerational. Empty or "none" for none.');
 
-    $rule = 'regex:/^\d{1,8}(\.\d{1,2})?$/';
+    $rule = 'regex:/^\d{1,5}(\.\d{1,2})?$/';
     expect(TillProfile::priceRule())->toBe($rule)
         ->and((new SaveProductRequest)->rules()['sell_price'])->toBe(['required', $rule])
         ->and((new EveryShopPriceRequest)->rules()['price'])->toBe(['required', $rule])
         ->and((new AddFromCatalogueRequest)->rules()['items.*.sell_price'])->toBe(['nullable', $rule])
         ->and((new PromotionRequest)->rules()['deal_price'])->toBe(['nullable', $rule])
-        ->and((new MasterProductRequest)->rules()['rrp'])->toBe(['nullable', 'numeric', 'min:0', 'max:100000'])
-        ->and(pakPriceOk($rule, '99999999.99'))->toBeTrue()
-        ->and(pakPriceOk($rule, '100000000.00'))->toBeFalse()
-        ->and(RowInterpreter::decimal('12,000,000.50', 2))->toBe('12000000.50');
+        ->and((new MasterProductRequest)->rules()['rrp'])->toBe(['nullable', 'numeric', 'min:0', 'max:99999.99'])
+        ->and(pakPriceOk($rule, '99999.99'))->toBeTrue()
+        ->and(pakPriceOk($rule, '100000.00'))->toBeFalse()
+        ->and(RowInterpreter::decimal('99,999.99', 2))->toBe('99999.99')
+        ->and(RowInterpreter::decimal('100,000.00', 2))->toBeNull();
 
     foreach ([['1.0.0', '0.1.53'], ['0.1.52', '0.1.53'], ['0.1.60', '0.1.0'], ['1.0.0', '1.0.1']] as [$version, $gate]) {
         expect(TillProfile::compareAppVersion($version, $gate))->toBe(AppVersion::compare($version, $gate));
