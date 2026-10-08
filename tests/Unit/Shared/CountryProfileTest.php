@@ -186,7 +186,7 @@ it('has the Pakistan profile', function () {
         ->and($pk->numberLocale())->toBe('en-PK')
         ->and($pk->timezone())->toBe('Asia/Karachi')
         ->and($pk->taxName())->toBe('GST')
-        ->and(array_map(fn (array $id) => $id['label'], $pk->taxIds()))->toBe(['ntn' => 'NTN', 'strn' => 'STRN', 'companyNumber' => 'SECP registration number'])
+        ->and(array_map(fn (array $id) => $id['label'], $pk->taxIds()))->toBe(['vatNumber' => 'STRN', 'companyNumber' => 'NTN']) // Pak POS pack: keyed by the column the till reads them from
         ->and($pk->address()['postcodeRequired'])->toBeFalse()
         ->and($pk->address()['cityRequired'])->toBeTrue()
         ->and(preg_match($pk->address()['postcodePattern'], '54000'))->toBe(1)

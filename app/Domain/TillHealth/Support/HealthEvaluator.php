@@ -2,7 +2,7 @@
 
 namespace App\Domain\TillHealth\Support;
 
-use App\Domain\Shared\Support\AppVersion;
+use App\Domain\Shared\Country\TillProfile;
 use App\Domain\TillHealth\Data\BranchHealthRow;
 use App\Domain\TillHealth\Data\SyncSource;
 use App\Domain\TillHealth\Data\TillHealthRow;
@@ -62,7 +62,7 @@ final readonly class HealthEvaluator
         $state = $this->state($till, $isSyncTill ? $syncContact : null, $lastSeen);
         $version = $till->appVersion ?? $sync?->lastAppVersion;
         $activated = $till->isActivated();
-        $outdated = $activated && $version !== null && AppVersion::compare($version, $this->thresholds->minimumAppVersion) < 0;
+        $outdated = $activated && $version !== null && TillProfile::compareAppVersion($version, $this->thresholds->minimumAppVersion) < 0;
         $skewed = $activated && $till->clockSkewSeconds !== null && abs($till->clockSkewSeconds) > $this->thresholds->clockSkewSeconds;
         $tillSync = $isSyncTill ? $branchSync : SyncState::NotLinked;
 

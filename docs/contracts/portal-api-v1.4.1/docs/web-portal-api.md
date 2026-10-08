@@ -1422,7 +1422,9 @@ the same reply). On 200 the till forgets its cloud link and withdraws the licenc
 work) and writes an `AuditLog` row `DeactivateTill`; any refusal or no answer changes nothing on the till.
 
 **Request** (`deactivate-request.schema.json`): `registerId`, `installId`, `reason` (`transfer`, `replaced`,
-`removed`, `closed`, `other` — open list), `note`.
+`removed`, `closed`, `other` — open list), `note`; from till **0.1.53** also `tokenSha256` (SHA-256 hex of the licence
+token this install holds, as in `validate`; null when it holds none) and `installCode` — both optional. A
+`tokenSha256` that is not the token given to this install → 403 `device.token_mismatch`; without them, check as before.
 
 - **A second till** (`deactivate-request.json` → `deactivate-reply.json`): the seat is freed (`seat: "deactivated"`,
   `seatsInUse`, `maxRegisters`); the main till stops letting that till join.
@@ -1437,7 +1439,7 @@ backup → wizard "Link to your account" → transfer code → `activate` with `
 Deactivate on the portal → the same transfer code; a later `validate` from the dead PC, if it ever comes back,
 gets `auth.key_revoked`.
 
-**Errors:** 400, 401, 403 (`device.not_main_till`), 404 `device.not_found`, 409, 422, 426, 429, 500, 503.
+**Errors:** 400, 401, 403 (`device.not_main_till`, `device.token_mismatch`), 404 `device.not_found`, 409, 422, 426, 429, 500, 503.
 
 ### 17.8 `POST /api/v1/cloud/migrate` — a local shop moves to the cloud
 

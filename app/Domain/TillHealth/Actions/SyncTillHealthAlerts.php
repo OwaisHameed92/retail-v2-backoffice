@@ -6,6 +6,7 @@ use App\Domain\Calendar\Queries\ShopHours;
 use App\Domain\Licensing\Enums\LicenceAlertType;
 use App\Domain\Licensing\Enums\LicenceStatus;
 use App\Domain\Licensing\Models\LicenceAlert;
+use App\Domain\Shared\Country\TillProfile;
 use App\Domain\Tenancy\Enums\CompanyStatus;
 use App\Domain\TillHealth\Data\BranchHealthRow;
 use App\Domain\TillHealth\Data\TillHealthRow;
@@ -148,7 +149,7 @@ class SyncTillHealthAlerts
 
         return match ($problem) {
             HealthProblem::Offline => 'Last heard from '.$when($row->lastSeenAt).'.',
-            HealthProblem::OldVersion => 'SSPOS '.$row->appVersion.' (minimum '.$thresholds->minimumAppVersion.').',
+            HealthProblem::OldVersion => TillProfile::appName().' '.$row->appVersion.' (minimum '.$thresholds->minimumAppVersion.').',
             HealthProblem::SyncFailing => mb_substr(trim(($branch->sync->lastErrorCode ?? 'error').': '.($branch->sync->lastErrorMessage ?? '')), 0, 300),
             HealthProblem::SyncStalled => 'Last sync '.$when($branch?->sync?->lastContactAt()).($row->pendingSyncRows !== null ? ', '.$row->pendingSyncRows.' rows waiting on the till.' : '.'),
             HealthProblem::ClockSkew => 'Till clock '.abs($skew).' s '.($skew > 0 ? 'fast' : 'slow').' at the last check-in.',

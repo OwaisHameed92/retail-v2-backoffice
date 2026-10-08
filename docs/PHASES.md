@@ -4,6 +4,8 @@ Plan v2 (2026-09-28), rewritten after the EPOS team's contract v1.3.1; **current
 `docs/contracts/portal-api-v1.4.1/`, start at `START-HERE.md` and `docs/web-portal-api/ANSWERS-2026-09-29.md`). The
 till is already built against that contract, so **the portal implements it exactly**; where our earlier modules
 differ, they are reworked (marked 🔄). Earlier contract folders (v1.1, v1.3.3) were removed when the generator moved on.
+Latest pack in that folder: till 0.1.53 (2026-10-08). The Pakistan till (Pak POS) has its own folder,
+`docs/contracts/pak-pos-2026-10-07`, used only by the Pakistan instance (docs/pakistan-plan.md P12).
 
 Each module is one agent task. Modules in the same wave can run in parallel. Status: `done` · `rework` · `todo` ·
 `blocked (reason)`. A module is done only when its Actions + Pest tests (tenant isolation and authorisation

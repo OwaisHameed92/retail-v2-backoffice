@@ -14,9 +14,13 @@ export function hasModule(module: CountryModule): boolean {
 }
 
 /**
- * The till's age rules for a pick list: all of them where the lottery is shown, else without "Lottery (18)" unless
- * it is the value already chosen (a stored value stays visible and is saved unchanged).
+ * The till's age rules for a pick list: all of them where the lottery is shown, else without "Lottery (18)"; where
+ * the profile limits the rules (Pak POS: None and 18 or over only) just those. The value already chosen always stays
+ * (a stored value stays visible and is saved unchanged).
  */
 export function visibleAgeRules<T extends { value: string }>(options: T[], current?: string | null): T[] {
-    return hasModule('lottery') ? options : options.filter((option) => option.value !== 'lottery18' || option.value === current);
+    const offered = country().ageRules;
+    const limited = offered ? options.filter((option) => offered.includes(option.value) || option.value === current) : options;
+
+    return hasModule('lottery') ? limited : limited.filter((option) => option.value !== 'lottery18' || option.value === current);
 }

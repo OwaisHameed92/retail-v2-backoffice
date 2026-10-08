@@ -3,6 +3,7 @@
 namespace App\Domain\Tenancy\Data;
 
 use App\Domain\Shared\Country\Country;
+use App\Domain\Shared\Country\TaxIdColumns;
 use App\Domain\Tenancy\Enums\CompanyRole;
 use App\Domain\Tenancy\Models\Branch;
 use App\Domain\Tenancy\Models\Company;
@@ -43,7 +44,7 @@ final class TenantData
             'id' => $company->id,
             'name' => $company->name,
             'legalName' => $company->legal_name,
-            'vatNumber' => $company->vat_number,
+            'vatNumber' => TaxIdColumns::vatNumber($company),
             'companyNumber' => $company->company_number,
             'address' => $company->address,
             'phone' => $company->phone,

@@ -3,6 +3,7 @@
 namespace App\Domain\Catalogue\Import;
 
 use App\Domain\Shared\Country\Country;
+use App\Domain\Shared\Country\TillProfile;
 use App\Domain\TillData\Enums\AgeRule;
 
 /**
@@ -93,7 +94,10 @@ final class RowInterpreter
     {
         $value = str_replace([app(Country::class)->symbol(), ',', ' '], '', $value);
 
-        if (preg_match('/^\d+(\.\d{1,'.$places.'})?$/', $value) !== 1 || (float) $value > self::MAX_PRICE) {
+        // A price (2 places) where the profile limits it (Pak POS: 9,999,999.99); GB and costs as before.
+        $max = $places === 2 && TillProfile::priceDigits() !== TillProfile::DEFAULT_PRICE_DIGITS ? (float) TillProfile::priceMax() : self::MAX_PRICE;
+
+        if (preg_match('/^\d+(\.\d{1,'.$places.'})?$/', $value) !== 1 || (float) $value > $max) {
             return null;
         }
 

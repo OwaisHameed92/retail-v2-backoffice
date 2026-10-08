@@ -6,6 +6,7 @@ use App\Domain\Admin\Models\Admin;
 use App\Domain\Licensing\Enums\LicenceStatus;
 use App\Domain\Licensing\Models\Licence;
 use App\Domain\Shared\Country\Country;
+use App\Domain\Shared\Country\TillProfile;
 use App\Domain\Shared\Models\AuditLog;
 use App\Domain\Tenancy\Models\Register;
 use App\Models\User;
@@ -77,7 +78,7 @@ final class LicenceActivity
             'licence.reinstalled' => 'Reinstalled'.$of.' on '.self::pc($after),
             'licence.released' => 'Released the key'.$of.' from '.self::pc($before).' (deactivated on the till'.(isset($meta['reason']) && $meta['reason'] !== '' ? ', '.$meta['reason'] : '').')',
             'licence.lock_changed' => ($after['lock_locked'] ?? false) ? 'The till'.$of.' reported it is locked ('.($after['lock_reason'] ?? 'no reason').')' : 'The till'.$of.' reported it is unlocked',
-            'licence.app_updated' => 'Updated SSPOS'.$of.' from '.($before['last_app_version'] ?? '?').' to '.($after['last_app_version'] ?? '?'),
+            'licence.app_updated' => 'Updated '.TillProfile::appName().$of.' from '.($before['last_app_version'] ?? '?').' to '.($after['last_app_version'] ?? '?'),
             'licence.alert_resolved' => 'Resolved the alert "'.($meta['label'] ?? $after['alert'] ?? 'alert').'"'.$of,
             default => $entry->action,
         };

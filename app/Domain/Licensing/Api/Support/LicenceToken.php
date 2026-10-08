@@ -14,6 +14,7 @@ use App\Domain\Licensing\Signing\Sspos\SsposTokenSigner;
 use App\Domain\Licensing\Signing\Sspos\TokenKind;
 use App\Domain\Licensing\Support\BranchLicenceTerm;
 use App\Domain\Plans\Enums\Feature;
+use App\Domain\Shared\Country\TillProfile;
 use App\Domain\Tenancy\Models\Branch;
 use App\Domain\Tenancy\Models\Company;
 use App\Domain\Tenancy\Support\TenantLimits;
@@ -34,6 +35,7 @@ use Illuminate\Support\Collection;
  *   allowance is `onlineCheck.graceDays`, not part of `expiresAt`.
  * - `company` block: business type, owner's name from the company; address, town, postcode from the branch when
  *   it has an address, else the company; phone, VAT number, receipt footer from the branch, else the company.
+ * - `country` (§17.18): the profile's licence country ("PK"), none on GB (TillProfile::licenceCountry).
  */
 final class LicenceToken
 {
@@ -71,6 +73,7 @@ final class LicenceToken
             features: $features,
             limits: $multiBranch ? ['branches' => TenantLimits::branchesAllowed($company)] : [],
             company: self::companyBlock($licence),
+            country: TillProfile::licenceCountry(),
         );
     }
 

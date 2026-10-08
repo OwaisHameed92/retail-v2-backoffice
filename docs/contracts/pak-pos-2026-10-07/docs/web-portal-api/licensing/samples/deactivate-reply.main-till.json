@@ -1,0 +1,22 @@
+{
+  "registerId": "01K5T0Q8C4000000000000R001",
+  "seat": "deactivated",
+  "seatsInUse": 1,
+  "maxRegisters": 3,
+  "apiKeyRevoked": true,
+  "transferCode": "SSP-TRF-8M3K-2QXD",
+  "transferCodeExpiresAt": "2026-10-11T17:00:00Z",
+  "portalTimeUtc": "2026-10-04T17:00:01Z",
+  "messages": [
+    {
+      "id": "01K5T0Q8C4000000000000M006",
+      "level": "info",
+      "title": "Till released",
+      "text": "Enter code SSP-TRF-8M3K-2QXD on the new PC within 7 days. Take a backup first.",
+      "showFromUtc": null,
+      "showUntilUtc": "2026-10-11T17:00:00Z",
+      "dismissible": false,
+      "link": null
+    }
+  ]
+}

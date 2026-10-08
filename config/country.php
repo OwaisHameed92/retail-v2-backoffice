@@ -91,6 +91,15 @@ return [
             // Phase P9: UK sample places in examples and previews ("e.g. Leeds", "LDS-01-000482") and what replaces them
             // on this profile. GB has none: its text is shown as written.
             'samplePlaces' => [],
+            // Till-facing profile values (App\Domain\Shared\Country\TillProfile; Pak POS pack 2026-10-07). GB keeps every
+            // reply, token and pull exactly as before: no licence country (the UK till 0.1.60 does not read one), the
+            // `nations` above, every age rule, product prices as the forms always took them, versions compared as they are.
+            'till' => [
+                // Licence `country` (contract §17.18): null = not sent. Set 'GB' here when the UK tills should get it.
+                'licenceCountry' => null,
+                // The till app's name on portal pages and alerts.
+                'appName' => 'SSPOS',
+            ],
         ],
 
         'PK' => [
@@ -110,25 +119,20 @@ return [
             'timezone' => 'Asia/Karachi',
             'taxName' => 'GST',
             'taxIds' => [
-                // Phase P3, lenient on purpose (FBR formats vary): TenantRules strips spaces first, and STRN dashes too.
-                // NTN (stored in `vat_number`): 7 digits with an optional check digit ("1234567", "1234567-8"), or a
-                // sole trader's 13-digit CNIC ("35202-1234567-1", dashes optional).
-                'ntn' => [
-                    'label' => 'NTN',
-                    'pattern' => '/^(\d{7}(-?\d)?|\d{5}-?\d{7}-?\d)$/',
-                    'example' => '1234567-8',
-                ],
-                // STRN (sales tax registration, column `strn`): 13 digits.
-                'strn' => [
+                // Pak POS pack 2026-10-07 (supersedes P3's NTN / STRN / SECP split): the ids live where the Pak POS till
+                // reads them. `vat_number` (Company / Branch `vatNumber`, `shop.vat_number`) is the STRN, `company_number`
+                // (Company `companyNumber`, `shop.company_number`) the NTN. No SECP field for now; `companies.strn` is no
+                // longer read or written on PK. Lenient on purpose: TenantRules strips spaces and dashes from the STRN.
+                'vatNumber' => [
                     'label' => 'STRN',
                     'pattern' => '/^\d{13}$/',
                     'example' => '1234567890123',
                 ],
-                // SECP company registration (`company_number`): 7 digits.
+                // NTN: 7 digits with an optional check digit ("1234567", "1234567-8").
                 'companyNumber' => [
-                    'label' => 'SECP registration number',
-                    'pattern' => '/^\d{7}$/',
-                    'example' => '0123456',
+                    'label' => 'NTN',
+                    'pattern' => '/^\d{7}(-?\d)?$/',
+                    'example' => '1234567-8',
                 ],
             ],
             'address' => [
@@ -169,6 +173,8 @@ return [
             ],
             'legal' => [
                 'registeredIn' => 'Pakistan',
+                // Our own seller block (BILLING_SELLER_*): its ids keep their own names, whatever the customer columns hold.
+                'sellerIds' => ['companyNumber' => 'SECP registration number', 'vatNumber' => 'NTN'],
             ],
             // Phase P9: the till contract has no Pakistani value for Branch `nation` (England, Scotland, Wales, Northern
             // Ireland only): the field is hidden and a shop keeps the column default until EPOS answers.
@@ -180,6 +186,76 @@ return [
                 'Bradford' => 'Karachi',
                 'LDS' => 'LHR',
                 'BFD' => 'KHI',
+            ],
+            // Pak POS pack 2026-10-07 (docs/contracts/pak-pos-2026-10-07, DECISIONS "Pak POS pack 2026-10-07").
+            'till' => [
+                // §17.18: "PK" in the signed token payload and top level in licence/activate and licence/validate.
+                'licenceCountry' => 'PK',
+                'appName' => 'Pak POS',
+                // Pak POS versions are their own line from 1.0.0, cut from SSPOS 3 0.1.53: against a gate written in
+                // SSPOS 3's 0.x numbers a Pak POS version counts as this baseline (TillProfile::compareAppVersion).
+                'ssposBaseline' => '0.1.53',
+                // The first Pak POS version: the `minimumAppVersion` sent while the configured one is in 0.x numbers.
+                'firstAppVersion' => '1.0.0',
+                // Branch `nation` of every Pakistan shop (owner's answer): stored and pulled as written.
+                'branchNation' => 'Pakistan',
+                // One age rule, eighteen: the portal's pickers offer only these (stored till values are kept).
+                'ageRules' => ['none', 'over18'],
+                // A product's price may be up to 9,999,999.99 (7 whole digits); GB keeps its forms' 8.
+                'priceDigits' => 7,
+                // The Till settings page (App\Domain\ShopSettings\Support\CountrySettings). GB has none: its catalogue is
+                // shown exactly as written.
+                'settings' => [
+                    // Never shown or read by the Pak POS till; a value already stored stays as it is (`*` = any ending).
+                    'hidden' => [
+                        'till.keypad_price_in_pence', 'compliance.mup_*', 'compliance.challenge25_*', 'compliance.nicotine_products_gated',
+                        'compliance.energy_drink_age_gate', 'compliance.generational_*',
+                    ],
+                    // Shared settings only the Pak POS line has, section => key => definition (catalogue.php's shape).
+                    'added' => [
+                        'shop' => [
+                            'shop.currency_symbol' => ['label' => 'Currency sign', 'type' => 'text', 'max' => 6, 'everyShopOnly' => true, 'help' => 'Written before every amount on the till, receipts, reports and labels, for example Rs. The amounts themselves do not change.'],
+                        ],
+                        'payments' => [
+                            'payments.allow_wallets' => ['label' => 'Phone wallets', 'type' => 'bool', 'help' => 'JazzCash, Easypaisa and Raast QR on the till\'s payment screen. The customer pays from their phone; the transaction ID is printed as "Ref …".'],
+                            'payments.quick_cash' => ['label' => 'Quick cash buttons', 'type' => 'text', 'max' => 60, 'help' => 'The amounts on the till\'s quick cash buttons, separated by commas.'],
+                        ],
+                        'accounts' => [
+                            'messaging.whatsapp_country_code' => ['label' => 'WhatsApp country code', 'type' => 'int', 'min' => 1, 'max' => 999, 'help' => 'Put in front of customers\' local mobile numbers when the till sends WhatsApp messages.'],
+                        ],
+                    ],
+                    // [label, help] in place of the catalogue's.
+                    'labels' => [
+                        'payments.round_cash_to_5p' => ['Round cash to the rupee', 'Cash totals are rounded to the nearest rupee. Card and wallet payments are never rounded.'],
+                    ],
+                    // The till's start values here (UPCOMING-CHANGES 2026-10-07, pak-pos): shown as the default of a setting
+                    // on the page. Money settings start on rupee sums; nothing is pushed or stored.
+                    'defaults' => [
+                        'shop.currency_symbol' => 'Rs',
+                        'payments.allow_wallets' => 'true',
+                        'payments.round_cash_to_5p' => 'true',
+                        'payments.quick_cash' => '100,500,1000,5000',
+                        'messaging.whatsapp_country_code' => '92',
+                        'till.manager_pin_discount_over' => '500.00',
+                        'till.clear_cart_requires_pin_over' => '2000.00',
+                        'till.refund_without_receipt_max' => '2000.00',
+                        'till.bag_charge_amount' => '10.00',
+                        'cash.default_float' => '5000.00',
+                        'cash.variance_alert_over' => '500.00',
+                        'cash.high_value_variance_threshold' => '1000.00',
+                        'cash.safe_drop_prompt_over' => '50000.00',
+                        'stock.take_recount_over_value' => '2000.00',
+                        'stock.take_approval_over' => '10000.00',
+                        'stock.adjust_manager_pin_over' => '5000.00',
+                        'staff.discount_daily_cap' => '1000.00',
+                        'staff.discount_weekly_cap' => '3000.00',
+                        'loss_prevention.refund_amount_per_shift' => '10000.00',
+                        'loss_prevention.discount_minimum_amount' => '2000.00',
+                        'vouchers.min_issue_amount' => '500.00',
+                    ],
+                    // Money settings' highest values × this (rupee sums run about a hundred times larger than pounds).
+                    'moneyMaxFactor' => 100,
+                ],
             ],
         ],
     ],

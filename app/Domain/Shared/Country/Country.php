@@ -14,13 +14,13 @@ use Illuminate\Container\Container;
  * @phpstan-type TaxId array{label: string, pattern: string|null, example: string}
  * @phpstan-type Address array{postcodeLabel: string, postcodeRequired: bool, postcodePattern: string, postcodeExample: string, cityRequired: bool}
  * @phpstan-type Phone array{pattern: string, example: string, dialCode: string}
- * @phpstan-type Profile array{name: string, currency: string, currencySymbol: string, currencyName: string, currencySymbolSpace: bool, displayDecimals: int, grouping: string, numberLocale: string, dateLocale: string, timezone: string, taxName: string, taxIds: array<string, TaxId>, address: Address, phone: Phone, billing: array{collection: string, manualMethods: list<string>}, features: array<string, bool>, legal?: array{registeredIn: string}, nations?: list<string>, samplePlaces?: array<string, string>}
+ * @phpstan-type Profile array{name: string, currency: string, currencySymbol: string, currencyName: string, currencySymbolSpace: bool, displayDecimals: int, grouping: string, numberLocale: string, dateLocale: string, timezone: string, taxName: string, taxIds: array<string, TaxId>, address: Address, phone: Phone, billing: array{collection: string, manualMethods: list<string>}, features: array<string, bool>, legal?: array{registeredIn: string, sellerIds?: array<string, string>}, nations?: list<string>, samplePlaces?: array<string, string>, till?: array<string, mixed>}
  */
 final class Country
 {
     public const DEFAULT = 'GB';
 
-    /** Business columns → the taxIds keys they may hold, first found wins (see `taxIdFor`). */
+    /** Business columns → the taxIds keys they may hold, first found wins (see `taxIdFor`). PK keys its ids by column. */
     private const TAX_ID_COLUMNS = [
         'vat_number' => ['vatNumber', 'ntn'],
         'strn' => ['strn'],
@@ -175,7 +175,7 @@ final class Country
     }
 
     /**
-     * Business tax and registration ids, keyed by field: GB vatNumber, companyNumber; PK ntn, strn, companyNumber.
+     * Business tax and registration ids, keyed by the column they live in: GB VAT number, Companies House; PK STRN (vatNumber), NTN (companyNumber).
      *
      * @return array<string, TaxId>
      */
@@ -186,7 +186,7 @@ final class Country
 
     /**
      * The tax id a business column holds (phase P3), null when the profile has none: `vat_number` is the VAT number
-     * (GB) or the NTN (PK), `strn` the STRN (PK only), `company_number` the Companies House or SECP number.
+     * (GB) or the STRN (PK), `company_number` the Companies House number or the NTN (PK); `strn` none today (Pak POS pack).
      *
      * @return TaxId|null
      */
@@ -246,6 +246,15 @@ final class Country
     }
 
     /**
+     * The name of one of our own seller ids (`companyNumber`, `vatNumber`) on our invoices where it differs from the
+     * customer column's label (PK: "SECP registration number", "NTN"); null = the column's label (GB as before).
+     */
+    public function sellerIdLabel(string $field): ?string
+    {
+        return $this->profile['legal']['sellerIds'][$field] ?? null;
+    }
+
+    /**
      * The till's Branch `nation` values this country offers on the shop forms (phase P9): GB England, Scotland, Wales,
      * Northern Ireland; PK none (the field is hidden and a shop keeps the column default).
      *
@@ -265,6 +274,14 @@ final class Country
     public function samplePlaces(): array
     {
         return $this->profile['samplePlaces'] ?? [];
+    }
+
+    /**
+     * A till-facing value of the profile (`till.*` in config/country.php), read through TillProfile.
+     */
+    public function till(string $key): mixed
+    {
+        return $this->profile['till'][$key] ?? null;
     }
 
     /**
@@ -325,6 +342,11 @@ final class Country
             ...($this->billingCollection() === 'manual' ? ['manualMethods' => $this->manualPaymentMethods()] : []),
             // Phase P9: the sample places that replace the UK ones in page examples, only where there are some (PK).
             ...($this->samplePlaces() !== [] ? ['samplePlaces' => $this->samplePlaces()] : []),
+            // Pak POS pack: the age rules the pickers offer and the whole digits of a product price, only where the
+            // profile limits them (PK); GB is unchanged.
+            ...TillProfile::frontend($this),
+            // Pak POS pack: our own seller ids' names where they differ from the customer columns' (PK), never on GB.
+            ...(($this->profile['legal']['sellerIds'] ?? []) !== [] ? ['sellerIds' => $this->profile['legal']['sellerIds']] : []),
         ];
     }
 }

@@ -3,6 +3,7 @@
 namespace App\Domain\TillHealth\Support;
 
 use App\Domain\Shared\Country\Country;
+use App\Domain\Shared\Country\TillProfile;
 
 /**
  * The Till health thresholds of config/till-health.php (module 2.7), plus the minimum app version the licence API
@@ -44,7 +45,7 @@ final readonly class HealthThresholds
             syncFailingHours: max(1, (int) config('till-health.sync_failing_hours', 24)),
             syncStalledHours: max(1, (int) config('till-health.sync_stalled_hours', 24)),
             alertOfflineHours: max(1, (int) config('till-health.alert_offline_hours', 4)),
-            minimumAppVersion: (string) config('licence.api.minimum_app_version', '0.1.0'),
+            minimumAppVersion: TillProfile::minimumAppVersion((string) config('licence.api.minimum_app_version', '0.1.0')),
             tradingStart: (string) ($hours['start'] ?? '08:00'),
             tradingEnd: (string) ($hours['end'] ?? '20:00'),
             timezone: is_string($zone = config('till-health.timezone')) ? $zone : null,

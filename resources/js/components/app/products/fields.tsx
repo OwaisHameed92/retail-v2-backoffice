@@ -1,7 +1,7 @@
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { currencySymbol, formatMoneyAsGiven, formatMoney as profileMoney, wideCurrencySymbol } from '@/lib/country';
+import { currencySymbol, formatMoneyAsGiven, priceInputPattern, formatMoney as profileMoney, wideCurrencySymbol } from '@/lib/country';
 import { cn } from '@/lib/utils';
 import { type ComponentProps, type ReactNode } from 'react';
 import { type Option } from './types';
@@ -39,7 +39,7 @@ export function MoneyInput({ id, invalid, className, places = 2, ...props }: Com
                 type="text"
                 inputMode="decimal"
                 autoComplete="off"
-                pattern={places === 2 ? '^\\d{1,8}(\\.\\d{1,2})?$' : '^\\d{1,8}(\\.\\d{1,4})?$'}
+                pattern={places === 2 ? priceInputPattern() : '^\\d{1,8}(\\.\\d{1,4})?$'}
                 aria-invalid={invalid || undefined}
                 aria-describedby={invalid ? `${id}-error` : `${id}-help`}
                 className={cn(wideCurrencySymbol() ? 'pl-10' : 'pl-7', 'tabular-nums', className)}

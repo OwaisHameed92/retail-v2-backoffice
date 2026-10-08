@@ -1,0 +1,63 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "licence-activate-reply",
+  "description": "POST /api/v1/licence/activate 200 reply (section 17.15). The same installId activating the same key again gets the same kind of reply (idempotent - a reinstall that kept its data, or a retry).",
+  "type": "object",
+  "properties": {
+    "status": {
+      "$ref": "common.schema.json#/$defs/licenceStatus"
+    },
+    "licenceToken": {
+      "$ref": "common.schema.json#/$defs/licenceToken",
+      "description": "Signed token for THIS till: source portal, installCode = the request's installCode, onlineCheck required, and (since 2026-09-28) the shop's companyId/branchId, names and company block, maxRegisters = tills allowed in the branch, features (multi_branch), limits.branches, validFrom/expiresAt."
+    },
+    "licence": {
+      "allOf": [
+        {
+          "$ref": "common.schema.json#/$defs/licenceSummary"
+        }
+      ],
+      "description": "Plain summary of the same fields (company block, maxRegisters, limits.branches, features, validFrom, expiresAt)."
+    },
+    "portalTimeUtc": {
+      "$ref": "common.schema.json#/$defs/utc"
+    },
+    "nextCheckAfterSeconds": {
+      "type": "integer",
+      "minimum": 60,
+      "maximum": 2592000
+    },
+    "messages": {
+      "$ref": "common.schema.json#/$defs/messages"
+    },
+    "apiKey": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Optional (2026-09-28). The branch's sync key when the licence includes the dashboard (cloud_sync). The till stores it and turns Cloud sync on, so the owner types no second code (docs/web-portal-api.md 17.3 step 3)."
+    },
+    "hubUrl": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^https://",
+      "description": "Optional (2026-09-28). Only when sync runs on another host than the address built into the till."
+    },
+    "country": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^[A-Z]{2}$",
+      "description": "Optional (2026-10-07, docs/web-portal-api.md 17.18). The licence's country, the same value as the token's country: PK or GB. A till built for another country refuses the key before reading the token."
+    }
+  },
+  "required": [
+    "status",
+    "licenceToken",
+    "portalTimeUtc",
+    "messages"
+  ]
+}

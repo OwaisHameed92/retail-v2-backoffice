@@ -6,6 +6,7 @@ use App\Domain\Catalogue\Support\ProductFields;
 use App\Domain\Shared\Country\Country;
 use App\Domain\Shared\Country\CountryModules;
 use App\Domain\Shared\Country\LocalText;
+use App\Domain\Shared\Country\TillProfile;
 use App\Domain\TillData\Enums\AgeRule;
 use App\Domain\TillData\Enums\NegativeStockPolicy;
 use App\Domain\TillData\Enums\UnitType;
@@ -16,12 +17,10 @@ use Illuminate\Validation\Rule;
 /**
  * The product form (module 4.2). Route: `company.can:catalogue.manage`. Formats only; SaveProduct checks the
  * business's data (department, category, VAT rate, units, barcodes on other products). Money in pounds: prices 2
- * decimal places, costs and quantities 4. Text limits are the columns' (255), as tills may send longer values than the form suggests.
+ * decimal places (up to 8 whole digits, Pak POS 7: TillProfile::priceRule), costs and quantities 4. Text limits are the columns' (255), as tills may send longer values than the form suggests.
  */
 class SaveProductRequest extends CompanyWideWriteRequest
 {
-    private const MONEY = 'regex:/^\d{1,8}(\.\d{1,2})?$/';
-
     private const COST = 'regex:/^\d{1,8}(\.\d{1,4})?$/';
 
     /**
@@ -72,10 +71,10 @@ class SaveProductRequest extends CompanyWideWriteRequest
             'vat_rate_id' => ['required', 'string', 'size:26'],
             'unit_type' => ['required', Rule::enum(UnitType::class)],
             'unit_code' => ['required', 'string', 'max:20'],
-            'sell_price' => ['required', self::MONEY],
+            'sell_price' => ['required', TillProfile::priceRule()],
             'cost_price' => ['required', self::COST],
-            'trade_price' => ['nullable', self::MONEY],
-            'pmp_price' => ['nullable', self::MONEY],
+            'trade_price' => ['nullable', TillProfile::priceRule()],
+            'pmp_price' => ['nullable', TillProfile::priceRule()],
             'min_stock_qty' => ['nullable', self::COST],
             'max_stock_qty' => ['nullable', self::COST],
             'reorder_qty' => ['nullable', self::COST],
@@ -86,7 +85,7 @@ class SaveProductRequest extends CompanyWideWriteRequest
             'max_qty_reason' => ['nullable', 'string', 'max:255'],
             'abv_percent' => ['nullable', 'numeric', 'min:0', 'max:100', 'regex:/^\d{1,3}(\.\d{1,2})?$/'],
             'volume_ml' => ['nullable', self::COST],
-            'deposit_amount' => ['nullable', 'required_if_accepted:is_deposit_item', self::MONEY],
+            'deposit_amount' => ['nullable', 'required_if_accepted:is_deposit_item', TillProfile::priceRule()],
             'commodity_code' => ['nullable', 'string', 'max:20'],
             'net_mass_kg' => ['nullable', self::COST],
             'tile_colour_hex' => ['required', 'regex:/^#[0-9A-Fa-f]{6}$/'],
@@ -102,7 +101,7 @@ class SaveProductRequest extends CompanyWideWriteRequest
             'units.*.id' => ['nullable', 'string', 'size:26'],
             'units.*.unit_id' => ['required', 'string', 'size:26'],
             'units.*.conversion_factor' => ['required', self::COST, 'not_in:0,0.0,0.00,0.000,0.0000'],
-            'units.*.sell_price_inc_vat' => ['required', self::MONEY],
+            'units.*.sell_price_inc_vat' => ['required', TillProfile::priceRule()],
             'units.*.cost' => ['required', self::COST],
             'units.*.is_default_sell_unit' => ['required', 'boolean'],
             'units.*.is_purchase_unit' => ['required', 'boolean'],

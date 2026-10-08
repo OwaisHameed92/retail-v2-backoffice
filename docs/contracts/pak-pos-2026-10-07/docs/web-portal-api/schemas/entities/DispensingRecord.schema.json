@@ -1,0 +1,161 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:sspos:web-portal-api:v1:DispensingRecord",
+  "title": "DispensingRecord",
+  "description": "Payload of a DispensingRecord row.",
+  "type": "object",
+  "properties": {
+    "patientCustomerId": {
+      "type": "string"
+    },
+    "prescriberName": {
+      "type": "string"
+    },
+    "prescriberRegistration": {
+      "type": "string"
+    },
+    "prescriptionDate": {
+      "type": "string",
+      "format": "date"
+    },
+    "dispensedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "dispensedByUserId": {
+      "type": "string"
+    },
+    "dispensedByName": {
+      "type": "string"
+    },
+    "chargeStatus": {
+      "enum": [
+        "paid",
+        "exempt",
+        "private"
+      ]
+    },
+    "exemption": {
+      "enum": [
+        "none",
+        "aged60OrOver",
+        "under16",
+        "aged16To18InEducation",
+        "maternityExemption",
+        "medicalExemption",
+        "prepaymentCertificate",
+        "warPension",
+        "lowIncomeHc2",
+        "benefits",
+        "taxCredit",
+        "freeInNation"
+      ]
+    },
+    "chargeAmount": {
+      "type": [
+        "string",
+        "number"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$"
+    },
+    "saleId": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "notes": {
+      "type": "string"
+    },
+    "branchId": {
+      "type": "string"
+    },
+    "id": {
+      "type": "string"
+    },
+    "companyId": {
+      "type": "string"
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "rowVersion": {
+      "type": [
+        "string",
+        "integer"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)$"
+    },
+    "deletedAt": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "isDeleted": {
+      "type": "boolean"
+    },
+    "domainEvents": {
+      "type": [
+        "array",
+        "null"
+      ],
+      "items": {
+        "type": "object",
+        "properties": {
+          "eventId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "occurredAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "version": {
+            "type": [
+              "string",
+              "integer"
+            ],
+            "pattern": "^-?(?:0|[1-9]\\d*)$"
+          }
+        },
+        "required": [
+          "eventId",
+          "occurredAt",
+          "version"
+        ]
+      }
+    }
+  },
+  "required": [
+    "patientCustomerId",
+    "prescriberName",
+    "prescriberRegistration",
+    "prescriptionDate",
+    "dispensedAt",
+    "dispensedByUserId",
+    "dispensedByName",
+    "chargeStatus",
+    "exemption",
+    "chargeAmount",
+    "saleId",
+    "notes",
+    "branchId",
+    "id",
+    "companyId",
+    "createdAt",
+    "updatedAt",
+    "rowVersion",
+    "deletedAt",
+    "isDeleted",
+    "domainEvents"
+  ]
+}

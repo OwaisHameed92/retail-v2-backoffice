@@ -1,0 +1,60 @@
+{
+  "companyId": "01K5T0Q8C4000000000000C001",
+  "branchId": "01K5T0Q8C4000000000000B001",
+  "registerId": "01K5T0Q8C4000000000000R001",
+  "isMain": true,
+  "hubUrl": "https://portal.example.co.uk",
+  "apiKey": "sspos_br_SAMPLE_7f3a9c2e41d84b6f9a0c",
+  "licenceToken": "SSPOS1.eyJ2IjoxLCJraWQiOiJrMTM3OTlmYTQiLCJsaWNlbmNlSWQiOiIwMUs1VDBROEM0MDAwMDAwMDAwMDAwWTAwMSIsImtpbmQiOiJ0cmlhbCIsInNvdXJjZSI6InBvcnRhbCIsImlzc3VlciI6IlNTUE9TIFBvcnRhbCIsImNvbXBhbnlJZCI6IjAxSzVUMFE4QzQwMDAwMDAwMDAwMDBDMDAxIiwiYnJhbmNoSWQiOiIwMUs1VDBROEM0MDAwMDAwMDAwMDAwQjAwMSIsImJ1c2luZXNzTmFtZSI6IktpcmtnYXRlIFN0b3JlcyBMdGQiLCJicmFuY2hOYW1lIjoiTGVlZHMgS2lya2dhdGUiLCJtYXhSZWdpc3RlcnMiOjIsImlzc3VlZEF0IjoiMjAyNi0wOS0yNlQwOTowMDowMFoiLCJ2YWxpZEZyb20iOiIyMDI2LTA5LTI2VDA5OjAwOjAwWiIsImV4cGlyZXNBdCI6IjIwMjYtMTAtMDNUMDk6MDA6MDBaIiwib25saW5lQ2hlY2siOnsicmVxdWlyZWQiOnRydWUsImludGVydmFsSG91cnMiOjI0LCJncmFjZURheXMiOjE0fSwibm90ZXMiOiI3LWRheSBmcmVlIHRyaWFsIC0gZXZlcnkgZmVhdHVyZSBvbiJ9.6AKSS9nL89qp4JT_v7CMKpYHUdUWH6Zr-Dqp9y7KmNncvrFeBHkMVNCAPJ_pVTRiTOWeTyTCZvxlZbPbjo-lDQ",
+  "licence": {
+    "licenceId": "01K5T0Q8C4000000000000Y001",
+    "kind": "trial",
+    "source": "portal",
+    "expiresAt": "2026-10-03T09:00:00Z",
+    "maxRegisters": 2,
+    "features": null,
+    "limits": null
+  },
+  "settingsBootstrap": {
+    "company": {
+      "name": "Kirkgate Stores Ltd",
+      "vatNumber": "GB123456789",
+      "companyNumber": "01234567"
+    },
+    "branch": {
+      "name": "Leeds Kirkgate",
+      "code": "LDS",
+      "address": "12 Kirkgate",
+      "city": "Leeds",
+      "postcode": "LS1 6BY",
+      "phone": "0113 496 0000",
+      "email": "leeds@kirkgate.example"
+    },
+    "register": {
+      "name": "Till 1",
+      "code": "01"
+    },
+    "settings": {
+      "shop.currency": "GBP",
+      "shop.vat_registered": true,
+      "sync.interval_seconds": 30
+    }
+  },
+  "portalTimeUtc": "2026-09-26T09:00:05Z",
+  "nextCheckAfterSeconds": 86400,
+  "messages": [
+    {
+      "id": "01K5T0Q8C4000000000000M001",
+      "level": "info",
+      "title": "Welcome",
+      "text": "Your 7-day trial has started. Choose a plan any time on the portal.",
+      "showFromUtc": null,
+      "showUntilUtc": "2026-09-27T09:00:00Z",
+      "dismissible": true,
+      "link": {
+        "label": "Choose a plan",
+        "url": "https://portal.example.co.uk/billing"
+      }
+    }
+  ]
+}

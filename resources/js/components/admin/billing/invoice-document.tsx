@@ -1,7 +1,7 @@
 import { InvoiceStatusBadge } from '@/components/admin/billing/invoice-status-badge';
 import { type InvoiceDocumentData } from '@/components/admin/billing/types';
 import BrandLogo from '@/components/brand-logo';
-import { companyNumberLabel, keepsUkStyles, taxName, vatNumberPrefix } from '@/lib/country';
+import { companyNumberLabel, country, keepsUkStyles, taxName, vatNumberPrefix } from '@/lib/country';
 import { cn } from '@/lib/utils';
 
 function Label({ children }: { children: string }) {
@@ -54,7 +54,7 @@ export function InvoiceDocument({ doc }: { doc: InvoiceDocumentData }) {
                         ))}
                         {doc.seller.email && <p className="text-muted-foreground">{doc.seller.email}</p>}
                         {doc.seller.phone && <p className="text-muted-foreground">{doc.seller.phone}</p>}
-                        {doc.seller.vatNumber && <p className="text-muted-foreground">{vatNumberPrefix()} {doc.seller.vatNumber}</p>}
+                        {doc.seller.vatNumber && <p className="text-muted-foreground">{country().sellerIds?.vatNumber ?? vatNumberPrefix()} {doc.seller.vatNumber}</p>}
                         {doc.seller.strn && <p className="text-muted-foreground">STRN {doc.seller.strn}</p>}
                     </div>
                     <div className="min-w-0">
@@ -182,7 +182,7 @@ export function InvoiceDocument({ doc }: { doc: InvoiceDocumentData }) {
                 )}
 
                 <footer className="text-muted-foreground border-t pt-4 text-center text-xs">
-                    {[doc.seller.legalName, doc.seller.companyNumber && `${keepsUkStyles() ? 'Company no.' : companyNumberLabel()} ${doc.seller.companyNumber}`, doc.seller.vatNumber && `${vatNumberPrefix()} ${doc.seller.vatNumber}`, doc.seller.strn && `STRN ${doc.seller.strn}`, doc.seller.email]
+                    {[doc.seller.legalName, doc.seller.companyNumber && `${keepsUkStyles() ? 'Company no.' : (country().sellerIds?.companyNumber ?? companyNumberLabel())} ${doc.seller.companyNumber}`, doc.seller.vatNumber && `${country().sellerIds?.vatNumber ?? vatNumberPrefix()} ${doc.seller.vatNumber}`, doc.seller.strn && `STRN ${doc.seller.strn}`, doc.seller.email]
                         .filter(Boolean)
                         .join(' · ')}
                 </footer>

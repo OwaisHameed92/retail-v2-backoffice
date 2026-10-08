@@ -4,6 +4,7 @@ namespace App\Domain\Shops\Queries;
 
 use App\Domain\Licensing\Data\LicenceData;
 use App\Domain\Shared\Country\Country;
+use App\Domain\Shared\Country\TaxIdColumns;
 use App\Domain\Tenancy\CurrentCompany;
 use App\Domain\Tenancy\Enums\Ability;
 use App\Domain\Tenancy\Models\Branch;
@@ -25,7 +26,7 @@ final class BusinessPage
             'business' => [
                 'name' => $company->name,
                 'legal_name' => $company->legal_name,
-                'vat_number' => $company->vat_number,
+                'vat_number' => TaxIdColumns::vatNumber($company),
                 'company_number' => $company->company_number,
                 'address' => $company->address,
                 'town' => $company->town,

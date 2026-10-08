@@ -47,6 +47,8 @@
 <body>
 @php
     $vatNo = app(\App\Domain\Shared\Country\Country::class)->vatNumberPrefix();
+    // Pak POS pack: our own tax number keeps its name (NTN) while the customer's `vat_number` is the STRN; GB as before.
+    $sellerVatNo = app(\App\Domain\Shared\Country\Country::class)->sellerIdLabel('vatNumber') ?? $vatNo;
     $tax = app(\App\Domain\Shared\Country\Country::class)->taxName();
     $badgeClass = match ($doc['status']) {
         'paid' => 'badge-paid',
@@ -65,7 +67,7 @@
 
 <div class="footer">
     {{ $seller['legalName'] }}@if ($seller['companyNumber']) · {{ \App\Domain\Shared\Country\LocalText::registration($seller['companyNumber']) }}@endif
-    @if ($seller['vatNumber']) · {{ $vatNo }} {{ $seller['vatNumber'] }}@endif
+    @if ($seller['vatNumber']) · {{ $sellerVatNo }} {{ $seller['vatNumber'] }}@endif
     @if (! empty($seller['strn'])) · STRN {{ $seller['strn'] }}@endif
     @if ($seller['email']) · {{ $seller['email'] }}@endif
 </div>
@@ -100,7 +102,7 @@
             @endforeach
             @if ($seller['email'])<div class="muted">{{ $seller['email'] }}</div>@endif
             @if ($seller['phone'])<div class="muted">{{ $seller['phone'] }}</div>@endif
-            @if ($seller['vatNumber'])<div class="muted">{{ $vatNo }} {{ $seller['vatNumber'] }}</div>@endif
+            @if ($seller['vatNumber'])<div class="muted">{{ $sellerVatNo }} {{ $seller['vatNumber'] }}</div>@endif
             @if (! empty($seller['strn']))<div class="muted">STRN {{ $seller['strn'] }}</div>@endif
         </td>
         <td>

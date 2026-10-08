@@ -34,7 +34,7 @@ final class TenantRules
     public static function company(): array
     {
         // The business ids follow the country profile (Pakistan plan P3): GB's patterns are VAT_PATTERN and
-        // COMPANY_NUMBER_PATTERN exactly (pinned by CountryProfileTest); PK adds the STRN.
+        // COMPANY_NUMBER_PATTERN exactly (pinned by CountryProfileTest). A profile with a separate STRN id adds it (none today).
         $strn = self::taxIdPattern('strn');
 
         return [
@@ -80,7 +80,7 @@ final class TenantRules
             $prefix.'town' => ContactRules::town(['nullable', 'string', 'max:80'], [$prefix.'address', $prefix.'postcode']),
             $prefix.'postcode' => ContactRules::postcode(['nullable', 'string', 'max:10', 'regex:'.self::POSTCODE_PATTERN]),
             $prefix.'receipt_footer' => ['nullable', 'string', 'max:200'],
-            $prefix.'nation' => ['required', Rule::enum(Nation::class)],
+            $prefix.'nation' => ['required', Nation::rule()],
             $prefix.'licensed_hours_json' => ['nullable', 'string', 'json', 'max:4000'],
             $prefix.'is_drs_return_point' => ['boolean'],
             $prefix.'area_m2' => ['nullable', 'numeric', 'min:0', 'max:99999999.99', 'decimal:0,2'],
@@ -168,10 +168,9 @@ final class TenantRules
                 $clean[$numberKey] = str_pad((string) $clean[$numberKey], 8, '0', STR_PAD_LEFT);
             }
 
-            // PK STRN: digits only, however it was grouped ("17-00-1234-567-89").
-            $strnKey = $prefix.'strn';
-            if (! $uk && isset($clean[$strnKey])) {
-                $clean[$strnKey] = (string) preg_replace('/[\s-]+/', '', (string) $clean[$strnKey]);
+            // PK STRN (`vat_number` since the Pak POS pack): digits only, however it was grouped ("17-00-1234-567-89").
+            if (! $uk && isset($clean[$vatKey])) {
+                $clean[$vatKey] = (string) preg_replace('/[\s-]+/', '', (string) $clean[$vatKey]);
             }
         }
 
@@ -228,7 +227,7 @@ final class TenantRules
         return new BranchDetails(
             code: (string) $request->input($prefix.'code'),
             name: (string) $request->input($prefix.'name'),
-            nation: Nation::from((string) $request->input($prefix.'nation')),
+            nation: Nation::forShop((string) $request->input($prefix.'nation')),
             address: self::nullableString($request->input($prefix.'address')),
             phone: self::nullableString($request->input($prefix.'phone')),
             vatNumber: self::nullableString($request->input($prefix.'vat_number')),

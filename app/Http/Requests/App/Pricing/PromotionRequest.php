@@ -5,6 +5,7 @@ namespace App\Http\Requests\App\Pricing;
 use App\Domain\Promotions\Support\PromotionTypes;
 use App\Domain\Shared\Country\CountryModules;
 use App\Domain\Shared\Country\LocalText;
+use App\Domain\Shared\Country\TillProfile;
 use App\Domain\Tenancy\CurrentCompany;
 use App\Domain\TillData\Enums\PromotionScope;
 use App\Domain\TillData\Enums\PromotionType;
@@ -19,8 +20,6 @@ use Illuminate\Validation\Rule;
  */
 class PromotionRequest extends FormRequest
 {
-    private const MONEY = 'regex:/^\d{1,8}(\.\d{1,2})?$/';
-
     public function authorize(): bool
     {
         $restricted = app(CurrentCompany::class)->restrictedBranchId();
@@ -67,8 +66,8 @@ class PromotionRequest extends FormRequest
             'scope' => ['required', Rule::enum(PromotionScope::class)],
             'target_id' => ['nullable', 'string', 'max:64'],
             'percent' => ['nullable', 'regex:/^\d{1,3}(\.\d{1,2})?$/'],
-            'amount_off' => ['nullable', self::MONEY],
-            'deal_price' => ['nullable', self::MONEY],
+            'amount_off' => ['nullable', TillProfile::priceRule()],
+            'deal_price' => ['nullable', TillProfile::priceRule()],
             'buy_quantity' => ['nullable', 'integer', 'min:0', 'max:999'],
             'get_quantity' => ['nullable', 'integer', 'min:0', 'max:999'],
             'min_quantity' => ['nullable', 'integer', 'min:1', 'max:999'],

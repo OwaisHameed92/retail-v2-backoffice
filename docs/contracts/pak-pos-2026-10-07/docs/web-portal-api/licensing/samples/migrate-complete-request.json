@@ -1,0 +1,25 @@
+{
+  "uploadId": "01K5TA00000000000000000G01",
+  "totalRows": 159306,
+  "highestSeq": 159306,
+  "rowCounts": {
+    "VatRate": 4,
+    "Department": 12,
+    "Category": 58,
+    "Product": 3120,
+    "ProductBarcode": 3388,
+    "Customer": 41,
+    "User": 5,
+    "Register": 1,
+    "BranchProduct": 3120,
+    "Shift": 176,
+    "Sale": 15840,
+    "SaleLine": 41210,
+    "SalePayment": 16102,
+    "SaleVat": 22017,
+    "StockMovement": 44916,
+    "ZReport": 176,
+    "AuditLog": 9120
+  },
+  "snapshotChangeLogSeq": 212806
+}

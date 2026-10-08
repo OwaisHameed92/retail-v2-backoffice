@@ -50,7 +50,7 @@ class ApproveTrialRequest extends FormRequest
             'shops' => ['required', 'array', 'min:1', 'max:'.Lead::MAX_SHOPS],
             'shops.*.name' => ['required', 'string', 'max:120'],
             'shops.*.code' => ['required', 'string', 'regex:'.Branch::CODE_PATTERN, 'distinct'],
-            'shops.*.nation' => ['required', Rule::enum(Nation::class)],
+            'shops.*.nation' => ['required', Nation::rule()],
             'shops.*.tills' => ['required', 'integer', 'min:1', 'max:'.NewTenant::MAX_TILLS],
             'plan_id' => ['nullable', 'string', Rule::exists('plans', 'id')->where('is_active', true)->whereNull('deleted_at')],
             // Module 1.11: tills allowed per shop, and kind, length and features for every shop's keys.
@@ -89,7 +89,7 @@ class ApproveTrialRequest extends FormRequest
                 name: $shop['name'],
                 code: $shop['code'],
                 tills: (int) $shop['tills'],
-                nation: Nation::from($shop['nation']),
+                nation: Nation::forShop($shop['nation']),
                 tillsAllowed: $shop['tills_allowed'] === null || $shop['tills_allowed'] === '' ? null : (int) $shop['tills_allowed'],
             ), $shops),
             planId: $this->filled('plan_id') ? (string) $this->input('plan_id') : null,

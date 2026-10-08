@@ -20,12 +20,11 @@ final class ContractReplyGuard
 {
     /**
      * Our codes the contract does not list yet, pending EPOS confirmation (docs/DECISIONS.md), code => status.
-     * `device.token_mismatch`: devices/deactivate with a `tokenSha256` that is not the token we issued that install
-     * (ANSWERS-2026-10-06 "Purane khule sawal" 2: 403; the till shows the message of a code it does not know).
+     * Empty since the 0.1.53 pack: `device.token_mismatch` (403, devices/deactivate) is in error-codes.json now.
      *
      * @var array<string, int>
      */
-    public const PENDING_CODES = ['device.token_mismatch' => 403];
+    public const PENDING_CODES = [];
 
     /** Till endpoints: [method path] => reply schema (`pull` = pull reply with entity payloads). */
     public const REPLY_SCHEMAS = [

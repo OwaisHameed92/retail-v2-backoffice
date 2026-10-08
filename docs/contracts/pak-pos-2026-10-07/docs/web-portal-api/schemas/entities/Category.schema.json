@@ -1,0 +1,150 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:sspos:web-portal-api:v1:Category",
+  "title": "Category",
+  "description": "Payload of a Category row.",
+  "type": "object",
+  "properties": {
+    "departmentId": {
+      "type": "string"
+    },
+    "parentCategoryId": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "name": {
+      "type": "string"
+    },
+    "position": {
+      "type": [
+        "string",
+        "integer"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)$"
+    },
+    "colourHex": {
+      "type": "string"
+    },
+    "isActive": {
+      "type": "boolean"
+    },
+    "isVisibleOnTill": {
+      "type": "boolean"
+    },
+    "ageRuleDefault": {
+      "enum": [
+        "none",
+        "over16",
+        "over18",
+        "tobaccoGenerational",
+        "nicotine",
+        "lottery18",
+        "knives18",
+        "fireworks18",
+        "solvents18",
+        "energyDrink16",
+        "paracetamol16"
+      ]
+    },
+    "defaultVatRateId": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "negativeStockMode": {
+      "enum": [
+        "allow",
+        "warn",
+        "block",
+        null
+      ]
+    },
+    "id": {
+      "type": "string"
+    },
+    "companyId": {
+      "type": "string"
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "rowVersion": {
+      "type": [
+        "string",
+        "integer"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)$"
+    },
+    "deletedAt": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "isDeleted": {
+      "type": "boolean"
+    },
+    "domainEvents": {
+      "type": [
+        "array",
+        "null"
+      ],
+      "items": {
+        "type": "object",
+        "properties": {
+          "eventId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "occurredAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "version": {
+            "type": [
+              "string",
+              "integer"
+            ],
+            "pattern": "^-?(?:0|[1-9]\\d*)$"
+          }
+        },
+        "required": [
+          "eventId",
+          "occurredAt",
+          "version"
+        ]
+      }
+    }
+  },
+  "required": [
+    "departmentId",
+    "parentCategoryId",
+    "name",
+    "position",
+    "colourHex",
+    "isActive",
+    "isVisibleOnTill",
+    "ageRuleDefault",
+    "defaultVatRateId",
+    "negativeStockMode",
+    "id",
+    "companyId",
+    "createdAt",
+    "updatedAt",
+    "rowVersion",
+    "deletedAt",
+    "isDeleted",
+    "domainEvents"
+  ]
+}

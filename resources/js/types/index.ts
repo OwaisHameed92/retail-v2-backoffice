@@ -96,7 +96,7 @@ export interface CountryProfile {
     timezone: string;
     /** "VAT", "GST". */
     taxName: string;
-    /** GB: vatNumber, companyNumber. PK: ntn, strn, companyNumber. */
+    /** Keyed by the column they live in: GB VAT number, Companies House; PK STRN (`vatNumber`), NTN (`companyNumber`). */
     taxIds: Record<string, { label: string; example: string }>;
     address: { postcodeLabel: string; postcodeRequired: boolean; postcodeExample: string; cityRequired: boolean };
     phoneExample: string;
@@ -106,6 +106,12 @@ export interface CountryProfile {
     manualMethods?: string[];
     /** Pakistan plan P9: UK sample places in examples and what replaces them ("Leeds" → "Lahore"), sent only off GB. */
     samplePlaces?: Record<string, string>;
+    /** Pak POS pack: the till age rules the pickers offer (PK `none`, `over18`), sent only where the profile limits them. */
+    ageRules?: string[];
+    /** Pak POS pack: whole digits of a product price (PK 7: up to 9,999,999.99), sent only where the profile sets them. */
+    priceDigits?: number;
+    /** Pak POS pack: our own seller ids' names on invoices (PK: companyNumber SECP, vatNumber NTN), sent only off GB. */
+    sellerIds?: Record<string, string>;
 }
 
 export interface SharedData {

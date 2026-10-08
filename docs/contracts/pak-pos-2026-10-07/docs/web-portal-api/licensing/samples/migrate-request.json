@@ -1,0 +1,69 @@
+{
+  "activationCode": "SSP-2WQA-HN4D-R7KM",
+  "installId": "01K5M1GR8T000000000000H009",
+  "installCode": "0M01-TFG6",
+  "deviceName": "HYDEPARK-TILL",
+  "appVersion": "3.0.412",
+  "os": {
+    "name": "Windows 11 Pro",
+    "version": "10.0.26200",
+    "architecture": "x64"
+  },
+  "tillClockUtc": "2026-09-26T11:29:58Z",
+  "approverKids": [
+    "k76b44696"
+  ],
+  "trustedKids": [
+    "k13799fa4",
+    "k76b44696"
+  ],
+  "localLicenceToken": "SSPOS1.eyJ2IjoxLCJraWQiOiJrNzZiNDQ2OTYiLCJsaWNlbmNlSWQiOiIwMUs1TTFHUjhUMDAwMDAwMDAwMDAwWTAwMiIsImtpbmQiOiJmdWxsIiwic291cmNlIjoibG9jYWwiLCJpc3N1ZXIiOiJTU1BPUyBMaWNlbmNlIEdlbmVyYXRvciAtIE93bmVyIFBDIiwiY29tcGFueUlkIjoiIiwiYnJhbmNoSWQiOiIiLCJidXNpbmVzc05hbWUiOiJIeWRlIFBhcmsgTmV3cyBMdGQiLCJicmFuY2hOYW1lIjoiSHlkZSBQYXJrIiwiaW5zdGFsbENvZGUiOiIwTTAxLVRGRzYiLCJtYXhSZWdpc3RlcnMiOjIsImZlYXR1cmVzIjpbIndoYXRzYXBwIl0sImlzc3VlZEF0IjoiMjAyNi0wMy0zMVQxMDowMDowMFoiLCJ2YWxpZEZyb20iOiIyMDI2LTAzLTMxVDAwOjAwOjAwWiIsImV4cGlyZXNBdCI6IjIwMjctMDMtMzFUMjM6NTk6NTlaIiwibm90ZXMiOiJQYWlkIGJ5IGJhbmsgdHJhbnNmZXIsIGludm9pY2UgMTA0MiJ9.c2IlqHOT1WguKa1H6aTEvKWKBiIoejoTubfayzeZhqx-g6apnMwPfM-R1vIbE_DAspKZrY289Bqm7fPWCtOtCg",
+  "localTrialEndsAt": null,
+  "company": {
+    "id": "01K5M1GR8T000000000000C009",
+    "name": "Hyde Park News Ltd"
+  },
+  "branch": {
+    "id": "01K5M1GR8T000000000000B009",
+    "name": "Hyde Park",
+    "code": "HPK"
+  },
+  "registers": [
+    {
+      "registerId": "01K5M1GR8T000000000000R009",
+      "code": "01",
+      "name": "Till 1",
+      "isMain": true,
+      "appVersion": "3.0.412",
+      "installId": "01K5M1GR8T000000000000H009",
+      "deviceName": "HYDEPARK-TILL",
+      "lastSeenUtc": "2026-09-26T11:29:58Z",
+      "isActive": true
+    }
+  ],
+  "data": {
+    "totalRows": 159306,
+    "rowCounts": {
+      "VatRate": 4,
+      "Department": 12,
+      "Category": 58,
+      "Product": 3120,
+      "ProductBarcode": 3388,
+      "Customer": 41,
+      "User": 5,
+      "Register": 1,
+      "BranchProduct": 3120,
+      "Shift": 176,
+      "Sale": 15840,
+      "SaleLine": 41210,
+      "SalePayment": 16102,
+      "SaleVat": 22017,
+      "StockMovement": 44916,
+      "ZReport": 176,
+      "AuditLog": 9120
+    },
+    "firstSaleAtUtc": "2026-04-01T07:02:11Z",
+    "lastSaleAtUtc": "2026-09-26T11:20:40Z",
+    "snapshotChangeLogSeq": 212806
+  }
+}

@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "deactivate-reply",
+  "description": "POST /api/v1/devices/deactivate 200 reply. Idempotent: deactivating an already deactivated register returns the same reply.",
+  "type": "object",
+  "properties": {
+    "registerId": {
+      "$ref": "common.schema.json#/$defs/ulid"
+    },
+    "seat": {
+      "$ref": "common.schema.json#/$defs/seatState"
+    },
+    "seatsInUse": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "maxRegisters": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "apiKeyRevoked": {
+      "type": "boolean",
+      "description": "true when the main till released itself: the branch key stops working now."
+    },
+    "transferCode": {
+      "anyOf": [
+        {
+          "$ref": "common.schema.json#/$defs/activationCode"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "Per-till licences (the portal's choice, 2026-09-30): null — the same licence key is activated again on the new PC and messages[] says so; the till shows that text and never treats null as an error. A one-time code is still accepted (branch model): the till shows it once with Copy."
+    },
+    "transferCodeExpiresAt": {
+      "$ref": "common.schema.json#/$defs/utcOrNull"
+    },
+    "portalTimeUtc": {
+      "$ref": "common.schema.json#/$defs/utc"
+    },
+    "messages": {
+      "$ref": "common.schema.json#/$defs/messages",
+      "description": "When transferCode is null, put the next step here (e.g. \"Activate this same licence key on the new PC\"): the till shows it straight after Deactivate. None sent: the till says to enter the same licence key on the new PC."
+    }
+  },
+  "required": [
+    "registerId",
+    "seat",
+    "seatsInUse",
+    "maxRegisters",
+    "apiKeyRevoked",
+    "transferCode",
+    "transferCodeExpiresAt",
+    "portalTimeUtc"
+  ]
+}

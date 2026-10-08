@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Admin\Catalogue;
 
 use App\Domain\MasterCatalogue\Support\PackSize;
+use App\Domain\Shared\Country\TillProfile;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -33,7 +34,7 @@ class MasterProductRequest extends FormRequest
             'department' => ['nullable', 'string', 'max:120'],
             'category' => ['nullable', 'string', 'max:120'],
             'vat_rate' => ['nullable', 'numeric', 'min:0', 'max:100'],
-            'rrp' => ['nullable', 'numeric', 'min:0', 'max:100000'],
+            'rrp' => ['nullable', 'numeric', 'min:0', 'max:'.(TillProfile::priceDigits() === TillProfile::DEFAULT_PRICE_DIGITS ? '100000' : TillProfile::priceMax())],
             'age_rule' => ['required', 'string', 'max:30'],
             'image_url' => ['nullable', 'string', 'max:500'],
             'in_starter_packs' => ['boolean'],
