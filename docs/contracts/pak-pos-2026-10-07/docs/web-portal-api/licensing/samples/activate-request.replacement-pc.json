@@ -1,0 +1,27 @@
+{
+  "activationCode": "SSP-TRF-8M3K-2QXD",
+  "installId": "01K5T0Q8C4000000000000H003",
+  "installCode": "B4RK-ANZV",
+  "deviceName": "KIRKGATE-TILL1-NEW",
+  "appVersion": "3.0.415",
+  "os": {
+    "name": "Windows 11 Pro",
+    "version": "10.0.26200",
+    "architecture": "x64"
+  },
+  "tillClockUtc": "2026-10-05T08:30:00Z",
+  "approverKids": [
+    "k76b44696"
+  ],
+  "trustedKids": [
+    "k13799fa4",
+    "k76b44696"
+  ],
+  "registerName": null,
+  "existingIds": {
+    "companyId": "01K5T0Q8C4000000000000C001",
+    "branchId": "01K5T0Q8C4000000000000B001",
+    "registerId": "01K5T0Q8C4000000000000R001"
+  },
+  "localLicenceToken": null
+}

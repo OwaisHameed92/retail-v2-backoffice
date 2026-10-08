@@ -106,6 +106,10 @@ export interface CountryProfile {
     manualMethods?: string[];
     /** Pakistan plan P9: UK sample places in examples and what replaces them ("Leeds" → "Lahore"), sent only off GB. */
     samplePlaces?: Record<string, string>;
+    /** Pak POS pack: the till age rules the pickers offer (PK `none`, `over18`), sent only where the profile limits them. */
+    ageRules?: string[];
+    /** Pak POS pack: whole digits of a product price (PK 7: up to 9,999,999.99), sent only where the profile sets them. */
+    priceDigits?: number;
 }
 
 export interface SharedData {

@@ -1,0 +1,658 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "common",
+  "description": "Shared definitions for the licensing, device and onboarding endpoints (docs/web-portal-api.md section 17). Referenced by relative path; these files deliberately carry no $id so a file-based resolver finds common.schema.json next to them.",
+  "$defs": {
+    "ulid": {
+      "type": "string",
+      "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+      "description": "26-character ULID, Crockford base32, made by whoever creates the row."
+    },
+    "utc": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO-8601 UTC with Z, e.g. 2026-09-26T09:00:00Z."
+    },
+    "utcOrNull": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "appVersion": {
+      "type": "string",
+      "pattern": "^[0-9]+(\\.[0-9]+){1,3}([-+][0-9A-Za-z.-]+)?$",
+      "description": "The till's version, e.g. 3.0.412."
+    },
+    "activationCode": {
+      "type": "string",
+      "minLength": 6,
+      "maxLength": 64,
+      "description": "Made by the portal. The till trims spaces and upper-cases it before sending; format is the portal's choice (>= 60 bits of randomness recommended)."
+    },
+    "installId": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/ulid"
+        }
+      ],
+      "description": "Made once on the PC at first run and never changed (survives updates, not a reinstall of Windows). Identifies the PC, not the register."
+    },
+    "installCode": {
+      "type": "string",
+      "pattern": "^[0-9A-HJKMNP-TV-Z]{4}-[0-9A-HJKMNP-TV-Z]{4}$",
+      "description": "Short code the till shows on its licence screen; binds a local key to one install. Derived from installId."
+    },
+    "kid": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9._-]{1,64}$",
+      "description": "Signing key id. Convention (src/SSPOS.Infrastructure/Licensing/LicenceTokens.KidFor): k + the first 8 lower-case hex digits of SHA-256(raw 32-byte public key), e.g. k1a2b3c4d."
+    },
+    "licenceToken": {
+      "type": "string",
+      "pattern": "^SSPOS1\\.[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+$",
+      "maxLength": 8192,
+      "description": "SSPOS1.<base64url payload>.<base64url Ed25519 signature>. See licence-token-payload.schema.json."
+    },
+    "licenceTokenOrNull": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/licenceToken"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "sha256Hex": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$",
+      "description": "Lower-case hex SHA-256 of the whole token string (ASCII)."
+    },
+    "apiKey": {
+      "type": "string",
+      "minLength": 20,
+      "maxLength": 200,
+      "description": "Branch sync API key (Bearer). Secret: the till masks it and never logs it."
+    },
+    "featureName": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+([._-][a-z0-9]+)*$",
+      "description": "Paid feature name, lower case; words joined by _ . or - . The till's names use snake_case, e.g. multi_branch, loyalty, cloud_sync, second_screen (src/SSPOS.Application/Ports/Feature.cs). Compared case-insensitively and exactly - multi-branch is NOT multi_branch."
+    },
+    "features": {
+      "type": [
+        "array",
+        "null"
+      ],
+      "items": {
+        "$ref": "#/$defs/featureName"
+      },
+      "uniqueItems": true,
+      "description": "Open list. full licence: exactly these paid features (absent, null or [] = none). trial licence: absent, null or [] = every feature on; a non-empty list = only these."
+    },
+    "limits": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "additionalProperties": {
+        "type": "integer"
+      },
+      "description": "Open object of numeric limits. Known today: branches (how many branches the company may run; 1 when absent - owner 2026-09-28, Domain/Licensing/LicenceLimits). Values must be integers (the till reads a string-to-int map; anything else makes the token unreadable). A limit the till does not know is ignored; a missing limit means unlimited, except branches (1). Tills are NOT a limit - they are maxRegisters."
+    },
+    "onlineCheck": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "properties": {
+        "required": {
+          "type": "boolean"
+        },
+        "intervalHours": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 720
+        },
+        "graceDays": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 365
+        }
+      },
+      "required": [
+        "required"
+      ],
+      "description": "Cloud licences: {required:true, intervalHours:24, graceDays:14}. Null/absent or required:false = no online check (local licences)."
+    },
+    "licenceCompany": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "description": "The shop's details carried in a key (owner 2026-09-28, specs/licensing.md section 8; src/SSPOS.Domain/Licensing/LicenceCompany.cs). Every field optional; absent, null and \"\" mean the same. They only START the till's first-run wizard: the shop edits them on the till and the edits sync up as Company / Branch rows. A later token never overwrites them. The shop name is the token's businessName, the branch name its branchName.",
+      "properties": {
+        "businessType": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 40,
+          "description": "A BusinessType name: ConvenienceOffLicence, Newsagent, GroceryHalalButcher, ClothingFootwear, PhoneElectronics, Salon, DryCleaner, CashAndCarry, Pharmacy, Other. Blank or unknown = the wizard asks.",
+          "examples": [
+            "ConvenienceOffLicence"
+          ]
+        },
+        "address": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 200,
+          "description": "Street lines, as printed on the receipt."
+        },
+        "town": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 80
+        },
+        "postcode": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 10,
+          "description": "UK postcode as typed; the wizard tidies it."
+        },
+        "phone": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 30
+        },
+        "email": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 120
+        },
+        "vatNumber": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 20,
+          "description": "Blank when not VAT registered."
+        },
+        "ownerName": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 80,
+          "description": "Name for the first user. A PIN or password is never in a key."
+        },
+        "receiptFooter": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 200
+        }
+      }
+    },
+    "licenceKind": {
+      "type": "string",
+      "enum": [
+        "trial",
+        "full"
+      ]
+    },
+    "licenceSource": {
+      "type": "string",
+      "enum": [
+        "portal",
+        "local"
+      ]
+    },
+    "licenceStatus": {
+      "type": "string",
+      "enum": [
+        "active",
+        "expiring",
+        "expired",
+        "revoked",
+        "suspended",
+        "seatLimit",
+        "released"
+      ],
+      "description": "active = trading; expiring = trading, ends within 7 days (warn); expired, revoked, suspended, released = lock after the sale in progress (released = the key was released on the portal from this PC, e.g. to move it to another PC); seatLimit = branch model only (not used for per-till licences). A value the till does not know = not active (lock)."
+    },
+    "seatState": {
+      "type": "string",
+      "enum": [
+        "allowed",
+        "refused",
+        "deactivated"
+      ],
+      "description": "allowed = may trade; refused = over maxRegisters, locks; deactivated = freed on the portal, locks and forgets its link. Unknown = refused."
+    },
+    "link": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "properties": {
+        "label": {
+          "type": "string",
+          "maxLength": 60
+        },
+        "url": {
+          "type": "string",
+          "format": "uri",
+          "pattern": "^https://"
+        }
+      },
+      "required": [
+        "label",
+        "url"
+      ]
+    },
+    "message": {
+      "type": "object",
+      "description": "A note the till shows the owner (licence screen and a banner). Display only - never changes what the till allows.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "maxLength": 64,
+          "description": "Stable id; the till shows each id once per day and remembers dismissals."
+        },
+        "level": {
+          "type": "string",
+          "enum": [
+            "info",
+            "warning",
+            "critical"
+          ],
+          "description": "Unknown level = shown as info."
+        },
+        "title": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 80
+        },
+        "text": {
+          "type": "string",
+          "maxLength": 500,
+          "description": "en-GB, plain text, one or two sentences."
+        },
+        "showFromUtc": {
+          "$ref": "#/$defs/utcOrNull"
+        },
+        "showUntilUtc": {
+          "$ref": "#/$defs/utcOrNull"
+        },
+        "dismissible": {
+          "type": "boolean",
+          "default": true
+        },
+        "link": {
+          "$ref": "#/$defs/link"
+        }
+      },
+      "required": [
+        "id",
+        "level",
+        "text"
+      ]
+    },
+    "messages": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/message"
+      },
+      "maxItems": 20
+    },
+    "licenceSummary": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "description": "Plain copy of the token's main fields for screens and logs. The signed token always wins if they differ. Since 2026-09-28 also list the shop fields the token carries (companyId, branchId, names, installCode, validFrom, company) - all optional for older portals.",
+      "properties": {
+        "licenceId": {
+          "$ref": "#/$defs/ulid"
+        },
+        "kind": {
+          "$ref": "#/$defs/licenceKind"
+        },
+        "source": {
+          "$ref": "#/$defs/licenceSource"
+        },
+        "companyId": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ulid"
+            },
+            {
+              "const": ""
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "branchId": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ulid"
+            },
+            {
+              "const": ""
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "businessName": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 100
+        },
+        "branchName": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 100
+        },
+        "installCode": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/installCode"
+            },
+            {
+              "const": ""
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "validFrom": {
+          "$ref": "#/$defs/utcOrNull"
+        },
+        "expiresAt": {
+          "$ref": "#/$defs/utc"
+        },
+        "maxRegisters": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "features": {
+          "$ref": "#/$defs/features"
+        },
+        "limits": {
+          "$ref": "#/$defs/limits"
+        },
+        "company": {
+          "$ref": "#/$defs/licenceCompany"
+        }
+      },
+      "required": [
+        "licenceId",
+        "kind",
+        "expiresAt",
+        "maxRegisters"
+      ]
+    },
+    "registerReport": {
+      "type": "object",
+      "description": "One till of the branch as the main till knows it (sent up).",
+      "properties": {
+        "registerId": {
+          "$ref": "#/$defs/ulid"
+        },
+        "code": {
+          "type": "string",
+          "maxLength": 10,
+          "description": "Till code on receipts, e.g. 01."
+        },
+        "name": {
+          "type": "string",
+          "maxLength": 60
+        },
+        "isMain": {
+          "type": "boolean"
+        },
+        "appVersion": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/appVersion"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "installId": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ulid"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "deviceName": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 64
+        },
+        "lastSeenUtc": {
+          "$ref": "#/$defs/utcOrNull"
+        },
+        "isActive": {
+          "type": "boolean",
+          "default": true
+        }
+      },
+      "required": [
+        "registerId",
+        "name",
+        "isMain",
+        "appVersion",
+        "lastSeenUtc"
+      ]
+    },
+    "registerSeat": {
+      "type": "object",
+      "description": "The portal's answer for one till (sent down).",
+      "properties": {
+        "registerId": {
+          "$ref": "#/$defs/ulid"
+        },
+        "seat": {
+          "$ref": "#/$defs/seatState"
+        }
+      },
+      "required": [
+        "registerId",
+        "seat"
+      ]
+    },
+    "os": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "maxLength": 60,
+          "examples": [
+            "Windows 11 Pro"
+          ]
+        },
+        "version": {
+          "type": "string",
+          "maxLength": 40,
+          "examples": [
+            "10.0.26200"
+          ]
+        },
+        "architecture": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "examples": [
+            "x64"
+          ]
+        }
+      },
+      "required": [
+        "name",
+        "version"
+      ]
+    },
+    "settingsBootstrap": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "description": "Open object sent once at activation / migration. The till applies the keys it knows and ignores the rest. Never carries a secret (the API key has its own field).",
+      "properties": {
+        "company": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "vatNumber": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "companyNumber": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          }
+        },
+        "branch": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "code": {
+              "type": "string",
+              "maxLength": 6,
+              "description": "Branch code on receipts, e.g. LDS (the till's Shops screen 'Install code')."
+            },
+            "address": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "city": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "postcode": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "phone": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "email": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          }
+        },
+        "register": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "code": {
+              "type": "string",
+              "maxLength": 10
+            }
+          }
+        },
+        "settings": {
+          "type": "object",
+          "description": "Till setting keys (src/SSPOS.Domain/Common/SettingKeys.cs, e.g. shop.vat_number, sync.interval_seconds) to values. Never sync.hub_api_key.",
+          "additionalProperties": {
+            "type": [
+              "string",
+              "number",
+              "boolean",
+              "null"
+            ]
+          }
+        }
+      }
+    },
+    "idMapping": {
+      "type": "object",
+      "properties": {
+        "localId": {
+          "$ref": "#/$defs/ulid"
+        },
+        "portalId": {
+          "$ref": "#/$defs/ulid"
+        },
+        "action": {
+          "type": "string",
+          "enum": [
+            "adopted",
+            "aliased"
+          ],
+          "description": "adopted = the portal now uses the till's id; aliased = the portal keeps its own id and translates at its edge for this branch. Either way the till keeps its own id. An unknown action = the till stops the migration and shows the messages."
+        }
+      },
+      "required": [
+        "localId",
+        "portalId",
+        "action"
+      ]
+    },
+    "licenceKey": {
+      "type": "string",
+      "minLength": 8,
+      "maxLength": 64,
+      "pattern": "^[A-Z0-9-]{8,64}$",
+      "description": "The short licence key the portal e-mails (layout is the portal's choice, e.g. SSPK-4F7Q-XM2D-9KTR-B6WN). The till removes spaces and upper-cases it. It is the credential for licence/activate: store it hashed, bind it to the first installId that activates it."
+    }
+  }
+}

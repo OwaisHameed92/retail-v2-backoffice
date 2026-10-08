@@ -1,0 +1,177 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:sspos:web-portal-api:v1:PrinterProfile",
+  "title": "PrinterProfile",
+  "description": "Payload of a PrinterProfile row.",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "role": {
+      "enum": [
+        "receipt",
+        "token",
+        "label",
+        "report",
+        "kitchen",
+        "cashDrawer",
+        "a4Label"
+      ]
+    },
+    "driverKey": {
+      "type": "string"
+    },
+    "transport": {
+      "enum": [
+        "windows",
+        "serial",
+        "tcp",
+        "file",
+        "usb"
+      ]
+    },
+    "address": {
+      "type": "string"
+    },
+    "port": {
+      "type": [
+        "string",
+        "integer"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)$"
+    },
+    "paperWidthMm": {
+      "type": [
+        "string",
+        "integer"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)$"
+    },
+    "charsPerLine": {
+      "type": [
+        "string",
+        "integer"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)$"
+    },
+    "hasCutter": {
+      "type": "boolean"
+    },
+    "hasDrawerKick": {
+      "type": "boolean"
+    },
+    "drawerKickPin": {
+      "type": [
+        "string",
+        "integer"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)$"
+    },
+    "codePage": {
+      "type": [
+        "string",
+        "integer"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)$"
+    },
+    "logoPath": {
+      "type": "string"
+    },
+    "isDefault": {
+      "type": "boolean"
+    },
+    "branchId": {
+      "type": "string"
+    },
+    "id": {
+      "type": "string"
+    },
+    "companyId": {
+      "type": "string"
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "rowVersion": {
+      "type": [
+        "string",
+        "integer"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)$"
+    },
+    "deletedAt": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "isDeleted": {
+      "type": "boolean"
+    },
+    "domainEvents": {
+      "type": [
+        "array",
+        "null"
+      ],
+      "items": {
+        "type": "object",
+        "properties": {
+          "eventId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "occurredAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "version": {
+            "type": [
+              "string",
+              "integer"
+            ],
+            "pattern": "^-?(?:0|[1-9]\\d*)$"
+          }
+        },
+        "required": [
+          "eventId",
+          "occurredAt",
+          "version"
+        ]
+      }
+    }
+  },
+  "required": [
+    "name",
+    "role",
+    "driverKey",
+    "transport",
+    "address",
+    "port",
+    "paperWidthMm",
+    "charsPerLine",
+    "hasCutter",
+    "hasDrawerKick",
+    "drawerKickPin",
+    "codePage",
+    "logoPath",
+    "isDefault",
+    "branchId",
+    "id",
+    "companyId",
+    "createdAt",
+    "updatedAt",
+    "rowVersion",
+    "deletedAt",
+    "isDeleted",
+    "domainEvents"
+  ]
+}

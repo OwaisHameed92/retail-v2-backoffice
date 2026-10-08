@@ -1,0 +1,118 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:sspos:web-portal-api:v1:ProductRecallBranchState",
+  "title": "ProductRecallBranchState",
+  "description": "Payload of a ProductRecallBranchState row.",
+  "type": "object",
+  "properties": {
+    "recallId": {
+      "type": "string"
+    },
+    "status": {
+      "enum": [
+        "open",
+        "closed"
+      ]
+    },
+    "closedByUserId": {
+      "type": "string"
+    },
+    "closedAt": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "note": {
+      "type": "string"
+    },
+    "isOpen": {
+      "type": "boolean"
+    },
+    "branchId": {
+      "type": "string"
+    },
+    "id": {
+      "type": "string"
+    },
+    "companyId": {
+      "type": "string"
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "rowVersion": {
+      "type": [
+        "string",
+        "integer"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)$"
+    },
+    "deletedAt": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "isDeleted": {
+      "type": "boolean"
+    },
+    "domainEvents": {
+      "type": [
+        "array",
+        "null"
+      ],
+      "items": {
+        "type": "object",
+        "properties": {
+          "eventId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "occurredAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "version": {
+            "type": [
+              "string",
+              "integer"
+            ],
+            "pattern": "^-?(?:0|[1-9]\\d*)$"
+          }
+        },
+        "required": [
+          "eventId",
+          "occurredAt",
+          "version"
+        ]
+      }
+    }
+  },
+  "required": [
+    "recallId",
+    "status",
+    "closedByUserId",
+    "closedAt",
+    "note",
+    "isOpen",
+    "branchId",
+    "id",
+    "companyId",
+    "createdAt",
+    "updatedAt",
+    "rowVersion",
+    "deletedAt",
+    "isDeleted",
+    "domainEvents"
+  ]
+}

@@ -4,6 +4,7 @@ namespace App\Domain\Licensing\Data;
 
 use App\Domain\Licensing\LicenceState;
 use App\Domain\Licensing\Models\Licence;
+use App\Domain\Shared\Country\TillProfile;
 use Carbon\CarbonImmutable;
 
 /**
@@ -47,7 +48,7 @@ final class LicenceTimeline
 
         $add('suspended', 'Suspended', $licence->suspended_at, $licence->suspended_reason, 'danger');
         $add('revoked', 'Revoked', $licence->revoked_at, $licence->revoked_reason, 'danger');
-        $add('check_in', 'Last check-in', $licence->last_check_in_at, $licence->last_app_version ? 'SSPOS '.$licence->last_app_version : null, 'neutral');
+        $add('check_in', 'Last check-in', $licence->last_check_in_at, $licence->last_app_version ? TillProfile::appName().' '.$licence->last_app_version : null, 'neutral');
 
         usort($events, fn (array $a, array $b) => $a['sort'] <=> $b['sort']);
 

@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:sspos:web-portal-api:v1:Setting",
+  "title": "Setting",
+  "description": "Payload of a Setting row (keyed by scope, scopeId, key; section 10.3).",
+  "type": "object",
+  "properties": {
+    "scope": {
+      "enum": [
+        "company",
+        "branch",
+        "register"
+      ]
+    },
+    "scopeId": {
+      "type": "string"
+    },
+    "key": {
+      "type": "string"
+    },
+    "value": {
+      "type": "string"
+    },
+    "updatedAt": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "scope",
+    "scopeId",
+    "key",
+    "value",
+    "updatedAt"
+  ]
+}

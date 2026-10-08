@@ -1,0 +1,23 @@
+{
+  "key": "SSPOS1.eyJ2IjoxLCJraWQiOiJrNzZiNDQ2OTYiLCJsaWNlbmNlSWQiOiIwMUs1TTFHUjhUMDAwMDAwMDAwMDAwWTAwNCIsImtpbmQiOiJmdWxsIiwic291cmNlIjoibG9jYWwiLCJpc3N1ZXIiOiJTU1BPUyBMaWNlbmNlIEdlbmVyYXRvciAtIE93bmVyIFBDIiwiY29tcGFueUlkIjoiMDFLNU0xR1I4VDAwMDAwMDAwMDAwMEMwMDQiLCJicmFuY2hJZCI6IjAxSzVNMUdSOFQwMDAwMDAwMDAwMDBCMDA0IiwiYnVzaW5lc3NOYW1lIjoiQWxsZXJ0b24gTmV3cyBMdGQiLCJicmFuY2hOYW1lIjoiQ2hhcGVsIEFsbGVydG9uIiwiaW5zdGFsbENvZGUiOiIiLCJtYXhSZWdpc3RlcnMiOjIsImZlYXR1cmVzIjpbImxveWFsdHkiXSwiaXNzdWVkQXQiOiIyMDI2LTA5LTI4VDEwOjAwOjAwWiIsInZhbGlkRnJvbSI6IjIwMjYtMDktMjhUMDA6MDA6MDBaIiwiZXhwaXJlc0F0IjoiMjAyNy0wOS0yOFQyMzo1OTo1OVoiLCJsaW1pdHMiOnsiYnJhbmNoZXMiOjF9LCJub3RlcyI6Ik9wZW4ga2V5IC0gcmVuZXdhbHMgYXJlIG1hZGUgZm9yIHRoZSB0aWxsJ3MgaW5zdGFsbCBjb2RlIiwiY29tcGFueSI6eyJidXNpbmVzc1R5cGUiOiJOZXdzYWdlbnQiLCJhZGRyZXNzIjoiMyBIYXJyb2dhdGUgUm9hZCIsInRvd24iOiJMZWVkcyIsInBvc3Rjb2RlIjoiTFM3IDNOQiIsInBob25lIjoiMDExMyA0OTYgMDQ1NiIsImVtYWlsIjoiIiwidmF0TnVtYmVyIjoiIiwib3duZXJOYW1lIjoiU2FyYSBLaGFuIiwicmVjZWlwdEZvb3RlciI6IiJ9fQ.LeCgmrw4Q_v_9mt-9YflfYukmykmnjAEk9wUVeO7N0beRTcvsTBYDKk1DW8AYOTjUfOiAk60avGH_HvKNST5DA",
+  "keyType": "token",
+  "licenceId": "01K5M1GR8T000000000000Y004",
+  "tokenSha256": "0034ecf1f83dcf27a08e588643e9a3f1970fd732cd0e16f5e204d822a2903c18",
+  "approverKids": [
+    "k76b44696"
+  ],
+  "trustedKids": [
+    "k13799fa4",
+    "k76b44696"
+  ],
+  "installCode": "Q3EG-1RNC",
+  "installId": "01K5M1GR8T000000000000H003",
+  "deviceName": "TILL-2",
+  "appVersion": "3.0.412",
+  "os": {
+    "name": "Windows",
+    "version": "10.0.26200",
+    "architecture": "x64"
+  },
+  "tillClockUtc": "2026-09-28T11:02:12Z"
+}

@@ -126,8 +126,12 @@ test('deactivate-request.main-till.json: the main till that holds the branch syn
     $this->licence->forceFill(['features' => ['cloud_sync']])->save();
     $request = SsposDocs::sample('deactivate-request.main-till.json');
     $activate = [...$this->activateBody(install: $request['installId']), 'existingIds' => ['companyId' => self::TILL_COMPANY, 'branchId' => self::TILL_BRANCH, 'registerId' => $request['registerId']]];
-    $apiKey = (string) $this->till('licence/activate', $activate, $this->tillHeaders($request['installId']))->assertOk()->json('apiKey');
+    $activated = $this->till('licence/activate', $activate, $this->tillHeaders($request['installId']))->assertOk();
+    $apiKey = (string) $activated->json('apiKey');
     expect($apiKey)->toStartWith('SSK-');
+    // 0.1.53 pack: the sample now carries tokenSha256 (a hash of EPOS's own sample token); a real till sends the hash
+    // of the token we issued it, so the replay does the same (the sample's own hash is replayed below: 403).
+    $request['tokenSha256'] = hash('sha256', (string) $activated->json('licenceToken'));
 
     // §17.7: the main till sends the branch key it holds as Bearer.
     $reply = $this->till('devices/deactivate', $request, [...$this->tillHeaders($request['installId']), 'Authorization' => 'Bearer '.$apiKey])->assertOk();
@@ -141,7 +145,9 @@ test('deactivate-reply.main-till.same-key.json: the main till is released with n
     $this->licence->forceFill(['features' => ['cloud_sync']])->save();
     $request = SsposDocs::sample('deactivate-request.main-till.json');
     $activate = [...$this->activateBody(install: $request['installId']), 'existingIds' => ['companyId' => self::TILL_COMPANY, 'branchId' => self::TILL_BRANCH, 'registerId' => $request['registerId']]];
-    $apiKey = (string) $this->till('licence/activate', $activate, $this->tillHeaders($request['installId']))->assertOk()->json('apiKey');
+    $activated = $this->till('licence/activate', $activate, $this->tillHeaders($request['installId']))->assertOk();
+    $apiKey = (string) $activated->json('apiKey');
+    $request['tokenSha256'] = hash('sha256', (string) $activated->json('licenceToken'));
 
     $reply = $this->till('devices/deactivate', $request, [...$this->tillHeaders($request['installId']), 'Authorization' => 'Bearer '.$apiKey])->assertOk();
     $sample = SsposDocs::sample('deactivate-reply.main-till.same-key.json');
@@ -156,6 +162,20 @@ test('deactivate-reply.main-till.same-key.json: the main till is released with n
     // The key's binding to the old install is released: the new PC's licence/activate gets 200, not key.already_used.
     $this->activateTill(install: self::OTHER_INSTALL, code: self::OTHER_CODE)->assertOk();
     expect($this->licence->fresh()->device_id)->toBe(self::OTHER_INSTALL);
+});
+
+test('deactivate-request.main-till.json as sent (0.1.53): a tokenSha256 that is not our token is 403 device.token_mismatch, a contract code now', function () {
+    $this->licence->forceFill(['features' => ['cloud_sync']])->save();
+    $request = SsposDocs::sample('deactivate-request.main-till.json');
+    $activate = [...$this->activateBody(install: $request['installId']), 'existingIds' => ['companyId' => self::TILL_COMPANY, 'branchId' => self::TILL_BRANCH, 'registerId' => $request['registerId']]];
+    $apiKey = (string) $this->till('licence/activate', $activate, $this->tillHeaders($request['installId']))->assertOk()->json('apiKey');
+
+    $reply = $this->till('devices/deactivate', $request, [...$this->tillHeaders($request['installId']), 'Authorization' => 'Bearer '.$apiKey]);
+    $codes = array_column(SsposDocs::sample('error-codes.json'), 'status', 'code');
+
+    expect($reply->status())->toBe(403)->and($reply->json('code'))->toBe('device.token_mismatch')
+        ->and($codes['device.token_mismatch'] ?? null)->toBe(403)
+        ->and($this->licence->fresh()->device_id)->toBe($request['installId']);
 });
 
 test('the error samples we emit: same HTTP status, code and details members', function () {

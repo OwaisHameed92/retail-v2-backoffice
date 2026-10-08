@@ -7,6 +7,7 @@ use App\Domain\Licensing\LicenceState;
 use App\Domain\Licensing\Models\Licence;
 use App\Domain\Licensing\Signing\Sspos\LicenceClaims;
 use App\Domain\Shared\Country\Country;
+use App\Domain\Shared\Country\TillProfile;
 use App\Domain\Shared\Support\ApiDate;
 use App\Domain\Shared\Support\AppVersion;
 use Carbon\CarbonImmutable;
@@ -17,6 +18,7 @@ use Carbon\CarbonImmutable;
  * signed token always wins. Module 2.1: `apiKey` (+ `hubUrl`) is added by SyncKeyDelivery. Top-level
  * `companyId`/`branchId` are always the shop's ids as its tills know them, never blank (ShopTillIds,
  * ANSWERS-2026-10-06 "Purane khule sawal" 1): the till takes an `apiKey` only when they match its own database.
+ * Top-level `country` (§17.18) = the token's, only where the profile names one (PK; TillProfile::countryMember).
  */
 final class LicenceReply
 {
@@ -35,6 +37,7 @@ final class LicenceReply
             'portalTimeUtc' => ApiDate::format($now),
             'nextCheckAfterSeconds' => TillStatus::nextCheckAfterSeconds($status),
             'messages' => self::messages($licence, $state, $status, $claims->expiresAt, $now),
+            ...TillProfile::countryMember(),
         ];
     }
 
@@ -55,6 +58,7 @@ final class LicenceReply
             'portalTimeUtc' => ApiDate::format($now),
             'nextCheckAfterSeconds' => TillStatus::nextCheckAfterSeconds($status),
             'messages' => self::messages($licence, $state, $status, $claims->expiresAt, $now),
+            ...TillProfile::countryMember(),
         ];
     }
 
@@ -147,12 +151,13 @@ final class LicenceReply
      * The oldest supported till version, sent in every validate reply (contract v1.4.1 §17.5; ANSWERS-2026-09-29
      * §3): informational only — the till keeps trading and we never answer 426 on licence/*. Default `0.1.0`
      * (tills send `0.1.x`); raise it only when the owner says so. An unreadable value falls back to the default.
+     * Pak POS (PK) is its own line from 1.0.0: a 0.x value is sent as the profile's first version (TillProfile).
      */
     public static function minimumAppVersion(): string
     {
         $minimum = trim((string) config('licence.api.minimum_app_version'));
 
-        return AppVersion::isValid($minimum) ? $minimum : self::DEFAULT_MINIMUM_APP_VERSION;
+        return TillProfile::minimumAppVersion(AppVersion::isValid($minimum) ? $minimum : self::DEFAULT_MINIMUM_APP_VERSION);
     }
 
     /**

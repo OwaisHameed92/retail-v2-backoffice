@@ -1,0 +1,174 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:sspos:web-portal-api:v1:ProductRecall",
+  "title": "ProductRecall",
+  "description": "Payload of a ProductRecall row.",
+  "type": "object",
+  "properties": {
+    "reference": {
+      "type": "string"
+    },
+    "productId": {
+      "type": "string"
+    },
+    "productName": {
+      "type": "string"
+    },
+    "batchCode": {
+      "type": "string"
+    },
+    "expiryFrom": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date"
+    },
+    "expiryTo": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date"
+    },
+    "source": {
+      "type": "string"
+    },
+    "reason": {
+      "type": "string"
+    },
+    "status": {
+      "enum": [
+        "open",
+        "closed"
+      ]
+    },
+    "supplierId": {
+      "type": "string"
+    },
+    "returnedQty": {
+      "type": [
+        "string",
+        "number"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$"
+    },
+    "raisedByUserId": {
+      "type": "string"
+    },
+    "raisedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "closedByUserId": {
+      "type": "string"
+    },
+    "closedAt": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "note": {
+      "type": "string"
+    },
+    "scope": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "id": {
+      "type": "string"
+    },
+    "companyId": {
+      "type": "string"
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "rowVersion": {
+      "type": [
+        "string",
+        "integer"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)$"
+    },
+    "deletedAt": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "isDeleted": {
+      "type": "boolean"
+    },
+    "domainEvents": {
+      "type": [
+        "array",
+        "null"
+      ],
+      "items": {
+        "type": "object",
+        "properties": {
+          "eventId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "occurredAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "version": {
+            "type": [
+              "string",
+              "integer"
+            ],
+            "pattern": "^-?(?:0|[1-9]\\d*)$"
+          }
+        },
+        "required": [
+          "eventId",
+          "occurredAt",
+          "version"
+        ]
+      }
+    }
+  },
+  "required": [
+    "reference",
+    "productId",
+    "productName",
+    "batchCode",
+    "expiryFrom",
+    "expiryTo",
+    "source",
+    "reason",
+    "status",
+    "supplierId",
+    "returnedQty",
+    "raisedByUserId",
+    "raisedAt",
+    "closedByUserId",
+    "closedAt",
+    "note",
+    "scope",
+    "id",
+    "companyId",
+    "createdAt",
+    "updatedAt",
+    "rowVersion",
+    "deletedAt",
+    "isDeleted",
+    "domainEvents"
+  ]
+}

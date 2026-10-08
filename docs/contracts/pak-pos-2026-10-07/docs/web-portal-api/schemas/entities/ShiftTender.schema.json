@@ -1,0 +1,131 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:sspos:web-portal-api:v1:ShiftTender",
+  "title": "ShiftTender",
+  "description": "Payload of a ShiftTender row.",
+  "type": "object",
+  "properties": {
+    "shiftId": {
+      "type": "string"
+    },
+    "paymentTypeId": {
+      "type": "string"
+    },
+    "expected": {
+      "type": [
+        "string",
+        "number"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$"
+    },
+    "declared": {
+      "type": [
+        "string",
+        "number"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$"
+    },
+    "terminalTotal": {
+      "type": [
+        "string",
+        "number"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$"
+    },
+    "variance": {
+      "type": [
+        "string",
+        "number"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$"
+    },
+    "registerId": {
+      "type": "string"
+    },
+    "branchId": {
+      "type": "string"
+    },
+    "id": {
+      "type": "string"
+    },
+    "companyId": {
+      "type": "string"
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "rowVersion": {
+      "type": [
+        "string",
+        "integer"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)$"
+    },
+    "deletedAt": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "isDeleted": {
+      "type": "boolean"
+    },
+    "domainEvents": {
+      "type": [
+        "array",
+        "null"
+      ],
+      "items": {
+        "type": "object",
+        "properties": {
+          "eventId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "occurredAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "version": {
+            "type": [
+              "string",
+              "integer"
+            ],
+            "pattern": "^-?(?:0|[1-9]\\d*)$"
+          }
+        },
+        "required": [
+          "eventId",
+          "occurredAt",
+          "version"
+        ]
+      }
+    }
+  },
+  "required": [
+    "shiftId",
+    "paymentTypeId",
+    "expected",
+    "declared",
+    "terminalTotal",
+    "variance",
+    "registerId",
+    "branchId",
+    "id",
+    "companyId",
+    "createdAt",
+    "updatedAt",
+    "rowVersion",
+    "deletedAt",
+    "isDeleted",
+    "domainEvents"
+  ]
+}

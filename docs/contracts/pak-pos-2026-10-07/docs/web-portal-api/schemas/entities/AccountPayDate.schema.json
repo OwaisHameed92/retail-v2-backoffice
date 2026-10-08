@@ -1,0 +1,164 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:sspos:web-portal-api:v1:AccountPayDate",
+  "title": "AccountPayDate",
+  "description": "Payload of a AccountPayDate row.",
+  "type": "object",
+  "properties": {
+    "customerId": {
+      "type": "string"
+    },
+    "saleId": {
+      "type": "string"
+    },
+    "dueAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "note": {
+      "type": "string"
+    },
+    "userId": {
+      "type": "string"
+    },
+    "replacedAt": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "reminderSentAt": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "reminderChannel": {
+      "enum": [
+        "none",
+        "whatsApp",
+        "email"
+      ]
+    },
+    "reminderAttempts": {
+      "type": [
+        "string",
+        "integer"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)$"
+    },
+    "lastReminderAt": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "lastReminderError": {
+      "type": "string"
+    },
+    "reminderSetupKey": {
+      "type": "string"
+    },
+    "isCurrent": {
+      "type": "boolean"
+    },
+    "lastTryFailed": {
+      "type": "boolean"
+    },
+    "branchId": {
+      "type": "string"
+    },
+    "id": {
+      "type": "string"
+    },
+    "companyId": {
+      "type": "string"
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "rowVersion": {
+      "type": [
+        "string",
+        "integer"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)$"
+    },
+    "deletedAt": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "isDeleted": {
+      "type": "boolean"
+    },
+    "domainEvents": {
+      "type": [
+        "array",
+        "null"
+      ],
+      "items": {
+        "type": "object",
+        "properties": {
+          "eventId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "occurredAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "version": {
+            "type": [
+              "string",
+              "integer"
+            ],
+            "pattern": "^-?(?:0|[1-9]\\d*)$"
+          }
+        },
+        "required": [
+          "eventId",
+          "occurredAt",
+          "version"
+        ]
+      }
+    }
+  },
+  "required": [
+    "customerId",
+    "saleId",
+    "dueAt",
+    "note",
+    "userId",
+    "replacedAt",
+    "reminderSentAt",
+    "reminderChannel",
+    "reminderAttempts",
+    "lastReminderAt",
+    "lastReminderError",
+    "reminderSetupKey",
+    "isCurrent",
+    "lastTryFailed",
+    "branchId",
+    "id",
+    "companyId",
+    "createdAt",
+    "updatedAt",
+    "rowVersion",
+    "deletedAt",
+    "isDeleted",
+    "domainEvents"
+  ]
+}

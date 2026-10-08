@@ -14,7 +14,7 @@ use Illuminate\Container\Container;
  * @phpstan-type TaxId array{label: string, pattern: string|null, example: string}
  * @phpstan-type Address array{postcodeLabel: string, postcodeRequired: bool, postcodePattern: string, postcodeExample: string, cityRequired: bool}
  * @phpstan-type Phone array{pattern: string, example: string, dialCode: string}
- * @phpstan-type Profile array{name: string, currency: string, currencySymbol: string, currencyName: string, currencySymbolSpace: bool, displayDecimals: int, grouping: string, numberLocale: string, dateLocale: string, timezone: string, taxName: string, taxIds: array<string, TaxId>, address: Address, phone: Phone, billing: array{collection: string, manualMethods: list<string>}, features: array<string, bool>, legal?: array{registeredIn: string}, nations?: list<string>, samplePlaces?: array<string, string>}
+ * @phpstan-type Profile array{name: string, currency: string, currencySymbol: string, currencyName: string, currencySymbolSpace: bool, displayDecimals: int, grouping: string, numberLocale: string, dateLocale: string, timezone: string, taxName: string, taxIds: array<string, TaxId>, address: Address, phone: Phone, billing: array{collection: string, manualMethods: list<string>}, features: array<string, bool>, legal?: array{registeredIn: string}, nations?: list<string>, samplePlaces?: array<string, string>, till?: array<string, mixed>}
  */
 final class Country
 {
@@ -268,6 +268,14 @@ final class Country
     }
 
     /**
+     * A till-facing value of the profile (`till.*` in config/country.php), read through TillProfile.
+     */
+    public function till(string $key): mixed
+    {
+        return $this->profile['till'][$key] ?? null;
+    }
+
+    /**
      * A country feature flag ("vatReturn", "fbr", or a P10 module such as "pharmacy"); unknown flags are off, except a
      * CountryModules module, which is on unless the profile turns it off (the UK default).
      */
@@ -325,6 +333,9 @@ final class Country
             ...($this->billingCollection() === 'manual' ? ['manualMethods' => $this->manualPaymentMethods()] : []),
             // Phase P9: the sample places that replace the UK ones in page examples, only where there are some (PK).
             ...($this->samplePlaces() !== [] ? ['samplePlaces' => $this->samplePlaces()] : []),
+            // Pak POS pack: the age rules the pickers offer and the whole digits of a product price, only where the
+            // profile limits them (PK); GB is unchanged.
+            ...TillProfile::frontend($this),
         ];
     }
 }

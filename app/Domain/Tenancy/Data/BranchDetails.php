@@ -33,7 +33,8 @@ final readonly class BranchDetails
         return [
             'code' => strtoupper($this->code),
             'name' => $this->name,
-            'nation' => $this->nation,
+            // Pak POS pack: a Pakistan shop always carries the profile's nation ("Pakistan"); GB keeps the one picked.
+            'nation' => Nation::forShop($this->nation->value),
             'address' => $this->address,
             'phone' => $this->phone,
             'vat_number' => $this->vatNumber,

@@ -1,0 +1,22 @@
+{
+  "registerId": "01K5T0Q8C4000000000000R001",
+  "seat": "deactivated",
+  "seatsInUse": 0,
+  "maxRegisters": 3,
+  "apiKeyRevoked": true,
+  "transferCode": null,
+  "transferCodeExpiresAt": null,
+  "portalTimeUtc": "2026-10-04T17:00:01Z",
+  "messages": [
+    {
+      "id": "01K5T0Q8C4000000000000M007",
+      "level": "info",
+      "title": "Till released",
+      "text": "Activate this same licence key on the new PC (Settings - Licence - Enter key). Restore your backup there first.",
+      "showFromUtc": null,
+      "showUntilUtc": null,
+      "dismissible": false,
+      "link": null
+    }
+  ]
+}

@@ -88,7 +88,8 @@ final class SettingCatalogue
         }
         unset($section);
 
-        return $sections;
+        // Pak POS pack: the settings of a till line with its own (hidden, added, start values; GB has none).
+        return CountrySettings::apply($sections, $country);
     }
 
     /**

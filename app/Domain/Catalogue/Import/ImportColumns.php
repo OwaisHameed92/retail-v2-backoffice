@@ -3,6 +3,7 @@
 namespace App\Domain\Catalogue\Import;
 
 use App\Domain\Shared\Country\Country;
+use App\Domain\Shared\Country\TillProfile;
 
 /**
  * What a product CSV column can be mapped to, and a first guess from the header names.
@@ -97,12 +98,18 @@ final class ImportColumns
         }
 
         $tax = strtolower($country->taxName());
-
-        return array_map(fn (array $d) => [
+        $fields = array_map(fn (array $d) => [
             'label' => $country->taxText($d['label']),
             'help' => str_replace('In pounds', 'In '.$country->currencyName(), $country->taxText($d['help'])),
             'aliases' => array_values(array_unique([...$d['aliases'], ...array_map(fn (string $a) => (string) preg_replace('/\bvat\b/', $tax, $a), $d['aliases'])])),
         ], self::FIELDS);
+
+        // Pak POS pack: one age rule, eighteen (a file's other till rules are still read and kept as written).
+        if (TillProfile::ageRules() !== null) {
+            $fields['age_rule']['help'] = '18 for an age check. Empty or "none" for none.';
+        }
+
+        return $fields;
     }
 
     private static function normal(string $header): string

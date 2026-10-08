@@ -1,0 +1,215 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "licence-token-payload",
+  "description": "The JSON inside a licence token (specs/licensing.md sections 1 and 8). Serialised compact, UTF-8, camelCase; the token carries the exact bytes, so field order and spacing do not matter. Unknown fields are ignored by every till. Since 2026-09-28 a key may carry the shop's details (company) and limits.branches.",
+  "type": "object",
+  "properties": {
+    "v": {
+      "type": "integer",
+      "const": 1,
+      "description": "Token format version."
+    },
+    "kid": {
+      "$ref": "common.schema.json#/$defs/kid"
+    },
+    "licenceId": {
+      "$ref": "common.schema.json#/$defs/ulid"
+    },
+    "kind": {
+      "$ref": "common.schema.json#/$defs/licenceKind"
+    },
+    "source": {
+      "$ref": "common.schema.json#/$defs/licenceSource"
+    },
+    "issuer": {
+      "type": "string",
+      "maxLength": 80
+    },
+    "companyId": {
+      "anyOf": [
+        {
+          "$ref": "common.schema.json#/$defs/ulid"
+        },
+        {
+          "const": ""
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "Required for source=portal. A local key may leave it blank; since 2026-09-28 every key of one shop (portal or local, one per till) carries the SAME companyId - the main till refuses a LAN join from a till whose key names another company."
+    },
+    "branchId": {
+      "anyOf": [
+        {
+          "$ref": "common.schema.json#/$defs/ulid"
+        },
+        {
+          "const": ""
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "Required for source=portal. A local key may leave it blank; every till key of one shop carries the same branchId (the main till refuses a join from a key for another branch)."
+    },
+    "businessName": {
+      "type": "string",
+      "maxLength": 100
+    },
+    "branchName": {
+      "type": "string",
+      "maxLength": 100
+    },
+    "installCode": {
+      "anyOf": [
+        {
+          "$ref": "common.schema.json#/$defs/installCode"
+        },
+        {
+          "const": ""
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "source=portal (per-till, section 17.15): the installCode of the till that activated the key. source=local: the install the generator made it for; absent, null or empty = an OPEN local key (owner 2026-09-28) - the first till that accepts it binds it to its own install code, and renewals are made for that install code."
+    },
+    "maxRegisters": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 999,
+      "description": "Tills allowed in this branch, main till included. The same value in every till key of the branch; the portal counts the branch's activated tills against it (section 17.16)."
+    },
+    "features": {
+      "allOf": [
+        {
+          "$ref": "common.schema.json#/$defs/features"
+        }
+      ],
+      "description": "Paid features. multi_branch = the company may add branches (up to limits.branches)."
+    },
+    "issuedAt": {
+      "$ref": "common.schema.json#/$defs/utc"
+    },
+    "validFrom": {
+      "allOf": [
+        {
+          "$ref": "common.schema.json#/$defs/utc"
+        }
+      ],
+      "description": "Start of the licence period; with expiresAt it is the length the admin chose (days, months, years)."
+    },
+    "expiresAt": {
+      "allOf": [
+        {
+          "$ref": "common.schema.json#/$defs/utc"
+        }
+      ],
+      "description": "Required - there are no lifetime licences."
+    },
+    "onlineCheck": {
+      "$ref": "common.schema.json#/$defs/onlineCheck"
+    },
+    "limits": {
+      "allOf": [
+        {
+          "$ref": "common.schema.json#/$defs/limits"
+        }
+      ],
+      "description": "Open map; limits.branches = how many branches the company may run (1 when absent)."
+    },
+    "notes": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 200
+    },
+    "company": {
+      "$ref": "common.schema.json#/$defs/licenceCompany"
+    },
+    "signerCert": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^SSPOSCERT1\\.[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+$",
+      "description": "The signer certificate (docs/web-portal-api.md 17.17). Required in every token signed by a key that is not built into the till (the portal's): the owner's key generator approved that key. Absent for built-in keys."
+    },
+    "country": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^[A-Z]{2}$",
+      "description": "Optional (2026-10-07, docs/web-portal-api.md 17.18). The country the licence was sold in, ISO 3166-1 alpha-2 in capitals: PK on the Pakistan portal, GB on the UK portal. A till built for another country refuses the key (licence.other_country). Absent = the key names no country and works in any till."
+    }
+  },
+  "required": [
+    "v",
+    "kid",
+    "licenceId",
+    "kind",
+    "source",
+    "issuer",
+    "businessName",
+    "branchName",
+    "maxRegisters",
+    "issuedAt",
+    "validFrom",
+    "expiresAt"
+  ],
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "source": {
+            "const": "local"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "installCode": {
+            "anyOf": [
+              {
+                "$ref": "common.schema.json#/$defs/installCode"
+              },
+              {
+                "const": ""
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      },
+      "description": "local: bound to installCode, or an open key (installCode absent/empty) bound by the first till that accepts it."
+    },
+    {
+      "if": {
+        "properties": {
+          "source": {
+            "const": "portal"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "companyId",
+          "branchId"
+        ],
+        "properties": {
+          "companyId": {
+            "$ref": "common.schema.json#/$defs/ulid"
+          },
+          "branchId": {
+            "$ref": "common.schema.json#/$defs/ulid"
+          }
+        }
+      }
+    }
+  ]
+}

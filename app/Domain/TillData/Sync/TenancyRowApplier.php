@@ -72,8 +72,8 @@ final class TenancyRowApplier
         foreach ($mapped->definition->tillFields as $field => $column) {
             $value = $row[$mapped->definition->fields[$field]->column] ?? null;
 
-            // The portal needs a display name, and only knows the nations in its enum.
-            if (($field === 'name' && ($value === null || $value === '')) || ($field === 'nation' && Nation::tryFrom((string) $value) === null)) {
+            // The portal needs a display name, and only keeps the nations its profile uses (Nation::fromTill).
+            if (($field === 'name' && ($value === null || $value === '')) || ($field === 'nation' && Nation::fromTill($value) === null)) {
                 continue;
             }
 

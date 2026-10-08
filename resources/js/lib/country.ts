@@ -164,6 +164,14 @@ export function moneyInputPattern(): string {
     return keepsUkStyles() ? '^\\d{1,5}(\\.\\d{1,2})?$' : '^\\d[\\d,]{0,12}(\\.\\d{1,2})?$';
 }
 
+/**
+ * The browser check on a typed product price (2 decimals): GB exactly as before (8 whole digits); where the profile sets
+ * the digits (Pak POS: 7, up to 9,999,999.99) that many. The server checks the same (PHP TillProfile::priceRule).
+ */
+export function priceInputPattern(): string {
+    return `^\\d{1,${current.priceDigits ?? 8}}(\\.\\d{1,2})?$`;
+}
+
 /** The currency in words for text: "pounds" (GB), "rupees" (PK). */
 export function currencyName(): string {
     return ({ GBP: 'pounds', PKR: 'rupees' } as Record<string, string>)[current.currency] ?? current.currency;

@@ -3,6 +3,7 @@
 namespace App\Http\Requests\App\Pricing;
 
 use App\Domain\Shared\Country\LocalText;
+use App\Domain\Shared\Country\TillProfile;
 use App\Http\Requests\App\Setup\CompanyWideWriteRequest;
 
 /**
@@ -17,7 +18,7 @@ class EveryShopPriceRequest extends CompanyWideWriteRequest
     public function rules(): array
     {
         return [
-            'price' => ['required', 'regex:/^\d{1,8}(\.\d{1,2})?$/'],
+            'price' => ['required', TillProfile::priceRule()],
             'end_shop_ids' => ['present', 'array', 'max:500'],
             'end_shop_ids.*' => ['string', 'size:26', 'distinct'],
         ];

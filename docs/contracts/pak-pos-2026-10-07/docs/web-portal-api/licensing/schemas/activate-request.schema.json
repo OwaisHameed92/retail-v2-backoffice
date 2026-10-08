@@ -1,0 +1,92 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "activate-request",
+  "description": "POST /api/v1/devices/activate body. No Authorization header: the activation code is the credential.",
+  "type": "object",
+  "properties": {
+    "activationCode": {
+      "$ref": "common.schema.json#/$defs/activationCode"
+    },
+    "installId": {
+      "$ref": "common.schema.json#/$defs/installId"
+    },
+    "installCode": {
+      "$ref": "common.schema.json#/$defs/installCode"
+    },
+    "deviceName": {
+      "type": "string",
+      "maxLength": 64,
+      "description": "Windows computer name."
+    },
+    "appVersion": {
+      "$ref": "common.schema.json#/$defs/appVersion"
+    },
+    "os": {
+      "$ref": "common.schema.json#/$defs/os"
+    },
+    "tillClockUtc": {
+      "$ref": "common.schema.json#/$defs/utc"
+    },
+    "approverKids": {
+      "type": "array",
+      "items": {
+        "$ref": "common.schema.json#/$defs/kid"
+      },
+      "description": "Built-in kids whose signer certificates this till accepts (docs/web-portal-api.md 17.17). Sign a returned token with a kid in trustedKids, or with your certified key when its certificate approvedBy is in this list."
+    },
+    "trustedKids": {
+      "type": "array",
+      "items": {
+        "$ref": "common.schema.json#/$defs/kid"
+      },
+      "minItems": 1,
+      "description": "Signing key ids this till version trusts; sign the returned token with one of them."
+    },
+    "registerName": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 60,
+      "description": "Name typed in the wizard, else null (portal default 'Till 1')."
+    },
+    "existingIds": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "description": "Set only when the till already holds data (a restored backup on a replacement PC). Must be the code's branch, else 409 activation.use_migrate.",
+      "properties": {
+        "companyId": {
+          "$ref": "common.schema.json#/$defs/ulid"
+        },
+        "branchId": {
+          "$ref": "common.schema.json#/$defs/ulid"
+        },
+        "registerId": {
+          "$ref": "common.schema.json#/$defs/ulid"
+        }
+      },
+      "required": [
+        "companyId",
+        "branchId",
+        "registerId"
+      ]
+    },
+    "localLicenceToken": {
+      "$ref": "common.schema.json#/$defs/licenceTokenOrNull"
+    }
+  },
+  "required": [
+    "activationCode",
+    "installId",
+    "installCode",
+    "deviceName",
+    "appVersion",
+    "os",
+    "tillClockUtc",
+    "trustedKids",
+    "existingIds",
+    "localLicenceToken"
+  ]
+}

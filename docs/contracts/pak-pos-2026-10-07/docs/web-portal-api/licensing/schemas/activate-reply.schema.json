@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "activate-reply",
+  "description": "POST /api/v1/devices/activate 200 reply. The till adopts these ids, stores the key and token, and switches Cloud sync on.",
+  "type": "object",
+  "properties": {
+    "companyId": {
+      "$ref": "common.schema.json#/$defs/ulid"
+    },
+    "branchId": {
+      "$ref": "common.schema.json#/$defs/ulid"
+    },
+    "registerId": {
+      "$ref": "common.schema.json#/$defs/ulid"
+    },
+    "isMain": {
+      "type": "boolean",
+      "description": "Always true in v1 (only a branch's main till activates)."
+    },
+    "hubUrl": {
+      "type": "string",
+      "format": "uri",
+      "pattern": "^https://",
+      "description": "Base URL for every later call (sync.hub_url)."
+    },
+    "apiKey": {
+      "$ref": "common.schema.json#/$defs/apiKey"
+    },
+    "licenceToken": {
+      "$ref": "common.schema.json#/$defs/licenceToken"
+    },
+    "licence": {
+      "$ref": "common.schema.json#/$defs/licenceSummary"
+    },
+    "settingsBootstrap": {
+      "$ref": "common.schema.json#/$defs/settingsBootstrap"
+    },
+    "portalTimeUtc": {
+      "$ref": "common.schema.json#/$defs/utc"
+    },
+    "nextCheckAfterSeconds": {
+      "type": "integer",
+      "minimum": 60,
+      "maximum": 2592000,
+      "description": "When to call licence/validate next (the till adds a little random jitter)."
+    },
+    "messages": {
+      "$ref": "common.schema.json#/$defs/messages"
+    }
+  },
+  "required": [
+    "companyId",
+    "branchId",
+    "registerId",
+    "hubUrl",
+    "apiKey",
+    "licenceToken",
+    "portalTimeUtc",
+    "nextCheckAfterSeconds"
+  ]
+}

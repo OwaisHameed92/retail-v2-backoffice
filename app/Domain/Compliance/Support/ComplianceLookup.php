@@ -4,6 +4,7 @@ namespace App\Domain\Compliance\Support;
 
 use App\Domain\Cash\Support\CashLookup;
 use App\Domain\Compliance\Data\ComplianceFilters;
+use App\Domain\Shared\Country\TillProfile;
 use App\Domain\Tenancy\Models\Branch;
 use App\Domain\TillData\Enums\AgeRule;
 use App\Domain\TillData\Models\TillUser;
@@ -33,7 +34,7 @@ final class ComplianceLookup
     {
         return array_values(array_map(
             fn (AgeRule $r) => ['value' => $r->value, 'label' => self::ageRule($r->value)],
-            array_filter(AgeRule::cases(), fn (AgeRule $r) => $r !== AgeRule::None),
+            array_filter(AgeRule::cases(), fn (AgeRule $r) => $r !== AgeRule::None && TillProfile::offersAgeRule($r->value)),
         ));
     }
 

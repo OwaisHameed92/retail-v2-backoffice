@@ -165,6 +165,7 @@ class RedeemLicence
         }
 
         // The redeem reply carries no sync link: neither the key nor the shop ids that go with it (redeem-reply.applied.json).
-        return ['result' => 'applied', ...Arr::except($reply, ['apiKey', 'hubUrl', 'companyId', 'branchId'])];
+        // §17.18 names activate and validate for the top-level `country` (PK); the token inside carries it anyway.
+        return ['result' => 'applied', ...Arr::except($reply, ['apiKey', 'hubUrl', 'companyId', 'branchId', 'country'])];
     }
 }

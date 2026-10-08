@@ -1,0 +1,49 @@
+{
+  "licenceId": "01K5T0Q8C4000000000000Y001",
+  "tokenSha256": "3848315811206cf590309eeefb2ce627a927f98167825e44049ea59910a2a3eb",
+  "appVersion": "3.0.412",
+  "approverKids": [
+    "k76b44696"
+  ],
+  "trustedKids": [
+    "k13799fa4",
+    "k76b44696"
+  ],
+  "tillClockUtc": "2026-09-27T09:05:00Z",
+  "clockWatermarkUtc": "2026-09-27T09:05:00Z",
+  "lastValidatedAtUtc": "2026-09-26T09:00:05Z",
+  "lastSyncAt": "2026-09-27T09:04:30Z",
+  "lock": {
+    "locked": false,
+    "reason": null
+  },
+  "registers": [
+    {
+      "registerId": "01K5T0Q8C4000000000000R001",
+      "code": "01",
+      "name": "Till 1",
+      "isMain": true,
+      "appVersion": "3.0.412",
+      "installId": "01K5T0Q8C4000000000000H001",
+      "deviceName": "KIRKGATE-TILL1",
+      "lastSeenUtc": "2026-09-27T09:04:58Z",
+      "isActive": true
+    },
+    {
+      "registerId": "01K5T0Q8C4000000000000R002",
+      "code": "02",
+      "name": "Till 2",
+      "isMain": false,
+      "appVersion": "3.0.412",
+      "installId": "01K5T0Q8C4000000000000H002",
+      "deviceName": "KIRKGATE-TILL2",
+      "lastSeenUtc": "2026-09-27T08:59:40Z",
+      "isActive": true
+    }
+  ],
+  "diagnostics": {
+    "pendingSyncRows": 0,
+    "lastSyncError": null,
+    "databaseSizeMb": 84
+  }
+}

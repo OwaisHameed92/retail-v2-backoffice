@@ -200,11 +200,12 @@ it('hides the UK nation on a Pakistan instance and keeps the till value as store
         ->assertInertia(fn (Assert $page) => $page->where('shop.nation', null));
     expect(overviewJson($this, $company))->not->toContain('"nation"');
 
-    // The hidden field still sends the column default, so the till gets the value it always had.
+    // The hidden field still sends the column default; since the Pak POS pack (2026-10-07, owner: Branch `nation` is
+    // "Pakistan") the shop gets the profile's nation, which supersedes P9's "keeps the column default".
     $this->actingAs($this->admin(), 'admin')
         ->post("/admin/tenants/{$company->id}/branches", ['code' => 'KHI', 'name' => 'Saddar', 'nation' => 'england', 'tills' => 1, 'town' => 'Karachi'])
         ->assertSessionHas('success');
-    expect(Branch::withoutCompanyScope()->where('code', 'KHI')->firstOrFail()->nation)->toBe(Nation::England);
+    expect(Branch::withoutCompanyScope()->where('code', 'KHI')->firstOrFail()->nation)->toBe(Nation::Pakistan);
 })->group('country-pk');
 
 it('words messages, settings, permissions, prompts and AI tools without UK terms on a Pakistan instance', function () {
@@ -216,11 +217,11 @@ it('words messages, settings, permissions, prompts and AI tools without UK terms
         ->and((new StoreTenantRequest)->messages()['branch_name.required'])->toBe('Enter the branch name, for example Lahore.')
         ->and(LocalText::places('1 more till for Leeds (LDS) on Leeds Road'))->toBe('1 more till for Lahore (LHR) on Mall Road');
 
+    // Pak POS pack (2026-10-07) supersedes P9's neutral wording: the pence keypad and Challenge 25 settings are not on
+    // the Pakistan till (hidden), and cash rounds to the rupee (PakPosSettingsTest).
     $settings = SettingCatalogue::all();
-    expect([$settings['till.keypad_price_in_pence']['label'], $settings['till.keypad_price_in_pence']['help']])
-        ->toBe(['Type prices without the decimal point', 'On: typing 150 on the keypad means Rs 1.50. Off: type 1.50.'])
-        ->and([$settings['payments.round_cash_to_5p']['label'], $settings['payments.round_cash_to_5p']['help']])->toBe(['Round cash totals', 'Cash totals are rounded to the nearest 0.05.'])
-        ->and($settings['compliance.challenge25_age']['help'])->toBe('Usually 25.')
+    expect($settings)->not->toHaveKey('till.keypad_price_in_pence')->not->toHaveKey('compliance.challenge25_age')
+        ->and([$settings['payments.round_cash_to_5p']['label'], $settings['payments.round_cash_to_5p']['help']])->toBe(['Round cash to the rupee', 'Cash totals are rounded to the nearest rupee. Card and wallet payments are never rounded.'])
         ->and($settings['compliance.refusal_register_enabled']['help'])->toBe('Staff record each refused sale.');
 
     $billing = collect(RoleMatrix::rows())->firstWhere('key', 'billing.manage');

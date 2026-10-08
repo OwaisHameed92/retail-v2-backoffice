@@ -34,6 +34,7 @@ final class LicenceClaims
      * @param  array<mixed>  $limits  Name => whole number, e.g. ['branches' => 2].
      * @param  array<mixed>  $company  Any of COMPANY_FIELDS => string|null; empty values are dropped.
      * @param  array<mixed>|null  $onlineCheck  {required: bool, intervalHours?: int, graceDays?: int}; null = config.
+     * @param  string|null  $country  Contract §17.18 (Pak POS pack): the licence's country, "PK"; null = not sent (GB).
      */
     public function __construct(
         public readonly string $licenceId,
@@ -53,6 +54,7 @@ final class LicenceClaims
         public readonly array $company = [],
         public readonly ?string $issuer = null,
         public readonly ?array $onlineCheck = null,
+        public readonly ?string $country = null,
     ) {
         $this->validate();
     }
@@ -86,6 +88,7 @@ final class LicenceClaims
             'notes' => $this->notes,
             'company' => $this->companyBlock(),
             'signerCert' => $signerCert,
+            'country' => $this->country,
         ];
 
         return array_filter($payload, fn (mixed $value) => $value !== null && $value !== '' && $value !== []);
@@ -137,6 +140,7 @@ final class LicenceClaims
         self::require($this->issuer === null || mb_strlen($this->issuer) <= 80, 'issuer is at most 80 characters.');
         self::require($this->maxRegisters >= 1 && $this->maxRegisters <= 999, 'maxRegisters must be 1 to 999.');
         self::require($this->notes === null || mb_strlen($this->notes) <= 200, 'notes is at most 200 characters.');
+        self::require($this->country === null || preg_match('/^[A-Z]{2}$/', $this->country) === 1, 'country is two capital letters (ISO 3166-1 alpha-2).');
         self::require($this->expiresAt->greaterThan($this->validFrom), 'expiresAt must be after validFrom.');
 
         self::require(array_is_list($this->features) && count(array_unique($this->features)) === count($this->features), 'features must be a list without duplicates.');

@@ -4,6 +4,7 @@ namespace App\Http\Requests\App\Pricing;
 
 use App\Domain\Shared\Country\Country;
 use App\Domain\Shared\Country\LocalText;
+use App\Domain\Shared\Country\TillProfile;
 use App\Domain\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Http\FormRequest;
@@ -32,7 +33,7 @@ class ShopPriceRequest extends FormRequest
         return [
             'branch_id' => ['required', 'string', 'size:26'],
             'product_unit_id' => ['nullable', 'string', 'size:26'],
-            'price' => $ending ? ['prohibited'] : ['required', 'regex:/^\d{1,8}(\.\d{1,2})?$/'],
+            'price' => $ending ? ['prohibited'] : ['required', TillProfile::priceRule()],
             'valid_from' => $ending ? ['prohibited'] : ['nullable', 'date'],
             'valid_to' => $ending ? ['prohibited'] : ['nullable', 'date'],
         ];

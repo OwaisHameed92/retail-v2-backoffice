@@ -167,3 +167,10 @@ A second copy of this app with `COUNTRY=PK` (docs/pakistan-plan.md). Nothing is 
 The `.env` was made from the UK one with Pakistan values (new `APP_KEY`, `COUNTRY=PK`, seller name only, no GoCardless,
 no UK bank lines). Deploy: `SERVER=root@187.124.113.13 APP_ROOT=/var/www/pak-pos APP_USER=pakpos HEALTH_URL=https://pak-pos.sspos.co.uk/up bash deploy/push-release.sh`.
 Deploy the UK first, check it, then Pakistan. First admin: `sudo -u pakpos php artisan admin:create <email> --name=…` (password typed in).
+
+Pak POS pack (2026-10-07): when the owner sends the "Pak POS portal" signer certificate for `k9fa21394` (valid to
+2027-12-31; it is not in the pack), import it on the PK server only: `cd /var/www/pak-pos && sudo -u pakpos php artisan
+licence:keys:import-cert 'SSPOSCERT1…'` (`LICENCE_APPROVERS` in its `.env` must list the owner's root key). Ask the owner
+for a new one before the end of 2027: keys signed after it ends are refused by the tills. After the release that brings
+the pack, run once on the PK server: `sudo -u pakpos php artisan branches:pakistan-nation --dry-run`, then without
+`--dry-run` (shops still at `england` become `Pakistan`; refused on the UK).

@@ -5,6 +5,7 @@ namespace App\Http\Requests\App\Catalogue;
 use App\Domain\MasterCatalogue\Actions\AddFromCatalogue;
 use App\Domain\MasterCatalogue\Data\PriceRule;
 use App\Domain\MasterCatalogue\Enums\StarterPack;
+use App\Domain\Shared\Country\TillProfile;
 use App\Http\Requests\App\Setup\CompanyWideWriteRequest;
 use Illuminate\Validation\Rule;
 
@@ -25,7 +26,7 @@ class AddFromCatalogueRequest extends CompanyWideWriteRequest
         return [
             'items' => [$starter ? 'prohibited' : 'required', 'array', 'min:1', 'max:'.AddFromCatalogue::MAX_ITEMS],
             'items.*.barcode' => ['required', 'string', 'max:20'],
-            'items.*.sell_price' => ['nullable', 'regex:/^\d{1,8}(\.\d{1,2})?$/'],
+            'items.*.sell_price' => ['nullable', TillProfile::priceRule()],
             'items.*.cost_price' => ['nullable', 'regex:/^\d{1,8}(\.\d{1,4})?$/'],
             'pack' => [$starter ? 'required' : 'prohibited', Rule::enum(StarterPack::class)],
             'include' => [$starter ? 'required' : 'prohibited', 'array', 'min:1', 'max:200'],
