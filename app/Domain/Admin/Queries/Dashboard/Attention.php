@@ -8,12 +8,15 @@ use App\Domain\Billing\Support\BillingFormat;
 use App\Domain\Leads\Models\Lead;
 use App\Domain\Licensing\Enums\LicenceAlertType;
 use App\Domain\Licensing\Models\LicenceAlert;
+use App\Domain\Partners\Enums\PartnerRequestStatus;
+use App\Domain\Partners\Models\PartnerTenantRequest;
+use App\Domain\Partners\Support\PartnerApi;
 use App\Domain\Shared\Country\Country;
 use Carbon\CarbonImmutable;
 
 /**
- * "Needs attention": trials ending within 2 days, open licence alerts, overdue invoices and leads whose
- * follow-up is late. Each area keeps its newest 5 and its total, so AdminDashboard can drop the areas an admin
+ * "Needs attention": trials ending within 2 days, open licence alerts, overdue invoices, leads whose
+ * follow-up is late and partner requests waiting for review (UK, `partners` area: tenants.manage). Each area keeps its newest 5 and its total, so AdminDashboard can drop the areas an admin
  * may not see and still show the newest 5 of the rest. `at` is when the item needed attention (a trial: 2 days
  * before it ends).
  *
@@ -35,6 +38,13 @@ final class Attention
         $alerts = LicenceAlert::withoutCompanyScope()->open();
         $late = Lead::query()->open()->whereNotNull('follow_up_at')->where('follow_up_at', '<', $rows->now);
         $overdue = $rows->overdue->filter(fn (Invoice $invoice) => $invoice->status === InvoiceStatus::Overdue);
+        // One query (joined for the partner's name): waiting requests are few, so all are read and counted here.
+        $partners = PartnerApi::enabled()
+            ? PartnerTenantRequest::query()->join('partners', 'partners.id', '=', 'partner_tenant_requests.partner_id')
+                ->where('partner_tenant_requests.status', PartnerRequestStatus::PendingReview)
+                ->orderByDesc('partner_tenant_requests.updated_at')
+                ->get(['partner_tenant_requests.id', 'partner_tenant_requests.business_name', 'partner_tenant_requests.updated_at', 'partners.name as partner_name'])
+            : collect();
 
         $items = [
             ...array_slice($trials, 0, self::LIMIT),
@@ -80,6 +90,16 @@ final class Attention
                     'at' => CarbonImmutable::instance($lead->follow_up_at ?? $rows->now)->utc()->toIso8601String(),
                     'href' => route('admin.leads.show', $lead->id, false),
                 ])->all(),
+            ...$partners->take(self::LIMIT)
+                ->map(fn (PartnerTenantRequest $request) => [
+                    'id' => 'partner-request-'.$request->id,
+                    'area' => 'partners',
+                    'label' => 'Partner',
+                    'tone' => 'info',
+                    'text' => 'Waiting for review · '.$request->business_name.' · '.($request->getAttribute('partner_name') ?? 'Partner'),
+                    'at' => ($request->updated_at ?? $rows->now)->utc()->toIso8601String(),
+                    'href' => route('admin.partner-requests.show', $request->id, false),
+                ])->values()->all(),
         ];
 
         return [
@@ -89,6 +109,7 @@ final class Attention
                 'licences' => $alerts->count(),
                 'billing' => $overdue->count(),
                 'leads' => $late->count(),
+                'partners' => $partners->count(),
             ],
         ];
     }

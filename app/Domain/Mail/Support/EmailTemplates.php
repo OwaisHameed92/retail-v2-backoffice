@@ -6,6 +6,7 @@ use App\Domain\Billing\Support\ManualCollection;
 use App\Domain\Mail\Mailables\AccountReactivatedMail;
 use App\Domain\Mail\Mailables\AccountSuspendedMail;
 use App\Domain\Mail\Mailables\AdminNewLeadMail;
+use App\Domain\Mail\Mailables\AdminPartnerRequestMail;
 use App\Domain\Mail\Mailables\AdminSubscriptionRequestMail;
 use App\Domain\Mail\Mailables\AdminTillRequestMail;
 use App\Domain\Mail\Mailables\AnomalyAlertMail;
@@ -55,6 +56,7 @@ final class EmailTemplates
         CustomerStatementMail::class,
         AdminTillRequestMail::class,
         AdminSubscriptionRequestMail::class,
+        AdminPartnerRequestMail::class,
         OwnerAlertMail::class,
         OwnerAlertResolvedMail::class,
         OwnerDigestMail::class,

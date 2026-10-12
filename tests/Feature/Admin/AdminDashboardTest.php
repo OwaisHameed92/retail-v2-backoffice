@@ -315,7 +315,8 @@ test('the dashboard runs a bounded number of queries whatever the number of tena
         Lead::factory()->followUpAt(londonAt('2026-10-20 10:00'))->create();
     }
 
-    expect($count())->toBe($few)->and($few)->toBeLessThanOrEqual(20);
+    // 21: one more since partner requests joined "Needs attention" (2026-10-12); still the same for 1 or 7 tenants.
+    expect($count())->toBe($few)->and($few)->toBeLessThanOrEqual(21);
 });
 
 test('guests and tenant users cannot open the admin dashboard', function () {

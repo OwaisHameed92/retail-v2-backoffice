@@ -2,6 +2,7 @@
 
 namespace App\Domain\Partners\Actions;
 
+use App\Domain\Mail\Data\PartnerRequestAlertData;
 use App\Domain\Partners\Enums\PartnerRequestStatus;
 use App\Domain\Partners\Enums\PartnerWebhookType;
 use App\Domain\Partners\Models\PartnerTenantRequest;
@@ -26,13 +27,16 @@ class CancelTenantRequest
     public function __construct(
         private readonly QueuePartnerWebhook $webhooks,
         private readonly RecordAudit $audit,
+        private readonly AlertStaffOfPartnerRequest $alerts,
     ) {}
 
     public function handle(PartnerTenantRequest $request, ?string $reason): PartnerTenantRequest
     {
         $reason = trim((string) $reason) === '' ? self::DEFAULT_REASON : mb_substr(trim((string) $reason), 0, 500);
 
-        return DB::transaction(function () use ($request, $reason) {
+        $flagged = false;
+
+        $result = DB::transaction(function () use ($request, $reason, &$flagged) {
             $locked = PartnerTenantRequest::query()->whereKey($request->id)->lockForUpdate()->firstOrFail();
             $now = CarbonImmutable::now();
 
@@ -62,9 +66,17 @@ class CancelTenantRequest
                     'external_id' => $locked->external_id,
                     'reason' => $reason,
                 ], companyId: $locked->company_id);
+                $flagged = true;
             }
 
             return $locked;
         });
+
+        // An approved business the partner no longer wants: staff decide what happens to it, so they hear at once.
+        if ($flagged) {
+            $this->alerts->handle($result, null, PartnerRequestAlertData::PARTNER_CANCELLED);
+        }
+
+        return $result;
     }
 }

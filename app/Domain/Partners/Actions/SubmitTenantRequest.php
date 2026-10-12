@@ -2,6 +2,7 @@
 
 namespace App\Domain\Partners\Actions;
 
+use App\Domain\Mail\Data\PartnerRequestAlertData;
 use App\Domain\Partners\Data\TenantRequestInput;
 use App\Domain\Partners\Enums\PartnerRequestStatus;
 use App\Domain\Partners\Models\Partner;
@@ -27,7 +28,10 @@ use Illuminate\Support\Facades\DB;
  */
 class SubmitTenantRequest
 {
-    public function __construct(private readonly RecordAudit $audit) {}
+    public function __construct(
+        private readonly RecordAudit $audit,
+        private readonly AlertStaffOfPartnerRequest $alerts,
+    ) {}
 
     /**
      * @return array{0: PartnerTenantRequest, 1: 'created'|'updated'|'unchanged'}
@@ -37,15 +41,22 @@ class SubmitTenantRequest
     public function handle(Partner $partner, string $externalId, TenantRequestInput $input): array
     {
         try {
-            return $this->apply($partner, $externalId, $input);
+            [$request, $result, $alert] = $this->apply($partner, $externalId, $input);
         } catch (UniqueConstraintViolationException) {
             // The same externalId arrived twice at once: the other call created it; this one is now a repeat.
-            return $this->apply($partner, $externalId, $input);
+            [$request, $result, $alert] = $this->apply($partner, $externalId, $input);
         }
+
+        // Staff hear of a new request (or one sent again) at once, after the commit (owner 2026-10-12).
+        if ($alert !== null) {
+            $this->alerts->handle($request, $partner, $alert);
+        }
+
+        return [$request, $result];
     }
 
     /**
-     * @return array{0: PartnerTenantRequest, 1: 'created'|'updated'|'unchanged'}
+     * @return array{0: PartnerTenantRequest, 1: 'created'|'updated'|'unchanged', 2: PartnerRequestAlertData::NEW|PartnerRequestAlertData::SENT_AGAIN|null}
      */
     private function apply(Partner $partner, string $externalId, TenantRequestInput $input): array
     {
@@ -73,11 +84,11 @@ class SubmitTenantRequest
                     'tills' => $request->tills(),
                 ]);
 
-                return [$request->refresh(), 'created'];
+                return [$request->refresh(), 'created', PartnerRequestAlertData::NEW];
             }
 
             if (hash_equals($request->payload_hash, $hash) && $request->status !== PartnerRequestStatus::Rejected) {
-                return [$request, 'unchanged'];
+                return [$request, 'unchanged', null];
             }
 
             if ($request->status === PartnerRequestStatus::Approved) {
@@ -113,7 +124,7 @@ class SubmitTenantRequest
                 'tills' => $request->tills(),
             ]);
 
-            return [$request, 'updated'];
+            return [$request, 'updated', $reopened ? PartnerRequestAlertData::SENT_AGAIN : null];
         });
     }
 }

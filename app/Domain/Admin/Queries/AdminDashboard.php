@@ -13,6 +13,7 @@ use App\Domain\Admin\Queries\Dashboard\RecentActivity;
 use App\Domain\Admin\Queries\Dashboard\RecentTenants;
 use App\Domain\Admin\Queries\Dashboard\RevenueChart;
 use App\Domain\Admin\Queries\Dashboard\SystemHealth;
+use App\Domain\Partners\Support\PartnerApi;
 use App\Domain\TillHealth\Queries\TillHealthSummary;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Cache;
@@ -66,7 +67,7 @@ final class AdminDashboard
      */
     public function forAdmin(Admin $admin): array
     {
-        return $this->data()->forViewer(self::seesBilling($admin), self::seesLeads($admin));
+        return $this->data()->forViewer(self::seesBilling($admin), self::seesLeads($admin), PartnerApi::enabled() && $admin->hasAbility(AdminRole::TENANTS_MANAGE));
     }
 
     /**
