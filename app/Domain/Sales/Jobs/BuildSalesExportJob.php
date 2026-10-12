@@ -13,14 +13,20 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Throwable;
 
-/** Builds one queued sales CSV export as its business (module 4.6). */
+/**
+ * Builds one queued sales CSV export as its business (module 4.6). The longest job: its timeout stays below the
+ * queue's retry_after (1900 s, config/queue.php) and the worker's --timeout. A second copy of it (a redelivery)
+ * does nothing while the first runs: BuildSalesExport claims the export atomically.
+ */
 class BuildSalesExportJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable;
 
+    public const TIMEOUT = 1800;
+
     public int $tries = 2;
 
-    public int $timeout = 1800;
+    public int $timeout = self::TIMEOUT;
 
     public function __construct(public readonly string $exportId, public readonly string $companyId) {}
 

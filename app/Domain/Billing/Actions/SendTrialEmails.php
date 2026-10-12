@@ -13,6 +13,7 @@ use App\Domain\Licensing\Models\Licence;
 use App\Domain\Licensing\Support\DefaultPlan;
 use App\Domain\Plans\Models\Plan;
 use App\Domain\Shared\Actions\RecordAudit;
+use App\Domain\Shared\Support\BusinessFailures;
 use App\Domain\Tenancy\Enums\CompanyStatus;
 use App\Domain\Tenancy\Models\Company;
 use Carbon\CarbonImmutable;
@@ -26,14 +27,18 @@ use Illuminate\Support\Facades\DB;
  * - TrialEndedMail once it has passed, for trials that ended in the last `billing.trial.ended_window_days` (3).
  *
  * Tracked on the billing account (`trial_reminder_for` / `trial_ended_for` = the trial end they were for), so
- * a trial extended by staff gets its own reminder. Cancelled and suspended companies get nothing.
+ * a trial extended by staff gets its own reminder. Cancelled and suspended companies get nothing. One business's
+ * error is reported and the rest still run (BusinessFailures).
  */
 class SendTrialEmails
 {
+    public const TASK = 'billing:run trial-emails';
+
     public function __construct(
         private readonly BillingAccounts $accounts,
         private readonly BillingMailer $mailer,
         private readonly RecordAudit $audit,
+        private readonly BusinessFailures $failures,
     ) {}
 
     /**
@@ -51,50 +56,65 @@ class SendTrialEmails
             ->where('trial_ends_at', '<=', $now->addDays($reminderDays + 1))
             ->distinct()->pluck('company_id');
 
-        foreach ($trials as $companyId) {
-            $company = Company::query()->find($companyId);
-
-            if ($company === null || in_array($company->status, [CompanyStatus::Cancelled, CompanyStatus::Suspended], true)) {
-                continue;
-            }
-
-            $licences = RenewCompanyLicences::renewable($company)->get();
-            $trialEnds = $licences->filter(fn (Licence $licence) => $licence->activated_at !== null && $licence->expires_at === null && $licence->trial_ends_at !== null)
-                ->map(fn (Licence $licence) => $licence->trial_ends_at)->min();
-
-            if ($trialEnds === null) {
-                continue;
-            }
-
-            $daysLeft = (int) BillingDates::today($now)->diffInDays(BillingDates::localDate($trialEnds), false);
-            $price = $this->priceSummary($company, $licences->first()?->plan);
-            $account = $this->accounts->for($company);
-            // Direct Debit customers without a working mandate get the setup link (module 1.12).
-            $ddUrl = $account->isDirectDebit() && ! $account->hasUsableMandate() ? SetupLink::for($company) : null;
-
-            DB::transaction(function () use ($company, $trialEnds, $now, $daysLeft, $reminderDays, $windowDays, $licences, $price, $ddUrl, &$sent) {
-                $account = $this->accounts->lock($company);
-                $sameEnd = fn (?CarbonImmutable $for) => $for !== null && $for->getTimestamp() === $trialEnds->getTimestamp();
-
-                if ($now->lessThan($trialEnds) && $daysLeft <= $reminderDays && ! $sameEnd($account->trial_reminder_for)) {
-                    $this->mailer->trialReminder($company, $trialEnds, max(0, $daysLeft), $licences->count(), $price, $ddUrl);
-                    $account->trial_reminder_for = $trialEnds;
-                    $account->trial_reminder_sent_at = $now;
-                    $account->save();
-                    $this->audit->handle('billing.trial_reminder_sent', $company, null, null, ['trial_ends_at' => $trialEnds->toIso8601String(), 'days_left' => $daysLeft], companyId: $company->id);
-                    $sent['reminders']++;
-                }
-
-                if ($now->greaterThanOrEqualTo($trialEnds) && $now->lessThan($trialEnds->addDays($windowDays)) && ! $sameEnd($account->trial_ended_for)) {
-                    $this->mailer->trialEnded($company, $trialEnds, $licences->count(), $price, $ddUrl);
-                    $account->trial_ended_for = $trialEnds;
-                    $account->trial_ended_sent_at = $now;
-                    $account->save();
-                    $this->audit->handle('billing.trial_ended_sent', $company, null, null, ['trial_ends_at' => $trialEnds->toIso8601String()], companyId: $company->id);
-                    $sent['ended']++;
-                }
-            });
+        foreach ($trials as $id) {
+            $done = $this->failures->attempt(self::TASK, (string) $id, fn () => $this->company((string) $id, $now, $reminderDays, $windowDays), ['reminders' => 0, 'ended' => 0]);
+            $sent['reminders'] += $done['reminders'];
+            $sent['ended'] += $done['ended'];
         }
+
+        return $sent;
+    }
+
+    /**
+     * One business's reminder or ended email, when due.
+     *
+     * @return array{reminders: int, ended: int}
+     */
+    private function company(string $companyId, CarbonImmutable $now, int $reminderDays, int $windowDays): array
+    {
+        $sent = ['reminders' => 0, 'ended' => 0];
+        $company = Company::query()->find($companyId);
+
+        if ($company === null || in_array($company->status, [CompanyStatus::Cancelled, CompanyStatus::Suspended], true)) {
+            return $sent;
+        }
+
+        $licences = RenewCompanyLicences::renewable($company)->get();
+        $trialEnds = $licences->filter(fn (Licence $licence) => $licence->activated_at !== null && $licence->expires_at === null && $licence->trial_ends_at !== null)
+            ->map(fn (Licence $licence) => $licence->trial_ends_at)->min();
+
+        if ($trialEnds === null) {
+            return $sent;
+        }
+
+        $daysLeft = (int) BillingDates::today($now)->diffInDays(BillingDates::localDate($trialEnds), false);
+        $price = $this->priceSummary($company, $licences->first()?->plan);
+        $account = $this->accounts->for($company);
+        // Direct Debit customers without a working mandate get the setup link (module 1.12).
+        $ddUrl = $account->isDirectDebit() && ! $account->hasUsableMandate() ? SetupLink::for($company) : null;
+
+        DB::transaction(function () use ($company, $trialEnds, $now, $daysLeft, $reminderDays, $windowDays, $licences, $price, $ddUrl, &$sent) {
+            $account = $this->accounts->lock($company);
+            $sameEnd = fn (?CarbonImmutable $for) => $for !== null && $for->getTimestamp() === $trialEnds->getTimestamp();
+
+            if ($now->lessThan($trialEnds) && $daysLeft <= $reminderDays && ! $sameEnd($account->trial_reminder_for)) {
+                $this->mailer->trialReminder($company, $trialEnds, max(0, $daysLeft), $licences->count(), $price, $ddUrl);
+                $account->trial_reminder_for = $trialEnds;
+                $account->trial_reminder_sent_at = $now;
+                $account->save();
+                $this->audit->handle('billing.trial_reminder_sent', $company, null, null, ['trial_ends_at' => $trialEnds->toIso8601String(), 'days_left' => $daysLeft], companyId: $company->id);
+                $sent['reminders']++;
+            }
+
+            if ($now->greaterThanOrEqualTo($trialEnds) && $now->lessThan($trialEnds->addDays($windowDays)) && ! $sameEnd($account->trial_ended_for)) {
+                $this->mailer->trialEnded($company, $trialEnds, $licences->count(), $price, $ddUrl);
+                $account->trial_ended_for = $trialEnds;
+                $account->trial_ended_sent_at = $now;
+                $account->save();
+                $this->audit->handle('billing.trial_ended_sent', $company, null, null, ['trial_ends_at' => $trialEnds->toIso8601String()], companyId: $company->id);
+                $sent['ended']++;
+            }
+        });
 
         return $sent;
     }

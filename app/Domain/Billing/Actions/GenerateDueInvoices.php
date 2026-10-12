@@ -8,6 +8,7 @@ use App\Domain\Billing\Support\BillingPeriod;
 use App\Domain\Licensing\Actions\RenewCompanyLicences;
 use App\Domain\Licensing\Models\Licence;
 use App\Domain\Plans\Enums\PlanBillingType;
+use App\Domain\Shared\Support\BusinessFailures;
 use App\Domain\Tenancy\Enums\CompanyStatus;
 use App\Domain\Tenancy\Models\Company;
 use Carbon\CarbonImmutable;
@@ -19,13 +20,17 @@ use Illuminate\Validation\ValidationException;
  * within `billing.generate.days_before` days and that has no invoice (draft or issued, not void) for that next
  * period yet. Drafts for staff to review, or issued and emailed when `billing.generate.auto_issue` is on.
  * Idempotent: the overlap check stops a second invoice for the same period. Companies paying by Direct Debit are
- * skipped (their invoices come with each GoCardless payment), and so are setup-only plans (nothing recurs).
+ * skipped (their invoices come with each GoCardless payment), and so are setup-only plans (nothing recurs). One
+ * business's error is reported and the rest still run (BusinessFailures).
  */
 class GenerateDueInvoices
 {
+    public const TASK = 'billing:run invoices';
+
     public function __construct(
         private readonly GenerateInvoice $generateInvoice,
         private readonly BillingAccounts $accounts,
+        private readonly BusinessFailures $failures,
     ) {}
 
     /**
@@ -44,48 +49,60 @@ class GenerateDueInvoices
             ->where('ends_at', '>', $since)->where('ends_at', '<=', $horizon)
             ->distinct()->pluck('company_id');
 
-        foreach ($companyIds as $companyId) {
-            $company = Company::query()->find($companyId);
+        foreach ($companyIds as $id) {
+            $invoiceId = $this->failures->attempt(self::TASK, (string) $id, fn () => $this->company((string) $id, $now, $since, $horizon));
 
-            if ($company === null || $company->status === CompanyStatus::Cancelled) {
-                continue;
-            }
-
-            // Owner rules (2026-10-05): the recurring fee of a Direct Debit business is only ever collected by
-            // Direct Debit (the invoice comes with each GoCardless payment); without a mandate the deadline and
-            // suspension rules apply instead of hand invoices. Staff can still raise one by hand as an exception.
-            // A setup-only plan has nothing recurring to invoice.
-            $account = $this->accounts->for($company);
-
-            if ($account->isDirectDebit() || ApplySetupFeeTerms::planType($company) === PlanBillingType::SetupOnly) {
-                continue;
-            }
-
-            $licences = RenewCompanyLicences::renewable($company)->get();
-            $anchor = BillingPeriod::anchor($company, $licences);
-
-            if ($anchor === null || $anchor->lessThanOrEqualTo($since) || $anchor->greaterThan($horizon)) {
-                continue;
-            }
-
-            $input = new NewInvoice(issue: (bool) config('billing.generate.auto_issue', false), auto: true);
-
-            try {
-                $plan = $this->generateInvoice->plan($company, $input, $now);
-
-                if ($plan->overlapsNumber !== null || $plan->lines === []) {
-                    continue;
-                }
-
-                $created[] = $this->generateInvoice->handle($company, $input)->id;
-            } catch (ValidationException $exception) {
-                Log::warning('billing:run could not create an invoice', [
-                    'company_id' => $company->id,
-                    'errors' => $exception->errors(),
-                ]);
+            if ($invoiceId !== null) {
+                $created[] = $invoiceId;
             }
         }
 
         return $created;
+    }
+
+    /** One business's next invoice, when due. Returns its id, or null when nothing was created. */
+    private function company(string $companyId, CarbonImmutable $now, CarbonImmutable $since, CarbonImmutable $horizon): ?string
+    {
+        $company = Company::query()->find($companyId);
+
+        if ($company === null || $company->status === CompanyStatus::Cancelled) {
+            return null;
+        }
+
+        // Owner rules (2026-10-05): the recurring fee of a Direct Debit business is only ever collected by
+        // Direct Debit (the invoice comes with each GoCardless payment); without a mandate the deadline and
+        // suspension rules apply instead of hand invoices. Staff can still raise one by hand as an exception.
+        // A setup-only plan has nothing recurring to invoice.
+        $account = $this->accounts->for($company);
+
+        if ($account->isDirectDebit() || ApplySetupFeeTerms::planType($company) === PlanBillingType::SetupOnly) {
+            return null;
+        }
+
+        $licences = RenewCompanyLicences::renewable($company)->get();
+        $anchor = BillingPeriod::anchor($company, $licences);
+
+        if ($anchor === null || $anchor->lessThanOrEqualTo($since) || $anchor->greaterThan($horizon)) {
+            return null;
+        }
+
+        $input = new NewInvoice(issue: (bool) config('billing.generate.auto_issue', false), auto: true);
+
+        try {
+            $plan = $this->generateInvoice->plan($company, $input, $now);
+
+            if ($plan->overlapsNumber !== null || $plan->lines === []) {
+                return null;
+            }
+
+            return $this->generateInvoice->handle($company, $input)->id;
+        } catch (ValidationException $exception) {
+            Log::warning('billing:run could not create an invoice', [
+                'company_id' => $company->id,
+                'errors' => $exception->errors(),
+            ]);
+        }
+
+        return null;
     }
 }

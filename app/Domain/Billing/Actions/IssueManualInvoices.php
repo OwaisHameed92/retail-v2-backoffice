@@ -12,6 +12,7 @@ use App\Domain\Billing\Support\SetupFeeState;
 use App\Domain\Licensing\Actions\RenewCompanyLicences;
 use App\Domain\Licensing\Models\Licence;
 use App\Domain\Plans\Enums\PlanBillingType;
+use App\Domain\Shared\Support\BusinessFailures;
 use App\Domain\Tenancy\Enums\CompanyStatus;
 use App\Domain\Tenancy\Models\Company;
 use Carbon\CarbonImmutable;
@@ -26,13 +27,16 @@ use Illuminate\Validation\ValidationException;
  *
  * The recurring fee starts once the setup fee (or its first instalment) is paid, as the UK Direct Debit does, and at
  * once for monthly-only plans; setup-only plans have nothing to invoice. Idempotent: the overlap check stops a second
- * invoice for the same period.
+ * invoice for the same period. One business's error is reported and the rest still run (BusinessFailures).
  */
 class IssueManualInvoices
 {
+    public const TASK = 'billing:run manual-invoices';
+
     public function __construct(
         private readonly GenerateInvoice $generateInvoice,
         private readonly BillingAccounts $accounts,
+        private readonly BusinessFailures $failures,
     ) {}
 
     /**
@@ -52,9 +56,13 @@ class IssueManualInvoices
             ->distinct()->pluck('company_id');
 
         foreach ($companyIds as $id) {
-            $company = Company::query()->find($id);
+            $invoice = $this->failures->attempt(self::TASK, (string) $id, function () use ($id, $now, $since) {
+                $company = Company::query()->find($id);
 
-            if ($company !== null && ($invoice = $this->issueNext($company, $now, $since)) !== null) {
+                return $company === null ? null : $this->issueNext($company, $now, $since);
+            });
+
+            if ($invoice !== null) {
                 $issued[] = $invoice->id;
             }
         }

@@ -12,6 +12,7 @@ use App\Domain\Billing\GoCardless\Support\SubscriptionAmount;
 use App\Domain\Billing\Models\BillingAccount;
 use App\Domain\Billing\Support\BillingAccounts;
 use App\Domain\Demo\Support\DemoBusinesses;
+use App\Domain\Shared\Support\BusinessFailures;
 use App\Domain\Tenancy\Models\Company;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Log;
@@ -22,10 +23,13 @@ use Throwable;
  * company with a mandate compares GoCardless with our records and fixes the drift through the same actions the
  * webhooks use: mandate status, subscription status/amount/next charge date, the subscription amount against the
  * live tills (SyncSubscription), and every payment of the last `billing.direct_debit.reconcile_days` (unknown,
- * a different status, or collected but not recorded). Dry run: reports without changing anything.
+ * a different status, or collected but not recorded). Dry run: reports without changing anything. Any error of one
+ * business is reported and listed, and the others are still reconciled (audit DATA-7).
  */
 class ReconcileGoCardless
 {
+    public const TASK = 'billing:reconcile-gocardless';
+
     public function __construct(
         private readonly GoCardlessClient $client,
         private readonly BillingAccounts $accounts,
@@ -34,6 +38,7 @@ class ReconcileGoCardless
         private readonly ApplySubscription $applySubscription,
         private readonly SyncSubscription $syncSubscription,
         private readonly ApplyGoCardlessPayment $applyPayment,
+        private readonly BusinessFailures $failures,
     ) {}
 
     /**
@@ -74,6 +79,10 @@ class ReconcileGoCardless
             } catch (GoCardlessException $exception) {
                 $report['errors'][] = "{$company->name}: {$exception->getMessage()}";
                 Log::warning('GoCardless reconcile failed for a company', ['company_id' => $company->id, 'error' => $exception->getMessage()]);
+            } catch (Throwable $exception) {
+                // Anything else (a DB error, a bad row): reported, and the other businesses are still reconciled.
+                $report['errors'][] = "{$company->name} ({$company->id}): ".class_basename($exception);
+                $this->failures->record(self::TASK, $company->id, $exception);
             }
         }
 

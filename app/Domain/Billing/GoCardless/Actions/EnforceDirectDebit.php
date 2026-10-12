@@ -10,6 +10,7 @@ use App\Domain\Billing\Models\BillingAccount;
 use App\Domain\Billing\Support\BillingAccounts;
 use App\Domain\Billing\Support\MandateDeadline;
 use App\Domain\Shared\Actions\RecordAudit;
+use App\Domain\Shared\Support\BusinessFailures;
 use App\Domain\Tenancy\Actions\SuspendCompany;
 use App\Domain\Tenancy\Enums\CompanyStatus;
 use App\Domain\Tenancy\Models\Company;
@@ -26,17 +27,21 @@ use Illuminate\Support\Facades\DB;
  *   (ApplyMandate → ReleaseBillingHolds);
  * - a failed payment still unpaid `dunning_reminder_days` (5) after the failure email: one reminder.
  *
- * `$companyId` limits it to one business (the demo:billing showcase); billing:run passes none.
+ * `$companyId` limits it to one business (the demo:billing showcase); billing:run passes none. One business's error
+ * is reported and the rest still run (BusinessFailures).
  *
  * @phpstan-type Result array{suspended: int, mandateReminders: int, reminders: int}
  */
 class EnforceDirectDebit
 {
+    public const TASK = 'billing:run direct-debit';
+
     public function __construct(
         private readonly BillingAccounts $accounts,
         private readonly SuspendCompany $suspendCompany,
         private readonly DirectDebitMailer $mailer,
         private readonly RecordAudit $audit,
+        private readonly BusinessFailures $failures,
     ) {}
 
     /**
@@ -51,23 +56,38 @@ class EnforceDirectDebit
             ->reject(fn (BillingAccount $account) => $account->hasUsableMandate());
 
         foreach ($accounts as $account) {
-            $company = Company::query()->find($account->company_id);
+            $done = $this->failures->attempt(self::TASK, $account->company_id, fn () => $this->mandate($account, $now));
 
-            if ($company === null || ! in_array($company->status, [CompanyStatus::Trial, CompanyStatus::Active, CompanyStatus::Overdue], true)
-                || ! MandateDeadline::applies($company, $account)) {
-                continue;
-            }
-
-            if (MandateDeadline::missed($company, $account, $now)) {
-                $result['suspended'] += (int) $this->suspend($company, $now);
-            } else {
-                $result['mandateReminders'] += (int) $this->remind($company, $account, $now);
+            if ($done !== null) {
+                $result[$done]++;
             }
         }
 
         $result['reminders'] = $this->reminders($now, $companyId);
 
         return $result;
+    }
+
+    /**
+     * One business without a working mandate: suspended once the deadline passed, else reminded when it is close.
+     * Returns the result key that counts what was done, or null when nothing was.
+     *
+     * @return 'suspended'|'mandateReminders'|null
+     */
+    private function mandate(BillingAccount $account, CarbonImmutable $now): ?string
+    {
+        $company = Company::query()->find($account->company_id);
+
+        if ($company === null || ! in_array($company->status, [CompanyStatus::Trial, CompanyStatus::Active, CompanyStatus::Overdue], true)
+            || ! MandateDeadline::applies($company, $account)) {
+            return null;
+        }
+
+        if (MandateDeadline::missed($company, $account, $now)) {
+            return $this->suspend($company, $now) ? 'suspended' : null;
+        }
+
+        return $this->remind($company, $account, $now) ? 'mandateReminders' : null;
     }
 
     private function remind(Company $company, BillingAccount $account, CarbonImmutable $now): bool
@@ -127,16 +147,19 @@ class EnforceDirectDebit
             ->whereNull('reminder_sent_at')->when($companyId !== null, fn ($q) => $q->where('company_id', $companyId))->get();
 
         foreach ($rows as $row) {
-            $company = Company::query()->find($row->company_id);
-            $row->reminder_sent_at = $now;
-            $row->save();
+            $sent += (int) $this->failures->attempt(self::TASK, $row->company_id, function () use ($row, $now) {
+                $company = Company::query()->find($row->company_id);
+                $row->reminder_sent_at = $now;
+                $row->save();
 
-            if ($company === null || $row->invoice === null || ! $row->invoice->isOpen() || $company->status === CompanyStatus::Cancelled) {
-                continue;
-            }
+                if ($company === null || $row->invoice === null || ! $row->invoice->isOpen() || $company->status === CompanyStatus::Cancelled) {
+                    return false;
+                }
 
-            $this->mailer->failed($company, $row, reminder: true);
-            $sent++;
+                $this->mailer->failed($company, $row, reminder: true);
+
+                return true;
+            }, false);
         }
 
         return $sent;

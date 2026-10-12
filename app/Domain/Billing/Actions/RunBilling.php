@@ -4,6 +4,7 @@ namespace App\Domain\Billing\Actions;
 
 use App\Domain\Billing\GoCardless\Actions\EnforceDirectDebit;
 use App\Domain\Billing\Support\ManualCollection;
+use App\Domain\Shared\Support\BusinessFailures;
 use Carbon\CarbonImmutable;
 
 /**
@@ -15,9 +16,15 @@ use Carbon\CarbonImmutable;
  * Manual collection (Pakistan plan P5): period invoices are issued by IssueManualInvoices instead of
  * GenerateDueInvoices, the Direct Debit step is skipped (there is none), and SendPaymentReminders emails before, on
  * and after each due date (`paymentReminders`, a key only this instance returns).
+ *
+ * Each step isolates its businesses (audit DATA-7): one business's error is reported with its company id and every
+ * other business and later step still runs; `failedCompanyIds()` lists them afterwards (billing:run exits non-zero).
  */
 class RunBilling
 {
+    /** The task prefix of every step's BusinessFailures entries ("billing:run overdue", …). */
+    public const TASK = 'billing:run';
+
     public function __construct(
         private readonly RefreshSetupFeeTerms $refreshSetupFeeTerms,
         private readonly GenerateDueInvoices $generateDueInvoices,
@@ -27,6 +34,7 @@ class RunBilling
         private readonly EnforceDirectDebit $enforceDirectDebit,
         private readonly IssueManualInvoices $issueManualInvoices,
         private readonly SendPaymentReminders $sendPaymentReminders,
+        private readonly BusinessFailures $failures,
     ) {}
 
     /**
@@ -35,6 +43,7 @@ class RunBilling
     public function handle(?CarbonImmutable $now = null): array
     {
         $now ??= CarbonImmutable::now();
+        $this->failures->forget(self::TASK);
 
         if (ManualCollection::active()) {
             return $this->manual($now);
@@ -58,6 +67,16 @@ class RunBilling
             'directDebitReminders' => $directDebit['reminders'],
             'setupOnlyLicences' => $setupOnly,
         ];
+    }
+
+    /**
+     * The businesses a step failed for in the last run (each reported already), in the order they failed.
+     *
+     * @return list<string>
+     */
+    public function failedCompanyIds(): array
+    {
+        return $this->failures->companyIds(self::TASK);
     }
 
     /**
