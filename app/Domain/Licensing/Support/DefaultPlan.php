@@ -2,6 +2,8 @@
 
 namespace App\Domain\Licensing\Support;
 
+use App\Domain\Licensing\Actions\RenewCompanyLicences;
+use App\Domain\Licensing\Models\Licence;
 use App\Domain\Plans\Models\Plan;
 use App\Domain\Tenancy\Models\Company;
 
@@ -12,6 +14,8 @@ use App\Domain\Tenancy\Models\Company;
  * 2. else the portal default (`config('licence.default_plan')`, a plan code), when active;
  * 3. else the first active plan by sort order;
  * 4. else none (no plan can be offered yet: tills stay unlicensed until one exists).
+ *
+ * A till added to a business that already has live tills follows them instead (`forNewTill`, audit BILL-1).
  */
 final class DefaultPlan
 {
@@ -26,6 +30,25 @@ final class DefaultPlan
         }
 
         return self::portal();
+    }
+
+    /**
+     * The plan a till added to a business gets, and the plan its added-till setup fee is worked out on: the plan the
+     * business's live tills are on (the business's plan as billing reads it, CompanyPricing), even when that plan is
+     * no longer offered to new businesses (inactive; archived plans are never used). Without live tills: `for()`.
+     * Audit BILL-1: a till must not land on another plan and start a recurring fee the business never had.
+     */
+    public static function forNewTill(Company $company): ?Plan
+    {
+        $licensed = RenewCompanyLicences::renewable($company)->get()->first(fn (Licence $licence) => $licence->plan !== null);
+
+        return $licensed instanceof Licence ? $licensed->plan : self::for($company);
+    }
+
+    /** `forNewTill` kept this plan for the business although it is not offered any more (inactive, not archived). */
+    public static function isKeptFor(Plan $plan, Company $company): bool
+    {
+        return ! $plan->trashed() && self::forNewTill($company)?->is($plan) === true;
     }
 
     /** The portal-wide default (steps 2 and 3). */

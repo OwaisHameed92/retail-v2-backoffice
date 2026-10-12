@@ -34,10 +34,10 @@ final class SetupFeeTills
             ->count();
     }
 
-    /** The business's plan charges the setup fee for each till. */
+    /** The business's plan (its live tills' plan, as an added till gets it: BILL-1) charges the setup fee for each till. */
     public static function perTill(Company $company): bool
     {
-        return DefaultPlan::for($company)?->setupFeePerTill() ?? false;
+        return DefaultPlan::forNewTill($company)?->setupFeePerTill() ?? false;
     }
 
     /** Tills already covered by a setup fee; untracked = every till the business has now. */

@@ -25,6 +25,9 @@ use Illuminate\Support\Facades\DB;
  *   when the deadline passes, a billing suspension once per deadline ("No Direct Debit set up" / "Direct Debit
  *   cancelled and not replaced"), so the tills lock at their next check-in. A new mandate lifts it at once
  *   (ApplyMandate → ReleaseBillingHolds);
+ * - a deadline that passed with nobody warned of it (no reminder, no suspension for it: it ran out while nothing
+ *   recurred, audit BILL-1) never suspends: a fresh deadline starts now and the setup email goes with it (counted
+ *   as a mandate reminder; the reminder is marked sent for the new deadline, so it suspends when that one passes);
  * - a failed payment still unpaid `dunning_reminder_days` (5) after the failure email: one reminder.
  *
  * `$companyId` limits it to one business (the demo:billing showcase); billing:run passes none. One business's error
@@ -42,6 +45,7 @@ class EnforceDirectDebit
         private readonly DirectDebitMailer $mailer,
         private readonly RecordAudit $audit,
         private readonly BusinessFailures $failures,
+        private readonly StartMandateDeadline $deadlines,
     ) {}
 
     /**
@@ -83,6 +87,10 @@ class EnforceDirectDebit
             return null;
         }
 
+        if (MandateDeadline::unwarned($account, $now)) {
+            return $this->restart($company, $now) ? 'mandateReminders' : null;
+        }
+
         if (MandateDeadline::missed($company, $account, $now)) {
             return $this->suspend($company, $now) ? 'suspended' : null;
         }
@@ -106,6 +114,29 @@ class EnforceDirectDebit
         $this->audit->handle('billing.dd_mandate_reminder', $account, null, null, ['deadline' => $deadline->toIso8601String()], companyId: $company->id);
 
         return true;
+    }
+
+    /** BILL-1: the passed deadline nobody was warned of is replaced by a fresh one, and the owners are told now. */
+    private function restart(Company $company, CarbonImmutable $now): bool
+    {
+        $account = DB::transaction(function () use ($company, $now) {
+            $account = $this->accounts->lock($company);
+
+            if (! MandateDeadline::unwarned($account, $now) || ! $this->deadlines->restartLocked($company, $account, 'unwarned', $now)) {
+                return null;
+            }
+
+            $account->mandate_reminder_for = $account->mandate_deadline_at;
+            $account->save();
+
+            return $account;
+        });
+
+        if ($account !== null) {
+            $this->mailer->setup($company, $account, $account->mandate_deadline_at);
+        }
+
+        return $account !== null;
     }
 
     private function suspend(Company $company, CarbonImmutable $now): bool

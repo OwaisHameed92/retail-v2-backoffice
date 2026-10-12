@@ -6,6 +6,7 @@ use App\Domain\Billing\Models\Invoice;
 use App\Domain\Billing\Models\Payment;
 use App\Domain\Billing\Support\Allocator;
 use App\Domain\Billing\Support\BillingAccounts;
+use App\Domain\Billing\Support\SetupFeeUnlock;
 use App\Domain\Shared\Actions\RecordAudit;
 use App\Domain\Shared\Support\Money;
 use App\Domain\Tenancy\Models\Company;
@@ -68,6 +69,7 @@ class ApplyCredit
                 ->orderBy('due_date')->orderBy('sequence')->lockForUpdate()->get();
 
         $applied = [];
+        $settled = [];
 
         foreach ($invoices as $invoice) {
             foreach ($payments as $payment) {
@@ -84,8 +86,12 @@ class ApplyCredit
 
             if ($invoice->isOpen() && Money::isZero($invoice->balance)) {
                 $this->settleInvoice->handle($invoice, $now);
+                $settled[] = $invoice;
             }
         }
+
+        // BILL-6: a setup fee finished by credit unlocks what it held back, as a recorded payment does.
+        SetupFeeUnlock::afterSettled($company, ...$settled);
 
         $total = Money::sum($applied);
 
