@@ -145,6 +145,7 @@ test('Direct Debit enforcement: one failing business does not stop the next', fu
     foreach ($companies as $company) {
         $account = $this->billingAccountOf($company);
         $account->mandate_deadline_at = CarbonImmutable::now()->subHour();
+        $account->mandate_reminder_for = $account->mandate_deadline_at; // reminded by an earlier run (BILL-1)
         $account->save();
     }
 

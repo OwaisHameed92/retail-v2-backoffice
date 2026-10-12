@@ -3,6 +3,7 @@
 namespace App\Domain\Billing\Actions;
 
 use App\Domain\Billing\Data\BillingSettingsInput;
+use App\Domain\Billing\GoCardless\Actions\StartMandateDeadline;
 use App\Domain\Billing\GoCardless\Actions\SyncSubscription;
 use App\Domain\Billing\GoCardless\GoCardlessException;
 use App\Domain\Billing\Models\BillingAccount;
@@ -15,7 +16,8 @@ use Illuminate\Validation\ValidationException;
 
 /**
  * Saves a company's billing settings: who invoices go to, billing name and address, cycle, payment terms and
- * whether VAT is charged. Changes apply to invoices created or issued from now on.
+ * whether VAT is charged. Changes apply to invoices created or issued from now on. A cycle whose price is above £0
+ * where the old one was £0 starts a fresh Direct Debit deadline (audit BILL-1, StartMandateDeadline).
  */
 class UpdateBillingSettings
 {
@@ -23,10 +25,13 @@ class UpdateBillingSettings
         private readonly BillingAccounts $accounts,
         private readonly SyncSubscription $syncSubscription,
         private readonly RecordAudit $audit,
+        private readonly StartMandateDeadline $deadlines,
     ) {}
 
     public function handle(Company $company, BillingSettingsInput $input): BillingAccount
     {
+        $recurringBefore = $this->deadlines->before($company);
+
         $account = DB::transaction(function () use ($company, $input) {
             $account = $this->accounts->lock($company);
             $blank = fn (?string $value) => trim((string) $value) === '' ? null : trim((string) $value);
@@ -50,6 +55,8 @@ class UpdateBillingSettings
 
             return $account;
         });
+
+        $this->deadlines->after($company, $recurringBefore, 'settings');
 
         // Direct Debit (module 1.12): a new cycle or VAT setting changes what the subscription collects.
         try {

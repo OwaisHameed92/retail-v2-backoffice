@@ -126,6 +126,8 @@ test('without a mandate by the new deadline the business is suspended, as for a 
     $company = $this->cpOnboarded(PlanBillingType::SetupOnly);
     $this->changePlan($company, $this->cpPlan('Monthly only', PlanBillingType::RecurringOnly, '0.00', '30.00'))->assertRedirect();
 
+    // The daily run reminds the owner before the deadline (27 Oct 10:00); one never warned is restarted (BILL-1).
+    expect($this->runBillingOn('2026-10-26')['mandateReminders'])->toBe(1);
     $this->runBillingOn('2026-10-28');
 
     expect($company->refresh()->status)->toBe(CompanyStatus::Suspended);

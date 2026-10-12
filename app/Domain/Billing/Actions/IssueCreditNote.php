@@ -10,6 +10,7 @@ use App\Domain\Billing\Support\BillingFormat;
 use App\Domain\Billing\Support\DocumentNumbers;
 use App\Domain\Billing\Support\InvoiceBalance;
 use App\Domain\Billing\Support\InvoiceMaths;
+use App\Domain\Billing\Support\SetupFeeUnlock;
 use App\Domain\Shared\Actions\RecordAudit;
 use App\Domain\Shared\Country\MoneyFormat;
 use App\Domain\Shared\Support\Money;
@@ -95,6 +96,7 @@ class IssueCreditNote
 
             if (InvoiceBalance::refresh($invoice)) {
                 $this->settleInvoice->handle($invoice, $now);
+                SetupFeeUnlock::afterSettled($company, $invoice); // BILL-6: a setup fee finished by the credit note
             }
 
             return $note;

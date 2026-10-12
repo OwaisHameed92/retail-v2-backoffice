@@ -17,10 +17,13 @@ use App\Domain\Tenancy\Models\Company;
  */
 final class SetupFee
 {
-    /** The plan's fee (net): per business, or per till times the tills (P11). "0.00" without a plan. */
+    /**
+     * The plan's fee (net): per business, or per till times the tills (P11). "0.00" without a plan. The plan is the
+     * business's live tills' plan, the one an added till gets (DefaultPlan::forNewTill, audit BILL-1).
+     */
     public static function planFee(Company $company): string
     {
-        $plan = DefaultPlan::for($company);
+        $plan = DefaultPlan::forNewTill($company);
         $fee = Money::normalise($plan->setup_fee ?? '0.00');
 
         return $plan !== null && $plan->setupFeePerTill() ? Money::mul($fee, SetupFeeTills::count($company)) : $fee;
@@ -29,7 +32,7 @@ final class SetupFee
     /** P11: the setup fee for one till added later (net): the business's own per-till fee, else the plan's. */
     public static function perTillFee(Company $company, BillingAccount $account): string
     {
-        return $account->till_setup_fee_override ?? Money::normalise(DefaultPlan::for($company)->setup_fee ?? '0.00');
+        return $account->till_setup_fee_override ?? Money::normalise(DefaultPlan::forNewTill($company)->setup_fee ?? '0.00');
     }
 
     /** The fee this company pays (net): the override when set, else the plan's. */

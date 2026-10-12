@@ -11,6 +11,7 @@ use App\Domain\Billing\Support\BillingDates;
 use App\Domain\Billing\Support\BillingMailer;
 use App\Domain\Billing\Support\DocumentNumbers;
 use App\Domain\Billing\Support\InvoiceBalance;
+use App\Domain\Billing\Support\SetupFeeUnlock;
 use App\Domain\Billing\Support\Vat;
 use App\Domain\Shared\Actions\RecordAudit;
 use App\Domain\Tenancy\Models\Company;
@@ -91,6 +92,7 @@ class IssueInvoice
 
             if (InvoiceBalance::refresh($invoice) && $invoice->isOpen()) {
                 $this->settleInvoice->handle($invoice, $now);
+                SetupFeeUnlock::afterSettled($company, $invoice); // BILL-6 (credit taken at issue: ApplyCredit)
             }
 
             if ($send) {

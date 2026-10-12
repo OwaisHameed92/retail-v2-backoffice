@@ -10,13 +10,15 @@ use App\Domain\Billing\Models\Invoice;
 use App\Domain\Shared\Support\Money;
 use App\Domain\Tenancy\Models\Company;
 use Carbon\CarbonImmutable;
+use Illuminate\Database\Eloquent\Collection;
 
 /**
  * Where a company stands with its setup fee, the one-time "upfront" amount (owner rules 2026-10-05: always paid by
  * hand, cash, card or bank transfer, optionally in instalments; never by Direct Debit):
  *
- * - none: nothing to pay (no fee, £0 recorded, waived, or every setup fee invoice voided);
- * - unpaid: a fee is due and nothing is paid yet (not invoiced, or no instalment paid);
+ * - none: nothing to pay (no fee, £0 recorded, waived, or every setup fee invoice voided with no corrected draft);
+ * - unpaid: a fee is due and nothing is paid yet (not invoiced, or no instalment paid, or every setup fee invoice
+ *   voided and a corrected draft waits to be issued: "Void and re-issue", audit BILL-2);
  * - partPaid: some instalments paid in full (a part payment of the first one still counts as unpaid);
  * - paid: every setup fee invoice paid.
  *
@@ -63,6 +65,13 @@ final readonly class SetupFeeState
             return new self($status, $total, Money::sub($total, $balance), $invoices->count(), $paidParts, $next?->due_date, true);
         }
 
+        // BILL-2: every setup fee invoice is void but a corrected draft replaces one: the fee is still owed.
+        $corrected = self::correctedDrafts($company);
+
+        if ($corrected->isNotEmpty()) {
+            return new self(self::UNPAID, Money::sum($corrected->pluck('total')), '0.00', $corrected->count(), 0, null, true);
+        }
+
         if ($account->setup_fee_invoiced_at !== null || $account->upfront_recorded_at !== null) {
             return new self(self::NONE, '0.00', '0.00', 0, 0, null, $account->setup_fee_invoiced_at !== null);
         }
@@ -74,6 +83,21 @@ final readonly class SetupFeeState
         }
 
         return new self(self::UNPAID, $totals['gross'], '0.00', count(SetupFee::schedule($company, $account)), 0, null, false);
+    }
+
+    /**
+     * Draft setup fee invoices that replace a void one (VoidInvoice "create a corrected draft"). Only read when no
+     * setup fee invoice is issued, so a business with an issued or paid one never changes state because of a draft.
+     *
+     * @return Collection<int, Invoice>
+     */
+    private static function correctedDrafts(Company $company): Collection
+    {
+        return Invoice::withoutCompanyScope()->where('company_id', $company->id)
+            ->where('kind', InvoiceKind::SetupFee->value)->where('status', InvoiceStatus::Draft->value)
+            ->whereIn('replaces_invoice_id', Invoice::withoutCompanyScope()->select('id')->where('company_id', $company->id)
+                ->where('kind', InvoiceKind::SetupFee->value)->where('status', InvoiceStatus::Void->value))
+            ->get();
     }
 
     /** Nothing more to pay: paid in full, or there was nothing to pay. */
