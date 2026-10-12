@@ -71,6 +71,8 @@ interface UpfrontPaymentFieldsProps {
     planFee: string;
     /** P11: how the plan's fee is made up, e.g. "£600.00 per till × 3 tills". */
     planFeeNote?: string | null;
+    /** What an empty amount means in the hint: the plan's fee (onboarding) or the business's agreed fee (Billing tab). */
+    feeLabel?: string;
     /** Show the "Took an upfront payment" checkbox (onboarding); off on the Billing tab dialog. */
     toggle?: boolean;
     /** The setup fee is already invoiced (instalments): the amount is fixed, only method and reference are asked. */
@@ -90,6 +92,7 @@ export function UpfrontPaymentFields({
     options,
     planFee,
     planFeeNote = null,
+    feeLabel = 'the plan’s fee',
     toggle = true,
     amountLocked = false,
     idPrefix = 'upfront',
@@ -135,8 +138,8 @@ export function UpfrontPaymentFields({
                             hint={
                                 (total ? `Received: ${total}. ` : '') +
                                 (planFeeNote
-                                    ? `Empty = the plan’s fee (${planFeeNote}); 0 = nothing to pay.`
-                                    : 'Empty = the plan’s fee; 0 = nothing to pay.')
+                                    ? `Empty = ${feeLabel} (${planFeeNote}); 0 = nothing to pay.`
+                                    : `Empty = ${feeLabel}; 0 = nothing to pay.`)
                             }
                         >
                             <MoneyInput
