@@ -1197,3 +1197,16 @@ a payment, a confirm, a page view). Proof: `tests/Feature/Billing/BillingAuditDe
 | Change plan under the lock (BILL-10) | `ChangeBusinessPlan` works the plan out again once it holds the billing lock: already on the plan (the other confirm won) → "… is already on …"; the plan changed to another one in between → "plan changed while this was being confirmed". `ChangePlanLockTest` stages the race |
 | Demo money (BILL-4) | `BillingStats`, `DirectDebitStats::for` and the dashboard's paid / overdue invoices leave out `is_demo` businesses (`DemoBusinesses::excludeFrom`, soft-deleted businesses kept). The overview's lists and "Businesses by billing state" still show demo businesses (their numbers start `DEMO-`). `BillingStatsDemoTest` |
 | Overdue banner (UI-5) | The shared `billingNotice` gains `kind`: `directDebit` (unchanged, still first) or `overdue` (`OverdueNotice`: `amountDue` decimal string formatted in the browser with `lib/country.ts`, `invoices`, `lockOn` = the day billing:run suspends by `SuspendForUnpaidInvoices`' own rule — due date + `suspend_after_days` + 1, or after a reopening the morning after reopened + grace —, `daysLeft`, `canPay` = billing.manage). Only while the business is trial, active or overdue. The banner: "£X is overdue — your tills lock on 19 Nov 2026" with "Go to Billing" for the owner, "Ask the business owner to pay …" for the others; hidden on Billing. The Direct Debit banner's "Please ask …" became "Ask …" (BRAND). Rules unchanged. `OverdueNoticeTest` |
+
+## Audit billing fixes BILL-1, BILL-2, BILL-5, BILL-6 (2026-10-12; `docs/audit/2026-10-11-billing.md`)
+
+- **BILL-1.** A passed Direct Debit deadline counts only once the customer was reminded or suspended for it
+  (`MandateDeadline::unwarned`); otherwise billing:run starts a fresh one and emails the setup link. Recurring going from
+  £0 to more (pricing, cycle, a new till) restarts the deadline (`StartMandateDeadline`, audited
+  `billing.dd_mandate_deadline_restarted`). New tills, and the per-till setup fee, use the plan of the business's live
+  tills (`DefaultPlan::forNewTill`; an inactive plan is allowed, an archived one never).
+- **BILL-2.** A corrected draft replacing a void setup fee invoice keeps the fee unpaid while no setup fee invoice is issued.
+- **BILL-5.** "Paid by … on …" is derived from the standing (not reversed) payment (`SetupFeePayment`); the `upfront_*`
+  stamp is unchanged.
+- **BILL-6.** Credit notes and credit that settle a setup fee run `ApplySetupFeeTerms(justPaid)` after commit
+  (`SetupFeeUnlock`). No migration.
