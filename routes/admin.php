@@ -195,7 +195,9 @@ Route::middleware(['auth:admin', AdminIsActive::class, BlockAdminWhileImpersonat
         Route::middleware('can:'.AdminRole::LICENCES_MANAGE)->group(function () {
             Route::post('{company}/licences/issue-missing', [TenantLicenceController::class, 'issueMissing'])->name('licences.issue-missing');
             Route::post('{company}/licences/renew', [TenantLicenceController::class, 'renewAll'])->name('licences.renew');
-            Route::put('{company}/plan', [TenantLicenceController::class, 'changePlan'])->name('plan.update');
+            // Moves the business's plan (and optionally every live licence): a billing change, so billing.manage too
+            // (audit SEC-4). Support renews and issues; Billing → "Change plan" is the full flow.
+            Route::put('{company}/plan', [TenantLicenceController::class, 'changePlan'])->name('plan.update')->middleware('can:'.AdminRole::BILLING_MANAGE);
             Route::post('{company}/registers/{register}/licence', [TenantLicenceController::class, 'issueForRegister'])->name('registers.licence');
             // Licence form (module 1.11): a branch's licence settings and the company's branch limits.
             Route::put('{company}/branches/{branch}/licence', [BranchLicenceController::class, 'update'])->name('branches.licence');
@@ -242,7 +244,7 @@ Route::middleware(['auth:admin', AdminIsActive::class, BlockAdminWhileImpersonat
         Route::middleware('can:'.AdminRole::LICENCES_MANAGE)->whereUlid('licence')->group(function () {
             Route::put('{licence}/notes', [LicenceController::class, 'updateNotes'])->name('notes');
             Route::post('{licence}/renew', [LicenceActionController::class, 'renew'])->name('renew');
-            Route::post('{licence}/plan', [LicenceActionController::class, 'changePlan'])->name('plan');
+            Route::post('{licence}/plan', [LicenceActionController::class, 'changePlan'])->name('plan')->middleware('can:'.AdminRole::BILLING_MANAGE); // SEC-4
             Route::post('{licence}/release', [LicenceActionController::class, 'release'])->name('release');
             Route::post('{licence}/reissue', [LicenceActionController::class, 'reissue'])->name('reissue')->middleware('throttle:30,1');
             // Module 1.11: resend = reissue + email (plain keys are not stored); activate-by date of an unused key.

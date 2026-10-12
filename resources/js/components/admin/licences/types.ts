@@ -190,7 +190,8 @@ export interface LicenceShowProps {
     activity: LicenceActivityEntry[];
     alerts: LicenceAlert[];
     plans: PlanOption[];
-    can: { manage: boolean };
+    /** changePlan: licences.manage and billing.manage (audit SEC-4). */
+    can: { manage: boolean; changePlan: boolean };
     /** Module 2.7: this till's health, null when the licence is not the till's live one. */
     health: { till: TillHealth; shop: ShopHealth | null; thresholds: HealthThresholds } | null;
 }

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Domain\Admin\Enums\AdminRole;
 use App\Domain\Mail\Actions\DiscardHeldEmail;
 use App\Domain\Mail\Actions\RenderEmailPreview;
 use App\Domain\Mail\Actions\SendCompanyHeldEmails;
@@ -12,6 +13,7 @@ use App\Domain\Mail\Support\HeldEmailMessage;
 use App\Domain\Tenancy\Models\Company;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Http\Response as HttpResponse;
 use Illuminate\Validation\ValidationException;
 
@@ -35,13 +37,17 @@ class HeldEmailController extends Controller
         return back()->with('success', 'Email to '.$email->to.' discarded. Nothing was sent.');
     }
 
-    /** The email exactly as Send would send it now, in the sandboxed preview frame (no password link is made). */
-    public function preview(string $held, HeldEmailMessage $message, RenderEmailPreview $render): HttpResponse
+    /**
+     * The email as Send would send it now, in the sandboxed preview frame (no password link is made). Licence keys
+     * show only their last 4 characters unless the admin may see keys (licences.manage, audit SEC-2).
+     */
+    public function preview(Request $request, string $held, HeldEmailMessage $message, RenderEmailPreview $render): HttpResponse
     {
         $email = $this->find($held);
+        $revealKeys = $request->user('admin')?->hasAbility(AdminRole::LICENCES_MANAGE) ?? false;
 
         try {
-            $html = $render->handle($message->forPreview($email))['html'];
+            $html = $render->handle($message->forPreview($email, $revealKeys))['html'];
         } catch (ValidationException $exception) {
             $html = '<p style="font-family:sans-serif">'.e((string) collect($exception->errors())->flatten()->first()).'</p>';
         }

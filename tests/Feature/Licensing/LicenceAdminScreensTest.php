@@ -148,8 +148,12 @@ test('staff change a licence from its page', function () {
     $this->post("/admin/licences/{$licence->id}/renew", ['term' => 'until'])->assertSessionHasErrors('until');
     $this->post("/admin/licences/{$licence->id}/renew", ['term' => 'until', 'until' => '2001-01-01'])->assertSessionHasErrors('until');
 
-    $this->post("/admin/licences/{$licence->id}/plan", ['plan_id' => $this->proPlan()->id])->assertSessionHas('success');
+    // Moving the licence to another plan is a billing change too (audit SEC-4): refused to support, done by an owner.
+    $this->post("/admin/licences/{$licence->id}/plan", ['plan_id' => $this->proPlan()->id])->assertForbidden();
+    $this->actingAs($this->admin(AdminRole::Owner), 'admin')
+        ->post("/admin/licences/{$licence->id}/plan", ['plan_id' => $this->proPlan()->id])->assertSessionHas('success');
     expect($licence->fresh()->plan->code)->toBe('pro');
+    $this->actingAs($admin, 'admin');
 
     $this->post("/admin/licences/{$licence->id}/release")->assertSessionHas('success');
     expect($licence->fresh()->device_id)->toBeNull();
@@ -165,7 +169,7 @@ test('staff change a licence from its page', function () {
     $this->post("/admin/licences/{$licence->id}/suspend", ['reason' => 'Again'])->assertSessionHasErrors('status');
 
     expect(AuditLog::query()->where('subject_id', $licence->id)->where('actor_id', $admin->id)->pluck('action')->all())
-        ->toContain('licence.renewed', 'licence.plan_changed', 'licence.device_released', 'licence.suspended', 'licence.unsuspended', 'licence.notes_updated', 'licence.revoked');
+        ->toContain('licence.renewed', 'licence.device_released', 'licence.suspended', 'licence.unsuspended', 'licence.notes_updated', 'licence.revoked');
 });
 
 test('reissuing answers with the new key once, as JSON that is never cached', function () {
@@ -241,13 +245,15 @@ test('adding a till or branch from the tenant page answers with the new keys whe
 test('renew all and the company plan are changed from the tenant page', function () {
     $company = $this->licensedTenant(tills: 2);
     $pro = $this->proPlan();
-    $admin = $this->admin(AdminRole::Support);
 
-    $this->actingAs($admin, 'admin')->post("/admin/tenants/{$company->id}/licences/renew", ['term' => 'year', 'notify' => false])
+    // Support renews every licence.
+    $this->actingAs($this->admin(AdminRole::Support), 'admin')->post("/admin/tenants/{$company->id}/licences/renew", ['term' => 'year', 'notify' => false])
         ->assertRedirect()->assertSessionHas('success');
     expect(Licence::withoutCompanyScope()->whereBelongsTo($company)->whereNotNull('expires_at')->count())->toBe(2);
     Mail::assertNotQueued(LicenceRenewedMail::class);
 
+    // The plan is a billing change too (audit SEC-4): an owner (licences.manage and billing.manage) changes it.
+    $this->actingAs($this->admin(AdminRole::Owner), 'admin');
     $this->put("/admin/tenants/{$company->id}/plan", ['plan_id' => $pro->id])->assertSessionHas('success', 'New tills get Pro.');
     expect($company->fresh()->plan_id)->toBe($pro->id)
         ->and($this->firstLicence($company)->plan_id)->not->toBe($pro->id);
@@ -255,6 +261,38 @@ test('renew all and the company plan are changed from the tenant page', function
     $this->put("/admin/tenants/{$company->id}/plan", ['plan_id' => $pro->id, 'apply_to_licences' => true])->assertSessionHas('success', 'New tills get Pro. 2 licences moved to it.');
     expect(Licence::withoutCompanyScope()->whereBelongsTo($company)->where('plan_id', $pro->id)->count())->toBe(2);
 });
+
+test('support cannot move a business or a licence to another plan (audit SEC-4)', function () {
+    $company = $this->licensedTenant(tills: 2);
+    $pro = $this->proPlan();
+    $planBefore = $company->plan_id;
+    $support = $this->admin(AdminRole::Support);
+
+    $this->actingAs($support, 'admin')->put("/admin/tenants/{$company->id}/plan", ['plan_id' => $pro->id, 'apply_to_licences' => true])->assertForbidden();
+    $this->actingAs($support, 'admin')->post("/admin/licences/{$this->firstLicence($company)->id}/plan", ['plan_id' => $pro->id])->assertForbidden();
+
+    expect($company->fresh()->plan_id)->toBe($planBefore)
+        ->and(Licence::withoutCompanyScope()->whereBelongsTo($company)->where('plan_id', $pro->id)->count())->toBe(0);
+
+    // Support still renews.
+    $this->actingAs($support, 'admin')->post("/admin/tenants/{$company->id}/licences/renew", ['term' => 'year', 'notify' => false])
+        ->assertRedirect()->assertSessionHas('success');
+});
+
+test('only admins who can change billing see the licence plan controls (audit SEC-4)', function (AdminRole $role, bool $manage, bool $changePlan) {
+    $company = $this->licensedTenant(tills: 1);
+    $licence = $this->firstLicence($company);
+    $admin = $this->admin($role);
+
+    $this->actingAs($admin, 'admin')->get("/admin/tenants/{$company->id}")->assertOk()
+        ->assertInertia(fn (Assert $page) => $page->where('can.manageLicences', $manage)->where('can.changePlan', $changePlan));
+    $this->actingAs($admin, 'admin')->get("/admin/licences/{$licence->id}")->assertOk()
+        ->assertInertia(fn (Assert $page) => $page->where('can.manage', $manage)->where('can.changePlan', $changePlan));
+})->with([
+    'owner' => [AdminRole::Owner, true, true],
+    'support' => [AdminRole::Support, true, false],
+    'accounts' => [AdminRole::Accounts, false, false],
+]);
 
 test('the tenant page shows its licences and each till licence', function () {
     $company = $this->licensedTenant(tills: 2);

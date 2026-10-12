@@ -88,6 +88,8 @@ class LicenceController extends Controller
         // Module 2.7: this till's health (only while the licence is the till's live one) and its shop's sync.
         $health = CompanyHealth::for($model->company_id, $now);
         $till = $health['tills'][$model->register_id] ?? null;
+        $manage = $request->user('admin')?->hasAbility(AdminRole::LICENCES_MANAGE) ?? false;
+        $billing = $request->user('admin')?->hasAbility(AdminRole::BILLING_MANAGE) ?? false;
 
         return Inertia::render('admin/licences/show', [
             'licence' => LicenceData::detail($model, $now),
@@ -100,7 +102,11 @@ class LicenceController extends Controller
                 'thresholds' => $health['thresholds'],
             ] : null,
             'plans' => LicenceData::planOptions(),
-            'can' => ['manage' => $request->user('admin')?->hasAbility(AdminRole::LICENCES_MANAGE) ?? false],
+            'can' => [
+                'manage' => $manage,
+                // Moving a licence to another plan is a billing change too (audit SEC-4).
+                'changePlan' => $manage && $billing,
+            ],
         ]);
     }
 
