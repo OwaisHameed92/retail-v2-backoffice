@@ -4,6 +4,7 @@ namespace App\Domain\Mail\Mailables;
 
 use App\Domain\Mail\Data\PartnerRequestAlertData;
 use App\Domain\Mail\Support\MailFormat;
+use App\Domain\Shared\Country\LocalText;
 use App\Domain\Shared\Country\MoneyFormat;
 use Illuminate\Mail\Mailables\Address;
 use Illuminate\Mail\Mailables\Content;
@@ -47,7 +48,7 @@ final class AdminPartnerRequestMail extends BrandedMailable
             businessName: 'Istanbul Market',
             partnerName: 'Zivaro',
             sellerName: 'Ali Khan',
-            sellerEmail: 'ali@example.co.uk',
+            sellerEmail: LocalText::domains('ali@example.co.uk'),
             shops: 1,
             tills: 2,
             plan: 'setup-only',
@@ -72,7 +73,8 @@ final class AdminPartnerRequestMail extends BrandedMailable
 
     protected function defaultRecipients(): array
     {
-        $list = array_values(array_filter(array_map('trim', (array) config('sspos.lead_alert_emails', []))));
+        $list = array_values(array_filter(array_map('trim', (array) config('sspos.partner_alert_emails', []))));
+        $list = $list !== [] ? $list : array_values(array_filter(array_map('trim', (array) config('sspos.lead_alert_emails', []))));
 
         if ($list === []) {
             return [new Address((string) config('sspos.staff_email'), 'Switch & Save team')];

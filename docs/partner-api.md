@@ -14,7 +14,7 @@ switched off (country profile `features.partnerApi` false): `/api/partner/v1/*` 
   billing account with the agreed per-till setup fee) or **Reject** (with a reason).
 - Tenant emails follow the email control settings (today all held for the admin).
 - Staff hear at once (owner 2026-10-12): a new request, a rejected one sent again, and an approved one the partner
-  cancels email the lead alert addresses (`SSPOS_LEAD_ALERT_EMAILS`, else `SSPOS_STAFF_EMAIL`; never held), show in the
+  cancels email `SSPOS_PARTNER_ALERT_EMAILS` (else the lead alert addresses, else `SSPOS_STAFF_EMAIL`; never held), show in the
   admin dashboard's "Needs attention" (admins with `tenants.manage`) and in the menu's "Partner requests" count.
 - One request per `externalId`, ever (idempotent): sending the same `externalId` again returns the same request;
   a changed body while `pendingReview` updates it; after approval a changed body is refused (409

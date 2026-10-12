@@ -23,6 +23,9 @@ return [
     // New lead alerts (module 1.6): comma-separated list, e.g. "sales@…,owner@…". Empty = staff_email only.
     'lead_alert_emails' => array_values(array_filter(array_map('trim', explode(',', (string) env('SSPOS_LEAD_ALERT_EMAILS', ''))))),
 
+    // Partner request alerts (Zivaro, owner 2026-10-12): comma-separated list. Empty = lead_alert_emails, else staff_email.
+    'partner_alert_emails' => array_values(array_filter(array_map('trim', explode(',', (string) env('SSPOS_PARTNER_ALERT_EMAILS', ''))))),
+
     // Our public website (phase P6): named in messages such as "Please use the form at switchandsave.co.uk.".
     'website_url' => rtrim((string) (env('SSPOS_WEBSITE_URL') ?: 'https://switchandsave.co.uk'), '/'),
 
