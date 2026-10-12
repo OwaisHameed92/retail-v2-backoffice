@@ -20,6 +20,10 @@ interface TenantLicencesPanelProps {
     licensing: TenantLicensing;
     plans: PlanOption[];
     canManage: boolean;
+    /** licences.manage and billing.manage (audit SEC-4): the plan for new tills is a billing change. */
+    canChangePlan: boolean;
+    /** Opens the Billing tab (only for admins who can see it). */
+    onOpenBilling?: () => void;
 }
 
 const ORDER: LicenceStatus[] = ['active', 'trial', 'grace', 'issued', 'expired', 'suspended', 'revoked'];
@@ -27,7 +31,7 @@ const ORDER: LicenceStatus[] = ['active', 'trial', 'grace', 'issued', 'expired',
 const RELOAD = ['licensing', 'branches', 'activity'];
 
 /** The Licences tab of a tenant: every till's licence, plus issue missing, renew all and the plan for new tills. */
-export function TenantLicencesPanel({ tenant, licensing, plans, canManage }: TenantLicencesPanelProps) {
+export function TenantLicencesPanel({ tenant, licensing, plans, canManage, canChangePlan, onOpenBilling }: TenantLicencesPanelProps) {
     const [dialog, setDialog] = useState<'issue' | 'renew' | 'plan' | null>(null);
     const { summary, licences, plan } = licensing;
     const cancelled = tenant.status === 'cancelled';
@@ -76,12 +80,15 @@ export function TenantLicencesPanel({ tenant, licensing, plans, canManage }: Ten
                             New tills get{' '}
                             <span className="text-foreground font-medium">{plan.current?.name ?? 'no plan (none is active)'}</span>
                             {plan.current && !plan.isCompanyPlan && <span>(the portal default)</span>}
-                            {canManage && !cancelled && plans.length > 0 && (
+                            {canChangePlan && !cancelled && plans.length > 0 && (
                                 <Button variant="link" size="sm" className="h-auto p-0" onClick={() => setDialog('plan')}>
                                     Change
                                 </Button>
                             )}
                         </p>
+                        {canManage && !canChangePlan && !cancelled && (
+                            <p className="text-muted-foreground text-sm">An owner or accounts admin changes the plan, in Billing → Change plan.</p>
+                        )}
                     </div>
                     <div className="flex flex-wrap items-center gap-2 lg:shrink-0">
                         <Button variant="outline" size="sm" asChild>
@@ -204,7 +211,29 @@ export function TenantLicencesPanel({ tenant, licensing, plans, canManage }: Ten
                 open={dialog === 'plan'}
                 onOpenChange={(value) => setDialog(value ? 'plan' : null)}
                 title="Change the plan for new tills?"
-                description={`Tills added to ${tenant.name} from now on are licensed on this plan.`}
+                description={
+                    <>
+                        Tills added to {tenant.name} from now on are licensed on this plan. What the business pays stays the same.
+                        {onOpenBilling && (
+                            <>
+                                {' '}
+                                To move the business to another plan with its fees and Direct Debit, use{' '}
+                                <Button
+                                    type="button"
+                                    variant="link"
+                                    className="h-auto p-0 align-baseline"
+                                    onClick={() => {
+                                        setDialog(null);
+                                        onOpenBilling();
+                                    }}
+                                >
+                                    Billing → Change plan
+                                </Button>
+                                .
+                            </>
+                        )}
+                    </>
+                }
                 url={route('admin.tenants.plan.update', tenant.id)}
                 method="put"
                 plans={plans}

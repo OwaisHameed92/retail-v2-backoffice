@@ -27,6 +27,7 @@ use App\Domain\Tenancy\Events\RegisterAdded;
 use App\Domain\Tenancy\Events\RegisterDeactivated;
 use App\Domain\Tenancy\Events\RegisterReactivated;
 use App\Domain\Tenancy\Events\TenantCreated;
+use Illuminate\Mail\Markdown;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
@@ -67,6 +68,10 @@ class AppServiceProvider extends ServiceProvider
         // Customer passwords (security review L6): at least 10 characters, and never one known from a data breach
         // (Have I Been Pwned, k-anonymity; checked in production only, so tests and local work stay offline).
         Password::defaults(fn () => app()->isProduction() ? Password::min(10)->uncompromised() : Password::min(10));
+
+        // Mail templates (audit SEC-3): a `{{ }}` value never becomes Markdown, so a business, shop or person name
+        // typed as `[text](https://…)` or `![](https://…)` shows literally instead of making a link or tracking image.
+        Markdown::withSecuredEncoding();
 
         // Licences follow the tills (module 1.3). Synchronous: they run inside the tenancy actions' transactions.
         Event::listen(RegisterAdded::class, IssueLicenceForNewTill::class);

@@ -245,6 +245,32 @@ test('a held preview shows the email as it will go, without a password link', fu
     expect(sentMail())->toBe([]);
 });
 
+test('a held welcome preview shows licence keys only to admins who manage licences; the email sent keeps them (audit SEC-2)', function () {
+    holdAll();
+    $company = $this->licensedTenant('Khan Mini Mart', 1);
+    $held = HeldEmail::query()->where('template', WelcomeTenantMail::templateKey())->sole();
+    /** @var WelcomeTenantMail $mail */
+    $mail = $held->mailable();
+    $fullKey = $mail->data->tills[0]->licenceKey;
+    expect(strlen($fullKey))->toBeGreaterThan(10);
+
+    // Accounts (billing.manage, not licences.manage): the email with the key's last 4 characters, as the held list.
+    $accounts = $this->admin(AdminRole::Accounts);
+    $this->actingAs($accounts, 'admin')->get(route('admin.emails.held.preview', $held->id))->assertOk()
+        ->assertSee($company->name)->assertSee('…'.substr($fullKey, -4))->assertDontSee($fullKey);
+
+    // Owner (licences.manage): the email exactly as it goes.
+    $this->actingAs($this->admin(AdminRole::Owner), 'admin')->get(route('admin.emails.held.preview', $held->id))->assertOk()
+        ->assertSee($company->name)->assertSee($fullKey);
+
+    // Sending it (as Accounts) sends the full keys, unchanged.
+    $this->actingAs($accounts, 'admin')->post(route('admin.emails.held.send', $held->id))->assertSessionHas('success');
+    $sent = collect(app('mail.manager')->mailer('array')->getSymfonyTransport()->messages())->sole()->getOriginalMessage();
+    expect($sent->getSubject())->toBe('Welcome to Switch & Save – your licence keys')
+        ->and($sent->getHtmlBody())->toContain($fullKey)
+        ->and($sent->getTextBody())->toContain($fullKey);
+});
+
 test('Pakistan: a manual-billing payment reminder is held when reminders are off', function () {
     config(['country.code' => 'PK']);
     app()->forgetInstance(Country::class);

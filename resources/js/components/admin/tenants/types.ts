@@ -160,7 +160,8 @@ export interface TenantShowProps {
     tillSetupFee: AddedTillFeeOptions;
     /** P11: held emails and the first emails' buttons. Null without billing.manage (tab hidden). */
     emails: TenantEmailsData | null;
-    can: { manage: boolean; impersonate: boolean; manageLicences: boolean };
+    /** changePlan: licences.manage and billing.manage (audit SEC-4). */
+    can: { manage: boolean; impersonate: boolean; manageLicences: boolean; changePlan: boolean };
 }
 
 /** TenantEmails::for (P11): the business page's Emails tab. */

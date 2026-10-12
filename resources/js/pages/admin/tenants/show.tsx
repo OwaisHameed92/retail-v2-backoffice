@@ -223,7 +223,16 @@ export default function TenantShow({
                         <UsersPanel tenant={tenant} members={members} roles={roles} canManage={can.manage} canImpersonate={can.impersonate} />
                     )}
                     {tab === 'activity' && <ActivityPanel activity={activity} />}
-                    {tab === 'licences' && <TenantLicencesPanel tenant={tenant} licensing={licensing} plans={plans} canManage={can.manageLicences} />}
+                    {tab === 'licences' && (
+                        <TenantLicencesPanel
+                            tenant={tenant}
+                            licensing={licensing}
+                            plans={plans}
+                            canManage={can.manageLicences}
+                            canChangePlan={can.changePlan}
+                            onOpenBilling={billing ? () => changeTab('billing') : undefined}
+                        />
+                    )}
                     {tab === 'cloud' && <TenantCloudPanel moves={cloudLink.moves} keys={cloudLink.keys} canClear={can.manageLicences} />}
                     {tab === 'billing' && billing && <TenantBillingPanel tenant={tenant} billing={billing} />}
                     {tab === 'emails' && emails && <TenantEmailsPanel tenant={tenant} emails={emails} />}

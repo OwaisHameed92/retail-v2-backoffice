@@ -1,8 +1,10 @@
 <?php
 
 use App\Domain\Mail\Data\AccountSuspendedData;
+use App\Domain\Mail\Data\CustomerStatementData;
 use App\Domain\Mail\Data\LicenceRenewedData;
 use App\Domain\Mail\Data\NewLeadData;
+use App\Domain\Mail\Data\PortalInvitationData;
 use App\Domain\Mail\Data\RenewedTillData;
 use App\Domain\Mail\Data\SetPasswordData;
 use App\Domain\Mail\Data\TillKeyData;
@@ -12,7 +14,9 @@ use App\Domain\Mail\Mailables\AccountReactivatedMail;
 use App\Domain\Mail\Mailables\AccountSuspendedMail;
 use App\Domain\Mail\Mailables\AdminNewLeadMail;
 use App\Domain\Mail\Mailables\BrandedMailable;
+use App\Domain\Mail\Mailables\CustomerStatementMail;
 use App\Domain\Mail\Mailables\LicenceRenewedMail;
+use App\Domain\Mail\Mailables\PortalInvitationMail;
 use App\Domain\Mail\Mailables\SetPasswordMail;
 use App\Domain\Mail\Mailables\TrialEndedMail;
 use App\Domain\Mail\Mailables\TrialReminderMail;
@@ -212,4 +216,41 @@ it('security review L3: a visitor\'s Markdown in the new-lead email renders as p
         ->toContain('[Click here](https://evil.test/login)')
         ->toContain('[Imran](https://evil.test/a)')
         ->toContain('Thanks!');
+});
+
+// Audit SEC-3: Markdown::withSecuredEncoding() (AppServiceProvider), so a tenant-typed `{{ }}` value is never a link.
+it('audit SEC-3: tenant-typed Markdown in the invitation email (sent to any address) is not a link or image', function () {
+    $mail = new PortalInvitationMail(new PortalInvitationData(
+        name: '[Bilal](https://evil.test/b)',
+        email: 'stranger@example.test',
+        businessName: '[Verify your account](https://evil.test/login)',
+        roleLabel: 'Manager',
+        branchName: null,
+        inviterName: '![](https://evil.test/pixel.gif)',
+        url: config('sspos.portal_url').'/app/invitations/01J00000000000000000000000/token',
+        expiresAt: Carbon::now()->addDays(7),
+    ));
+    $html = $mail->render();
+
+    expect($html)->not->toContain('href="https://evil.test')->not->toContain('src="https://evil.test')
+        ->toContain('[Verify your account](https://evil.test/login)')
+        // Our own invitation link and button still work.
+        ->toContain('href="https://portal.example.test/app/invitations/01J00000000000000000000000/token"');
+});
+
+it('audit SEC-3: tenant-typed Markdown in the customer statement email is not a link', function () {
+    $mail = new CustomerStatementMail(new CustomerStatementData(
+        businessName: '[Pay here](https://evil.test/pay)',
+        businessEmail: 'shop@example.test',
+        businessPhone: '[0113](https://evil.test/call)',
+        customerName: 'Aisha Rahman',
+        period: '1 Oct – 31 Oct 2026',
+        closingBalance: '42.50',
+        closingPoints: 0,
+    ));
+    $html = $mail->render();
+
+    expect($html)->not->toContain('href="https://evil.test')
+        ->toContain('[Pay here](https://evil.test/pay)')
+        ->toContain('[0113](https://evil.test/call)');
 });
