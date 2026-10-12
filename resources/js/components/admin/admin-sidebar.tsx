@@ -9,7 +9,9 @@ export function AdminSidebar() {
     const { admin } = usePage<AdminSharedData>().props;
     const abilities = admin?.abilities ?? [];
     const counts = admin?.navCounts ?? {};
-    const items = adminNavItems.filter((item) => !item.ability || abilities.includes(item.ability));
+    const items = adminNavItems.filter(
+        (item) => (!item.ability || abilities.includes(item.ability)) && (item.feature !== 'partnerApi' || admin?.partnerApi === true),
+    );
 
     const toGroup = (label: (typeof adminNavGroups)[number]): ShellNavGroup => ({
         label: label || undefined,

@@ -69,6 +69,9 @@ return [
             'features' => [
                 'vatReturn' => true,
                 'fbr' => false,
+                // Partner onboarding API (owner 2026-10-12): UK only. Off = /api/partner/v1/* and the admin partner pages
+                // 404, no partner webhook. Server-side only (not in the shared `country.features`).
+                'partnerApi' => true,
                 // Phase P10 (owner 2026-10-07): UK till modules the portal shows (App\Domain\Shared\Country\CountryModules).
                 // Off = hidden in the portal (pages, form fields, settings, portal actions) and their routes 404; till
                 // data still syncs and is stored exactly as before. A module missing here counts as on.
@@ -164,6 +167,8 @@ return [
             'features' => [
                 'vatReturn' => false,
                 'fbr' => false,
+                // Partner onboarding API: UK only (owner 2026-10-12).
+                'partnerApi' => false,
                 // Phase P10: no deposit return scheme, UK-style shop lottery, UK alcohol licensing, HFSS or vaping duty in
                 // Pakistan; the master catalogue starter set is UK products; pharmacy waits for a DRAP version.
                 'depositReturn' => false,

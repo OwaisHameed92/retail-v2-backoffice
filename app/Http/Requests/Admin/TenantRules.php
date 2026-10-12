@@ -133,10 +133,23 @@ final class TenantRules
      */
     public static function clean(FormRequest $request, array $prefixes = ['']): array
     {
+        return self::cleanValues($request->all(), $prefixes);
+    }
+
+    /**
+     * clean() for any input array (the partner API's shops and business, module "Partner onboarding API"): only the
+     * string members come back, tidied.
+     *
+     * @param  array<string, mixed>  $values
+     * @param  list<string>  $prefixes
+     * @return array<string, mixed>
+     */
+    public static function cleanValues(array $values, array $prefixes = ['']): array
+    {
         $uk = app(Country::class)->is(Country::DEFAULT);
         $clean = [];
 
-        foreach ($request->all() as $key => $value) {
+        foreach ($values as $key => $value) {
             if (is_string($value)) {
                 $value = trim($value);
                 $clean[$key] = $value === '' ? null : $value;

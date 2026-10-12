@@ -2,8 +2,11 @@
 
 use App\Http\Controllers\Api\CloudMigrationController;
 use App\Http\Controllers\Api\LicenceApiController;
+use App\Http\Controllers\Api\PartnerTenantRequestController;
 use App\Http\Controllers\Api\SyncController;
 use App\Http\Controllers\Api\TrialRequestController;
+use App\Http\Middleware\AuditPartnerCall;
+use App\Http\Middleware\AuthenticatePartnerKey;
 use App\Http\Middleware\AuthenticateSyncKey;
 use App\Http\Middleware\EnsureTillContract;
 use App\Http\Middleware\GuardPublicTrialRequests;
@@ -11,6 +14,7 @@ use App\Http\Middleware\GuardSyncRequest;
 use App\Http\Middleware\IdempotentTillRequest;
 use App\Http\Middleware\PublicFormCors;
 use App\Http\Middleware\ThrottleLicenceApi;
+use App\Http\Middleware\ThrottlePartnerApi;
 use Illuminate\Support\Facades\Route;
 
 // Till APIs, loaded under the /api prefix with the "api" middleware group.
@@ -56,4 +60,18 @@ Route::prefix('v1/public')->name('api.public.')->middleware(PublicFormCors::clas
     ->group(function () {
         Route::options('trial-requests', 'preflight')->name('trial-requests.preflight');
         Route::post('trial-requests', 'store')->name('trial-requests.store')->middleware(GuardPublicTrialRequests::class);
+    });
+
+// Partner onboarding API v1 (docs/partner-api.md): Zivaro → retail portal. Bearer partner key (AuthenticatePartnerKey),
+// its own named limiter (60 a minute per key, PartnerRateLimit), every call's outcome audited (AuditPartnerCall,
+// outermost). A request never creates a business: it waits in Admin → Partner requests. UK only: 404 where the
+// country profile has `partnerApi` off (PK).
+Route::prefix('partner/v1')->name('api.partner.')
+    ->middleware(['country.feature:partnerApi', AuditPartnerCall::class, AuthenticatePartnerKey::class, ThrottlePartnerApi::class])
+    ->controller(PartnerTenantRequestController::class)
+    ->group(function () {
+        Route::get('plans', 'plans')->name('plans');
+        Route::put('tenant-requests/{externalId}', 'upsert')->name('tenant-requests.upsert');
+        Route::get('tenant-requests/{externalId}', 'show')->name('tenant-requests.show');
+        Route::post('tenant-requests/{externalId}/cancel', 'cancel')->name('tenant-requests.cancel');
     });

@@ -44,6 +44,8 @@ use App\Http\Controllers\Admin\Licences\LicenceController;
 use App\Http\Controllers\Admin\Licences\LicenceKeyController;
 use App\Http\Controllers\Admin\Licences\LicenceKeyEmailController;
 use App\Http\Controllers\Admin\Licences\TenantLicenceController;
+use App\Http\Controllers\Admin\Partners\PartnerRequestController;
+use App\Http\Controllers\Admin\Partners\PartnerSettingsController;
 use App\Http\Controllers\Admin\PlanController;
 use App\Http\Controllers\Admin\PlanLifecycleController;
 use App\Http\Controllers\Admin\TenantBranchController;
@@ -205,6 +207,29 @@ Route::middleware(['auth:admin', AdminIsActive::class, BlockAdminWhileImpersonat
             Route::delete('{company}/branches/{branch}/sync-key', [BranchSyncKeyController::class, 'revoke'])->name('branches.sync-key.revoke');
         });
     });
+
+    // Partner onboarding API: requests sent by partners (Zivaro), reviewed and approved into a business or rejected.
+    // tenants.manage, reading included (it holds the owner's details and creates businesses).
+    // UK only (`country.feature:partnerApi`): 404 on the Pakistan instance.
+    Route::prefix('partner-requests')->name('partner-requests.')->middleware(['country.feature:partnerApi', 'can:'.AdminRole::TENANTS_MANAGE])
+        ->whereUlid('partnerRequest')->controller(PartnerRequestController::class)->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::get('{partnerRequest}', 'show')->name('show');
+            Route::post('{partnerRequest}/approve', 'approve')->name('approve')->middleware('throttle:20,1');
+            Route::post('{partnerRequest}/reject', 'reject')->name('reject')->middleware('throttle:20,1');
+        });
+
+    // Partner onboarding API: partners, their webhook URL and secret, their API keys (owner only: partners.manage).
+    // New keys and secrets answer JSON (shown once).
+    Route::prefix('settings/partners')->name('settings.partners.')->middleware(['country.feature:partnerApi', 'can:'.AdminRole::PARTNERS_MANAGE])
+        ->whereUlid(['partner', 'key'])->controller(PartnerSettingsController::class)->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::post('/', 'store')->name('store');
+            Route::put('{partner}', 'update')->name('update');
+            Route::post('{partner}/webhook-secret', 'webhookSecret')->name('webhook-secret')->middleware('throttle:10,1');
+            Route::post('{partner}/keys', 'issueKey')->name('keys.store')->middleware('throttle:10,1');
+            Route::delete('{partner}/keys/{key}', 'revokeKey')->name('keys.destroy')->scopeBindings();
+        });
 
     // Licences (module 1.3): tenants.view reads, licences.manage changes. Ids are looked up across companies in
     // the controllers (FindsLicences), never by route model binding.

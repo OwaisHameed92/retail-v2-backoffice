@@ -389,3 +389,8 @@ Tokens live only in `resources/css/app.css` (v2 palette, light + dark): `chrome`
 - `components/shared/two-factor/`: `RecoveryCodesPanel` (one-time codes with copy/download/acknowledge), `RegenerateCodesDialog` (password → new codes from a JSON url), `TwoFactorStatus`, `CodeInput`.
 - `components/shared/audit/`: `AuditLogView` (DataTable + filters + keyset pager + `AuditDrawer` with the before/after diff), `exportHref()`. Backend: `App\Domain\Audit\Queries\AuditLogList::for($request, AuditFilters::fromRequest(...), $companyId)` and `AuditCsv::download()`.
 
+
+## Added by the partner onboarding API (2026-10-12)
+
+- `components/admin/partners/`: `types.ts` (matches `PartnerRequestList::row()`, `PartnerRequestDetail::for()`, `ReviewFormDefaults::for()`, `PartnerSettingsData::all()`), `PartnerRequestStatusBadge` / `PartnerCancelledPill`, `ReviewForm` (the new-business wizard's sections for several shops; Approve behind `ConfirmDialog`, Reject with `ReasonDialog`), `ReviewShops`, `DealCard` / `SentCard` / `WebhooksCard` / `ActivityCard`, `PartnerFormDialog`, `RevealSecretDialog` (a secret shown once: copy, asks before closing uncopied).
+- Backend: `TenantRules::cleanValues($array, $prefixes)` — the form tidying for any input array (`clean()` calls it); `Partners\Support\TenantRequestView::iso()` (ISO UTC with ms).

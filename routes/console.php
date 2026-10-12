@@ -55,6 +55,9 @@ Schedule::command('reports:process-dirty')->everyMinute()->onOneServer()->withou
 // on automatic anonymising (the rest stay a dry run).
 Schedule::command('privacy:retention', ['--apply'])->dailyAt('03:30')->onOneServer()->withoutOverlapping();
 
+// Partner onboarding API: retries of the partner webhook outbox (first attempts are queued at once).
+Schedule::command('partners:send-webhooks')->everyMinute()->onOneServer()->withoutOverlapping(10);
+
 // Shelf labels (gap #6): queue labels for offers that start today or ended yesterday.
 Schedule::command('labels:queue-offers')->dailyAt('00:10')->timezone(Country::zone())->onOneServer()->withoutOverlapping(60);
 

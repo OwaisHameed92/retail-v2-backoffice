@@ -18,6 +18,7 @@ namespace App\Domain\Admin\Enums;
  * | trading.view      |  yes  |       |   yes   |   yes    |
  * | audit.view        |  yes  |       |   yes   |          |
  * | catalogue.manage  |  yes  |       |   yes   |          |
+ * | partners.manage   |  yes  |       |         |          |
  *
  * The owner can do everything. Unknown abilities are denied for every role except owner.
  */
@@ -48,6 +49,9 @@ enum AdminRole: string
 
     /** The platform-wide master catalogue (/admin/catalogue): products, CSV loads, merges, the till review queue. */
     public const CATALOGUE_MANAGE = 'catalogue.manage';
+
+    /** Partner onboarding API: partners, their API keys and webhook secrets (Admin → Settings → Partners). Owner only. */
+    public const PARTNERS_MANAGE = 'partners.manage';
 
     /**
      * Abilities granted to each non-owner role. The owner implicitly has all abilities.
@@ -96,6 +100,7 @@ enum AdminRole: string
             self::TRADING_VIEW,
             self::AUDIT_VIEW,
             self::CATALOGUE_MANAGE,
+            self::PARTNERS_MANAGE,
         ];
     }
 

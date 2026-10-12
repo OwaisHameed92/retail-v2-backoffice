@@ -4,6 +4,7 @@ namespace App\Domain\Billing\Actions;
 
 use App\Domain\Billing\Enums\InvoiceKind;
 use App\Domain\Billing\Enums\InvoiceStatus;
+use App\Domain\Billing\Events\SetupFeePaymentRecorded;
 use App\Domain\Billing\Models\Invoice;
 use App\Domain\Billing\Models\InvoiceLine;
 use App\Domain\Billing\Support\BillingDates;
@@ -53,6 +54,11 @@ class SettleInvoice
                 'number' => $invoice->number,
                 'total' => $invoice->total,
             ]);
+
+            // Partner onboarding API: listeners read the setup fee state (nothing in billing listens).
+            if ($invoice->kind === InvoiceKind::SetupFee) {
+                SetupFeePaymentRecorded::dispatch($invoice->company_id);
+            }
         }
 
         // P11: an added till's setup fee renews nothing itself; it lets go of the tills it held (UnlockAddedTills).

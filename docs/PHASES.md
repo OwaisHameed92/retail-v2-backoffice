@@ -138,6 +138,13 @@ Contract: v1.4.1 §18.4. Roles: business owner, **shop manager** (one branch onl
 | 7.5 | End-to-end testing with the EPOS team, go-live checklist | todo |
 | 7.6 | Scale: partitioning, archiving, sharding, load test with 1,000 synthetic shops (`docs/scaling.md`; groundwork `companies.data_connection` done in 2.1) | todo |
 
+## Partner onboarding API (owner 2026-10-12) — done
+
+Zivaro → retail portal (`docs/partner-api.md`, module `app/Domain/Partners`, DECISIONS "Partner onboarding API"):
+Bearer-key API (PUT/GET/cancel tenant requests, plans), Admin → Partner requests (review, approve through the normal
+onboarding, reject), Admin → Settings → Partners (keys and webhook secret shown once), signed webhooks with an outbox
+and 24 h retries. UK only (country flag `partnerApi`, off on PK). Status: done.
+
 ## Phase 8: Later — 0/5
 
 Web orders / click and collect · Online payments · Dealers and resellers · Public marketing site · EPOS update
