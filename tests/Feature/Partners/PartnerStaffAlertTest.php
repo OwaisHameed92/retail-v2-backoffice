@@ -25,7 +25,7 @@ beforeEach(function () {
     Http::preventStrayRequests();
     Http::fake(['zivaro.test/*' => Http::response(['ok' => true])]);
     $this->travelTo(CarbonImmutable::parse('2026-10-12 09:00:00', 'UTC'));
-    config(['sspos.staff_email' => 'team@switchandsave.test', 'sspos.lead_alert_emails' => []]);
+    config(['sspos.staff_email' => 'team@switchandsave.test', 'sspos.lead_alert_emails' => [], 'sspos.partner_alert_emails' => []]);
     $this->standardPlan();
     $this->setupOnlyPlan();
 });
@@ -58,6 +58,15 @@ test('the lead alert addresses get it when they are set', function () {
     $this->putDeal($key, $this->dealBody())->assertCreated();
 
     Mail::assertQueued(AdminPartnerRequestMail::class, fn (AdminPartnerRequestMail $mail) => $mail->hasTo('owner@switchandsave.test') && $mail->hasTo('sales@switchandsave.test'));
+});
+
+test('the partner alert address wins over the lead alert addresses', function () {
+    config(['sspos.lead_alert_emails' => ['sales@switchandsave.test'], 'sspos.partner_alert_emails' => ['hello@switchandsave.test']]);
+    [, $key] = $this->partnerWithKey();
+
+    $this->putDeal($key, $this->dealBody())->assertCreated();
+
+    Mail::assertQueued(AdminPartnerRequestMail::class, fn (AdminPartnerRequestMail $mail) => $mail->hasTo('hello@switchandsave.test') && ! $mail->hasTo('sales@switchandsave.test'));
 });
 
 test('an edit while waiting for review sends no email, a rejected one sent again does', function () {
