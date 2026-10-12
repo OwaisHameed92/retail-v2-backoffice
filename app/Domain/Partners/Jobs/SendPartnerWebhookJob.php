@@ -12,7 +12,7 @@ use Illuminate\Queue\SerializesModels;
 /**
  * One delivery attempt of a partner webhook, queued after the transaction that made the event commits. One try per
  * job: retries are the outbox's (next_attempt_at, picked up by `partners:send-webhooks` every minute), so a slow
- * partner never holds a worker. The job's timeout (30 s) stays below the queue's retry_after (90 s).
+ * partner never holds a worker. The job's timeout (30 s) stays below the queue's retry_after (1900 s).
  */
 class SendPartnerWebhookJob implements ShouldQueue
 {

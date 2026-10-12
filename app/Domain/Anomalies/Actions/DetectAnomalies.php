@@ -13,6 +13,7 @@ use App\Domain\Anomalies\Detectors\SalesGap;
 use App\Domain\Anomalies\Detectors\StaffExceptions;
 use App\Domain\Anomalies\Detectors\UnlinkedRefunds;
 use App\Domain\Reporting\Support\TradingDay;
+use App\Domain\Shared\Support\BusinessFailures;
 use App\Domain\Tenancy\CurrentCompany;
 use App\Domain\Tenancy\Enums\CompanyStatus;
 use App\Domain\Tenancy\Models\Company;
@@ -26,10 +27,13 @@ use Throwable;
  * and daily at 06:30 London (yesterday, every detector that runs daily). For each trading business (not suspended or
  * cancelled) with active shops: the detectors inside its company scope (one failing detector is reported and the
  * rest still run), then RecordAnomalies (dedupe) and DispatchAnomalyAlerts (serious ones straight away).
- * Deterministic: no AI is involved in finding anything.
+ * Deterministic: no AI is involved in finding anything. A business whose recording or alerting fails is reported with
+ * its company id and the other businesses still run (audit DATA-8; `failedCompanyIds()`, the command exits non-zero).
  */
 class DetectAnomalies
 {
+    public const TASK = 'anomalies:detect';
+
     /** @var list<class-string<Detector>> */
     public const DETECTORS = [
         StaffExceptions::class,
@@ -46,6 +50,7 @@ class DetectAnomalies
         private readonly CurrentCompany $tenancy,
         private readonly RecordAnomalies $record,
         private readonly DispatchAnomalyAlerts $dispatch,
+        private readonly BusinessFailures $failures,
     ) {}
 
     /**
@@ -62,17 +67,30 @@ class DetectAnomalies
         $today = TradingDay::today($now);
         $day = ($mode === DetectionWindow::DAILY ? $today->subDay() : $today)->format('Y-m-d');
         $totals = ['companies' => 0, 'found' => 0, 'raised' => 0, 'notified' => 0, 'emailed' => 0];
+        $this->failures->forget(self::TASK);
 
         Company::query()
             ->whereNotIn('status', [CompanyStatus::Suspended->value, CompanyStatus::Cancelled->value])
             ->when($companyIds !== null, fn ($q) => $q->whereIn('id', $companyIds ?? []))
             ->chunkById(100, function ($companies) use ($mode, $now, $day, &$totals) {
                 foreach ($companies as $company) {
-                    $this->company($company, $mode, $now, $day, $totals);
+                    $this->failures->attempt(self::TASK, $company->id, function () use ($company, $mode, $now, $day, &$totals) {
+                        $this->company($company, $mode, $now, $day, $totals);
+                    });
                 }
             });
 
         return $totals;
+    }
+
+    /**
+     * The businesses that failed in the last run (each reported already).
+     *
+     * @return list<string>
+     */
+    public function failedCompanyIds(): array
+    {
+        return $this->failures->companyIds(self::TASK);
     }
 
     /**

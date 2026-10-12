@@ -18,9 +18,11 @@ use App\Domain\Notifications\Support\AlertInbox;
 use App\Domain\Notifications\Support\AlertLinks;
 use App\Domain\Notifications\Support\AlertRecipients;
 use App\Domain\Reporting\Support\TradingDay;
+use App\Domain\Shared\Support\BusinessFailures;
 use App\Domain\Tenancy\Enums\CompanyStatus;
 use App\Domain\Tenancy\Models\Company;
 use Carbon\CarbonImmutable;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 
 /**
@@ -30,13 +32,20 @@ use Illuminate\Support\Facades\Mail;
  *
  * The morning summary (module 6.3) rides in the same email for users who have it on: one email per user per morning.
  * Its facts are computed once per business, only when someone wants it.
+ *
+ * Audit DATA-2: one business's error is reported with its company id and the other businesses still get theirs
+ * (`failedCompanyIds()`; alerts:digest exits non-zero). The "sent" row and the bell entry are written in one
+ * transaction before the email is queued, so a failure in between and a rerun never send a digest twice.
  */
 class SendDigests
 {
+    public const TASK = 'alerts:digest';
+
     public function __construct(
         private readonly DigestFindings $findings,
         private readonly MorningFacts $morningFacts,
         private readonly BuildMorningSummary $morningSummary,
+        private readonly BusinessFailures $failures,
     ) {}
 
     /**
@@ -48,17 +57,30 @@ class SendDigests
         $now = ($now ?? CarbonImmutable::now())->utc();
         $day = TradingDay::today($now)->format('Y-m-d');
         $totals = ['companies' => 0, 'sent' => 0, 'empty' => 0, 'already' => 0];
+        $this->failures->forget(self::TASK);
 
         Company::query()
             ->whereNotIn('status', [CompanyStatus::Suspended->value, CompanyStatus::Cancelled->value])
             ->when($companyIds !== null, fn ($q) => $q->whereIn('id', $companyIds ?? []))
             ->chunkById(100, function ($companies) use ($now, $day, &$totals) {
                 foreach ($companies as $company) {
-                    $this->company($company, $now, $day, $totals);
+                    $this->failures->attempt(self::TASK, $company->id, function () use ($company, $now, $day, &$totals) {
+                        $this->company($company, $now, $day, $totals);
+                    });
                 }
             });
 
         return $totals;
+    }
+
+    /**
+     * The businesses whose digest failed in the last run (each reported already).
+     *
+     * @return list<string>
+     */
+    public function failedCompanyIds(): array
+    {
+        return $this->failures->companyIds(self::TASK);
     }
 
     /**
@@ -105,7 +127,7 @@ class SendDigests
                 continue;
             }
 
-            Mail::to($recipient->email, $recipient->name)->queue(new OwnerDigestMail(new OwnerDigestData(
+            $mail = new OwnerDigestMail(new OwnerDigestData(
                 businessName: $company->name,
                 recipientName: $recipient->name,
                 day: $day,
@@ -114,19 +136,24 @@ class SendDigests
                 unsubscribeUrl: AlertLinks::unsubscribe($company->id, $recipient->userId, AlertLinks::DIGEST),
                 companyId: $company->id,
                 summary: $summary,
-            )));
+            ));
 
-            AlertInbox::add($company->id, $recipient->userId, AlertLinks::DIGEST, 'info',
-                $summary !== null
-                    ? 'Morning summary: '.MailFormat::money($summary['total']['sales']).' sales yesterday'.($sections !== [] ? ', '.MailFormat::count(count($sections), 'thing').' to check' : '')
-                    : 'Daily summary: '.MailFormat::count(count($sections), 'thing').' to check',
-                $sections !== [] ? implode(' · ', array_column($sections, 'title')) : 'How '.$summary['scope'].' traded on '.$summary['dayLabel'],
-                $summary['url'] ?? $sections[0]['url']);
+            // "Sent" first (with the bell entry), then the email: a failure in between never sends it twice.
+            DB::transaction(function () use ($company, $recipient, $day, $now, $sections, $summary) {
+                AlertDispatch::withoutCompanyScope()->create([
+                    'company_id' => $company->id, 'user_id' => $recipient->userId, 'alert_type' => AlertLinks::DIGEST,
+                    'subject_key' => 'digest|'.$day, 'state' => AlertDispatch::SENT, 'notified_at' => $now,
+                ]);
 
-            AlertDispatch::withoutCompanyScope()->create([
-                'company_id' => $company->id, 'user_id' => $recipient->userId, 'alert_type' => AlertLinks::DIGEST,
-                'subject_key' => 'digest|'.$day, 'state' => AlertDispatch::SENT, 'notified_at' => $now,
-            ]);
+                AlertInbox::add($company->id, $recipient->userId, AlertLinks::DIGEST, 'info',
+                    $summary !== null
+                        ? 'Morning summary: '.MailFormat::money($summary['total']['sales']).' sales yesterday'.($sections !== [] ? ', '.MailFormat::count(count($sections), 'thing').' to check' : '')
+                        : 'Daily summary: '.MailFormat::count(count($sections), 'thing').' to check',
+                    $sections !== [] ? implode(' · ', array_column($sections, 'title')) : 'How '.$summary['scope'].' traded on '.$summary['dayLabel'],
+                    $summary['url'] ?? $sections[0]['url']);
+            });
+
+            Mail::to($recipient->email, $recipient->name)->queue($mail);
             $totals['sent']++;
         }
     }

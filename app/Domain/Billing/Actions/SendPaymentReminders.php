@@ -9,6 +9,7 @@ use App\Domain\Billing\Support\BillingStatus;
 use App\Domain\Billing\Support\ManualCollection;
 use App\Domain\Mail\Data\PaymentReminderData;
 use App\Domain\Shared\Actions\RecordAudit;
+use App\Domain\Shared\Support\BusinessFailures;
 use App\Domain\Tenancy\Enums\CompanyStatus;
 use App\Domain\Tenancy\Models\Company;
 use Carbon\CarbonImmutable;
@@ -25,10 +26,13 @@ use Illuminate\Database\Eloquent\Builder;
  *   still unpaid (`billing.suspend_after_days`, 7, as in the UK).
  *
  * Paying stops them (paid invoices are not open). Cancelled businesses get none. Returns how many invoices were
- * reminded. Does nothing on a Direct Debit (GB) instance.
+ * reminded. Does nothing on a Direct Debit (GB) instance. One invoice's error is reported and the rest still run
+ * (BusinessFailures).
  */
 class SendPaymentReminders
 {
+    public const TASK = 'billing:run payment-reminders';
+
     private const COLUMNS = [
         PaymentReminderData::DUE_SOON => 'due_soon_reminded_at',
         PaymentReminderData::DUE_TODAY => 'due_today_reminded_at',
@@ -38,6 +42,7 @@ class SendPaymentReminders
     public function __construct(
         private readonly BillingMailer $mailer,
         private readonly RecordAudit $audit,
+        private readonly BusinessFailures $failures,
     ) {}
 
     public function handle(CarbonImmutable $now, ?string $companyId = null): int
@@ -65,7 +70,7 @@ class SendPaymentReminders
                 ->where($when)->orderBy('due_date')->orderBy('sequence')->get();
 
             foreach ($invoices as $invoice) {
-                $sent += (int) $this->remind($invoice, $kind, $now);
+                $sent += (int) $this->failures->attempt(self::TASK, $invoice->company_id, fn () => $this->remind($invoice, $kind, $now), false);
             }
         }
 
