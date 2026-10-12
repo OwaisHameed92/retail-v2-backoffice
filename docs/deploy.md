@@ -66,6 +66,10 @@ Checklist (2 vCPU / 4 GB RAM / 40 GB SSD is plenty to start; UK region; the serv
   server runs on Redis since 2026-10-06 (Stage 1: `maxmemory 1gb`, `noeviction`, AOF on; MySQL
   `innodb_buffer_pool_size=6G`, slow query log over 1 s in `/var/log/mysql/slow.log`, from
   `/etc/mysql/mysql.conf.d/zz-retail-v2-tuning.cnf`). `reports:process-dirty` (every minute) re-queues any lost report rebuild, so a worker restart loses nothing.
+- The live workers are systemd units (`/etc/systemd/system/retail-v2-queue@.service`, `pak-pos-queue@.service`), not
+  supervisor: `queue:work redis --sleep=3 --tries=3 --timeout=1800 --max-time=3600 --memory=512` with
+  `TimeoutStopSec=1810` (audit DATA-1, 2026-10-12: `retry_after` is 1900 by default, so no job runs twice). After
+  editing a unit: `systemctl daemon-reload`, then `php artisan queue:restart` (workers finish their job, then restart).
 - `LICENCE_ALLOW_UNCERTIFIED=false`: production signs licence tokens only with the owner's signer certificate.
 - Mail must be a real SMTP relay: welcome emails carry licence keys and invoices go out by email.
 - After any `.env` change: `cd /var/www/retail-v2/current && php artisan optimize && php artisan queue:restart`
