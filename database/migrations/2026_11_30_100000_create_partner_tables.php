@@ -87,7 +87,7 @@ return new class extends Migration
             $table->timestamps();
 
             $table->index(['partner_tenant_request_id', 'type']);
-            $table->index(['delivered_at', 'failed_at', 'next_attempt_at']);
+            $table->index(['delivered_at', 'failed_at', 'next_attempt_at'], 'partner_webhook_events_due_index'); // MySQL names are at most 64 characters
         });
     }
 
