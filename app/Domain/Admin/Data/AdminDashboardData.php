@@ -73,9 +73,9 @@ final readonly class AdminDashboardData
      *
      * @return array<string, mixed>
      */
-    public function forViewer(bool $billing, bool $leads): array
+    public function forViewer(bool $billing, bool $leads, bool $partners = false): array
     {
-        $areas = array_values(array_filter(['tenants', 'licences', $billing ? 'billing' : null, $leads ? 'leads' : null]));
+        $areas = array_values(array_filter(['tenants', 'licences', $billing ? 'billing' : null, $leads ? 'leads' : null, $partners ? 'partners' : null]));
         $lock = fn (array $figure) => $figure['area'] === 'billing' && ! $billing
             ? ['locked' => true, 'value' => null, 'delta' => null, 'series' => [], 'footer' => null]
             : ['locked' => false, ...array_diff_key($figure, ['area' => true])];

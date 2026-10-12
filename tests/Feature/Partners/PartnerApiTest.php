@@ -1,6 +1,7 @@
 <?php
 
 use App\Domain\Admin\Enums\AdminRole;
+use App\Domain\Mail\Mailables\AdminPartnerRequestMail;
 use App\Domain\Partners\Actions\RevokePartnerKey;
 use App\Domain\Partners\Actions\SavePartner;
 use App\Domain\Partners\Enums\PartnerRequestStatus;
@@ -63,7 +64,9 @@ test('a new deal lands as a pending request and never creates a business', funct
         ->and($request->payload['setupFeePerTill'])->toBe('750.00')
         ->and(Company::query()->count())->toBe(0)
         ->and(PartnerWebhookEvent::query()->count())->toBe(0);
-    Mail::assertNothingQueued();
+    // Nothing to the business; only the staff alert (owner 2026-10-12, PartnerStaffAlertTest).
+    Mail::assertQueuedCount(1);
+    Mail::assertQueued(AdminPartnerRequestMail::class);
 });
 
 test('the same body again is the same request, unchanged', function () {
