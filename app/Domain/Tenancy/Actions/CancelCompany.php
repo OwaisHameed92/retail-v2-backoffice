@@ -4,6 +4,7 @@ namespace App\Domain\Tenancy\Actions;
 
 use App\Domain\Shared\Actions\RecordAudit;
 use App\Domain\Tenancy\Enums\CompanyStatus;
+use App\Domain\Tenancy\Events\CompanyCancelled;
 use App\Domain\Tenancy\Models\Company;
 use App\Domain\Tenancy\Support\AuditChanges;
 use Illuminate\Support\Facades\DB;
@@ -46,6 +47,7 @@ class CancelCompany
             $company->save();
 
             $this->audit->handle('company.cancelled', $company, $before, $after, ['reason' => $reason], companyId: $company->id);
+            CompanyCancelled::dispatch($company, $reason);
 
             return $company;
         });

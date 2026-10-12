@@ -7,6 +7,7 @@ use App\Domain\Billing\Data\UpfrontPayment;
 use App\Domain\Billing\Enums\InvoiceKind;
 use App\Domain\Billing\Enums\PaymentMethod;
 use App\Domain\Billing\Enums\SetupFeeMethod;
+use App\Domain\Billing\Events\SetupFeePaymentRecorded;
 use App\Domain\Billing\GoCardless\Actions\ChargeSetupFee;
 use App\Domain\Billing\GoCardless\Support\SetupFee;
 use App\Domain\Billing\Models\BillingAccount;
@@ -86,6 +87,7 @@ class RecordUpfrontPayment
 
         if ($net !== null && Money::isZero($net)) {
             $this->setupFeeTerms->handle($company, justPaid: true);
+            SetupFeePaymentRecorded::dispatch($company->id); // "nothing to pay" recorded (partner onboarding API)
 
             return $this->accounts->for($company);
         }

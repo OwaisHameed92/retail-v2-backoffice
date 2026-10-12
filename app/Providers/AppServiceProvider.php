@@ -4,20 +4,25 @@ namespace App\Providers;
 
 use App\Domain\Admin\Enums\AdminRole;
 use App\Domain\Admin\Models\Admin;
+use App\Domain\Billing\Events\SetupFeePaymentRecorded;
 use App\Domain\Billing\GoCardless\Contracts\GoCardlessClient;
 use App\Domain\Billing\GoCardless\Listeners\SyncDirectDebitOnTillChange;
 use App\Domain\Billing\GoCardless\Support\DemoSafeGoCardlessClient;
 use App\Domain\Billing\GoCardless\Support\NoDirectDebitClient;
 use App\Domain\Billing\GoCardless\Support\SdkGoCardlessClient;
 use App\Domain\Billing\Support\ManualCollection;
+use App\Domain\Licensing\Events\LicenceActivated;
 use App\Domain\Licensing\Listeners\IssueLicenceForNewTill;
 use App\Domain\Licensing\Listeners\SendWelcomeEmailWithKeys;
 use App\Domain\Licensing\Listeners\SuspendLicenceOfDeactivatedTill;
 use App\Domain\Licensing\Listeners\UnsuspendLicenceOfReactivatedTill;
+use App\Domain\Partners\Listeners\PartnerWebhookListeners;
+use App\Domain\Partners\Support\PartnerRateLimit;
 use App\Domain\Shared\Country\Country;
 use App\Domain\Tenancy\Events\BranchAdded;
 use App\Domain\Tenancy\Events\BranchDeactivated;
 use App\Domain\Tenancy\Events\BranchReactivated;
+use App\Domain\Tenancy\Events\CompanyCancelled;
 use App\Domain\Tenancy\Events\RegisterAdded;
 use App\Domain\Tenancy\Events\RegisterDeactivated;
 use App\Domain\Tenancy\Events\RegisterReactivated;
@@ -71,5 +76,11 @@ class AppServiceProvider extends ServiceProvider
 
         // Direct Debit follows the live tills (module 1.12). Queued, after the till's transaction commits.
         Event::listen([RegisterAdded::class, RegisterDeactivated::class, RegisterReactivated::class, BranchAdded::class, BranchDeactivated::class, BranchReactivated::class], SyncDirectDebitOnTillChange::class);
+
+        // Partner onboarding API: webhooks that follow a partner-made business (setup fee paid, first till, cancelled).
+        Event::listen(SetupFeePaymentRecorded::class, [PartnerWebhookListeners::class, 'setupFeePaid']);
+        Event::listen(LicenceActivated::class, [PartnerWebhookListeners::class, 'firstTillActivated']);
+        Event::listen(CompanyCancelled::class, [PartnerWebhookListeners::class, 'companyCancelled']);
+        PartnerRateLimit::register();
     }
 }

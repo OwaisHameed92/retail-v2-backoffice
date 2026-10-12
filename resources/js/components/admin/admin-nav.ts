@@ -5,6 +5,7 @@ import {
     Building2,
     CloudUpload,
     FileText,
+    Handshake,
     Inbox,
     KeyRound,
     Layers,
@@ -14,6 +15,7 @@ import {
     Mail,
     MonitorDown,
     MonitorSmartphone,
+    PlugZap,
     Receipt,
     RefreshCw,
     ScrollText,
@@ -34,6 +36,8 @@ export interface AdminNavItem {
     group?: AdminNavGroup;
     /** Key into the optional `admin.navCounts` shared prop; shows a green count pill when > 0. */
     countKey?: string;
+    /** Shown only where this instance has the feature (`admin.partnerApi`: the partner onboarding API, UK only). */
+    feature?: 'partnerApi';
 }
 
 /** Sidebar groups, in order. "Settings" is pinned near the bottom of the sidebar. */
@@ -52,6 +56,17 @@ export const adminNavItems: AdminNavItem[] = [
         ability: 'tenants.view',
         group: 'Customers',
         countKey: 'leads',
+    },
+    // Partner onboarding API: deals sent by partners (Zivaro), waiting for review.
+    {
+        title: 'Partner requests',
+        icon: Handshake,
+        route: 'admin.partner-requests.index',
+        activePattern: 'admin.partner-requests.*',
+        ability: 'tenants.manage',
+        group: 'Customers',
+        countKey: 'partnerRequests',
+        feature: 'partnerApi',
     },
     {
         title: 'Tenants',
@@ -158,9 +173,19 @@ export const adminNavItems: AdminNavItem[] = [
         title: 'Email settings',
         icon: Settings,
         route: 'admin.settings.emails',
-        activePattern: 'admin.settings.*',
+        activePattern: 'admin.settings.emails*',
         ability: 'billing.manage',
         group: 'Settings',
+    },
+    // Partner onboarding API: partners, their webhook and API keys (owner only).
+    {
+        title: 'Partners',
+        icon: PlugZap,
+        route: 'admin.settings.partners.index',
+        activePattern: 'admin.settings.partners.*',
+        ability: 'partners.manage',
+        group: 'Settings',
+        feature: 'partnerApi',
     },
 ];
 

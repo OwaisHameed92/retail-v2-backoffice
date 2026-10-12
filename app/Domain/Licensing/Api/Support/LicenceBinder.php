@@ -3,6 +3,7 @@
 namespace App\Domain\Licensing\Api\Support;
 
 use App\Domain\Licensing\Api\TillRequest;
+use App\Domain\Licensing\Events\LicenceActivated;
 use App\Domain\Licensing\Models\Licence;
 use App\Domain\Licensing\Support\BranchLicenceTerm;
 use App\Domain\Licensing\Support\LicenceTerms;
@@ -57,6 +58,10 @@ final class LicenceBinder
             'os' => $till->osLabel(),
             'company_trial_ends_at' => $companyTrialEndsAt,
         ]));
+
+        if ($firstActivation) {
+            LicenceActivated::dispatch($licence); // partner onboarding API: `tenant.first_till_activated`
+        }
     }
 
     /**

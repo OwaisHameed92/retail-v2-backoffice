@@ -16,6 +16,8 @@ export interface AdminSharedData extends SharedData {
     admin: AdminSession & {
         /** Optional sidebar counts (e.g. `{ leads: 3 }`). Not shared by the backend yet; the pill shows when present. */
         navCounts?: Record<string, number>;
+        /** Partner onboarding API: on where the country profile has it (UK only); the partner pages are hidden otherwise. */
+        partnerApi?: boolean;
     };
 }
 
