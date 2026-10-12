@@ -7,11 +7,11 @@ import { SectionCard } from '@/components/shared/section-card';
 import { StatusPill, type StatusTone } from '@/components/shared/status-badge';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { byHand, manualMethodsText } from '@/lib/billing-collection';
 import { formatMoney } from '@/lib/country';
 import { useForm } from '@inertiajs/react';
 import { ArrowRightLeft, Banknote, LoaderCircle, Tags } from 'lucide-react';
 import { type FormEventHandler, type ReactNode, useState } from 'react';
-import { byHand, manualMethodsText } from '@/lib/billing-collection';
 
 function Tile({ label, children }: { label: string; children: ReactNode }) {
     return (
@@ -188,7 +188,8 @@ export function UpfrontBody({
                     onChange={(key, value) => setData(key, value as never)}
                     errors={errors}
                     options={options}
-                    planFee={directDebit.setupFee.plan}
+                    planFee={directDebit.setupFee.override ?? directDebit.setupFee.plan}
+                    feeLabel={directDebit.setupFee.override === null ? 'the plan’s fee' : 'the agreed fee'}
                     toggle={false}
                     amountLocked={upfront.invoiced}
                     idPrefix="tab-upfront"
