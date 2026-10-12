@@ -20,7 +20,8 @@ class UpfrontPaymentRequest extends BillingRequest
      */
     public function rules(): array
     {
-        return UpfrontPaymentRules::rules();
+        // Audit BILL-9: made when the form opens; the same key never records a second payment.
+        return UpfrontPaymentRules::rules() + ['idempotency_key' => ['nullable', 'string', 'uuid']];
     }
 
     /**
@@ -33,6 +34,15 @@ class UpfrontPaymentRequest extends BillingRequest
 
     public function toPayment(): UpfrontPayment
     {
-        return UpfrontPaymentRules::payment($this) ?? new UpfrontPayment(null, PaymentMethod::Cash);
+        $payment = UpfrontPaymentRules::payment($this) ?? new UpfrontPayment(null, PaymentMethod::Cash);
+
+        return new UpfrontPayment($payment->setupFee, $payment->method, $payment->reference, $payment->receivedAt, $this->idempotencyKey());
+    }
+
+    public function idempotencyKey(): ?string
+    {
+        $key = $this->validated('idempotency_key');
+
+        return is_string($key) ? $key : null;
     }
 }

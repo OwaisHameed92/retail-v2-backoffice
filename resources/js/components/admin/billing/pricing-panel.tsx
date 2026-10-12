@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { byHand, manualMethodsText } from '@/lib/billing-collection';
 import { formatMoney } from '@/lib/country';
+import { idempotencyKey } from '@/lib/idempotency';
 import { useForm } from '@inertiajs/react';
 import { ArrowRightLeft, Banknote, LoaderCircle, Tags } from 'lucide-react';
 import { type FormEventHandler, type ReactNode, useState } from 'react';
@@ -156,7 +157,8 @@ export function UpfrontBody({
     directDebit: DirectDebitData;
     onOpenChange: (open: boolean) => void;
 }) {
-    const { data, setData, post, processing, errors } = useForm({ ...emptyUpfront, upfront_record: true });
+    // Audit BILL-9: one key per opened form, so submitting it twice records one payment.
+    const { data, setData, post, processing, errors } = useForm({ ...emptyUpfront, upfront_record: true, idempotency_key: idempotencyKey() });
     const { upfront } = directDebit;
     const options: OnboardingBillingOptions = {
         canRecord: true,
@@ -168,6 +170,9 @@ export function UpfrontBody({
 
     const submit: FormEventHandler = (event) => {
         event.preventDefault();
+        if (processing) {
+            return;
+        }
         post(route('admin.billing.tenants.upfront', company.id), { preserveScroll: true, onSuccess: () => onOpenChange(false) });
     };
 

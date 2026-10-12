@@ -7,7 +7,8 @@ use Carbon\CarbonImmutable;
 
 /**
  * The upfront payment staff take when they onboard a business (module 1.13): the setup fee (net, pounds; null =
- * the plan's, "0" = nothing to pay), paid in cash or by bank transfer.
+ * the plan's, "0" = nothing to pay), paid in cash or by bank transfer. `idempotencyKey`: the Billing tab form's key
+ * (audit BILL-9): a resubmitted form records nothing more.
  */
 final readonly class UpfrontPayment
 {
@@ -16,5 +17,6 @@ final readonly class UpfrontPayment
         public PaymentMethod $method,
         public ?string $reference = null,
         public ?CarbonImmutable $receivedAt = null,
+        public ?string $idempotencyKey = null,
     ) {}
 }

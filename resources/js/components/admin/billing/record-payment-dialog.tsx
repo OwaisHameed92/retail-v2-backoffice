@@ -10,6 +10,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
 import { currencySymbol, wideCurrencySymbol } from '@/lib/country';
 import { sendJson } from '@/lib/http';
+import { idempotencyKey } from '@/lib/idempotency';
 import { cn } from '@/lib/utils';
 import { useForm } from '@inertiajs/react';
 import { Banknote, CircleCheck, Landmark, LoaderCircle, Smartphone, Wallet } from 'lucide-react';
@@ -36,6 +37,8 @@ type FormData = {
     notes: string;
     allocation: Allocation;
     allocations: Record<string, string>;
+    /** Audit BILL-9: one key per opened form, so submitting it twice records one payment. */
+    idempotency_key: string;
 };
 
 const methodIcons: Partial<Record<PaymentMethod, typeof Banknote>> = {
@@ -128,6 +131,7 @@ function PaymentForm({
         notes: '',
         allocation: manualStart ? 'manual' : 'auto',
         allocations: manualStart && first ? { [first.id]: first.balance } : {},
+        idempotency_key: idempotencyKey(),
     });
 
     const amount = toPence(data.amount);
@@ -173,6 +177,9 @@ function PaymentForm({
 
     const submit: FormEventHandler = (event) => {
         event.preventDefault();
+        if (processing) {
+            return;
+        }
         post(route('admin.billing.tenants.payments.store', company.id), { preserveScroll: true, onSuccess: () => onOpenChange(false) });
     };
 

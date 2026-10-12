@@ -57,13 +57,10 @@ class RecordPayment
             $now = CarbonImmutable::now();
             $this->accounts->lock($company);
 
-            if ($input->gateway !== null && $input->gatewayReference !== null) {
-                $existing = Payment::withoutCompanyScope()->where('company_id', $company->id)
-                    ->where('gateway', $input->gateway)->where('gateway_reference', $input->gatewayReference)->first();
+            $existing = self::duplicateOf($company, $input);
 
-                if ($existing !== null) {
-                    return new RecordedPayment($existing, [], 0, $existing->unallocated, false, duplicate: true);
-                }
+            if ($existing !== null) {
+                return new RecordedPayment($existing, [], 0, $existing->unallocated, false, duplicate: true);
             }
 
             $invoices = $this->invoicesToPay($company, $input, $amount);
@@ -81,6 +78,7 @@ class RecordPayment
                 'received_by_admin_id' => Actor::adminId(),
                 'gateway' => $input->gateway,
                 'gateway_reference' => $input->gatewayReference,
+                'idempotency_key' => $input->idempotencyKey,
             ]);
             $payment->company_id = $company->id;
             $payment->save();
@@ -133,6 +131,29 @@ class RecordPayment
         }
 
         return new RecordedPayment($result->payment, $result->paidInvoices, $result->licencesRenewed, $result->credit, $unsuspended);
+    }
+
+    /**
+     * The payment this one repeats, looked up under the billing lock: the same gateway payment still standing (a
+     * reversed one is money we did not keep, so a later collection of it is new money; audit BILL-3), or a payment
+     * recorded from the same form (its key; audit BILL-9).
+     */
+    public static function duplicateOf(Company $company, NewPayment $input): ?Payment
+    {
+        if ($input->gateway !== null && $input->gatewayReference !== null) {
+            $existing = Payment::withoutCompanyScope()->where('company_id', $company->id)->whereNull('reversed_at')
+                ->where('gateway', $input->gateway)->where('gateway_reference', $input->gatewayReference)->first();
+
+            if ($existing !== null) {
+                return $existing;
+            }
+        }
+
+        if ($input->idempotencyKey === null) {
+            return null;
+        }
+
+        return Payment::withoutCompanyScope()->where('company_id', $company->id)->where('idempotency_key', $input->idempotencyKey)->first();
     }
 
     /**

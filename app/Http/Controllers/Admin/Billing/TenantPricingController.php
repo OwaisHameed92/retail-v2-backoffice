@@ -27,7 +27,14 @@ class TenantPricingController extends Controller
 
     public function upfront(UpfrontPaymentRequest $request, Company $company, RecordUpfrontPayment $record): RedirectResponse
     {
-        $record->handle($company, $request->toPayment());
+        $payment = $request->toPayment();
+
+        // Audit BILL-9: the same form again (a double click, a browser retry) records nothing more.
+        if ($record->alreadyRecorded($company, $payment)) {
+            return back()->with('success', 'This setup fee payment is already recorded. Nothing more was recorded.');
+        }
+
+        $record->handle($company, $payment);
         $state = SetupFeeState::for($company, app(BillingAccounts::class)->for($company));
 
         return back()->with('success', $state->isSettled()
