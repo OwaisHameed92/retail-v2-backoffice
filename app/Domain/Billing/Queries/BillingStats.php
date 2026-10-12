@@ -7,6 +7,7 @@ use App\Domain\Billing\Models\BillingAccount;
 use App\Domain\Billing\Models\Invoice;
 use App\Domain\Billing\Models\Payment;
 use App\Domain\Billing\Support\BillingDates;
+use App\Domain\Demo\Support\DemoBusinesses;
 use App\Domain\Shared\Country\Country;
 use App\Domain\Shared\Support\Money;
 use App\Domain\Tenancy\Enums\CompanyStatus;
@@ -18,7 +19,7 @@ use Carbon\CarbonImmutable;
  *     $stats = BillingStats::for(CarbonImmutable::now());
  *     $stats['cashDue']['amount']; // "1234.50" (pounds, decimal string)
  *
- * Sums are done with bcmath on the row values (SQLite's SUM would return floats).
+ * Sums are done with bcmath on the row values (SQLite's SUM would return floats). Demo businesses are not counted.
  */
 final class BillingStats
 {
@@ -36,7 +37,8 @@ final class BillingStats
     public static function for(CarbonImmutable $now): array
     {
         $today = BillingDates::today($now);
-        $open = Invoice::withoutCompanyScope()->open()->get(['id', 'status', 'balance', 'due_date']);
+        // Real money only: demo businesses (demo:billing) are left out (audit BILL-4).
+        $open = DemoBusinesses::excludeFrom(Invoice::withoutCompanyScope()->open())->get(['id', 'status', 'balance', 'due_date']);
         $overdue = $open->where('status', InvoiceStatus::Overdue);
         $weekEnd = $today->addDays(6);
         $dueSoon = $open->filter(fn (Invoice $invoice) => $invoice->status !== InvoiceStatus::Overdue
@@ -45,8 +47,8 @@ final class BillingStats
 
         $monthStart = CarbonImmutable::parse($now->setTimezone(Country::zone())->format('Y-m-01').' 00:00:00', Country::zone())->utc();
         // Money we kept: a reversed payment (chargeback, or re-recorded on a corrected invoice) is not collected.
-        $collected = Payment::withoutCompanyScope()->where('received_at', '>=', $monthStart)->where('received_at', '<=', $now)->whereNull('reversed_at')->pluck('amount');
-        $drafts = Invoice::withoutCompanyScope()->where('status', InvoiceStatus::Draft->value)->pluck('total');
+        $collected = DemoBusinesses::excludeFrom(Payment::withoutCompanyScope())->where('received_at', '>=', $monthStart)->where('received_at', '<=', $now)->whereNull('reversed_at')->pluck('amount');
+        $drafts = DemoBusinesses::excludeFrom(Invoice::withoutCompanyScope())->where('status', InvoiceStatus::Draft->value)->pluck('total');
 
         return [
             'cashDue' => ['count' => $open->count(), 'amount' => Money::sum($open->pluck('balance'))],
@@ -54,8 +56,8 @@ final class BillingStats
             'dueThisWeek' => ['count' => $dueSoon->count(), 'amount' => Money::sum($dueSoon->pluck('balance'))],
             'collectedThisMonth' => ['count' => $collected->count(), 'amount' => Money::sum($collected)],
             'drafts' => ['count' => $drafts->count(), 'amount' => Money::sum($drafts)],
-            'creditHeld' => Money::sum(Payment::withoutCompanyScope()->where('unallocated', '>', 0)->pluck('unallocated')),
-            'suspendedForBilling' => BillingAccount::withoutCompanyScope()->whereNotNull('billing_suspended_at')
+            'creditHeld' => Money::sum(DemoBusinesses::excludeFrom(Payment::withoutCompanyScope())->where('unallocated', '>', 0)->pluck('unallocated')),
+            'suspendedForBilling' => DemoBusinesses::excludeFrom(BillingAccount::withoutCompanyScope())->whereNotNull('billing_suspended_at')
                 ->whereHas('company', fn ($q) => $q->where('status', CompanyStatus::Suspended->value))->count(),
         ];
     }

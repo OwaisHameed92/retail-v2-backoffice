@@ -57,14 +57,23 @@ The Direct Debit does not start until the setup fee (or its first instalment) is
 |---|---|---|---|---|
 | **No Direct Debit** within 3 days of onboarding (`BILLING_MANDATE_DEADLINE_DAYS`) | Banner every day. One reminder email when less than 2 days are left. Then "Account suspended" email with the setup link. | Billing tab warning, then the business shows **Suspended** ("No Direct Debit set up"). | **Suspended** at its next check-in. | The owner sets up the Direct Debit: the suspension lifts **at once**. Money taken by hand does not lift it. |
 | **Direct Debit cancelled** by the customer (or failed, expired, blocked) | "Your Direct Debit has stopped" email with a new link. Reminder before the deadline. Then suspended. | Copy of the email. Billing tab: "Direct Debit stopped". Subscription paused. | Keeps working for 3 days (`BILLING_MANDATE_GRACE_DAYS`), then **suspended**. | A new mandate: suspension lifted at once, subscription moved to the new mandate. |
-| **Payment failed** | "Direct Debit failed" email, a reminder after 5 days. | Copy of the email. Invoice shows **Overdue** the next day. | Paid date stays. After it passes: **grace** for the plan's payment grace days (7), then **expired**. After 7 days unpaid (`BILLING_SUSPEND_AFTER_DAYS`, the same as the payment grace — owner 2026-10-05): **suspended**. | GoCardless retries (if Success+ retries are on in GoCardless), the next collection pays the oldest unpaid invoice, or the admin records a payment. Paid: **active** again at once. |
-| **Charged back** (bank reversed a paid payment) | "Payment reversed" email. | Copy. The invoice is owed again. | The paid date is **not** shortened. Suspended only 7 days **after the chargeback**, not after the old due date. | Same as a failed payment. |
+| **Payment failed** | "Direct Debit failed" email, a reminder after 5 days. Portal banner on every page once the invoice is overdue: "£X is overdue — your tills lock on <date>" (Go to Billing for the owner; the others are told to ask the owner). | Copy of the email. Invoice shows **Overdue** the next day. | Paid date stays. After it passes: **grace** for the plan's payment grace days (7), then **expired**. After 7 days unpaid (`BILLING_SUSPEND_AFTER_DAYS`, the same as the payment grace — owner 2026-10-05): **suspended**. | GoCardless retries (if Success+ retries are on in GoCardless), the next collection pays the oldest unpaid invoice, or the admin records a payment. Paid: **active** again at once. A payment that failed **after** it was confirmed (late failure) and is then retried and collected is recorded again (once). |
+| **Charged back** (bank reversed a paid payment) | "Payment reversed" email. | Copy. The invoice is owed again. | The paid date is **not** shortened. Suspended only 7 days **after the chargeback**, not after the old due date. | Same as a failed payment. A chargeback GoCardless cancels (the money comes back) is recorded again. |
 | **Payment late** (still being collected) | Nothing. | The invoice is not marked overdue while GoCardless is still collecting it. | No change. | Confirmed: paid. Failed: see above. |
 | **Setup fee unpaid** | Portal: "Setup fee: Unpaid — £X to pay by cash, card or bank transfer". | Billing tab: "Setup fee: £X — Unpaid", button "Record setup fee payment". | Trial until it ends (plus trial grace), then **expired**. No Direct Debit is collected. | The admin records it: the till unlocks at its next check-in. |
 
+### Paid late (by hand; audit BILL-7, 2026-10-12)
+
+A period invoice paid by hand **after its period ended** (Pakistan, or a UK business not on Direct Debit) buys one
+period **from the day it is paid**, for the tills that ran out: the November invoice paid on 2 December keeps the tills
+**active** to 1 January, and the next invoice comes 7 days before that, as usual. A till still paid (the invoice was
+for time already used) keeps its date. A period written off with credit notes (no money received) renews nothing. On
+Direct Debit nothing changes: the subscription invoices each period itself.
+
 ## What the admin can always do
 
-All of these are audited.
+All of these are audited. Record payment and Record setup fee payment are safe to submit twice (a double click, a
+browser retry): the form sends a key and the second submit records nothing ("already recorded").
 
 | Action | Where |
 |---|---|
@@ -117,6 +126,7 @@ More cases: `php artisan demo:billing --scenario=<case>` (or `all`):
 | `payment-failed` | DEMO – Direct Debit failed | Monthly only, payment failed 4 days ago, locks in 3 days |
 | `instalments` | DEMO – Setup fee in instalments | 1 of 2 instalments paid, next due next month |
 
+Demo businesses are left out of the money figures on Admin → Billing (and its Direct Debit card) and the admin dashboard.
 Demo businesses are safe on the live server: nothing is ever sent to GoCardless for them and they never get an email
 (logged as "Not sent (demo)"). `--fresh` removes every demo business (and only those) first. In production add
 `--force`. To remove any one business for good: `php artisan tenant:purge "<name or id>"` (shows what goes, asks first).
@@ -155,10 +165,10 @@ same as in the UK.
 
 | Day after the due date | Customer | Admin | Till |
 |---|---|---|---|
-| 1 | — | Invoice **Overdue**, business overdue. | Paid date passed: **grace** for the plan's payment grace days, then **expired**. |
+| 1 | Portal banner on every page: "Rs X is overdue — your tills lock on <date>". | Invoice **Overdue**, business overdue. | Paid date passed: **grace** for the plan's payment grace days, then **expired**. |
 | 3 (`BILLING_MANUAL_REMIND_AFTER_DAYS`) | "Invoice … is overdue" email with the day the account is suspended. | — | — |
 | 8 (unpaid more than `BILLING_SUSPEND_AFTER_DAYS` = 7, as in the UK) | "Account suspended" email, with how to pay by hand. | Business **Suspended** ("Invoice … unpaid"). | **Suspended** at its next check-in. |
-| Paid | "Account active again" email. | Suspension lifted at once. | **Active** at its next check-in. |
+| Paid | "Account active again" email. | Suspension lifted at once. | **Active** at its next check-in (paid after the period ended: one period from the payment day, see "Paid late"). |
 
 ### How to pay (per instance, empty = hidden)
 

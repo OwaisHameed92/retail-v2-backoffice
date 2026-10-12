@@ -34,6 +34,9 @@ use Illuminate\Validation\ValidationException;
  * - failed / charged back: a payment we recorded is reversed (the invoice is owed again) and the owners (and staff)
  *   get the "Direct Debit failed" email once; billing:run then marks it overdue and suspends as for any unpaid
  *   invoice. A retried payment (back to pending) can email again if it fails again.
+ * - collected again after a failure (a late failure retried, a chargeback cancelled; audit BILL-3): the reversed
+ *   payment stays reversed and the money is recorded again as a new payment, once (RecordPayment dedupes on the
+ *   GoCardless id among the payments still standing, under the billing lock).
  */
 class ApplyGoCardlessPayment
 {
@@ -61,6 +64,12 @@ class ApplyGoCardlessPayment
         // GoCardless is retrying a failed payment (Success+ / a retry): a new failure gets its own emails.
         if ($before->isProblem() && $remote->status->isPending()) {
             $row->forceFill(['failure_notified_at' => null, 'reminder_sent_at' => null]);
+        }
+
+        // Out of a failure or chargeback (retried, or the chargeback cancelled): the payment we recorded was reversed,
+        // so let go of it; when the money is collected it is recorded again below as a new payment (audit BILL-3).
+        if ($before->isProblem() && ! $remote->status->isProblem() && $this->recordedPaymentReversed($row)) {
+            $row->payment_id = null;
         }
 
         $row->save();
@@ -131,6 +140,12 @@ class ApplyGoCardlessPayment
         }
 
         return $row;
+    }
+
+    private function recordedPaymentReversed(GoCardlessPayment $row): bool
+    {
+        return $row->payment_id !== null
+            && Payment::withoutCompanyScope()->whereKey($row->payment_id)->whereNotNull('reversed_at')->exists();
     }
 
     private function record(Company $company, GoCardlessPayment $row): void

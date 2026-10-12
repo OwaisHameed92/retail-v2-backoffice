@@ -47,6 +47,11 @@ class TenantBillingController extends Controller
     public function recordPayment(RecordPaymentRequest $request, Company $company, RecordPayment $record): RedirectResponse
     {
         $result = $record->handle($company, $request->toNewPayment());
+
+        if ($result->duplicate) {
+            return back()->with('success', "This payment is already recorded as {$result->payment->number}. Nothing more was recorded.");
+        }
+
         $parts = [BillingFormat::money($result->payment->amount).' recorded as '.$result->payment->number.'.'];
 
         if ($result->paidInvoices !== []) {
