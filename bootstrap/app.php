@@ -9,6 +9,7 @@ use App\Http\Middleware\EnsureDirectDebit;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\RequireTwoFactor;
 use App\Http\Middleware\SecurityHeaders;
+use App\Http\Middleware\ThrottlePerRoute;
 use App\Http\Support\InertiaErrorPages;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -63,6 +64,9 @@ return Application::configure(basePath: dirname(__DIR__))
             'country.feature' => EnsureCountryFeature::class,
             // A Direct Debit route: 404 where fees are collected by hand (Pakistan plan P5).
             'billing.direct-debit' => EnsureDirectDebit::class,
+            // `throttle:N,M`: one bucket per signed-in user and route, not one per user (UI audit UI-1). Guests and
+            // named limiters behave exactly as the framework's.
+            'throttle' => ThrottlePerRoute::class,
         ]);
 
         // Guests on /admin go to the admin login; everyone else to the tenant login.
