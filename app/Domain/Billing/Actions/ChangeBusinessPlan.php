@@ -72,8 +72,9 @@ class ChangeBusinessPlan
         $plan = $this->check($company, $to, $setupFee, $now);
         $firstDue = $plan->firstPeriodNow && ! $plan->manual && $plan->mandateUsable ? $this->firstCollection($plan) : $plan->firstPeriodDue;
 
-        [$setupInvoice, $firstInvoice, $moved] = DB::transaction(function () use ($company, $to, $plan, $now, $firstDue) {
+        [$setupInvoice, $firstInvoice, $moved] = DB::transaction(function () use ($company, $to, $setupFee, $plan, $now, $firstDue) {
             $account = $this->accounts->lock($company);
+            $this->recheck($company, $to, $setupFee, $plan, $now);
             $company->plan_id = $to->id;
             $company->save();
             $moved = $this->licences->move($company, $plan->from, $to, $now);
@@ -136,6 +137,23 @@ class ChangeBusinessPlan
         }
 
         return $plan;
+    }
+
+    /**
+     * Audit BILL-10: the plan was worked out before the billing lock. Two confirms at the same moment would both apply
+     * it (two setup fee or first-period invoices), so once the lock is held it is worked out again: the business is
+     * already on the plan (the other confirm won), or its plan changed in between, and this one is refused.
+     *
+     * @throws ValidationException
+     */
+    private function recheck(Company $company, Plan $to, ?string $setupFee, PlanChangePlan $planned, CarbonImmutable $now): void
+    {
+        $company->refresh();
+        $locked = $this->check($company, $to, $setupFee, $now);
+
+        if ($locked->from?->id !== $planned->from?->id) {
+            throw ValidationException::withMessages(['plan_id' => "{$company->name}'s plan changed while this was being confirmed. Close the dialog and check the preview again."]);
+        }
     }
 
     /**

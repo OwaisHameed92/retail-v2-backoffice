@@ -15,6 +15,7 @@ use App\Domain\Billing\Support\BillingFormat;
 use App\Domain\Billing\Support\CompanyPricing;
 use App\Domain\Billing\Support\MandateDeadline;
 use App\Domain\Billing\Support\ManualCollection;
+use App\Domain\Billing\Support\SetupFeePayment;
 use App\Domain\Billing\Support\SetupFeeState;
 use App\Domain\Billing\Support\SetupFeeTills;
 use App\Domain\Billing\Support\Vat;
@@ -79,10 +80,8 @@ final class DirectDebitData
             // "Setup fee" and "upfront payment" are one thing (owner, 2026-10-05): always paid by hand.
             'planType' => $planType !== null ? ['value' => $planType->value, 'label' => $planType->label()] : null,
             'upfront' => [
-                'recorded' => $account->upfront_recorded_at !== null,
-                'amount' => $account->upfront_amount !== null ? BillingFormat::money($account->upfront_amount) : null,
-                'method' => $account->upfront_method?->label(),
-                'recordedAt' => $account->upfront_recorded_at?->toIso8601String(),
+                // BILL-5: the payment that stands (not a reversed one, nor one on a voided invoice).
+                ...SetupFeePayment::display($company, $account),
                 'canRecord' => ! $company->isCancelled() && (! $fee->isSettled() || ($account->upfront_recorded_at === null && $account->setup_fee_invoiced_at === null)),
                 'status' => $fee->status,
                 'statusLabel' => $fee->label(),
@@ -105,7 +104,7 @@ final class DirectDebitData
                 'vatRate' => Money::isZero(Vat::rateFor($account)) ? null : Vat::rateFor($account),
                 // P11: per-till setup fee, the tills covered and the tills waiting for their setup fee.
                 'perTill' => SetupFeeTills::perTill($company),
-                'tillFeePlan' => Money::normalise(DefaultPlan::for($company)->setup_fee ?? '0.00'),
+                'tillFeePlan' => Money::normalise(DefaultPlan::forNewTill($company)->setup_fee ?? '0.00'),
                 'tillFeeOverride' => $account->till_setup_fee_override,
                 'tills' => SetupFeeTills::count($company),
                 'coveredTills' => $account->setup_fee_covered_tills,

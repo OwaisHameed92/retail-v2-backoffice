@@ -8,6 +8,7 @@ use App\Domain\Billing\GoCardless\Enums\PaymentStatus;
 use App\Domain\Billing\GoCardless\Models\GoCardlessPayment;
 use App\Domain\Billing\Models\BillingAccount;
 use App\Domain\Billing\Support\BillingFormat;
+use App\Domain\Demo\Support\DemoBusinesses;
 use App\Domain\Shared\Support\Money;
 use Carbon\CarbonImmutable;
 
@@ -24,10 +25,11 @@ final class DirectDebitStats
     public static function for(CarbonImmutable $now, bool $enabled): array
     {
         $usable = [MandateStatus::PendingSubmission->value, MandateStatus::Submitted->value, MandateStatus::Active->value];
-        $directDebit = BillingAccount::withoutCompanyScope()->where('billing_mode', BillingMode::DirectDebit->value);
+        // Real businesses only: demo businesses (demo:billing) are left out (audit BILL-4).
+        $directDebit = DemoBusinesses::excludeFrom(BillingAccount::withoutCompanyScope())->where('billing_mode', BillingMode::DirectDebit->value);
 
-        $upcoming = GoCardlessPayment::withoutCompanyScope()->whereIn('status', PaymentStatus::pendingValues())->pluck('amount');
-        $failed = GoCardlessPayment::withoutCompanyScope()->whereIn('status', [PaymentStatus::Failed->value, PaymentStatus::ChargedBack->value])
+        $upcoming = DemoBusinesses::excludeFrom(GoCardlessPayment::withoutCompanyScope())->whereIn('status', PaymentStatus::pendingValues())->pluck('amount');
+        $failed = DemoBusinesses::excludeFrom(GoCardlessPayment::withoutCompanyScope())->whereIn('status', [PaymentStatus::Failed->value, PaymentStatus::ChargedBack->value])
             ->where('failed_at', '>=', $now->subDays(30))->pluck('amount');
 
         return [

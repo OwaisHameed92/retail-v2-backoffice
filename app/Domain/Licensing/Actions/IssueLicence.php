@@ -140,7 +140,8 @@ class IssueLicence
             throw ValidationException::withMessages(['plan' => 'There is no active plan to licence tills with. Create a plan first.']);
         }
 
-        if (! DefaultPlan::isOffered($plan)) {
+        // A plan no longer offered stays the plan of a business whose live tills are on it (BILL-1): its new tills too.
+        if (! DefaultPlan::isOffered($plan) && ! DefaultPlan::isKeptFor($plan, $company)) {
             throw ValidationException::withMessages(['plan' => "{$plan->name} is not offered any more. Choose an active plan."]);
         }
 

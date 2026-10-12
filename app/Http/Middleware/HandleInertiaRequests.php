@@ -5,6 +5,7 @@ namespace App\Http\Middleware;
 use App\Domain\Admin\Models\Admin;
 use App\Domain\Billing\Support\BillingAccounts;
 use App\Domain\Billing\Support\MandateDeadline;
+use App\Domain\Billing\Support\OverdueNotice;
 use App\Domain\Pharmacy\Support\ServiceModules;
 use App\Domain\Shared\Country\Country;
 use App\Domain\Tenancy\Actions\ResolveCurrentBranch;
@@ -81,7 +82,8 @@ class HandleInertiaRequests extends Middleware
             // Module 3.3: a user limited to one shop cannot switch to another (or to "All branches").
             'branchLocked' => fn () => app(CurrentCompany::class)->restrictedBranchId() !== null,
             'impersonation' => fn () => $this->impersonation($request),
-            // Module 1.13: "Set up your Direct Debit — N days left" across the portal until a mandate exists.
+            // Module 1.13: "Set up your Direct Debit — N days left" across the portal until a mandate exists; audit UI-5:
+            // "£X is overdue — your tills lock on …" while an invoice is overdue.
             'billingNotice' => fn () => $this->billingNotice(),
             'flash' => fn () => $request->hasSession() ? [
                 'success' => $request->session()->get('success'),
@@ -113,7 +115,11 @@ class HandleInertiaRequests extends Middleware
     }
 
     /**
-     * @return array{deadline: string, daysLeft: int, passed: bool, canSetUp: bool, url: string}|null
+     * The portal billing banner: the Direct Debit set-up deadline (module 1.13), else an overdue warning with the
+     * amount and the day the tills lock (audit UI-5). Users with billing permission get the link to Billing; the
+     * others are asked to tell the owner.
+     *
+     * @return array<string, mixed>|null
      */
     private function billingNotice(): ?array
     {
@@ -124,9 +130,16 @@ class HandleInertiaRequests extends Middleware
             return null;
         }
 
+        $canManage = $tenancy->can(Ability::BillingManage);
         $state = MandateDeadline::state($company, app(BillingAccounts::class)->for($company));
 
-        return $state === null ? null : $state + ['canSetUp' => $tenancy->can(Ability::BillingManage), 'url' => route('app.billing')];
+        if ($state !== null) {
+            return ['kind' => 'directDebit'] + $state + ['canSetUp' => $canManage, 'url' => route('app.billing')];
+        }
+
+        $overdue = OverdueNotice::state($company);
+
+        return $overdue === null ? null : ['kind' => 'overdue'] + $overdue + ['canPay' => $canManage, 'url' => route('app.billing')];
     }
 
     private function currentBranchId(Request $request): ?string

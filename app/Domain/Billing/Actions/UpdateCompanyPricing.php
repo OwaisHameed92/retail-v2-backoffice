@@ -3,6 +3,7 @@
 namespace App\Domain\Billing\Actions;
 
 use App\Domain\Billing\Data\PricingOverride;
+use App\Domain\Billing\GoCardless\Actions\StartMandateDeadline;
 use App\Domain\Billing\GoCardless\Actions\SyncSubscription;
 use App\Domain\Billing\GoCardless\GoCardlessException;
 use App\Domain\Billing\Models\BillingAccount;
@@ -19,7 +20,8 @@ use Illuminate\Validation\ValidationException;
 /**
  * Staff set a company's own pricing (module 1.13, `billing.manage`): per till or per branch and the monthly /
  * yearly price per unit, each blank for the plan's. Audited (`billing.pricing_updated`). Invoices raised from now
- * on use it, and a live Direct Debit subscription changes its amount from the next payment.
+ * on use it, and a live Direct Debit subscription changes its amount from the next payment. A business waiting for
+ * its first mandate that starts to recur here gets a fresh Direct Debit deadline (audit BILL-1, StartMandateDeadline).
  */
 class UpdateCompanyPricing
 {
@@ -27,6 +29,7 @@ class UpdateCompanyPricing
         private readonly BillingAccounts $accounts,
         private readonly SyncSubscription $syncSubscription,
         private readonly RecordAudit $audit,
+        private readonly StartMandateDeadline $deadlines,
     ) {}
 
     /** @throws ValidationException */
@@ -37,6 +40,8 @@ class UpdateCompanyPricing
                 throw ValidationException::withMessages([$field => 'The price cannot be below '.MoneyFormat::format('0').'.']);
             }
         }
+
+        $recurringBefore = $this->deadlines->before($company);
 
         $changed = DB::transaction(function () use ($company, $input) {
             $account = $this->accounts->lock($company);
@@ -57,6 +62,8 @@ class UpdateCompanyPricing
         });
 
         if ($changed) {
+            $this->deadlines->after($company, $recurringBefore, 'pricing');
+
             try {
                 $this->syncSubscription->handle($company, 'pricing');
             } catch (GoCardlessException $exception) {

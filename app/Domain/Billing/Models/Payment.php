@@ -33,6 +33,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string|null $received_by_admin_id
  * @property string|null $gateway
  * @property string|null $gateway_reference
+ * @property string|null $idempotency_key The staff form's key (audit BILL-9): a resubmitted form records nothing new.
  * @property CarbonImmutable|null $reversed_at
  * @property string|null $reversal_reason
  * @property CarbonImmutable|null $created_at

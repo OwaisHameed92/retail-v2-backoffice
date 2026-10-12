@@ -14,6 +14,7 @@ use App\Domain\Billing\Support\BillingStatus;
 use App\Domain\Billing\Support\CompanyPricing;
 use App\Domain\Billing\Support\MandateDeadline;
 use App\Domain\Billing\Support\ManualCollection;
+use App\Domain\Billing\Support\SetupFeePayment;
 use App\Domain\Billing\Support\SetupFeeState;
 use App\Domain\Shared\Support\Money;
 use App\Domain\Tenancy\Models\Company;
@@ -59,10 +60,8 @@ final class PortalBilling
                 'isZero' => Money::isZero($amount['gross']),
             ],
             'upfront' => [
-                'recorded' => $account->upfront_recorded_at !== null,
-                'amount' => $account->upfront_amount !== null ? BillingFormat::money($account->upfront_amount) : null,
-                'method' => $account->upfront_method?->label(),
-                'recordedAt' => $account->upfront_recorded_at?->toIso8601String(),
+                // BILL-5: the payment that stands (not a reversed one, nor one on a voided invoice).
+                ...SetupFeePayment::display($company, $account),
                 // The setup fee and the upfront payment are one thing (owner, 2026-10-05), always paid by hand.
                 'status' => $fee->status,
                 'statusLabel' => $fee->label(),

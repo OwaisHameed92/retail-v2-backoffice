@@ -4,6 +4,8 @@ namespace App\Domain\Demo\Support;
 
 use App\Domain\Billing\GoCardless\GoCardlessException;
 use App\Domain\Tenancy\Models\Company;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 
 /**
  * The guards that make demo businesses (`companies.is_demo`, made by `demo:billing`) safe on a live server:
@@ -36,6 +38,20 @@ final class DemoBusinesses
         }
 
         return (bool) Company::withTrashed()->whereKey($company)->value('is_demo');
+    }
+
+    /**
+     * Leaves demo businesses' rows out of a query across tenants (soft-deleted businesses stay in): money figures
+     * count real money only (audit BILL-4).
+     *
+     * @template TModel of Model
+     *
+     * @param  Builder<TModel>  $query
+     * @return Builder<TModel>
+     */
+    public static function excludeFrom(Builder $query, string $column = 'company_id'): Builder
+    {
+        return $query->whereNotIn($query->qualifyColumn($column), Company::withTrashed()->where('is_demo', true)->select('id'));
     }
 
     /** A GoCardless id made up for a demo business. */

@@ -37,6 +37,8 @@ class RecordPaymentRequest extends BillingRequest
             'allocation' => ['required', Rule::in(['auto', 'manual'])],
             'allocations' => ['nullable', 'array', 'max:50'],
             'allocations.*' => ['nullable', 'string', 'regex:'.self::moneyPattern()],
+            // Audit BILL-9: made when the form opens; the same key never records a second payment.
+            'idempotency_key' => ['nullable', 'string', 'uuid'],
         ];
     }
 
@@ -79,6 +81,7 @@ class RecordPaymentRequest extends BillingRequest
             reference: $this->validated('reference'),
             notes: $this->validated('notes'),
             allocations: $allocations,
+            idempotencyKey: $this->validated('idempotency_key'),
         );
     }
 }

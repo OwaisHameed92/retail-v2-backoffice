@@ -12,6 +12,7 @@ use App\Domain\Billing\GoCardless\Actions\ChargeSetupFee;
 use App\Domain\Billing\GoCardless\Support\SetupFee;
 use App\Domain\Billing\Models\BillingAccount;
 use App\Domain\Billing\Models\Invoice;
+use App\Domain\Billing\Models\Payment;
 use App\Domain\Billing\Support\BillingAccounts;
 use App\Domain\Billing\Support\BillingFormat;
 use App\Domain\Billing\Support\ManualCollection;
@@ -35,6 +36,7 @@ use Illuminate\Validation\ValidationException;
  *
  * The paid invoice is emailed as the receipt (with any later instalment invoices). The first payment is stamped on
  * the account (`upfront_*`). Paying it unlocks what the setup fee holds back (RecordPayment → ApplySetupFeeTerms).
+ * The Billing tab form sends a key (audit BILL-9): submitted twice, it records one payment and pays one instalment.
  */
 class RecordUpfrontPayment
 {
@@ -61,6 +63,11 @@ class RecordUpfrontPayment
         $net = DB::transaction(function () use ($company, $input) {
             $account = $this->accounts->lock($company);
 
+            // The same form submitted again (audit BILL-9): already recorded, nothing more to do.
+            if ($this->alreadyRecorded($company, $input)) {
+                return false;
+            }
+
             if ($account->setup_fee_invoiced_at !== null) {
                 return null; // instalments: pay the next one below (the amount is fixed by the invoices)
             }
@@ -85,6 +92,10 @@ class RecordUpfrontPayment
             return $net;
         });
 
+        if ($net === false) {
+            return $this->accounts->for($company);
+        }
+
         if ($net !== null && Money::isZero($net)) {
             $this->setupFeeTerms->handle($company, justPaid: true);
             SetupFeePaymentRecorded::dispatch($company->id); // "nothing to pay" recorded (partner onboarding API)
@@ -96,17 +107,26 @@ class RecordUpfrontPayment
         $invoice = $this->nextUnpaid($company);
 
         if ($invoice === null) {
+            if ($this->alreadyRecorded($company, $input)) {
+                return $this->accounts->for($company); // the same form, submitted twice at once
+            }
+
             throw ValidationException::withMessages(['upfront_amount' => "The setup fee for {$company->name} is already paid."]);
         }
 
-        $this->recordPayment->handle($company, new NewPayment(
+        $result = $this->recordPayment->handle($company, new NewPayment(
             method: $input->method,
             amount: $invoice->balance,
             receivedAt: $input->receivedAt ?? CarbonImmutable::now(),
             reference: $input->reference ?? 'Setup fee',
             notes: 'Setup fee (upfront) paid by '.$input->method->inSentence(),
             allocations: [$invoice->id => $invoice->balance],
+            idempotencyKey: $input->idempotencyKey,
         ));
+
+        if ($result->duplicate) {
+            return $this->accounts->for($company);
+        }
 
         DB::transaction(function () use ($company, $invoice, $input) {
             $account = $this->accounts->lock($company);
@@ -125,6 +145,13 @@ class RecordUpfrontPayment
         }
 
         return $this->accounts->for($company);
+    }
+
+    /** A payment from the same form (its key, audit BILL-9) is already recorded. */
+    public function alreadyRecorded(Company $company, UpfrontPayment $input): bool
+    {
+        return $input->idempotencyKey !== null
+            && Payment::withoutCompanyScope()->where('company_id', $company->id)->where('idempotency_key', $input->idempotencyKey)->exists();
     }
 
     private function nextUnpaid(Company $company): ?Invoice

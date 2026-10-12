@@ -9,6 +9,7 @@ use App\Domain\Billing\Models\Invoice;
 use App\Domain\Billing\Models\InvoiceLine;
 use App\Domain\Billing\Support\BillingDates;
 use App\Domain\Billing\Support\BillingMailer;
+use App\Domain\Billing\Support\LatePeriod;
 use App\Domain\Billing\Support\SetupFeeTills;
 use App\Domain\Licensing\Actions\RenewCompanyLicences;
 use App\Domain\Licensing\Actions\RenewLicence;
@@ -28,7 +29,9 @@ use Illuminate\Validation\ValidationException;
  * company's billing lock held. Idempotent: an invoice renews its licences once.
  *
  * Skipped (and listed in the audit meta): licences revoked or deleted since, and licences already paid up to
- * the period end or later (a renewal never shortens a licence). Nothing is renewed when the period is over.
+ * the period end or later (a renewal never shortens a licence). Paid after its period ended (audit BILL-7): by hand,
+ * the tills that ran out get one period from today (LatePeriod); on Direct Debit nothing is renewed (the subscription
+ * invoices the current period itself).
  */
 class SettleInvoice
 {
@@ -117,7 +120,9 @@ class SettleInvoice
             return [];
         }
 
-        $expiresAt = BillingDates::endOfDay($invoice->period_end);
+        // Paid after the period ended (audit BILL-7): one period from today for the tills that ran out.
+        $late = LatePeriod::until($invoice, $now);
+        $expiresAt = $late ?? BillingDates::endOfDay($invoice->period_end);
         $renewed = [];
         $skipped = [];
 
@@ -135,7 +140,7 @@ class SettleInvoice
 
                 $licence = LicenceGuard::lock($licence);
 
-                if ($licence->expires_at !== null && $licence->expires_at->greaterThanOrEqualTo($expiresAt)) {
+                if (($licence->expires_at !== null && $licence->expires_at->greaterThanOrEqualTo($expiresAt)) || ($late !== null && LatePeriod::stillPaid($licence, $now))) {
                     $skipped[] = $licence->id;
 
                     continue;
@@ -152,8 +157,8 @@ class SettleInvoice
             'number' => $invoice->number,
             'renewed' => count($renewed),
             'skipped' => count($skipped),
-            'until' => $invoice->period_end->format('Y-m-d'),
-        ]);
+            'until' => $late !== null ? BillingDates::localDate($late)->format('Y-m-d') : $invoice->period_end->format('Y-m-d'),
+        ] + ($late !== null ? ['paid_late' => true] : []));
 
         if ($renewed !== []) {
             $this->mailer->renewed($invoice, $renewed, $expiresAt);

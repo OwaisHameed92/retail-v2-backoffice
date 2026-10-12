@@ -4,6 +4,7 @@ namespace App\Domain\Admin\Queries\Dashboard;
 
 use App\Domain\Billing\Enums\InvoiceStatus;
 use App\Domain\Billing\Models\Invoice;
+use App\Domain\Demo\Support\DemoBusinesses;
 use App\Domain\Licensing\Models\Licence;
 use App\Domain\Plans\Models\Plan;
 use App\Domain\Shared\Country\Country;
@@ -26,7 +27,7 @@ final class DashboardRows
      * @param  Collection<string, Company>  $companies  Every company, soft-deleted ones too, keyed by id.
      * @param  Collection<int, Licence>  $licences  Licences not revoked or deleted before the history window.
      * @param  Collection<string, Plan>  $plans  Keyed by id.
-     * @param  Collection<int, Invoice>  $paid  Paid invoices since the history window (paid_at, total).
+     * @param  Collection<int, Invoice>  $paid  Paid invoices since the history window (paid_at, total), demo businesses left out.
      * @param  Collection<int, Invoice>  $overdue  Invoices that went overdue and were still open during the window.
      */
     public function __construct(
@@ -60,7 +61,8 @@ final class DashboardRows
                 ]),
             plans: Plan::withTrashed()->get(['id', 'name', 'price_monthly'])->keyBy('id'),
             paid: self::paidSince($since),
-            overdue: Invoice::withoutCompanyScope()
+            // Real money only: demo businesses (demo:billing) are left out (audit BILL-4).
+            overdue: DemoBusinesses::excludeFrom(Invoice::withoutCompanyScope())
                 ->whereNotNull('overdue_at')
                 ->where(fn (Builder $q) => $q->whereIn('status', InvoiceStatus::openValues())
                     ->orWhere('paid_at', '>=', $since)
@@ -74,7 +76,7 @@ final class DashboardRows
      */
     public static function paidSince(CarbonImmutable $since): Collection
     {
-        return Invoice::withoutCompanyScope()
+        return DemoBusinesses::excludeFrom(Invoice::withoutCompanyScope())
             ->where('status', InvoiceStatus::Paid->value)
             ->where('paid_at', '>=', $since)
             ->get(['id', 'paid_at', 'total']);
