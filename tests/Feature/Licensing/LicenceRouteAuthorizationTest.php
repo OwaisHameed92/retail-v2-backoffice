@@ -17,7 +17,7 @@ beforeEach(function () {
 
 /**
  * Every module 1.3 route as [method, uri, ability needed]. "view" = tenants.view, "manage" = licences.manage,
- * "keys" = licences.manage or tenants.manage.
+ * "keys" = licences.manage or tenants.manage, "plan" = licences.manage and billing.manage (audit SEC-4).
  *
  * @return list<array{0: string, 1: string, 2: string}>
  */
@@ -30,7 +30,7 @@ function licenceRoutes(): array
         ['post', '/admin/search', 'view'],
         ['put', '/admin/licences/{licence}/notes', 'manage'],
         ['post', '/admin/licences/{licence}/renew', 'manage'],
-        ['post', '/admin/licences/{licence}/plan', 'manage'],
+        ['post', '/admin/licences/{licence}/plan', 'plan'],
         ['post', '/admin/licences/{licence}/release', 'manage'],
         ['post', '/admin/licences/{licence}/reissue', 'manage'],
         ['post', '/admin/licences/{licence}/suspend', 'manage'],
@@ -39,7 +39,7 @@ function licenceRoutes(): array
         ['post', '/admin/licences/email-keys', 'keys'],
         ['post', '/admin/tenants/{company}/licences/issue-missing', 'manage'],
         ['post', '/admin/tenants/{company}/licences/renew', 'manage'],
-        ['put', '/admin/tenants/{company}/plan', 'manage'],
+        ['put', '/admin/tenants/{company}/plan', 'plan'],
         ['post', '/admin/tenants/{company}/registers/{register}/licence', 'manage'],
         // Module 1.11: the licence form.
         ['put', '/admin/tenants/{company}/branches/{branch}/licence', 'manage'],
@@ -92,6 +92,7 @@ test('each role reaches exactly the licence routes its abilities allow', functio
             'view' => $role->can(AdminRole::TENANTS_VIEW),
             'manage' => $role->can(AdminRole::LICENCES_MANAGE),
             'keys' => $role->can(AdminRole::LICENCES_MANAGE) || $role->can(AdminRole::TENANTS_MANAGE),
+            'plan' => $role->can(AdminRole::LICENCES_MANAGE) && $role->can(AdminRole::BILLING_MANAGE),
         };
 
         $status = $this->actingAs($admin, 'admin')->{$method.'Json'}(fillLicenceRoute($uri, $this))->status();

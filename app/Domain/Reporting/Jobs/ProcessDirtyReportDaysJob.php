@@ -25,6 +25,12 @@ class ProcessDirtyReportDaysJob implements ShouldBeUniqueUntilProcessing, Should
 
     public int $uniqueFor = 600;
 
+    /**
+     * A big rebuild (an initial upload) takes minutes; progress is kept per shop-week. Below the queue's retry_after
+     * (1900 s) and the overlap lock's expiry (900 s), so no second copy starts while this one runs (audit DATA-1).
+     */
+    public int $timeout = 600;
+
     public function __construct(public readonly string $companyId)
     {
         $this->afterCommit = true;

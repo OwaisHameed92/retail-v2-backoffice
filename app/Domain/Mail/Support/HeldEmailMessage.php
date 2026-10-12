@@ -6,12 +6,16 @@ use App\Domain\Billing\Enums\InvoiceStatus;
 use App\Domain\Billing\Models\Invoice;
 use App\Domain\Billing\Support\BillingMailer;
 use App\Domain\Mail\Data\SetPasswordData;
+use App\Domain\Mail\Data\TillKeyData;
+use App\Domain\Mail\Data\WelcomeTenantData;
 use App\Domain\Mail\Mailables\BrandedMailable;
 use App\Domain\Mail\Mailables\InvoiceMail;
 use App\Domain\Mail\Mailables\SetPasswordMail;
+use App\Domain\Mail\Mailables\WelcomeTenantMail;
 use App\Domain\Mail\Models\HeldEmail;
 use App\Models\User;
 use Illuminate\Support\Facades\Password;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 /**
@@ -21,7 +25,9 @@ use Illuminate\Validation\ValidationException;
  * - a first set-password link: a new 7-day link (the held one may have run out);
  * - anything else: exactly what was held (the welcome email keeps its licence keys, which exist nowhere else).
  *
- * For the preview the password link is not made: a placeholder stands in for it.
+ * For the preview the password link is not made: a placeholder stands in for it. The welcome email's licence keys
+ * are shown as their last 4 characters ("…1234", as the held-email list) unless the viewer may see keys
+ * (licences.manage, audit SEC-2). What is sent is never masked.
  */
 final class HeldEmailMessage
 {
@@ -34,13 +40,13 @@ final class HeldEmailMessage
     }
 
     /** @throws ValidationException */
-    public function forPreview(HeldEmail $held): BrandedMailable
+    public function forPreview(HeldEmail $held, bool $revealKeys = false): BrandedMailable
     {
-        return $this->build($held, preview: true);
+        return $this->build($held, preview: true, revealKeys: $revealKeys);
     }
 
     /** @throws ValidationException */
-    private function build(HeldEmail $held, bool $preview): BrandedMailable
+    private function build(HeldEmail $held, bool $preview, bool $revealKeys = true): BrandedMailable
     {
         $mailable = $held->mailable();
 
@@ -51,6 +57,7 @@ final class HeldEmailMessage
         $fresh = match (true) {
             $mailable instanceof InvoiceMail => $this->invoice($mailable),
             $mailable instanceof SetPasswordMail && $mailable->data->firstTime => $this->passwordLink($mailable, $preview),
+            $mailable instanceof WelcomeTenantMail && $preview && ! $revealKeys => $this->maskedWelcome($mailable),
             default => $mailable,
         };
 
@@ -81,6 +88,24 @@ final class HeldEmailMessage
         }
 
         return $this->billingMailer->invoiceMail($invoice, $mailable->data->recipientName, $mailable->data->resent);
+    }
+
+    /** The welcome email with each licence key cut to its last 4 characters, for a viewer who may not see keys. */
+    private function maskedWelcome(WelcomeTenantMail $mailable): WelcomeTenantMail
+    {
+        $data = $mailable->data;
+
+        return new WelcomeTenantMail(new WelcomeTenantData(
+            businessName: $data->businessName,
+            ownerName: $data->ownerName,
+            ownerEmail: $data->ownerEmail,
+            loginUrl: $data->loginUrl,
+            tills: array_map(fn (TillKeyData $till) => new TillKeyData($till->branchName, $till->tillName, '…'.Str::substr($till->licenceKey, -4)), $data->tills),
+            trialDays: $data->trialDays,
+            companyId: $data->companyId,
+            billingUrl: $data->billingUrl,
+            directDebitDays: $data->directDebitDays,
+        ));
     }
 
     /** @throws ValidationException */

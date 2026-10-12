@@ -18,7 +18,7 @@ function postTo(url: string) {
 }
 
 /** Header actions of the licence page, each confirmed with a dialog that names the consequence. */
-export function LicenceActions({ licence, plans }: { licence: LicenceDetail; plans: PlanOption[] }) {
+export function LicenceActions({ licence, plans, canChangePlan }: { licence: LicenceDetail; plans: PlanOption[]; canChangePlan: boolean }) {
     const [dialog, setDialog] = useState<DialogName>(null);
     const till = `${licence.register.name} at ${licence.branch.name}`;
     const keyEnd = `…${licence.keyLast4}`;
@@ -68,10 +68,13 @@ export function LicenceActions({ licence, plans }: { licence: LicenceDetail; pla
                             Extend activate-by date
                         </DropdownMenuItem>
                     )}
-                    <DropdownMenuItem onSelect={() => setDialog('plan')}>
-                        <Layers />
-                        Change plan
-                    </DropdownMenuItem>
+                    {/* Moving a licence to another plan is a billing change too: billing.manage (audit SEC-4). */}
+                    {canChangePlan && (
+                        <DropdownMenuItem onSelect={() => setDialog('plan')}>
+                            <Layers />
+                            Change plan
+                        </DropdownMenuItem>
+                    )}
                     <DropdownMenuItem disabled={!licence.isBound} onSelect={() => setDialog('release')}>
                         <MonitorX />
                         Release from PC
@@ -105,16 +108,18 @@ export function LicenceActions({ licence, plans }: { licence: LicenceDetail; pla
                 url={route('admin.licences.renew', licence.id)}
                 currentEnd={licence.endsAt}
             />
-            <ChangePlanDialog
-                open={dialog === 'plan'}
-                onOpenChange={open('plan')}
-                title={`Change the plan for ${till}?`}
-                description="The plan’s features are copied onto this licence and the till gets them at its next check-in. Dates stay the same."
-                url={route('admin.licences.plan', licence.id)}
-                method="post"
-                plans={plans}
-                currentPlanId={licence.plan?.id ?? null}
-            />
+            {canChangePlan && (
+                <ChangePlanDialog
+                    open={dialog === 'plan'}
+                    onOpenChange={open('plan')}
+                    title={`Change the plan for ${till}?`}
+                    description="The plan’s features are copied onto this licence and the till gets them at its next check-in. Dates and what the business pays stay the same. To move the whole business to another plan, use Billing → Change plan on the business page."
+                    url={route('admin.licences.plan', licence.id)}
+                    method="post"
+                    plans={plans}
+                    currentPlanId={licence.plan?.id ?? null}
+                />
+            )}
             <ConfirmDialog
                 open={dialog === 'release'}
                 onOpenChange={open('release')}

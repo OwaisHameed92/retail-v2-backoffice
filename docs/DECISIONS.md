@@ -1161,3 +1161,25 @@ Contract: `docs/partner-api.md` (v1). Module `app/Domain/Partners`. Zivaro (the 
 | Nav | Customers → Partner requests (pill = pending, `admin.navCounts.partnerRequests`, only when > 0); Settings → Partners. "Email settings" now matches `admin.settings.emails*` only |
 | UK only | Owner 2026-10-12: never on the Pakistan instance. Country profile flag `features.partnerApi` (GB true, PK false; server-side only, left out of the shared `country.features` so GB/PK props are unchanged). Off: `/api/partner/v1/*` and the admin partner routes 404 (`country.feature:partnerApi`; the API in the JSON envelope), the nav items hidden (`admin.partnerApi`), no webhook made, sent or retried, listeners do nothing |
 | Tests | `tests/Feature/Partners/`: `PartnerApiTest`, `PartnerApprovalTest` (wizard identity), `PartnerWebhookTest`, `PartnerSettingsTest`, `PartnerRouteAuthorizationTest`, `PartnerPakistanTest` (`country-pk`: everything 404 / hidden, no webhook). No existing test changed |
+
+## Security audit fixes SEC-2, SEC-3, SEC-4 / UI-2 (2026-10-12; `docs/audit/2026-10-11-security.md`, `docs/audit/2026-10-11-ui.md`)
+
+| Topic | Decision |
+|---|---|
+| Plan routes (SEC-4, UI-2) | `PUT /admin/tenants/{company}/plan` (with `apply_to_licences`) and `POST /admin/licences/{licence}/plan` need `billing.manage` as well as `licences.manage`: only the Owner role has both. Support keeps renew, issue, reissue, suspend and the rest. The UI follows (`can.changePlan` on the business and licence pages): the Licences tab's "Change" and the licence page's "Change plan" are hidden without it, and Support sees "An owner or accounts admin changes the plan, in Billing → Change plan". The dialogs say what the business pays stays the same and point to Billing → Change plan (the full flow) |
+| Held welcome preview (SEC-2) | `HeldEmailMessage::forPreview($held, revealKeys)`: without `licences.manage` (Accounts) the welcome email's keys show as `…` + last 4, as the held-email list. Owner sees the email as it goes. Sending is unchanged (`forSending` never masks) |
+| Mail Markdown (SEC-3) | `Markdown::withSecuredEncoding()` in `AppServiceProvider::boot` (Laravel 12): a `{{ }}` value in a mail template has `[`, `<`, `>` escaped, so tenant-typed `[text](url)` / `![](url)` never becomes a link or image. Bold and italic markers in a value still render (harmless). Templates build their own links and `**` outside `{{ }}`, so none changed; `MailFormat::plain` (L3) still works on top |
+| Tests changed | `LicenceRouteAuthorizationTest`: the two plan routes now need "plan" (licences.manage and billing.manage). `LicenceAdminScreensTest`: "staff change a licence from its page" has Support refused (403) and an Owner moving the plan; "renew all and the company plan…" renews as Support and changes the plan as Owner. New: Support 403 on both routes, `can.changePlan` per role, the masked held preview, two SEC-3 mail tests |
+
+## Audit batch 1: jobs, scheduled runs, throttles (2026-10-12; `docs/audit/2026-10-11-data.md`, `-ui.md`, `-sync.md`)
+
+- **Queue timeouts (DATA-1).** `retry_after` defaults to 1900 s (database and redis); workers run `--timeout=1800` with
+  `stopwaitsecs=1810` (`deploy/supervisor/retail-v2-worker.conf`). Every job's own `$timeout` stays below 1900. A sales
+  export is claimed atomically and written to a `.partial` file, then renamed, so a second copy never corrupts it.
+- **One business never stops the rest (DATA-7, DATA-2, DATA-8).** `billing:run` (every step), `billing:reconcile-gocardless`,
+  `alerts:digest`, `anomalies:detect`, `privacy:retention` and `labels:queue-offers` catch errors per business, report
+  them with the company id, carry on, and exit 1 listing the failed ids. A digest's "sent" row is written before the
+  email is queued (no double send on a rerun).
+- **Throttles (UI-1).** `throttle:N,M` counts per signed-in user **and per route** (`ThrottlePerRoute`); limits are
+  unchanged; guests and named limiters are as before.
+- **Sync entity names (SYNC-9).** An entity name over 64 characters is refused for that change only (`change.invalid`).

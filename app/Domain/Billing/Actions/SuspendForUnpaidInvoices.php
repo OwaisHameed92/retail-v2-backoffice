@@ -8,6 +8,7 @@ use App\Domain\Billing\Support\BillingAccounts;
 use App\Domain\Billing\Support\BillingDates;
 use App\Domain\Billing\Support\BillingMailer;
 use App\Domain\Shared\Actions\RecordAudit;
+use App\Domain\Shared\Support\BusinessFailures;
 use App\Domain\Shared\Support\Money;
 use App\Domain\Tenancy\Actions\SuspendCompany;
 use App\Domain\Tenancy\Enums\CompanyStatus;
@@ -24,15 +25,19 @@ use Illuminate\Support\Facades\DB;
  * Each invoice triggers this once: if staff lift the suspension by hand, the same invoice does not suspend the
  * company again (a later overdue invoice can, and so can the same invoice after a Direct Debit failure reopens
  * it). For a reopened invoice the grace counts from the reopening (`reopened_at`), so a late chargeback still gets
- * the full grace. A company already suspended or cancelled is left alone.
+ * the full grace. A company already suspended or cancelled is left alone. One business's error is reported and the
+ * rest still run (BusinessFailures).
  */
 class SuspendForUnpaidInvoices
 {
+    public const TASK = 'billing:run suspend';
+
     public function __construct(
         private readonly BillingAccounts $accounts,
         private readonly SuspendCompany $suspendCompany,
         private readonly BillingMailer $mailer,
         private readonly RecordAudit $audit,
+        private readonly BusinessFailures $failures,
     ) {}
 
     /** Returns how many companies were suspended. */
@@ -46,57 +51,66 @@ class SuspendForUnpaidInvoices
         $companyIds = self::due(Invoice::withoutCompanyScope(), $cutoff, $reopenedBefore)
             ->distinct()->pluck('company_id');
 
-        foreach ($companyIds as $companyId) {
-            $company = Company::query()->find($companyId);
-
-            if ($company === null || ! in_array($company->status, [CompanyStatus::Trial, CompanyStatus::Active, CompanyStatus::Overdue], true)) {
-                continue;
-            }
-
-            $done = DB::transaction(function () use ($company, $cutoff, $reopenedBefore, $now) {
-                $account = $this->accounts->lock($company);
-
-                $invoices = self::due(Invoice::withoutCompanyScope()->where('company_id', $company->id), $cutoff, $reopenedBefore)
-                    ->orderBy('due_date')->orderBy('sequence')->lockForUpdate()->get();
-
-                if ($invoices->isEmpty()) {
-                    return null;
-                }
-
-                /** @var Invoice $oldest */
-                $oldest = $invoices->first();
-                $reason = "Invoice {$oldest->number} unpaid";
-                $company = $this->suspendCompany->handle($company, $reason);
-
-                $account->billing_suspended_at = CarbonImmutable::instance($company->suspended_at ?? $now);
-                $account->suspension_invoice_id = $oldest->id;
-                $account->save();
-
-                foreach ($invoices as $invoice) {
-                    $invoice->suspension_triggered_at = $now;
-                    $invoice->save();
-                }
-
-                $this->audit->handle('billing.company_suspended', $oldest, null, null, [
-                    'number' => $oldest->number,
-                    'reason' => $reason,
-                    'days_overdue' => (int) $oldest->due_date?->diffInDays(BillingDates::today($now)),
-                ]);
-
-                $overdue = Money::sum(Invoice::withoutCompanyScope()->where('company_id', $company->id)
-                    ->where('status', InvoiceStatus::Overdue->value)->pluck('balance'));
-
-                return [$company, $reason, $overdue];
-            });
-
-            if ($done !== null) {
-                [$company, $reason, $overdue] = $done;
-                $this->mailer->suspended($company, $reason, $overdue, $now);
-                $suspended++;
-            }
+        foreach ($companyIds as $id) {
+            $suspended += (int) $this->failures->attempt(self::TASK, (string) $id, fn () => $this->company((string) $id, $cutoff, $reopenedBefore, $now), false);
         }
 
         return $suspended;
+    }
+
+    /** One business: suspended (and its owners emailed) when an invoice is unpaid past the grace. */
+    private function company(string $companyId, string $cutoff, CarbonImmutable $reopenedBefore, CarbonImmutable $now): bool
+    {
+        $company = Company::query()->find($companyId);
+
+        if ($company === null || ! in_array($company->status, [CompanyStatus::Trial, CompanyStatus::Active, CompanyStatus::Overdue], true)) {
+            return false;
+        }
+
+        $done = DB::transaction(function () use ($company, $cutoff, $reopenedBefore, $now) {
+            $account = $this->accounts->lock($company);
+
+            $invoices = self::due(Invoice::withoutCompanyScope()->where('company_id', $company->id), $cutoff, $reopenedBefore)
+                ->orderBy('due_date')->orderBy('sequence')->lockForUpdate()->get();
+
+            if ($invoices->isEmpty()) {
+                return null;
+            }
+
+            /** @var Invoice $oldest */
+            $oldest = $invoices->first();
+            $reason = "Invoice {$oldest->number} unpaid";
+            $company = $this->suspendCompany->handle($company, $reason);
+
+            $account->billing_suspended_at = CarbonImmutable::instance($company->suspended_at ?? $now);
+            $account->suspension_invoice_id = $oldest->id;
+            $account->save();
+
+            foreach ($invoices as $invoice) {
+                $invoice->suspension_triggered_at = $now;
+                $invoice->save();
+            }
+
+            $this->audit->handle('billing.company_suspended', $oldest, null, null, [
+                'number' => $oldest->number,
+                'reason' => $reason,
+                'days_overdue' => (int) $oldest->due_date?->diffInDays(BillingDates::today($now)),
+            ]);
+
+            $overdue = Money::sum(Invoice::withoutCompanyScope()->where('company_id', $company->id)
+                ->where('status', InvoiceStatus::Overdue->value)->pluck('balance'));
+
+            return [$company, $reason, $overdue];
+        });
+
+        if ($done === null) {
+            return false;
+        }
+
+        [$company, $reason, $overdue] = $done;
+        $this->mailer->suspended($company, $reason, $overdue, $now);
+
+        return true;
     }
 
     /**

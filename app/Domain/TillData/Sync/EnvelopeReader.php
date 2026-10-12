@@ -10,13 +10,20 @@ use App\Domain\TillData\Sync\Data\SyncChange;
 /**
  * Validates one envelope against schemas/sync-change.schema.json and the contract's identity rules (§5):
  * company must be the pushing company, a non-empty branchId must be the sending branch, a non-empty registerId
- * must be one of its tills. Any entity name is accepted (§18.8, §21.1): a `local` one is acknowledged without
- * storing, one the portal does not know yet is kept raw (UnknownEntityRows).
+ * must be one of its tills. Any entity name of up to 64 characters is accepted (§18.8, §21.1): a `local` one is
+ * acknowledged without storing, one the portal does not know yet is kept raw (UnknownEntityRows).
  */
 final class EnvelopeReader
 {
     /** Till-side screen/bookkeeping tables some till builds push with an empty companyId (EPOS asked, 2026-10-04). */
     public const TILL_BOOKKEEPING = ['EventSubscription', 'TopSellerTile'];
+
+    /**
+     * Longest entity name the store keeps: `till_unknown_rows.entity` and the push ledger's `entity` are varchar(64).
+     * A longer (unknown) name threw on MySQL outside the per-row fallback and failed the whole push on every retry
+     * (sync audit 2026-10-11, SYNC-9); it is now this one change's `change.invalid`.
+     */
+    public const MAX_ENTITY_LENGTH = 64;
 
     private const INTEGER = '/^(0|[1-9]\d{0,17})$/';
 
@@ -101,6 +108,8 @@ final class EnvelopeReader
 
         if ($entity === '') {
             $problems[] = 'entity must be a non-empty string';
+        } elseif (mb_strlen($entity) > self::MAX_ENTITY_LENGTH) {
+            $problems[] = 'entity must be at most '.self::MAX_ENTITY_LENGTH.' characters';
         }
 
         // Setting / RolePermission ids are 26 Crockford characters derived from their key, not ULIDs (§10.3).

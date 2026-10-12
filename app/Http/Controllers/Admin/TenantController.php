@@ -194,6 +194,8 @@ class TenantController extends Controller
                 'manage' => $request->user('admin')?->can('update', $company) ?? false,
                 'impersonate' => $request->user('admin')?->can('impersonate', $company) ?? false,
                 'manageLicences' => $admin?->hasAbility(AdminRole::LICENCES_MANAGE) ?? false,
+                // The Licences tab's "plan for new tills" is a billing change too (audit SEC-4).
+                'changePlan' => ($admin?->hasAbility(AdminRole::LICENCES_MANAGE) ?? false) && $billingAccess,
             ],
         ]);
     }

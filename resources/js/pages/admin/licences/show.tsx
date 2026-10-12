@@ -126,7 +126,7 @@ export default function LicenceShow({ licence, timeline, activity, alerts, plans
                         </Link>
                     </>
                 }
-                actions={can.manage && <LicenceActions licence={licence} plans={plans} />}
+                actions={can.manage && <LicenceActions licence={licence} plans={plans} canChangePlan={can.changePlan} />}
             />
 
             <StatusAlert licence={licence} />
