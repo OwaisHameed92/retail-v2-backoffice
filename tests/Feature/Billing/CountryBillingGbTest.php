@@ -5,7 +5,9 @@ use App\Domain\Billing\Actions\RecordUpfrontPayment;
 use App\Domain\Billing\Data\InvoiceDocument;
 use App\Domain\Billing\Data\TenantBilling;
 use App\Domain\Billing\Data\UpfrontPayment;
+use App\Domain\Billing\Enums\BillingMode;
 use App\Domain\Billing\Enums\PaymentMethod;
+use App\Domain\Billing\Support\BillingAccounts;
 use App\Domain\Billing\Support\BillingMailer;
 use App\Domain\Billing\Support\ManualCollection;
 use App\Domain\Licensing\Support\LicenceMailer;
@@ -184,4 +186,24 @@ it('keeps the UK plan price limit and its message', function () {
         'price_monthly' => '30.00', 'price_yearly' => '300.00', 'setup_fee' => '150000', 'trial_days' => 7, 'trial_grace_days' => 3,
         'grace_days' => 7, 'features' => [], 'is_active' => true, 'is_public' => false, 'sort_order' => 10,
     ])->assertSessionHasErrors(['setup_fee' => 'Enter an amount in pounds with up to 2 decimal places, for example 30 or 29.99.']);
+});
+
+it('tells a Direct Debit business its period invoice is collected by Direct Debit, never cash or bank (owner 2026-10-13)', function () {
+    config(['billing.bank.account_name' => 'To be confirmed', 'billing.bank.sort_code' => 'To be confirmed', 'billing.bank.account_number' => 'To be confirmed']);
+    $company = $this->payingTenant();
+    app(BillingAccounts::class)->for($company)
+        ->forceFill(['billing_mode' => BillingMode::DirectDebit, 'price_monthly_override' => '20.00'])->save();
+
+    $this->issuedFor($company);
+
+    Mail::assertQueued(InvoiceMail::class, function (InvoiceMail $mail) {
+        $text = gbBillingMailText($mail);
+
+        return $mail->data->directDebit
+            && $mail->data->tillCount === 2
+            && str_contains($text, 'This is collected by Direct Debit.')
+            && ! str_contains($text, 'We take cash')
+            && ! str_contains($text, 'Bank transfer')
+            && ! str_contains($text, 'To be confirmed');
+    });
 });

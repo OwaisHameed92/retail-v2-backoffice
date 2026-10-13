@@ -30,7 +30,13 @@ The invoice is attached as a PDF.
 
 Nothing to do: we collect **{{ $amountDue }}** by Direct Debit on {{ $directDebitOn }}. Your licences are renewed as soon as the payment clears.
 @endif
-@unless ($paid || $directDebitOn)
+@if (! $paid && ! $directDebitOn && $data->directDebit)
+
+## How to pay
+
+This is collected by Direct Debit. If you have not set up your Direct Debit yet, do it from **Billing** in your account (the button below): we then collect **{{ $amountDue }}** from your bank and your licences are renewed as soon as the payment clears.
+@endif
+@unless ($paid || $directDebitOn || $data->directDebit)
 
 ## How to pay
 
