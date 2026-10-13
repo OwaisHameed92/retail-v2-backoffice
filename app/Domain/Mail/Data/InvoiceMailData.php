@@ -37,5 +37,10 @@ final readonly class InvoiceMailData
          * reference." in place of the UK "We take cash, or you can pay by bank transfer" text. Null on GB.
          */
         public ?string $howToPay = null,
+        /**
+         * A period invoice of a Direct Debit business whose collection is not scheduled yet (no mandate, or not yet
+         * charged): "How to pay" says it is collected by Direct Debit and links to set it up, never cash or bank.
+         */
+        public bool $directDebit = false,
     ) {}
 }
