@@ -3,7 +3,7 @@
 
 Hi {{ $firstName }}, good news: the Switch & Save account for **{{ $data->businessName }}** is active again.
 
-Your {{ $tillCount }} can take sales again after their next check-in. If a till still shows as locked, restart SSPOS on that till.
+Your {{ $tillCount }} can take sales again after their next check-in. If a till still shows as locked, restart {{ \App\Domain\Shared\Country\TillProfile::appName() }} on that till.
 @if ($activeUntil)
 
 <x-mail::panel>

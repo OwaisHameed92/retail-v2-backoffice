@@ -1,7 +1,7 @@
 <x-mail::message>
 # Your free trial {{ $endsIn }}
 
-Hi {{ $firstName }}, the free trial for **{{ $data->businessName }}** {{ $endsIn }}, on {{ $endsOn }}. We hope SSPOS has been working well for you.
+Hi {{ $firstName }}, the free trial for **{{ $data->businessName }}** {{ $endsIn }}, on {{ $endsOn }}. We hope {{ \App\Domain\Shared\Country\TillProfile::appName() }} has been working well for you.
 
 ## What happens next
 
