@@ -2,11 +2,14 @@
 
 use App\Domain\Accounts\Export\ExportTarget;
 use App\Domain\Billing\Data\InvoiceDocument;
+use App\Domain\Mail\Mailables\AccountReactivatedMail;
 use App\Domain\Mail\Mailables\AdminNewLeadMail;
 use App\Domain\Mail\Mailables\CustomerStatementMail;
 use App\Domain\Mail\Mailables\DirectDebitFailedMail;
 use App\Domain\Mail\Mailables\InvoiceMail;
+use App\Domain\Mail\Mailables\LicenceKeyMail;
 use App\Domain\Mail\Mailables\SetPasswordMail;
+use App\Domain\Mail\Mailables\TrialReminderMail;
 use App\Domain\Mail\Mailables\WelcomeTenantMail;
 use App\Domain\Shared\Country\Country;
 use App\Domain\Shared\Country\LocalText;
@@ -142,6 +145,12 @@ it('keeps the UK messages and help text on GB', function () {
 
 // PK: no UK law, regulator or domain wording; the seller block and contacts from the instance's settings.
 
+it('names the till SSPOS in the UK emails', function () {
+    foreach ([WelcomeTenantMail::sample(), LicenceKeyMail::sample(), TrialReminderMail::sample(), AccountReactivatedMail::sample()] as $mail) {
+        expect(mailText($mail))->toContain('SSPOS')->not->toContain('Pak POS');
+    }
+});
+
 it('writes the emails without UK wording on a Pakistan instance', function () {
     asPakistanContentInstance();
     // What the PK instance's .env sets (SSPOS_SUPPORT_EMAIL, SSPOS_SUPPORT_PHONE, SSPOS_EPOS_DOWNLOAD_URL).
@@ -158,6 +167,11 @@ it('writes the emails without UK wording on a Pakistan instance', function () {
         ->and($lead->data->phone)->toBe('0300 1234567')
         ->and(CustomerStatementMail::sample()->data->businessPhone)->toBe('0300 1234567')
         ->and(SetPasswordMail::sample()->data->url)->toEndWith('email=aisha%40khanminimart.pk');
+
+    // Pak POS 1.0.1 (EPOS 2026-10-13): the till is "Pak POS" on PK, never the UK's SSPOS.
+    foreach ([$welcome, mailText(LicenceKeyMail::sample()), mailText(TrialReminderMail::sample()), mailText(AccountReactivatedMail::sample())] as $text) {
+        expect($text)->toContain('Pak POS')->not->toContain('SSPOS');
+    }
 
     foreach ([$welcome, $invoice, mailText($lead), mailText(SetPasswordMail::sample())] as $text) {
         expect($text)->not->toContain('.co.uk')->not->toContain('HMRC')->not->toContain('GDPR')

@@ -9,7 +9,7 @@ Your {{ $data->trialDays }}-day free trial starts when you activate your first t
 
 ## Your licence keys
 
-Each till has its own key. Enter it on that till the first time you open SSPOS.
+Each till has its own key. Enter it on that till the first time you open {{ \App\Domain\Shared\Country\TillProfile::appName() }}.
 
 <x-mail::licence-keys :tills="$tills" />
 
@@ -19,8 +19,8 @@ Each till has its own key. Enter it on that till the first time you open SSPOS.
 
 ## How to activate a till
 
-1. On the till PC, download and install SSPOS from [{{ preg_replace('#^https?://#', '', $downloadUrl) }}]({{ $downloadUrl }}).
-2. Open SSPOS and enter the licence key for that till.
+1. On the till PC, download and install {{ \App\Domain\Shared\Country\TillProfile::appName() }} from [{{ preg_replace('#^https?://#', '', $downloadUrl) }}]({{ $downloadUrl }}).
+2. Open {{ \App\Domain\Shared\Country\TillProfile::appName() }} and enter the licence key for that till.
 3. The till connects to your account and is ready to trade. Repeat for each till.
 
 ## Your online portal

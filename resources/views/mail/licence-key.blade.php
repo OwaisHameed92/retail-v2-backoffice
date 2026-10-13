@@ -16,8 +16,8 @@ here {{ $single ? 'is the licence key' : 'are the licence keys' }} for {{ $tillC
 
 ## How to activate a till
 
-1. On the till PC, open SSPOS. If it is not installed yet, download it from [{{ preg_replace('#^https?://#', '', $downloadUrl) }}]({{ $downloadUrl }}).
-2. Enter the licence key for that till when SSPOS asks for it.
+1. On the till PC, open {{ \App\Domain\Shared\Country\TillProfile::appName() }}. If it is not installed yet, download it from [{{ preg_replace('#^https?://#', '', $downloadUrl) }}]({{ $downloadUrl }}).
+2. Enter the licence key for that till when {{ \App\Domain\Shared\Country\TillProfile::appName() }} asks for it.
 3. The till connects to your account and is ready to trade.
 
 If you did not expect this email, contact us straight away by replying to it.
