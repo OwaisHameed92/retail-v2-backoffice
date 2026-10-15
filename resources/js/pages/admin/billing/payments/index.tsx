@@ -13,12 +13,12 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import AdminLayout from '@/layouts/admin-layout';
 import { formatNumber } from '@/lib/country';
-import { Head, router } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import { type ColumnDef } from '@tanstack/react-table';
 import { Banknote, Building2, SearchX, X } from 'lucide-react';
 import { useState } from 'react';
 
-const ONLY = ['payments', 'filters', 'totals'];
+const ONLY = ['payments', 'filters', 'totals', 'reversedCount'];
 
 const columns: ColumnDef<PaymentRow>[] = [
     {
@@ -172,7 +172,7 @@ function PaymentFilters({ filters, methods }: Pick<PaymentIndexProps, 'filters' 
     );
 }
 
-export default function PaymentIndex({ payments, filters, totals, methods, manualMethods, canManage }: PaymentIndexProps) {
+export default function PaymentIndex({ payments, filters, totals, reversedCount, methods, manualMethods, canManage }: PaymentIndexProps) {
     const filtered = Boolean(payments.meta.search || filters.method || filters.company || filters.from || filters.to);
     const [picking, setPicking] = useState(false);
     const [paying, setPaying] = useState<CompanyRef | null>(null);
@@ -231,14 +231,26 @@ export default function PaymentIndex({ payments, filters, totals, methods, manua
                     }
                 />
 
-                {totals.count > 0 && (
+                {(totals.count > 0 || reversedCount > 0) && (
                     <Card className="flex flex-col gap-2 px-5 py-3 text-sm sm:flex-row sm:items-center sm:justify-between">
                         <span className="text-muted-foreground">
-                            {formatNumber(totals.count)} {totals.count === 1 ? 'payment' : 'payments'}
+                            {formatNumber(totals.count)} {filters.reversed ? 'reversed ' : ''}
+                            {totals.count === 1 ? 'payment' : 'payments'}
                             {filtered ? ' matching the filters' : ''}
+                            {reversedCount > 0 && (
+                                <>
+                                    {' · '}
+                                    <Link
+                                        href={route('admin.billing.payments.index', filters.reversed ? {} : { reversed: 1 })}
+                                        className="hover:text-foreground underline-offset-4 hover:underline"
+                                    >
+                                        {filters.reversed ? 'Back to payments received' : `${formatNumber(reversedCount)} reversed (kept on record)`}
+                                    </Link>
+                                </>
+                            )}
                         </span>
                         <span>
-                            <span className="text-muted-foreground">Received </span>
+                            <span className="text-muted-foreground">{filters.reversed ? 'Taken back ' : 'Received '}</span>
                             <span className="text-success-foreground font-semibold tabular-nums">{totals.amount}</span>
                         </span>
                     </Card>
