@@ -64,7 +64,7 @@ export function DirectDebitPanel({ company, directDebit, canManage }: { company:
             actions={
                 canManage ? (
                     <div className="flex flex-wrap gap-2">
-                        {isDirectDebit && !mandate.usable && (
+                        {isDirectDebit && !mandate.usable && !directDebit.pricing.recurringIsZero && (
                             <Button size="sm" onClick={() => setAction('setup-email')} disabled={!directDebit.enabled}>
                                 <MailPlus />
                                 {mandate.setupSentAt ? 'Send setup email again' : 'Send setup email'}
