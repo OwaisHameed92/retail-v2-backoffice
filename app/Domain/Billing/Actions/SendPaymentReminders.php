@@ -65,7 +65,9 @@ class SendPaymentReminders
         ];
 
         foreach ($due as $kind => $when) {
+            // An invoice a Direct Debit payment is collecting needs no reminder (owner 2026-10-15): the bank pays it.
             $invoices = Invoice::withoutCompanyScope()->open()->whereNotNull('number')->whereNull(self::COLUMNS[$kind])
+                ->whereNotIn('id', MarkOverdueInvoices::beingCollected())
                 ->when($companyId !== null, fn (Builder $q) => $q->where('company_id', $companyId))
                 ->where($when)->orderBy('due_date')->orderBy('sequence')->get();
 

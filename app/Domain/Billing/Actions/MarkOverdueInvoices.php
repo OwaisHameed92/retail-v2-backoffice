@@ -99,7 +99,7 @@ class MarkOverdueInvoices
      *
      * @return Builder<GoCardlessPayment>
      */
-    private static function beingCollected(): Builder
+    public static function beingCollected(): Builder
     {
         return GoCardlessPayment::withoutCompanyScope()->select('invoice_id')->whereNotNull('invoice_id')
             ->where(fn (Builder $q) => $q->whereIn('status', PaymentStatus::pendingValues())

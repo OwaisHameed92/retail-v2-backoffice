@@ -16,13 +16,25 @@ export function InvoiceNumber({ row }: { row: Pick<InvoiceRow, 'number' | 'autoG
         );
     }
 
-    return <span className={cn('font-mono text-[13px] font-medium whitespace-nowrap', row.status === 'void' && 'text-muted-foreground line-through')}>{row.number}</span>;
+    return (
+        <span className={cn('font-mono text-[13px] font-medium whitespace-nowrap', row.status === 'void' && 'text-muted-foreground line-through')}>
+            {row.number}
+        </span>
+    );
 }
 
 /** Due date with "3 days overdue" in red or "Due in 2 days" in amber. */
-export function DueDate({ row }: { row: Pick<InvoiceRow, 'dueDate' | 'isOpen' | 'status'> }) {
+export function DueDate({ row }: { row: Pick<InvoiceRow, 'dueDate' | 'isOpen' | 'status' | 'directDebitOn'> }) {
     if (!row.dueDate) {
         return <span className="text-muted-foreground">Not issued</span>;
+    }
+    if (row.isOpen && row.directDebitOn) {
+        return (
+            <div className="leading-tight whitespace-nowrap">
+                <div className="tabular-nums">{formatDay(row.directDebitOn)}</div>
+                <div className="text-muted-foreground text-xs">By Direct Debit</div>
+            </div>
+        );
     }
     const label = dueLabel(row.dueDate, row.isOpen);
     const overdue = row.isOpen && (row.status === 'overdue' || (label?.endsWith('overdue') ?? false));
@@ -31,7 +43,11 @@ export function DueDate({ row }: { row: Pick<InvoiceRow, 'dueDate' | 'isOpen' | 
     return (
         <div className="leading-tight whitespace-nowrap">
             <div className={cn('tabular-nums', overdue && 'text-destructive font-medium')}>{formatDay(row.dueDate)}</div>
-            {label && <div className={cn('text-xs', overdue ? 'text-destructive' : soon ? 'text-warning-foreground' : 'text-muted-foreground')}>{label}</div>}
+            {label && (
+                <div className={cn('text-xs', overdue ? 'text-destructive' : soon ? 'text-warning-foreground' : 'text-muted-foreground')}>
+                    {label}
+                </div>
+            )}
         </div>
     );
 }
@@ -43,7 +59,10 @@ export function Money({ value, muted = false, strong = false }: { value: string;
 /**
  * Columns of the admin invoice list for a breakpoint (see useBreakpoint). Sortable ids match InvoiceQuery::SORTABLE.
  */
-export function invoiceColumns({ showBusiness = true, breakpoint = 4 }: { showBusiness?: boolean; breakpoint?: number } = {}): ColumnDef<InvoiceRow>[] {
+export function invoiceColumns({
+    showBusiness = true,
+    breakpoint = 4,
+}: { showBusiness?: boolean; breakpoint?: number } = {}): ColumnDef<InvoiceRow>[] {
     const columns: ColumnDef<InvoiceRow>[] = [
         {
             id: 'sequence',
@@ -93,7 +112,9 @@ export function invoiceColumns({ showBusiness = true, breakpoint = 4 }: { showBu
             header: 'Balance',
             enableSorting: true,
             meta: { align: 'right' },
-            cell: ({ row }) => <Money value={row.original.isOpen ? row.original.balance : '—'} muted={!row.original.isOpen} strong={row.original.isOpen} />,
+            cell: ({ row }) => (
+                <Money value={row.original.isOpen ? row.original.balance : '—'} muted={!row.original.isOpen} strong={row.original.isOpen} />
+            ),
         },
         {
             id: 'status',
