@@ -139,6 +139,11 @@ final class BillingStatusData
             return ['text' => 'None — no monthly or yearly fee on this plan', 'status' => 'none', 'tone' => 'neutral'];
         }
 
+        // A monthly or yearly plan at an agreed £0 (owner 2026-10-15, Fun fair): nothing is collected, no Direct Debit.
+        if (Money::isZero($status->recurring['gross']) && $status->recurring['tills'] > 0) {
+            return ['text' => BillingFormat::money('0.00').' '.($status->recurring['per'] === 'per year' ? 'a year' : 'a month').' (agreed price) — no Direct Debit needed', 'status' => 'none', 'tone' => 'neutral'];
+        }
+
         $account = $status->account;
         $per = $status->recurring['per'] === 'per year' ? 'a year' : 'a month';
         $amount = Money::isZero($status->recurring['gross']) ? 'Nothing yet (no live tills)' : BillingFormat::money($status->recurring['gross'])." {$per}";
