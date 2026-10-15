@@ -2,12 +2,16 @@
 
 namespace App\Domain\Mail\Mailables;
 
+use App\Domain\Billing\GoCardless\Support\SubscriptionAmount;
+use App\Domain\Billing\Support\BillingAccounts;
 use App\Domain\Billing\Support\ManualCollection;
 use App\Domain\Mail\Data\TillKeyData;
 use App\Domain\Mail\Data\WelcomeTenantData;
 use App\Domain\Mail\Enums\EmailCategory;
 use App\Domain\Mail\Support\MailFormat;
 use App\Domain\Shared\Country\LocalText;
+use App\Domain\Shared\Support\Money;
+use App\Domain\Tenancy\Models\Company;
 use Illuminate\Mail\Mailables\Content;
 
 /**
@@ -83,6 +87,22 @@ final class WelcomeTenantMail extends BrandedMailable
             'tillCount' => MailFormat::count(count($this->data->tills), 'till'),
             'downloadUrl' => (string) config('sspos.epos_download_url'),
             'tills' => $this->data->tills,
+            'showDirectDebit' => $this->data->billingUrl !== null && $this->stillRecurs(),
         ]);
+    }
+
+    /**
+     * Read when the email is rendered, so a welcome email held since onboarding (P11) drops the Direct Debit section
+     * when the business no longer has a monthly or yearly fee (owner 2026-10-15, Kingsbury moved to setup only).
+     */
+    private function stillRecurs(): bool
+    {
+        $company = $this->data->companyId !== null ? Company::withoutGlobalScopes()->find($this->data->companyId) : null;
+
+        if ($company === null) {
+            return true;
+        }
+
+        return rescue(fn () => ! Money::isZero(SubscriptionAmount::for($company, app(BillingAccounts::class)->for($company))['gross']), true, false);
     }
 }

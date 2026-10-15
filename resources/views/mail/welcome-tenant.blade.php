@@ -32,7 +32,7 @@ Sign in to your portal
 </x-mail::button>
 
 If you have not set your password yet, look for our "Set your password" email, or use "Forgot password" on the sign-in page.
-@if ($data->billingUrl)
+@if ($showDirectDebit)
 
 ## Set up your Direct Debit
 
