@@ -63,7 +63,11 @@ export function TenantBillingPanel({ tenant, billing }: TenantBillingPanelProps)
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <p className="text-muted-foreground text-sm">
                     {billing.directDebit.pricing.recurringIsZero ? (
-                        'Setup fee only: no monthly or yearly fee.'
+                        billing.directDebit.pricing.overridden ? (
+                            'No monthly or yearly fee (agreed price).'
+                        ) : (
+                            'Setup fee only: no monthly or yearly fee.'
+                        )
                     ) : (
                         <>
                             Billed {settings.cycle === 'yearly' ? 'yearly' : 'monthly'}, payment due{' '}
@@ -343,7 +347,9 @@ export function TenantBillingPanel({ tenant, billing }: TenantBillingPanelProps)
                             },
                             {
                                 label: 'Next period',
-                                value: (
+                                value: billing.directDebit.pricing.recurringIsZero ? (
+                                    <span className="text-muted-foreground">None: no monthly or yearly fee</span>
+                                ) : (
                                     <span className="inline-flex items-center gap-1.5">
                                         <CalendarRange className="text-muted-foreground size-3.5" aria-hidden />
                                         {formatDay(summary.nextPeriod.start)} – {formatDay(summary.nextPeriod.end)}

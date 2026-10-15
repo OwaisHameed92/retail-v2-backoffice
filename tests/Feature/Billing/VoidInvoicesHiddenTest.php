@@ -6,6 +6,7 @@ use App\Domain\Billing\Actions\ReversePayment;
 use App\Domain\Billing\Data\NewInvoice;
 use App\Domain\Billing\Data\UpfrontPayment;
 use App\Domain\Billing\Enums\PaymentMethod;
+use App\Domain\Billing\Support\BillingAccounts;
 use App\Domain\Plans\Enums\SetupFeeMode;
 use Illuminate\Support\Facades\Mail;
 use Inertia\Testing\AssertableInertia;
@@ -91,4 +92,14 @@ test('reversed payments are left out of the payment list and its total, and list
     $this->actingAs($admin, 'admin')->get(route('admin.billing.payments.index', ['reversed' => 1]))
         ->assertInertia(fn (AssertableInertia $page) => $page->has('payments.data', 1)
             ->where('payments.data.0.number', $taken->payment->number)->where('totals.amount', '£20.00'));
+});
+
+test('a monthly plan at an agreed £0 reads as no fee and no Direct Debit needed', function () {
+    $company = $this->payingTenant();
+    app(BillingAccounts::class)->for($company)->forceFill(['price_monthly_override' => '0.00', 'price_yearly_override' => '0.00'])->save();
+
+    $this->actingAs($this->admin(AdminRole::Owner), 'admin')->get(route('admin.tenants.show', $company))
+        ->assertInertia(fn (AssertableInertia $page) => $page
+            ->where('billing.status.recurring.text', '£0.00 a month (agreed price) — no Direct Debit needed')
+            ->where('billing.status.recurring.tone', 'neutral'));
 });
