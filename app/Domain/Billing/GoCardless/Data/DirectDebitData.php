@@ -97,6 +97,9 @@ final class DirectDebitData
                 'override' => $account->setup_fee_override,
                 'net' => BillingFormat::money($setup['net']),
                 'gross' => BillingFormat::money($setup['gross']),
+                // Once invoiced, the fee is what the setup fee invoices say (not the plan's figure): e.g. a per-till
+                // price agreed for this business (2 × £750) while the plan says £1,200 a till.
+                'invoicedTotal' => $fee->invoiced ? BillingFormat::money($fee->total) : null,
                 'hasFee' => ! Money::isZero($setup['net']),
                 'method' => $account->setup_fee_method->value,
                 'instalments' => $account->setup_fee_instalments,
