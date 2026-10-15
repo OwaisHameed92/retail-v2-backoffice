@@ -75,3 +75,20 @@ test('a reversed payment is not shown as the last payment', function () {
     $this->actingAs($this->admin(AdminRole::Owner), 'admin')->get(route('admin.tenants.show', $company))
         ->assertInertia(fn (AssertableInertia $page) => $page->where('billing.summary.lastPayment.amount', '£10.00'));
 });
+
+test('reversed payments are left out of the payment list and its total, and listed on their own', function () {
+    $company = $this->payingTenant();
+    $invoice = $this->issuedFor($company);
+    $this->pay($company, '10.00', [$invoice->id => '10.00']);
+    $taken = $this->pay($company, '20.00', [$invoice->id => '20.00']);
+    app(ReversePayment::class)->handle($taken->payment, 'Recorded by mistake');
+    $admin = $this->admin(AdminRole::Owner);
+
+    $this->actingAs($admin, 'admin')->get(route('admin.billing.payments.index'))
+        ->assertInertia(fn (AssertableInertia $page) => $page->has('payments.data', 1)
+            ->where('totals', ['count' => 1, 'amount' => '£10.00'])->where('reversedCount', 1)->where('filters.reversed', false));
+
+    $this->actingAs($admin, 'admin')->get(route('admin.billing.payments.index', ['reversed' => 1]))
+        ->assertInertia(fn (AssertableInertia $page) => $page->has('payments.data', 1)
+            ->where('payments.data.0.number', $taken->payment->number)->where('totals.amount', '£20.00'));
+});

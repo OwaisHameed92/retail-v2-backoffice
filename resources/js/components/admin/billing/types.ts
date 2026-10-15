@@ -411,7 +411,9 @@ export interface InvoiceIndexProps {
 
 export interface PaymentIndexProps {
     payments: Paginated<PaymentRow>;
-    filters: { method: string | null; company: CompanyRef | null; from: string | null; to: string | null };
+    filters: { method: string | null; company: CompanyRef | null; from: string | null; to: string | null; reversed: boolean };
+    /** Reversed payments, kept on record but left out of the list unless `reversed` is on. */
+    reversedCount: number;
     totals: { count: number; amount: string };
     methods: Option<PaymentMethod>[];
     manualMethods: Option<PaymentMethod>[];

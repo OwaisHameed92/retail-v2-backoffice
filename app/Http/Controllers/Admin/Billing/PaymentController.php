@@ -34,7 +34,9 @@ class PaymentController extends Controller
             'company' => ['nullable', 'string', 'max:26'],
             'from' => ['nullable', 'date_format:Y-m-d'],
             'to' => ['nullable', 'date_format:Y-m-d'],
+            'reversed' => ['nullable', 'boolean'],
         ]);
+        $reversed = (bool) ($filters['reversed'] ?? false);
         $table = TableQuery::from($request)->sortable(['received_at', 'amount', 'company_name', 'sequence'])->defaultSort('received_at', 'desc');
         $search = $table->search();
 
@@ -45,6 +47,9 @@ class PaymentController extends Controller
             ->when($filters['company'] ?? null, fn (Builder $q, string $company) => $q->where('payments.company_id', $company))
             ->when($filters['from'] ?? null, fn (Builder $q, string $from) => $q->where('payments.received_at', '>=', BillingDates::endOfDay(BillingDates::date($from)->subDay())))
             ->when($filters['to'] ?? null, fn (Builder $q, string $to) => $q->where('payments.received_at', '<=', BillingDates::endOfDay(BillingDates::date($to))))
+            // Reversed payments were taken back: kept on record but out of the list and the total (owner 2026-10-15);
+            // `reversed=1` lists only them.
+            ->when($reversed, fn (Builder $q) => $q->whereNotNull('payments.reversed_at'), fn (Builder $q) => $q->whereNull('payments.reversed_at'))
             ->when($search !== null, function (Builder $q) use ($search) {
                 $like = '%'.$search.'%';
                 $q->where(fn (Builder $w) => $w->where('payments.number', 'like', $like)->orWhere('payments.reference', 'like', $like)->orWhere('companies.name', 'like', $like));
@@ -60,7 +65,9 @@ class PaymentController extends Controller
                 'company' => $company === null ? null : ['id' => $company->id, 'name' => $company->name],
                 'from' => $filters['from'] ?? null,
                 'to' => $filters['to'] ?? null,
+                'reversed' => $reversed,
             ],
+            'reversedCount' => Payment::withoutCompanyScope()->whereNotNull('reversed_at')->count(),
             'totals' => ['count' => $amounts->count(), 'amount' => BillingFormat::money(Money::sum($amounts))],
             'methods' => PaymentMethod::options(),
             'manualMethods' => PaymentMethod::options(manualOnly: true),
