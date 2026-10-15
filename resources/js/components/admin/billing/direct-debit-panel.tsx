@@ -131,11 +131,19 @@ export function DirectDebitPanel({ company, directDebit, canManage }: { company:
                         </span>
                     </Tile>
                     <Tile label="Setup fee (upfront)">
-                        <span className="font-medium tabular-nums">{setupFee.hasFee ? `${setupFee.gross} incl. ${taxName()}` : 'None'}</span>
+                        <span className="font-medium tabular-nums">
+                            {setupFee.invoicedTotal !== null
+                                ? `${setupFee.invoicedTotal} incl. ${taxName()}`
+                                : setupFee.hasFee
+                                  ? `${setupFee.gross} incl. ${taxName()}`
+                                  : 'None'}
+                        </span>
                         <span className="text-muted-foreground text-sm">
-                            {setupFee.hasFee
-                                ? `${setupFee.override !== null ? 'Custom' : 'Plan fee'} · ${setupFee.instalments > 1 ? `${setupFee.instalments} monthly payments` : 'one payment'} · paid by hand`
-                                : 'No setup fee on this plan'}
+                            {setupFee.invoicedTotal !== null
+                                ? 'As invoiced · paid by hand'
+                                : setupFee.hasFee
+                                  ? `${setupFee.override !== null ? 'Custom' : 'Plan fee'} · ${setupFee.instalments > 1 ? `${setupFee.instalments} monthly payments` : 'one payment'} · paid by hand`
+                                  : 'No setup fee on this plan'}
                         </span>
                         {setupFee.invoicedAt && (
                             <span className="text-success-foreground text-xs font-medium">Invoiced {formatDate(setupFee.invoicedAt)}</span>

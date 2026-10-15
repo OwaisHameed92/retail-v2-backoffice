@@ -37,6 +37,9 @@ final class InvoiceQuery
             $query->whereIn('invoices.status', InvoiceStatus::openValues());
         } elseif ($status !== null && InvoiceStatus::tryFrom($status) !== null) {
             $query->where('invoices.status', $status);
+        } else {
+            // "All" leaves void invoices out (owner 2026-10-15); the "Void" filter lists them.
+            $query->where('invoices.status', '!=', InvoiceStatus::Void->value);
         }
 
         if (($filters['company'] ?? null) !== null) {

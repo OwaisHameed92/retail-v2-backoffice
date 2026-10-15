@@ -200,7 +200,8 @@ export interface TenantBillingData {
         nextPeriod: { start: string; end: string; label: string };
         suspendedForBilling: boolean;
     };
-    invoices: { data: InvoiceRow[]; total: number };
+    /** Void invoices are not in `data` / `total`; `void` counts them (linked to the Void filter). */
+    invoices: { data: InvoiceRow[]; total: number; void: number };
     payments: { data: PaymentRow[]; total: number };
     openInvoices: OpenInvoice[];
     options: { cycles: Option<BillingCycle>[]; methods: Option<PaymentMethod>[] };
@@ -289,6 +290,8 @@ export interface DirectDebitData {
         override: string | null;
         net: string;
         gross: string;
+        /** Once invoiced: what the setup fee invoices say (VAT inclusive). */
+        invoicedTotal: string | null;
         hasFee: boolean;
         method: SetupFeeMethod;
         instalments: number;

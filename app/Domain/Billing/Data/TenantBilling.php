@@ -79,11 +79,14 @@ final class TenantBilling
                 ],
                 'suspendedForBilling' => $account->billing_suspended_at !== null,
             ],
+            // Void invoices stay on record (their numbers are never deleted) but are left out of this list
+            // (owner 2026-10-15): "N void invoices" links to them.
             'invoices' => [
-                'data' => $invoices->clone()->with('company')->orderByRaw('case when status = ? then 0 else 1 end', [InvoiceStatus::Draft->value])
+                'data' => $invoices->clone()->where('status', '!=', InvoiceStatus::Void->value)->with('company')->orderByRaw('case when status = ? then 0 else 1 end', [InvoiceStatus::Draft->value])
                     ->latest('issue_date')->latest('created_at')->limit(self::RECENT)->get()
                     ->map(fn (Invoice $invoice) => InvoiceData::row($invoice, $now))->values()->all(),
-                'total' => $invoices->clone()->count(),
+                'total' => $invoices->clone()->where('status', '!=', InvoiceStatus::Void->value)->count(),
+                'void' => $invoices->clone()->where('status', InvoiceStatus::Void->value)->count(),
             ],
             'payments' => [
                 'data' => Payment::withoutCompanyScope()->where('company_id', $company->id)->latest('received_at')->limit(self::RECENT)->get()

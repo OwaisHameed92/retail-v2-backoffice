@@ -16,11 +16,11 @@ import { StatCard, StatGrid } from '@/components/shared/stat-card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { byHand } from '@/lib/billing-collection';
 import { taxName, taxText } from '@/lib/country';
 import { Link, router } from '@inertiajs/react';
 import { AlarmClock, ArrowRight, Banknote, CalendarRange, FilePlus2, PauseCircle, PiggyBank, Receipt, Scale, Settings2 } from 'lucide-react';
 import { type KeyboardEvent, useState } from 'react';
-import { byHand } from '@/lib/billing-collection';
 
 interface TenantBillingPanelProps {
     tenant: { id: string; name: string; status: string; legalName?: string | null; address?: string | null };
@@ -150,14 +150,26 @@ export function TenantBillingPanel({ tenant, billing }: TenantBillingPanelProps)
                         }
                         flush={invoices.data.length > 0}
                         footer={
-                            invoices.total > invoices.data.length ? (
-                                <Link
-                                    href={route('admin.billing.invoices.index', { company: tenant.id })}
-                                    className="text-primary inline-flex items-center gap-1 font-medium hover:underline"
-                                >
-                                    View all {invoices.total} invoices
-                                    <ArrowRight className="size-3.5" aria-hidden />
-                                </Link>
+                            invoices.total > invoices.data.length || invoices.void > 0 ? (
+                                <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+                                    {invoices.total > invoices.data.length && (
+                                        <Link
+                                            href={route('admin.billing.invoices.index', { company: tenant.id })}
+                                            className="text-primary inline-flex items-center gap-1 font-medium hover:underline"
+                                        >
+                                            View all {invoices.total} invoices
+                                            <ArrowRight className="size-3.5" aria-hidden />
+                                        </Link>
+                                    )}
+                                    {invoices.void > 0 && (
+                                        <Link
+                                            href={route('admin.billing.invoices.index', { company: tenant.id, status: 'void' })}
+                                            className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1 text-sm hover:underline"
+                                        >
+                                            {invoices.void} void {invoices.void === 1 ? 'invoice' : 'invoices'} (kept on record)
+                                        </Link>
+                                    )}
+                                </div>
                             ) : undefined
                         }
                     >
