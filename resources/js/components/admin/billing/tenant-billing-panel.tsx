@@ -62,9 +62,15 @@ export function TenantBillingPanel({ tenant, billing }: TenantBillingPanelProps)
 
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <p className="text-muted-foreground text-sm">
-                    Billed {settings.cycle === 'yearly' ? 'yearly' : 'monthly'}, payment due{' '}
-                    {settings.paymentTermsDays === 0 ? 'on receipt' : `within ${settings.paymentTermsDays} days`}. Next period{' '}
-                    {summary.nextPeriod.label}.
+                    {billing.directDebit.pricing.recurringIsZero ? (
+                        'Setup fee only: no monthly or yearly fee.'
+                    ) : (
+                        <>
+                            Billed {settings.cycle === 'yearly' ? 'yearly' : 'monthly'}, payment due{' '}
+                            {settings.paymentTermsDays === 0 ? 'on receipt' : `within ${settings.paymentTermsDays} days`}. Next period{' '}
+                            {summary.nextPeriod.label}.
+                        </>
+                    )}
                 </p>
                 {canManage && (
                     <div className="flex flex-wrap items-center gap-2">

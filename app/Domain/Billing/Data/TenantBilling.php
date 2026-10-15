@@ -38,7 +38,8 @@ final class TenantBilling
         $open = $invoices->clone()->open()->orderBy('due_date')->orderBy('sequence')->get();
         $overdue = $open->where('status', InvoiceStatus::Overdue);
         $credit = Money::sum(Payment::withoutCompanyScope()->where('company_id', $company->id)->where('unallocated', '>', 0)->pluck('unallocated'));
-        $lastPayment = Payment::withoutCompanyScope()->where('company_id', $company->id)->latest('received_at')->first();
+        // A reversed payment was taken back: it is not the last payment the business made (owner 2026-10-15).
+        $lastPayment = Payment::withoutCompanyScope()->where('company_id', $company->id)->whereNull('reversed_at')->latest('received_at')->first();
         $nextStart = BillingPeriod::nextStart($company, $now);
         $nextEnd = $account->cycle->periodEnd($nextStart);
         $recipients = app(BillingMailer::class)->invoiceRecipients($company);

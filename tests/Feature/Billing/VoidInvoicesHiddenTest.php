@@ -2,6 +2,7 @@
 
 use App\Domain\Admin\Enums\AdminRole;
 use App\Domain\Billing\Actions\RecordUpfrontPayment;
+use App\Domain\Billing\Actions\ReversePayment;
 use App\Domain\Billing\Data\NewInvoice;
 use App\Domain\Billing\Data\UpfrontPayment;
 use App\Domain\Billing\Enums\PaymentMethod;
@@ -61,4 +62,16 @@ test('the Direct Debit card shows the invoiced setup fee, not the plan figure', 
     $this->actingAs($this->admin(AdminRole::Owner), 'admin')->get(route('admin.tenants.show', $company))
         ->assertInertia(fn (AssertableInertia $page) => $page
             ->where('billing.directDebit.setupFee.invoicedTotal', '£1,800.00'));
+});
+
+test('a reversed payment is not shown as the last payment', function () {
+    $company = $this->payingTenant();
+    $invoice = $this->issuedFor($company);
+    $kept = $this->pay($company, '10.00', [$invoice->id => '10.00']);
+    $this->travel(1)->hours();
+    $taken = $this->pay($company, '20.00', [$invoice->id => '20.00']);
+    app(ReversePayment::class)->handle($taken->payment, 'Recorded by mistake');
+
+    $this->actingAs($this->admin(AdminRole::Owner), 'admin')->get(route('admin.tenants.show', $company))
+        ->assertInertia(fn (AssertableInertia $page) => $page->where('billing.summary.lastPayment.amount', '£10.00'));
 });
