@@ -49,6 +49,12 @@ return [
             'driver' => 'session',
             'provider' => 'admins',
         ],
+
+        // Handheld (PDA) app users during an `/api/pda/*` call (AuthenticateHandheldToken sets the user; HandheldGuard).
+        // Lets RecordAudit name the handheld user as the actor. Never a sign-in guard of its own.
+        'handheld' => [
+            'driver' => 'handheld-token',
+        ],
     ],
 
     /*

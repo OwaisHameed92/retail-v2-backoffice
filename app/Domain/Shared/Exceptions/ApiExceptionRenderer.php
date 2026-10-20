@@ -2,6 +2,7 @@
 
 namespace App\Domain\Shared\Exceptions;
 
+use App\Domain\Handheld\Support\PdaErrorRenderer;
 use App\Domain\Shared\Support\TraceId;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -20,6 +21,8 @@ use Throwable;
  * licensing/samples/error-codes.json): request.invalid, auth.invalid_key, rate.limited, server.busy, server.error;
  * on the till's endpoints every other 4xx is 400 request.invalid (module 2.6: only contract codes reach a till);
  * elsewhere under api/* (the public trial form) statuses the contract has no code for use request.* / auth.* names.
+ *
+ * The handheld (PDA) API (`api/pda/*`) has its own body: PdaErrorRenderer (legacy `success: false` + UPPER_SNAKE codes).
  *
  * Registered in bootstrap/app.php: `ApiExceptionRenderer::register($exceptions)`.
  */
@@ -55,6 +58,10 @@ final class ApiExceptionRenderer
 
     public static function render(Throwable $e, Request $request): JsonResponse
     {
+        if (PdaErrorRenderer::appliesTo($request)) {
+            return PdaErrorRenderer::render($e, $request);
+        }
+
         return match (true) {
             $e instanceof ApiException => self::response(
                 $request, $e->errorCode, $e->getMessage(), $e->httpStatus, $e->retryAfterSeconds, $e->rejectedKey, $e->details,

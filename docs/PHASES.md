@@ -145,6 +145,12 @@ Bearer-key API (PUT/GET/cancel tenant requests, plans), Admin → Partner reques
 onboarding, reject), Admin → Settings → Partners (keys and webhook secret shown once), signed webhooks with an outbox
 and 24 h retries. UK only (country flag `partnerApi`, off on PK). Status: done.
 
+## Handheld (PDA) API, phase 1 (2026-10-20)
+
+| # | Module | Status |
+|---|---|---|
+| PDA-1 | Handheld (PDA) API phase 1 (`docs/pda-api.md`, module `app/Domain/Handheld`, DECISIONS "Handheld (PDA) API"): the legacy `/api/pda/*` paths and shapes for the EPOS Android app. Handheld users per shop (bcrypt, tokens as SHA-256 + last 4, named limiters, audited), Settings → Handheld (PDA) users (`users.manage`), products with the shop's price and stock, barcode/unit lookups, suppliers, business price change (SaveProduct, pulled by every till), head-office purchase orders for the user's shop (SaveHeadOfficeOrder / ChangeHeadOfficeOrderStatus, 409 once the till owns them); receiving, returns, stock adjustments answer 501 until phase 2. Both countries, no plan gating | done (phase 2: receiving, returns, adjustments, stock takes, shop prices) |
+
 ## Phase 8: Later — 0/5
 
 Web orders / click and collect · Online payments · Dealers and resellers · Public marketing site · EPOS update

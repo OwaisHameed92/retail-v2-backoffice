@@ -11,6 +11,7 @@ use App\Domain\Billing\GoCardless\Support\DemoSafeGoCardlessClient;
 use App\Domain\Billing\GoCardless\Support\NoDirectDebitClient;
 use App\Domain\Billing\GoCardless\Support\SdkGoCardlessClient;
 use App\Domain\Billing\Support\ManualCollection;
+use App\Domain\Handheld\Support\HandheldRateLimits;
 use App\Domain\Licensing\Events\LicenceActivated;
 use App\Domain\Licensing\Listeners\IssueLicenceForNewTill;
 use App\Domain\Licensing\Listeners\SendWelcomeEmailWithKeys;
@@ -28,6 +29,7 @@ use App\Domain\Tenancy\Events\RegisterDeactivated;
 use App\Domain\Tenancy\Events\RegisterReactivated;
 use App\Domain\Tenancy\Events\TenantCreated;
 use Illuminate\Mail\Markdown;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
@@ -87,5 +89,10 @@ class AppServiceProvider extends ServiceProvider
         Event::listen(LicenceActivated::class, [PartnerWebhookListeners::class, 'firstTillActivated']);
         Event::listen(CompanyCancelled::class, [PartnerWebhookListeners::class, 'companyCancelled']);
         PartnerRateLimit::register();
+
+        // Handheld (PDA) API: its named limiters, and the `handheld` guard whose user AuthenticateHandheldToken sets
+        // for the call (so RecordAudit names the handheld user). It never signs anyone in by itself.
+        HandheldRateLimits::register();
+        Auth::viaRequest('handheld-token', fn () => null);
     }
 }
