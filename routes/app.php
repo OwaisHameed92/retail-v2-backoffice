@@ -18,6 +18,7 @@ use App\Http\Controllers\App\CatalogueGroupController;
 use App\Http\Controllers\App\ComplianceController;
 use App\Http\Controllers\App\CustomerController;
 use App\Http\Controllers\App\DashboardController;
+use App\Http\Controllers\App\HandheldUserController;
 use App\Http\Controllers\App\HeadOfficeOrderController;
 use App\Http\Controllers\App\InvitationAcceptController;
 use App\Http\Controllers\App\InvoiceImportController;
@@ -106,6 +107,19 @@ Route::middleware(['auth:web', 'verified', 'company', 'two-factor:web'])->group(
         Route::post('invitations', [PortalInvitationController::class, 'store'])->name('invitations.store')->middleware('throttle:30,1');
         Route::post('invitations/{invitation}/resend', [PortalInvitationController::class, 'resend'])->name('invitations.resend')->whereUlid('invitation')->middleware('throttle:10,1');
         Route::delete('invitations/{invitation}', [PortalInvitationController::class, 'destroy'])->name('invitations.destroy')->whereUlid('invitation');
+    });
+
+    // Handheld (PDA) users (docs/pda-api.md): logins for the Android PDA app, one shop each. Same permission as portal users.
+    Route::prefix('handheld-users')->name('handheld-users.')->middleware('company.can:users.manage')->controller(HandheldUserController::class)->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::middleware('throttle:60,1')->group(function () {
+            Route::post('/', 'store')->name('store');
+            Route::put('{handheld}', 'update')->name('update')->whereUlid('handheld');
+            Route::post('{handheld}/deactivate', 'deactivate')->name('deactivate')->whereUlid('handheld');
+            Route::post('{handheld}/reactivate', 'reactivate')->name('reactivate')->whereUlid('handheld');
+            Route::post('{handheld}/password', 'password')->name('password')->whereUlid('handheld');
+            Route::post('{handheld}/sign-out', 'signOut')->name('sign-out')->whereUlid('handheld');
+        });
     });
 
     // Module 4.2: products, barcodes, units, departments and categories, CSV import. Read: catalogue.view; edit: catalogue.manage.

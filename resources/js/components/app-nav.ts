@@ -26,6 +26,7 @@ import {
     ShieldAlert,
     ShieldCheck,
     ShoppingCart,
+    Smartphone,
     Store,
     Tag,
     Truck,
@@ -175,6 +176,13 @@ export function tenantNavGroups(path: string): TenantNavGroup[] {
             collapsible: 'closed',
             items: [
                 { title: 'Shops and tills', icon: Store, href: '/app/shops', active: startsWithPath(path, '/app/shops'), ability: 'shops.view' },
+                {
+                    title: 'Handheld (PDA) users',
+                    icon: Smartphone,
+                    href: '/app/handheld-users',
+                    active: startsWithPath(path, '/app/handheld-users'),
+                    ability: 'users.manage',
+                },
                 {
                     title: 'Till settings',
                     icon: Settings,

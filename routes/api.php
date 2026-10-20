@@ -1,11 +1,17 @@
 <?php
 
+use App\Domain\Handheld\Support\HandheldRateLimits;
 use App\Http\Controllers\Api\CloudMigrationController;
 use App\Http\Controllers\Api\LicenceApiController;
 use App\Http\Controllers\Api\PartnerTenantRequestController;
+use App\Http\Controllers\Api\Pda\PdaAuthController;
+use App\Http\Controllers\Api\Pda\PdaCatalogueController;
+use App\Http\Controllers\Api\Pda\PdaPhaseTwoController;
+use App\Http\Controllers\Api\Pda\PdaPurchaseOrderController;
 use App\Http\Controllers\Api\SyncController;
 use App\Http\Controllers\Api\TrialRequestController;
 use App\Http\Middleware\AuditPartnerCall;
+use App\Http\Middleware\AuthenticateHandheldToken;
 use App\Http\Middleware\AuthenticatePartnerKey;
 use App\Http\Middleware\AuthenticateSyncKey;
 use App\Http\Middleware\EnsureTillContract;
@@ -13,6 +19,7 @@ use App\Http\Middleware\GuardPublicTrialRequests;
 use App\Http\Middleware\GuardSyncRequest;
 use App\Http\Middleware\IdempotentTillRequest;
 use App\Http\Middleware\PublicFormCors;
+use App\Http\Middleware\ThrottleHandheldApi;
 use App\Http\Middleware\ThrottleLicenceApi;
 use App\Http\Middleware\ThrottlePartnerApi;
 use Illuminate\Support\Facades\Route;
@@ -75,3 +82,47 @@ Route::prefix('partner/v1')->name('api.partner.')
         Route::get('tenant-requests/{externalId}', 'show')->name('tenant-requests.show');
         Route::post('tenant-requests/{externalId}/cancel', 'cancel')->name('tenant-requests.cancel');
     });
+
+// Handheld (PDA) API, phase 1 (docs/pda-api.md): the Android PDA app, same paths and shapes as the legacy portal's
+// /api/pda/*. Login has its own limiter per email + IP; every other call needs `Authorization: Bearer <token>`
+// (AuthenticateHandheldToken: never a query string) and is limited per token. Everything is scoped to the user's
+// business and shop. Errors: `{success: false, code, message, traceId, retryAfterSeconds, rejectedKey}`. Both
+// countries; no plan gating yet (DECISIONS "Handheld (PDA) API").
+Route::prefix('pda')->name('api.pda.')->group(function () {
+    Route::post('login', [PdaAuthController::class, 'login'])->name('login')
+        ->middleware(ThrottleHandheldApi::class.':'.HandheldRateLimits::LOGIN);
+
+    Route::middleware([AuthenticateHandheldToken::class, ThrottleHandheldApi::class.':'.HandheldRateLimits::API])->group(function () {
+        Route::get('me', [PdaAuthController::class, 'me'])->name('me');
+        Route::post('logout', [PdaAuthController::class, 'logout'])->name('logout');
+
+        Route::controller(PdaCatalogueController::class)->group(function () {
+            Route::get('products', 'products')->name('products.index');
+            Route::get('products/{product}/units', 'units')->name('products.units')->whereUlid('product');
+            Route::put('products/{product}/price', 'updatePrice')->name('products.price')->whereUlid('product');
+            Route::get('resolve-barcode', 'resolveBarcode')->name('resolve-barcode');
+            Route::get('suppliers', 'suppliers')->name('suppliers.index');
+        });
+
+        Route::controller(PdaPurchaseOrderController::class)->prefix('purchase-orders')->name('purchase-orders.')->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::post('/', 'store')->name('store');
+            Route::get('{order}', 'show')->name('show')->whereUlid('order');
+            Route::put('{order}', 'update')->name('update')->whereUlid('order');
+            Route::post('{order}/cancel', 'cancel')->name('cancel')->whereUlid('order');
+        });
+
+        // Till-owned in contract v1.4.1: 501 NOT_AVAILABLE_YET until phase 2 (stock locations are not in the model).
+        Route::post('purchase-orders/{order}/receive', PdaPhaseTwoController::class)->name('purchase-orders.receive');
+        Route::get('purchase-orders/{order}/receipts', PdaPhaseTwoController::class)->name('purchase-orders.receipts');
+        Route::get('purchase-orders/{order}/returnable', PdaPhaseTwoController::class)->name('purchase-orders.returnable');
+        Route::get('purchase-returns', PdaPhaseTwoController::class)->name('purchase-returns.index');
+        Route::post('purchase-returns', PdaPhaseTwoController::class)->name('purchase-returns.store');
+        Route::put('purchase-returns/{return}', PdaPhaseTwoController::class)->name('purchase-returns.update');
+        Route::post('purchase-returns/{return}/cancel', PdaPhaseTwoController::class)->name('purchase-returns.cancel');
+        Route::get('stock-adjustments', PdaPhaseTwoController::class)->name('stock-adjustments.index');
+        Route::post('stock-adjustments', PdaPhaseTwoController::class)->name('stock-adjustments.store');
+        Route::put('stock-adjustments/{adjustment}', PdaPhaseTwoController::class)->name('stock-adjustments.update');
+        Route::post('stock-adjustments/{adjustment}/cancel', PdaPhaseTwoController::class)->name('stock-adjustments.cancel');
+    });
+});

@@ -12,13 +12,13 @@ use Illuminate\Support\Str;
 /**
  * Writes one audit log entry: who did what to which record, with before/after values.
  *
- * The actor is taken from the `admin` guard, then the `web` guard. Jobs and till APIs pass `$actor`
+ * The actor is taken from the `admin` guard, then the `web` guard, then `handheld` (PDA app calls). Jobs and till APIs pass `$actor`
  * explicitly (or leave it null for "system"). Secrets are redacted from before/after/meta.
  */
 final class RecordAudit
 {
-    /** Guards checked in order when no actor is passed. */
-    private const GUARDS = ['admin', 'web'];
+    /** Guards checked in order when no actor is passed (`handheld`: the PDA app user of an `/api/pda/*` call). */
+    private const GUARDS = ['admin', 'web', 'handheld'];
 
     public function __construct(
         private readonly AuthFactory $auth,
