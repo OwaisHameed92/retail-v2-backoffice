@@ -16,6 +16,8 @@ export interface PlanRow {
     currency: string;
     trialDays: number;
     featureCount: number;
+    /** Owner 2026-10-21: the handheld (PDA) app comes with the plan (portal only, not a till feature). */
+    includesHandheld: boolean;
     status: PlanStatusValue;
     statusLabel: string;
     sortOrder: number;
@@ -43,6 +45,7 @@ export interface PlanRecord {
     yearlySaving: string;
     yearlySavingPercent: number | null;
     features: string[];
+    includesHandheld: boolean;
     isActive: boolean;
     isPublic: boolean;
     sortOrder: number;

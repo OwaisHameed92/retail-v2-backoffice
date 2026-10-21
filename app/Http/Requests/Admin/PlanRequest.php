@@ -84,6 +84,8 @@ abstract class PlanRequest extends FormRequest
             'features.*' => ['string', 'distinct', Rule::in(Feature::values())],
             'is_active' => ['required', 'boolean'],
             'is_public' => ['required', 'boolean'],
+            // Owner 2026-10-21: optional, so older clients keep the plan's setting (a new plan: from its prices).
+            'includes_handheld' => ['sometimes', 'boolean'],
             'sort_order' => ['required', 'integer', 'min:0', 'max:9999'],
         ];
     }
@@ -147,6 +149,7 @@ abstract class PlanRequest extends FormRequest
             'trial_grace_days' => 'trial grace',
             'grace_days' => 'payment grace',
             'sort_order' => 'sort order',
+            'includes_handheld' => 'handheld (PDA) app included',
         ];
     }
 
@@ -172,6 +175,7 @@ abstract class PlanRequest extends FormRequest
             pricingMode: PricingMode::from($this->string('pricing_mode')->value()),
             billingType: PlanBillingType::tryFrom($this->string('billing_type')->value()),
             setupFeeMode: SetupFeeMode::tryFrom($this->string('setup_fee_mode')->value()),
+            includesHandheld: $this->has('includes_handheld') ? $this->boolean('includes_handheld') : null,
         );
     }
 

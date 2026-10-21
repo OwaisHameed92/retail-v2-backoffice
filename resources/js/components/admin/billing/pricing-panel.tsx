@@ -11,7 +11,7 @@ import { byHand, manualMethodsText } from '@/lib/billing-collection';
 import { formatMoney } from '@/lib/country';
 import { idempotencyKey } from '@/lib/idempotency';
 import { useForm } from '@inertiajs/react';
-import { ArrowRightLeft, Banknote, LoaderCircle, Tags } from 'lucide-react';
+import { ArrowRightLeft, Banknote, LoaderCircle, Smartphone, Tags } from 'lucide-react';
 import { type FormEventHandler, type ReactNode, useState } from 'react';
 
 function Tile({ label, children }: { label: string; children: ReactNode }) {
@@ -88,6 +88,13 @@ export function PricingPanel({ company, directDebit, canManage, planChange = nul
                             {pricing.unitPrice ? `${pricing.unitPrice} per ${pricing.unit} ${pricing.per}` : 'Mixed plan prices'}
                         </span>
                     )}
+                    <span className="inline-flex flex-wrap items-center gap-2 text-sm">
+                        <Smartphone className="text-muted-foreground size-3.5" aria-hidden />
+                        Handheld (PDA) app
+                        <StatusPill tone={directDebit.handheldIncluded ? 'success' : 'neutral'}>
+                            {directDebit.handheldIncluded ? 'Included' : 'Not on this plan'}
+                        </StatusPill>
+                    </span>
                 </Tile>
                 <Tile label="Setup fee (upfront)">
                     <span className="inline-flex flex-wrap items-center gap-2 font-medium tabular-nums">

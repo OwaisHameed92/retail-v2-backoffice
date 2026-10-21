@@ -1,6 +1,6 @@
 import { PlanFeaturePicker } from '@/components/admin/plans/plan-feature-picker';
 import { CheckboxRow, Field, FormSection, MoneyInput, NumberInput } from '@/components/admin/plans/plan-form-fields';
-import { formatMoney, slugify, yearlySaving } from '@/components/admin/plans/plan-format';
+import { formatMoney, handheldByDefault, slugify, yearlySaving } from '@/components/admin/plans/plan-format';
 import { type FeatureOption, type PlanBillingType, type PlanRecord } from '@/components/admin/plans/types';
 import { FormCard } from '@/components/shared/form-section';
 import { StickyFormBar } from '@/components/shared/sticky-form-bar';
@@ -45,6 +45,7 @@ export interface PlanFormData {
     trial_grace_days: string;
     grace_days: string;
     features: string[];
+    includes_handheld: boolean;
     is_active: boolean;
     is_public: boolean;
     sort_order: string;
@@ -69,6 +70,7 @@ export function planFormDefaults(
         trial_grace_days: String(plan?.trialGraceDays ?? defaults?.trialGraceDays ?? 3),
         grace_days: String(plan?.graceDays ?? defaults?.graceDays ?? 7),
         features: plan?.features ?? [],
+        includes_handheld: plan?.includesHandheld ?? false,
         is_active: plan?.isActive ?? true,
         is_public: plan?.isPublic ?? false,
         sort_order: String(plan?.sortOrder ?? defaults?.sortOrder ?? 0),
@@ -86,6 +88,8 @@ interface PlanFormProps {
     cancelHref: string;
     /** On create, the code follows the name until someone edits it. */
     autoCode?: boolean;
+    /** On create, "Handheld (PDA) app included" follows the prices until someone ticks or unticks it. */
+    autoHandheld?: boolean;
     /** From useForm: shows "unsaved changes" in the action bar. */
     isDirty?: boolean;
 }
@@ -100,13 +104,24 @@ export function PlanForm({
     submitLabel,
     cancelHref,
     autoCode = false,
+    autoHandheld = false,
     isDirty = false,
 }: PlanFormProps) {
     const [codeTouched, setCodeTouched] = useState(!autoCode);
+    const [handheldTouched, setHandheldTouched] = useState(!autoHandheld);
     const saving = yearlySaving(data.price_monthly, data.price_yearly);
     const unit = data.pricing_mode === 'perBranch' ? 'branch' : 'till';
     const recurs = data.billing_type !== 'setupOnly';
     const hasSetupFee = data.billing_type !== 'recurringOnly';
+
+    /** Type and prices; on create the handheld tick follows them (monthly or yearly price above 0) until changed by hand. */
+    const setPricing = <K extends 'billing_type' | 'price_monthly' | 'price_yearly'>(key: K, value: PlanFormData[K]) => {
+        setData(key, value);
+        if (!handheldTouched) {
+            const next = { ...data, [key]: value };
+            setData('includes_handheld', handheldByDefault(next.billing_type, next.price_monthly, next.price_yearly));
+        }
+    };
 
     const changeName = (name: string) => {
         setData('name', name);
@@ -182,7 +197,7 @@ export function PlanForm({
                                     type="button"
                                     role="radio"
                                     aria-checked={selected}
-                                    onClick={() => setData('billing_type', type.value)}
+                                    onClick={() => setPricing('billing_type', type.value)}
                                     className={cn(
                                         'grid gap-1 rounded-lg border p-3.5 text-left transition-colors',
                                         selected ? 'border-primary bg-primary/5 ring-primary/30 ring-2' : 'hover:bg-subtle',
@@ -238,7 +253,7 @@ export function PlanForm({
                                     placeholder="30.00"
                                     value={data.price_monthly}
                                     invalid={!!errors.price_monthly}
-                                    onChange={(e) => setData('price_monthly', e.target.value)}
+                                    onChange={(e) => setPricing('price_monthly', e.target.value)}
                                 />
                             </Field>
                         )}
@@ -271,7 +286,7 @@ export function PlanForm({
                                     placeholder="300.00"
                                     value={data.price_yearly}
                                     invalid={!!errors.price_yearly}
-                                    onChange={(e) => setData('price_yearly', e.target.value)}
+                                    onChange={(e) => setPricing('price_yearly', e.target.value)}
                                 />
                             </Field>
                         )}
@@ -394,6 +409,17 @@ export function PlanForm({
                         value={data.features}
                         onChange={(value) => setData('features', value)}
                         error={errors.features ?? Object.entries(errors).find(([key]) => key.startsWith('features.'))?.[1]}
+                    />
+                    <CheckboxRow
+                        id="includes_handheld"
+                        checked={data.includes_handheld}
+                        onChange={(checked) => {
+                            setHandheldTouched(true);
+                            setData('includes_handheld', checked);
+                        }}
+                        label="Handheld (PDA) app included"
+                        help="Staff can sign in to the Android PDA app. On by default for monthly and yearly plans. Portal only: not sent to the till."
+                        error={errors.includes_handheld}
                     />
                 </FormSection>
 

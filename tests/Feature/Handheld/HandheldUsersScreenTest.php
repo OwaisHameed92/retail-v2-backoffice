@@ -21,6 +21,7 @@ beforeEach(function () {
     $this->withoutVite();
     $this->travelTo('2026-10-20 09:00:00');
     $this->company = Company::factory()->create(['name' => 'Kirkgate Stores']);
+    H::monthlyPlan($this->company);
     $this->owner = P::member($this->company, CompanyRole::Owner, attributes: ['name' => 'Aisha Khan']);
     $this->leeds = Branch::factory()->forCompany($this->company)->create(['code' => 'LDS', 'name' => 'Leeds Kirkgate']);
     $this->bradford = Branch::factory()->forCompany($this->company)->create(['code' => 'BRD', 'name' => 'Bradford']);

@@ -3,8 +3,10 @@
 namespace App\Domain\Handheld\Actions;
 
 use App\Domain\Handheld\Models\HandheldUser;
+use App\Domain\Handheld\Support\HandheldAccess;
 use App\Domain\Handheld\Support\HandheldShops;
 use App\Domain\Shared\Actions\RecordAudit;
+use App\Domain\Tenancy\CurrentCompany;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -13,14 +15,17 @@ use SensitiveParameter;
 /**
  * Adds a handheld (PDA) login for one open shop of the current business, with the password the manager chose
  * (stored as bcrypt). Prices stay locked unless `can_change_prices`. Audited as `handheld_user.created` (never the
- * password).
+ * password). Only when the business's plan includes the handheld app (HandheldAccess::allowed, owner 2026-10-21):
+ * otherwise a validation error on `plan`, whatever the screen showed.
  *
  *     $handheld = app(CreateHandheldUser::class)->handle(['name' => 'Stock room 1', 'email' => 'stock1@shop.test',
  *         'branch_id' => $leeds->id, 'password' => '…', 'can_change_prices' => false], $owner);
  */
 final class CreateHandheldUser
 {
-    public function __construct(private readonly RecordAudit $audit) {}
+    public const NOT_INCLUDED = 'The handheld app comes with the monthly plans. Contact Switch & Save to upgrade before adding handheld users.';
+
+    public function __construct(private readonly RecordAudit $audit, private readonly CurrentCompany $tenancy) {}
 
     /**
      * @param  array{name: string, email: string, branch_id: string, password: string, can_change_prices?: bool}  $data
@@ -29,6 +34,10 @@ final class CreateHandheldUser
      */
     public function handle(#[SensitiveParameter] array $data, User $by): HandheldUser
     {
+        if (! HandheldAccess::allowed($this->tenancy->require())) {
+            throw ValidationException::withMessages(['plan' => self::NOT_INCLUDED]);
+        }
+
         $shop = HandheldShops::openShop((string) $data['branch_id']);
 
         return DB::transaction(function () use ($data, $by, $shop) {

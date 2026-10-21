@@ -19,6 +19,7 @@ use App\Domain\Billing\Support\SetupFeePayment;
 use App\Domain\Billing\Support\SetupFeeState;
 use App\Domain\Billing\Support\SetupFeeTills;
 use App\Domain\Billing\Support\Vat;
+use App\Domain\Handheld\Support\HandheldAccess;
 use App\Domain\Licensing\Support\DefaultPlan;
 use App\Domain\Plans\Enums\PricingMode;
 use App\Domain\Shared\Support\Money;
@@ -77,6 +78,8 @@ final class DirectDebitData
                 'per' => $expected['cycle']->per(),
                 'options' => PricingMode::options(),
             ],
+            // Owner 2026-10-21: the business's plan includes the handheld (PDA) app (the rule the PDA API applies).
+            'handheldIncluded' => HandheldAccess::allowed($company),
             // "Setup fee" and "upfront payment" are one thing (owner, 2026-10-05): always paid by hand.
             'planType' => $planType !== null ? ['value' => $planType->value, 'label' => $planType->label()] : null,
             'upfront' => [

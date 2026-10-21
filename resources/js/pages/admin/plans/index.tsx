@@ -6,6 +6,7 @@ import { DataTable, useTableQuery, type Paginated } from '@/components/shared/da
 import { EmptyState } from '@/components/shared/empty-state';
 import { EntityCell } from '@/components/shared/entity-cell';
 import { PageHeader } from '@/components/shared/page-header';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import AdminLayout from '@/layouts/admin-layout';
@@ -70,7 +71,16 @@ const columns: ColumnDef<PlanRow>[] = [
         id: 'features',
         header: 'Features',
         meta: { align: 'right' },
-        cell: ({ row }) => <span className="tabular-nums">{row.original.featureCount}</span>,
+        cell: ({ row }) => (
+            <span className="inline-flex items-center justify-end gap-1.5 whitespace-nowrap">
+                <span className="tabular-nums">{row.original.featureCount}</span>
+                {row.original.includesHandheld && (
+                    <Badge variant="info" title="Handheld (PDA) app included">
+                        + Handheld
+                    </Badge>
+                )}
+            </span>
+        ),
     },
     {
         id: 'status',

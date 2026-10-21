@@ -20,6 +20,7 @@ beforeEach(function () {
     $this->travelTo('2026-10-20 09:00:00');
     $this->sync = new SyncApiFixtures($this);
     $this->company = $this->sync->company;
+    H::monthlyPlan($this->company);
     F::catalogue($this->company);
     $this->handheld = H::user($this->company, $this->sync->leeds);
     $this->headers = H::headers(H::token($this, $this->handheld));

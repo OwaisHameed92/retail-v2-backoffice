@@ -28,6 +28,8 @@ export interface HandheldUsersProps {
     users: HandheldUser[];
     shops: HandheldShop[];
     stats: { active: number; inactive: number; canChangePrices: number; devices: number };
+    /** The business's plan includes the handheld app (owner 2026-10-21: monthly and yearly plans). */
+    included: boolean;
 }
 
 export type HandheldCommand = { kind: 'edit' | 'password' | 'sign-out' | 'deactivate' | 'reactivate'; user: HandheldUser };

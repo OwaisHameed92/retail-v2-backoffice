@@ -10,12 +10,13 @@ import { PageHeader } from '@/components/shared/page-header';
 import { SectionCard } from '@/components/shared/section-card';
 import { StatCard, StatGrid } from '@/components/shared/stat-card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import AdminLayout from '@/layouts/admin-layout';
+import { byHand } from '@/lib/billing-collection';
 import { taxName, taxText } from '@/lib/country';
 import { Head, Link } from '@inertiajs/react';
-import { Archive, CalendarClock, CalendarRange, Check, Clock, Layers, Minus, Pencil } from 'lucide-react';
-import { byHand } from '@/lib/billing-collection';
+import { Archive, CalendarClock, CalendarRange, Check, Clock, Layers, Minus, Pencil, Smartphone } from 'lucide-react';
 
 interface ShowPlanProps {
     plan: PlanRecord;
@@ -149,6 +150,14 @@ export default function ShowPlan({ plan, features, activity }: ShowPlanProps) {
                             ))}
                         </ul>
                     )}
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t pt-4 text-sm">
+                        <Smartphone className="text-muted-foreground size-4 shrink-0" aria-hidden />
+                        <span className="font-medium">Handheld (PDA) app</span>
+                        <Badge variant={plan.includesHandheld ? 'success' : 'neutral'}>{plan.includesHandheld ? 'Included' : 'Not included'}</Badge>
+                        <span className="text-muted-foreground basis-full pl-7">
+                            Portal setting: staff sign in to the Android PDA app. Not sent to the till.
+                        </span>
+                    </div>
                     {excluded.length > 0 && (
                         <div className="grid gap-2 border-t pt-4">
                             <p className="text-muted-foreground text-sm font-medium">Not included</p>

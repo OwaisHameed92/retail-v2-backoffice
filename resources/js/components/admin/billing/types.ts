@@ -356,6 +356,8 @@ export interface DirectDebitData {
     };
     /** Owner rules 2026-10-05: setup only, setup + recurring, or recurring only. */
     planType: { value: PlanBillingType; label: string } | null;
+    /** Owner 2026-10-21: the business's plan includes the handheld (PDA) app (what the PDA API checks). */
+    handheldIncluded: boolean;
     /** The setup fee (upfront): one thing, always paid by hand (cash, card or bank transfer). */
     upfront: {
         recorded: boolean;

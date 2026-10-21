@@ -30,6 +30,7 @@ final class PlanActivity
         'trial_grace_days' => 'Trial grace',
         'grace_days' => 'Payment grace',
         'features' => 'Features',
+        'includes_handheld' => 'Handheld (PDA) app included',
         'is_active' => 'Available for new licences',
         'is_public' => 'Shown on pricing page',
         'sort_order' => 'Sort order',
