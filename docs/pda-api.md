@@ -17,6 +17,9 @@ point at the new portal with few changes. Differences are listed in [Differences
 - **Times:** ISO-8601 UTC with `Z` (`"2026-10-20T09:00:00Z"`); dates `YYYY-MM-DD`.
 - **Handheld users** are created on the portal by the business owner: **Settings → Handheld (PDA) users** (name,
   email, shop, password, "can change selling prices"). They are not till users and are never sent to a till.
+- **Plans:** the handheld app is only for businesses on a monthly (or yearly) plan (owner, 2026-10-21). A business
+  whose plan does not include it gets `403 PLAN_NOT_INCLUDED` at login and on every call. Its users and tokens are
+  kept: the same token works again as soon as the business moves to a plan that includes the app (no new login).
 
 ## Errors
 
@@ -38,6 +41,7 @@ Validation errors are **422** `VALIDATION_FAILED` with `errors` (field → messa
 | 403 | `ACCOUNT_INACTIVE` | The handheld user is switched off on the portal |
 | 403 | `SHOP_CLOSED` | The user's shop is closed |
 | 403 | `BUSINESS_SUSPENDED` / `BUSINESS_CANCELLED` | The business's account is on hold / closed |
+| 403 | `PLAN_NOT_INCLUDED` | The business's plan does not include the handheld app (monthly plans do). Message: "The handheld app is part of the monthly plans. Ask Switch & Save to upgrade." Show it and stop; keep the token |
 | 403 | `PRICE_CHANGE_NOT_ALLOWED` | Price change by a user without the permission |
 | 404 | `NOT_FOUND` | Unknown id, or another shop's / business's record; unknown path |
 | 405 | `METHOD_NOT_ALLOWED` | Wrong HTTP method |

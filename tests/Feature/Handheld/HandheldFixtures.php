@@ -3,6 +3,8 @@
 namespace Tests\Feature\Handheld;
 
 use App\Domain\Handheld\Models\HandheldUser;
+use App\Domain\Plans\Enums\PlanBillingType;
+use App\Domain\Plans\Models\Plan;
 use App\Domain\Shared\Support\Ulid;
 use App\Domain\Tenancy\Models\Branch;
 use App\Domain\Tenancy\Models\Company;
@@ -37,6 +39,29 @@ final class HandheldFixtures
             'can_change_prices' => false,
             ...$attributes,
         ]);
+    }
+
+    /**
+     * Owner 2026-10-21: the handheld app comes with the monthly plans. Puts the business on a monthly plan that includes
+     * it (with no other plan, it is also the portal default for businesses without a plan).
+     */
+    public static function monthlyPlan(Company $company): Plan
+    {
+        $plan = Plan::factory()->create(['name' => 'Monthly only', 'billing_type' => PlanBillingType::RecurringOnly,
+            'price_monthly' => '30.00', 'price_yearly' => '300.00', 'setup_fee' => '0.00', 'includes_handheld' => true]);
+        $company->forceFill(['plan_id' => $plan->id])->saveQuietly();
+
+        return $plan;
+    }
+
+    /** A setup-only plan (no monthly or yearly price): the handheld app is not included. */
+    public static function setupOnlyPlan(?Company $company = null): Plan
+    {
+        $plan = Plan::factory()->create(['name' => 'Setup only', 'billing_type' => PlanBillingType::SetupOnly,
+            'price_monthly' => '0.00', 'price_yearly' => '0.00', 'setup_fee' => '499.00', 'includes_handheld' => false]);
+        $company?->forceFill(['plan_id' => $plan->id])->saveQuietly();
+
+        return $plan;
     }
 
     /**

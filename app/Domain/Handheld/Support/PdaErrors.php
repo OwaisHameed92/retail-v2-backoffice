@@ -25,6 +25,8 @@ final class PdaErrors
 
     public const TENANT_REQUIRED = 'TENANT_REQUIRED';
 
+    public const PLAN_NOT_INCLUDED = 'PLAN_NOT_INCLUDED';
+
     public const RATE_LIMITED = 'RATE_LIMITED';
 
     public const VALIDATION_FAILED = 'VALIDATION_FAILED';
@@ -77,6 +79,11 @@ final class PdaErrors
     public static function cancelled(): ApiException
     {
         return new ApiException(self::BUSINESS_CANCELLED, 'This business’s account is closed.', 403);
+    }
+
+    public static function planNotIncluded(): ApiException
+    {
+        return new ApiException(self::PLAN_NOT_INCLUDED, 'The handheld app is part of the monthly plans. Ask Switch & Save to upgrade.', 403);
     }
 
     public static function tenantRequired(): ApiException

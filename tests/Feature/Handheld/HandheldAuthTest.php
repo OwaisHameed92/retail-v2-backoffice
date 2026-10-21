@@ -18,6 +18,7 @@ beforeEach(function () {
     $this->travelTo('2026-10-20 09:00:00');
     $this->company = Company::factory()->create(['name' => 'Kirkgate Stores']);
     $this->leeds = Branch::factory()->forCompany($this->company)->create(['code' => 'LDS', 'name' => 'Leeds Kirkgate']);
+    H::monthlyPlan($this->company);
     $this->user = H::user($this->company, $this->leeds);
 });
 

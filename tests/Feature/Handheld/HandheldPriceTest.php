@@ -20,6 +20,7 @@ beforeEach(function () {
     $this->travelTo('2026-10-20 09:00:00');
     $this->sync = new SyncApiFixtures($this);
     $this->company = $this->sync->company;
+    H::monthlyPlan($this->company);
     F::catalogue($this->company);
     H::catalogueGroups($this->company);
     $this->since = $this->sync->pull(0)->json('highestVersion');

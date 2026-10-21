@@ -39,6 +39,16 @@ export function slugify(value: string): string {
 }
 
 /**
+ * Owner 2026-10-21 (mirrors `Plan::handheldByDefault`): a plan includes the handheld (PDA) app by default when it has a
+ * monthly or yearly price above 0. Setup-only plans do not.
+ */
+export function handheldByDefault(billingType: string, monthly: string, yearly: string): boolean {
+    const above = (value: string) => Number(stripMoney(value)) > 0;
+
+    return billingType !== 'setupOnly' && (above(monthly) || above(yearly));
+}
+
+/**
  * Yearly saving against 12 monthly payments, worked out in pence so the hint never shows float noise.
  * Returns null when either price is not a valid amount.
  */

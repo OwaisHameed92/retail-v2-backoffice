@@ -4,6 +4,7 @@ namespace App\Domain\Handheld\Queries;
 
 use App\Domain\Handheld\Models\HandheldToken;
 use App\Domain\Handheld\Models\HandheldUser;
+use App\Domain\Handheld\Support\HandheldAccess;
 use App\Domain\Handheld\Support\HandheldShops;
 use App\Domain\Tenancy\CurrentCompany;
 use App\Domain\Tenancy\Models\Branch;
@@ -11,14 +12,15 @@ use App\Domain\Tenancy\Models\Branch;
 /**
  * Props of Settings → Handheld (PDA) users (`app/handheld-users/index`): the current business's handheld users (a
  * one-shop portal user sees their shop's only), each with their shop, signed-in devices and last use, the open shops
- * to choose from and the counts. Never a password or token hash.
+ * to choose from, the counts, and whether the business's plan includes the handheld app (`included`: when not, the
+ * screen shows a notice and no Add). Never a password or token hash.
  */
 final class HandheldUsersPage
 {
     public function __construct(private readonly CurrentCompany $tenancy) {}
 
     /**
-     * @return array{users: list<array<string, mixed>>, shops: list<array{id: string, name: string, code: string}>, stats: array<string, int>}
+     * @return array{users: list<array<string, mixed>>, shops: list<array{id: string, name: string, code: string}>, stats: array<string, int>, included: bool}
      */
     public function handle(): array
     {
@@ -61,6 +63,7 @@ final class HandheldUsersPage
                 'canChangePrices' => $users->where('is_active', true)->where('can_change_prices', true)->count(),
                 'devices' => array_sum(array_column($rows, 'devices')),
             ],
+            'included' => HandheldAccess::allowed($this->tenancy->require()),
         ];
     }
 }

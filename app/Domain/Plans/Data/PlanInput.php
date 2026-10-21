@@ -49,6 +49,8 @@ final readonly class PlanInput
         ?PlanBillingType $billingType = null,
         /** P11: once per business or for each till; null = keep the plan's (a new plan: once per business). */
         public ?SetupFeeMode $setupFeeMode = null,
+        /** Owner 2026-10-21: the handheld (PDA) app comes with the plan; null = keep the plan's (a new plan: from its prices). */
+        public ?bool $includesHandheld = null,
     ) {
         $monthly = Money::normalise($priceMonthly);
         $yearly = Money::normalise($priceYearly);
@@ -85,6 +87,7 @@ final readonly class PlanInput
             'features' => $this->features,
             'is_active' => $this->isActive,
             'is_public' => $this->isPublic,
+            ...($this->includesHandheld !== null ? ['includes_handheld' => $this->includesHandheld] : []),
             'sort_order' => $this->sortOrder,
         ];
     }

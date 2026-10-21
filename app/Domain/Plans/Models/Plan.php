@@ -9,6 +9,7 @@ use App\Domain\Plans\Enums\PlanStatus;
 use App\Domain\Plans\Enums\PricingMode;
 use App\Domain\Plans\Enums\SetupFeeMode;
 use App\Domain\Shared\Casts\MoneyCast;
+use App\Domain\Shared\Support\Money;
 use App\Domain\Tenancy\Scopes\CompanyScope;
 use Carbon\CarbonInterface;
 use Database\Factories\PlanFactory;
@@ -45,6 +46,7 @@ use Illuminate\Support\Collection;
  * @property Collection<int, Feature> $features
  * @property bool $is_active
  * @property bool $is_public
+ * @property bool $includes_handheld Portal-only (owner 2026-10-21): the handheld (PDA) app comes with this plan.
  * @property int $sort_order
  * @property CarbonInterface|null $created_at
  * @property CarbonInterface|null $updated_at
@@ -81,6 +83,7 @@ class Plan extends Model
         'features',
         'is_active',
         'is_public',
+        'includes_handheld',
         'sort_order',
     ];
 
@@ -117,8 +120,30 @@ class Plan extends Model
             'features' => AsEnumCollection::of(Feature::class),
             'is_active' => 'boolean',
             'is_public' => 'boolean',
+            'includes_handheld' => 'boolean',
             'sort_order' => 'integer',
         ];
+    }
+
+    /** A plan saved without `includes_handheld` (seeders, factories, older callers) gets it from its prices. */
+    protected static function booted(): void
+    {
+        static::creating(function (Plan $plan) {
+            if (! array_key_exists('includes_handheld', $plan->getAttributes())) {
+                $plan->includes_handheld = self::handheldByDefault((string) $plan->price_monthly, (string) $plan->price_yearly);
+            }
+        });
+    }
+
+    /**
+     * Owner 2026-10-21: the handheld (PDA) app is for businesses on a monthly or yearly plan, so a plan includes it by
+     * default when it has a monthly or yearly price above 0 (the admin can change it). The migration's backfill rule.
+     */
+    public static function handheldByDefault(string $priceMonthly, string $priceYearly): bool
+    {
+        $above = fn (string $price) => $price !== '' && Money::compare($price, '0') > 0;
+
+        return $above($priceMonthly) || $above($priceYearly);
     }
 
     protected static function newFactory(): PlanFactory

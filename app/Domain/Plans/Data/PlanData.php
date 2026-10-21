@@ -13,7 +13,7 @@ final class PlanData
     /**
      * Row for the plans DataTable.
      *
-     * @return array{id: string, name: string, code: string, pricingMode: string, billingType: string, billingTypeLabel: string, priceMonthly: string, priceYearly: string, currency: string, trialDays: int, featureCount: int, status: string, statusLabel: string, sortOrder: int}
+     * @return array{id: string, name: string, code: string, pricingMode: string, billingType: string, billingTypeLabel: string, priceMonthly: string, priceYearly: string, currency: string, trialDays: int, featureCount: int, includesHandheld: bool, status: string, statusLabel: string, sortOrder: int}
      */
     public static function row(Plan $plan): array
     {
@@ -31,6 +31,7 @@ final class PlanData
             'currency' => $plan->currency,
             'trialDays' => $plan->trial_days,
             'featureCount' => $plan->features->count(),
+            'includesHandheld' => $plan->includes_handheld,
             'status' => $status->value,
             'statusLabel' => $status->label(),
             'sortOrder' => $plan->sort_order,
@@ -66,6 +67,7 @@ final class PlanData
             'yearlySaving' => self::yearlySaving($plan),
             'yearlySavingPercent' => self::yearlySavingPercent($plan),
             'features' => $plan->featureValues(),
+            'includesHandheld' => $plan->includes_handheld,
             'isActive' => $plan->is_active,
             'isPublic' => $plan->is_public,
             'sortOrder' => $plan->sort_order,
@@ -100,6 +102,7 @@ final class PlanData
             'trial_grace_days' => $plan->trial_grace_days,
             'grace_days' => $plan->grace_days,
             'features' => $plan->featureValues(),
+            'includes_handheld' => $plan->includes_handheld,
             'is_active' => $plan->is_active,
             'is_public' => $plan->is_public,
             'sort_order' => $plan->sort_order,

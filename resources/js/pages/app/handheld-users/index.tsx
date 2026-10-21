@@ -7,27 +7,28 @@ import { EmptyState } from '@/components/shared/empty-state';
 import { PageHeader } from '@/components/shared/page-header';
 import { SectionCard } from '@/components/shared/section-card';
 import { StatCard, StatGrid } from '@/components/shared/stat-card';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/app-layout';
 import { Head, router } from '@inertiajs/react';
-import { BadgePoundSterling, ScanBarcode, Smartphone, Truck, UserPlus, Users } from 'lucide-react';
+import { BadgePoundSterling, Lock, ScanBarcode, Smartphone, Truck, UserPlus, Users } from 'lucide-react';
 import { useState } from 'react';
 
 const post = (url: string) => new Promise<void>((resolve) => router.post(url, {}, { preserveScroll: true, onFinish: () => resolve() }));
 
-export default function HandheldUsers({ users, shops, stats }: HandheldUsersProps) {
+export default function HandheldUsers({ users, shops, stats, included }: HandheldUsersProps) {
     const [editor, setEditor] = useState<{ open: boolean; user: HandheldUser | null }>({ open: false, user: null });
     const [passwordFor, setPasswordFor] = useState<HandheldUser | null>(null);
     const [pending, setPending] = useState<HandheldCommand | null>(null);
     const noShops = shops.length === 0;
 
     const add = () => setEditor({ open: true, user: null });
-    const addButton = (
+    const addButton = included ? (
         <Button onClick={add} disabled={noShops} title={noShops ? 'Open a shop first' : undefined}>
             <UserPlus />
             Add handheld user
         </Button>
-    );
+    ) : undefined;
 
     const onCommand = (command: HandheldCommand) => {
         if (command.kind === 'edit') {
@@ -48,6 +49,19 @@ export default function HandheldUsers({ users, shops, stats }: HandheldUsersProp
                 description="Sign-ins for the Android PDA app: scan products, check prices and stock, and order from suppliers for one shop."
                 actions={addButton}
             />
+
+            {!included && (
+                <Alert variant="warning">
+                    <Lock />
+                    <AlertTitle>The handheld app is not on your plan</AlertTitle>
+                    <AlertDescription>
+                        The handheld app comes with the monthly plans. Contact Switch & Save to upgrade.{' '}
+                        {users.length > 0
+                            ? 'Until then these users cannot sign in. You can still switch them off or sign them out.'
+                            : 'Once it is on your plan, you add handheld users here.'}
+                    </AlertDescription>
+                </Alert>
+            )}
 
             {users.length === 0 ? (
                 <SectionCard>
@@ -74,7 +88,7 @@ export default function HandheldUsers({ users, shops, stats }: HandheldUsersProp
                                         Change selling prices, if you allow it for that user.
                                     </li>
                                 </ul>
-                                {noShops && <p>Open a shop under Shops and tills first.</p>}
+                                {included && noShops && <p>Open a shop under Shops and tills first.</p>}
                             </div>
                         }
                         action={addButton}

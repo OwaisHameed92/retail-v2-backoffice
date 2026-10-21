@@ -37,6 +37,7 @@ export default function CreatePlan({ features, defaults }: CreatePlanProps) {
                     submitLabel="Create plan"
                     cancelHref={route('admin.plans.index')}
                     autoCode
+                    autoHandheld
                     isDirty={isDirty}
                 />
             </div>
