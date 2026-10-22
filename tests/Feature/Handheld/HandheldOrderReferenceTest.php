@@ -71,7 +71,7 @@ test('race-safe: a create that loses the unique index to a parallel request answ
     // transaction), so this request's insert hits the unique index.
     $fired = false;
     DB::listen(function (QueryExecuted $query) use (&$fired, $winner) {
-        if ($fired || ! str_starts_with($query->sql, 'select') || ! str_contains($query->sql, 'from "handheld_order_references"')) {
+        if ($fired || ! str_starts_with($query->sql, 'select') || ! preg_match('/from [`"]handheld_order_references[`"]/', $query->sql)) {
             return;
         }
 
