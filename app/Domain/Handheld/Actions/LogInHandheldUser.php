@@ -11,7 +11,9 @@ use App\Domain\Handheld\Support\PdaErrors;
 use App\Domain\Shared\Actions\RecordAudit;
 use App\Domain\Shared\Exceptions\ApiException;
 use App\Domain\Tenancy\CurrentCompany;
+use App\Domain\Tenancy\Models\Company;
 use Carbon\CarbonImmutable;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use SensitiveParameter;
@@ -20,7 +22,8 @@ use SensitiveParameter;
  * `POST /api/pda/login`: email + password → a new bearer token for that handheld user (one per device).
  *
  * Emails are unique per business, not across businesses: the password picks the account. When it opens accounts in
- * more than one business the app must send `tenant_id` (409 TENANT_REQUIRED). Wrong email or password → 401
+ * more than one business (switched-on accounts only) the app must send `tenant_id` (409 TENANT_REQUIRED, with `tenants`
+ * [{id, name}] of those businesses only). Wrong email or password → 401
  * INVALID_CREDENTIALS (the same answer and roughly the same time either way); the right password on a switched-off
  * account, a closed shop or a business on hold → 403 with its code (HandheldAccess). Audited as `handheld.login`;
  * the token and password are never logged.
@@ -55,12 +58,8 @@ final class LogInHandheldUser
             throw PdaErrors::invalidCredentials();
         }
 
-        if ($matched->count() > 1) {
-            throw PdaErrors::tenantRequired();
-        }
-
         /** @var HandheldUser $user */
-        $user = $matched->first();
+        $user = $matched->count() > 1 ? self::pick($matched) : $matched->first();
         [$company, $shop] = HandheldAccess::assertAllowed($user);
         $plain = HandheldTokenSecret::generate();
 
@@ -79,5 +78,33 @@ final class LogInHandheldUser
         }));
 
         return new IssuedHandheldToken($user, $company, $shop, $token, $plain);
+    }
+
+    /**
+     * The email and password open accounts in more than one business. Only the switched-on ones count: exactly one →
+     * that account; none → 403 ACCOUNT_INACTIVE; several → 409 TENANT_REQUIRED listing just those businesses (the
+     * password was right for each, so nothing is revealed to someone without it).
+     *
+     * @param  Collection<int, HandheldUser>  $matched
+     *
+     * @throws ApiException
+     */
+    private static function pick(Collection $matched): HandheldUser
+    {
+        $active = $matched->filter(fn (HandheldUser $user) => $user->is_active)->values();
+
+        if ($active->isEmpty()) {
+            throw PdaErrors::inactive();
+        }
+
+        if ($active->count() === 1) {
+            return $active->first();
+        }
+
+        $names = Company::query()->withTrashed()->whereKey($active->pluck('company_id')->all())->pluck('name', 'id');
+
+        throw PdaErrors::tenantRequired($active
+            ->map(fn (HandheldUser $user) => ['id' => $user->company_id, 'name' => (string) ($names[$user->company_id] ?? '')])
+            ->sortBy('name', SORT_NATURAL | SORT_FLAG_CASE)->values()->all());
     }
 }

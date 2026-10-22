@@ -26,6 +26,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string $password
  * @property bool $is_active
  * @property bool $can_change_prices
+ * @property bool $can_change_cost
+ * @property bool $can_adjust_stock
  * @property CarbonImmutable|null $last_login_at
  * @property int|null $created_by_user_id
  * @property CarbonImmutable|null $created_at
@@ -38,7 +40,7 @@ class HandheldUser extends Model implements AuthenticatableContract
     use Authenticatable, BelongsToCompany, HasPortalUlid;
 
     /** @var list<string> */
-    protected $fillable = ['company_id', 'branch_id', 'name', 'email', 'password', 'is_active', 'can_change_prices', 'created_by_user_id'];
+    protected $fillable = ['company_id', 'branch_id', 'name', 'email', 'password', 'is_active', 'can_change_prices', 'can_change_cost', 'can_adjust_stock', 'created_by_user_id'];
 
     /** @var list<string> */
     protected $hidden = ['password', 'remember_token'];
@@ -52,6 +54,8 @@ class HandheldUser extends Model implements AuthenticatableContract
             'password' => 'hashed',
             'is_active' => 'boolean',
             'can_change_prices' => 'boolean',
+            'can_change_cost' => 'boolean',
+            'can_adjust_stock' => 'boolean',
             'last_login_at' => 'immutable_datetime',
             'created_at' => 'immutable_datetime',
             'updated_at' => 'immutable_datetime',

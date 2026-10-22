@@ -25,12 +25,21 @@ export function toLine(p: CatalogueProduct, cases?: number): OrderFormLine {
     };
 }
 
+const orderedUnits = (line: OrderFormLine) => line.orderedCases * line.caseQty + (Number(line.looseUnits) || 0);
+
 /** Units × cost, shown while typing (the server works out the order's totals when it is saved). */
 function lineNet(line: OrderFormLine): number {
-    return (line.orderedCases * line.caseQty + line.looseUnits) * Number(line.unitCost || 0);
+    return orderedUnits(line) * Number(line.unitCost || 0);
 }
 
 const whole = (value: string) => Math.max(0, Math.floor(Number(value.replace(/[^\d]/g, '')) || 0));
+
+/** Loose units as typed: digits and one decimal point, up to 3 decimal places (weighed products, e.g. 2.5 kg). */
+const decimal = (value: string) => {
+    const [units = '', ...rest] = value.replace(/[^\d.]/g, '').split('.');
+
+    return rest.length > 0 ? `${units}.${rest.join('').slice(0, 3)}` : units;
+};
 
 /** The order's lines: cases × case size + loose units at a cost ex VAT, with the shop's stock beside each. */
 export function LinesEditor({
@@ -108,9 +117,9 @@ export function LinesEditor({
                         <TableCell>
                             <NumberField
                                 id={`loose-${i}`}
-                                inputMode="numeric"
+                                inputMode="decimal"
                                 value={String(line.looseUnits)}
-                                onChange={(e) => set(i, { looseUnits: whole(e.target.value) })}
+                                onChange={(e) => set(i, { looseUnits: decimal(e.target.value) })}
                                 aria-label={`Loose units of ${line.name}`}
                             />
                         </TableCell>
@@ -134,7 +143,7 @@ export function LinesEditor({
                         <TableCell className="text-right tabular-nums">
                             <div className="grid leading-5">
                                 <span>{money(lineNet(line))}</span>
-                                <span className="text-muted-foreground text-xs">{qty(line.orderedCases * line.caseQty + line.looseUnits)} units</span>
+                                <span className="text-muted-foreground text-xs">{qty(orderedUnits(line))} units</span>
                             </div>
                         </TableCell>
                         <TableCell>

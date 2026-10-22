@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\PartnerTenantRequestController;
 use App\Http\Controllers\Api\Pda\PdaAuthController;
 use App\Http\Controllers\Api\Pda\PdaCatalogueController;
 use App\Http\Controllers\Api\Pda\PdaPhaseTwoController;
+use App\Http\Controllers\Api\Pda\PdaProductChangeController;
 use App\Http\Controllers\Api\Pda\PdaPurchaseOrderController;
 use App\Http\Controllers\Api\SyncController;
 use App\Http\Controllers\Api\TrialRequestController;
@@ -83,11 +84,11 @@ Route::prefix('partner/v1')->name('api.partner.')
         Route::post('tenant-requests/{externalId}/cancel', 'cancel')->name('tenant-requests.cancel');
     });
 
-// Handheld (PDA) API, phase 1 (docs/pda-api.md): the Android PDA app, same paths and shapes as the legacy portal's
+// Handheld (PDA) API, phase 1 + the portal part of phase 2 (docs/pda-api.md): the Android PDA app, same paths and shapes as the legacy portal's
 // /api/pda/*. Login has its own limiter per email + IP; every other call needs `Authorization: Bearer <token>`
 // (AuthenticateHandheldToken: never a query string) and is limited per token. Everything is scoped to the user's
 // business and shop. Errors: `{success: false, code, message, traceId, retryAfterSeconds, rejectedKey}`. Both
-// countries; no plan gating yet (DECISIONS "Handheld (PDA) API").
+// countries; only on plans that include the handheld app (DECISIONS "Handheld (PDA) API", "Handheld app on monthly plans").
 Route::prefix('pda')->name('api.pda.')->group(function () {
     Route::post('login', [PdaAuthController::class, 'login'])->name('login')
         ->middleware(ThrottleHandheldApi::class.':'.HandheldRateLimits::LOGIN);
@@ -104,6 +105,13 @@ Route::prefix('pda')->name('api.pda.')->group(function () {
             Route::get('suppliers', 'suppliers')->name('suppliers.index');
         });
 
+        // Phase 2 (portal part): this shop's own price, unit prices and the cost, through the portal's own paths.
+        Route::controller(PdaProductChangeController::class)->prefix('products/{product}')->name('products.')->whereUlid('product')->group(function () {
+            Route::put('shop-price', 'shopPrice')->name('shop-price');
+            Route::put('units/{unit}/price', 'unitPrice')->name('units.price')->whereUlid('unit');
+            Route::put('cost', 'cost')->name('cost');
+        });
+
         Route::controller(PdaPurchaseOrderController::class)->prefix('purchase-orders')->name('purchase-orders.')->group(function () {
             Route::get('/', 'index')->name('index');
             Route::post('/', 'store')->name('store');
@@ -112,7 +120,8 @@ Route::prefix('pda')->name('api.pda.')->group(function () {
             Route::post('{order}/cancel', 'cancel')->name('cancel')->whereUlid('order');
         });
 
-        // Till-owned in contract v1.4.1: 501 NOT_AVAILABLE_YET until phase 2 (stock locations are not in the model).
+        // Till-owned in contract v1.4.1: 501 NOT_AVAILABLE_YET until the till contract has portal-drafted stock documents
+        // (docs/pda-api.md "Needs the till contract"; stock locations are not in the model).
         Route::post('purchase-orders/{order}/receive', PdaPhaseTwoController::class)->name('purchase-orders.receive');
         Route::get('purchase-orders/{order}/receipts', PdaPhaseTwoController::class)->name('purchase-orders.receipts');
         Route::get('purchase-orders/{order}/returnable', PdaPhaseTwoController::class)->name('purchase-orders.returnable');
@@ -124,5 +133,10 @@ Route::prefix('pda')->name('api.pda.')->group(function () {
         Route::post('stock-adjustments', PdaPhaseTwoController::class)->name('stock-adjustments.store');
         Route::put('stock-adjustments/{adjustment}', PdaPhaseTwoController::class)->name('stock-adjustments.update');
         Route::post('stock-adjustments/{adjustment}/cancel', PdaPhaseTwoController::class)->name('stock-adjustments.cancel');
+        Route::get('stock-takes', PdaPhaseTwoController::class)->name('stock-takes.index');
+        Route::post('stock-takes', PdaPhaseTwoController::class)->name('stock-takes.store');
+        Route::get('stock-takes/{take}', PdaPhaseTwoController::class)->name('stock-takes.show');
+        Route::put('stock-takes/{take}', PdaPhaseTwoController::class)->name('stock-takes.update');
+        Route::post('stock-takes/{take}/cancel', PdaPhaseTwoController::class)->name('stock-takes.cancel');
     });
 });

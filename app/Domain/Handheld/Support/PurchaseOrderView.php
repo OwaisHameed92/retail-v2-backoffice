@@ -2,6 +2,7 @@
 
 namespace App\Domain\Handheld\Support;
 
+use App\Domain\Handheld\Models\HandheldOrderReference;
 use App\Domain\Purchasing\Support\HeadOfficeOrders;
 use App\Domain\Shared\Support\Money;
 use App\Domain\TillData\Enums\PurchaseOrderStatus;
@@ -16,7 +17,8 @@ use Illuminate\Support\Collection;
  * A purchase order in the handheld API (legacy shape where it fits). `portal_state`: `pending` while the portal still
  * owns a head-office order (editable here, waiting for the till), `confirmed` once the shop's till owns it (or for
  * the till's own orders), `cancelled`. Quantities are base units (`quantity_ordered` = cases × case size + loose).
- * `quantity_returned` is null until purchase returns come to the app (phase 2).
+ * `quantity_returned` is null until purchase returns come to the app (phase 2). `client_reference` is the app's
+ * idempotency UUID when the order was created from the handheld with one, else null.
  */
 final class PurchaseOrderView
 {
@@ -33,8 +35,12 @@ final class PurchaseOrderView
         $barcodes = $productIds === [] ? collect() : ProductBarcode::query()->whereIn('product_id', $productIds)->orderByDesc('is_primary')->orderBy('created_at')
             ->get(['product_id', 'barcode'])->unique('product_id')->pluck('barcode', 'product_id');
         $suppliers = Supplier::query()->withTrashed()->whereKey($orders->pluck('supplier_id')->unique()->values()->all())->pluck('name', 'id');
+        $references = $ids === [] ? collect() : HandheldOrderReference::query()->whereIn('purchase_order_id', $ids)->pluck('client_reference', 'purchase_order_id');
 
-        return $orders->map(fn (PurchaseOrder $order) => self::one($order, $lines[$order->id] ?? collect(), $products, $barcodes, $suppliers))->values()->all();
+        return $orders->map(fn (PurchaseOrder $order) => [
+            ...self::one($order, $lines[$order->id] ?? collect(), $products, $barcodes, $suppliers),
+            'client_reference' => $references[$order->id] ?? null,
+        ])->values()->all();
     }
 
     /**

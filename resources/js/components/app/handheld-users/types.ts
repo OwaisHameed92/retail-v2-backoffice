@@ -11,6 +11,9 @@ export interface HandheldUser {
     shopOpen: boolean;
     isActive: boolean;
     canChangePrices: boolean;
+    canChangeCost: boolean;
+    /** Read by the app now; the stock calls come when the till contract has them. */
+    canAdjustStock: boolean;
     devices: number;
     lastLoginAt: string | null;
     lastUsedAt: string | null;

@@ -6,6 +6,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { taxName } from '@/lib/country';
 import { useForm } from '@inertiajs/react';
 import { LoaderCircle } from 'lucide-react';
 import { type FormEventHandler } from 'react';
@@ -18,7 +19,7 @@ interface HandheldUserDialogProps {
     user?: HandheldUser | null;
 }
 
-/** Add a handheld user (name, email, shop, password, price permission) or edit one (no password here). */
+/** Add a handheld user (name, email, shop, password, permissions) or edit one (no password here). */
 export function HandheldUserDialog(props: HandheldUserDialogProps) {
     return (
         <Dialog open={props.open} onOpenChange={props.onOpenChange}>
@@ -32,6 +33,8 @@ type HandheldForm = {
     email: string;
     branch_id: string;
     can_change_prices: boolean;
+    can_change_cost: boolean;
+    can_adjust_stock: boolean;
     password: string;
     password_confirmation: string;
 };
@@ -44,6 +47,8 @@ function HandheldUserDialogBody({ onOpenChange, shops, user }: HandheldUserDialo
         email: user?.email ?? '',
         branch_id: user?.shopId ?? (shops.length === 1 ? shops[0].id : ''),
         can_change_prices: user?.canChangePrices ?? false,
+        can_change_cost: user?.canChangeCost ?? false,
+        can_adjust_stock: user?.canAdjustStock ?? false,
         password: '',
         password_confirmation: '',
     });
@@ -53,7 +58,14 @@ function HandheldUserDialogBody({ onOpenChange, shops, user }: HandheldUserDialo
         const options = { preserveScroll: true, onSuccess: () => onOpenChange(false) };
 
         if (user) {
-            transform((form) => ({ name: form.name, email: form.email, branch_id: form.branch_id, can_change_prices: form.can_change_prices }));
+            transform((form) => ({
+                name: form.name,
+                email: form.email,
+                branch_id: form.branch_id,
+                can_change_prices: form.can_change_prices,
+                can_change_cost: form.can_change_cost,
+                can_adjust_stock: form.can_adjust_stock,
+            }));
             put(route('app.handheld-users.update', user.id), options);
         } else {
             post(route('app.handheld-users.store'), options);
@@ -144,22 +156,30 @@ function HandheldUserDialogBody({ onOpenChange, shops, user }: HandheldUserDialo
                     </div>
                 )}
 
-                <div className="flex items-start gap-3 rounded-lg border p-3">
-                    <Checkbox
+                <fieldset className="grid gap-0 divide-y rounded-lg border">
+                    <legend className="sr-only">What this handheld user may change</legend>
+                    <PermissionOption
                         id="handheld-prices"
+                        label="Can change selling prices"
+                        help="The business price, this shop’s own price and case or pack prices. The tills get the new prices at their next sync."
                         checked={data.can_change_prices}
-                        onCheckedChange={(on) => setData('can_change_prices', on === true)}
-                        className="mt-0.5"
+                        onChange={(on) => setData('can_change_prices', on)}
                     />
-                    <div className="grid gap-1">
-                        <Label htmlFor="handheld-prices" className="font-medium">
-                            Can change selling prices
-                        </Label>
-                        <p className="text-muted-foreground text-sm">
-                            Changes the business price of a product from the handheld. Every till gets the new price at its next sync.
-                        </p>
-                    </div>
-                </div>
+                    <PermissionOption
+                        id="handheld-cost"
+                        label="Can change cost prices"
+                        help={`The product’s cost price (ex ${taxName()}), used for margins and stock value.`}
+                        checked={data.can_change_cost}
+                        onChange={(on) => setData('can_change_cost', on)}
+                    />
+                    <PermissionOption
+                        id="handheld-stock"
+                        label="Can adjust stock"
+                        help="Stock adjustments and counts from the handheld. These come in a later app update; for now stock is changed on the till."
+                        checked={data.can_adjust_stock}
+                        onChange={(on) => setData('can_adjust_stock', on)}
+                    />
+                </fieldset>
 
                 <DialogFooter className="gap-2">
                     <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={processing}>
@@ -172,5 +192,31 @@ function HandheldUserDialogBody({ onOpenChange, shops, user }: HandheldUserDialo
                 </DialogFooter>
             </form>
         </DialogContent>
+    );
+}
+
+function PermissionOption({
+    id,
+    label,
+    help,
+    checked,
+    onChange,
+}: {
+    id: string;
+    label: string;
+    help: string;
+    checked: boolean;
+    onChange: (on: boolean) => void;
+}) {
+    return (
+        <div className="flex items-start gap-3 p-3">
+            <Checkbox id={id} checked={checked} onCheckedChange={(on) => onChange(on === true)} className="mt-0.5" />
+            <div className="grid gap-1">
+                <Label htmlFor={id} className="font-medium">
+                    {label}
+                </Label>
+                <p className="text-muted-foreground text-sm">{help}</p>
+            </div>
+        </div>
     );
 }

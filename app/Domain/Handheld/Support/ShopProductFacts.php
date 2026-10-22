@@ -52,6 +52,12 @@ final class ShopProductFacts
         return Money::normalise($own !== null ? $own->price : $product->sell_price, 2);
     }
 
+    /** This shop's own live price row for the base unit (null) or a unit; null when it sells at the business price. */
+    public function shopPrice(Product $product, ?string $productUnitId = null): ?BranchPrice
+    {
+        return $this->live[$product->id][$this->shop->id][$productUnitId ?? ''] ?? null;
+    }
+
     public function hasShopPrice(Product $product, ?string $productUnitId = null): bool
     {
         return isset($this->live[$product->id][$this->shop->id][$productUnitId ?? '']);

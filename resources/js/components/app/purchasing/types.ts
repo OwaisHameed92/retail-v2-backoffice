@@ -133,7 +133,8 @@ export type OrderFormLine = {
     sku: string | null;
     orderedCases: number;
     caseQty: number;
-    looseUnits: number;
+    /** Whole units, or a decimal (up to 3 dp) for a weighed (kg) line; a string while it is being typed. */
+    looseUnits: number | string;
     unitCost: string;
     vatRateId: string;
     onHand: string | null;
