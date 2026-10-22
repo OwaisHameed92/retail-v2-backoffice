@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "GoodsReceiptLine (hubDrafted)",
+  "description": "PROPOSAL pda-stock-drafts §5.3: a line of a drafted delivery: receivedQty is what arrived in this delivery (a delta, > 0) on purchaseOrderLineId. No $id on purpose: the $ref is relative to this file.",
+  "allOf": [
+    {
+      "$ref": "../../../portal-api-v1.4.1/docs/web-portal-api/schemas/entities/GoodsReceiptLine.schema.json"
+    }
+  ],
+  "type": "object",
+  "properties": {
+    "goodsReceiptId": {
+      "type": "string",
+      "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$"
+    },
+    "purchaseOrderLineId": {
+      "type": "string",
+      "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$"
+    },
+    "productId": {
+      "type": "string",
+      "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$"
+    },
+    "receivedQty": {
+      "type": [
+        "string",
+        "number"
+      ],
+      "pattern": "^(?:0|[1-9]\\d*)(?:\\.\\d{1,4})?$",
+      "minimum": 0,
+      "exclusiveMinimum": 0
+    },
+    "damagedQty": {
+      "enum": [
+        0,
+        "0",
+        0.0
+      ]
+    },
+    "rowVersion": {
+      "enum": [
+        0,
+        "0"
+      ]
+    }
+  },
+  "required": []
+}

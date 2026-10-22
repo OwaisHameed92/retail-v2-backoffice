@@ -1,0 +1,69 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "PurchaseReturn (hubDrafted)",
+  "description": "PROPOSAL pda-stock-drafts §5.4: a return to the supplier drafted on the portal for one shop: the v1.4.1 PurchaseReturn row plus origin and cancelReason (new). The till books it (status sent) or cancels it with cancelReason. No $id on purpose: the $ref is relative to this file.",
+  "allOf": [
+    {
+      "$ref": "../../../portal-api-v1.4.1/docs/web-portal-api/schemas/entities/PurchaseReturn.schema.json"
+    }
+  ],
+  "type": "object",
+  "properties": {
+    "origin": {
+      "const": "headOffice"
+    },
+    "cancelReason": {
+      "type": "null"
+    },
+    "status": {
+      "const": "draft"
+    },
+    "reference": {
+      "type": "string",
+      "pattern": "^HR-[A-Z0-9]*-\\d{6,}$"
+    },
+    "supplierId": {
+      "type": "string",
+      "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$"
+    },
+    "purchaseOrderId": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$"
+    },
+    "goodsReceiptId": {
+      "type": "null"
+    },
+    "createdByUserId": {
+      "const": ""
+    },
+    "sentAt": {
+      "type": "null"
+    },
+    "sentByUserId": {
+      "type": "null"
+    },
+    "creditedAt": {
+      "type": "null"
+    },
+    "cancelledAt": {
+      "type": "null"
+    },
+    "branchId": {
+      "type": "string",
+      "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$"
+    },
+    "rowVersion": {
+      "enum": [
+        0,
+        "0"
+      ]
+    }
+  },
+  "required": [
+    "origin",
+    "cancelReason"
+  ]
+}

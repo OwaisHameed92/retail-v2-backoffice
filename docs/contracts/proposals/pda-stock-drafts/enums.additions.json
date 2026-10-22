@@ -1,0 +1,32 @@
+{
+  "GoodsReceiptOrigin": [
+    "branch",
+    "headOffice"
+  ],
+  "PurchaseReturnOrigin": [
+    "branch",
+    "headOffice"
+  ],
+  "StockAdjustmentDraftStatus": [
+    "pending",
+    "confirmed",
+    "rejected"
+  ],
+  "StockAdjustmentDraftType": [
+    "stockIncrease",
+    "stockDecrease",
+    "openingStock",
+    "stockCount"
+  ],
+  "StockAdjustmentReason": [
+    "damaged",
+    "expired",
+    "theft",
+    "countCorrection",
+    "other"
+  ],
+  "StockTakeOrigin": [
+    "branch",
+    "headOffice"
+  ]
+}

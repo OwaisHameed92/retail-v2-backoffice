@@ -4,6 +4,7 @@ namespace App\Domain\Handheld\Support;
 
 use App\Domain\Purchasing\Support\HeadOfficeOrders;
 use App\Domain\Shared\Exceptions\ApiException;
+use App\Domain\StockDrafts\Queries\PurchaseOrderStock;
 use App\Domain\TillData\Enums\PurchaseOrderStatus;
 use App\Domain\TillData\Models\PurchaseOrder;
 use Illuminate\Validation\ValidationException;
@@ -15,6 +16,8 @@ use Illuminate\Validation\ValidationException;
  */
 final class HandheldOrderGuard
 {
+    public const RECEIVING = 'Goods have been booked in against this order from a handheld, so it is the shop\'s now. Create a new order instead.';
+
     private const FIELDS = [
         'supplierId' => 'supplier_id',
         'expectedDate' => 'expected_delivery_date',
@@ -30,6 +33,11 @@ final class HandheldOrderGuard
     public static function assertPortalOwns(PurchaseOrder $order): void
     {
         if (HeadOfficeOrders::portalOwns($order)) {
+            // Contract proposal pda-stock-drafts §9: a handheld delivery is waiting for the till (none while it is off).
+            if (PurchaseOrderStock::receivingStarted($order->id)) {
+                throw PdaErrors::ownedByTill(self::RECEIVING);
+            }
+
             return;
         }
 

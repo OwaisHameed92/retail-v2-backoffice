@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "PurchaseReturnLine (hubDrafted)",
+  "description": "PROPOSAL pda-stock-drafts §5.4: a line of a drafted return, plus purchaseOrderLineId (new, nullable: the order line the goods came on). No $id on purpose: the $ref is relative to this file.",
+  "allOf": [
+    {
+      "$ref": "../../../portal-api-v1.4.1/docs/web-portal-api/schemas/entities/PurchaseReturnLine.schema.json"
+    }
+  ],
+  "type": "object",
+  "properties": {
+    "purchaseReturnId": {
+      "type": "string",
+      "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$"
+    },
+    "productId": {
+      "type": "string",
+      "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$"
+    },
+    "purchaseOrderLineId": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$"
+    },
+    "qty": {
+      "type": [
+        "string",
+        "number"
+      ],
+      "pattern": "^(?:0|[1-9]\\d*)(?:\\.\\d{1,4})?$",
+      "minimum": 0,
+      "exclusiveMinimum": 0
+    },
+    "unitCost": {
+      "type": [
+        "string",
+        "number"
+      ],
+      "pattern": "^(?:0|[1-9]\\d*)(?:\\.\\d{1,4})?$",
+      "minimum": 0
+    },
+    "fromStock": {
+      "const": true
+    },
+    "goodsReceiptLineId": {
+      "type": "null"
+    },
+    "rowVersion": {
+      "enum": [
+        0,
+        "0"
+      ]
+    }
+  },
+  "required": [
+    "purchaseOrderLineId"
+  ]
+}

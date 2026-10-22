@@ -119,6 +119,30 @@ final class HubVersions
     }
 
     /**
+     * Stamps unstamped rows of portal-only tables the pull also sends (the stock drafts of contract proposal
+     * pda-stock-drafts, StockDraftFeed), in the order given, with the same counter and lock as the feed: header ids
+     * first, then their lines. Returns the highest version given, or null.
+     *
+     * @param  list<array{0: string, 1: list<string>}>  $tables  [table, ids] in apply order
+     */
+    public function stampTables(string $companyId, array $tables): ?int
+    {
+        if (array_sum(array_map(fn (array $t) => count($t[1]), $tables)) === 0) {
+            return null;
+        }
+
+        return $this->locked($companyId, function (int $version) use ($companyId, $tables): int {
+            foreach ($tables as [$table, $ids]) {
+                foreach (array_chunk($ids, self::CHUNK) as $chunk) {
+                    $version = $this->assignTable($companyId, $table, 'company_id', $chunk, $version);
+                }
+            }
+
+            return $version;
+        });
+    }
+
+    /**
      * Stamps every unstamped row of the feed (rows accepted from tills, and any portal change whose after-commit
      * stamp did not run), parents first. Cheap when there are none: one indexed read per table.
      */
@@ -217,29 +241,39 @@ final class HubVersions
      */
     private function assign(string $companyId, EntityDefinition $def, array $ids, int $version): int
     {
-        $table = DB::getQueryGrammar()->wrapTable($def->table);
-
         foreach (array_chunk($ids, self::CHUNK) as $chunk) {
-            $bindings = [];
-
-            foreach ($chunk as $id) {
-                array_push($bindings, $id, ++$version);
-            }
-
-            $cases = implode(' ', array_fill(0, count($chunk), 'WHEN ? THEN ?'));
-            $in = implode(', ', array_fill(0, count($chunk), '?'));
-
-            $company = DB::getQueryGrammar()->wrap(self::companyColumn($def));
-
-            DB::update(
-                "UPDATE {$table} SET hub_version = CASE id {$cases} END WHERE {$company} = ? AND hub_version IS NULL AND id IN ({$in})",
-                [...$bindings, $companyId, ...$chunk],
-            );
+            $version = $this->assignTable($companyId, $def->table, self::companyColumn($def), $chunk, $version);
 
             if ($def->entity === 'User') {
                 self::versionPinHashes($companyId, $chunk);
             }
         }
+
+        return $version;
+    }
+
+    /**
+     * One chunk: the next versions, in the order of `$chunk`, to those of its rows still unstamped.
+     *
+     * @param  list<string>  $chunk
+     */
+    private function assignTable(string $companyId, string $table, string $companyColumn, array $chunk, int $version): int
+    {
+        $bindings = [];
+
+        foreach ($chunk as $id) {
+            array_push($bindings, $id, ++$version);
+        }
+
+        $cases = implode(' ', array_fill(0, count($chunk), 'WHEN ? THEN ?'));
+        $in = implode(', ', array_fill(0, count($chunk), '?'));
+        $wrapped = DB::getQueryGrammar()->wrapTable($table);
+        $company = DB::getQueryGrammar()->wrap($companyColumn);
+
+        DB::update(
+            "UPDATE {$wrapped} SET hub_version = CASE id {$cases} END WHERE {$company} = ? AND hub_version IS NULL AND id IN ({$in})",
+            [...$bindings, $companyId, ...$chunk],
+        );
 
         return $version;
     }

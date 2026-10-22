@@ -22,9 +22,13 @@ final class PullFeed
      * `departure` is null for a feed row, or [the row's branch before it moved away from this branch ('' = every
      * shop), when] for a `D` to this branch (BranchDepartures, ANSWERS-2026-09-29-b A.3).
      *
+     * `$extra`: more union members with the same columns (the stock drafts of contract proposal pda-stock-drafts,
+     * StockDraftFeed::sources(), only while that switch serves this till; none otherwise).
+     *
+     * @param  list<Builder>  $extra
      * @return list<array{0: string, 1: string, 2: int, 3: array{0: string, 1: string}|null}>
      */
-    public function page(string $companyId, string $branchId, int $since, int $limit): array
+    public function page(string $companyId, string $branchId, int $since, int $limit, array $extra = []): array
     {
         $query = DB::table(BranchDepartures::TABLE)
             ->selectRaw('entity, entity_id as id, hub_version as version, from_branch_id as departed_from, departed_at')
@@ -34,6 +38,10 @@ final class PullFeed
 
         foreach (HubVersions::feed() as $def) {
             $query->unionAll($this->visible($def, $companyId, $branchId, $since));
+        }
+
+        foreach ($extra as $source) {
+            $query->unionAll($source);
         }
 
         return $query->orderBy('version')->limit($limit)->get()

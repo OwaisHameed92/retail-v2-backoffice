@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "StockTake (hubDrafted)",
+  "description": "PROPOSAL pda-stock-drafts §5.2: a stock take the portal drafts for one shop, as pulled: the v1.4.1 StockTake row plus origin (new) and cancelReason (new, the till sets it when it refuses the count). No $id on purpose: the $ref is relative to this file.",
+  "allOf": [
+    {
+      "$ref": "../../../portal-api-v1.4.1/docs/web-portal-api/schemas/entities/StockTake.schema.json"
+    }
+  ],
+  "type": "object",
+  "properties": {
+    "origin": {
+      "const": "headOffice"
+    },
+    "cancelReason": {
+      "type": "null"
+    },
+    "reference": {
+      "type": "string",
+      "pattern": "^HS-[A-Z0-9]*-\\d{6,}$"
+    },
+    "status": {
+      "const": "review"
+    },
+    "scope": {
+      "const": "productList"
+    },
+    "scopeId": {
+      "const": ""
+    },
+    "isBlind": {
+      "const": false
+    },
+    "countUncountedAsZero": {
+      "const": false
+    },
+    "startedByUserId": {
+      "const": ""
+    },
+    "approvedByUserId": {
+      "const": ""
+    },
+    "approvedAt": {
+      "type": "null"
+    },
+    "cancelledAt": {
+      "type": "null"
+    },
+    "isClosed": {
+      "const": false
+    },
+    "branchId": {
+      "type": "string",
+      "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$"
+    },
+    "rowVersion": {
+      "enum": [
+        0,
+        "0"
+      ]
+    }
+  },
+  "required": [
+    "origin",
+    "cancelReason"
+  ]
+}

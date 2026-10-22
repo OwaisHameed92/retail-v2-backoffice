@@ -26,6 +26,8 @@ class PdaListRequest extends FormRequest
             'barcode' => ['nullable', 'string', 'max:50'],
             'status' => ['nullable', 'string', 'max:20'],
             'client_reference' => ['nullable', 'string', 'max:64'],
+            'product_id' => ['nullable', 'string', 'max:64'],
+            'purchase_order_id' => ['nullable', 'string', 'max:64'],
             'page' => ['nullable', 'integer', 'min:1', 'max:100000'],
             'per_page' => ['nullable', 'integer', 'min:1', 'max:'.(int) config('handheld.max_per_page', 100)],
         ];
