@@ -1,0 +1,77 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "StockTakeLine (hubDrafted)",
+  "description": "PROPOSAL pda-stock-drafts §5.2: a counted line of a drafted stock take. snapshotQty, varianceQty, varianceCost and unitCost are 0 and never read from a pull: the till fills them when it applies the count. No $id on purpose: the $ref is relative to this file.",
+  "allOf": [
+    {
+      "$ref": "../../../portal-api-v1.4.1/docs/web-portal-api/schemas/entities/StockTakeLine.schema.json"
+    }
+  ],
+  "type": "object",
+  "properties": {
+    "stockTakeId": {
+      "type": "string",
+      "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$"
+    },
+    "productId": {
+      "type": "string",
+      "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$"
+    },
+    "countedQty": {
+      "type": [
+        "string",
+        "number"
+      ],
+      "pattern": "^(?:0|[1-9]\\d*)(?:\\.\\d{1,4})?$",
+      "minimum": 0
+    },
+    "isCounted": {
+      "const": true
+    },
+    "snapshotQty": {
+      "enum": [
+        0,
+        "0",
+        0.0
+      ]
+    },
+    "varianceQty": {
+      "enum": [
+        0,
+        "0",
+        0.0
+      ]
+    },
+    "varianceCost": {
+      "enum": [
+        0,
+        "0",
+        0.0
+      ]
+    },
+    "unitCost": {
+      "enum": [
+        0,
+        "0",
+        0.0
+      ]
+    },
+    "sectionId": {
+      "const": ""
+    },
+    "countedByUserId": {
+      "const": ""
+    },
+    "branchId": {
+      "type": "string",
+      "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$"
+    },
+    "rowVersion": {
+      "enum": [
+        0,
+        "0"
+      ]
+    }
+  },
+  "required": []
+}

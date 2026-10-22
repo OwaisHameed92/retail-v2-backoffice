@@ -6,9 +6,12 @@ use App\Http\Controllers\Api\LicenceApiController;
 use App\Http\Controllers\Api\PartnerTenantRequestController;
 use App\Http\Controllers\Api\Pda\PdaAuthController;
 use App\Http\Controllers\Api\Pda\PdaCatalogueController;
-use App\Http\Controllers\Api\Pda\PdaPhaseTwoController;
 use App\Http\Controllers\Api\Pda\PdaProductChangeController;
 use App\Http\Controllers\Api\Pda\PdaPurchaseOrderController;
+use App\Http\Controllers\Api\Pda\PdaPurchaseReturnController;
+use App\Http\Controllers\Api\Pda\PdaReceivingController;
+use App\Http\Controllers\Api\Pda\PdaStockAdjustmentController;
+use App\Http\Controllers\Api\Pda\PdaStockTakeController;
 use App\Http\Controllers\Api\SyncController;
 use App\Http\Controllers\Api\TrialRequestController;
 use App\Http\Middleware\AuditPartnerCall;
@@ -20,6 +23,7 @@ use App\Http\Middleware\GuardPublicTrialRequests;
 use App\Http\Middleware\GuardSyncRequest;
 use App\Http\Middleware\IdempotentTillRequest;
 use App\Http\Middleware\PublicFormCors;
+use App\Http\Middleware\RequireStockDrafts;
 use App\Http\Middleware\ThrottleHandheldApi;
 use App\Http\Middleware\ThrottleLicenceApi;
 use App\Http\Middleware\ThrottlePartnerApi;
@@ -120,23 +124,34 @@ Route::prefix('pda')->name('api.pda.')->group(function () {
             Route::post('{order}/cancel', 'cancel')->name('cancel')->whereUlid('order');
         });
 
-        // Till-owned in contract v1.4.1: 501 NOT_AVAILABLE_YET until the till contract has portal-drafted stock documents
-        // (docs/pda-api.md "Needs the till contract"; stock locations are not in the model).
-        Route::post('purchase-orders/{order}/receive', PdaPhaseTwoController::class)->name('purchase-orders.receive');
-        Route::get('purchase-orders/{order}/receipts', PdaPhaseTwoController::class)->name('purchase-orders.receipts');
-        Route::get('purchase-orders/{order}/returnable', PdaPhaseTwoController::class)->name('purchase-orders.returnable');
-        Route::get('purchase-returns', PdaPhaseTwoController::class)->name('purchase-returns.index');
-        Route::post('purchase-returns', PdaPhaseTwoController::class)->name('purchase-returns.store');
-        Route::put('purchase-returns/{return}', PdaPhaseTwoController::class)->name('purchase-returns.update');
-        Route::post('purchase-returns/{return}/cancel', PdaPhaseTwoController::class)->name('purchase-returns.cancel');
-        Route::get('stock-adjustments', PdaPhaseTwoController::class)->name('stock-adjustments.index');
-        Route::post('stock-adjustments', PdaPhaseTwoController::class)->name('stock-adjustments.store');
-        Route::put('stock-adjustments/{adjustment}', PdaPhaseTwoController::class)->name('stock-adjustments.update');
-        Route::post('stock-adjustments/{adjustment}/cancel', PdaPhaseTwoController::class)->name('stock-adjustments.cancel');
-        Route::get('stock-takes', PdaPhaseTwoController::class)->name('stock-takes.index');
-        Route::post('stock-takes', PdaPhaseTwoController::class)->name('stock-takes.store');
-        Route::get('stock-takes/{take}', PdaPhaseTwoController::class)->name('stock-takes.show');
-        Route::put('stock-takes/{take}', PdaPhaseTwoController::class)->name('stock-takes.update');
-        Route::post('stock-takes/{take}/cancel', PdaPhaseTwoController::class)->name('stock-takes.cancel');
+        // Stock documents drafted for the shop's till (contract proposal docs/contracts/proposals/pda-stock-drafts):
+        // RequireStockDrafts answers 501 NOT_AVAILABLE_YET while PDA_STOCK_DRAFTS is off (the default), exactly as
+        // before. Stock locations are not in the model (not routed).
+        Route::middleware(RequireStockDrafts::class)->group(function () {
+            Route::controller(PdaReceivingController::class)->prefix('purchase-orders/{order}')->name('purchase-orders.')->group(function () {
+                Route::post('receive', 'receive')->name('receive');
+                Route::get('receipts', 'receipts')->name('receipts');
+                Route::get('returnable', 'returnable')->name('returnable');
+            });
+            Route::controller(PdaPurchaseReturnController::class)->prefix('purchase-returns')->name('purchase-returns.')->group(function () {
+                Route::get('/', 'index')->name('index');
+                Route::post('/', 'store')->name('store');
+                Route::put('{return}', 'update')->name('update');
+                Route::post('{return}/cancel', 'cancel')->name('cancel');
+            });
+            Route::controller(PdaStockAdjustmentController::class)->prefix('stock-adjustments')->name('stock-adjustments.')->group(function () {
+                Route::get('/', 'index')->name('index');
+                Route::post('/', 'store')->name('store');
+                Route::put('{adjustment}', 'update')->name('update');
+                Route::post('{adjustment}/cancel', 'cancel')->name('cancel');
+            });
+            Route::controller(PdaStockTakeController::class)->prefix('stock-takes')->name('stock-takes.')->group(function () {
+                Route::get('/', 'index')->name('index');
+                Route::post('/', 'store')->name('store');
+                Route::get('{take}', 'show')->name('show');
+                Route::put('{take}', 'update')->name('update');
+                Route::post('{take}/cancel', 'cancel')->name('cancel');
+            });
+        });
     });
 });

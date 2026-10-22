@@ -1,0 +1,369 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:sspos:web-portal-api:proposal:pda-stock-drafts:StockAdjustmentDraft",
+  "title": "StockAdjustmentDraft",
+  "description": "PROPOSAL pda-stock-drafts §5.1: a stock change for one product in one shop, drafted on the portal (branch-owned, hubDrafted). The portal sends it with status pending and every outcome member null; the till applies it as its own StockMovement and pushes the same row confirmed (with qtyBefore/qtyDelta/qtyAfter and stockMovementId) or rejected (with rejectReason).",
+  "type": "object",
+  "properties": {
+    "productId": {
+      "type": "string",
+      "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$"
+    },
+    "type": {
+      "enum": [
+        "stockIncrease",
+        "stockDecrease",
+        "openingStock",
+        "stockCount"
+      ]
+    },
+    "quantity": {
+      "type": [
+        "string",
+        "number"
+      ],
+      "pattern": "^(?:0|[1-9]\\d*)(?:\\.\\d{1,4})?$",
+      "minimum": 0,
+      "description": "Base units. stockIncrease / stockDecrease / openingStock: the change (> 0). stockCount: the counted quantity on the shelf (>= 0); the till books quantity - its stock at apply."
+    },
+    "unitCost": {
+      "type": [
+        "string",
+        "number",
+        "null"
+      ],
+      "pattern": "^(?:0|[1-9]\\d*)(?:\\.\\d{1,4})?$",
+      "minimum": 0,
+      "description": "Per base unit, ex VAT (4 dp). Set for stockIncrease and openingStock, else null."
+    },
+    "reason": {
+      "enum": [
+        "damaged",
+        "expired",
+        "theft",
+        "countCorrection",
+        "other",
+        null
+      ]
+    },
+    "note": {
+      "type": "string",
+      "maxLength": 255
+    },
+    "productUnitId": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$"
+    },
+    "enteredQuantity": {
+      "type": [
+        "string",
+        "number",
+        "null"
+      ],
+      "pattern": "^(?:0|[1-9]\\d*)(?:\\.\\d{1,4})?$",
+      "minimum": 0,
+      "description": "Display only: the quantity typed in productUnitId units."
+    },
+    "conversionToBase": {
+      "type": [
+        "string",
+        "number",
+        "null"
+      ],
+      "pattern": "^(?:0|[1-9]\\d*)(?:\\.\\d{1,4})?$",
+      "minimum": 0,
+      "description": "Display only: base units per entered unit."
+    },
+    "enteredAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "enteredBy": {
+      "type": "string",
+      "maxLength": 120
+    },
+    "status": {
+      "enum": [
+        "pending",
+        "confirmed",
+        "rejected"
+      ]
+    },
+    "confirmedAt": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "rejectedAt": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "rejectReason": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 500
+    },
+    "qtyBefore": {
+      "type": [
+        "string",
+        "number",
+        "null"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d{1,4})?$"
+    },
+    "qtyDelta": {
+      "type": [
+        "string",
+        "number",
+        "null"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d{1,4})?$"
+    },
+    "qtyAfter": {
+      "type": [
+        "string",
+        "number",
+        "null"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d{1,4})?$"
+    },
+    "stockMovementId": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$"
+    },
+    "branchId": {
+      "type": "string",
+      "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$"
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$"
+    },
+    "companyId": {
+      "type": "string",
+      "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$"
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "rowVersion": {
+      "type": [
+        "string",
+        "integer"
+      ],
+      "pattern": "^(?:0|[1-9]\\d*)$",
+      "minimum": 0
+    },
+    "deletedAt": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "isDeleted": {
+      "type": "boolean"
+    },
+    "domainEvents": {
+      "type": [
+        "array",
+        "null"
+      ]
+    }
+  },
+  "required": [
+    "productId",
+    "type",
+    "quantity",
+    "unitCost",
+    "reason",
+    "note",
+    "productUnitId",
+    "enteredQuantity",
+    "conversionToBase",
+    "enteredAt",
+    "enteredBy",
+    "status",
+    "confirmedAt",
+    "rejectedAt",
+    "rejectReason",
+    "qtyBefore",
+    "qtyDelta",
+    "qtyAfter",
+    "stockMovementId",
+    "branchId",
+    "id",
+    "companyId",
+    "createdAt",
+    "updatedAt",
+    "rowVersion",
+    "deletedAt",
+    "isDeleted",
+    "domainEvents"
+  ],
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "pending"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "confirmedAt": {
+            "type": "null"
+          },
+          "rejectedAt": {
+            "type": "null"
+          },
+          "rejectReason": {
+            "type": "null"
+          },
+          "qtyBefore": {
+            "type": "null"
+          },
+          "qtyDelta": {
+            "type": "null"
+          },
+          "qtyAfter": {
+            "type": "null"
+          },
+          "stockMovementId": {
+            "type": "null"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "confirmed"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "confirmedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "qtyBefore": {
+            "type": [
+              "string",
+              "number"
+            ],
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d{1,4})?$"
+          },
+          "qtyDelta": {
+            "type": [
+              "string",
+              "number"
+            ],
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d{1,4})?$"
+          },
+          "qtyAfter": {
+            "type": [
+              "string",
+              "number"
+            ],
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d{1,4})?$"
+          },
+          "rejectReason": {
+            "type": "null"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "rejected"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "rejectedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "rejectReason": {
+            "type": "string",
+            "minLength": 1
+          },
+          "stockMovementId": {
+            "type": "null"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "stockDecrease"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "reason": {
+            "enum": [
+              "damaged",
+              "expired",
+              "theft",
+              "countCorrection",
+              "other"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "enum": [
+              "stockIncrease",
+              "openingStock"
+            ]
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "unitCost": {
+            "type": [
+              "string",
+              "number"
+            ],
+            "pattern": "^(?:0|[1-9]\\d*)(?:\\.\\d{1,4})?$",
+            "minimum": 0
+          }
+        }
+      }
+    }
+  ]
+}

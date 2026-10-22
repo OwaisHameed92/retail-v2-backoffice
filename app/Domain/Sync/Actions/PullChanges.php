@@ -3,9 +3,12 @@
 namespace App\Domain\Sync\Actions;
 
 use App\Domain\Shared\Exceptions\ApiException;
+use App\Domain\StockDrafts\Support\StockDraftFeed;
+use App\Domain\StockDrafts\Support\StockDraftSwitch;
 use App\Domain\Sync\Data\SyncCaller;
 use App\Domain\Sync\Support\PullEnvelopes;
 use App\Domain\Sync\Support\PullFeed;
+use App\Domain\Sync\Support\PullPayload;
 use App\Domain\Sync\Support\SyncApiErrors;
 use App\Domain\Sync\Support\SyncStatusRecorder;
 use App\Domain\TillData\EntityRegistry;
@@ -27,6 +30,10 @@ use Illuminate\Support\Facades\DB;
  * 3. Envelopes in the till's shape with the till's own ids (PullEnvelopes). `highestVersion` = the page's last
  *    version (`since` when nothing is new, as samples/pull-reply.empty.json); `hasMore` when rows are still waiting.
  * 4. Records the pull in `sync_branch_status`.
+ *
+ * Contract proposal pda-stock-drafts (handheld stock drafts, StockDraftFeed): only while `PDA_STOCK_DRAFTS` is on
+ * and the till is new enough (StockDraftSwitch) the page also carries this branch's open stock drafts, which are
+ * then the till's. Off (the default): none of it runs and the reply is exactly as before.
  */
 final class PullChanges
 {
@@ -36,6 +43,7 @@ final class PullChanges
         private readonly HubVersions $versions,
         private readonly PullFeed $feed,
         private readonly SyncStatusRecorder $status,
+        private readonly StockDraftFeed $drafts,
     ) {}
 
     /**
@@ -56,12 +64,19 @@ final class PullChanges
 
         $companyId = $caller->company->id;
         $this->versions->stampPending($companyId);
+        $withDrafts = StockDraftSwitch::servesTill($appVersion);
 
-        $reply = DB::transaction(function () use ($caller, $companyId, $since, $max): array {
-            $page = $this->feed->page($companyId, $caller->branch->id, $since, $max + 1);
+        if ($withDrafts) {
+            $this->drafts->prepare($companyId);
+        }
+
+        $reply = DB::transaction(function () use ($caller, $companyId, $since, $max, $withDrafts): array {
+            $extra = $withDrafts ? $this->drafts->sources($companyId, $caller->branch->id, $since) : [];
+            $page = $this->feed->page($companyId, $caller->branch->id, $since, $max + 1, $extra);
             $hasMore = count($page) > $max;
             $page = array_slice($page, 0, $max);
             $envelopes = new PullEnvelopes($caller->ids, $caller->branch->id, $since);
+            $drafted = $withDrafts ? $this->drafts->envelopes(new PullPayload($caller->ids, $caller->branch->id, $since), $companyId, $caller->branch->id, $page) : [];
             $rows = [];
 
             foreach ($this->byEntity($page) as $entity => $ids) {
@@ -71,6 +86,14 @@ final class PullChanges
             $changes = [];
 
             foreach ($page as [$entity, $id, $version, $departure]) {
+                if (StockDraftFeed::owns($entity)) {
+                    if (isset($drafted["{$entity}:{$id}"])) {
+                        $changes[] = $drafted["{$entity}:{$id}"];
+                    }
+
+                    continue;
+                }
+
                 $row = $rows[$entity][$id] ?? null;
 
                 // A shop row moved away from this branch: a `D` (ANSWERS-2026-09-29-b A.3), whatever the row is now.
@@ -112,7 +135,9 @@ final class PullChanges
         $ids = [];
 
         foreach ($page as [$entity, $id]) {
-            $ids[$entity][] = $id;
+            if (! StockDraftFeed::owns($entity)) {
+                $ids[$entity][] = $id;
+            }
         }
 
         return $ids;

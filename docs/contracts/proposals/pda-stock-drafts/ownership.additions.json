@@ -1,0 +1,15 @@
+{
+  "rule": "PROPOSAL pda-stock-drafts: additions to samples/ownership.json (contract v1.4.1); nothing existing changes. hubDrafted = a branch table the portal may also write rows into for one shop, which then owns them (section 10.6). The till applies a drafted stock document when it pulls it and pushes the outcome on the same row (README sections 6-9).",
+  "entities": {
+    "StockAdjustmentDraft": "branch"
+  },
+  "hubDrafted": {
+    "StockAdjustmentDraft": "the portal may draft a stock change for one product in one shop (status pending; type stockIncrease, stockDecrease, openingStock or stockCount) and send it once in that shop's pull; the till applies it as its own StockMovement and pushes the same row confirmed or rejected; confirmedAt, rejectedAt, rejectReason, qtyBefore, qtyDelta, qtyAfter and stockMovementId are never read from a pull",
+    "StockTake": "the portal may draft a counted stock take for one shop (origin headOffice, status review) and send it once in that shop's pull; the till approves it against its own stock at apply (a variance per line) or cancels it with cancelReason, and owns every change after that",
+    "StockTakeLine": "the counted lines of a drafted stock take, with their stock take; snapshotQty, varianceQty, varianceCost and unitCost are never read from a pull",
+    "GoodsReceipt": "the portal may draft one delivery against a purchase order of one shop (origin headOffice, status draft) and send it once in that shop's pull; the till posts it as its own goods-in (status posted) or cancels it with cancelReason, and owns every change after that",
+    "GoodsReceiptLine": "the lines of a drafted delivery, with their receipt; receivedQty is what arrived in this delivery on purchaseOrderLineId",
+    "PurchaseReturn": "the portal may draft a return to the supplier for one shop (origin headOffice, status draft) and send it once in that shop's pull; the till books it (status sent) or cancels it with cancelReason, and owns every change after that",
+    "PurchaseReturnLine": "the lines of a drafted return, with their return; purchaseOrderLineId names the order line the goods came on, or null"
+  }
+}

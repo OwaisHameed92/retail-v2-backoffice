@@ -7,6 +7,7 @@ use App\Domain\Shared\Country\Country;
 use App\Domain\Shared\Country\MoneyFormat;
 use App\Domain\Shared\Support\Money;
 use App\Domain\Shared\Support\Ulid;
+use App\Domain\StockDrafts\Queries\PurchaseOrderStock;
 use App\Domain\Tenancy\CurrentCompany;
 use App\Domain\Tenancy\Models\Branch;
 use App\Domain\TillData\Data\HeadOfficeOrderData;
@@ -150,6 +151,11 @@ final class DraftHeadOfficeOrder
 
         if ($order->status === 'cancelled') {
             throw ValidationException::withMessages(['order' => 'A cancelled order cannot be re-opened. Draft a new order instead.']);
+        }
+
+        // Contract proposal pda-stock-drafts §9: a delivery booked on the handheld is waiting for the shop's till.
+        if (PurchaseOrderStock::receivingStarted($order->id)) {
+            throw ValidationException::withMessages(['order' => 'Goods have been booked in against this order from a handheld, so it is the shop\'s now. Draft a new order instead.']);
         }
 
         return $order;

@@ -15,4 +15,11 @@ return [
     // Page sizes of the lists (`per_page`).
     'per_page' => 25,
     'max_per_page' => 100,
+
+    // Stock documents drafted from the handheld (stock adjustments, stock takes, goods-in, purchase returns): contract
+    // proposal docs/contracts/proposals/pda-stock-drafts. OFF until the till supports it: while off every stock call
+    // answers 501 NOT_AVAILABLE_YET and nothing new enters any till's pull. `stock_drafts_min_till`: when set, drafts
+    // go only to tills whose X-SSPOS-App-Version is at least this (older tills keep them waiting); empty = every till.
+    'stock_drafts' => (bool) env('PDA_STOCK_DRAFTS', false),
+    'stock_drafts_min_till' => (string) env('PDA_STOCK_DRAFTS_MIN_TILL', ''),
 ];

@@ -8,7 +8,8 @@ point at the new portal with few changes. Differences are listed in [Differences
 (§2.2), the cost (§2.3), the `can_change_cost` and `can_adjust_stock` permissions, `client_reference` on purchase
 order creates (§3), decimal kg quantities on orders, the `tenants` list on `409 TENANT_REQUIRED`, and which 403s
 mean "sign out". Stock adjustments, stock takes, goods-in, purchase returns and stock locations need the till contract
-first: see [Needs the till contract](#needs-the-till-contract) (they answer `501 NOT_AVAILABLE_YET`).
+first: see [Stock documents](#stock-documents) — built on the portal and **available when `PDA_STOCK_DRAFTS` is on,
+after the till supports contract proposal `pda-stock-drafts`** (until then they answer `501 NOT_AVAILABLE_YET`).
 
 - **Base URLs:** UK `https://retail-v2-portal.sspos.co.uk` · Pakistan `https://pak-pos.sspos.co.uk` (same API on both).
 - **Format:** JSON (`Content-Type: application/json`, `Accept: application/json`). HTTPS only.
@@ -59,9 +60,14 @@ Validation errors are **422** `VALIDATION_FAILED` with `errors` (field → messa
 | 409 | `PO_OWNED_BY_TILL` | The shop's till owns the order now (sent/cancelled/received on the till, or the till's own order) |
 | 409 | `PO_CANCELLED` | The order is cancelled: it cannot be edited or re-opened |
 | 422 | `VALIDATION_FAILED` | Body or query not valid (`errors` lists the fields) |
-| 422 | `PRODUCT_ARCHIVED` | Price or cost change on an archived product |
+| 422 | `PRODUCT_ARCHIVED` | Price, cost or stock change on an archived product |
+| 403 | `STOCK_CHANGE_NOT_ALLOWED` | A stock write (adjustment, stock take, receiving, return) by a user without "can adjust stock" (stock documents) |
+| 409 | `ADJUSTMENT_OWNED_BY_TILL` / `STOCK_TAKE_OWNED_BY_TILL` / `RETURN_OWNED_BY_TILL` | Edit or cancel after the shop's till took the document (stock documents) |
+| 409 | `ADJUSTMENT_CANCELLED` / `STOCK_TAKE_CANCELLED` / `RETURN_CANCELLED` | Edit or cancel a cancelled document (stock documents) |
+| 409 | `PO_NOT_RECEIVABLE` | Receiving against an order still in `draft` (not placed) (stock documents) |
+| 422 | `NOT_STOCK_TRACKED` / `OVER_RECEIPT` / `OVER_RETURN` | Product does not track stock / more than is outstanding / more than can be returned; the field is named in `errors` (stock documents) |
 | 429 | `RATE_LIMITED` | Too many requests; wait `retryAfterSeconds` (also `Retry-After`) |
-| 501 | `NOT_AVAILABLE_YET` | A call that needs the till contract first (stock adjustments, stock takes, receiving, returns) |
+| 501 | `NOT_AVAILABLE_YET` | A stock call while the stock documents are switched off (stock adjustments, stock takes, receiving, returns) |
 | 500 / 503 | `SERVER_ERROR` / `SERVER_BUSY` | Our side; retry later |
 
 **Rate limits:** login 10 a minute per email + IP (60 per IP); every other call 240 a minute per token.
@@ -102,7 +108,7 @@ the reply was `409 TENANT_REQUIRED`.
 Store the token; it is shown once (the portal keeps only a hash). Each login makes a new token (one per device);
 tokens do not expire on their own — they end at logout, a password reset, "sign out devices" or when the user is
 switched off. Use `can_change_prices` to show or hide the price editors (business, shop and unit prices),
-`can_change_cost` for the cost editor and `can_adjust_stock` for the stock screens (still 501, see below).
+`can_change_cost` for the cost editor and `can_adjust_stock` for the stock screens (501 until the stock documents are switched on, see [Stock documents](#stock-documents)).
 
 **`409 TENANT_REQUIRED` (clarification 2):** when the email **and** the password open switched-on handheld accounts
 in more than one business, the reply lists exactly those businesses, by name:
@@ -276,7 +282,8 @@ Order fields:
   here), `cancelled`. `editable` / `locked_reason` say whether and why not.
 - Quantities are **base units**: `quantity_ordered` = `cases_ordered` × `case_qty` (+ loose kg on a weighed line, where
   `cases_ordered` is 0 and `case_qty` 1). `unit_cost` is per base unit, ex VAT.
-  `quantity_returned` / `total_returned` are `null` until purchase returns come to the app (needs the till contract).
+  `quantity_returned` / `total_returned` are `null` while the stock documents are off; when on they count returns, and
+  each line also has `quantity_pending` (handheld deliveries the till has not booked yet, included in `quantity_received`).
 - `client_reference`: the app's UUID when the order was created from the handheld with one, else `null`.
 
 ### `GET /api/pda/purchase-orders?status=&search=&client_reference=&page=&per_page=`
@@ -328,27 +335,141 @@ cancellation. Same 409s as edit (cancel a till-owned order on the till).
 
 ---
 
-## Needs the till contract
+## Stock documents
 
-These answer **`501 NOT_AVAILABLE_YET`** today (the routes exist so the app can show "Do this on the till for now").
-In contract v1.4.1 `StockMovement`, `StockTake`, `GoodsReceipt` and `PurchaseReturn` are **branch-owned** (the shop's
-till writes them; `samples/ownership.json`); only `PurchaseOrder` / `PurchaseOrderLine` can be drafted by the portal
-(`hubDrafted`). The portal must never write till-owned stock rows itself: two writers of stock would double-book it.
-They need the EPOS till team to add portal-drafted documents that the till pulls, applies against its own stock and
-answers (`confirmed` with what it booked, or `rejected` with a reason), as proposed in the phase 2 request:
+> **Available when `PDA_STOCK_DRAFTS` is on, after the till supports contract proposal `pda-stock-drafts`**
+> (`docs/contracts/proposals/pda-stock-drafts`). Until then every call below answers **`501 NOT_AVAILABLE_YET`**
+> (for a signed-in user; `401` without a token), exactly as before, and the app keeps "Do this on the till for now".
 
-| App feature | Calls (501 today) | Needs in the till contract |
-|---|---|---|
-| Stock adjustments (+/-, opening stock, count corrections) | `GET`/`POST /api/pda/stock-adjustments`, `PUT …/{id}`, `POST …/{id}/cancel` | A hub-drafted `StockAdjustmentDraft` (product, type, base-unit quantity, cost, reason, `clientReference`) the till applies as its own `StockMovement` and confirms or rejects in a push |
-| Stock takes (shelf counts) | `GET`/`POST /api/pda/stock-takes`, `GET`/`PUT …/{id}`, `POST …/{id}/cancel` | A hub-drafted `StockTake` with lines (counted quantity); the till works out the variance against its stock at apply time and pushes expected / counted / variance per line |
-| Goods-in against a PO (partial too) | `POST /api/pda/purchase-orders/{id}/receive`, `GET …/{id}/receipts`, `GET …/{id}/returnable` | A hub-drafted `GoodsReceiptDraft` (PO line id, delta quantity, delivery note no.) the till books as its `GoodsReceipt` and confirms |
-| Purchase returns | `GET`/`POST /api/pda/purchase-returns`, `PUT …/{id}`, `POST …/{id}/cancel` | A hub-drafted return draft the till books as its `PurchaseReturn`; then `quantity_returned` / `total_returned` on orders can be filled |
-| Stock locations, location moves, branch transfers | `GET /api/pda/stock-locations` (404: not offered) | Locations in the till's model (today only the product's `bin_location` text) |
+In contract v1.4.1 the shop's till is the only writer of stock. So each call below makes a **draft** for the user's
+shop that its till pulls at its next sync, applies against its own stock at that moment, and answers: `confirmed`
+(with what it booked) or `rejected` (with `reject_reason`). Same lifecycle for every document:
 
-When the contract has them, the portal side follows the purchase order pattern already live: `client_reference`
-idempotency (unique per shop, `200` on a repeat), `portal_state` `pending` / `confirmed` / `rejected` / `cancelled`,
-`409 …_OWNED_BY_TILL` once the till has it, and the `can_adjust_stock` permission (`403 STOCK_CHANGE_NOT_ALLOWED`).
-The permission is already on the portal screen and in `user.can_adjust_stock`, so the app can read it now.
+| `status` | `portal_state` | `editable` | Meaning |
+|---|---|---|---|
+| `pending` | `pending` | true | Saved on the portal; the till has not pulled it yet. Edit and cancel work |
+| `withTill` | `pending` | false | Sent to the shop's till; it applies it at its sync. `409 …_OWNED_BY_TILL` to edit or cancel |
+| `confirmed` | `confirmed` | false | The till applied it (`confirmed_at`); stock moves (`stock_on_hand` follows when the till reports stock) |
+| `rejected` | `rejected` | false | The till refused it; `reject_reason` says why. Make a new one |
+| `cancelled` | `cancelled` | false | Cancelled before the till got it (`cancelled_at`, `cancel_reason`). `409 …_CANCELLED` |
+
+- **Permission:** every write needs **"can adjust stock"** (`user.can_adjust_stock`; else `403 STOCK_CHANGE_NOT_ALLOWED`),
+  receiving and returns included. Lists and reads do not.
+- **Products:** a product of the business (`422 VALIDATION_FAILED` naming the field), not archived (`422 PRODUCT_ARCHIVED`),
+  tracking stock (`422 NOT_STOCK_TRACKED`); both name the field in `errors`.
+- **Quantities** are base units, up to 4 dp (`"24.0000"`).
+- **`client_reference`** (a UUID, optional, every create): unique per shop and document type. A create that repeats one
+  makes nothing and answers **`200`** with the document made the first time, as it is now (the body is not applied);
+  safe under parallel retries. Not a UUID → `422`. `PUT` ignores it. Lists filter on it: `?client_reference=`.
+- **Writes** answer `{ success, message, type, data }`; `201` when made, `200` for a repeat or a change.
+
+### Stock adjustments (`type: stock_adjustment`)
+
+`POST /api/pda/stock-adjustments`
+```json
+{ "client_reference": "3f2c9a5e-5b1d-4d0e-9a51-3c2f9e8b7a10", "product_id": "01K5T0Q8C4000000000000P002",
+  "adjustment_type": "stockDecrease", "quantity": "2.0000", "unit_cost": null, "reason": "Damaged",
+  "product_unit_id": null, "entered_quantity": null, "conversion_to_base": null }
+```
+- `adjustment_type`: `stockIncrease`, `stockDecrease`, `openingStock`, `stockCount` (else 422; `locationMove` /
+  `branchTransferOut` are not offered).
+- `quantity`: the change, > 0. **`stockCount`: the counted quantity on the shelf (≥ 0)** — the till books the difference
+  against its own stock when it applies it, so sales between the scan and the sync are not lost.
+- `unit_cost`: per base unit ex VAT, for `stockIncrease` / `openingStock` (the product's cost when left out); ignored
+  otherwise.
+- `reason`: required for `stockDecrease`, ≤ 255. "Damaged", "Expired", "Theft", "Count correction", "Other" (any case)
+  are the fixed codes; any other text is kept as it is (code `other`).
+- `product_unit_id` / `entered_quantity` / `conversion_to_base`: display only ("2 × Case of 12" = `quantity` 24); the
+  unit must be the product's (`422 errors.product_unit_id`).
+
+`201`:
+```json
+{ "success": true, "message": "Saved — the shop’s till applies it at its next sync.", "type": "stock_adjustment",
+  "data": { "id": "01K80A0J000000000000SA0001", "client_reference": "3f2c9a5e-…", "product_id": "01K5T0Q8C4000000000000P002",
+    "product_name": "Coca-Cola 500ml", "adjustment_type": "stockDecrease", "quantity": "2.0000", "unit_cost": null,
+    "reason": "Damaged", "reason_code": "damaged", "product_unit_id": null, "entered_quantity": null, "conversion_to_base": null,
+    "stock_on_hand_before": "36.0000", "status": "pending", "portal_state": "pending", "editable": true, "locked_reason": null,
+    "reject_reason": null, "confirmed_at": null, "quantity_before": null, "quantity_change": null, "quantity_after": null,
+    "cancelled_at": null, "cancel_reason": null, "created_at": "2026-10-22T09:00:00Z", "updated_at": "2026-10-22T09:00:00Z" } }
+```
+`stock_on_hand_before` is what the till last reported (null when unknown). After the till confirms:
+`quantity_before`, `quantity_change`, `quantity_after` are what it booked.
+
+| Call | Behaviour |
+|---|---|
+| `GET /api/pda/stock-adjustments?page=&per_page=&product_id=&client_reference=` | This shop's adjustments, newest first |
+| `PUT /api/pda/stock-adjustments/{id}` | Same body as create; while `pending`. `409 ADJUSTMENT_OWNED_BY_TILL` / `ADJUSTMENT_CANCELLED` |
+| `POST /api/pda/stock-adjustments/{id}/cancel` | `{ "reason": "…" }` (optional); same 409s |
+
+### Stock takes (`type: stock_take`)
+
+`POST /api/pda/stock-takes`
+```json
+{ "client_reference": "7a1f…", "name": "Aisle 3 — soft drinks", "note": "Morning count",
+  "lines": [ { "product_id": "01K5T0Q8C4000000000000P002", "counted_quantity": "34.0000" },
+             { "product_id": "01K5T0Q8C4000000000000P001", "counted_quantity": "0.0000" } ] }
+```
+A product once per stock take (`422 errors.lines.N.product_id`), up to 500 lines, counts ≥ 0. The document:
+`{ id, client_reference, reference ("HS-LDS-000001"), name, note, counted_at, status, portal_state, editable,
+locked_reason, reject_reason, confirmed_at, cancelled_at, cancel_reason, created_at, updated_at, lines: [{ id,
+product_id, product_name, counted_quantity, expected_quantity, variance }] }`. `expected_quantity` (the till's stock
+when it applied the count) and `variance` (counted − expected) are filled once the till confirms.
+
+`GET /api/pda/stock-takes?client_reference=&page=&per_page=`, `GET …/{id}`, `PUT …/{id}` (replaces the lines while
+pending), `POST …/{id}/cancel`; `409 STOCK_TAKE_OWNED_BY_TILL` / `STOCK_TAKE_CANCELLED`.
+
+### Receiving against a purchase order
+
+`POST /api/pda/purchase-orders/{id}/receive`
+```json
+{ "client_reference": "9b1e…", "reference_no": "GRN-20261022-001", "received_at": "2026-10-22T09:15:00Z",
+  "note": "2 of 3 pallets",
+  "items": [ { "purchase_order_item_id": "01K7Z7LINE00000000000000L1", "quantity_received": "12.0000" } ] }
+```
+- **`quantity_received` is a delta**: what arrived in *this* delivery (base units, > 0). Name the line by
+  `purchase_order_item_id` (or `product_id`). Leave `items` out to receive everything still outstanding.
+- Outstanding = ordered − booked by the till − handheld deliveries it has not booked yet. More →
+  `422 OVER_RECEIPT` with `errors: { "items.0.quantity_received": ["Only 12.0000 left to receive on this line."] }`.
+- `409 PO_CANCELLED` for a cancelled order, `409 PO_NOT_RECEIVABLE` for an order still in `draft` (place it first).
+  Any order of the shop (head-office or the till's own); another shop's → 404.
+- `201` (`200` on a repeated `client_reference`): `type: purchase_order`, `data` = the order (each line's
+  `quantity_received` includes this delivery, `quantity_pending` = the part the till has not booked yet,
+  `quantity_remaining`), and `receipt` = the delivery (as in `receipts`). The order's `status` moves to `partReceived` /
+  `received` when the till books it. While a handheld delivery waits for the till, a head-office order can no longer be
+  edited or cancelled (`409 PO_OWNED_BY_TILL`).
+
+| Call | Returns |
+|---|---|
+| `GET /api/pda/purchase-orders/{id}/receipts` | One row per delivery, newest first — handheld ones and the till's own goods-in: `{ id, reference_no, received_at, received_by, note, client_reference, status, portal_state, editable, locked_reason, reject_reason, confirmed_at, items: [{ purchase_order_item_id, product_id, product_name, quantity_received }] }` |
+| `GET /api/pda/purchase-orders/{id}/returnable` | Per line: `{ purchase_order_item_id, product_id, product_name, unit_cost, quantity_received, quantity_returned, quantity_returnable }` |
+
+### Purchase returns (`type: purchase_return`)
+
+`POST /api/pda/purchase-returns`
+```json
+{ "client_reference": "c4d2…", "supplier_id": "01K5T0Q8C4000000000000S001", "purchase_order_id": "01K7Z6ORDER0000000000000O1",
+  "reference_no": "RET-1001", "return_reason": "Damaged in transit",
+  "items": [ { "product_id": "01K5T0Q8C4000000000000P001", "purchase_order_item_id": "01K7Z7LINE00000000000000L1",
+               "quantity": "2.0000", "cost_price": "0.9800", "reason": "Crushed" } ] }
+```
+- `purchase_order_id` (an order of this shop from that supplier) and `purchase_order_item_id` (a line of it, for that
+  product) are optional; without them it is a plain supplier return. Against a line, more than received − returned →
+  `422 OVER_RETURN` naming `items.N.quantity`.
+- `cost_price`: per base unit ex VAT (else the order line's, else the product's). VAT from the product.
+- Line `reason`: "Damaged", "Wrong item", "Expired", "Recalled", "Other" are codes; other text is kept (code `other`).
+- The document: `{ id, client_reference, reference ("HR-LDS-000001"), supplier_id, supplier_name, purchase_order_id,
+  reference_no, return_reason, status, portal_state, editable, locked_reason, reject_reason, confirmed_at, net_total,
+  vat_total, gross_total, cancelled_at, cancel_reason, created_at, updated_at, items: [{ id, product_id, product_name,
+  purchase_order_item_id, quantity, cost_price, vat_percentage, reason, reason_code, line_net }] }`.
+
+`GET /api/pda/purchase-returns?purchase_order_id=&client_reference=&page=&per_page=` (the returns made from the portal
+or the handheld), `PUT …/{id}`, `POST …/{id}/cancel`; `409 RETURN_OWNED_BY_TILL` / `RETURN_CANCELLED`. Orders then
+show `quantity_returned` / `total_returned`.
+
+### Not offered
+
+Stock locations, location moves and branch transfers: `GET /api/pda/stock-locations` is 404 (the till's model has
+only the product's `bin_location` text).
 
 ## Differences from the legacy API
 
@@ -363,5 +484,5 @@ The permission is already on the portal screen and in `user.can_adjust_stock`, s
 | Price change | allowed for every PDA user | only users with "can change selling prices" (else 403 `PRICE_CHANGE_NOT_ALLOWED`); reply adds `shop_retail`, `has_shop_price`, `changed`; shop and unit prices too (§2.1, §2.2); the cost needs "can change cost prices" (§2.3) |
 | Purchase orders | drafts that the POS confirms or rejects; `portal_state` pending/confirmed/rejected | head-office orders; `portal_state` pending/confirmed/cancelled (no "rejected": the till takes the order on, then it is read only here); `status` draft/sent/…; lines are whole units with `conversion_factor`; `quantity_returned` null for now; edit/cancel only while the portal owns the order (409 after) |
 | Edit/receive/cancel any shop PO | yes | edit/cancel only head-office orders the portal still owns; receiving needs the till contract |
-| Returns, adjustments, stock takes, receiving, stock locations | available | need the till contract (501), stock locations not offered |
+| Returns, adjustments, stock takes, receiving, stock locations | available, applied at once | drafts the shop's till applies at its next sync (`portal_state`), only when the stock documents are on (else 501); stock locations not offered |
 | Users | `php artisan pda:create-user` or the admin | the business owner, on the portal (Settings → Handheld (PDA) users) |
