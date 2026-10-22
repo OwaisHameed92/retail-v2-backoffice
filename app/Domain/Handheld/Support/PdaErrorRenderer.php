@@ -16,7 +16,8 @@ use Throwable;
  *
  *     {"success": false, "code": "PRICE_CHANGE_NOT_ALLOWED", "message": "…", "traceId": "01K…", "retryAfterSeconds": null, "rejectedKey": null}
  *
- * Validation adds `errors` (field → messages, the app's field names) with status 422, as the legacy API. Never any
+ * Validation adds `errors` (field → messages, the app's field names) with status 422, as the legacy API; an ApiException's
+ * `details` become top-level members (409 TENANT_REQUIRED's `tenants`). Never any
  * exception detail, even with APP_DEBUG on.
  */
 final class PdaErrorRenderer
@@ -31,7 +32,7 @@ final class PdaErrorRenderer
     public static function render(Throwable $e, Request $request): JsonResponse
     {
         return match (true) {
-            $e instanceof ApiException => self::response($request, $e->errorCode, $e->getMessage(), $e->httpStatus, $e->retryAfterSeconds, $e->rejectedKey),
+            $e instanceof ApiException => self::response($request, $e->errorCode, $e->getMessage(), $e->httpStatus, $e->retryAfterSeconds, $e->rejectedKey, $e->details ?? []),
             $e instanceof ValidationException => self::response($request, PdaErrors::VALIDATION_FAILED, self::validationMessage($e), 422, extra: ['errors' => $e->errors()]),
             $e instanceof AuthenticationException => self::response($request, PdaErrors::UNAUTHENTICATED, PdaErrors::unauthenticated()->getMessage(), 401),
             $e instanceof HttpExceptionInterface => self::fromHttpException($e, $request),

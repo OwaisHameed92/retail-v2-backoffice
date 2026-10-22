@@ -14,7 +14,8 @@ use SensitiveParameter;
 
 /**
  * Adds a handheld (PDA) login for one open shop of the current business, with the password the manager chose
- * (stored as bcrypt). Prices stay locked unless `can_change_prices`. Audited as `handheld_user.created` (never the
+ * (stored as bcrypt). Prices, cost and stock stay locked unless `can_change_prices` / `can_change_cost` /
+ * `can_adjust_stock`. Audited as `handheld_user.created` (never the
  * password). Only when the business's plan includes the handheld app (HandheldAccess::allowed, owner 2026-10-21):
  * otherwise a validation error on `plan`, whatever the screen showed.
  *
@@ -28,7 +29,7 @@ final class CreateHandheldUser
     public function __construct(private readonly RecordAudit $audit, private readonly CurrentCompany $tenancy) {}
 
     /**
-     * @param  array{name: string, email: string, branch_id: string, password: string, can_change_prices?: bool}  $data
+     * @param  array{name: string, email: string, branch_id: string, password: string, can_change_prices?: bool, can_change_cost?: bool, can_adjust_stock?: bool}  $data
      *
      * @throws ValidationException
      */
@@ -48,11 +49,14 @@ final class CreateHandheldUser
                 'password' => $data['password'],
                 'is_active' => true,
                 'can_change_prices' => (bool) ($data['can_change_prices'] ?? false),
+                'can_change_cost' => (bool) ($data['can_change_cost'] ?? false),
+                'can_adjust_stock' => (bool) ($data['can_adjust_stock'] ?? false),
                 'created_by_user_id' => $by->id,
             ]);
 
             $this->audit->handle('handheld_user.created', $handheld, null, [
                 'name' => $handheld->name, 'email' => $handheld->email, 'shop' => $shop->name, 'can_change_prices' => $handheld->can_change_prices,
+                'can_change_cost' => $handheld->can_change_cost, 'can_adjust_stock' => $handheld->can_adjust_stock,
             ], actor: $by);
 
             return $handheld;

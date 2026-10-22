@@ -40,7 +40,7 @@ final class ChangeHeadOfficeOrderStatus
             ->map(fn (PurchaseOrderLine $l) => new HeadOfficeOrderLine(
                 (string) $l->product_id, (int) $l->ordered_cases, max(1, (int) $l->case_qty_snapshot), (string) $l->unit_cost_snapshot,
                 (string) $l->vat_rate_id, (string) $l->vat_percentage,
-                max(0, (int) bcsub($l->ordered_units ?? '0', (string) ($l->ordered_cases * $l->case_qty_snapshot), 0)),
+                HeadOfficeOrderLine::looseFrom($l->ordered_units, (int) $l->ordered_cases, (int) $l->case_qty_snapshot),
             ))->values()->all();
 
         return $this->draft->handle($shop, new HeadOfficeOrderData(

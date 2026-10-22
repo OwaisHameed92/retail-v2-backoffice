@@ -25,6 +25,8 @@ class HandheldUserRequest extends FormRequest
             'name' => is_string($this->input('name')) ? trim($this->input('name')) : $this->input('name'),
             'email' => is_string($this->input('email')) ? mb_strtolower(trim($this->input('email'))) : $this->input('email'),
             'can_change_prices' => $this->boolean('can_change_prices'),
+            'can_change_cost' => $this->boolean('can_change_cost'),
+            'can_adjust_stock' => $this->boolean('can_adjust_stock'),
         ]);
     }
 
@@ -43,6 +45,8 @@ class HandheldUserRequest extends FormRequest
                 ->ignore(is_string($id) ? $id : null)],
             'branch_id' => ['required', 'string', 'size:26'],
             'can_change_prices' => ['required', 'boolean'],
+            'can_change_cost' => ['required', 'boolean'],
+            'can_adjust_stock' => ['required', 'boolean'],
             ...($creating ? ['password' => ['required', 'string', 'max:255', 'confirmed', Password::defaults()]] : []),
         ];
     }
@@ -60,11 +64,11 @@ class HandheldUserRequest extends FormRequest
     }
 
     /**
-     * @return array{name: string, email: string, branch_id: string, password: string, can_change_prices: bool}
+     * @return array{name: string, email: string, branch_id: string, password: string, can_change_prices: bool, can_change_cost: bool, can_adjust_stock: bool}
      */
     public function handheld(): array
     {
-        /** @var array{name: string, email: string, branch_id: string, password?: string, can_change_prices: bool} $data */
+        /** @var array{name: string, email: string, branch_id: string, password?: string, can_change_prices: bool, can_change_cost: bool, can_adjust_stock: bool} $data */
         $data = $this->validated();
 
         return [...$data, 'password' => $data['password'] ?? ''];

@@ -46,6 +46,8 @@ final class HandheldUsersPage
                 'shopOpen' => $shop !== null && $shop->is_active && ! $shop->trashed(),
                 'isActive' => $user->is_active,
                 'canChangePrices' => $user->can_change_prices,
+                'canChangeCost' => $user->can_change_cost,
+                'canAdjustStock' => $user->can_adjust_stock,
                 'devices' => $live->count(),
                 'lastLoginAt' => $user->last_login_at?->toIso8601ZuluString(),
                 'lastUsedAt' => $lastUsed?->toIso8601ZuluString(),

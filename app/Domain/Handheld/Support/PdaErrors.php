@@ -43,6 +43,8 @@ final class PdaErrors
 
     public const PRICE_CHANGE_NOT_ALLOWED = 'PRICE_CHANGE_NOT_ALLOWED';
 
+    public const COST_CHANGE_NOT_ALLOWED = 'COST_CHANGE_NOT_ALLOWED';
+
     public const PRODUCT_ARCHIVED = 'PRODUCT_ARCHIVED';
 
     public const PO_OWNED_BY_TILL = 'PO_OWNED_BY_TILL';
@@ -86,9 +88,13 @@ final class PdaErrors
         return new ApiException(self::PLAN_NOT_INCLUDED, 'The handheld app is part of the monthly plans. Ask Switch & Save to upgrade.', 403);
     }
 
-    public static function tenantRequired(): ApiException
+    /**
+     * @param  list<array{id: string, name: string}>  $tenants  the businesses this email and password open (top-level `tenants`)
+     */
+    public static function tenantRequired(array $tenants = []): ApiException
     {
-        return new ApiException(self::TENANT_REQUIRED, 'This email signs in to more than one business. Send "tenant_id" with the login, or ask your manager for a separate email.', 409);
+        return new ApiException(self::TENANT_REQUIRED, 'This email signs in to more than one business. Choose the business, or ask your manager for a separate email.', 409,
+            details: ['tenants' => $tenants]);
     }
 
     public static function rateLimited(int $retryAfterSeconds): ApiException
@@ -108,9 +114,14 @@ final class PdaErrors
         return new ApiException(self::PRICE_CHANGE_NOT_ALLOWED, 'This handheld account may not change prices. Ask your manager to allow it on the portal.', 403);
     }
 
-    public static function productArchived(): ApiException
+    public static function costChangeNotAllowed(): ApiException
     {
-        return new ApiException(self::PRODUCT_ARCHIVED, 'This product is archived. Restore it on the portal before changing its price.', 422);
+        return new ApiException(self::COST_CHANGE_NOT_ALLOWED, 'This handheld account may not change costs. Ask your manager to allow it on the portal.', 403);
+    }
+
+    public static function productArchived(string $what = 'price'): ApiException
+    {
+        return new ApiException(self::PRODUCT_ARCHIVED, "This product is archived. Restore it on the portal before changing its {$what}.", 422);
     }
 
     public static function ownedByTill(string $message): ApiException

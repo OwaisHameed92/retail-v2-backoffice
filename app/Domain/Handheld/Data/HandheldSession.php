@@ -26,6 +26,8 @@ final class HandheldSession
                 'shop_name' => $shop->name,
                 'shop_code' => $shop->code,
                 'can_change_prices' => $user->can_change_prices,
+                'can_change_cost' => $user->can_change_cost,
+                'can_adjust_stock' => $user->can_adjust_stock,
                 'last_login_at' => $user->last_login_at?->toIso8601ZuluString(),
             ],
             'tenant' => [

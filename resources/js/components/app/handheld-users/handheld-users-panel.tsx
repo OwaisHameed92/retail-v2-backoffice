@@ -66,8 +66,16 @@ export function HandheldUsersPanel({ users, shops, onCommand }: HandheldUsersPan
             {!user.shopOpen && <Badge variant="warning">Closed</Badge>}
         </span>
     );
-    const pricesCell = (user: HandheldUser) =>
-        user.canChangePrices ? <Badge variant="info">Can change prices</Badge> : <span className="text-muted-foreground">Look up only</span>;
+    const permissionsCell = (user: HandheldUser) =>
+        user.canChangePrices || user.canChangeCost || user.canAdjustStock ? (
+            <span className="inline-flex flex-wrap gap-1.5">
+                {user.canChangePrices && <Badge variant="info">Prices</Badge>}
+                {user.canChangeCost && <Badge variant="info">Cost</Badge>}
+                {user.canAdjustStock && <Badge variant="info">Stock</Badge>}
+            </span>
+        ) : (
+            <span className="text-muted-foreground">Look up only</span>
+        );
     const statusCell = (user: HandheldUser) => (
         <StatusBadge status={user.isActive ? 'active' : 'inactive'} label={user.isActive ? 'Active' : 'Switched off'} />
     );
@@ -132,7 +140,7 @@ export function HandheldUsersPanel({ users, shops, onCommand }: HandheldUsersPan
                                 <TableRow className="hover:bg-transparent">
                                     <TableHead className="pl-5">Name</TableHead>
                                     <TableHead>Shop</TableHead>
-                                    <TableHead>Prices</TableHead>
+                                    <TableHead>Can change</TableHead>
                                     <TableHead>Status</TableHead>
                                     <TableHead className="hidden lg:table-cell">Devices · last used</TableHead>
                                     <TableHead className="w-12 pr-5">
@@ -145,7 +153,7 @@ export function HandheldUsersPanel({ users, shops, onCommand }: HandheldUsersPan
                                     <TableRow key={user.id}>
                                         <TableCell className="pl-5">{nameCell(user)}</TableCell>
                                         <TableCell>{shopCell(user)}</TableCell>
-                                        <TableCell>{pricesCell(user)}</TableCell>
+                                        <TableCell>{permissionsCell(user)}</TableCell>
                                         <TableCell>{statusCell(user)}</TableCell>
                                         <TableCell className="hidden lg:table-cell">{devicesCell(user)}</TableCell>
                                         <TableCell className="pr-5 text-right">
@@ -165,7 +173,7 @@ export function HandheldUsersPanel({ users, shops, onCommand }: HandheldUsersPan
                                 aside: statusCell(user),
                                 fields: [
                                     { label: 'Shop', value: shopCell(user) },
-                                    { label: 'Prices', value: pricesCell(user) },
+                                    { label: 'Can change', value: permissionsCell(user) },
                                     { label: 'Devices', value: devicesCell(user) },
                                 ],
                                 actions: <RowActions label={`Actions for ${user.name}`} actions={actionsFor(user)} />,

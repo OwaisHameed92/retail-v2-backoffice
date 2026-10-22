@@ -190,7 +190,7 @@ final class DraftHeadOfficeOrder
         }
 
         foreach ($data->lines as $i => $line) {
-            if ($line->caseQty < 1 || $line->orderedCases < 0 || $line->looseUnits < 0 || $line->orderedUnits() < 1
+            if ($line->caseQty < 1 || $line->orderedCases < 0 || Money::isNegative($line->looseUnits) || Money::compare($line->orderedUnits(), '0') <= 0
                 || Money::isNegative($line->unitCost) || Money::compare($line->vatPercentage, '100') > 0 || Money::isNegative($line->vatPercentage)) {
                 $errors["lines.{$i}"] = 'Line '.($i + 1).': order at least one unit, at a cost of '.MoneyFormat::whole('0').' or more and a '.Country::tax('VAT').' rate of 0–100%.';
             }

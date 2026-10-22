@@ -26,7 +26,7 @@ class HeadOfficeOrderRequest extends CompanyWideWriteRequest
             'lines.*.productId' => ['required', 'string', 'max:64', 'distinct'],
             'lines.*.orderedCases' => ['required', 'integer', 'min:0', 'max:100000'],
             'lines.*.caseQty' => ['required', 'integer', 'min:1', 'max:10000'],
-            'lines.*.looseUnits' => ['nullable', 'integer', 'min:0', 'max:100000'],
+            'lines.*.looseUnits' => ['nullable', 'numeric', 'min:0', 'max:100000', 'decimal:0,3'],
             'lines.*.unitCost' => ['required', 'numeric', 'min:0', 'max:9999999', 'decimal:0,4'],
             'lines.*.vatRateId' => ['required', 'string', 'max:64'],
         ];
@@ -42,6 +42,7 @@ class HeadOfficeOrderRequest extends CompanyWideWriteRequest
             'lines.min' => 'Add at least one product.',
             'lines.*.productId.distinct' => 'Each product may be on the order once.',
             'lines.*.unitCost.decimal' => 'Enter the cost with up to 4 decimal places.',
+            'lines.*.looseUnits.decimal' => 'Enter loose units with up to 3 decimal places (weighed products).',
         ];
     }
 }

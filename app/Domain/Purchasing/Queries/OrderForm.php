@@ -7,6 +7,7 @@ use App\Domain\Purchasing\Support\ReorderSuggestion;
 use App\Domain\Shared\Support\Money;
 use App\Domain\Tenancy\CurrentCompany;
 use App\Domain\Tenancy\Models\Branch;
+use App\Domain\TillData\Data\HeadOfficeOrderLine;
 use App\Domain\TillData\Models\Product;
 use App\Domain\TillData\Models\PurchaseOrder;
 use App\Domain\TillData\Models\PurchaseOrderLine;
@@ -61,11 +62,17 @@ final class OrderForm
             'lines' => $lines->map(fn (PurchaseOrderLine $l) => [
                 'productId' => $l->product_id, 'name' => (string) ($products[$l->product_id]->name ?? 'Unknown product'), 'sku' => $products[$l->product_id]->sku ?? null,
                 'orderedCases' => (int) $l->ordered_cases, 'caseQty' => max(1, (int) $l->case_qty_snapshot),
-                'looseUnits' => max(0, (int) bcsub($l->ordered_units ?? '0', (string) ($l->ordered_cases * $l->case_qty_snapshot), 0)),
+                'looseUnits' => self::loose(HeadOfficeOrderLine::looseFrom($l->ordered_units, (int) $l->ordered_cases, (int) $l->case_qty_snapshot)),
                 'unitCost' => Money::normalise($l->unit_cost_snapshot ?? 0, 4), 'vatRateId' => $l->vat_rate_id,
                 'onHand' => self::quantity($stock[$l->product_id]->qty_on_hand ?? null),
             ])->values()->all(),
         ];
+    }
+
+    /** Loose units for the form: a whole number as an int, a weighed quantity (2.5 kg, from the handheld) as a decimal. */
+    private static function loose(string $units): int|float
+    {
+        return Money::compare($units, bcadd($units, '0', 0)) === 0 ? (int) $units : (float) $units;
     }
 
     /**

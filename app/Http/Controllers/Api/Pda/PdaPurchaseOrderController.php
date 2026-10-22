@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\Pda;
 
 use App\Domain\Handheld\Actions\CancelHandheldPurchaseOrder;
+use App\Domain\Handheld\Actions\CreateHandheldPurchaseOrder;
 use App\Domain\Handheld\Actions\SaveHandheldPurchaseOrder;
 use App\Domain\Handheld\Queries\HandheldPurchaseOrders;
 use App\Http\Controllers\Controller;
@@ -15,8 +16,8 @@ use Illuminate\Http\Request;
 
 /**
  * Handheld purchase orders (docs/pda-api.md §4): the shop's orders (head-office and the till's own), and head-office
- * orders created, edited and cancelled for the user's shop while the portal still owns them. Another shop's or
- * business's order is "not found".
+ * orders created, edited and cancelled for the user's shop while the portal still owns them. A create repeating a
+ * `client_reference` answers 200 with the order already made. Another shop's or business's order is "not found".
  */
 class PdaPurchaseOrderController extends Controller
 {
@@ -24,7 +25,8 @@ class PdaPurchaseOrderController extends Controller
 
     public function index(PdaListRequest $request): JsonResponse
     {
-        $page = $this->orders->page(AuthenticateHandheldToken::shop($request), $request->text('status'), $request->text('search'), $request->perPage(), $request->pageNumber());
+        $page = $this->orders->page(AuthenticateHandheldToken::shop($request), $request->text('status'), $request->text('search'), $request->perPage(), $request->pageNumber(),
+            $request->text('client_reference'));
 
         return response()->json(['success' => true, 'data' => $page]);
     }
@@ -34,18 +36,20 @@ class PdaPurchaseOrderController extends Controller
         return response()->json(['success' => true, 'data' => $this->orders->view($this->orders->find(AuthenticateHandheldToken::shop($request), $order))]);
     }
 
-    public function store(PdaPurchaseOrderRequest $request, SaveHandheldPurchaseOrder $save): JsonResponse
+    public function store(PdaPurchaseOrderRequest $request, CreateHandheldPurchaseOrder $create): JsonResponse
     {
-        $order = $save->handle(AuthenticateHandheldToken::shop($request), $request->order());
+        [$order, $created] = $create->handle(AuthenticateHandheldToken::user($request), AuthenticateHandheldToken::shop($request), $request->order(), $request->clientReference());
 
         return response()->json([
             'success' => true,
-            'message' => $order->status?->value === 'sent'
-                ? 'Order placed — the shop’s till gets it at its next sync and can book the delivery in.'
-                : 'Created as a draft — the shop’s till gets it at its next sync.',
+            'message' => match (true) {
+                ! $created => 'Already saved — this is the order made with this client_reference.',
+                $order->status?->value === 'sent' => 'Order placed — the shop’s till gets it at its next sync and can book the delivery in.',
+                default => 'Created as a draft — the shop’s till gets it at its next sync.',
+            },
             'type' => 'purchase_order',
             'data' => $this->orders->view($order),
-        ], 201);
+        ], $created ? 201 : 200);
     }
 
     public function update(PdaPurchaseOrderRequest $request, string $order, SaveHandheldPurchaseOrder $save): JsonResponse
