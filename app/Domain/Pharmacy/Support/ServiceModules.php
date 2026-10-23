@@ -59,8 +59,9 @@ final class ServiceModules
         return array_values(array_filter($abilities, fn (string $ability) => match ($ability) {
             Ability::PharmacyView->value => self::pharmacy($company),
             Ability::ParcelsView->value => self::parcels($company),
-            // The online store's menu items (OS-3, OS-4) only while the store is available (ONLINE_STORE + country flag).
-            Ability::StoreManage->value => OnlineStoreSwitch::enabled(),
+            // The online store's menu items (OS-3, OS-4) only while the store is available to this business
+            // (ONLINE_STORE + country flag, OS-6: its add-on and cloud sync).
+            Ability::StoreManage->value => OnlineStoreSwitch::availableFor($company),
             default => true,
         }));
     }

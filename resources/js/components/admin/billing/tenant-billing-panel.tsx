@@ -4,6 +4,7 @@ import { DirectDebitPanel } from '@/components/admin/billing/direct-debit-panel'
 import { formatDate, formatDay } from '@/components/admin/billing/format';
 import { DueDate, InvoiceNumber, Money } from '@/components/admin/billing/invoice-columns';
 import { InvoiceStatusBadge } from '@/components/admin/billing/invoice-status-badge';
+import { OnlineStoreAddOnCard } from '@/components/admin/billing/online-store-addon-card';
 import { PricingPanel } from '@/components/admin/billing/pricing-panel';
 import { RecordPaymentDialog } from '@/components/admin/billing/record-payment-dialog';
 import { TenantBillingStatus } from '@/components/admin/billing/tenant-billing-status';
@@ -148,6 +149,8 @@ export function TenantBillingPanel({ tenant, billing }: TenantBillingPanelProps)
                 planChange={billing.planChange}
                 cancelled={cancelled}
             />
+
+            {billing.onlineStore && <OnlineStoreAddOnCard company={company} addOn={billing.onlineStore} canManage={canManage} cancelled={cancelled} />}
 
             <DirectDebitPanel company={company} directDebit={billing.directDebit} canManage={canManage} />
 

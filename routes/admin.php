@@ -20,6 +20,7 @@ use App\Http\Controllers\Admin\Billing\InvoiceActionController;
 use App\Http\Controllers\Admin\Billing\InvoiceController;
 use App\Http\Controllers\Admin\Billing\PaymentController;
 use App\Http\Controllers\Admin\Billing\TenantBillingController;
+use App\Http\Controllers\Admin\Billing\TenantOnlineStoreController;
 use App\Http\Controllers\Admin\Billing\TenantPlanChangeController;
 use App\Http\Controllers\Admin\Billing\TenantPricingController;
 use App\Http\Controllers\Admin\Catalogue\ContributionController;
@@ -296,6 +297,11 @@ Route::middleware(['auth:admin', AdminIsActive::class, BlockAdminWhileImpersonat
             Route::get('/', [TenantPlanChangeController::class, 'preview'])->name('preview')->middleware('throttle:120,1');
             Route::post('/', [TenantPlanChangeController::class, 'store'])->name('store')->middleware('throttle:10,1');
         });
+
+        // Online store OS-6: the business's online store add-on (on/off, monthly price, template). Changes its bill.
+        // 404 where the country has no online stores (Pakistan).
+        Route::put('tenants/{company}/online-store', [TenantOnlineStoreController::class, 'update'])->name('tenants.online-store.update')
+            ->middleware(['country.feature:onlineStore', 'throttle:20,1']);
     });
 
     // Cash billing (module 1.8): owner and accounts only (billing.manage), reading included (owner decision

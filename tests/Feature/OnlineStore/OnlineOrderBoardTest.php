@@ -27,27 +27,31 @@ beforeEach(function () {
     $this->statusOf = fn (OnlineOrder $order) => OnlineOrder::withoutCompanyScope()->find($order->id)?->status;
 });
 
-test('the board shows today\'s orders in columns with the day\'s figures', function () {
+test('the board shows today\'s orders in columns with the day\'s figures; new orders for any day stay in New (OS-6 fix)', function () {
     $tomorrow = $this->f->order([['productId' => $this->beans, 'quantity' => '1']], '2026-11-03T10:00:00Z')->order;
 
     $props = C::props($this->actingAs($this->owner)->get('/app/online-orders')
         ->assertInertia(fn (Assert $page) => $page->component('app/online-orders/index')
             ->where('store', ['isLive' => true, 'takingOrders' => true])
             ->where('filters.day', '2026-11-02')->where('filters.isToday', true)->where('filters.shopLocked', false)
-            ->where('board.columns.new.count', 1)
+            ->where('board.columns.new.count', 2)
             ->where('board.columns.new.cards.0.reference', 'W-0001')
+            ->where('board.columns.new.cards.0.otherDay', false)
+            ->where('board.columns.new.cards.1.id', $tomorrow->id)
+            ->where('board.columns.new.cards.1.otherDay', true)
             ->where('board.columns.new.cards.0.customer', 'Asha P.')
             ->where('board.columns.new.cards.0.itemCount', 3)
             ->where('board.columns.new.cards.0.total', '3.00')
             ->where('board.columns.new.cards.0.collectFrom', '2026-11-02T10:00:00Z')
             ->where('board.columns.new.cards.0.fresh', true)
-            ->where('board.stats', ['orders' => 1, 'value' => '3.00', 'average' => '3.00', 'waiting' => 1])
+            ->where('board.stats', ['orders' => 1, 'value' => '3.00', 'average' => '3.00', 'waiting' => 2])
             ->where('board.later', [['day' => '2026-11-03', 'count' => 1]])));
     expect($props['board']['columns']['picking']['count'])->toBe(0);
 
     $this->actingAs($this->owner)->get('/app/online-orders?day=2026-11-03&shop=all')
         ->assertInertia(fn (Assert $page) => $page->where('filters.isToday', false)
-            ->where('board.columns.new.cards.0.id', $tomorrow->id)->where('board.columns.new.count', 1)->where('board.later', []));
+            ->where('board.columns.new.cards.1.id', $tomorrow->id)->where('board.columns.new.cards.1.otherDay', false)
+            ->where('board.columns.new.cards.0.otherDay', true)->where('board.columns.new.count', 2)->where('board.later', []));
 });
 
 test('owners and managers open the board; accountants and staff get 403; guests sign in; switched off is 404', function () {
@@ -195,8 +199,7 @@ test('the sidebar counts new orders, and hides the item while the online store i
         ->assertInertia(fn (Assert $page) => $page->where('onlineOrdersNew', null)->where('abilities', fn ($abilities) => ! collect($abilities)->contains('store.manage')));
 });
 
-test('a business without a store sees how to set one up', function () {
+test('a business without the add-on (so without a store) gets 404 (OS-6)', function () {
     $company = Company::factory()->create();
-    $this->actingAs(C::member($company, CompanyRole::Owner))->get('/app/online-orders')
-        ->assertInertia(fn (Assert $page) => $page->where('store', null)->where('board.columns.new.count', 0));
+    $this->actingAs(C::member($company, CompanyRole::Owner))->get('/app/online-orders')->assertNotFound();
 });

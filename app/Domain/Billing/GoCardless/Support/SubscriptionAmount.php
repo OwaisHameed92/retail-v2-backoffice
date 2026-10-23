@@ -18,11 +18,14 @@ use Carbon\CarbonImmutable;
  * What the company owes each cycle, and so what the Direct Debit subscription collects: exactly the invoice of a
  * full period (one line per live till or per active branch at the unit price for the cycle, VAT per the billing
  * settings), so every GoCardless payment matches the invoice we raise for it. £0 = nothing recurring to collect.
+ *
+ * OS-6: the online store add-on line is part of that invoice, so of the amount; `onlineStore` is its net price for the
+ * cycle (null when not billed), and `units` / `unitPrice` count the till or branch lines only.
  */
 final class SubscriptionAmount
 {
     /**
-     * @return array{net: string, vat: string, gross: string, tills: int, units: int, mode: PricingMode, unitPrice: string|null, cycle: BillingCycle, start: CarbonImmutable}
+     * @return array{net: string, vat: string, gross: string, tills: int, units: int, mode: PricingMode, unitPrice: string|null, cycle: BillingCycle, start: CarbonImmutable, onlineStore: string|null}
      */
     public static function for(Company $company, BillingAccount $account, ?CarbonImmutable $now = null): array
     {
@@ -33,18 +36,21 @@ final class SubscriptionAmount
         $cycle = $account->cycle;
         $lines = InvoiceLineBuilder::build($licences, $start, $cycle->periodEnd($start), $cycle, Vat::rateFor($account), false, $pricing);
         $totals = InvoiceMaths::totals($lines);
-        $prices = array_values(array_unique(array_column($lines, 'unit_price')));
+        $units = array_values(array_filter($lines, fn (array $line) => ! InvoiceLineBuilder::isOnlineStoreLine($line)));
+        $addOn = array_values(array_filter($lines, fn (array $line) => InvoiceLineBuilder::isOnlineStoreLine($line)));
+        $prices = array_values(array_unique(array_column($units, 'unit_price')));
 
         return [
             'net' => $totals['subtotal'],
             'vat' => $totals['vat_total'],
             'gross' => $totals['total'],
             'tills' => $licences->count(),
-            'units' => count($lines),
+            'units' => count($units),
             'mode' => $pricing->mode,
             'unitPrice' => count($prices) === 1 ? $prices[0] : ($prices === [] ? $pricing->unitPrice($cycle) : null),
             'cycle' => $cycle,
             'start' => $start,
+            'onlineStore' => $addOn === [] ? null : $addOn[0]['unit_price'],
         ];
     }
 }

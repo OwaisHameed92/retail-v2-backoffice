@@ -25,6 +25,8 @@ export interface PortalBillingProps {
         gross: string;
         vatApplies: boolean;
         isZero: boolean;
+        /** Online store add-on (OS-6): its price for the cycle before tax, a line of the amount; null when not billed. */
+        onlineStore: string | null;
     };
     /** The setup fee (upfront): one thing, always paid by hand. Money formatted, VAT included. */
     upfront: {

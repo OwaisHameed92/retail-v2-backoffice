@@ -50,6 +50,7 @@ export function SubscriptionCard({
                     { label: 'Plan', value: plan ?? 'Standard' },
                     { label: 'Priced', value: pricing.unitPrice ? `${pricing.unitPrice} per ${pricing.unit} ${pricing.per}` : pricing.modeLabel },
                     { label: 'Billed', value: pricing.cycle === 'yearly' ? 'Yearly' : 'Monthly' },
+                    ...(pricing.onlineStore ? [{ label: 'Online store add-on', value: `${pricing.onlineStore} ${pricing.per}, before ${taxName()}` }] : []),
                     { label: 'Tills counted', value: String(account.tills) },
                     { label: 'Shops', value: String(account.shops) },
                     account.trialEndsAt && account.status === 'trial'

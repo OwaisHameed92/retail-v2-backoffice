@@ -26,6 +26,8 @@ export interface OrderCard {
     fresh: boolean;
     /** Still open after its slot ended. */
     late: boolean;
+    /** OS-6: a New card to be collected on another day than the board's (the New column shows every new order). */
+    otherDay?: boolean;
     /** Not ready yet and its slot starts within 30 minutes. */
     dueSoon: boolean;
 }

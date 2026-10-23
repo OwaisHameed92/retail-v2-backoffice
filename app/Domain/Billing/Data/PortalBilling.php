@@ -58,6 +58,8 @@ final class PortalBilling
                 'gross' => BillingFormat::money($amount['gross']),
                 'vatApplies' => ! Money::isZero($amount['vat']),
                 'isZero' => Money::isZero($amount['gross']),
+                // Online store OS-6: the add-on's price for the cycle before VAT (a line of the amount), null when not billed.
+                'onlineStore' => $amount['onlineStore'] !== null ? BillingFormat::money($amount['onlineStore']) : null,
             ],
             'upfront' => [
                 // BILL-5: the payment that stands (not a reversed one, nor one on a voided invoice).

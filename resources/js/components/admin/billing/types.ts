@@ -210,9 +210,38 @@ export interface TenantBillingData {
     directDebit: DirectDebitData;
     /** Change plan (owner 2026-10-07): the active plans; null without billing.manage. */
     planChange: PlanChangeOptions | null;
+    /** Online store add-on (OS-6); null where the country has no online stores. */
+    onlineStore: OnlineStoreAddOnData | null;
     vatEnabled: boolean;
     vatRate: string;
     canManage: boolean;
+}
+
+/** AdminAddOnData::for (OS-6). Money labels are formatted; `monthlyPrice` / `defaultPrice` are decimal strings. */
+export interface OnlineStoreAddOnData {
+    on: boolean;
+    since: string | null;
+    monthlyPrice: string | null;
+    defaultPrice: string;
+    defaultPriceLabel: string;
+    priceLabel: string;
+    custom: boolean;
+    /** The invoice line per billing cycle, before and with VAT. */
+    cycleNet: string;
+    cycleGross: string;
+    per: string;
+    /** On, a monthly plan and cloud sync: the line is on the invoice. */
+    billed: boolean;
+    monthlyPlan: boolean;
+    template: string | null;
+    templateLabel: string | null;
+    templates: Option<string>[];
+    slug: string | null;
+    url: string | null;
+    live: boolean;
+    serverOn: boolean;
+    cloudSync: boolean;
+    available: boolean;
 }
 
 /** PlanChangePreview::options. Money is formatted. */

@@ -102,17 +102,14 @@ test('the builder page shows the saved store, its full address, the templates wi
         ->where('canEdit', true));
 });
 
-test('a business without a store gets an empty builder with a suggested address', function () {
+test('a business without the add-on (so without a store) gets 404; the admin\'s switch makes the store (OS-6)', function () {
     $other = Company::factory()->create(['name' => 'Al Noor Butchers', 'email' => 'hello@alnoor.test']);
     Branch::factory()->forCompany($other)->create();
     $owner = F::member($other, CompanyRole::Owner);
 
-    $this->actingAs($owner)->get('/app/online-store')->assertOk()->assertInertia(fn (Assert $p) => $p
-        ->where('store', null)->where('suggested.slug', 'al-noor-butchers')->where('suggested.orderEmail', 'hello@alnoor.test')
-        ->where('checklist.collectionShops', 0)->where('checklist.productsShown', null));
-
-    $this->actingAs($owner)->post('/app/online-store', ($this->settings)(['slug' => 'al-noor']))->assertRedirect('/app/online-store')->assertSessionHas('success');
-    expect(($this->store)($other)->slug)->toBe('al-noor')->and(($this->store)($other)->is_live)->toBeFalse();
+    $this->actingAs($owner)->get('/app/online-store')->assertNotFound();
+    $this->actingAs($owner)->post('/app/online-store', ($this->settings)(['slug' => 'al-noor']))->assertNotFound();
+    expect(OnlineStore::withoutCompanyScope()->where('company_id', $other->id)->exists())->toBeFalse();
 });
 
 test('saving changes the store and uploads the logo and banner to the business\'s own folder with a new name', function () {

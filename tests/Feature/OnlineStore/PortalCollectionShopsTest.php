@@ -77,14 +77,13 @@ test('collection settings are checked (422): :dataset', function (array $overrid
     'missing switch' => [['enabled' => null], 'enabled'],
 ]);
 
-test('a business without a store must set it up first', function () {
+test('a business without the add-on (so without a store) gets 404 (OS-6)', function () {
     $other = Company::factory()->create();
     $shop = Branch::factory()->forCompany($other)->create();
     $owner = F::member($other, CompanyRole::Owner);
 
-    $this->actingAs($owner)->get('/app/online-store/shops')->assertInertia(fn (Assert $p) => $p->where('hasStore', false)->has('shops', 1));
-    $this->actingAs($owner)->putJson("/app/online-store/shops/{$shop->id}", OnlineStoreFixtures::shopInput())
-        ->assertUnprocessable()->assertJsonPath('errors.store.0', 'Set up the online store first.');
+    $this->actingAs($owner)->get('/app/online-store/shops')->assertNotFound();
+    $this->actingAs($owner)->putJson("/app/online-store/shops/{$shop->id}", OnlineStoreFixtures::shopInput())->assertNotFound();
 });
 
 test('a one-shop manager sees and changes only their own shop', function () {

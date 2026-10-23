@@ -18,7 +18,8 @@ use RuntimeException;
  * and every row that belongs to it — every table with a `company_id` (branches, tills, licences, sync keys, id map,
  * billing account, invoices, payments, GoCardless rows, sales, stock, audit rows…), the rows hanging off those
  * without one (AI messages, lead notes, local key refusals), audit rows about the company, the logins that belong to
- * no other business (with their sessions and reset tokens) and its files (imports, exports). One transaction;
+ * no other business (with their sessions and reset tokens) and its files (imports, exports, and the online store's
+ * pictures on the public disk, `online-store/{company_id}/`). One transaction;
  * files go after it commits. Other businesses are never touched: every delete is filtered on this company's id.
  *
  * A business that has traded (an activated licence or any sale) is refused unless forced.
@@ -27,6 +28,9 @@ class PurgeCompany
 {
     /** Files kept per business on the local disk. */
     public const FILE_DIRECTORIES = ['invoice-imports', 'product-imports', 'sales-exports'];
+
+    /** Files kept per business on the public disk: the online store's logo, banner and product photos (StoreImages). */
+    public const PUBLIC_DIRECTORIES = ['online-store'];
 
     public function __construct(private readonly RecordAudit $audit) {}
 
@@ -48,7 +52,7 @@ class PurgeCompany
         }
 
         $users = count($this->ownUserIds($company));
-        $files = count($this->files($company));
+        $files = count($this->files($company)) + count($this->publicFiles($company));
 
         return [...$counts, 'companies' => 1, ...($users > 0 ? ['users (only in this business)' => $users] : []), ...($files > 0 ? ['files' => $files] : [])];
     }
@@ -122,11 +126,16 @@ class PurgeCompany
             return array_filter($removed);
         });
 
-        DB::afterCommit(function () use ($files) {
+        DB::afterCommit(function () use ($files, $company) {
             Storage::disk('local')->delete($files);
 
             foreach ($files === [] ? [] : array_unique(array_map('dirname', $files)) as $directory) {
                 Storage::disk('local')->deleteDirectory($directory);
+            }
+
+            // The online store's pictures (OS-6 fix): the whole `online-store/{company_id}` folder.
+            foreach ($company->id === '' ? [] : self::PUBLIC_DIRECTORIES as $directory) {
+                Storage::disk('public')->deleteDirectory($directory.'/'.$company->id);
             }
         });
 
@@ -190,6 +199,20 @@ class PurgeCompany
         return DB::table('company_user')->where('company_id', $company->id)
             ->whereNotIn('user_id', DB::table('company_user')->select('user_id')->where('company_id', '!=', $company->id))
             ->pluck('user_id')->map(fn (mixed $id) => (string) $id)->unique()->values()->all();
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function publicFiles(Company $company): array
+    {
+        $files = [];
+
+        foreach (self::PUBLIC_DIRECTORIES as $directory) {
+            $files = [...$files, ...Storage::disk('public')->allFiles($directory.'/'.$company->id)];
+        }
+
+        return $files;
     }
 
     /**

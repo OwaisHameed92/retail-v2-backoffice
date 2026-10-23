@@ -71,7 +71,7 @@ export default function Billing(props: PortalBillingProps) {
                     hint={
                         pricing.isZero
                             ? 'Nothing to pay each cycle'
-                            : `${pricing.unitsLabel}${pricing.vatApplies ? `, incl. ${pricing.vat} ${taxName()}` : ''}`
+                            : `${pricing.unitsLabel}${pricing.onlineStore ? ' + online store' : ''}${pricing.vatApplies ? `, incl. ${pricing.vat} ${taxName()}` : ''}`
                     }
                     icon={MoneyIcon}
                     tone="success"

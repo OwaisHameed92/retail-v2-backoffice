@@ -20,8 +20,10 @@ use Illuminate\Support\Facades\Route;
 /**
  * The portal's online orders board (docs/online-store.md "Orders"): four columns for one day (shop time) and shop —
  * New, Picking, Ready (by collection time) and Done (collected or cancelled that day) — with the day's figures.
- * Today's board also keeps open orders from earlier days (marked late), so nothing waiting drops off; open orders
- * for later days are counted per day under the board.
+ * New orders are always in the New column, whatever day they are to be collected (OS-6 fix: tomorrow's new order
+ * must not wait unseen under "Coming up"); such a card says its day (`otherDay`). Picking and Ready are per day, and
+ * today's board also keeps those from earlier days (marked late), so nothing waiting drops off; open orders for later
+ * days are counted per day under the board.
  */
 final class OnlineOrderBoard
 {
@@ -56,7 +58,8 @@ final class OnlineOrderBoard
     public function board(OrderBoardFilters $filters, CarbonImmutable $now): array
     {
         [$start, $end] = $filters->window();
-        $open = $this->scoped($filters)->whereIn('status', [OnlineOrderStatus::New, OnlineOrderStatus::Picking, OnlineOrderStatus::Ready])
+        $new = $this->scoped($filters)->where('status', OnlineOrderStatus::New)->orderBy('collect_from')->orderBy('number')->get();
+        $open = $this->scoped($filters)->whereIn('status', [OnlineOrderStatus::Picking, OnlineOrderStatus::Ready])
             ->where('collect_from', '<', $end)
             ->when(! $filters->isToday(), fn (Builder $q) => $q->where('collect_from', '>=', $start))
             ->orderBy('collect_from')->orderBy('number')->get();
@@ -65,8 +68,8 @@ final class OnlineOrderBoard
                 ->orWhere(fn (Builder $c) => $c->where('cancelled_at', '>=', $start)->where('cancelled_at', '<', $end)))
             ->get()->sortByDesc(fn (OnlineOrder $o) => ($o->collected_at ?? $o->cancelled_at)?->getTimestamp())->values();
 
-        $columns = [];
-        foreach (['new' => OnlineOrderStatus::New, 'picking' => OnlineOrderStatus::Picking, 'ready' => OnlineOrderStatus::Ready] as $key => $status) {
+        $columns = ['new' => $this->column($new, $now, $start, $end)];
+        foreach (['picking' => OnlineOrderStatus::Picking, 'ready' => OnlineOrderStatus::Ready] as $key => $status) {
             $columns[$key] = $this->column($open->where('status', $status)->values(), $now);
         }
         $columns['done'] = $this->column($done, $now);
@@ -89,14 +92,19 @@ final class OnlineOrderBoard
     }
 
     /**
+     * With the board's day (`$start`, `$end`), each card says whether it is to be collected on another day (`otherDay`).
+     *
      * @param  Collection<int, OnlineOrder>|\Illuminate\Support\Collection<int, OnlineOrder>  $orders
      * @return array{count: int, cards: list<array<string, mixed>>}
      */
-    private function column(Collection|\Illuminate\Support\Collection $orders, CarbonImmutable $now): array
+    private function column(Collection|\Illuminate\Support\Collection $orders, CarbonImmutable $now, ?CarbonImmutable $start = null, ?CarbonImmutable $end = null): array
     {
+        $otherDay = fn (OnlineOrder $o) => $start !== null && $end !== null && ($o->collect_from->lessThan($start) || $o->collect_from->greaterThanOrEqualTo($end));
+
         return [
             'count' => $orders->count(),
-            'cards' => $orders->take(self::COLUMN_LIMIT)->map(fn (OnlineOrder $o) => OrderRows::card($o, $now))->values()->all(),
+            'cards' => $orders->take(self::COLUMN_LIMIT)
+                ->map(fn (OnlineOrder $o) => OrderRows::card($o, $now) + ($start !== null ? ['otherDay' => $otherDay($o)] : []))->values()->all(),
         ];
     }
 
@@ -122,7 +130,8 @@ final class OnlineOrderBoard
     }
 
     /**
-     * Open orders for the coming days (shop time), for the "Later" chips under today's board.
+     * Open orders for the coming days (shop time), for the "Coming up" chips under today's board (new ones are also
+     * in the New column).
      *
      * @return list<array{day: string, count: int}>
      */

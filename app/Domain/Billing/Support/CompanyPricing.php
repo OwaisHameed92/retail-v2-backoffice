@@ -6,6 +6,7 @@ use App\Domain\Billing\Enums\BillingCycle;
 use App\Domain\Billing\Models\BillingAccount;
 use App\Domain\Licensing\Models\Licence;
 use App\Domain\Licensing\Support\DefaultPlan;
+use App\Domain\OnlineStore\Support\OnlineStoreAddOn;
 use App\Domain\Plans\Enums\PricingMode;
 use App\Domain\Plans\Models\Plan;
 use App\Domain\Tenancy\Models\Company;
@@ -17,6 +18,10 @@ use Illuminate\Support\Collection;
  * the one its live tills are licensed on (else the plan new tills get).
  *
  * Per till without a price override keeps each till's own plan price (a company can have tills on two plans).
+ *
+ * OS-6: `onlineStoreMonthly` is the online store add-on's monthly price before VAT while it is billed (switched on by
+ * an admin, a recurring plan, cloud sync; never on PK: OnlineStoreAddOn::billedPrice), else null. InvoiceLineBuilder
+ * adds it as its own line on the period invoice.
  */
 final readonly class CompanyPricing
 {
@@ -26,6 +31,7 @@ final readonly class CompanyPricing
         public ?string $monthlyOverride = null,
         public ?string $yearlyOverride = null,
         public bool $overridden = false,
+        public ?string $onlineStoreMonthly = null,
     ) {}
 
     /**
@@ -43,6 +49,7 @@ final readonly class CompanyPricing
             monthlyOverride: $account->price_monthly_override,
             yearlyOverride: $account->price_yearly_override,
             overridden: $modeOverride !== null || $account->price_monthly_override !== null || $account->price_yearly_override !== null,
+            onlineStoreMonthly: $plan?->billingType()->recurs() ? OnlineStoreAddOn::billedPrice($company) : null,
         );
     }
 

@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\OnlineStore;
 
+use App\Domain\Licensing\Models\Licence;
 use App\Domain\OnlineStore\Actions\PlaceCollectOrder;
 use App\Domain\OnlineStore\Actions\SaveOnlineStore;
 use App\Domain\OnlineStore\Actions\SaveStoreShop;
@@ -11,10 +12,12 @@ use App\Domain\OnlineStore\Data\CollectOrderInput;
 use App\Domain\OnlineStore\Data\PlacedOrder;
 use App\Domain\OnlineStore\Models\OnlineStore;
 use App\Domain\OnlineStore\Models\OnlineStoreShop;
+use App\Domain\Plans\Enums\Feature;
 use App\Domain\Shared\Country\Country;
 use App\Domain\Shared\Support\Ulid;
 use App\Domain\Tenancy\Models\Branch;
 use App\Domain\Tenancy\Models\Company;
+use App\Domain\Tenancy\Models\Register;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -50,6 +53,7 @@ final class OnlineStoreFixtures
         $f->category = self::category($f->company, $f->department, 'Cupboard');
         $f->store = app(SaveOnlineStore::class)->handle($f->company, ['slug' => $slug, 'template' => 'freshMarket', 'order_email' => 'orders@example.test']);
         $f->shop = app(SaveStoreShop::class)->handle($f->company, $f->leeds->id, self::shopInput());
+        self::addOn($f->company, $f->leeds);
         app(SetStoreLive::class)->handle($f->company, true);
         $f->store = app(SetTakingOrders::class)->handle($f->company, true)->refresh();
 
@@ -150,6 +154,17 @@ final class OnlineStoreFixtures
     public function order(array $lines, string $collectFrom): PlacedOrder
     {
         return app(PlaceCollectOrder::class)->handle($this->store, $this->input($lines, $collectFrom));
+    }
+
+    /**
+     * OS-6: what makes a store usable besides the switch: a till with cloud sync (a live licence at `$shop`) and the
+     * add-on switched on (as the admin's SetOnlineStoreAddOn leaves it; the store row must exist).
+     */
+    public static function addOn(Company $company, Branch $shop): void
+    {
+        $register = Register::factory()->forBranch($shop)->create();
+        Licence::factory()->forRegister($register)->create(['features' => [Feature::CloudSync->value]]);
+        OnlineStore::withoutCompanyScope()->where('company_id', $company->id)->update(['addon_on' => true, 'addon_on_at' => now()]);
     }
 
     public static function asPakistan(): void
