@@ -17,7 +17,7 @@ final class StoreTestRoutes
         }
 
         if (! Route::has('store.order')) {
-            Route::get('/store/{slug}/orders/{order}', fn () => 'order')->middleware('signed')->name('store.order');
+            Route::get('/store/{slug}/order/{order}', fn () => 'order')->middleware('signed')->name('store.order');
         }
 
         Route::getRoutes()->refreshNameLookups();

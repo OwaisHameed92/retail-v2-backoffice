@@ -54,7 +54,7 @@ test('a new order emails the shop and the customer and tells the store\'s staff'
 
         return $mail->hasTo('asha@example.test') && $mail->subjectLine() === "We've got your order W-0001"
             && $mail->hasReplyTo('orders@example.test') && $mail->hasFrom('hello@switchandsave.test', 'Kirkgate Convenience')
-            && $mail->data->orderUrl !== null && str_contains($mail->data->orderUrl, "/store/kirkgate/orders/{$order->id}") && str_contains($mail->data->orderUrl, 'signature=')
+            && $mail->data->orderUrl !== null && str_contains($mail->data->orderUrl, "/store/kirkgate/order/{$order->id}") && str_contains($mail->data->orderUrl, 'signature=')
             && str_contains($html, 'Hi Asha') && str_contains($html, 'Pay at the shop') && str_contains($html, 'Weighed items are priced on the scale');
     });
     Mail::assertQueuedCount(2);
