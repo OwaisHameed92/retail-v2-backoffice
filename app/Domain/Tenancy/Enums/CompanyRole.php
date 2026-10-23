@@ -64,6 +64,7 @@ enum CompanyRole: string
                 Ability::ParcelsView,
                 Ability::AiUse,
                 Ability::LabelsPrint,
+                Ability::StoreManage,
             ],
             self::Accountant => [
                 Ability::DashboardView,

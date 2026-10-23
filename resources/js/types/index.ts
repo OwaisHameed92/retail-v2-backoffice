@@ -62,7 +62,8 @@ export type Ability =
     | 'privacy.manage'
     | 'accounts.export'
     | 'ai.use'
-    | 'labels.print';
+    | 'labels.print'
+    | 'store.manage';
 
 /** The company the user is working in (shared by HandleInertiaRequests). */
 export interface CurrentCompany {

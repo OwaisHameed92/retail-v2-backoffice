@@ -96,4 +96,7 @@ enum Ability: string
 
     /** Shelf-edge labels: the shop's label queue, templates and printing (gap #6). Owner and manager (a one-shop manager: their shop). */
     case LabelsPrint = 'labels.print';
+
+    /** The online store: its builder, collection shops, products shown online and the online orders board (docs/online-store.md). Owner and manager. */
+    case StoreManage = 'store.manage';
 }

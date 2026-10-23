@@ -303,8 +303,9 @@ final class Country
     {
         return array_filter(
             $this->profile['features'],
-            // `partnerApi` is server-side only (admin pages and the partner API), so the shared flags stay as before.
-            fn (bool $on, string $name) => $name !== 'partnerApi' && (! $on || ! in_array($name, CountryModules::ALL, true)),
+            // `partnerApi` and `onlineStore` are server-side only (admin pages, the partner API, the online store), so the
+            // shared flags stay as before.
+            fn (bool $on, string $name) => ! in_array($name, ['partnerApi', 'onlineStore'], true) && (! $on || ! in_array($name, CountryModules::ALL, true)),
             ARRAY_FILTER_USE_BOTH,
         );
     }
