@@ -6,9 +6,9 @@ https://claude.ai/artifact/FdsDJZ2vyhQJw5hfPmUiNz. DECISIONS "Online store, clic
 
 ## Stage S1: click & collect, pay at the shop (this build)
 
-- **Turn on.** The add-on is switched on per business from the admin area. The default price is £20 + VAT a month,
-  and it can be changed per business. UK monthly fees go by Direct Debit, so the add-on is added to that business's
-  monthly amount. It needs cloud sync, because the products come from the tills. Live only in the UK for now: the
+- **Turn on.** The admin switches the add-on on per business and picks the template. Only businesses on a monthly
+  plan (cloud sync + Direct Debit) can have it; a setup-only business moves to monthly first. The default price is
+  £20 + VAT a month, changeable per business, billed as its own "Online store" line on the same monthly invoice. Live only in the UK for now: the
   country flag `onlineStore` is off on PK. The `ONLINE_STORE` switch is off by default.
 - **Template.** Chosen by Switch & Save (admin) when the add-on is switched on: Fresh Market or Butcher's Block. The tenant sees it read-only.
 - **Store builder** (portal → Online store, `store.manage`). Settings:

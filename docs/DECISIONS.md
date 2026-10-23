@@ -1290,7 +1290,8 @@ in v1.4.1. We wrote the contract proposal for the EPOS till team and built the p
 |---|---|
 | What | A one-click online shop per business, managed from the portal, with three templates: Fresh Market (grocery, convenience), Butcher's Block, Care Pharmacy. All templates are light (the owner turned down a dark butcher design). Mockup: https://claude.ai/artifact/FdsDJZ2vyhQJw5hfPmUiNz |
 | First stage | Click & collect with pay at the shop. The till sale at collection takes the stock off and records the money, so an online order never writes till data. Card payment by DNA Payments (not Stripe) and local delivery come in S2. Orders on the till (WebOrder) come in S3, because they need the EPOS contract |
-| Price | Add-on, default £20 + VAT a month, changeable per business. UK monthly fees go by Direct Debit, so the add-on joins the business's monthly amount |
+| Price | Add-on, default £20 + VAT a month, changeable per business (admin) |
+| Billing (owner 2026-10-24) | Only for businesses on a monthly plan (they already have cloud sync and a Direct Debit); a setup-only business is first moved to monthly (Change plan). The add-on is its own line "Online store" on the same monthly invoice, collected by the same Direct Debit. Non-payment follows the existing monthly rules. Never part of the till licence features (the tills never see it) |
 | Switch | `ONLINE_STORE` (default off), country flag `onlineStore` (GB on, PK off). Needs cloud sync |
 | Data | Portal-only tables (`online_stores`, `online_store_shops`, `online_store_products`, `online_orders`, `online_order_lines`). Till tables are read only |
 | Shown online | Active products with a price at the shop. Never: age-restricted, alcohol, tobacco, lottery, knives, banned, vapes, P / POM medicines. Weighed products are sold in kg steps at an estimated price. Shelf price only (the till applies promotions) |
