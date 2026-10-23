@@ -27,6 +27,7 @@ use App\Http\Controllers\App\NewsController;
 use App\Http\Controllers\App\NewsTitleController;
 use App\Http\Controllers\App\NotificationController;
 use App\Http\Controllers\App\NotificationSettingsController;
+use App\Http\Controllers\App\OnlineOrderController;
 use App\Http\Controllers\App\ParcelController;
 use App\Http\Controllers\App\PharmacyController;
 use App\Http\Controllers\App\PortalInvitationController;
@@ -53,6 +54,7 @@ use App\Http\Controllers\App\SwitchCompanyController;
 use App\Http\Controllers\App\SyncConflictController;
 use App\Http\Controllers\App\TillListController;
 use App\Http\Controllers\App\TransferController;
+use App\Http\Middleware\EnsureOnlineStoreOn;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth:web', 'verified', 'company', 'two-factor:web'])->group(function () {
@@ -473,6 +475,17 @@ Route::middleware(['auth:web', 'verified', 'company', 'two-factor:web'])->group(
         Route::put('{anomaly}/status', [AnomalyController::class, 'status'])->name('status')->whereUlid('anomaly')->middleware('throttle:60,1');
         Route::post('{anomaly}/explain', [AnomalyController::class, 'explain'])->name('explain')->whereUlid('anomaly')->middleware(['company.can:ai.use', 'throttle:10,1']);
     });
+
+    // Online store OS-4: the online orders board, an order's page and pick list, moving orders on and the "Taking
+    // orders" switch. 404 while the online store is switched off; store.manage; a one-shop user: own shop's orders.
+    Route::prefix('online-orders')->name('online-orders.')->middleware([EnsureOnlineStoreOn::class, 'company.can:store.manage'])
+        ->controller(OnlineOrderController::class)->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::put('taking', 'taking')->name('taking')->middleware('throttle:30,1');
+            Route::get('{order}', 'show')->name('show')->whereUlid('order');
+            Route::get('{order}/pick-list', 'pickList')->name('pick-list')->whereUlid('order');
+            Route::post('{order}/status', 'status')->name('status')->whereUlid('order')->middleware('throttle:120,1');
+        });
 
     // Module 4.8: reports (sales, products, refunds, discounts, VAT, payments, staff, hours, stock, shifts and Z), each
     // on screen, as CSV and printable. reports.view; a one-shop user sees only their shop (BusinessContext).

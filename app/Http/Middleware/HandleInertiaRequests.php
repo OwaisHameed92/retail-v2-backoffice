@@ -6,6 +6,8 @@ use App\Domain\Admin\Models\Admin;
 use App\Domain\Billing\Support\BillingAccounts;
 use App\Domain\Billing\Support\MandateDeadline;
 use App\Domain\Billing\Support\OverdueNotice;
+use App\Domain\OnlineStore\Queries\NewOnlineOrderCount;
+use App\Domain\OnlineStore\Support\OnlineStoreSwitch;
 use App\Domain\Pharmacy\Support\ServiceModules;
 use App\Domain\Shared\Country\Country;
 use App\Domain\Tenancy\Actions\ResolveCurrentBranch;
@@ -72,10 +74,13 @@ class HandleInertiaRequests extends Middleware
             'companies' => fn () => $this->companies($request),
             'companyRole' => fn () => $this->currentCompany($request)?->membership?->role->value,
             // Module 5.10: pharmacy and parcels leave the menu for businesses that do not use them.
-            'abilities' => fn () => ServiceModules::visibleAbilities($this->currentCompany($request), array_map(
+            // Online store: `store.manage` (its menu items) only while the online store is switched on (OnlineStoreSwitch).
+            'abilities' => fn () => ServiceModules::visibleAbilities($this->currentCompany($request), array_values(array_filter(array_map(
                 fn (Ability $ability) => $ability->value,
                 $this->currentCompany($request)?->membership?->role->abilities() ?? [],
-            )),
+            ), fn (string $ability) => $ability !== Ability::StoreManage->value || OnlineStoreSwitch::enabled()))),
+            // Online store OS-4: the sidebar count of new online orders (null when the item is hidden).
+            'onlineOrdersNew' => fn () => app(NewOnlineOrderCount::class)->get(),
             // Module 1.2: branch switcher, "login as customer" banner and flash toasts.
             'branches' => fn () => $this->branches(),
             'currentBranchId' => fn () => $this->currentBranchId($request),

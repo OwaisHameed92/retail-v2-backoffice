@@ -25,6 +25,7 @@ import {
     Settings,
     ShieldAlert,
     ShieldCheck,
+    ShoppingBag,
     ShoppingCart,
     Smartphone,
     Store,
@@ -72,6 +73,13 @@ export function tenantNavGroups(path: string): TenantNavGroup[] {
             collapsible: 'open',
             items: [
                 { title: 'Sales', icon: Receipt, href: '/app/sales', active: startsWithPath(path, '/app/sales'), ability: 'sales.view' },
+                {
+                    title: 'Online orders',
+                    icon: ShoppingBag,
+                    href: '/app/online-orders',
+                    active: startsWithPath(path, '/app/online-orders'),
+                    ability: 'store.manage',
+                },
                 {
                     title: 'Customers',
                     icon: Users,
@@ -237,11 +245,20 @@ export function tenantNavGroups(path: string): TenantNavGroup[] {
     ];
 }
 
-/** Tenant navigation for the signed-in user: items need their ability, Settings is pinned, empty groups vanish. */
-export function tenantNav(path: string, abilities: string[]): { groups: ShellNavGroup[]; pinned: ShellNavGroup[] } {
+/**
+ * Tenant navigation for the signed-in user: items need their ability, Settings is pinned, empty groups vanish.
+ * `counts` puts a count pill on items by href (e.g. new online orders).
+ */
+export function tenantNav(
+    path: string,
+    abilities: string[],
+    counts: Record<string, number> = {},
+): { groups: ShellNavGroup[]; pinned: ShellNavGroup[] } {
     const visible = tenantNavGroups(path).map((group) => ({
         ...group,
-        items: group.items.filter((item) => !item.ability || abilities.includes(item.ability)),
+        items: group.items
+            .filter((item) => !item.ability || abilities.includes(item.ability))
+            .map((item) => (item.href && counts[item.href] ? { ...item, count: counts[item.href] } : item)),
     }));
 
     return {

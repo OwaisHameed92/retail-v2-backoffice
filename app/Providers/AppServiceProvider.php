@@ -17,6 +17,10 @@ use App\Domain\Licensing\Listeners\IssueLicenceForNewTill;
 use App\Domain\Licensing\Listeners\SendWelcomeEmailWithKeys;
 use App\Domain\Licensing\Listeners\SuspendLicenceOfDeactivatedTill;
 use App\Domain\Licensing\Listeners\UnsuspendLicenceOfReactivatedTill;
+use App\Domain\OnlineStore\Events\OnlineOrderPlaced;
+use App\Domain\OnlineStore\Events\OnlineOrderStatusChanged;
+use App\Domain\OnlineStore\Listeners\SendNewOnlineOrderMessages;
+use App\Domain\OnlineStore\Listeners\SendOnlineOrderStatusMail;
 use App\Domain\Partners\Listeners\PartnerWebhookListeners;
 use App\Domain\Partners\Support\PartnerRateLimit;
 use App\Domain\Shared\Country\Country;
@@ -89,6 +93,10 @@ class AppServiceProvider extends ServiceProvider
         Event::listen(LicenceActivated::class, [PartnerWebhookListeners::class, 'firstTillActivated']);
         Event::listen(CompanyCancelled::class, [PartnerWebhookListeners::class, 'companyCancelled']);
         PartnerRateLimit::register();
+
+        // Online store (OS-4): the shop's new order email and bell entries, and the customer's order emails. Queued.
+        Event::listen(OnlineOrderPlaced::class, SendNewOnlineOrderMessages::class);
+        Event::listen(OnlineOrderStatusChanged::class, SendOnlineOrderStatusMail::class);
 
         // Handheld (PDA) API: its named limiters, and the `handheld` guard whose user AuthenticateHandheldToken sets
         // for the call (so RecordAudit names the handheld user). It never signs anyone in by itself.

@@ -29,6 +29,10 @@ use App\Domain\Mail\Mailables\SetPasswordMail;
 use App\Domain\Mail\Mailables\TrialEndedMail;
 use App\Domain\Mail\Mailables\TrialReminderMail;
 use App\Domain\Mail\Mailables\WelcomeTenantMail;
+use App\Domain\OnlineStore\Mail\NewOnlineOrderMail;
+use App\Domain\OnlineStore\Mail\OnlineOrderCancelledMail;
+use App\Domain\OnlineStore\Mail\OnlineOrderReadyMail;
+use App\Domain\OnlineStore\Mail\OnlineOrderReceivedMail;
 
 /**
  * Every branded email, in customer-lifecycle order. The admin template screen and previews read this list.
@@ -61,6 +65,11 @@ final class EmailTemplates
         OwnerAlertResolvedMail::class,
         OwnerDigestMail::class,
         AnomalyAlertMail::class,
+        // Online store (OS-4): sent for a business, the customer ones in the shop's name.
+        NewOnlineOrderMail::class,
+        OnlineOrderReceivedMail::class,
+        OnlineOrderReadyMail::class,
+        OnlineOrderCancelledMail::class,
     ];
 
     /**

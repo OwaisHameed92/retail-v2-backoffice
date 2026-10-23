@@ -7,8 +7,8 @@ use App\Domain\OnlineStore\Models\OnlineOrder;
 use Illuminate\Foundation\Events\Dispatchable;
 
 /**
- * An online order moved on (ChangeOnlineOrderStatus), dispatched after it was committed. No listeners yet: OS-4
- * emails the customer when it is ready to collect or cancelled.
+ * An online order moved on (ChangeOnlineOrderStatus), dispatched after it was committed. Listener:
+ * SendOnlineOrderStatusMail (emails the customer when it is ready to collect or cancelled).
  */
 final class OnlineOrderStatusChanged
 {

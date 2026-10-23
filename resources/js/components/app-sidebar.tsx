@@ -21,9 +21,9 @@ function WorkspaceHeader({ name }: { name: string }) {
 
 /** Business (tenant) portal sidebar: the same white sidebar as admin, its own navigation. */
 export function AppSidebar() {
-    const { company, abilities } = usePage<SharedData>().props;
+    const { company, abilities, onlineOrdersNew } = usePage<SharedData>().props;
     const path = usePage().url.split('?')[0];
-    const { groups, pinned } = tenantNav(path, abilities ?? []);
+    const { groups, pinned } = tenantNav(path, abilities ?? [], onlineOrdersNew ? { '/app/online-orders': onlineOrdersNew } : {});
 
     return (
         <ShellSidebar

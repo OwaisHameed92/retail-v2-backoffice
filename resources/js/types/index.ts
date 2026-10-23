@@ -124,6 +124,8 @@ export interface SharedData {
     companyRole: CompanyRole | null;
     abilities: Ability[];
     country: CountryProfile;
+    /** Online store OS-4: new online orders for the sidebar count; null when the item is hidden. */
+    onlineOrdersNew?: number | null;
     [key: string]: unknown;
 }
 
