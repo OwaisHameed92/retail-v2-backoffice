@@ -8,8 +8,9 @@ use App\Domain\Tenancy\Models\Company;
 
 /**
  * The public store at an address (`/{slug}`), for requests with no signed-in user. Found only when this instance
- * runs online stores (OnlineStoreSwitch: `ONLINE_STORE` and the country flag), the store is live, and its business
- * exists and may trade (not suspended or cancelled). Otherwise null: the public page answers 404.
+ * runs online stores (OnlineStoreSwitch: `ONLINE_STORE` and the country flag), the store is live, its business
+ * exists and may trade (not suspended or cancelled), and (OS-6) the business's add-on is on, with cloud sync and a
+ * monthly plan. Otherwise null: the public page answers 404.
  *
  * The store is the only row read across businesses (by its globally unique slug, with the `company` relation set);
  * everything after this runs scoped to that store's business (CurrentCompany::runAs), never on an ambient scope.
@@ -32,7 +33,8 @@ final class FindStoreBySlug
 
         $company = Company::query()->find($store->company_id);
 
-        if ($company === null || ! $company->status->allowsPortalAccess()) {
+        // OS-6: the add-on is on, with cloud sync and a monthly plan (OnlineStoreSwitch::availableFor).
+        if ($company === null || ! $company->status->allowsPortalAccess() || ! OnlineStoreSwitch::availableFor($company, $store)) {
             return null;
         }
 

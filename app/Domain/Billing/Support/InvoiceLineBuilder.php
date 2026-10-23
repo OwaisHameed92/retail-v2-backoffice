@@ -5,6 +5,7 @@ namespace App\Domain\Billing\Support;
 use App\Domain\Billing\Enums\BillingCycle;
 use App\Domain\Licensing\Models\Licence;
 use App\Domain\Licensing\Support\LicenceTerms;
+use App\Domain\OnlineStore\Support\OnlineStoreAddOn;
 use App\Domain\Plans\Enums\PricingMode;
 use App\Domain\Tenancy\Models\Branch;
 use Carbon\CarbonImmutable;
@@ -21,10 +22,18 @@ use Illuminate\Support\Collection;
  * already runs into the period is charged only for the days after it (quantity = days / period days, 4 dp; for a
  * branch, after its earliest-ending till); a unit covered for the whole period gets no line.
  *
+ * OS-6: while the online store add-on is billed (CompanyPricing::onlineStoreMonthly) the invoice gets one more line,
+ * "Online store · 1 Nov – 30 Nov 2026", for the whole period at the add-on's price for the cycle (12 months on a
+ * yearly cycle), VAT as the other lines, no licence or branch (paying it renews nothing). Never prorated: like a price
+ * change it is charged on the invoices raised after it was switched on. Without the add-on nothing changes.
+ *
  * @phpstan-type Line array{licence_id: string|null, register_id: string|null, branch_id: string|null, plan_id: string|null, description: string, quantity: string, unit_price: string, net: string, vat: string, gross: string, period_start: string, period_end: string, position: int}
  */
 final class InvoiceLineBuilder
 {
+    /** OS-6: the add-on line's description (before the period). */
+    public const ONLINE_STORE = 'Online store';
+
     /**
      * @param  Collection<int, Licence>  $licences  Renewable licences (branch, register, plan loaded).
      * @return list<Line>
@@ -80,7 +89,48 @@ final class InvoiceLineBuilder
             ];
         }
 
+        if ($pricing->onlineStoreMonthly !== null && $licences->isNotEmpty()) {
+            $lines[] = self::onlineStoreLine($pricing->onlineStoreMonthly, $start, $end, $cycle, $vatRate, count($lines) + 1);
+        }
+
         return $lines;
+    }
+
+    /**
+     * OS-6: an online store add-on line (the only line here with no licence and no branch).
+     *
+     * @param  Line  $line
+     */
+    public static function isOnlineStoreLine(array $line): bool
+    {
+        return $line['licence_id'] === null && $line['branch_id'] === null;
+    }
+
+    /**
+     * "Online store · 1 Nov – 30 Nov 2026" at the add-on's price for the cycle.
+     *
+     * @return Line
+     */
+    private static function onlineStoreLine(string $monthly, CarbonImmutable $start, CarbonImmutable $end, BillingCycle $cycle, string $vatRate, int $position): array
+    {
+        $unitPrice = OnlineStoreAddOn::cyclePrice($monthly, $cycle);
+        $amounts = InvoiceMaths::line('1.0000', $unitPrice, $vatRate);
+
+        return [
+            'licence_id' => null,
+            'register_id' => null,
+            'branch_id' => null,
+            'plan_id' => null,
+            'description' => self::ONLINE_STORE.' · '.BillingDates::range($start, $end),
+            'quantity' => '1.0000',
+            'unit_price' => $unitPrice,
+            'net' => $amounts['net'],
+            'vat' => $amounts['vat'],
+            'gross' => $amounts['gross'],
+            'period_start' => $start->format('Y-m-d'),
+            'period_end' => $end->format('Y-m-d'),
+            'position' => $position,
+        ];
     }
 
     /** "Standard plan · Till 1, Leeds · 1 Oct – 31 Oct 2026" */

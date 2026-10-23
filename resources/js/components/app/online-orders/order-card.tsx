@@ -56,7 +56,7 @@ export function OrderCard({ order, showShop, highlight }: { order: Card; showSho
                     <Clock className="size-3.5" aria-hidden />
                     {done && order.doneAt
                         ? `${order.status === 'collected' ? 'Collected' : 'Cancelled'} ${formatTime(order.doneAt)}`
-                        : `${order.late ? `${dayLabel(order.collectFrom)} ` : ''}Collect ${slotTime(order)}`}
+                        : `${order.late || order.otherDay ? `${dayLabel(order.collectFrom)} ` : ''}Collect ${slotTime(order)}`}
                 </span>
                 {showShop && (
                     <span className="inline-flex items-center gap-1">

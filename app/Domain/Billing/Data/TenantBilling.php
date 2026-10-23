@@ -15,6 +15,7 @@ use App\Domain\Billing\Support\BillingMailer;
 use App\Domain\Billing\Support\BillingPeriod;
 use App\Domain\Billing\Support\BillingStatus;
 use App\Domain\Billing\Support\Vat;
+use App\Domain\OnlineStore\Data\AdminAddOnData;
 use App\Domain\Shared\Support\Money;
 use App\Domain\Tenancy\Models\Company;
 use Carbon\CarbonImmutable;
@@ -102,6 +103,8 @@ final class TenantBilling
             'directDebit' => DirectDebitData::for($company),
             // Change plan (owner 2026-10-07): the plans the business can be moved to.
             'planChange' => $canManage ? PlanChangePreview::options($company) : null,
+            // Online store OS-6: the add-on card (null where the country has no online stores).
+            'onlineStore' => AdminAddOnData::for($company, $account),
             'vatEnabled' => Vat::enabled(),
             'vatRate' => BillingFormat::percent(Vat::rate()),
             'canManage' => $canManage,

@@ -10,7 +10,8 @@ use App\Domain\Tenancy\Enums\Ability;
 
 /**
  * The sidebar's "Online orders" count (shared prop `onlineOrdersNew`): the signed-in user's new orders, any day.
- * Null when the item is not shown: the online store is switched off, or the user cannot run it (`store.manage`).
+ * Null when the item is not shown: the store is not available to the business (switch, add-on, cloud sync), or the
+ * user cannot run it (`store.manage`).
  */
 final class NewOnlineOrderCount
 {
@@ -18,7 +19,9 @@ final class NewOnlineOrderCount
 
     public function get(): ?int
     {
-        if (! OnlineStoreSwitch::enabled() || ! $this->tenancy->can(Ability::StoreManage)) {
+        $company = $this->tenancy->get();
+
+        if ($company === null || ! $this->tenancy->can(Ability::StoreManage) || ! OnlineStoreSwitch::availableFor($company)) {
             return null;
         }
 

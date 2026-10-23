@@ -145,6 +145,7 @@ test('a shop needs a store first', function () {
 
 test('publishing needs the switch and a collection shop; taking it off line always works; audited', function () {
     ($this->save)(['slug' => 'kirkgate']);
+    OnlineStoreFixtures::addOn($this->company, $this->leeds); // OS-6: the add-on and a till with cloud sync
     expect(($this->error)(fn () => app(SetStoreLive::class)->handle($this->company, true))['store'][0])->toContain('at least one shop');
 
     app(SaveStoreShop::class)->handle($this->company, $this->leeds->id, OnlineStoreFixtures::shopInput());

@@ -14,7 +14,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * A business's online store (docs/online-store.md): one per business, found by its `slug` (unique across every
- * business). Written by SaveOnlineStore, SetStoreLive and SetTakingOrders.
+ * business). Written by SaveOnlineStore, SetStoreLive and SetTakingOrders; created, and its add-on, template and price
+ * set, by the admin's SetOnlineStoreAddOn (OS-6).
  *
  * @property string $id
  * @property string $company_id
@@ -29,6 +30,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property bool $taking_orders
  * @property string|null $order_email
  * @property string|null $monthly_price the add-on's price for this business; null = the default
+ * @property bool $addon_on OS-6: the admin switched the online store add-on on (the store is usable)
+ * @property CarbonImmutable|null $addon_on_at when the add-on was last switched on
  * @property CarbonImmutable|null $live_at
  * @property CarbonImmutable|null $created_at
  * @property CarbonImmutable|null $updated_at
@@ -60,6 +63,8 @@ class OnlineStore extends Model
             'is_live' => 'boolean',
             'taking_orders' => 'boolean',
             'monthly_price' => MoneyCast::class,
+            'addon_on' => 'boolean',
+            'addon_on_at' => 'immutable_datetime',
             'live_at' => 'immutable_datetime',
             'created_at' => 'immutable_datetime',
             'updated_at' => 'immutable_datetime',

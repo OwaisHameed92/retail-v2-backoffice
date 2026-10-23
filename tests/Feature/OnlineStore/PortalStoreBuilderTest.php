@@ -102,19 +102,14 @@ test('the builder page shows the saved store, its full address, its look (read o
         ->where('canEdit', true));
 });
 
-test('a business without a store sees "not switched on" and cannot create one (Switch & Save switches it on)', function () {
+test('a business without the add-on (so without a store) gets 404; the admin\'s switch makes the store (OS-6)', function () {
     $other = Company::factory()->create(['name' => 'Al Noor Butchers', 'email' => 'hello@alnoor.test']);
     Branch::factory()->forCompany($other)->create();
     $owner = F::member($other, CompanyRole::Owner);
 
-    $this->actingAs($owner)->get('/app/online-store')->assertOk()->assertInertia(fn (Assert $p) => $p
-        ->where('store', null)->where('template', null)->missing('suggested')
-        ->where('checklist.collectionShops', 0)->where('checklist.productsShown', null));
-
-    $this->actingAs($owner)->postJson('/app/online-store', ($this->settings)(['slug' => 'al-noor']))
-        ->assertUnprocessable()->assertJsonPath('errors.store.0', 'Your online store is not switched on yet. Contact Switch & Save to switch it on.');
-    expect(OnlineStore::withoutCompanyScope()->where('company_id', $other->id)->exists())->toBeFalse()
-        ->and(Storage::disk('public')->allFiles())->toBe([]);
+    $this->actingAs($owner)->get('/app/online-store')->assertNotFound();
+    $this->actingAs($owner)->post('/app/online-store', ($this->settings)(['slug' => 'al-noor']))->assertNotFound();
+    expect(OnlineStore::withoutCompanyScope()->where('company_id', $other->id)->exists())->toBeFalse();
 });
 
 test('the business cannot change its store\'s look: a template sent with the save is ignored', function () {
