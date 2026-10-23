@@ -28,6 +28,9 @@ use App\Http\Controllers\App\NewsTitleController;
 use App\Http\Controllers\App\NotificationController;
 use App\Http\Controllers\App\NotificationSettingsController;
 use App\Http\Controllers\App\OnlineOrderController;
+use App\Http\Controllers\App\OnlineProductController;
+use App\Http\Controllers\App\OnlineStoreController;
+use App\Http\Controllers\App\OnlineStoreShopController;
 use App\Http\Controllers\App\ParcelController;
 use App\Http\Controllers\App\PharmacyController;
 use App\Http\Controllers\App\PortalInvitationController;
@@ -486,6 +489,21 @@ Route::middleware(['auth:web', 'verified', 'company', 'two-factor:web'])->group(
             Route::get('{order}/pick-list', 'pickList')->name('pick-list')->whereUlid('order');
             Route::post('{order}/status', 'status')->name('status')->whereUlid('order')->middleware('throttle:120,1');
         });
+    // Online store OS-3 (docs/online-store.md): store builder, collection shops and products shown online. store.manage;
+    // 404 while the online store is off (EnsureOnlineStoreOn). A one-shop user may look; they change only their own shop.
+    Route::prefix('online-store')->name('online-store.')->middleware([EnsureOnlineStoreOn::class, 'company.can:store.manage'])->group(function () {
+        Route::get('/', [OnlineStoreController::class, 'edit'])->name('edit');
+        Route::get('shops', [OnlineStoreShopController::class, 'index'])->name('shops');
+        Route::get('products', [OnlineProductController::class, 'index'])->name('products');
+        Route::middleware('throttle:60,1')->group(function () {
+            Route::post('/', [OnlineStoreController::class, 'update'])->name('update');
+            Route::put('live', [OnlineStoreController::class, 'live'])->name('live');
+            Route::put('taking-orders', [OnlineStoreController::class, 'takingOrders'])->name('taking-orders');
+            Route::put('shops/{branch}', [OnlineStoreShopController::class, 'update'])->name('shops.update')->whereAlphaNumeric('branch');
+            Route::post('products/visibility', [OnlineProductController::class, 'visibility'])->name('products.visibility');
+            Route::post('products/{product}', [OnlineProductController::class, 'update'])->name('products.update')->whereAlphaNumeric('product');
+        });
+    });
 
     // Module 4.8: reports (sales, products, refunds, discounts, VAT, payments, staff, hours, stock, shifts and Z), each
     // on screen, as CSV and printable. reports.view; a one-shop user sees only their shop (BusinessContext).

@@ -13,6 +13,7 @@ import {
     CreditCard,
     Factory,
     GitCompareArrows,
+    Globe,
     LayoutGrid,
     ListChecks,
     LockKeyhole,
@@ -97,6 +98,27 @@ export function tenantNavGroups(path: string): TenantNavGroup[] {
                 { title: 'Newspapers', icon: Newspaper, href: '/app/news', active: startsWithPath(path, '/app/news'), ability: 'news.view' },
                 { title: 'Pharmacy', icon: Pill, href: '/app/pharmacy', active: startsWithPath(path, '/app/pharmacy'), ability: 'pharmacy.view' },
                 { title: 'Parcels', icon: PackageOpen, href: '/app/parcels', active: startsWithPath(path, '/app/parcels'), ability: 'parcels.view' },
+            ],
+        },
+        {
+            // Online store (OS-3); `store.manage` is only shared while the store is available (ServiceModules).
+            label: 'Online store',
+            collapsible: 'open',
+            items: [
+                {
+                    title: 'Store',
+                    icon: Globe,
+                    href: '/app/online-store',
+                    active: startsWithPath(path, '/app/online-store') && !startsWithPath(path, '/app/online-store/products'),
+                    ability: 'store.manage',
+                },
+                {
+                    title: 'Products',
+                    icon: ShoppingBag,
+                    href: '/app/online-store/products',
+                    active: startsWithPath(path, '/app/online-store/products'),
+                    ability: 'store.manage',
+                },
             ],
         },
         {
