@@ -1,0 +1,67 @@
+@import 'tailwindcss' source(none);
+
+/*
+  The public online store (OS-2), Fresh Market template. Its own look, not the portal's: Bricolage Grotesque for
+  display type, Inter for text, ink #0E1712 on a warm paper background, lime highlights, and the store's own brand
+  colour (`--brand`, set by the store layout from the store's settings; forest green by default).
+*/
+@source '../js/store.tsx';
+@source '../js/pages/store';
+@source '../js/components/store';
+
+@theme {
+    --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+    --font-display: 'Bricolage Grotesque', 'Inter', ui-sans-serif, system-ui, sans-serif;
+
+    --color-ink: #0e1712;
+    --color-body: #2c3833;
+    --color-muted: #56635c;
+    --color-paper: #f4f3ee;
+    --color-line: #e4e2da;
+    --color-tile: #efebe3;
+    --color-lime: #cff27a;
+    --color-lime-soft: #eaf8c4;
+    --color-sale: #b42318;
+    --color-ok: #1f7a4a;
+    --color-warn: #8a5300;
+    --color-warn-soft: #fff1d6;
+    --color-brand: var(--brand, #0b4a34);
+    --color-on-brand: var(--on-brand, #ffffff);
+
+    --radius-card: 1.75rem;
+}
+
+@layer base {
+    html {
+        -webkit-text-size-adjust: 100%;
+        scroll-behavior: smooth;
+    }
+
+    body {
+        background: var(--color-paper);
+        color: var(--color-ink);
+    }
+
+    :focus-visible {
+        outline: 3px solid var(--color-ink);
+        outline-offset: 2px;
+    }
+
+    .bg-brand :focus-visible,
+    .bg-ink :focus-visible {
+        outline-color: var(--color-lime);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        html {
+            scroll-behavior: auto;
+        }
+
+        *,
+        *::before,
+        *::after {
+            transition-duration: 0.01ms !important;
+            animation-duration: 0.01ms !important;
+        }
+    }
+}

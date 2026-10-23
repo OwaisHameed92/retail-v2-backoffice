@@ -18,4 +18,9 @@ return [
 
     // How many days ahead (today included, shop time) a customer may book a collection slot.
     'order_days_ahead' => (int) env('ONLINE_STORE_ORDER_DAYS_AHEAD', 7),
+
+    // Public store POSTs per minute (StoreRateLimits): basket changes and shop choice per visitor (IP) and store,
+    // and placed orders per visitor and store.
+    'basket_per_minute' => (int) env('ONLINE_STORE_BASKET_PER_MINUTE', 60),
+    'checkout_per_minute' => (int) env('ONLINE_STORE_CHECKOUT_PER_MINUTE', 6),
 ];
