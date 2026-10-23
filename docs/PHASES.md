@@ -162,7 +162,7 @@ and 24 h retries. UK only (country flag `partnerApi`, off on PK). Status: done.
 | OS-2 | Public store, Fresh Market template: `routes/store.php` (host or `/store/{slug}`), home, department, search, product, basket (session, re-priced on every view), checkout (collect, pay at shop, PlaceCollectOrder) and the signed order page; store-styled 404/403/429, named limiters, honeypot, own root view and Vite entry. Only the online photo is shown (never the till's `image_path`); checkout refuses when re-pricing changed the basket | done |
 | OS-3 | Portal store builder `/app/online-store`: template, address, logo, colour, banner, headline, sections and their order, order email, go live / take offline, taking orders; collection shops (hours, ready-in minutes, slot length, orders per slot); products (why a product is not online, photo, description, bulk hide/show). Uploads on the public disk under `online-store/{company}/`. A one-shop manager can view all and change only their own shop | done |
 | OS-4 | Portal online orders board, staff and customer emails, notifications: `/app/online-orders` (shop/day filter, 4 columns, stats, 30 s refresh, cancel needs a reason), order page + printable pick list, queued listeners (new-order mail to `order_email` → first owner → company email, bell for `store.manage`, customer mails in the shop's name, link once `store.order` exists), sidebar count. Order mails are never held | done |
-| OS-5 | Butcher and Pharmacy templates, mobile polish | todo (E3) |
+| OS-5 | Butcher template, mobile polish (pharmacy template dropped by the owner 2026-10-24) | todo (E3) |
 | OS-6 | Admin add-on switch, £20 + VAT default with per-business price, billing line | todo (E3) |
 
 ## Phase 8: Later — 0/5

@@ -1,6 +1,6 @@
 # Online store
 
-One-click online shop for a retail business (owner 2026-10-23). Products, prices and stock come from what the tills
+One-click online shop for a retail business (owner 2026-10-23). Two templates for now: Fresh Market (grocery, convenience) and Butcher's Block; the pharmacy template was dropped by the owner on 2026-10-24 (maybe later). Products, prices and stock come from what the tills
 already sync. Design mockup (13 screens, three templates):
 https://claude.ai/artifact/FdsDJZ2vyhQJw5hfPmUiNz. DECISIONS "Online store, click & collect first".
 
@@ -11,7 +11,7 @@ https://claude.ai/artifact/FdsDJZ2vyhQJw5hfPmUiNz. DECISIONS "Online store, clic
   monthly amount. It needs cloud sync, because the products come from the tills. Live only in the UK for now: the
   country flag `onlineStore` is off on PK. The `ONLINE_STORE` switch is off by default.
 - **Store builder** (portal → Online store, `store.manage`). Settings:
-  - template (`freshMarket`, `butcher` or `pharmacy`), logo, main colour, banner photo, headline;
+  - template (`freshMarket` or `butcher`), logo, main colour, banner photo, headline;
   - home sections on or off, in order;
   - the shops customers can collect from, with opening hours, how many minutes it takes to get an order ready, and
     how many orders per slot;
@@ -75,4 +75,4 @@ Till tables (products, prices, stock) are read only and never changed.
 |---|---|
 | E1 | OS-1 data, actions, catalogue query, order flow (no UI) |
 | E2 | OS-2 public store (Fresh Market) · OS-3 portal store builder + products · OS-4 orders board, emails, notifications |
-| E3 | OS-5 Butcher + Pharmacy templates, mobile polish · OS-6 admin add-on switch + billing line |
+| E3 | OS-5 Butcher template, mobile polish · OS-6 admin add-on switch + billing line |

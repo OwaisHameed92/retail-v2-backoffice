@@ -1295,3 +1295,4 @@ in v1.4.1. We wrote the contract proposal for the EPOS till team and built the p
 | Data | Portal-only tables (`online_stores`, `online_store_shops`, `online_store_products`, `online_orders`, `online_order_lines`). Till tables are read only |
 | Shown online | Active products with a price at the shop. Never: age-restricted, alcohol, tobacco, lottery, knives, banned, vapes, P / POM medicines. Weighed products are sold in kg steps at an estimated price. Shelf price only (the till applies promotions) |
 | Customers | Guest checkout in S1 (name, mobile, email). The order page is opened by a secret link (hash stored) |
+| Templates (owner 2026-10-24) | Only two niches for now: Fresh Market and Butcher's Block. The pharmacy template is removed (maybe later). P / POM medicines stay excluded from every store |
