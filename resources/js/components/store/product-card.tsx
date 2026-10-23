@@ -43,7 +43,8 @@ export function ProductCard({ product, compact = false }: { product: StoreProduc
                 <Link
                     href={product.url}
                     className={cn(
-                        'text-ink line-clamp-2 leading-snug font-bold underline-offset-4 hover:underline',
+                        // The padding (offset by the margin) makes the name a 44px tap target without moving it.
+                        'text-ink -my-2.5 line-clamp-2 py-2.5 leading-snug font-bold underline-offset-4 hover:underline',
                         compact ? 'text-sm' : 'text-base',
                     )}
                 >

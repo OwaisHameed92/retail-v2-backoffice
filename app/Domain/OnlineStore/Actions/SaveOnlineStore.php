@@ -16,10 +16,11 @@ use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
 /**
- * Creates or changes a business's online store settings (portal → Online store, `store.manage`): address (slug),
- * template, logo and banner (paths of files OS-3 uploads), brand colour, headline, home sections (on or off, in
- * order) and the email new orders go to. One store per business: the first save makes it (not live, not taking
- * orders). The add-on price (`monthly_price`) is the admin's (OS-6), never set here. Audited.
+ * Creates or changes a business's online store settings: address (slug), template, logo and banner (paths of files
+ * OS-3 uploads), brand colour, headline, home sections (on or off, in order) and the email new orders go to. One
+ * store per business: the first save makes it (not live, not taking orders). `template` is optional (kept when left
+ * out, Fresh Market for a new store); the portal never sends it (SaveStoreBuilder drops it), only Switch & Save sets
+ * it. The add-on price (`monthly_price`) is the admin's (OS-6), never set here. Audited.
  *
  *     app(SaveOnlineStore::class)->handle($company, ['slug' => 'kirkgate', 'template' => 'freshMarket', ...]);
  *
@@ -87,7 +88,7 @@ final class SaveOnlineStore
 
         $data = Validator::make($input, [
             'slug' => ['required', 'string'],
-            'template' => ['required', Rule::enum(StoreTemplate::class)],
+            'template' => ['sometimes', 'required', Rule::enum(StoreTemplate::class)],
             'headline' => ['nullable', 'string', 'max:160'],
             'brand_colour' => ['nullable', 'string', 'regex:/^#[0-9A-Fa-f]{6}$/'],
             'logo_path' => self::PATH_RULE,
@@ -106,7 +107,10 @@ final class SaveOnlineStore
             throw ValidationException::withMessages(['slug' => $problem]);
         }
 
-        $data['template'] = StoreTemplate::from((string) $data['template']);
+        if (isset($data['template'])) {
+            $data['template'] = StoreTemplate::from((string) $data['template']);
+        }
+
         $data['headline'] = self::text($data['headline'] ?? null);
         $data['brand_colour'] = isset($data['brand_colour']) ? strtoupper((string) $data['brand_colour']) : null;
         $data['order_email'] = self::text($data['order_email'] ?? null);

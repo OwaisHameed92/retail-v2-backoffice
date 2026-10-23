@@ -12,8 +12,9 @@ use Inertia\Inertia;
 use Inertia\Response;
 
 /**
- * `GET /{slug}` (OS-2): the store's home page in its template (Fresh Market): the sections the store turned on, in
- * its order (banner, departments, featured products, how click & collect works, shops and hours, about).
+ * `GET /{slug}` (OS-2, OS-5): the store's home page in its template (Fresh Market or Butcher's Block, `store.template`):
+ * the sections the store turned on, in its order (banner, departments, featured products, how click & collect works,
+ * shops and hours, about). Each template draws the same sections in its own style.
  */
 class StoreHomeController extends Controller
 {

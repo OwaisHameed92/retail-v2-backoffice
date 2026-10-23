@@ -8,24 +8,17 @@ use App\Domain\OnlineStore\Models\OnlineStore;
 use App\Domain\OnlineStore\Support\OnlineCatalogueQuery;
 use App\Domain\OnlineStore\Support\StoreAddress;
 use App\Domain\OnlineStore\Support\StoreImages;
-use App\Domain\OnlineStore\Support\StoreSlug;
 use App\Domain\Tenancy\Models\Company;
-use Illuminate\Support\Str;
 
 /**
  * The portal's store builder page (OS-3, `app/online-store/builder`): the business's store settings as React edits
- * them, the three templates with their default banner photos, the preset brand colours, the address prefix for the
- * live preview and the "ready to go live" checklist (collection shops, products shown at the first one).
+ * them, its template (read only: Switch & Save sets it when the add-on is switched on) with its default banner
+ * photo, the preset brand colours, the address prefix for the live preview and the "ready to go live" checklist
+ * (collection shops, products shown at the first one). No store yet → `store` and `template` are null and the page
+ * says the online store is not switched on.
  */
 final class StoreBuilderPage
 {
-    /** Who each template is for and its default banner photo (public/images/online-store). */
-    public const TEMPLATES = [
-        'freshMarket' => ['for' => 'Grocery, convenience and world foods', 'photo' => 'images/online-store/hero-grocery.jpg'],
-        'butcher' => ['for' => 'Butchers, halal meat and BBQ', 'photo' => 'images/online-store/hero-butcher.jpg'],
-        'pharmacy' => ['for' => 'Pharmacies, health and beauty', 'photo' => 'images/online-store/hero-pharmacy.jpg'],
-    ];
-
     /** Preset main colours (name => hex); any other #RRGGBB can be typed. */
     public const COLOURS = ['Forest' => '#0B4A34', 'Red' => '#B42318', 'Blue' => '#1F4E9C', 'Purple' => '#5B2A86', 'Charcoal' => '#2A2522'];
 
@@ -50,16 +43,11 @@ final class StoreBuilderPage
 
         return [
             'store' => $store === null ? null : self::store($store),
-            'templates' => array_map(fn (array $t) => [
-                ...$t,
-                'for' => self::TEMPLATES[$t['value']]['for'],
-                'photo' => asset(self::TEMPLATES[$t['value']]['photo']),
-            ], StoreTemplate::options()),
+            'template' => $store === null ? null : self::template($store->template),
             'colours' => array_map(fn (string $name, string $hex) => ['name' => $name, 'hex' => $hex], array_keys(self::COLOURS), self::COLOURS),
             'sectionOptions' => array_map(fn (StoreSection $s) => ['key' => $s->value, 'label' => $s->label(), 'hint' => self::SECTION_HINTS[$s->value]],
                 StoreSection::cases()),
             'addressPrefix' => StoreAddress::prefix(),
-            'suggested' => ['slug' => self::suggestSlug($company), 'orderEmail' => $company->email],
             'checklist' => [
                 'collectionShops' => $shops->count(),
                 'productsShown' => $first === null ? null : OnlineCatalogueQuery::base($first)->count(),
@@ -113,15 +101,13 @@ final class StoreBuilderPage
         return array_values($out);
     }
 
-    /** The business name as an address, when it is free to use (empty otherwise). */
-    private static function suggestSlug(Company $company): string
+    /**
+     * The store's look as the builder shows it: name, who it is for and its default banner photo.
+     *
+     * @return array{value: string, label: string, for: string, photo: string}
+     */
+    public static function template(StoreTemplate $template): array
     {
-        $slug = trim(Str::limit(Str::slug($company->name), 40, ''), '-');
-
-        if (StoreSlug::problem($slug) !== null || OnlineStore::withoutCompanyScope()->where('slug', $slug)->exists()) {
-            return '';
-        }
-
-        return $slug;
+        return ['value' => $template->value, 'label' => $template->label(), 'for' => $template->audience(), 'photo' => asset($template->bannerPath())];
     }
 }

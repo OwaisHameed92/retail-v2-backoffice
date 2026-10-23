@@ -2,6 +2,7 @@
 
 namespace App\Http\Support\Store;
 
+use App\Domain\OnlineStore\Models\OnlineStoreShop;
 use App\Domain\OnlineStore\Queries\StorefrontCatalogue;
 use App\Domain\OnlineStore\Support\StoreScope;
 use Illuminate\Http\Request;
@@ -10,7 +11,8 @@ use Symfony\Component\HttpFoundation\Response;
 
 /**
  * The public store's page frame (OS-2): its own root view (`resources/views/store.blade.php`, the shop's brand, not
- * the portal's), the props every store page shares (store, departments, basket summary), and its own error pages
+ * the portal's), the props every store page shares (store with its template, departments, basket summary; the React
+ * pages switch fonts, colours and home sections by `store.template`, OS-5), and its own error pages
  * (404 unknown or closed store and missing pages, 403 bad order links, 429 too many tries).
  */
 final class StorePages
@@ -48,8 +50,9 @@ final class StorePages
             'initials' => StorePresenter::initials($name),
             'logoUrl' => StorePresenter::publicUrl($store->logo_path),
             'brand' => StorePresenter::brand($store),
+            'template' => $store->template->value,
             'takingOrders' => $context->takingOrders(),
-            'shop' => $shop === null ? null : ['id' => $shop->id, 'name' => $shop->branch->name],
+            'shop' => $shop === null ? null : self::shop($shop),
             'shopCount' => $context->shops->count(),
             'departments' => array_map(fn (array $d) => [
                 'id' => $d['id'], 'name' => $d['name'], 'count' => $d['count'],
@@ -63,6 +66,19 @@ final class StorePages
                 'checkout' => route('store.checkout', [], false),
             ],
         ];
+    }
+
+    /**
+     * The visitor's collection shop for the frame (name, and the address and phone the footer shows).
+     *
+     * @return array{id: string, name: string, address: string, phone: string|null}
+     */
+    private static function shop(OnlineStoreShop $shop): array
+    {
+        $shop->loadMissing('branch');
+        $info = StorePresenter::shop($shop);
+
+        return ['id' => $shop->id, 'name' => $info['name'], 'address' => $info['address'], 'phone' => $info['phone']];
     }
 
     public static function error(Request $request, int $status, ?StoreContext $context = null): Response

@@ -20,10 +20,6 @@ use Illuminate\Support\Facades\Storage;
  */
 final class StorePresenter
 {
-    public const DEFAULT_BRAND = '#0B4A34';
-
-    public const DEFAULT_BANNER = 'images/online-store/hero-grocery.jpg';
-
     /**
      * @param  list<CatalogueItem>  $items
      * @return list<array<string, mixed>>
@@ -122,17 +118,18 @@ final class StorePresenter
         return $keys;
     }
 
-    /** "#0B4A34": the store's colour when it is a proper hex colour, else the default forest green. */
+    /** "#0B4A34": the store's colour when it is a proper hex colour, else its template's (forest green, oxblood). */
     public static function brand(OnlineStore $store): string
     {
         $colour = (string) $store->brand_colour;
 
-        return preg_match('/^#[0-9A-Fa-f]{6}$/', $colour) === 1 ? strtoupper($colour) : self::DEFAULT_BRAND;
+        return preg_match('/^#[0-9A-Fa-f]{6}$/', $colour) === 1 ? strtoupper($colour) : $store->template->defaultBrand();
     }
 
+    /** The store's own banner photo, else its template's. */
     public static function bannerUrl(OnlineStore $store): string
     {
-        return self::publicUrl($store->banner_path) ?? asset(self::DEFAULT_BANNER);
+        return self::publicUrl($store->banner_path) ?? asset($store->template->bannerPath());
     }
 
     /** "KC" for "Kirkgate Convenience". */

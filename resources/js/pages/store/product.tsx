@@ -7,6 +7,7 @@ import { QtyStepper } from '@/components/store/qty-stepper';
 import { StoreLayout } from '@/components/store/store-layout';
 import { type StoreProduct } from '@/components/store/types';
 import { useAddToBasket, useStore } from '@/components/store/use-store';
+import { WeightChoice } from '@/components/store/weight-choice';
 import { cn } from '@/lib/utils';
 import { Link } from '@inertiajs/react';
 import { Loader2, Scale } from 'lucide-react';
@@ -62,7 +63,7 @@ export default function StoreProductPage({ product, department, inBasket, nextCo
                         {department && (
                             <Link
                                 href={department.url}
-                                className="hover:bg-line self-start rounded-full bg-white px-3 py-1.5 text-[13px] font-semibold"
+                                className="hover:bg-line inline-flex min-h-11 items-center self-start rounded-full bg-white px-4 text-[13px] font-semibold"
                             >
                                 {department.name}
                             </Link>
@@ -90,6 +91,12 @@ export default function StoreProductPage({ product, department, inBasket, nextCo
                                     price on the scale when you collect.
                                 </span>
                             </p>
+                        )}
+                        {product.isWeighed && canAdd && (
+                            <div className="flex flex-col gap-2">
+                                <span className="text-sm font-bold">Quick weights</span>
+                                <WeightChoice product={product} value={quantity} onChange={setQuantity} className="max-w-md" />
+                            </div>
                         )}
                         <div className="hidden flex-wrap items-center gap-3 md:flex">
                             {stepper('light', 'lg')}
@@ -145,13 +152,14 @@ export default function StoreProductPage({ product, department, inBasket, nextCo
             </div>
             <div aria-hidden="true" className="h-20 md:hidden" />
 
-            <div className="bg-ink fixed inset-x-3 bottom-[84px] z-40 flex items-center gap-2 rounded-full p-2 shadow-2xl md:hidden">
+            {/* Sticky add bar on phones, just above the bottom bar (whose height grows with the home indicator). */}
+            <div className="bg-ink fixed inset-x-3 bottom-[calc(4.75rem+env(safe-area-inset-bottom))] z-40 flex items-center gap-1.5 rounded-full p-1.5 shadow-2xl min-[400px]:gap-2 min-[400px]:p-2 md:hidden">
                 {stepper('dark', 'md')}
                 <button
                     type="button"
                     onClick={() => add(product.id, quantity)}
                     disabled={!canAdd || adding}
-                    className="bg-lime text-ink flex min-h-12 flex-1 items-center justify-center gap-2 rounded-full px-4 font-extrabold disabled:cursor-not-allowed disabled:bg-white/20 disabled:text-white/80"
+                    className="bg-lime text-ink flex min-h-12 min-w-0 flex-1 items-center justify-center gap-2 rounded-full px-3 text-[15px] font-extrabold whitespace-nowrap disabled:cursor-not-allowed disabled:bg-white/20 disabled:text-white/80 min-[400px]:px-4 min-[400px]:text-base"
                 >
                     {adding && <Loader2 aria-hidden="true" className="size-5 animate-spin" />}
                     {canAdd ? label : product.orderable ? 'Not taking orders' : 'Out of stock'}

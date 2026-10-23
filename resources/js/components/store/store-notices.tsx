@@ -73,7 +73,7 @@ function Toast({ message }: { message: string | null }) {
                     <button
                         type="button"
                         onClick={() => setShown(null)}
-                        className="flex size-10 shrink-0 items-center justify-center rounded-full hover:bg-white/10"
+                        className="flex size-11 shrink-0 items-center justify-center rounded-full hover:bg-white/10"
                         aria-label="Close message"
                     >
                         <X aria-hidden="true" className="size-4" />

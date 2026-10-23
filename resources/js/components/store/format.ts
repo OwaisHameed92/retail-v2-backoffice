@@ -1,5 +1,6 @@
 import { formatMoney } from '@/lib/country';
-import { type StoreProduct } from './types';
+import { TINTS } from './theme';
+import { type StoreProduct, type StoreTemplate } from './types';
 
 /** "£1.10" (the instance's currency). Display only: the server does the sums. */
 export const money = (value: string | number): string => formatMoney(value);
@@ -57,17 +58,30 @@ export function onColour(hex: string): string {
     return 1.05 / (luminance + 0.05) >= (luminance + 0.05) / 0.0575 ? '#FFFFFF' : '#0E1712';
 }
 
-/** A soft tint for a placeholder tile, stable per name. */
-const TINTS = ['#E7EFD9', '#F3E6D6', '#E2ECEA', '#F1E3E3', '#E9E5F2', '#F4ECCF', '#DDEBE2', '#EFE7DC'];
-
-export function tintFor(name: string): string {
+/** A soft tint for a placeholder tile, stable per name, from the template's palette. */
+export function tintFor(name: string, template: StoreTemplate = 'freshMarket'): string {
+    const tints = TINTS[template] ?? TINTS.freshMarket;
     let hash = 0;
 
     for (let i = 0; i < name.length; i++) {
         hash = (hash * 31 + name.charCodeAt(i)) >>> 0;
     }
 
-    return TINTS[hash % TINTS.length];
+    return tints[hash % tints.length];
+}
+
+/** "500 g" or "1.5 kg". */
+export function weightLabel(kg: string | number): string {
+    const n = Number(kg);
+
+    return n > 0 && n < 1 ? `${Math.round(n * 1000)} g` : `${trimNumber(n)} kg`;
+}
+
+/** Quick weights for a weighed product (500 g, 1 kg, 2 kg) within its step and limit; at least its first add. */
+export function weightOptions(product: Pick<StoreProduct, 'isWeighed' | 'step' | 'max'>): string[] {
+    const options = ['0.5', '1', '2'].filter((w) => Number(w) >= Number(product.step) && Number(w) <= Number(product.max));
+
+    return options.length > 0 ? options : [defaultQuantity(product)];
 }
 
 export function initialOf(name: string): string {

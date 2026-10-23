@@ -188,3 +188,14 @@ test('per product: hidden, description, photo; only the given keys change; the t
         ->and(($this->error)(fn () => app(SetOnlineProduct::class)->handle($f->company, '01K5T0Q8C4000000000000P999', ['hidden' => true])))->toHaveKey('product_id')
         ->and(OnlineStoreProduct::withoutCompanyScope()->count())->toBe(1);
 });
+
+test('the template is optional: left out it stays as it is (Fresh Market for a new store); the removed pharmacy is refused', function () {
+    $store = app(SaveOnlineStore::class)->handle($this->company, ['slug' => 'kirkgate']);
+    expect($store->template)->toBe(StoreTemplate::FreshMarket);
+
+    ($this->save)(['slug' => 'kirkgate', 'template' => 'butcher']);
+    $again = app(SaveOnlineStore::class)->handle($this->company, ['slug' => 'kirkgate', 'headline' => 'Cut to order']);
+
+    expect($again->template)->toBe(StoreTemplate::Butcher)->and($again->headline)->toBe('Cut to order')
+        ->and(($this->error)(fn () => ($this->save)(['slug' => 'kirkgate', 'template' => 'pharmacy']))['template'][0])->toBe('The selected template is invalid.');
+});

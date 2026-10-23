@@ -1,7 +1,7 @@
 import { type Paginated } from '@/components/shared/data-table/types';
 
 /** Matches App\Domain\OnlineStore\Queries\StoreBuilderPage::for(). */
-export type TemplateKey = 'freshMarket' | 'butcher' | 'pharmacy';
+export type TemplateKey = 'freshMarket' | 'butcher';
 
 export type StoreSectionValue = {
     key: string;
@@ -23,6 +23,7 @@ export interface StoreSettings {
     address: string;
 }
 
+/** The store's look (read only here: Switch & Save sets it). */
 export interface TemplateOption {
     value: TemplateKey;
     label: string;
@@ -31,12 +32,12 @@ export interface TemplateOption {
 }
 
 export interface BuilderProps {
+    /** Null until Switch & Save switches the online store on. */
     store: StoreSettings | null;
-    templates: TemplateOption[];
+    template: TemplateOption | null;
     colours: { name: string; hex: string }[];
     sectionOptions: { key: string; label: string; hint: string }[];
     addressPrefix: string;
-    suggested: { slug: string; orderEmail: string | null };
     checklist: { collectionShops: number; productsShown: number | null; productsShop: string | null };
     canEdit: boolean;
 }

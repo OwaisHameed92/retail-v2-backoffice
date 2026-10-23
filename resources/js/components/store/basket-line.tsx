@@ -26,7 +26,7 @@ export function BasketLineRow({ line, editable }: { line: BasketLine; editable: 
                 <ProductPhoto name={product.name} url={product.photoUrl} alt="" rounded="rounded-[18px]" size="sm" />
             </Link>
             <div className="flex min-w-0 flex-[1_1_160px] flex-col gap-1">
-                <Link href={product.url} className="text-ink leading-snug font-bold underline-offset-4 hover:underline">
+                <Link href={product.url} className="text-ink -my-2.5 py-2.5 leading-snug font-bold underline-offset-4 hover:underline">
                     {product.name}
                 </Link>
                 <span className="text-muted text-[13px]">

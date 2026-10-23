@@ -1,9 +1,12 @@
 @import 'tailwindcss' source(none);
 
 /*
-  The public online store (OS-2), Fresh Market template. Its own look, not the portal's: Bricolage Grotesque for
-  display type, Inter for text, ink #0E1712 on a warm paper background, lime highlights, and the store's own brand
-  colour (`--brand`, set by the store layout from the store's settings; forest green by default).
+  The public online store (OS-2, OS-5). Its own look, not the portal's. Two light templates share every page and
+  component; the template only swaps these tokens (`data-template` on <html> and on the store layout):
+  - Fresh Market (default): Bricolage Grotesque display type, Inter text, ink #0E1712 on warm paper, lime highlights.
+  - Butcher's Block: Fraunces display type, Inter text, ink #1C1917 on cream #F7F3EC, tan #F3E6D3 highlights.
+  `lime` is the template's highlight colour (tan for the butcher). The store's brand colour (`--color-brand`) and
+  the text on it are set by the store layout from the store's settings, else the template's default.
 */
 @source '../js/store.tsx';
 @source '../js/pages/store';
@@ -25,13 +28,26 @@
     --color-ok: #1f7a4a;
     --color-warn: #8a5300;
     --color-warn-soft: #fff1d6;
-    --color-brand: var(--brand, #0b4a34);
-    --color-on-brand: var(--on-brand, #ffffff);
+    --color-brand: #0b4a34;
+    --color-on-brand: #ffffff;
 
     --radius-card: 1.75rem;
 }
 
 @layer base {
+    /* Butcher's Block. In the base layer so it wins over the theme layer's :root values. */
+    [data-template='butcher'] {
+        --font-display: 'Fraunces', ui-serif, Georgia, 'Times New Roman', serif;
+        --color-ink: #1c1917;
+        --color-body: #4a433e;
+        --color-muted: #6b625b;
+        --color-paper: #f7f3ec;
+        --color-line: #e8e1d6;
+        --color-tile: #efe6d8;
+        --color-lime: #f3e6d3;
+        --color-lime-soft: #f8efe2;
+    }
+
     html {
         -webkit-text-size-adjust: 100%;
         scroll-behavior: smooth;
@@ -50,6 +66,12 @@
     .bg-brand :focus-visible,
     .bg-ink :focus-visible {
         outline-color: var(--color-lime);
+    }
+
+    /* Nothing pushes the page sideways on a phone. */
+    html,
+    body {
+        overflow-x: clip;
     }
 
     @media (prefers-reduced-motion: reduce) {

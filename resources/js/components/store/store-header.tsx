@@ -3,6 +3,7 @@ import { Link, router, usePage } from '@inertiajs/react';
 import { Search, ShoppingBag, Store } from 'lucide-react';
 import { type FormEvent, useState } from 'react';
 import { money } from './format';
+import { useTemplate } from './theme';
 import { type BasketSummary, type StoreInfo } from './types';
 
 /** The store's logo: its uploaded logo, else its initials on the brand colour. */
@@ -20,7 +21,12 @@ export function StoreLogo({ store, size = 'md' }: { store: StoreInfo; size?: 'sm
     );
 }
 
+/**
+ * The store's header: the click & collect bar (ink for Fresh Market, the brand colour for the butcher), logo and
+ * name, search, collection shop and basket, then the departments (a swipeable row on phones).
+ */
 export function StoreHeader({ store, basket }: { store: StoreInfo; basket?: BasketSummary }) {
+    const butcher = useTemplate() === 'butcher';
     const { url } = usePage();
     const current = new URL(url, 'https://store.local');
     const [term, setTerm] = useState(current.pathname === store.urls.search ? (current.searchParams.get('q') ?? '') : '');
@@ -32,20 +38,31 @@ export function StoreHeader({ store, basket }: { store: StoreInfo; basket?: Bask
 
     return (
         <>
-            <div className="bg-ink text-[13px] text-white">
+            <div className={cn('text-[13px]', butcher ? 'bg-brand text-on-brand' : 'bg-ink text-white')}>
                 <div className="mx-auto flex max-w-[1320px] flex-wrap items-center justify-between gap-x-6 gap-y-1 px-4 py-2.5 sm:px-6">
-                    <p className="flex items-center gap-2.5">
-                        <span className="bg-lime text-ink rounded-full px-2.5 py-0.5 font-bold">Click &amp; collect</span>
-                        <span>Order online, pay when you collect{store.shop ? ` at ${store.shop.name}` : ''}.</span>
+                    <p className="flex min-w-0 items-center gap-2.5">
+                        <span className="bg-lime text-ink shrink-0 rounded-full px-2.5 py-0.5 font-bold">Click &amp; collect</span>
+                        <span className="min-w-0">Order online, pay when you collect{store.shop ? ` at ${store.shop.name}` : ''}.</span>
                     </p>
-                    <p className="hidden text-white/80 sm:block">Same prices as on the shelf, live from our tills</p>
+                    <p className="hidden opacity-85 sm:block">
+                        {butcher ? 'Weighed at the counter, so you pay the real weight' : 'Same prices as on the shelf, live from our tills'}
+                    </p>
                 </div>
             </div>
             <header className="border-line border-b bg-white">
                 <div className="mx-auto flex max-w-[1320px] flex-wrap items-center gap-x-5 gap-y-3 px-4 py-3.5 sm:px-6 sm:py-4">
-                    <Link href={store.urls.home} className="text-ink flex min-w-0 items-center gap-3" aria-label={`${store.name}, home`}>
+                    <Link
+                        href={store.urls.home}
+                        className="text-ink flex min-h-11 min-w-0 flex-1 items-center gap-3 md:flex-none"
+                        aria-label={`${store.name}, home`}
+                    >
                         <StoreLogo store={store} />
-                        <span className="font-display truncate text-xl leading-none font-extrabold tracking-[-0.03em] sm:text-[24px]">
+                        <span
+                            className={cn(
+                                'font-display truncate text-xl leading-none font-extrabold',
+                                butcher ? 'tracking-[-0.02em] sm:text-[28px]' : 'tracking-[-0.03em] sm:text-[24px]',
+                            )}
+                        >
                             {store.name}
                         </span>
                     </Link>
@@ -67,14 +84,14 @@ export function StoreHeader({ store, basket }: { store: StoreInfo; basket?: Bask
                             placeholder="Search products"
                             autoComplete="off"
                             enterKeyHint="search"
-                            className="placeholder:text-muted min-h-11 min-w-0 flex-1 bg-transparent text-[15px] outline-none"
+                            className="placeholder:text-muted min-h-11 min-w-0 flex-1 bg-transparent text-base outline-none sm:text-[15px]"
                         />
                         <button type="submit" className="bg-ink hover:bg-brand hidden min-h-11 rounded-full px-5 font-semibold text-white sm:block">
                             Search
                         </button>
                     </form>
 
-                    <div className="ml-auto flex items-center gap-2.5 md:ml-0">
+                    <div className="flex shrink-0 items-center gap-2.5">
                         {store.shop && store.shopCount > 1 && (
                             <Link
                                 href={store.urls.checkout}
@@ -91,12 +108,20 @@ export function StoreHeader({ store, basket }: { store: StoreInfo; basket?: Bask
                         )}
                         <Link
                             href={store.urls.basket}
-                            className="bg-lime text-ink flex min-h-12 items-center gap-2.5 rounded-full py-1.5 pr-1.5 pl-4 font-extrabold transition hover:brightness-95 sm:pl-5"
+                            className={cn(
+                                'flex min-h-12 items-center gap-2.5 rounded-full py-1.5 pr-1.5 pl-4 font-extrabold transition sm:pl-5',
+                                butcher ? 'bg-ink hover:bg-brand text-white' : 'bg-lime text-ink hover:brightness-95',
+                            )}
                             aria-label={`Basket: ${basket?.count ?? 0} items, ${money(basket?.total ?? '0')}`}
                         >
                             <ShoppingBag aria-hidden="true" className="size-5 sm:hidden" />
                             <span className="hidden sm:inline">{money(basket?.total ?? '0')}</span>
-                            <span className="bg-ink text-lime flex size-9 items-center justify-center rounded-full text-sm">
+                            <span
+                                className={cn(
+                                    'flex size-9 items-center justify-center rounded-full text-sm',
+                                    butcher ? 'bg-lime text-ink' : 'bg-ink text-lime',
+                                )}
+                            >
                                 {basket?.count ?? 0}
                             </span>
                         </Link>

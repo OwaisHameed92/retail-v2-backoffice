@@ -8,7 +8,8 @@ use App\Http\Requests\App\Setup\CompanyWideWriteRequest;
 /**
  * The store builder's "Save changes" (OS-3), sent as a form with the logo and banner files. The route checks
  * `store.manage`; a one-shop user may look but not change the business's store (403). The settings themselves are
- * checked by SaveOnlineStore; picture paths never come from the browser.
+ * checked by SaveOnlineStore; picture paths never come from the browser. There is no `template` field: the store's
+ * look is set by Switch & Save (admin), so one sent here is ignored.
  */
 class SaveStoreRequest extends CompanyWideWriteRequest
 {
@@ -19,7 +20,6 @@ class SaveStoreRequest extends CompanyWideWriteRequest
     {
         return [
             'slug' => ['required', 'string', 'max:60'],
-            'template' => ['required', 'string', 'max:40'],
             'headline' => ['nullable', 'string', 'max:160'],
             'brand_colour' => ['nullable', 'string', 'max:7'],
             'order_email' => ['nullable', 'string', 'max:255'],
