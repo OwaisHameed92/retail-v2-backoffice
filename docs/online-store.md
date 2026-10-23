@@ -10,8 +10,9 @@ https://claude.ai/artifact/FdsDJZ2vyhQJw5hfPmUiNz. DECISIONS "Online store, clic
   and it can be changed per business. UK monthly fees go by Direct Debit, so the add-on is added to that business's
   monthly amount. It needs cloud sync, because the products come from the tills. Live only in the UK for now: the
   country flag `onlineStore` is off on PK. The `ONLINE_STORE` switch is off by default.
+- **Template.** Chosen by Switch & Save (admin) when the add-on is switched on: Fresh Market or Butcher's Block. The tenant sees it read-only.
 - **Store builder** (portal → Online store, `store.manage`). Settings:
-  - template (`freshMarket` or `butcher`), logo, main colour, banner photo, headline;
+  - logo, main colour, banner photo, headline;
   - home sections on or off, in order;
   - the shops customers can collect from, with opening hours, how many minutes it takes to get an order ready, and
     how many orders per slot;
