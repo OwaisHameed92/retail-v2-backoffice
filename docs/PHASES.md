@@ -154,6 +154,17 @@ and 24 h retries. UK only (country flag `partnerApi`, off on PK). Status: done.
 | PDA-2 | Handheld API phase 2, portal part (2026-10-22, EPOS `PDA_API_PHASE2_REQUEST.md`, DECISIONS "Handheld (PDA) API, phase 2"): shop price (SetShopPrice / EndShopPrice), unit prices business (SaveProduct) and shop (BranchPrice per unit), cost (SaveProduct) with new `can_change_cost`, `can_adjust_stock` read by the app, `client_reference` idempotency on PO creates (`handheld_order_references`, unique per shop, race-safe), decimal kg order quantities, `tenants` on 409 TENANT_REQUIRED, sign-out vs keep-session 403 table. Stock adjustments, stock takes, goods-in, returns, locations: 501 until the till contract has portal-drafted stock documents | done (stock work waits for the EPOS till contract) |
 | PDA-3 | Handheld stock drafts (2026-10-22, DECISIONS "Handheld stock drafts"): contract proposal for the EPOS till team (`docs/contracts/proposals/pda-stock-drafts`: new `StockAdjustmentDraft`, `StockTake` / `GoodsReceipt` / `PurchaseReturn` (+ lines) `hubDrafted` with `origin: headOffice`, outcome on the same row, schemas + samples, 12 open questions) and the portal side behind `PDA_STOCK_DRAFTS` (default off): `stock_drafts` / `stock_draft_lines`, the PDA stock-adjustments, stock-takes, receive / receipts / returnable and purchase-returns calls, drafts in that shop's pull only, outcome read from the till's push. Off = 501 and the pull byte-identical | done, OFF (switch on when the till ships the proposal) |
 
+## Online store (owner 2026-10-23; `docs/online-store.md`)
+
+| # | Module | Status |
+|---|---|---|
+| OS-1 | Data, actions, storefront catalogue query, collect order flow (no UI): `app/Domain/OnlineStore`, ability `store.manage` (owner, manager), country flag `onlineStore` (server side only). Open-price products, products switched off at the shop and age-restricted categories are not shown; no stock line counts as 0; statuses go in strict order. The business add-on flag and the cloud-sync check come with OS-6 | done |
+| OS-2 | Public store, Fresh Market template: home, department, search, product, basket, checkout (collect, pay at shop), order page | todo (E2) |
+| OS-3 | Portal store builder: template, brand, sections, collection shops and slots, product visibility, photos | todo (E2) |
+| OS-4 | Portal online orders board, staff and customer emails, notifications | todo (E2) |
+| OS-5 | Butcher and Pharmacy templates, mobile polish | todo (E3) |
+| OS-6 | Admin add-on switch, £20 + VAT default with per-business price, billing line | todo (E3) |
+
 ## Phase 8: Later — 0/5
 
 Web orders / click and collect · Online payments · Dealers and resellers · Public marketing site · EPOS update
