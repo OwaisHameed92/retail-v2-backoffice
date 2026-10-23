@@ -15,8 +15,9 @@ use Inertia\Inertia;
 use Inertia\Response;
 
 /**
- * The portal's store builder (OS-3, `store.manage`, 404 while the online store is off): template, address, brand,
- * home sections, order email, go live / take offline and "Taking orders". A one-shop user may look only.
+ * The portal's store builder (OS-3, `store.manage`, 404 while the online store is off): address, brand (the look is
+ * read only, set by Switch & Save), home sections, order email, go live / take offline and "Taking orders". A one-shop
+ * user may look only.
  */
 class OnlineStoreController extends Controller
 {

@@ -5,7 +5,7 @@ import { Fragment } from 'react';
 export function Breadcrumbs({ items }: { items: { label: string; href?: string }[] }) {
     return (
         <nav aria-label="Breadcrumb" className="mb-5 sm:mb-6">
-            <ol className="text-muted flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
+            <ol className="text-muted flex min-w-0 flex-wrap items-center gap-x-2 text-sm [overflow-wrap:anywhere]">
                 {items.map((item, i) => (
                     <Fragment key={`${item.label}-${i}`}>
                         {i > 0 && (
@@ -17,7 +17,7 @@ export function Breadcrumbs({ items }: { items: { label: string; href?: string }
                             {item.href ? (
                                 <Link
                                     href={item.href}
-                                    className="text-ink inline-flex min-h-8 items-center font-medium underline-offset-4 hover:underline"
+                                    className="text-ink inline-flex min-h-11 items-center font-medium underline-offset-4 hover:underline"
                                 >
                                     {item.label}
                                 </Link>

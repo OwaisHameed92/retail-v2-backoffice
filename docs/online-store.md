@@ -1,7 +1,7 @@
 # Online store
 
 One-click online shop for a retail business (owner 2026-10-23). Products, prices and stock come from what the tills
-already sync. Design mockup (13 screens, three templates):
+already sync. Design mockup (13 screens; the Fresh Market and Butcher templates are built):
 https://claude.ai/artifact/FdsDJZ2vyhQJw5hfPmUiNz. DECISIONS "Online store, click & collect first".
 
 ## Stage S1: click & collect, pay at the shop (this build)
@@ -10,8 +10,15 @@ https://claude.ai/artifact/FdsDJZ2vyhQJw5hfPmUiNz. DECISIONS "Online store, clic
   and it can be changed per business. UK monthly fees go by Direct Debit, so the add-on is added to that business's
   monthly amount. It needs cloud sync, because the products come from the tills. Live only in the UK for now: the
   country flag `onlineStore` is off on PK. The `ONLINE_STORE` switch is off by default.
-- **Store builder** (portal → Online store, `store.manage`). Settings:
-  - template (`freshMarket`, `butcher` or `pharmacy`), logo, main colour, banner photo, headline;
+- **Templates** (owner 2026-10-24): two light looks, `freshMarket` (grocery, convenience) and `butcher` (Butcher's
+  Block). The Care Pharmacy template was dropped for now (a migration moves any `pharmacy` store to Fresh Market; an
+  unknown stored value reads as Fresh Market). Switch & Save sets the template when switching the add-on on; the
+  business cannot change it. Each template has its own fonts, colours, default brand colour (forest green, oxblood)
+  and default banner photo; the store's own colour and banner win. All pages are shared; only the home sections'
+  look changes (`resources/js/components/store/theme.ts`, `butcher-sections.tsx`).
+- **Store builder** (portal → Online store, `store.manage`). Only once Switch & Save has switched the store on
+  (before that it says "not switched on yet"). Settings:
+  - the look, read only ("set by Switch & Save"); logo, main colour, banner photo, headline;
   - home sections on or off, in order;
   - the shops customers can collect from, with opening hours, how many minutes it takes to get an order ready, and
     how many orders per slot;
@@ -75,4 +82,4 @@ Till tables (products, prices, stock) are read only and never changed.
 |---|---|
 | E1 | OS-1 data, actions, catalogue query, order flow (no UI) |
 | E2 | OS-2 public store (Fresh Market) · OS-3 portal store builder + products · OS-4 orders board, emails, notifications |
-| E3 | OS-5 Butcher + Pharmacy templates, mobile polish · OS-6 admin add-on switch + billing line |
+| E3 | OS-5 Butcher template, read-only look in the builder, mobile polish · OS-6 admin add-on switch + billing line |

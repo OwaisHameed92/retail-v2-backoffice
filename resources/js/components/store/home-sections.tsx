@@ -4,7 +4,13 @@ import { ArrowRight, Clock, MapPin, Phone } from 'lucide-react';
 import { type ReactNode } from 'react';
 import { initialOf, tintFor } from './format';
 import { ProductGrid } from './product-card';
+import { COPY, templateOf } from './theme';
 import { type ShopInfo, type StoreInfo, type StoreProduct } from './types';
+
+/*
+ * Fresh Market home sections (OS-2), plus the shops and about sections every template shares. Butcher's Block draws
+ * its own hero, tiles, picks and steps (butcher-sections.tsx).
+ */
 
 export function SectionHeading({ title, sub, link, id }: { title: string; sub?: string; link?: { href: string; label: string }; id?: string }) {
     return (
@@ -229,9 +235,10 @@ export function ShopCard({ shop, children }: { shop: ShopInfo; children?: ReactN
 }
 
 export function AboutSection({ store, prepMinutes }: { store: StoreInfo; prepMinutes: number | null }) {
+    const copy = COPY[templateOf(store.template)];
     const facts = [
-        { big: `${prepMinutes ?? 30} min`, title: 'Ready to collect', text: 'We pick your order fresh from the shelves.' },
-        { big: `${currencySymbol()}0`, title: 'Price difference', text: 'The same price as on the shelf, from our tills.' },
+        { big: `${prepMinutes ?? 30} min`, title: 'Ready to collect', text: 'We get your order ready for the time you choose.' },
+        { big: copy.priceFact.big ?? `${currencySymbol()}0`, title: copy.priceFact.title, text: copy.priceFact.text },
         { big: 'Pay', title: 'At the counter', text: 'Card or cash when you collect. Nothing to pay online.' },
     ];
 
@@ -241,10 +248,7 @@ export function AboutSection({ store, prepMinutes }: { store: StoreInfo; prepMin
                 <h2 id="about-title" className="font-display text-3xl leading-none font-extrabold tracking-[-0.035em] sm:text-4xl">
                     About {store.name}
                 </h2>
-                <p className="text-body leading-relaxed">
-                    Your local shop, now online. What you see here comes straight from our tills, so the prices and stock are what you would find in
-                    the shop today.
-                </p>
+                <p className="text-body leading-relaxed">{copy.aboutLead}</p>
             </div>
             <ul className="grid gap-4 sm:grid-cols-3">
                 {facts.map((fact) => (

@@ -15,10 +15,15 @@ use Throwable;
  * the upload, or removed (`remove_logo` / `remove_banner`). When the save fails the new files are deleted; when it
  * works the replaced or removed files are deleted.
  *
+ * The business only changes a store Switch & Save has switched on (OS-6 makes the row): with no store this refuses
+ * (`store`), and a `template` in the input is ignored, because the look is Switch & Save's to set.
+ *
  *     app(SaveStoreBuilder::class)->handle($company, $request->settings(), $request->file('logo'), $request->file('banner'));
  */
 final class SaveStoreBuilder
 {
+    public const NOT_SWITCHED_ON = 'Your online store is not switched on yet. Contact Switch & Save to switch it on.';
+
     private const PICTURES = ['logo' => StoreImages::LOGO, 'banner' => StoreImages::BANNER];
 
     public function __construct(private readonly SaveOnlineStore $save) {}
@@ -30,14 +35,16 @@ final class SaveStoreBuilder
      */
     public function handle(Company $company, array $input, ?UploadedFile $logo = null, ?UploadedFile $banner = null): OnlineStore
     {
-        $current = OnlineStore::withoutCompanyScope()->where('company_id', $company->id)->first();
+        $current = OnlineStore::withoutCompanyScope()->where('company_id', $company->id)->first()
+            ?? throw ValidationException::withMessages(['store' => self::NOT_SWITCHED_ON]);
+        unset($input['template']);
         $uploads = ['logo' => $logo, 'banner' => $banner];
         $stored = [];
         $paths = [];
 
         try {
             foreach (self::PICTURES as $kind => $folder) {
-                $old = $current?->{"{$kind}_path"};
+                $old = $current->{"{$kind}_path"};
                 $file = $uploads[$kind];
 
                 $paths["{$kind}_path"] = match (true) {
@@ -57,7 +64,7 @@ final class SaveStoreBuilder
         }
 
         foreach (array_keys(self::PICTURES) as $kind) {
-            $old = $current?->{"{$kind}_path"};
+            $old = $current->{"{$kind}_path"};
 
             if ($old !== null && $old !== $store->{"{$kind}_path"}) {
                 StoreImages::delete($company, $old);

@@ -2,6 +2,7 @@
 
 namespace App\Domain\OnlineStore\Models;
 
+use App\Domain\OnlineStore\Casts\StoreTemplateCast;
 use App\Domain\OnlineStore\Enums\StoreTemplate;
 use App\Domain\Shared\Casts\MoneyCast;
 use App\Domain\Tenancy\Concerns\BelongsToCompany;
@@ -18,7 +19,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string $id
  * @property string $company_id
  * @property string $slug
- * @property StoreTemplate $template
+ * @property StoreTemplate $template set by Switch & Save (admin), never by the business; unknown values read as Fresh Market
  * @property string|null $logo_path
  * @property string|null $banner_path
  * @property string|null $brand_colour "#RRGGBB"
@@ -54,7 +55,7 @@ class OnlineStore extends Model
     protected function casts(): array
     {
         return [
-            'template' => StoreTemplate::class,
+            'template' => StoreTemplateCast::class,
             'sections' => 'array',
             'is_live' => 'boolean',
             'taking_orders' => 'boolean',

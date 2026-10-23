@@ -85,7 +85,7 @@ test('with the online store switched off (or in Pakistan) every page answers 404
     expect(($this->store)()->is_live)->toBeTrue();
 });
 
-test('the builder page shows the saved store, its full address, the templates with their photos and the checklist', function () {
+test('the builder page shows the saved store, its full address, its look (read only) with its photo and the checklist', function () {
     $this->actingAs($this->owner)->get('/app/online-store')->assertInertia(fn (Assert $p) => $p
         ->where('store.slug', 'kirkgate')
         ->where('store.template', 'freshMarket')
@@ -93,8 +93,8 @@ test('the builder page shows the saved store, its full address, the templates wi
         ->where('store.takingOrders', true)
         ->where('store.address', url('/store/kirkgate'))
         ->where('addressPrefix', url('/store').'/')
-        ->where('templates.1.value', 'butcher')
-        ->where('templates.1.photo', asset('images/online-store/hero-butcher.jpg'))
+        ->where('template', ['value' => 'freshMarket', 'label' => 'Fresh Market', 'for' => 'Grocery, convenience and world foods', 'photo' => asset('images/online-store/hero-grocery.jpg')])
+        ->missing('templates')
         ->where('checklist.collectionShops', 1)
         ->where('checklist.productsShop', 'Leeds')
         ->has('sectionOptions', 6)
@@ -102,17 +102,33 @@ test('the builder page shows the saved store, its full address, the templates wi
         ->where('canEdit', true));
 });
 
-test('a business without a store gets an empty builder with a suggested address', function () {
+test('a business without a store sees "not switched on" and cannot create one (Switch & Save switches it on)', function () {
     $other = Company::factory()->create(['name' => 'Al Noor Butchers', 'email' => 'hello@alnoor.test']);
     Branch::factory()->forCompany($other)->create();
     $owner = F::member($other, CompanyRole::Owner);
 
     $this->actingAs($owner)->get('/app/online-store')->assertOk()->assertInertia(fn (Assert $p) => $p
-        ->where('store', null)->where('suggested.slug', 'al-noor-butchers')->where('suggested.orderEmail', 'hello@alnoor.test')
+        ->where('store', null)->where('template', null)->missing('suggested')
         ->where('checklist.collectionShops', 0)->where('checklist.productsShown', null));
 
-    $this->actingAs($owner)->post('/app/online-store', ($this->settings)(['slug' => 'al-noor']))->assertRedirect('/app/online-store')->assertSessionHas('success');
-    expect(($this->store)($other)->slug)->toBe('al-noor')->and(($this->store)($other)->is_live)->toBeFalse();
+    $this->actingAs($owner)->postJson('/app/online-store', ($this->settings)(['slug' => 'al-noor']))
+        ->assertUnprocessable()->assertJsonPath('errors.store.0', 'Your online store is not switched on yet. Contact Switch & Save to switch it on.');
+    expect(OnlineStore::withoutCompanyScope()->where('company_id', $other->id)->exists())->toBeFalse()
+        ->and(Storage::disk('public')->allFiles())->toBe([]);
+});
+
+test('the business cannot change its store\'s look: a template sent with the save is ignored', function () {
+    OnlineStore::withoutCompanyScope()->where('company_id', $this->company->id)->update(['template' => 'butcher']);
+
+    foreach (['freshMarket', 'casino', ''] as $template) {
+        $this->actingAs($this->owner)->post('/app/online-store', ($this->settings)(['template' => $template, 'headline' => "Try {$template}"]))
+            ->assertSessionHasNoErrors()->assertRedirect('/app/online-store');
+        expect(($this->store)()->template->value)->toBe('butcher')->and(($this->store)()->headline)->toBe(trim("Try {$template}"));
+    }
+
+    $audits = AuditLog::query()->where('action', 'online_store.updated')->get();
+    expect($audits)->toHaveCount(3)
+        ->and($audits->map(fn (AuditLog $log) => $log->after['template'] ?? null)->unique()->values()->all())->toBe(['butcher']);
 });
 
 test('saving changes the store and uploads the logo and banner to the business\'s own folder with a new name', function () {
@@ -123,7 +139,7 @@ test('saving changes the store and uploads the logo and banner to the business\'
     ]))->assertRedirect('/app/online-store')->assertSessionHas('success', 'Changes saved. Customers see them now.');
 
     $store = ($this->store)();
-    expect($store->template->value)->toBe('butcher')
+    expect($store->template->value)->toBe('freshMarket')
         ->and($store->headline)->toBe('Cut to order')
         ->and($store->brand_colour)->toBe('#B42318')
         ->and($store->sections)->toBe([['key' => 'departments', 'enabled' => true], ['key' => 'hero', 'enabled' => false]])
@@ -175,7 +191,6 @@ test('settings are checked (422) and a refused save leaves no uploaded file behi
     'reserved address' => [['slug' => 'admin'], 'slug'],
     'bad address' => [['slug' => 'kirk gate!'], 'slug'],
     'no address' => [['slug' => ''], 'slug'],
-    'unknown template' => [['template' => 'casino'], 'template'],
     'colour' => [['brand_colour' => 'red'], 'brand_colour'],
     'email' => [['order_email' => 'not-an-email'], 'order_email'],
     'unknown section' => [['sections' => [['key' => 'casino', 'enabled' => true]]], 'sections.0.key'],
@@ -221,7 +236,7 @@ test('go live needs a collection shop; take offline and the taking orders switch
 
 test('company A can never read or change company B\'s store', function () {
     $b = OnlineStoreFixtures::make('Other Shop', 'other-shop');
-    app(SaveOnlineStore::class)->handle($b->company, ['slug' => 'other-shop', 'template' => 'pharmacy', 'headline' => 'B only']);
+    app(SaveOnlineStore::class)->handle($b->company, ['slug' => 'other-shop', 'template' => 'butcher', 'headline' => 'B only']);
     $bLogo = StoreImages::put($b->company, UploadedFile::fake()->image('b.png', 50, 50), StoreImages::LOGO);
     OnlineStore::withoutCompanyScope()->where('company_id', $b->company->id)->update(['logo_path' => $bLogo]);
 
@@ -231,7 +246,7 @@ test('company A can never read or change company B\'s store', function () {
     $this->actingAs($this->owner)->put('/app/online-store/taking-orders', ['on' => false]);
 
     $bStore = ($this->store)($b->company);
-    expect($bStore->headline)->toBe('B only')->and($bStore->is_live)->toBeTrue()->and($bStore->taking_orders)->toBeTrue()->and($bStore->logo_path)->toBe($bLogo)
+    expect($bStore->headline)->toBe('B only')->and($bStore->template->value)->toBe('butcher')->and($bStore->is_live)->toBeTrue()->and($bStore->taking_orders)->toBeTrue()->and($bStore->logo_path)->toBe($bLogo)
         ->and(($this->store)()->logo_path)->toBeNull();
     Storage::disk('public')->assertExists($bLogo);
     expect(StoreImages::owns($this->company, $bLogo))->toBeFalse();

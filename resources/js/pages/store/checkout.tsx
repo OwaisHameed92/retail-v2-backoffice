@@ -124,13 +124,21 @@ export default function StoreCheckout({ lines, shop, shops, days, day, slots, ur
                                 />
                             </div>
                         </div>
-                        <div aria-hidden="true" className="absolute -left-[9999px] h-px w-px overflow-hidden">
+                        {/*
+                         * Honeypot: only a bot fills it in (the server refuses the order then). People never meet it:
+                         * visually hidden, aria-hidden and inert (out of the accessibility tree and the tab order),
+                         * tabindex -1 for older browsers, and no autofill.
+                         */}
+                        <div aria-hidden="true" inert className="pointer-events-none fixed top-0 -left-[10000px] h-px w-px overflow-hidden opacity-0">
                             <label htmlFor="checkout-website">Website</label>
                             <input
                                 id="checkout-website"
+                                name={honeypot}
                                 type="text"
                                 tabIndex={-1}
                                 autoComplete="off"
+                                data-1p-ignore
+                                data-lpignore="true"
                                 value={String(form.data[honeypot] ?? '')}
                                 onChange={(e) => form.setData(honeypot, e.target.value)}
                             />

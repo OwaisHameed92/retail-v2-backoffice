@@ -3,10 +3,11 @@ import { ImagePicker } from '@/components/app/online-store/image-picker';
 import { OnlineStoreTabs } from '@/components/app/online-store/online-store-tabs';
 import { SectionsEditor } from '@/components/app/online-store/sections-editor';
 import { putSwitch, StatusPanel } from '@/components/app/online-store/status-panel';
-import { TemplatePicker } from '@/components/app/online-store/template-picker';
+import { TemplateCard } from '@/components/app/online-store/template-card';
 import { ToggleSwitch } from '@/components/app/online-store/toggle-switch';
-import { type BuilderProps, type StoreSectionValue, type TemplateKey } from '@/components/app/online-store/types';
+import { type BuilderProps, type StoreSectionValue, type StoreSettings } from '@/components/app/online-store/types';
 import { ConfirmDialog } from '@/components/shared/confirm-dialog';
+import { EmptyState } from '@/components/shared/empty-state';
 import { FormCard, FormField, FormSection } from '@/components/shared/form-section';
 import { PageHeader } from '@/components/shared/page-header';
 import { StatusBadge } from '@/components/shared/status-badge';
@@ -14,15 +15,15 @@ import { StickyFormBar } from '@/components/shared/sticky-form-bar';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import AppLayout from '@/layouts/app-layout';
 import { Head, useForm } from '@inertiajs/react';
-import { CircleCheck, CreditCard, ExternalLink, Eye, LoaderCircle, Power, Rocket } from 'lucide-react';
+import { CircleCheck, CreditCard, ExternalLink, Eye, LoaderCircle, Power, Rocket, Store } from 'lucide-react';
 import { useState } from 'react';
 
 type BuilderForm = {
     slug: string;
-    template: TemplateKey;
     headline: string;
     brand_colour: string;
     order_email: string;
@@ -33,16 +34,13 @@ type BuilderForm = {
     remove_banner: boolean;
 };
 
-function initial(props: BuilderProps): BuilderForm {
-    const { store } = props;
-
+function initial(store: StoreSettings): BuilderForm {
     return {
-        slug: store?.slug ?? props.suggested.slug,
-        template: store?.template ?? 'freshMarket',
-        headline: store?.headline ?? '',
-        brand_colour: store?.brandColour ?? '',
-        order_email: store?.orderEmail ?? props.suggested.orderEmail ?? '',
-        sections: store?.sections ?? props.sectionOptions.map((s) => ({ key: s.key, enabled: true })),
+        slug: store.slug,
+        headline: store.headline ?? '',
+        brand_colour: store.brandColour ?? '',
+        order_email: store.orderEmail ?? '',
+        sections: store.sections,
         logo: null,
         banner: null,
         remove_logo: false,
@@ -50,12 +48,35 @@ function initial(props: BuilderProps): BuilderForm {
     };
 }
 
-function Builder(props: BuilderProps) {
-    const { store, templates, canEdit } = props;
-    const form = useForm<BuilderForm>(initial(props));
+const DESCRIPTION = 'Add your logo, choose what the home page shows and go live. Products, prices and stock come from your tills.';
+
+/** No store row yet: Switch & Save switches the add-on on (and picks the look) before the business can build it. */
+function NotSwitchedOn() {
+    return (
+        <>
+            <PageHeader
+                title="Online store"
+                description={DESCRIPTION}
+                status={<StatusBadge status="draft" label="Not switched on" />}
+                tabs={<OnlineStoreTabs active="store" />}
+            />
+            <Card>
+                <EmptyState
+                    icon={Store}
+                    tone="primary"
+                    title="Your online store is not switched on yet"
+                    body="Contact Switch & Save to switch it on. We set up your store's look, then you add your logo, collection shops and products here."
+                />
+            </Card>
+        </>
+    );
+}
+
+function Builder({ store, ...props }: BuilderProps & { store: StoreSettings }) {
+    const { template, canEdit } = props;
+    const form = useForm<BuilderForm>(initial(store));
     const errors = form.errors as Record<string, string | undefined>;
     const [switching, setSwitching] = useState(false);
-    const template = templates.find((t) => t.value === form.data.template) ?? templates[0];
     const disabled = !canEdit || form.processing;
     const sectionError = Object.entries(errors).find(([key]) => key.startsWith('sections'))?.[1];
 
@@ -76,62 +97,60 @@ function Builder(props: BuilderProps) {
         <>
             <PageHeader
                 title="Online store"
-                description="Pick a look, add your logo and go live. Products, prices and stock come from your tills."
+                description={DESCRIPTION}
                 status={
                     <StatusBadge
-                        status={!store ? 'draft' : store.isLive ? 'live' : 'offline'}
-                        label={!store ? 'Not set up' : store.isLive ? 'Live' : 'Offline'}
+                        status={store.isLive ? 'live' : 'offline'}
+                        label={store.isLive ? 'Live' : 'Offline'}
                         tones={{ live: 'success', offline: 'neutral' }}
                     />
                 }
                 tabs={<OnlineStoreTabs active="store" />}
                 actions={
-                    store && (
-                        <>
-                            {store.isLive ? (
-                                <Button variant="outline" asChild>
-                                    <a href={store.address} target="_blank" rel="noopener noreferrer">
-                                        <ExternalLink />
-                                        Preview store
-                                    </a>
-                                </Button>
-                            ) : (
-                                <Button variant="outline" disabled title="The store opens once it is live">
-                                    <Eye />
+                    <>
+                        {store.isLive ? (
+                            <Button variant="outline" asChild>
+                                <a href={store.address} target="_blank" rel="noopener noreferrer">
+                                    <ExternalLink />
                                     Preview store
-                                </Button>
-                            )}
-                            {canEdit &&
-                                (store.isLive ? (
-                                    <ConfirmDialog
-                                        trigger={
-                                            <Button variant="outline" disabled={switching}>
-                                                <Power />
-                                                Take offline
-                                            </Button>
-                                        }
-                                        title="Take your store offline?"
-                                        description={`${store.address} stops opening and customers cannot place orders. Orders already placed stay on the Online orders board.`}
-                                        confirmLabel="Take offline"
-                                        destructive
-                                        onConfirm={() => setLive(false)}
-                                    />
-                                ) : (
-                                    <ConfirmDialog
-                                        trigger={
-                                            <Button disabled={switching || form.isDirty} title={form.isDirty ? 'Save your changes first' : undefined}>
-                                                <Rocket />
-                                                Go live
-                                            </Button>
-                                        }
-                                        title="Go live?"
-                                        description={`Customers can open ${store.address} and ${store.takingOrders ? 'place click & collect orders' : 'look around (orders are paused)'}. Share the address on your receipts, social media and shop window.`}
-                                        confirmLabel="Go live"
-                                        onConfirm={() => setLive(true)}
-                                    />
-                                ))}
-                        </>
-                    )
+                                </a>
+                            </Button>
+                        ) : (
+                            <Button variant="outline" disabled title="The store opens once it is live">
+                                <Eye />
+                                Preview store
+                            </Button>
+                        )}
+                        {canEdit &&
+                            (store.isLive ? (
+                                <ConfirmDialog
+                                    trigger={
+                                        <Button variant="outline" disabled={switching}>
+                                            <Power />
+                                            Take offline
+                                        </Button>
+                                    }
+                                    title="Take your store offline?"
+                                    description={`${store.address} stops opening and customers cannot place orders. Orders already placed stay on the Online orders board.`}
+                                    confirmLabel="Take offline"
+                                    destructive
+                                    onConfirm={() => setLive(false)}
+                                />
+                            ) : (
+                                <ConfirmDialog
+                                    trigger={
+                                        <Button disabled={switching || form.isDirty} title={form.isDirty ? 'Save your changes first' : undefined}>
+                                            <Rocket />
+                                            Go live
+                                        </Button>
+                                    }
+                                    title="Go live?"
+                                    description={`Customers can open ${store.address} and ${store.takingOrders ? 'place click & collect orders' : 'look around (orders are paused)'}. Share the address on your receipts, social media and shop window.`}
+                                    confirmLabel="Go live"
+                                    onConfirm={() => setLive(true)}
+                                />
+                            ))}
+                    </>
                 }
             />
 
@@ -145,15 +164,11 @@ function Builder(props: BuilderProps) {
 
             <form onSubmit={submit} className="grid gap-6">
                 <FormCard>
-                    <FormSection title="Look" description="Each template has the sections that kind of shop needs. You can change it at any time.">
-                        <TemplatePicker
-                            templates={templates}
-                            value={form.data.template}
-                            onChange={(v) => form.setData('template', v)}
-                            disabled={disabled}
-                        />
-                        {errors.template && <p className="text-danger-foreground text-[13px]">{errors.template}</p>}
-                    </FormSection>
+                    {template && (
+                        <FormSection title="Look" description="The design of your store's pages.">
+                            <TemplateCard template={template} />
+                        </FormSection>
+                    )}
 
                     <FormSection
                         title="Store address"
@@ -196,7 +211,7 @@ function Builder(props: BuilderProps) {
                         <FormField id="logo" label="Logo" optional error={errors.logo}>
                             <ImagePicker
                                 label="Logo"
-                                current={store?.logoUrl ?? null}
+                                current={store.logoUrl}
                                 file={form.data.logo}
                                 removed={form.data.remove_logo}
                                 onPick={(f) => form.setData('logo', f)}
@@ -219,13 +234,13 @@ function Builder(props: BuilderProps) {
                             <ImagePicker
                                 label="Banner photo"
                                 shape="wide"
-                                current={store?.bannerUrl ?? null}
+                                current={store.bannerUrl}
                                 file={form.data.banner}
                                 removed={form.data.remove_banner}
                                 onPick={(f) => form.setData('banner', f)}
                                 onRemove={(r) => form.setData('remove_banner', r)}
-                                fallback={template.photo}
-                                fallbackNote={`${template.label} photo`}
+                                fallback={template?.photo}
+                                fallbackNote={template ? `${template.label} photo` : undefined}
                                 error={errors.banner}
                                 disabled={disabled}
                                 help="A wide photo of your shop or products, at least 1600 pixels wide. Without one, the template's photo is used."
@@ -318,16 +333,14 @@ function Builder(props: BuilderProps) {
                     </FormSection>
                 </FormCard>
 
-                {canEdit && (form.isDirty || !store) && (
-                    <StickyFormBar message={store ? 'You have unsaved changes.' : 'Save to create your store. Nobody sees it until you go live.'}>
-                        {store && (
-                            <Button type="button" variant="outline" disabled={form.processing} onClick={() => form.reset()}>
-                                Discard changes
-                            </Button>
-                        )}
+                {canEdit && form.isDirty && (
+                    <StickyFormBar message="You have unsaved changes.">
+                        <Button type="button" variant="outline" disabled={form.processing} onClick={() => form.reset()}>
+                            Discard changes
+                        </Button>
                         <Button type="submit" disabled={form.processing}>
                             {form.processing && <LoaderCircle className="animate-spin" />}
-                            {store ? 'Save changes' : 'Create store'}
+                            Save changes
                         </Button>
                     </StickyFormBar>
                 )}
@@ -336,7 +349,10 @@ function Builder(props: BuilderProps) {
     );
 }
 
-/** OS-3: the online store builder (template, address, brand, sections, order email, payments, go live). */
+/**
+ * OS-3: the online store builder (address, brand, sections, order email, payments, go live). The look is shown read
+ * only: Switch & Save sets it when switching the add-on on. No store yet → "not switched on".
+ */
 export default function OnlineStoreBuilder(props: BuilderProps) {
     // A fresh form after each save, so "unsaved changes" compares with what is saved now (the switches keep edits).
     const s = props.store;
@@ -345,7 +361,7 @@ export default function OnlineStoreBuilder(props: BuilderProps) {
     return (
         <AppLayout>
             <Head title="Online store" />
-            <Builder key={key} {...props} />
+            {s ? <Builder key={key} {...props} store={s} /> : <NotSwitchedOn />}
         </AppLayout>
     );
 }

@@ -1,5 +1,6 @@
 import { cn } from '@/lib/utils';
 import { initialOf, tintFor } from './format';
+import { useTemplate } from './theme';
 
 /**
  * A product's online photo, or a clean placeholder tile: the name's first letter on a soft tint (no stock images,
@@ -21,6 +22,8 @@ export function ProductPhoto({
     alt?: string;
     size?: 'sm' | 'md' | 'lg';
 }) {
+    const template = useTemplate();
+
     if (url) {
         return (
             <img
@@ -39,7 +42,7 @@ export function ProductPhoto({
             aria-label={alt === '' ? undefined : (alt ?? name)}
             aria-hidden={alt === '' ? true : undefined}
             className={cn('flex aspect-square w-full items-center justify-center', rounded, className)}
-            style={{ backgroundColor: tintFor(name) }}
+            style={{ backgroundColor: tintFor(name, template) }}
         >
             <span
                 className={cn(

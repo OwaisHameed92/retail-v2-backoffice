@@ -27,11 +27,8 @@ export default function OnlineStoreShops({ hasStore, shops, slotOptions }: Shops
                     <TriangleAlert />
                     <AlertDescription>
                         <span>
-                            Set up your store first: choose its look and address on the{' '}
-                            <Link href={route('app.online-store.edit')} className="text-primary font-medium hover:underline">
-                                Store
-                            </Link>{' '}
-                            tab and save. Then add the shops customers collect from.
+                            Your online store is not switched on yet. Contact Switch &amp; Save to switch it on, then add the shops customers collect
+                            from.
                         </span>
                     </AlertDescription>
                 </Alert>

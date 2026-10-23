@@ -6,20 +6,24 @@ import { onColour } from './format';
 import { StoreFooter } from './store-footer';
 import { StoreHeader } from './store-header';
 import { StoreNotices } from './store-notices';
+import { templateOf } from './theme';
 import { type StorePageProps } from './types';
 
 /**
- * The public store's frame (OS-2, Fresh Market): the shop's own brand (logo, colour), never the portal's. Skip link,
- * header with search and basket, departments, notices, the page, footer, and a bottom bar on phones.
+ * The public store's frame (OS-2, OS-5): the shop's own brand (logo, colour) and template (`data-template` swaps the
+ * fonts and colours in store.css), never the portal's. Skip link, header with search and basket, departments,
+ * notices, the page, footer, and a bottom bar on phones. The brand colour is set as `--color-brand` here (the store's
+ * colour, else the template's default from the server).
  */
 export function StoreLayout({ title, children, active }: { title: string; children: ReactNode; active?: 'home' | 'search' | 'basket' }) {
     const { store, basket } = usePage<StorePageProps>().props;
+    const template = templateOf(store?.template);
     const brand = store?.brand ?? '#0B4A34';
-    const style = { '--brand': brand, '--on-brand': onColour(brand) } as CSSProperties;
+    const style = { '--color-brand': brand, '--color-on-brand': onColour(brand) } as CSSProperties;
     const pageTitle = store ? (title === store.name ? title : `${title} · ${store.name}`) : title;
 
     return (
-        <div style={style} className="bg-paper text-ink flex min-h-screen flex-col font-sans">
+        <div style={style} data-template={template} className="bg-paper text-ink flex min-h-screen flex-col font-sans">
             <Head title={pageTitle} />
             <a
                 href="#main"
@@ -44,7 +48,7 @@ export function StoreLayout({ title, children, active }: { title: string; childr
             {store && (
                 <nav
                     aria-label="Shop"
-                    className="border-line fixed inset-x-0 bottom-0 z-40 grid grid-cols-3 border-t bg-white/95 px-2 pt-1.5 pb-[max(0.5rem,env(safe-area-inset-bottom))] backdrop-blur md:hidden"
+                    className="border-line fixed inset-x-0 bottom-0 z-40 grid grid-cols-3 border-t bg-white/95 px-[max(0.5rem,env(safe-area-inset-left))] pt-1.5 pb-[max(0.5rem,env(safe-area-inset-bottom))] backdrop-blur md:hidden"
                 >
                     <BottomLink
                         href={store.urls.home}

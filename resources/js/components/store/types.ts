@@ -8,13 +8,17 @@ export interface StoreDepartment {
     url: string;
 }
 
+/** The store's look (App\Domain\OnlineStore\Enums\StoreTemplate). Unknown values are drawn as Fresh Market. */
+export type StoreTemplate = 'freshMarket' | 'butcher';
+
 export interface StoreInfo {
     name: string;
     initials: string;
     logoUrl: string | null;
     brand: string;
+    template: StoreTemplate;
     takingOrders: boolean;
-    shop: { id: string; name: string } | null;
+    shop: { id: string; name: string; address: string; phone: string | null } | null;
     shopCount: number;
     departments: StoreDepartment[];
     urls: { home: string; search: string; basket: string; basketAdd: string; checkout: string };
