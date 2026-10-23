@@ -2,6 +2,7 @@
 
 namespace App\Domain\Pharmacy\Support;
 
+use App\Domain\OnlineStore\Support\OnlineStoreSwitch;
 use App\Domain\Shared\Country\CountryModules;
 use App\Domain\Tenancy\Enums\Ability;
 use App\Domain\Tenancy\Enums\BusinessType;
@@ -58,6 +59,8 @@ final class ServiceModules
         return array_values(array_filter($abilities, fn (string $ability) => match ($ability) {
             Ability::PharmacyView->value => self::pharmacy($company),
             Ability::ParcelsView->value => self::parcels($company),
+            // The online store's menu items (OS-3, OS-4) only while the store is available (ONLINE_STORE + country flag).
+            Ability::StoreManage->value => OnlineStoreSwitch::enabled(),
             default => true,
         }));
     }

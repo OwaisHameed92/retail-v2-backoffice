@@ -27,6 +27,9 @@ use App\Http\Controllers\App\NewsController;
 use App\Http\Controllers\App\NewsTitleController;
 use App\Http\Controllers\App\NotificationController;
 use App\Http\Controllers\App\NotificationSettingsController;
+use App\Http\Controllers\App\OnlineProductController;
+use App\Http\Controllers\App\OnlineStoreController;
+use App\Http\Controllers\App\OnlineStoreShopController;
 use App\Http\Controllers\App\ParcelController;
 use App\Http\Controllers\App\PharmacyController;
 use App\Http\Controllers\App\PortalInvitationController;
@@ -53,6 +56,7 @@ use App\Http\Controllers\App\SwitchCompanyController;
 use App\Http\Controllers\App\SyncConflictController;
 use App\Http\Controllers\App\TillListController;
 use App\Http\Controllers\App\TransferController;
+use App\Http\Middleware\EnsureOnlineStore;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth:web', 'verified', 'company', 'two-factor:web'])->group(function () {
@@ -472,6 +476,22 @@ Route::middleware(['auth:web', 'verified', 'company', 'two-factor:web'])->group(
         Route::get('{anomaly}', [AnomalyController::class, 'show'])->name('show')->whereUlid('anomaly');
         Route::put('{anomaly}/status', [AnomalyController::class, 'status'])->name('status')->whereUlid('anomaly')->middleware('throttle:60,1');
         Route::post('{anomaly}/explain', [AnomalyController::class, 'explain'])->name('explain')->whereUlid('anomaly')->middleware(['company.can:ai.use', 'throttle:10,1']);
+    });
+
+    // Online store OS-3 (docs/online-store.md): store builder, collection shops and products shown online. store.manage;
+    // 404 while the online store is off (EnsureOnlineStore). A one-shop user may look; they change only their own shop.
+    Route::prefix('online-store')->name('online-store.')->middleware([EnsureOnlineStore::class, 'company.can:store.manage'])->group(function () {
+        Route::get('/', [OnlineStoreController::class, 'edit'])->name('edit');
+        Route::get('shops', [OnlineStoreShopController::class, 'index'])->name('shops');
+        Route::get('products', [OnlineProductController::class, 'index'])->name('products');
+        Route::middleware('throttle:60,1')->group(function () {
+            Route::post('/', [OnlineStoreController::class, 'update'])->name('update');
+            Route::put('live', [OnlineStoreController::class, 'live'])->name('live');
+            Route::put('taking-orders', [OnlineStoreController::class, 'takingOrders'])->name('taking-orders');
+            Route::put('shops/{branch}', [OnlineStoreShopController::class, 'update'])->name('shops.update')->whereAlphaNumeric('branch');
+            Route::post('products/visibility', [OnlineProductController::class, 'visibility'])->name('products.visibility');
+            Route::post('products/{product}', [OnlineProductController::class, 'update'])->name('products.update')->whereAlphaNumeric('product');
+        });
     });
 
     // Module 4.8: reports (sales, products, refunds, discounts, VAT, payments, staff, hours, stock, shifts and Z), each

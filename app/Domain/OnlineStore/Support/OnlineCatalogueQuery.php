@@ -9,6 +9,7 @@ use App\Domain\TillData\Enums\AgeRule;
 use App\Domain\TillData\Enums\MedicineClassificationClass;
 use App\Domain\TillData\Models\Product;
 use Carbon\CarbonImmutable;
+use Closure;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Database\Query\JoinClause;
@@ -29,9 +30,31 @@ use Illuminate\Database\Query\JoinClause;
  */
 final class OnlineCatalogueQuery
 {
-    /** Product flags that keep a product off line (null counts as false). */
-    private const NEVER_FLAGS = ['is_age_restricted', 'is_alcohol', 'is_tobacco', 'is_lottery', 'is_knife', 'is_banned', 'vape_duty_applies',
-        'is_open_price', 'is_variant_parent'];
+    /**
+     * Why a product is not shown, as the store builder's products page says it (OS-3), in the order the rules are
+     * checked. Every key is one rule of base().
+     */
+    public const REASONS = [
+        'inactive' => 'Not active on the till',
+        'archived' => 'Archived or merged',
+        'hidden' => 'Hidden by you',
+        'ageRestricted' => 'Age-restricted',
+        'medicine' => 'Pharmacy or prescription medicine',
+        'alcohol' => 'Alcohol',
+        'tobacco' => 'Tobacco',
+        'lottery' => 'Lottery',
+        'knife' => 'Knife or blade',
+        'banned' => 'Banned item',
+        'vape' => 'Vape',
+        'openPrice' => 'Open price (no shelf price)',
+        'variantParent' => 'Has variants (the variants are shown instead)',
+        'notAtShop' => 'Switched off at this shop',
+        'noPrice' => 'No price at this shop',
+    ];
+
+    /** Product flags that keep a product off line (null counts as false), by the reason they give. */
+    private const NEVER_FLAGS = ['alcohol' => 'is_alcohol', 'tobacco' => 'is_tobacco', 'lottery' => 'is_lottery', 'knife' => 'is_knife',
+        'banned' => 'is_banned', 'vape' => 'vape_duty_applies', 'openPrice' => 'is_open_price', 'variantParent' => 'is_variant_parent'];
 
     /**
      * Products the store shows at this shop (no select yet: count it, or call select()).
@@ -40,32 +63,105 @@ final class OnlineCatalogueQuery
      */
     public static function base(OnlineStoreShop $shop, ?CarbonImmutable $at = null): Builder
     {
-        $companyId = $shop->company_id;
-        [$price, $bindings] = self::price($shop, $at);
+        $query = self::joined($shop);
 
-        $query = Product::query()
-            ->where('products.company_id', $companyId)
-            ->where('products.is_active', true)
-            ->whereNull('products.archived_at')
-            ->whereNull('products.merged_into_product_id')
-            ->leftJoin('online_store_products as osp', fn (JoinClause $j) => $j->on('osp.product_id', '=', 'products.id')->where('osp.company_id', '=', $companyId))
-            ->leftJoin('categories as cat', fn (JoinClause $j) => $j->on('cat.id', '=', 'products.category_id')->where('cat.company_id', '=', $companyId))
-            ->where(fn (Builder $q) => $q->whereNull('osp.hidden')->orWhere('osp.hidden', false))
-            ->where(fn (Builder $q) => $q->whereNull('products.age_rule')->orWhere('products.age_rule', AgeRule::None->value))
-            ->where(fn (Builder $q) => $q->whereNull('cat.age_rule_default')->orWhere('cat.age_rule_default', AgeRule::None->value))
-            ->whereNotExists(fn (QueryBuilder $q) => $q->selectRaw('1')->from('medicine_classifications as mc')
-                ->whereColumn('mc.product_id', 'products.id')->where('mc.company_id', $companyId)->whereNull('mc.deleted_at')
-                ->whereIn('mc.class', [MedicineClassificationClass::PharmacyOnly->value, MedicineClassificationClass::PrescriptionOnly->value]))
-            ->whereNotExists(fn (QueryBuilder $q) => $q->selectRaw('1')->from('branch_products as bpi')
-                ->whereColumn('bpi.product_id', 'products.id')->where('bpi.company_id', $companyId)->where('bpi.branch_id', $shop->branch_id)
-                ->whereNull('bpi.deleted_at')->where('bpi.is_active', false))
-            ->whereRaw("{$price} > 0", $bindings);
-
-        foreach (self::NEVER_FLAGS as $flag) {
-            $query->where(fn (Builder $q) => $q->whereNull("products.{$flag}")->orWhere("products.{$flag}", false));
+        foreach (self::rules($shop, $at) as $rule) {
+            $rule($query);
         }
 
         return $query;
+    }
+
+    /**
+     * Why each of these products of the business is not shown at the shop: product id => the keys of every rule it
+     * fails (REASONS order), an empty list when it is shown. Read only: one query for the ids, then one per rule for
+     * the products not shown (callers pass one page of ids).
+     *
+     * @param  list<string>  $ids
+     * @return array<string, list<string>>
+     */
+    public static function exclusions(OnlineStoreShop $shop, array $ids, ?CarbonImmutable $at = null): array
+    {
+        $out = array_fill_keys($ids, []);
+        $shown = self::base($shop, $at)->whereIn('products.id', $ids)->pluck('products.id')->all();
+        $rest = array_values(array_diff($ids, $shown));
+
+        if ($rest === []) {
+            return $out;
+        }
+
+        foreach (self::rules($shop, $at) as $reason => $rule) {
+            $query = self::joined($shop)->whereIn('products.id', $rest);
+            $rule($query);
+
+            foreach (array_diff($rest, $query->pluck('products.id')->all()) as $id) {
+                $out[$id][] = $reason;
+            }
+        }
+
+        return $out;
+    }
+
+    /**
+     * The shop's shelf price of a product row (`products` in the query): its live shop price for the base unit, else
+     * the business sell price. SQL and its bindings.
+     *
+     * @return array{0: string, 1: list<string>}
+     */
+    public static function shelfPrice(OnlineStoreShop $shop, ?CarbonImmutable $at = null): array
+    {
+        return self::price($shop, $at);
+    }
+
+    /**
+     * The business's products with the joins the rules read.
+     *
+     * @return Builder<Product>
+     */
+    private static function joined(OnlineStoreShop $shop): Builder
+    {
+        $companyId = $shop->company_id;
+
+        return Product::query()
+            ->where('products.company_id', $companyId)
+            ->leftJoin('online_store_products as osp', fn (JoinClause $j) => $j->on('osp.product_id', '=', 'products.id')->where('osp.company_id', '=', $companyId))
+            ->leftJoin('categories as cat', fn (JoinClause $j) => $j->on('cat.id', '=', 'products.category_id')->where('cat.company_id', '=', $companyId));
+    }
+
+    /**
+     * Each rule keeps the products that pass it (on a joined() query), keyed by the reason a product fails it.
+     *
+     * @return array<string, Closure(Builder<Product>): mixed>
+     */
+    private static function rules(OnlineStoreShop $shop, ?CarbonImmutable $at): array
+    {
+        $companyId = $shop->company_id;
+        [$price, $bindings] = self::price($shop, $at);
+        $off = fn (string $column) => fn (Builder $q) => $q->where(fn (Builder $w) => $w->whereNull($column)->orWhere($column, false));
+
+        $rules = [
+            'inactive' => fn (Builder $q) => $q->where('products.is_active', true),
+            'archived' => fn (Builder $q) => $q->whereNull('products.archived_at')->whereNull('products.merged_into_product_id'),
+            'hidden' => $off('osp.hidden'),
+            'ageRestricted' => fn (Builder $q) => $q
+                ->where(fn (Builder $w) => $w->whereNull('products.age_rule')->orWhere('products.age_rule', AgeRule::None->value))
+                ->where(fn (Builder $w) => $w->whereNull('cat.age_rule_default')->orWhere('cat.age_rule_default', AgeRule::None->value))
+                ->where(fn (Builder $w) => $w->whereNull('products.is_age_restricted')->orWhere('products.is_age_restricted', false)),
+            'medicine' => fn (Builder $q) => $q->whereNotExists(fn (QueryBuilder $s) => $s->selectRaw('1')->from('medicine_classifications as mc')
+                ->whereColumn('mc.product_id', 'products.id')->where('mc.company_id', $companyId)->whereNull('mc.deleted_at')
+                ->whereIn('mc.class', [MedicineClassificationClass::PharmacyOnly->value, MedicineClassificationClass::PrescriptionOnly->value])),
+        ];
+
+        foreach (self::NEVER_FLAGS as $reason => $flag) {
+            $rules[$reason] = $off("products.{$flag}");
+        }
+
+        return $rules + [
+            'notAtShop' => fn (Builder $q) => $q->whereNotExists(fn (QueryBuilder $s) => $s->selectRaw('1')->from('branch_products as bpi')
+                ->whereColumn('bpi.product_id', 'products.id')->where('bpi.company_id', $companyId)->where('bpi.branch_id', $shop->branch_id)
+                ->whereNull('bpi.deleted_at')->where('bpi.is_active', false)),
+            'noPrice' => fn (Builder $q) => $q->whereRaw("{$price} > 0", $bindings),
+        ];
     }
 
     /**
