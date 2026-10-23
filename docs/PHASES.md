@@ -161,7 +161,7 @@ and 24 h retries. UK only (country flag `partnerApi`, off on PK). Status: done.
 | OS-1 | Data, actions, storefront catalogue query, collect order flow (no UI): `app/Domain/OnlineStore`, ability `store.manage` (owner, manager), country flag `onlineStore` (server side only). Open-price products, products switched off at the shop and age-restricted categories are not shown; no stock line counts as 0; statuses go in strict order. The business add-on flag and the cloud-sync check come with OS-6 | done |
 | OS-2 | Public store, Fresh Market template: home, department, search, product, basket, checkout (collect, pay at shop), order page | todo (E2) |
 | OS-3 | Portal store builder: template, brand, sections, collection shops and slots, product visibility, photos | todo (E2) |
-| OS-4 | Portal online orders board, staff and customer emails, notifications | todo (E2) |
+| OS-4 | Portal online orders board, staff and customer emails, notifications: `/app/online-orders` (shop/day filter, 4 columns, stats, 30 s refresh, cancel needs a reason), order page + printable pick list, queued listeners (new-order mail to `order_email` → first owner → company email, bell for `store.manage`, customer mails in the shop's name, link once `store.order` exists), sidebar count. Order mails are never held | done |
 | OS-5 | Butcher and Pharmacy templates, mobile polish | todo (E3) |
 | OS-6 | Admin add-on switch, £20 + VAT default with per-business price, billing line | todo (E3) |
 
