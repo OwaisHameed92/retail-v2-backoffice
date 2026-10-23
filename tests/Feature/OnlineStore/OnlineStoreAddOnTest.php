@@ -52,7 +52,7 @@ test('switching on makes the store with the chosen template, not live, at the de
         ->and($store->is_live)->toBeFalse()->and($store->taking_orders)->toBeFalse()
         ->and($store->monthly_price)->toBeNull()
         ->and(AuditLog::query()->where('action', 'online_store.created')->count())->toBe(1)
-        ->and(AuditLog::query()->where('action', 'online_store.addon_updated')->sole()->after)->toBe(['addon_on' => true, 'monthly_price' => null, 'template' => 'butcher']);
+        ->and(AuditLog::query()->where('action', 'online_store.addon_updated')->sole()->after)->toEqual(['addon_on' => true, 'monthly_price' => null, 'template' => 'butcher']);
 });
 
 test('the price and template can change later (audited); off keeps the store row; the slug avoids one taken', function () {
