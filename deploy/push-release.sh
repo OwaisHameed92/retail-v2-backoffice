@@ -42,6 +42,8 @@ chmod 755 "$R"   # mktemp -d made the packed root 0700: Nginx (www-data) must tr
 cd "$R"
 sudo -u "$APP_USER" -H composer install --no-dev --optimize-autoloader --no-interaction --no-progress -q
 sudo -u "$APP_USER" php artisan migrate --force
+# Online store photos and logos live on the public disk (shared storage): serve them from public/storage, as deploy.sh does.
+sudo -u "$APP_USER" php artisan storage:link --quiet || true
 sudo -u "$APP_USER" php artisan optimize >/dev/null
 ln -sfn "$R" "$APP_ROOT/current.new" && mv -Tf "$APP_ROOT/current.new" "$APP_ROOT/current"
 systemctl reload php8.4-fpm
