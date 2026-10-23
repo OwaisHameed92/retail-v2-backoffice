@@ -17,6 +17,7 @@ use App\Domain\Licensing\Listeners\IssueLicenceForNewTill;
 use App\Domain\Licensing\Listeners\SendWelcomeEmailWithKeys;
 use App\Domain\Licensing\Listeners\SuspendLicenceOfDeactivatedTill;
 use App\Domain\Licensing\Listeners\UnsuspendLicenceOfReactivatedTill;
+use App\Domain\OnlineStore\Support\StoreRateLimits;
 use App\Domain\Partners\Listeners\PartnerWebhookListeners;
 use App\Domain\Partners\Support\PartnerRateLimit;
 use App\Domain\Shared\Country\Country;
@@ -28,6 +29,7 @@ use App\Domain\Tenancy\Events\RegisterAdded;
 use App\Domain\Tenancy\Events\RegisterDeactivated;
 use App\Domain\Tenancy\Events\RegisterReactivated;
 use App\Domain\Tenancy\Events\TenantCreated;
+use App\Http\Support\Store\StorePages;
 use Illuminate\Mail\Markdown;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Event;
@@ -93,6 +95,9 @@ class AppServiceProvider extends ServiceProvider
         // Handheld (PDA) API: its named limiters, and the `handheld` guard whose user AuthenticateHandheldToken sets
         // for the call (so RecordAudit names the handheld user). It never signs anyone in by itself.
         HandheldRateLimits::register();
+
+        // Public online store (OS-2): its named limiters, answering 429 with the store's own page.
+        StoreRateLimits::register(StorePages::tooMany(...));
         Auth::viaRequest('handheld-token', fn () => null);
     }
 }

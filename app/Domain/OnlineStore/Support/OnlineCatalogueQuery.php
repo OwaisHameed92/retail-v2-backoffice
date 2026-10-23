@@ -2,6 +2,7 @@
 
 namespace App\Domain\OnlineStore\Support;
 
+use App\Domain\OnlineStore\Data\CatalogueFilters;
 use App\Domain\OnlineStore\Data\CatalogueItem;
 use App\Domain\OnlineStore\Models\OnlineStoreShop;
 use App\Domain\Shared\Support\Money;
@@ -86,6 +87,48 @@ final class OnlineCatalogueQuery
             ->selectRaw("{$price} as online_price", $bindings)
             ->selectRaw($line('is_stock_tracked').' as shop_tracked', [$shop->company_id, $shop->branch_id])
             ->selectRaw('COALESCE('.$line('qty_on_hand').', 0) as shop_qty', [$shop->company_id, $shop->branch_id]);
+    }
+
+    /**
+     * The public store's list filters (OS-2): only products orderable now (not tracked, or tracked with stock at the
+     * shop, as item() decides) and a price range on the shop's price (the bound limit is cast, so SQLite compares
+     * numbers, not text).
+     *
+     * @param  Builder<Product>  $query
+     * @return Builder<Product>
+     */
+    public static function filter(Builder $query, OnlineStoreShop $shop, CatalogueFilters $filters, ?CarbonImmutable $at = null): Builder
+    {
+        [$price, $bindings] = self::price($shop, $at);
+        $line = fn (string $column) => "(select bpf.{$column} from branch_products bpf where bpf.product_id = products.id and bpf.company_id = ? "
+            .'and bpf.branch_id = ? and bpf.deleted_at is null order by bpf.id limit 1)';
+        $shopBindings = [$shop->company_id, $shop->branch_id];
+
+        return $query
+            ->when($filters->inStockOnly, fn (Builder $q) => $q->whereRaw(
+                '(COALESCE('.$line('is_stock_tracked').', products.track_stock, 0) = 0 OR COALESCE('.$line('qty_on_hand').', 0) > 0)',
+                [...$shopBindings, ...$shopBindings],
+            ))
+            ->when($filters->minPrice !== null, fn (Builder $q) => $q->whereRaw("{$price} >= CAST(? AS DECIMAL(12,2))", [...$bindings, $filters->minPrice]))
+            ->when($filters->maxPrice !== null, fn (Builder $q) => $q->whereRaw("{$price} <= CAST(? AS DECIMAL(12,2))", [...$bindings, $filters->maxPrice]));
+    }
+
+    /**
+     * The list's order (after select(), which names the price `online_price`); the id breaks ties so pages never
+     * overlap.
+     *
+     * @param  Builder<Product>  $query
+     * @return Builder<Product>
+     */
+    public static function order(Builder $query, CatalogueFilters $filters): Builder
+    {
+        $sorted = match ($filters->sort) {
+            CatalogueFilters::SORT_PRICE_ASC => $query->orderBy('online_price')->orderBy('products.name'),
+            CatalogueFilters::SORT_PRICE_DESC => $query->orderByDesc('online_price')->orderBy('products.name'),
+            default => $query->orderBy('products.name'),
+        };
+
+        return $sorted->orderBy('products.id');
     }
 
     /** One selected row as the store shows it. */

@@ -2,6 +2,7 @@
 
 namespace App\Domain\OnlineStore\Queries;
 
+use App\Domain\OnlineStore\Data\CatalogueFilters;
 use App\Domain\OnlineStore\Data\CatalogueItem;
 use App\Domain\OnlineStore\Data\CataloguePage;
 use App\Domain\OnlineStore\Models\OnlineStore;
@@ -53,23 +54,28 @@ final class StorefrontCatalogue
         });
     }
 
-    /** One page of products, by name: optionally a search (part of the name or brand, a code prefix or an exact barcode) and a department. */
-    public function products(OnlineStore $store, OnlineStoreShop $shop, ?string $search = null, ?string $departmentId = null, int $page = 1, int $perPage = self::PER_PAGE): CataloguePage
+    /**
+     * One page of products, by name: optionally a search (part of the name or brand, a code prefix or an exact
+     * barcode) and a department. `$filters` (OS-2, the public store's lists): sort by price, in stock only, price range.
+     */
+    public function products(OnlineStore $store, OnlineStoreShop $shop, ?string $search = null, ?string $departmentId = null, int $page = 1, int $perPage = self::PER_PAGE, ?CatalogueFilters $filters = null): CataloguePage
     {
         $page = max(1, $page);
         $perPage = min(self::MAX_PER_PAGE, max(1, $perPage));
+        $filters ??= new CatalogueFilters;
 
         if (! self::belongs($store, $shop)) {
             return new CataloguePage([], 0, $page, $perPage);
         }
 
-        return StoreScope::run($store, function () use ($store, $shop, $search, $departmentId, $page, $perPage): CataloguePage {
+        return StoreScope::run($store, function () use ($store, $shop, $search, $departmentId, $page, $perPage, $filters): CataloguePage {
             $query = OnlineCatalogueQuery::base($shop)
                 ->when($departmentId !== null && $departmentId !== '', fn (Builder $q) => $q->where('products.department_id', $departmentId))
                 ->when(self::term($search) !== null, fn (Builder $q) => self::search($q, (string) self::term($search), $store->company_id));
+            OnlineCatalogueQuery::filter($query, $shop, $filters);
             $total = (clone $query)->count();
 
-            $rows = OnlineCatalogueQuery::select($query, $shop)->orderBy('products.name')->orderBy('products.id')
+            $rows = OnlineCatalogueQuery::order(OnlineCatalogueQuery::select($query, $shop), $filters)
                 ->forPage($page, $perPage)->get();
 
             return new CataloguePage($rows->map(fn (Product $row) => OnlineCatalogueQuery::item($row))->values()->all(), $total, $page, $perPage);

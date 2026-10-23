@@ -20,7 +20,8 @@ use Illuminate\Support\Facades\Route;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
-        web: __DIR__.'/../routes/web.php',
+        // The public online store first (OS-2): on its own host, `/{slug}` must win over the portal's pages.
+        web: [__DIR__.'/../routes/store.php', __DIR__.'/../routes/web.php'],
         api: __DIR__.'/../routes/api.php',
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
