@@ -5,6 +5,7 @@ namespace App\Domain\OnlineStore\Support;
 use App\Domain\Notifications\Support\AlertInbox;
 use App\Domain\Notifications\Support\AlertLinks;
 use App\Domain\OnlineStore\Mail\OnlineOrderMailData;
+use App\Domain\OnlineStore\Mail\StoreMailIdentity;
 use App\Domain\OnlineStore\Models\OnlineOrder;
 use App\Domain\OnlineStore\Models\OnlineOrderLine;
 use App\Domain\OnlineStore\Models\OnlineStore;
@@ -43,7 +44,7 @@ final class OnlineOrderMessages
         }
 
         $this->tenancy->runAs($company, function (Company $company) use ($orderId, $send): void {
-            $order = OnlineOrder::query()->with(['lines', 'branch:id,name,address,town,postcode'])->where('company_id', $company->id)->find($orderId);
+            $order = OnlineOrder::query()->with(['lines', 'branch:id,name,address,town,postcode,phone'])->where('company_id', $company->id)->find($orderId);
             $store = $order === null ? null : OnlineStore::query()->where('company_id', $company->id)->find($order->online_store_id);
 
             if ($order !== null && $store !== null) {
@@ -52,12 +53,14 @@ final class OnlineOrderMessages
         });
     }
 
-    /** The shop's order address: the store's order email, else the business owner's sign-in email, else the business email. */
+    /**
+     * The shop's order address: the store's order email, else the business's contact email (OSA-14). Never a user's
+     * sign-in email: this address gets the new orders and is the Reply-To customers see. Null = no email to the shop
+     * (the board and bell entries still show the order).
+     */
     public function shopAddress(OnlineStore $store, Company $company): ?string
     {
-        $owner = $company->owners()->orderBy('users.id')->value('users.email');
-
-        foreach ([$store->order_email, $owner, $company->email] as $email) {
+        foreach ([$store->order_email, $company->email] as $email) {
             if (is_string($email) && filter_var(trim($email), FILTER_VALIDATE_EMAIL)) {
                 return trim($email);
             }
@@ -69,6 +72,8 @@ final class OnlineOrderMessages
     public function mailData(OnlineOrder $order, OnlineStore $store, Company $company, ?string $replyTo, bool $forCustomer): OnlineOrderMailData
     {
         $branch = $order->branch;
+        // OS-10: a customer email is in the store's own name and look, with its own Reply-To (Emails tab).
+        $settings = $forCustomer ? StoreMailIdentity::settings($store) : null;
         $address = array_filter([$branch->address, $branch->town, $branch->postcode], fn (?string $p) => $p !== null && trim($p) !== '');
 
         return new OnlineOrderMailData(
@@ -89,11 +94,13 @@ final class OnlineOrderMessages
                 'lineTotal' => $line->line_total,
             ])->values()->all(),
             itemsTotal: $order->items_total,
-            replyTo: $replyTo,
+            replyTo: $forCustomer ? StoreMailIdentity::replyTo($settings, $replyTo) : $replyTo,
             orderUrl: $forCustomer && Route::has('store.order') ? app(StoreLinks::class)->orderPage($order) : null,
             portalUrl: $forCustomer ? null : self::portalUrl($order),
             cancelReason: $order->cancel_reason,
             companyId: $company->id,
+            brand: $forCustomer ? StoreMailIdentity::brand($store, $company, $settings, $branch) : null,
+            senderName: $forCustomer ? StoreMailIdentity::senderName($company, $settings) : null,
         );
     }
 

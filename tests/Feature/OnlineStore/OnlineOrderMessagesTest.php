@@ -79,13 +79,25 @@ test('accountants, staff and another shop\'s manager get no bell entry', functio
     expect($users)->toContain($leeds->id)->not->toContain($accountant->id)->not->toContain($staff->id)->not->toContain($bradford->id);
 });
 
-test('without an order email the shop email goes to the business owner', function () {
+test('without an order email the shop email goes to the business email, never a sign-in email (OSA-14)', function () {
     OnlineStore::withoutCompanyScope()->whereKey($this->f->store->id)->update(['order_email' => null]);
+    $this->f->company->forceFill(['email' => 'hello@kirkgate.example.com'])->save();
 
     ($this->place)();
 
-    Mail::assertQueued(NewOnlineOrderMail::class, fn (NewOnlineOrderMail $mail) => $mail->hasTo($this->owner->email));
-    Mail::assertQueued(OnlineOrderReceivedMail::class, fn (OnlineOrderReceivedMail $mail) => $mail->hasReplyTo($this->owner->email));
+    Mail::assertQueued(NewOnlineOrderMail::class, fn (NewOnlineOrderMail $mail) => $mail->hasTo('hello@kirkgate.example.com') && ! $mail->hasTo($this->owner->email));
+    Mail::assertQueued(OnlineOrderReceivedMail::class, fn (OnlineOrderReceivedMail $mail) => $mail->hasReplyTo('hello@kirkgate.example.com') && ! $mail->hasReplyTo($this->owner->email));
+});
+
+test('without an order email or a business email nothing goes to the shop and customers get no reply-to (OSA-14)', function () {
+    OnlineStore::withoutCompanyScope()->whereKey($this->f->store->id)->update(['order_email' => null]);
+    $this->f->company->forceFill(['email' => null])->save();
+
+    ($this->place)();
+
+    Mail::assertNotQueued(NewOnlineOrderMail::class);
+    Mail::assertQueued(OnlineOrderReceivedMail::class, fn (OnlineOrderReceivedMail $mail) => ! $mail->hasReplyTo($this->owner->email)
+        && ! $mail->hasReplyTo((string) config('sspos.support_email')) && $mail->replyTo === []);
 });
 
 test('the customer hears when the order is ready and when it is cancelled, with the reason', function () {

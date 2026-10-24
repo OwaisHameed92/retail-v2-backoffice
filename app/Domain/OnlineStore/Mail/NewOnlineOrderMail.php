@@ -6,7 +6,7 @@ use Illuminate\Mail\Mailables\Address;
 use Illuminate\Mail\Mailables\Envelope;
 
 /**
- * To the shop (the store's order email, else the business owner): a customer placed a click & collect order, with
+ * To the shop (the store's order email, else the business's contact email; OSA-14): a customer placed a click & collect order, with
  * the lines, the slot and the customer's details. Replies go to the customer.
  */
 final class NewOnlineOrderMail extends OnlineOrderMailable
@@ -23,7 +23,7 @@ final class NewOnlineOrderMail extends OnlineOrderMailable
 
     public static function templateDescription(): string
     {
-        return 'Sent to the business\'s order address (else the owner) as soon as a customer places a click & collect order in its online store.';
+        return 'Sent to the business\'s order email (else its contact email) as soon as a customer places a click & collect order in its online store.';
     }
 
     public static function audience(): string

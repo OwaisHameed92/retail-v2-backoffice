@@ -4,24 +4,94 @@ namespace App\Domain\OnlineStore\Mail;
 
 use App\Domain\Mail\Mailables\BrandedMailable;
 use App\Domain\Mail\Support\MailFormat;
+use App\Domain\OnlineStore\Mail\Sending\StoreMailServer;
+use App\Domain\OnlineStore\Mail\Sending\StoreSmtpUnavailable;
 use App\Domain\Shared\Country\Country;
 use App\Domain\Shared\Country\LocalText;
 use Carbon\CarbonImmutable;
+use Illuminate\Contracts\Mail\Factory as MailFactory;
+use Illuminate\Contracts\Mail\Mailer;
 use Illuminate\Mail\Mailables\Address;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
+use Illuminate\Mail\SentMessage;
+use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
 
 /**
- * Base of the online order emails (OS-4): a business's email about one click & collect order, in the shop's name
- * (sender name, sign-off, replies to the shop) on the usual branded layout, like the customer statement. Dates and
- * money follow the country profile. Never categorised: a shop's order emails always go (EmailControl).
+ * Base of the online order emails (OS-4): a business's email about one click & collect order. Dates and money follow
+ * the country profile. Never categorised: a shop's order emails always go (EmailControl).
+ *
+ * OS-10, the emails to the shop's customers (sendsInShopName(): every "customer" audience email, so a new one added
+ * later works the same way) are the shop's own:
+ * - the shop's look (StoreMailBrand: logo, colour, name, address, phone; `x-mail::store-message`, theme
+ *   `mail.themes.online-store`), only a small "Online store by Switch & Save" line at the bottom;
+ * - From name = the store's sender name (else the business name), never Switch & Save; Reply-To = the store's;
+ * - sent through the store's own SMTP server when it is set up and verified (From = its address), else through the
+ *   platform mailer (From = the platform's no-reply). If the own server fails, the reason is recorded and the email
+ *   goes through the platform mailer, so the customer still gets it.
+ *
+ * The email to the shop itself (audience "staff") keeps the Switch & Save layout and the platform mailer.
+ *
+ * @phpstan-consistent-constructor
  */
 abstract class OnlineOrderMailable extends BrandedMailable
 {
-    public function __construct(public OnlineOrderMailData $data) {}
+    /** OS-10: set while sending through the store's own server: the From address on that server. */
+    public ?string $smtpFrom = null;
+
+    /** OS-10: the platform mailer, without trying the store's own server (the fallback, or a platform test send). */
+    public bool $platformOnly = false;
+
+    public function __construct(public OnlineOrderMailData $data)
+    {
+        if (static::sendsInShopName()) {
+            $this->theme = 'themes.online-store';
+        }
+    }
 
     /** The Markdown view under resources/views/mail. */
     abstract protected function markdownView(): string;
+
+    /** OS-10: an email to the shop's customer, in the shop's own name, look and (when set up) email server. */
+    public static function sendsInShopName(): bool
+    {
+        return static::audience() === 'customer';
+    }
+
+    /**
+     * OS-10: a customer email goes through the store's own SMTP server when it is set up and verified; if that fails
+     * (or the host is refused), the reason is recorded and it goes through the platform mailer instead. A test send
+     * uses the mailer it is given.
+     *
+     * @param  MailFactory|Mailer  $mailer
+     */
+    public function send($mailer): ?SentMessage
+    {
+        if ($this->isTest || $this->platformOnly || $this->smtpFrom !== null || ! static::sendsInShopName()) {
+            return parent::send($mailer);
+        }
+
+        $server = app(StoreMailServer::class);
+        $settings = $server->ownServer($this->companyId());
+
+        if ($settings === null) {
+            return parent::send($mailer);
+        }
+
+        $fallback = clone $this;
+        $fallback->platformOnly = true;
+        $this->smtpFrom = $settings->smtp_from_address;
+
+        try {
+            return parent::send($server->mailer($settings));
+        } catch (TransportExceptionInterface|StoreSmtpUnavailable $error) {
+            $server->failed($settings, $error, static::templateKey());
+            $fallback->emailLogId = $this->emailLogId;
+            $fallback->holdChecked = true;
+
+            return $fallback->send($mailer);
+        }
+    }
 
     public function companyId(): ?string
     {
@@ -36,10 +106,13 @@ abstract class OnlineOrderMailable extends BrandedMailable
     public function envelope(): Envelope
     {
         $envelope = parent::envelope();
-        $envelope->from = new Address((string) config('mail.from.address'), $this->data->businessName);
+        $name = static::sendsInShopName() ? $this->data->sender() : $this->data->businessName;
+        $envelope->from = new Address($this->smtpFrom ?? (string) config('mail.from.address'), $name);
 
         if (filled($this->data->replyTo)) {
-            $envelope->replyTo = [new Address((string) $this->data->replyTo, $this->data->businessName)];
+            $envelope->replyTo = [new Address((string) $this->data->replyTo, $name)];
+        } elseif (static::sendsInShopName()) {
+            $envelope->replyTo = []; // a shop's customer never replies to Switch & Save support
         }
 
         return $envelope;
@@ -48,6 +121,7 @@ abstract class OnlineOrderMailable extends BrandedMailable
     public function content(): Content
     {
         return new Content(markdown: $this->markdownView(), with: [
+            'brand' => $this->data->brand(),
             'firstName' => MailFormat::firstName($this->data->customerName),
             'slot' => self::slot($this->data->collectFrom, $this->data->collectTo),
             'facts' => $this->facts(),
@@ -92,6 +166,14 @@ abstract class OnlineOrderMailable extends BrandedMailable
         $zone = Country::zone();
 
         return $from->setTimezone($zone)->format('l j F, H:i').'–'.$to->setTimezone($zone)->format('H:i');
+    }
+
+    /**
+     * OS-10: the sample in a store's own look, sender name and Reply-To (the Emails tab's previews and test email).
+     */
+    public static function sampleFor(StoreMailBrand $brand, string $senderName, ?string $replyTo, ?string $companyId = null): static
+    {
+        return new static(static::sample()->data->withStore($brand, $senderName, $replyTo, $companyId));
     }
 
     /**

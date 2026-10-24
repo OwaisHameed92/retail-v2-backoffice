@@ -7,6 +7,7 @@ use App\Domain\Mail\Mailables\AdminNewLeadMail;
 use App\Domain\Mail\Mailables\WelcomeTenantMail;
 use App\Domain\Mail\Models\EmailLog;
 use App\Domain\Mail\Support\EmailTemplates;
+use App\Domain\OnlineStore\Mail\OnlineOrderMailable;
 use App\Domain\Shared\Models\AuditLog;
 use App\Domain\Tenancy\Models\Company;
 use App\Models\User;
@@ -130,12 +131,15 @@ it('previews every template as HTML and plain text without sending or logging', 
         ->assertHeader('X-Frame-Options', 'SAMEORIGIN')
         ->assertHeader('Content-Security-Policy');
 
-    expect($html->getContent())->toContain('<base target="_blank">')->toContain('switch-save-logo.png');
+    // OS-10: a shop's emails to its own customers are in the shop's look (a small "Online store by Switch & Save" line).
+    $class = EmailTemplates::find($key);
+    $inShopName = $class !== null && is_subclass_of($class, OnlineOrderMailable::class) && $class::sendsInShopName();
+    expect($html->getContent())->toContain('<base target="_blank">')->toContain($inShopName ? 'Online store by Switch &amp; Save' : 'switch-save-logo.png');
 
     $this->actingAs($admin, 'admin')->get("/admin/emails/templates/{$key}/preview?format=text")
         ->assertOk()
         ->assertHeader('Content-Type', 'text/plain; charset=UTF-8')
-        ->assertSee('Smart Solutions for Smart Businesses');
+        ->assertSee($inShopName ? 'Online store by Switch & Save' : 'Smart Solutions for Smart Businesses', false);
 
     Mail::assertNothingOutgoing();
     expect(EmailLog::query()->count())->toBe(0);

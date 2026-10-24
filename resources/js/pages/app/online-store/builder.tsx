@@ -274,13 +274,20 @@ function Builder({ store, ...props }: BuilderProps & { store: StoreSettings }) {
                         {sectionError && <p className="text-danger-foreground text-[13px]">{sectionError}</p>}
                     </FormSection>
 
-                    <FormSection title="Orders" description="Where we email each new order. Your team also sees them on the Online orders board.">
+                    <FormSection
+                        title="Orders"
+                        description="Where we email each new order. Customers' replies go here too (change that on the Emails tab). Your team also sees orders on the Online orders board."
+                    >
                         <FormField
                             id="order_email"
                             label="Order email"
                             optional
                             error={errors.order_email}
-                            help="Leave empty to rely on the board and portal notifications only."
+                            help={
+                                props.orderEmailFallback
+                                    ? `Empty: orders go to ${props.orderEmailFallback} (your business email), and customers' replies too.`
+                                    : 'Empty: no order emails. You see orders on the Online orders board and in your notifications.'
+                            }
                         >
                             <Input
                                 id="order_email"

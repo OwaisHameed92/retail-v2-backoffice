@@ -30,6 +30,7 @@ use App\Http\Controllers\App\NotificationSettingsController;
 use App\Http\Controllers\App\OnlineOrderController;
 use App\Http\Controllers\App\OnlineProductController;
 use App\Http\Controllers\App\OnlineStoreController;
+use App\Http\Controllers\App\OnlineStoreEmailController;
 use App\Http\Controllers\App\OnlineStoreShopController;
 use App\Http\Controllers\App\ParcelController;
 use App\Http\Controllers\App\PharmacyController;
@@ -495,6 +496,12 @@ Route::middleware(['auth:web', 'verified', 'company', 'two-factor:web'])->group(
         Route::get('/', [OnlineStoreController::class, 'edit'])->name('edit');
         Route::get('shops', [OnlineStoreShopController::class, 'index'])->name('shops');
         Route::get('products', [OnlineProductController::class, 'index'])->name('products');
+        // OS-10: the Emails tab (sender, Reply-To, the store's own SMTP server, test email, previews).
+        Route::get('emails', [OnlineStoreEmailController::class, 'edit'])->name('emails');
+        Route::get('emails/preview/{template}', [OnlineStoreEmailController::class, 'preview'])->name('emails.preview')
+            ->where('template', '[a-z0-9-]{1,60}')->middleware('throttle:120,1');
+        Route::put('emails', [OnlineStoreEmailController::class, 'update'])->name('emails.update')->middleware('throttle:30,1');
+        Route::post('emails/test', [OnlineStoreEmailController::class, 'test'])->name('emails.test')->middleware('throttle:5,10');
         Route::middleware('throttle:60,1')->group(function () {
             Route::post('/', [OnlineStoreController::class, 'update'])->name('update');
             Route::put('live', [OnlineStoreController::class, 'live'])->name('live');

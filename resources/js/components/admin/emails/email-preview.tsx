@@ -5,22 +5,34 @@ import { FileText, Monitor, Smartphone } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
 type Width = 'desktop' | 'phone';
-type Format = 'html' | 'text';
+export type EmailPreviewFormat = 'html' | 'text';
+type Format = EmailPreviewFormat;
 
 const MIN_HEIGHT = 480;
 
 /**
  * Live preview of one template, rendered by the server with sample data in a sandboxed iframe.
- * Desktop or phone width, HTML or plain text. The iframe grows to the email's height.
+ * Desktop or phone width, HTML or plain text. The iframe grows to the email's height. `srcFor` gives another preview
+ * address (the portal's online store Emails tab); by default the admin template preview.
  */
-export function EmailPreview({ templateKey, label }: { templateKey: string; label: string }) {
+export function EmailPreview({
+    templateKey,
+    label,
+    srcFor,
+}: {
+    templateKey: string;
+    label: string;
+    srcFor?: (format: EmailPreviewFormat) => string;
+}) {
     const [width, setWidth] = useState<Width>('desktop');
     const [format, setFormat] = useState<Format>('html');
     const [loading, setLoading] = useState(true);
     const [height, setHeight] = useState(MIN_HEIGHT);
     const frame = useRef<HTMLIFrameElement>(null);
 
-    const src = route('admin.emails.templates.preview', { template: templateKey, ...(format === 'text' ? { format: 'text' } : {}) });
+    const src = srcFor
+        ? srcFor(format)
+        : route('admin.emails.templates.preview', { template: templateKey, ...(format === 'text' ? { format: 'text' } : {}) });
 
     useEffect(() => {
         setLoading(true);
