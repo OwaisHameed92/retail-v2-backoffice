@@ -10,6 +10,7 @@ use App\Http\Controllers\Store\StoreOrderController;
 use App\Http\Controllers\Store\StoreProductController;
 use App\Http\Controllers\Store\StoreSearchController;
 use App\Http\Controllers\Store\StoreShopController;
+use App\Http\Controllers\Store\StoreSitemapController;
 use App\Http\Middleware\ResolveOnlineStore;
 use Illuminate\Support\Facades\Route;
 
@@ -27,6 +28,9 @@ $pages = function () use ($id) {
     Route::get('department/{department}', StoreDepartmentController::class)->name('department')->where('department', $id);
     Route::get('search', StoreSearchController::class)->name('search');
     Route::get('product/{product}', StoreProductController::class)->name('product')->where('product', $id);
+    // OS-8 (audit OSA-17): the store's sitemap and crawler rules.
+    Route::get('sitemap.xml', [StoreSitemapController::class, 'sitemap'])->name('sitemap');
+    Route::get('robots.txt', [StoreSitemapController::class, 'robots'])->name('robots');
 
     Route::get('basket', [StoreBasketController::class, 'show'])->name('basket');
     Route::middleware('throttle:'.StoreRateLimits::BASKET)->group(function () use ($id) {

@@ -5,8 +5,10 @@
   component; the template only swaps these tokens (`data-template` on <html> and on the store layout):
   - Fresh Market (default): Bricolage Grotesque display type, Inter text, ink #0E1712 on warm paper, lime highlights.
   - Butcher's Block: Fraunces display type, Inter text, ink #1C1917 on cream #F7F3EC, tan #F3E6D3 highlights.
-  `lime` is the template's highlight colour (tan for the butcher). The store's brand colour (`--color-brand`) and
-  the text on it are set by the store layout from the store's settings, else the template's default.
+  `lime` is the template's highlight colour (tan for the butcher). OS-8: every brand token (`--color-brand`, the
+  text on it, hover, `brand-text` for links and prices on light backgrounds, `brand-deep` for the footer and toasts,
+  soft tints, the highlight) comes from the store's one colour on the server (BrandPalette, WCAG AA) and is set on
+  <html> by store.blade.php and on the layout by StoreLayout.
 */
 @source '../js/store.tsx';
 @source '../js/pages/store';
@@ -30,8 +32,28 @@
     --color-warn-soft: #fff1d6;
     --color-brand: #0b4a34;
     --color-on-brand: #ffffff;
+    --color-brand-hover: #0a402d;
+    --color-brand-text: #0b4a34;
+    --color-brand-deep: #0b2e21;
+    --color-brand-soft: #eef3f1;
+    --color-brand-tint: #d9e5e0;
+    --color-on-lime: #0e1712;
 
-    --radius-card: 1.75rem;
+    --radius-card: 1rem;
+
+    /* OS-8: a calmer weight for the display type (owner: "fonts are very big"). */
+    --font-weight-extrabold: 700;
+
+    --animate-shimmer: shimmer 1.4s ease-in-out infinite;
+
+    @keyframes shimmer {
+        0% {
+            background-position: -200% 0;
+        }
+        100% {
+            background-position: 200% 0;
+        }
+    }
 }
 
 @layer base {
@@ -59,19 +81,40 @@
     }
 
     :focus-visible {
-        outline: 3px solid var(--color-ink);
+        outline: 3px solid var(--color-brand-text);
         outline-offset: 2px;
     }
 
     .bg-brand :focus-visible,
+    .bg-brand-deep :focus-visible,
     .bg-ink :focus-visible {
         outline-color: var(--color-lime);
+    }
+
+    #main:focus-visible {
+        outline: none;
     }
 
     /* Nothing pushes the page sideways on a phone. */
     html,
     body {
         overflow-x: clip;
+    }
+
+    /* A loading picture or row (OS-8). */
+    .store-skeleton {
+        background: linear-gradient(90deg, var(--color-tile) 0%, var(--color-paper) 50%, var(--color-tile) 100%);
+        background-size: 200% 100%;
+        animation: var(--animate-shimmer);
+    }
+
+    /* Horizontal product rows scroll without a visible bar. */
+    .store-rail {
+        scrollbar-width: none;
+    }
+
+    .store-rail::-webkit-scrollbar {
+        display: none;
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -86,4 +129,30 @@
             animation-duration: 0.01ms !important;
         }
     }
+}
+
+/*
+  OS-8: one calm size for page titles on every store page (basket, checkout, order and error pages included); the
+  banners' headline has its own size (.store-hero-title). Outside the layers on purpose, so it wins over the pages'
+  own size utilities.
+*/
+main h1.font-display:not(.store-hero-title) {
+    font-size: clamp(1.625rem, 1.1rem + 1.4vw, 2.25rem);
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+}
+
+/* OS-8: the same 16px corners on every store card, the pages' own large radii included. */
+main
+    :is(
+        .rounded-\[18px\],
+        .rounded-\[20px\],
+        .rounded-\[22px\],
+        .rounded-\[24px\],
+        .rounded-\[28px\],
+        .rounded-\[30px\],
+        .rounded-\[32px\],
+        .rounded-\[36px\]
+    ) {
+    border-radius: 1rem;
 }

@@ -1,11 +1,19 @@
+import { BannersEditor } from '@/components/app/online-store/banners-editor';
 import { ColourPicker } from '@/components/app/online-store/colour-picker';
+import { HomeContentFields } from '@/components/app/online-store/home-content-fields';
 import { ImagePicker } from '@/components/app/online-store/image-picker';
 import { OnlineStoreTabs } from '@/components/app/online-store/online-store-tabs';
 import { SectionsEditor } from '@/components/app/online-store/sections-editor';
 import { putSwitch, StatusPanel } from '@/components/app/online-store/status-panel';
 import { TemplateCard } from '@/components/app/online-store/template-card';
 import { ToggleSwitch } from '@/components/app/online-store/toggle-switch';
-import { type BuilderProps, type StoreSectionValue, type StoreSettings } from '@/components/app/online-store/types';
+import {
+    type BuilderProps,
+    type FeaturedModeKey,
+    type PickerProduct,
+    type StoreSectionValue,
+    type StoreSettings,
+} from '@/components/app/online-store/types';
 import { ConfirmDialog } from '@/components/shared/confirm-dialog';
 import { EmptyState } from '@/components/shared/empty-state';
 import { FormCard, FormField, FormSection } from '@/components/shared/form-section';
@@ -24,27 +32,30 @@ import { useState } from 'react';
 
 type BuilderForm = {
     slug: string;
-    headline: string;
     brand_colour: string;
     order_email: string;
     sections: StoreSectionValue[];
     logo: File | null;
-    banner: File | null;
     remove_logo: boolean;
-    remove_banner: boolean;
+    about_text: string;
+    featured_mode: FeaturedModeKey;
+    /** Hand-picked products with their names (sent as `featured_product_ids`). */
+    picked: PickerProduct[];
+    home_departments: string[];
 };
 
-function initial(store: StoreSettings): BuilderForm {
+function initial(store: StoreSettings, picked: PickerProduct[]): BuilderForm {
     return {
         slug: store.slug,
-        headline: store.headline ?? '',
         brand_colour: store.brandColour ?? '',
         order_email: store.orderEmail ?? '',
         sections: store.sections,
         logo: null,
-        banner: null,
         remove_logo: false,
-        remove_banner: false,
+        about_text: store.aboutText ?? '',
+        featured_mode: store.featuredMode,
+        picked,
+        home_departments: store.homeDepartments,
     };
 }
 
@@ -74,7 +85,7 @@ function NotSwitchedOn() {
 
 function Builder({ store, ...props }: BuilderProps & { store: StoreSettings }) {
     const { template, canEdit } = props;
-    const form = useForm<BuilderForm>(initial(store));
+    const form = useForm<BuilderForm>(initial(store, props.pickedProducts));
     const errors = form.errors as Record<string, string | undefined>;
     const [switching, setSwitching] = useState(false);
     const disabled = !canEdit || form.processing;
@@ -82,6 +93,13 @@ function Builder({ store, ...props }: BuilderProps & { store: StoreSettings }) {
 
     const submit = (e: React.FormEvent) => {
         e.preventDefault();
+        // Empty lists are not sent in a form, so `*_sent` says the lists are there (and may be empty).
+        form.transform(({ picked, ...data }) => ({
+            ...data,
+            featured_product_ids: picked.map((p) => p.id),
+            featured_product_ids_sent: '1',
+            home_departments_sent: '1',
+        }));
         form.post(route('app.online-store.update'), { forceFormData: true, preserveScroll: true });
     };
     const setLive = (on: boolean) =>
@@ -207,7 +225,10 @@ function Builder({ store, ...props }: BuilderProps & { store: StoreSettings }) {
                         </FormField>
                     </FormSection>
 
-                    <FormSection title="Brand" description="Your logo, main colour, banner photo and headline on the home page.">
+                    <FormSection
+                        title="Brand"
+                        description="Your logo and main colour. The colour is used for buttons, links, prices and the header and footer."
+                    >
                         <FormField id="logo" label="Logo" optional error={errors.logo}>
                             <ImagePicker
                                 label="Logo"
@@ -230,38 +251,10 @@ function Builder({ store, ...props }: BuilderProps & { store: StoreSettings }) {
                                 disabled={disabled}
                             />
                         </FormField>
-                        <FormField id="banner" label="Banner photo" optional error={errors.banner}>
-                            <ImagePicker
-                                label="Banner photo"
-                                shape="wide"
-                                current={store.bannerUrl}
-                                file={form.data.banner}
-                                removed={form.data.remove_banner}
-                                onPick={(f) => form.setData('banner', f)}
-                                onRemove={(r) => form.setData('remove_banner', r)}
-                                fallback={template?.photo}
-                                fallbackNote={template ? `${template.label} photo` : undefined}
-                                error={errors.banner}
-                                disabled={disabled}
-                                help="A wide photo of your shop or products, at least 1600 pixels wide. Without one, the template's photo is used."
-                            />
-                        </FormField>
-                        <FormField
-                            id="headline"
-                            label="Headline"
-                            optional
-                            error={errors.headline}
-                            help={`${form.data.headline.length} of 160 characters, e.g. "Fresh halal meat, ready when you are."`}
-                        >
-                            <Input
-                                id="headline"
-                                value={form.data.headline}
-                                maxLength={160}
-                                disabled={disabled}
-                                aria-invalid={!!errors.headline}
-                                onChange={(e) => form.setData('headline', e.target.value)}
-                            />
-                        </FormField>
+                    </FormSection>
+
+                    <FormSection title="Banners" description="Up to 6 photos with a headline and a button, taking turns at the top of the home page.">
+                        <BannersEditor props={props} disabled={!canEdit} />
                     </FormSection>
 
                     <FormSection title="Home page sections" description="Turn sections on or off and put them in the order you want.">
@@ -273,6 +266,14 @@ function Builder({ store, ...props }: BuilderProps & { store: StoreSettings }) {
                         />
                         {sectionError && <p className="text-danger-foreground text-[13px]">{sectionError}</p>}
                     </FormSection>
+
+                    <HomeContentFields
+                        data={form.data}
+                        set={(key, value) => form.setData(key, value as never)}
+                        errors={errors}
+                        props={props}
+                        disabled={disabled}
+                    />
 
                     <FormSection
                         title="Orders"
@@ -357,13 +358,28 @@ function Builder({ store, ...props }: BuilderProps & { store: StoreSettings }) {
 }
 
 /**
- * OS-3: the online store builder (address, brand, sections, order email, payments, go live). The look is shown read
- * only: Switch & Save sets it when switching the add-on on. No store yet → "not switched on".
+ * OS-3, OS-8: the online store builder (address, brand, banners, sections, featured products, department rows, about
+ * us, order email, payments, go live). The look is shown read only: Switch & Save sets it when switching the add-on
+ * on. No store yet → "not switched on".
  */
 export default function OnlineStoreBuilder(props: BuilderProps) {
-    // A fresh form after each save, so "unsaved changes" compares with what is saved now (the switches keep edits).
+    // A fresh form after each save, so "unsaved changes" compares with what is saved now (the switches and the banners,
+    // which save on their own, keep edits).
     const s = props.store;
-    const key = JSON.stringify(s && [s.slug, s.template, s.headline, s.brandColour, s.logoUrl, s.bannerUrl, s.sections, s.orderEmail]);
+    const key = JSON.stringify(
+        s && [
+            s.slug,
+            s.template,
+            s.brandColour,
+            s.logoUrl,
+            s.sections,
+            s.orderEmail,
+            s.aboutText,
+            s.featuredMode,
+            s.featuredProductIds,
+            s.homeDepartments,
+        ],
+    );
 
     return (
         <AppLayout>

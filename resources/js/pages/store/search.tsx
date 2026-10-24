@@ -19,17 +19,17 @@ export default function StoreSearch({ term, products, pagination, filters }: Pro
     return (
         <StoreLayout title={title} active="search">
             <Breadcrumbs items={[{ label: 'Home', href: store?.urls.home }, { label: term ? 'Search' : 'All products' }]} />
-            <div className="mb-6 flex flex-col gap-2 sm:mb-8">
-                <h1 className="font-display text-4xl leading-[0.95] font-extrabold tracking-[-0.045em] break-words sm:text-6xl">
+            <div className="mb-6 flex flex-col gap-1">
+                <h1 className="font-display text-[28px] leading-tight font-bold tracking-[-0.02em] break-words sm:text-[36px]">
                     {term ? (
                         <>
-                            Results for <span className="text-brand">“{term}”</span>
+                            Results for <span className="text-brand-text">“{term}”</span>
                         </>
                     ) : (
                         'All products'
                     )}
                 </h1>
-                {term && <p className="text-body">Searched by name, brand, code and barcode.</p>}
+                {term && <p className="text-muted text-sm">Searched by name, brand, code and barcode.</p>}
             </div>
             <ProductList
                 products={products}

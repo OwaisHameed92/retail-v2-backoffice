@@ -1,66 +1,64 @@
 import { cn } from '@/lib/utils';
 import { Link } from '@inertiajs/react';
-import { Loader2, Plus } from 'lucide-react';
-import { defaultQuantity, priceLabel } from './format';
+import { ChevronLeft, ChevronRight, Loader2, Plus } from 'lucide-react';
+import { type ReactNode, useRef } from 'react';
+import { defaultQuantity, money, priceLabel } from './format';
 import { ProductPhoto } from './product-photo';
 import { type StoreProduct } from './types';
 import { useAddToBasket, useStore } from './use-store';
 
-/** A product tile (Fresh Market): photo, name, price and a quick "add" (1, or 0.5 kg for weighed products). */
-export function ProductCard({ product, compact = false }: { product: StoreProduct; compact?: boolean }) {
+/** "500 g · £3.18/kg", "Per kg, weighed in the shop" or "Each". */
+export function productSubline(product: StoreProduct): string {
+    if (product.isWeighed) {
+        return 'Per kg · weighed in the shop';
+    }
+
+    const unit = product.unitPrice ? `${money(product.unitPrice.amount)}/${product.unitPrice.unit === 'kg' ? 'kg' : 'litre'}` : null;
+
+    return [product.size, unit].filter(Boolean).join(' · ') || 'Each';
+}
+
+/**
+ * A product tile (OS-8): a square photo (or the branded placeholder), offer / by weight / out of stock badges, the
+ * name (two lines at most, audit OSA-11), pack size and unit price, the price in the store's colour and a round
+ * "add" button (1, or 0.5 kg for weighed products).
+ */
+export function ProductCard({ product, priority = false }: { product: StoreProduct; compact?: boolean; priority?: boolean }) {
     const store = useStore();
     const { add, busy } = useAddToBasket();
     const canAdd = product.orderable && (store?.takingOrders ?? false);
     const adding = busy === product.id;
+    const department = store?.departments.find((d) => d.id === product.departmentId)?.name ?? null;
 
     return (
-        <article
-            className={cn(
-                'group relative flex w-full flex-col bg-white',
-                compact ? 'gap-2 rounded-[22px] p-1.5 pb-3' : 'gap-2.5 rounded-[22px] p-1.5 pb-3 sm:gap-3 sm:rounded-[28px] sm:p-2.5 sm:pb-4',
-                !product.orderable && 'opacity-80',
-            )}
-        >
-            {!product.orderable && (
-                <span className="bg-ink absolute top-3 left-3 z-10 rounded-full px-2.5 py-1 text-xs font-bold text-white sm:top-4 sm:left-4 sm:px-3 sm:py-1.5">
-                    Out of stock
-                </span>
-            )}
-            {product.isWeighed && product.orderable && (
-                <span className="bg-lime text-ink absolute top-3 left-3 z-10 rounded-full px-2.5 py-1 text-xs font-bold sm:top-4 sm:left-4 sm:px-3 sm:py-1.5">
-                    By weight
-                </span>
-            )}
-            <Link href={product.url} className="block overflow-hidden rounded-[20px]" tabIndex={-1} aria-hidden="true">
+        <article className="group border-line hover:border-brand-tint relative flex w-full flex-col rounded-2xl border bg-white p-2.5 transition duration-200 hover:shadow-[0_8px_24px_-12px_rgba(14,23,18,0.25)] sm:p-3">
+            <div className="pointer-events-none absolute top-4 left-4 z-10 flex max-w-[calc(100%-2rem)] flex-wrap gap-1 sm:top-5 sm:left-5">
+                {!product.orderable && <Badge tone="ink">Out of stock</Badge>}
+                {product.offer && <Badge tone="sale">{product.offer}</Badge>}
+                {product.isWeighed && product.orderable && !product.offer && <Badge tone="highlight">By weight</Badge>}
+            </div>
+            <Link href={product.url} className="block overflow-hidden rounded-xl" tabIndex={-1} aria-hidden="true">
                 <ProductPhoto
                     name={product.name}
                     url={product.photoUrl}
                     alt=""
-                    className="transition-transform duration-300 group-hover:scale-[1.03]"
+                    department={department}
+                    priority={priority}
+                    rounded="rounded-xl"
+                    className={cn('transition-transform duration-300 group-hover:scale-[1.03]', !product.orderable && 'opacity-60')}
                 />
             </Link>
-            <div className={cn('flex flex-col gap-1', compact ? 'px-1.5' : 'px-2')}>
+            <div className="flex flex-1 flex-col gap-0.5 px-0.5 pt-2.5">
                 <Link
                     href={product.url}
-                    className={cn(
-                        // The padding (offset by the margin) makes the name a 44px tap target without moving it.
-                        'text-ink -my-2.5 line-clamp-2 py-2.5 leading-snug font-bold underline-offset-4 hover:underline',
-                        compact ? 'text-sm' : 'text-base',
-                    )}
+                    className="text-ink -my-1 py-1 text-sm leading-snug font-semibold underline-offset-2 hover:underline sm:text-[15px]"
                 >
-                    {product.name}
+                    <span className="line-clamp-2 min-h-[2lh] break-words">{product.name}</span>
                 </Link>
-                <span className="text-muted text-xs sm:text-[13px]">{product.isWeighed ? 'Per kg, weighed in the shop' : 'Each'}</span>
+                <span className="text-muted line-clamp-1 text-xs">{productSubline(product)}</span>
             </div>
-            <div className={cn('mt-auto flex items-center justify-between gap-2', compact ? 'pr-0.5 pl-1.5' : 'pr-1 pl-2')}>
-                <span
-                    className={cn(
-                        'font-display min-w-0 leading-none font-extrabold tracking-tight',
-                        compact ? 'text-lg sm:text-xl' : 'text-lg sm:text-[26px]',
-                    )}
-                >
-                    {priceLabel(product)}
-                </span>
+            <div className="mt-2.5 flex items-center justify-between gap-2 px-0.5">
+                <span className="text-brand-text text-base font-bold tracking-tight tabular-nums sm:text-[17px]">{priceLabel(product)}</span>
                 <button
                     type="button"
                     onClick={() => add(product.id, defaultQuantity(product))}
@@ -70,15 +68,12 @@ export function ProductCard({ product, compact = false }: { product: StoreProduc
                             ? `Add ${product.isWeighed ? '0.5 kg of ' : ''}${product.name} to basket`
                             : `${product.name}: ${product.orderable ? 'not taking orders now' : 'out of stock'}`
                     }
-                    className={cn(
-                        'bg-ink text-lime hover:bg-brand hover:text-on-brand disabled:bg-line disabled:text-muted flex shrink-0 items-center justify-center rounded-full transition disabled:cursor-not-allowed',
-                        compact ? 'size-11' : 'size-11 sm:size-12',
-                    )}
+                    className="bg-brand text-on-brand hover:bg-brand-hover disabled:bg-line disabled:text-muted flex size-10 shrink-0 items-center justify-center rounded-full shadow-sm transition active:scale-95 disabled:cursor-not-allowed disabled:shadow-none"
                 >
                     {adding ? (
-                        <Loader2 aria-hidden="true" className="size-5 animate-spin" />
+                        <Loader2 aria-hidden="true" className="size-4 animate-spin" />
                     ) : (
-                        <Plus aria-hidden="true" className="size-6" strokeWidth={2.6} />
+                        <Plus aria-hidden="true" className="size-5" strokeWidth={2.4} />
                     )}
                 </button>
             </div>
@@ -86,16 +81,94 @@ export function ProductCard({ product, compact = false }: { product: StoreProduc
     );
 }
 
-export function ProductGrid({ products, compact = false }: { products: StoreProduct[]; compact?: boolean }) {
+export function Badge({ tone, children }: { tone: 'ink' | 'sale' | 'highlight' | 'brand'; children: ReactNode }) {
     return (
-        <ul className={cn('grid gap-2.5 sm:gap-4', compact ? 'grid-cols-2 lg:grid-cols-4' : 'grid-cols-2 md:grid-cols-3 xl:grid-cols-4')}>
-            {products.map((product) => (
+        <span
+            className={cn(
+                'max-w-full truncate rounded-md px-2 py-0.5 text-[11px] leading-5 font-semibold',
+                tone === 'ink' && 'bg-ink text-white',
+                tone === 'sale' && 'bg-sale text-white',
+                tone === 'highlight' && 'bg-lime text-on-lime',
+                tone === 'brand' && 'bg-brand text-on-brand',
+            )}
+        >
+            {children}
+        </span>
+    );
+}
+
+export function ProductGrid({
+    products,
+    priority = 0,
+    wide = false,
+}: {
+    products: StoreProduct[];
+    compact?: boolean;
+    priority?: number;
+    wide?: boolean;
+}) {
+    return (
+        <ul className={cn('grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4', wide && 'xl:grid-cols-5')}>
+            {products.map((product, i) => (
                 <li key={product.id} className="flex">
-                    <div className="flex w-full">
-                        <ProductCard product={product} compact={compact} />
-                    </div>
+                    <ProductCard product={product} priority={i < priority} />
                 </li>
             ))}
         </ul>
+    );
+}
+
+/**
+ * A shelf of products that scrolls sideways (snap, swipe on phones, arrows on larger screens). Every card stays
+ * reachable by keyboard; the arrows only scroll.
+ */
+export function ProductRail({ products, label }: { products: StoreProduct[]; label: string }) {
+    const rail = useRef<HTMLUListElement>(null);
+    const scroll = (direction: 1 | -1) => {
+        const el = rail.current;
+
+        if (el) {
+            const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            el.scrollBy({ left: direction * el.clientWidth * 0.9, behavior: reduce ? 'auto' : 'smooth' });
+        }
+    };
+
+    return (
+        <div className="relative">
+            <ul
+                ref={rail}
+                aria-label={label}
+                className="store-rail -mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-1 sm:-mx-6 sm:gap-4 sm:px-6"
+            >
+                {products.map((product) => (
+                    <li key={product.id} className="flex w-[44%] shrink-0 snap-start sm:w-[30%] lg:w-[calc((100%-4rem)/5)]">
+                        <ProductCard product={product} />
+                    </li>
+                ))}
+            </ul>
+            {products.length > 5 && (
+                <div className="pointer-events-none absolute inset-y-0 -right-4 -left-4 hidden items-center justify-between md:flex">
+                    <RailArrow
+                        onClick={() => scroll(-1)}
+                        label={`Scroll ${label} back`}
+                        icon={<ChevronLeft className="size-5" aria-hidden="true" />}
+                    />
+                    <RailArrow onClick={() => scroll(1)} label={`Scroll ${label} on`} icon={<ChevronRight className="size-5" aria-hidden="true" />} />
+                </div>
+            )}
+        </div>
+    );
+}
+
+function RailArrow({ onClick, label, icon }: { onClick: () => void; label: string; icon: ReactNode }) {
+    return (
+        <button
+            type="button"
+            onClick={onClick}
+            aria-label={label}
+            className="text-ink hover:bg-brand hover:text-on-brand border-line pointer-events-auto flex size-10 items-center justify-center rounded-full border bg-white shadow-md transition"
+        >
+            {icon}
+        </button>
     );
 }

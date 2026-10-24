@@ -1,0 +1,128 @@
+<?php
+
+namespace App\Http\Support\Store;
+
+use App\Domain\OnlineStore\Data\CatalogueFilters;
+use App\Domain\OnlineStore\Models\OnlineStoreShop;
+use App\Domain\OnlineStore\Queries\FeaturedProducts;
+use App\Domain\OnlineStore\Queries\StoreBanners;
+use App\Domain\OnlineStore\Queries\StorefrontCatalogue;
+use App\Domain\OnlineStore\Queries\StoreOffers;
+use App\Domain\OnlineStore\Queries\StorePhotos;
+
+/**
+ * The public home page's rows (OS-8), as the React page draws them: banners (slides), featured products (best
+ * sellers, hand-picked or newest), the "On offer" row, a row per chosen department (the store's `home_departments`
+ * shown at the shop, else its first three) and the department tiles with a photo each.
+ */
+final class StoreHomeRows
+{
+    public const FEATURED = 12;
+
+    public const OFFERS = 12;
+
+    public const PER_DEPARTMENT = 10;
+
+    public const DEFAULT_DEPARTMENT_ROWS = 3;
+
+    public function __construct(
+        private readonly StorefrontCatalogue $catalogue,
+        private readonly FeaturedProducts $featured,
+        private readonly StoreOffers $offers,
+        private readonly StorePhotos $photos,
+    ) {}
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    public function banners(StoreContext $context): array
+    {
+        return StoreBanners::slides($context->store, array_column($this->departments($context), 'id'));
+    }
+
+    /**
+     * @return array{featured: list<array<string, mixed>>, featuredMode: string}
+     */
+    public function featured(StoreContext $context): array
+    {
+        $shop = $context->shop();
+
+        if ($shop === null) {
+            return ['featured' => [], 'featuredMode' => 'bestSellers'];
+        }
+
+        $branchIds = $context->shops->map(fn (OnlineStoreShop $s) => $s->branch_id)->values()->all();
+        $row = $this->featured->handle($context->store, $shop, $branchIds, self::FEATURED);
+
+        return ['featured' => StorePresenter::products($context->store, $row['items'], $shop), 'featuredMode' => $row['mode']->value];
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    public function offers(StoreContext $context): array
+    {
+        $shop = $context->shop();
+
+        return $shop === null ? [] : StorePresenter::products($context->store, $this->offers->products($context->store, $shop, self::OFFERS), $shop);
+    }
+
+    /**
+     * @return list<array{id: string, name: string, count: int, url: string, products: list<array<string, mixed>>}>
+     */
+    public function departmentRows(StoreContext $context): array
+    {
+        $shop = $context->shop();
+        $shown = collect($this->departments($context))->keyBy('id');
+
+        if ($shop === null || $shown->isEmpty()) {
+            return [];
+        }
+
+        $chosen = array_values(array_filter(FeaturedProducts::pickedIds($context->store->home_departments), fn (string $id) => $shown->has($id)));
+        $ids = $chosen !== [] ? $chosen : $shown->keys()->take(self::DEFAULT_DEPARTMENT_ROWS)->all();
+        $rows = [];
+
+        foreach ($ids as $id) {
+            $items = $this->catalogue->products($context->store, $shop, departmentId: $id, perPage: self::PER_DEPARTMENT,
+                filters: new CatalogueFilters(inStockOnly: true))->items;
+
+            if ($items !== []) {
+                $department = $shown[$id];
+                $rows[] = [
+                    'id' => $department['id'], 'name' => $department['name'], 'count' => $department['count'],
+                    'url' => route('store.department', ['department' => $department['id']], false),
+                    'products' => StorePresenter::products($context->store, $items, $shop),
+                ];
+            }
+        }
+
+        return $rows;
+    }
+
+    /**
+     * The departments shown at the shop with a photo each (null: the page draws the department's icon).
+     *
+     * @return list<array{id: string, name: string, count: int, url: string, photoUrl: string|null}>
+     */
+    public function departmentTiles(StoreContext $context): array
+    {
+        $shop = $context->shop();
+        $departments = $this->departments($context);
+        $photos = $shop === null ? [] : $this->photos->departments($context->store, $shop, array_column($departments, 'id'));
+
+        return array_map(fn (array $d) => [
+            'id' => $d['id'], 'name' => $d['name'], 'count' => $d['count'],
+            'url' => route('store.department', ['department' => $d['id']], false),
+            'photoUrl' => $photos[$d['id']] ?? null,
+        ], $departments);
+    }
+
+    /**
+     * @return list<array{id: string, name: string, count: int}>
+     */
+    private function departments(StoreContext $context): array
+    {
+        return $context->departments();
+    }
+}

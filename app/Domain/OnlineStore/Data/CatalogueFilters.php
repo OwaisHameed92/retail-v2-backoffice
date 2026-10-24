@@ -15,7 +15,10 @@ final readonly class CatalogueFilters
 
     public const SORT_PRICE_DESC = 'priceDesc';
 
-    public const SORTS = [self::SORT_NAME, self::SORT_PRICE_ASC, self::SORT_PRICE_DESC];
+    /** OS-8: the products most recently added on the tills first. */
+    public const SORT_NEWEST = 'newest';
+
+    public const SORTS = [self::SORT_NAME, self::SORT_PRICE_ASC, self::SORT_PRICE_DESC, self::SORT_NEWEST];
 
     public function __construct(
         public string $sort = self::SORT_NAME,

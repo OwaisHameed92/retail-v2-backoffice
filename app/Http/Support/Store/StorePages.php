@@ -3,7 +3,8 @@
 namespace App\Http\Support\Store;
 
 use App\Domain\OnlineStore\Models\OnlineStoreShop;
-use App\Domain\OnlineStore\Queries\StorefrontCatalogue;
+use App\Domain\OnlineStore\Support\BrandPalette;
+use App\Domain\OnlineStore\Support\ShopOpenNow;
 use App\Domain\OnlineStore\Support\StoreScope;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -11,8 +12,9 @@ use Symfony\Component\HttpFoundation\Response;
 
 /**
  * The public store's page frame (OS-2): its own root view (`resources/views/store.blade.php`, the shop's brand, not
- * the portal's), the props every store page shares (store with its template, departments, basket summary; the React
- * pages switch fonts, colours and home sections by `store.template`, OS-5), and its own error pages
+ * the portal's), the props every store page shares (store with its template, its colours from the brand colour
+ * (BrandPalette, OS-8), departments, basket summary; the React pages switch fonts, colours and home sections by
+ * `store.template`, OS-5), and its own error pages
  * (404 unknown or closed store and missing pages, 403 bad order links, 429 too many tries).
  */
 final class StorePages
@@ -43,17 +45,22 @@ final class StorePages
         $store = $context->store;
         $name = StoreScope::company($store)->name;
         $shop = $context->shop();
-        $departments = $shop === null ? [] : app(StorefrontCatalogue::class)->departments($store, $shop);
+        $departments = $context->departments();
 
         return [
             'name' => $name,
             'initials' => StorePresenter::initials($name),
             'logoUrl' => StorePresenter::publicUrl($store->logo_path),
             'brand' => StorePresenter::brand($store),
+            'palette' => BrandPalette::for(StorePresenter::brand($store), $store->template),
             'template' => $store->template->value,
             'takingOrders' => $context->takingOrders(),
             'shop' => $shop === null ? null : self::shop($shop),
             'shopCount' => $context->shops->count(),
+            // Audit OSA-34: the shops to choose from in the header (only when there is a choice).
+            'shops' => $context->shops->count() > 1 ? $context->shops->map(fn (OnlineStoreShop $s) => [
+                'id' => $s->id, 'name' => StorePresenter::shop($s)['name'],
+            ])->values()->all() : [],
             'departments' => array_map(fn (array $d) => [
                 'id' => $d['id'], 'name' => $d['name'], 'count' => $d['count'],
                 'url' => route('store.department', ['department' => $d['id']], false),
@@ -64,21 +71,24 @@ final class StorePages
                 'basket' => route('store.basket', [], false),
                 'basketAdd' => route('store.basket.add', [], false),
                 'checkout' => route('store.checkout', [], false),
+                'shop' => route('store.shop', [], false),
             ],
         ];
     }
 
     /**
-     * The visitor's collection shop for the frame (name, and the address and phone the footer shows).
+     * The visitor's collection shop for the frame (name, and the address, phone, hours and "open now" the header and
+     * footer show).
      *
-     * @return array{id: string, name: string, address: string, phone: string|null}
+     * @return array<string, mixed>
      */
     private static function shop(OnlineStoreShop $shop): array
     {
         $shop->loadMissing('branch');
         $info = StorePresenter::shop($shop);
 
-        return ['id' => $shop->id, 'name' => $info['name'], 'address' => $info['address'], 'phone' => $info['phone']];
+        return ['id' => $shop->id, 'name' => $info['name'], 'address' => $info['address'], 'phone' => $info['phone'],
+            'hours' => $info['hours'], 'openNow' => ShopOpenNow::describe($shop)];
     }
 
     public static function error(Request $request, int $status, ?StoreContext $context = null): Response
@@ -94,9 +104,12 @@ final class StorePages
 
         Inertia::setRootView(self::ROOT_VIEW);
 
-        return Inertia::render('store/error', ['status' => $status, 'title' => $title, 'message' => $message])
+        $response = Inertia::render('store/error', ['status' => $status, 'title' => $title, 'message' => $message])
             ->toResponse($request)
             ->setStatusCode($status);
+        $response->headers->set('X-Robots-Tag', 'noindex, nofollow');
+
+        return $response;
     }
 
     /**

@@ -9,7 +9,15 @@ import { ImagePicker } from './image-picker';
 import { ToggleSwitch } from './toggle-switch';
 import { type OnlineProductRow } from './types';
 
-type DetailsForm = { hidden: boolean; description: string; photo: File | null; remove_photo: boolean };
+type DetailsForm = { hidden: boolean; description: string; allergen_info: string; photo: File | null; remove_photo: boolean };
+
+const initial = (product: OnlineProductRow): DetailsForm => ({
+    hidden: product.hidden,
+    description: product.description ?? '',
+    allergen_info: product.allergenInfo ?? '',
+    photo: null,
+    remove_photo: false,
+});
 
 interface ProductDialogProps {
     product: OnlineProductRow | null;
@@ -17,15 +25,18 @@ interface ProductDialogProps {
     descriptionMax: number;
 }
 
-/** A product's online details: shown or hidden, photo and short description. The till's product is never changed. */
+/**
+ * A product's online details: shown or hidden, photo, short description and (OS-8, audit OSA-3) ingredients and
+ * allergens shown on the product page before purchase. The till's product is never changed.
+ */
 export function ProductDialog({ product, onClose, descriptionMax }: ProductDialogProps) {
-    const form = useForm<DetailsForm>({ hidden: false, description: '', photo: null, remove_photo: false });
+    const form = useForm<DetailsForm>({ hidden: false, description: '', allergen_info: '', photo: null, remove_photo: false });
     const errors = form.errors as Record<string, string | undefined>;
 
     useEffect(() => {
         if (product) {
-            form.setDefaults({ hidden: product.hidden, description: product.description ?? '', photo: null, remove_photo: false });
-            form.setData({ hidden: product.hidden, description: product.description ?? '', photo: null, remove_photo: false });
+            form.setDefaults(initial(product));
+            form.setData(initial(product));
             form.clearErrors();
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -104,6 +115,34 @@ export function ProductDialog({ product, onClose, descriptionMax }: ProductDialo
                                 <p className="text-muted-foreground text-xs">
                                     {form.data.description.length} of {descriptionMax} characters.
                                     {product.tillDescription ? ' Empty uses the description from your tills.' : ''}
+                                </p>
+                            )}
+                        </div>
+
+                        <div className="grid gap-2">
+                            <Label htmlFor="product-allergens">Ingredients &amp; allergens</Label>
+                            <Textarea
+                                id="product-allergens"
+                                rows={4}
+                                maxLength={descriptionMax}
+                                value={form.data.allergen_info}
+                                disabled={form.processing}
+                                placeholder={
+                                    product.tillAllergens ?? 'Ingredients: … Allergens (in bold on the label): milk, wheat … May contain: nuts.'
+                                }
+                                aria-invalid={!!errors.allergen_info}
+                                aria-describedby="product-allergens-help"
+                                onChange={(e) => form.setData('allergen_info', e.target.value)}
+                            />
+                            {errors.allergen_info ? (
+                                <p className="text-danger-foreground text-xs">{errors.allergen_info}</p>
+                            ) : (
+                                <p id="product-allergens-help" className="text-muted-foreground text-xs leading-5">
+                                    Shown on the product page before customers order, with &ldquo;Always check the label. If you have an allergy, ask
+                                    the shop.&rdquo;
+                                    {product.tillAllergens
+                                        ? ' Empty uses the allergens from your tills.'
+                                        : ' Food law needs this for food sold online: copy it from the label.'}
                                 </p>
                             )}
                         </div>

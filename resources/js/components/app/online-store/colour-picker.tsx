@@ -11,6 +11,37 @@ interface ColourPickerProps {
 
 const HEX = /^#[0-9A-Fa-f]{6}$/;
 
+/** WCAG contrast of two #RRGGBB colours (the server's BrandPalette does the same sums for the live store). */
+export function contrast(a: string, b: string): number {
+    const luminance = (hex: string) => {
+        const [r, g, bl] = [1, 3, 5]
+            .map((i) => parseInt(hex.slice(i, i + 2), 16) / 255)
+            .map((v) => (v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4)));
+
+        return 0.2126 * r + 0.7152 * g + 0.0722 * bl;
+    };
+    const [x, y] = [luminance(a), luminance(b)];
+
+    return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05);
+}
+
+/** Audit OSA-16: what the store does with a colour that is hard to read on white, or null when it reads well. */
+function readability(hex: string): string | null {
+    if (!HEX.test(hex)) {
+        return null;
+    }
+
+    const onWhite = contrast(hex, '#FFFFFF');
+
+    if (onWhite >= 4.5) {
+        return null;
+    }
+
+    return onWhite < 3
+        ? 'This is a light colour: buttons and bars get dark text on it, and links and prices use a darker shade so they stay readable (WCAG AA).'
+        : 'Links and prices use a slightly darker shade of this colour so they stay readable on white (WCAG AA).';
+}
+
 /** Preset swatches plus a custom colour (picker and #RRGGBB text). An empty value means the template's own colour. */
 export function ColourPicker({ colours, value, onChange, error, disabled }: ColourPickerProps) {
     const custom = value !== '' && !colours.some((c) => c.hex.toLowerCase() === value.toLowerCase());
@@ -86,6 +117,11 @@ export function ColourPicker({ colours, value, onChange, error, disabled }: Colo
                 />
                 <span className="text-muted-foreground text-xs">Custom colour</span>
             </div>
+            {!error && readability(value) && (
+                <p role="status" className="bg-warning-soft text-warning-foreground rounded-md px-3 py-2 text-[13px] leading-5">
+                    {readability(value)}
+                </p>
+            )}
             {error && (
                 <p id="brand_colour-error" className="text-danger-foreground text-[13px] leading-5">
                     {error}

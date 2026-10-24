@@ -128,10 +128,12 @@ final class StorefrontCatalogue
      */
     private static function search(Builder $query, string $term, string $companyId): void
     {
-        $query->where(function (Builder $q) use ($term, $companyId) {
-            $q->where('products.name', 'like', '%'.$term.'%')
-                ->orWhere('products.brand', 'like', '%'.$term.'%')
-                ->orWhere('products.sku', 'like', $term.'%')
+        // Audit OSA-28: `_` is a LIKE wildcard too, so it is escaped ('!' is the escape character).
+        $like = str_replace(['!', '_'], ['!!', '!_'], $term);
+        $query->where(function (Builder $q) use ($term, $like, $companyId) {
+            $q->whereRaw("products.name like ? escape '!'", ['%'.$like.'%'])
+                ->orWhereRaw("products.brand like ? escape '!'", ['%'.$like.'%'])
+                ->orWhereRaw("products.sku like ? escape '!'", [$like.'%'])
                 ->orWhereIn('products.id', ProductBarcode::query()->select('product_id')->where('company_id', $companyId)->where('barcode', $term));
         });
     }
