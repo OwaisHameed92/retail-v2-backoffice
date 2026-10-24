@@ -1,0 +1,73 @@
+import {
+    Apple,
+    Baby,
+    Beef,
+    CakeSlice,
+    Candy,
+    Carrot,
+    Coffee,
+    Cookie,
+    CookingPot,
+    Croissant,
+    CupSoda,
+    Drumstick,
+    Egg,
+    Fish,
+    Ham,
+    IceCreamCone,
+    Leaf,
+    type LucideIcon,
+    Milk,
+    Package,
+    PawPrint,
+    Pill,
+    Pizza,
+    Salad,
+    Sandwich,
+    ShoppingBasket,
+    Snowflake,
+    Soup,
+    Sparkles,
+    SprayCan,
+    Wheat,
+} from 'lucide-react';
+
+/** Words in a department's name and the icon drawn when it has no photo (first match wins). */
+const ICONS: [RegExp, LucideIcon][] = [
+    [/ice ?cream|dessert/i, IceCreamCone],
+    [/frozen|freezer/i, Snowflake],
+    [/fruit|apple|banana/i, Apple],
+    [/veg|salad|greens|produce|fresh food/i, Carrot],
+    [/chicken|poultry|turkey|wings/i, Drumstick],
+    [/lamb|beef|mutton|steak|butcher|meat|mince|goat|bbq|grill/i, Beef],
+    [/deli|ham|cooked meat|sausage|charcuterie|bacon/i, Ham],
+    [/fish|seafood|prawn/i, Fish],
+    [/bread|bakery|baker|pastr|croissant|naan|roti/i, Croissant],
+    [/cake|sweet treat|patisserie/i, CakeSlice],
+    [/milk|dairy|cheese|yog/i, Milk],
+    [/egg/i, Egg],
+    [/drink|soda|juice|water|beverage|pop\b/i, CupSoda],
+    [/tea|coffee|hot drink/i, Coffee],
+    [/sweet|confection|chocolate|candy/i, Candy],
+    [/snack|crisp|biscuit|cookie/i, Cookie],
+    [/rice|grain|flour|pasta|cereal|lentil|pulse|dal|bean/i, Wheat],
+    [/spice|herb|masala|season/i, Leaf],
+    [/tin|can|jar|cupboard|pantry|grocery|groceries|world food|sauce/i, Soup],
+    [/ready|meal|chilled|kitchen/i, CookingPot],
+    [/pizza/i, Pizza],
+    [/sandwich|lunch|food to go/i, Sandwich],
+    [/salad bar|healthy/i, Salad],
+    [/baby|infant/i, Baby],
+    [/pet|dog|cat\b/i, PawPrint],
+    [/health|pharma|medic|vitamin/i, Pill],
+    [/beauty|toilet|personal care|cosmetic|hair/i, Sparkles],
+    [/house|clean|laundry|home/i, SprayCan],
+    [/news|card|gift|stationery|general/i, Package],
+];
+
+/** A tasteful icon for a department (or a product in it) without a photo. */
+export function departmentIcon(name: string | null | undefined): LucideIcon {
+    const text = (name ?? '').trim();
+
+    return ICONS.find(([pattern]) => pattern.test(text))?.[1] ?? ShoppingBasket;
+}

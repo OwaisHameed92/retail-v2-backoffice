@@ -29,6 +29,7 @@ use App\Http\Controllers\App\NotificationController;
 use App\Http\Controllers\App\NotificationSettingsController;
 use App\Http\Controllers\App\OnlineOrderController;
 use App\Http\Controllers\App\OnlineProductController;
+use App\Http\Controllers\App\OnlineStoreBannerController;
 use App\Http\Controllers\App\OnlineStoreController;
 use App\Http\Controllers\App\OnlineStoreShopController;
 use App\Http\Controllers\App\ParcelController;
@@ -495,7 +496,13 @@ Route::middleware(['auth:web', 'verified', 'company', 'two-factor:web'])->group(
         Route::get('/', [OnlineStoreController::class, 'edit'])->name('edit');
         Route::get('shops', [OnlineStoreShopController::class, 'index'])->name('shops');
         Route::get('products', [OnlineProductController::class, 'index'])->name('products');
+        // OS-8: the builder's product picker (JSON) and the home banners.
+        Route::get('product-search', [OnlineStoreBannerController::class, 'products'])->name('product-search')->middleware('throttle:120,1');
         Route::middleware('throttle:60,1')->group(function () {
+            Route::post('banners', [OnlineStoreBannerController::class, 'store'])->name('banners.store');
+            Route::put('banners/order', [OnlineStoreBannerController::class, 'order'])->name('banners.order');
+            Route::post('banners/{banner}', [OnlineStoreBannerController::class, 'update'])->name('banners.update')->whereUlid('banner');
+            Route::delete('banners/{banner}', [OnlineStoreBannerController::class, 'destroy'])->name('banners.destroy')->whereUlid('banner');
             Route::post('/', [OnlineStoreController::class, 'update'])->name('update');
             Route::put('live', [OnlineStoreController::class, 'live'])->name('live');
             Route::put('taking-orders', [OnlineStoreController::class, 'takingOrders'])->name('taking-orders');

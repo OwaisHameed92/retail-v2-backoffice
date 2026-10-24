@@ -97,8 +97,8 @@ test('the builder page shows the saved store, its full address, its look (read o
         ->missing('templates')
         ->where('checklist.collectionShops', 1)
         ->where('checklist.productsShop', 'Leeds')
-        ->has('sectionOptions', 6)
-        ->has('store.sections', 6)
+        ->has('sectionOptions', 8)
+        ->has('store.sections', 8)
         ->where('canEdit', true));
 });
 
@@ -146,7 +146,8 @@ test('saving changes the store and uploads the logo and banner to the business\'
     $this->actingAs($this->owner)->get('/app/online-store')->assertInertia(fn (Assert $p) => $p
         ->where('store.logoUrl', Storage::disk('public')->url($store->logo_path))
         ->where('store.sections', [['key' => 'departments', 'enabled' => true], ['key' => 'hero', 'enabled' => false],
-            ['key' => 'featured', 'enabled' => false], ['key' => 'howItWorks', 'enabled' => false], ['key' => 'shops', 'enabled' => false], ['key' => 'about', 'enabled' => false]]));
+            ['key' => 'featured', 'enabled' => false], ['key' => 'howItWorks', 'enabled' => false], ['key' => 'shops', 'enabled' => false], ['key' => 'about', 'enabled' => false],
+            ['key' => 'offers', 'enabled' => false], ['key' => 'departmentRows', 'enabled' => false]]));
 });
 
 test('a replaced logo is deleted, a removed banner is deleted, and saving without files keeps them', function () {

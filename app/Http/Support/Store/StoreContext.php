@@ -7,6 +7,7 @@ use App\Domain\OnlineStore\Basket\PriceBasket;
 use App\Domain\OnlineStore\Basket\PricedBasket;
 use App\Domain\OnlineStore\Models\OnlineStore;
 use App\Domain\OnlineStore\Models\OnlineStoreShop;
+use App\Domain\OnlineStore\Queries\StorefrontCatalogue;
 use Illuminate\Contracts\Session\Session;
 use Illuminate\Database\Eloquent\Collection;
 
@@ -20,6 +21,9 @@ final class StoreContext
     public const SESSION_PREFIX = 'online_store.';
 
     private ?PricedBasket $priced = null;
+
+    /** @var array<string, list<array{id: string, name: string, count: int}>> */
+    private array $departments = [];
 
     /**
      * @param  Collection<int, OnlineStoreShop>  $shops
@@ -37,6 +41,23 @@ final class StoreContext
         $chosen = $this->basket()->shopId;
 
         return ($chosen !== null ? $this->shops->firstWhere('id', $chosen) : null) ?? $this->shops->first();
+    }
+
+    /**
+     * The departments shown at the visitor's shop with their counts, read once per request (audit OSA-28: the frame,
+     * the home rows and the pages all need them).
+     *
+     * @return list<array{id: string, name: string, count: int}>
+     */
+    public function departments(): array
+    {
+        $shop = $this->shop();
+
+        if ($shop === null) {
+            return [];
+        }
+
+        return $this->departments[$shop->id] ??= app(StorefrontCatalogue::class)->departments($this->store, $shop);
     }
 
     /** Whether customers can add and order now: the store takes orders and a shop is open for collections. */

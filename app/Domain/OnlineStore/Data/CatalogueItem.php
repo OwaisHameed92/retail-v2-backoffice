@@ -5,7 +5,9 @@ namespace App\Domain\OnlineStore\Data;
 /**
  * One product as the online store shows it at one shop (StorefrontCatalogue). Money and quantities are decimal
  * strings. `price` is the shop's live price, else the business price (a weighed product's price is per kg and only
- * an estimate: the till weighs it). Stock-tracked products with no stock are shown but not `orderable`.
+ * an estimate: the till weighs it). Stock-tracked products with no stock are shown but not `orderable`. OS-8: the
+ * category (offers), the online "Ingredients & allergens" text and the pack size from the till (`net_mass_kg`,
+ * `volume_ml`) for the size and unit price.
  */
 final readonly class CatalogueItem
 {
@@ -21,6 +23,10 @@ final readonly class CatalogueItem
         public ?int $maxQtyPerSale,
         public bool $stockTracked,
         public bool $orderable,
+        public ?string $categoryId = null,
+        public ?string $allergenInfo = null,
+        public ?string $netMassKg = null,
+        public ?string $volumeMl = null,
     ) {}
 
     /**

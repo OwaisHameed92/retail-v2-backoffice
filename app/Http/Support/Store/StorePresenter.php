@@ -7,16 +7,19 @@ use App\Domain\OnlineStore\Basket\PricedBasket;
 use App\Domain\OnlineStore\Data\CatalogueItem;
 use App\Domain\OnlineStore\Enums\StoreSection;
 use App\Domain\OnlineStore\Models\OnlineStore;
-use App\Domain\OnlineStore\Models\OnlineStoreProduct;
 use App\Domain\OnlineStore\Models\OnlineStoreShop;
-use App\Domain\OnlineStore\Support\StoreScope;
+use App\Domain\OnlineStore\Queries\StoreOffers;
+use App\Domain\OnlineStore\Queries\StorePhotos;
+use App\Domain\OnlineStore\Support\PackSizeLabel;
 use App\Domain\Tenancy\Models\Branch;
 use Illuminate\Support\Facades\Storage;
 
 /**
- * What the public store's pages show (OS-2), as plain arrays for the React pages. Product photos are only the
- * online photos (`online_store_products.photo_path` on the public disk): the till's own `image_path` is a path on
- * the till's PC, never a URL (contract PORTAL-CHANGES 0.1.35). No photo → the page draws a placeholder tile.
+ * What the public store's pages show (OS-2), as plain arrays for the React pages. Product photos (StorePhotos, OS-8):
+ * the online photo (`online_store_products.photo_path` on the public disk), else the master catalogue's picture of
+ * one of its barcodes; the till's own `image_path` is a path on the till's PC, never a URL (contract PORTAL-CHANGES
+ * 0.1.35). No photo → the page draws a branded placeholder. With the shop, a product carries its till offer's label
+ * (StoreOffers, OS-8) to show beside the shelf price.
  */
 final class StorePresenter
 {
@@ -24,23 +27,28 @@ final class StorePresenter
      * @param  list<CatalogueItem>  $items
      * @return list<array<string, mixed>>
      */
-    public static function products(OnlineStore $store, array $items): array
+    public static function products(OnlineStore $store, array $items, ?OnlineStoreShop $shop = null): array
     {
         $photos = self::photos($store, array_map(fn (CatalogueItem $item) => $item->id, $items));
+        $offers = $shop === null ? [] : app(StoreOffers::class)->labels($store, $shop, $items);
 
-        return array_map(fn (CatalogueItem $item) => self::product($item, $photos[$item->id] ?? null), $items);
+        return array_map(fn (CatalogueItem $item) => self::product($item, $photos[$item->id] ?? null, $offers[$item->id] ?? null), $items);
     }
 
     /**
+     * @param  string|null  $photoUrl  the photo's address (StorePhotos)
      * @return array<string, mixed>
      */
-    public static function product(CatalogueItem $item, ?string $photoPath): array
+    public static function product(CatalogueItem $item, ?string $photoUrl, ?string $offer = null): array
     {
         return [
             'id' => $item->id,
             'name' => $item->name,
             'description' => $item->description,
-            'photoUrl' => self::publicUrl($photoPath),
+            'photoUrl' => $photoUrl,
+            'offer' => $offer,
+            'size' => PackSizeLabel::size($item),
+            'unitPrice' => PackSizeLabel::unitPrice($item),
             'departmentId' => $item->departmentId,
             'price' => $item->price,
             'isWeighed' => $item->isWeighed,
@@ -150,23 +158,13 @@ final class StorePresenter
     }
 
     /**
-     * The online photos of these products, by product id (one query, scoped to the store's business).
+     * The photos of these products, by product id (StorePhotos: online photo, else the master catalogue's).
      *
      * @param  list<string>  $productIds
      * @return array<string, string>
      */
     private static function photos(OnlineStore $store, array $productIds): array
     {
-        if ($productIds === []) {
-            return [];
-        }
-
-        return StoreScope::run($store, fn (): array => OnlineStoreProduct::query()
-            ->where('company_id', $store->company_id)
-            ->whereIn('product_id', $productIds)
-            ->whereNotNull('photo_path')->where('photo_path', '!=', '')
-            ->pluck('photo_path', 'product_id')
-            ->map(fn ($path) => (string) $path)
-            ->all());
+        return app(StorePhotos::class)->products($store, $productIds);
     }
 }

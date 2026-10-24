@@ -59,6 +59,19 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
+        // Audit OSA-7: the public online store (routes/store.php) shares only what its pages need (StorePages adds the
+        // store frame); never the portal's user, business, abilities or notices.
+        if ($request->routeIs('store.*')) {
+            return [
+                ...parent::share($request),
+                'country' => app(Country::class)->toFrontend(),
+                'flash' => fn () => $request->hasSession() ? [
+                    'success' => $request->session()->get('success'),
+                    'error' => $request->session()->get('error'),
+                ] : ['success' => null, 'error' => null],
+            ];
+        }
+
         [$message, $author] = str(Inspiring::quotes()->random())->explode('-');
 
         return array_merge(parent::share($request), [

@@ -17,6 +17,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property bool $hidden
  * @property string|null $photo_path
  * @property string|null $description
+ * @property string|null $allergen_info OS-8 (audit OSA-3): ingredients and allergens, shown before purchase
  * @property CarbonImmutable|null $created_at
  * @property CarbonImmutable|null $updated_at
  */

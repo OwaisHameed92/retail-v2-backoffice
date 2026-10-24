@@ -20,6 +20,7 @@ class SaveOnlineProductRequest extends CompanyWideWriteRequest
         return [
             'hidden' => ['sometimes', 'boolean'],
             'description' => ['sometimes', 'nullable', 'string', 'max:'.SetOnlineProduct::DESCRIPTION_MAX],
+            'allergen_info' => ['sometimes', 'nullable', 'string', 'max:'.SetOnlineProduct::DESCRIPTION_MAX],
             'remove_photo' => ['sometimes', 'boolean'],
             'photo' => StoreImages::rules(),
         ];
@@ -30,7 +31,8 @@ class SaveOnlineProductRequest extends CompanyWideWriteRequest
      */
     public function messages(): array
     {
-        return [...StoreImages::messages('photo'), 'description.max' => 'Keep the description to '.SetOnlineProduct::DESCRIPTION_MAX.' characters or fewer.'];
+        return [...StoreImages::messages('photo'), 'description.max' => 'Keep the description to '.SetOnlineProduct::DESCRIPTION_MAX.' characters or fewer.',
+            'allergen_info.max' => 'Keep the ingredients and allergens to '.SetOnlineProduct::DESCRIPTION_MAX.' characters or fewer.'];
     }
 
     /**
@@ -38,7 +40,7 @@ class SaveOnlineProductRequest extends CompanyWideWriteRequest
      */
     public function changes(): array
     {
-        $changes = $this->safe()->only(['description']);
+        $changes = $this->safe()->only(['description', 'allergen_info']);
 
         foreach (['hidden', 'remove_photo'] as $key) {
             if ($this->has($key)) {

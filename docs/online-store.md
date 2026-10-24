@@ -62,6 +62,31 @@ https://claude.ai/artifact/FdsDJZ2vyhQJw5hfPmUiNz. DECISIONS "Online store, clic
     logged-in user, so the global scope cannot be relied on.
   - Tests prove that store A never shows or accepts business B's products, shops or orders.
 
+## OS-8: the public store's look (2026-10-24)
+
+- **Colours.** The store's one colour (or the template's) becomes a full set of colours on the server
+  (`BrandPalette`): buttons, links, prices, chips, focus rings, header strip, footer, phone bar and toasts. Text is
+  always readable (WCAG AA): a light colour gets dark text, and links and prices use a darker shade. Fresh Market keeps
+  its lime highlight with a green or grey colour, else a light shade of the store's own colour; the butcher keeps tan.
+  The builder says when a colour is light.
+- **Banners** (`online_store_banners`): up to 6, each with a photo, headline, short text and a button to a department,
+  a product, a search or an https address; on or off, in order. They take turns at the top of the home page (pause on
+  hover or focus, pause button, arrows, dots, swipe; no auto-advance with reduced motion). The old single banner and
+  headline moved into the first banner.
+- **Featured products:** best sellers (quantity sold in the last 30 days at the collection shops, from
+  `rpt_product_daily`; newest until there are sales), hand-picked (up to 24, in order) or newest.
+- **Optional home rows** (off until turned on in "Home page sections"): "On offer" (till offers live today for everyone,
+  all day, at the shop; the offer shows on every product card, and the till takes it off at collection) and "Rows by
+  department" (chosen departments, else the first three). "About us" has its own text.
+- **Photos:** the online photo, else the master catalogue picture of one of the product's barcodes, else a branded
+  placeholder with the department's icon. Department tiles use a product photo from the department, else an icon.
+  Cards show pack size and price per kg or litre from the till's weight and volume.
+- **Food information:** "Ingredients & allergens" per product (Products page), else the tills' allergen data, shown on
+  the product page before ordering with "check the label, ask the shop".
+- **Search engines and sharing:** title, description, Open Graph, canonical and JSON-LD written on the server;
+  `noindex` (meta and `X-Robots-Tag`) on basket, checkout, order, error, search and filtered pages; `/{slug}/sitemap.xml`
+  and `/{slug}/robots.txt`. Store pages carry only the store's own shared props, never the portal's.
+
 ## Later stages
 
 - **S2:** card payment with DNA Payments (hosted payment page, webhook, money to the shop's DNA account) and local
@@ -76,7 +101,8 @@ https://claude.ai/artifact/FdsDJZ2vyhQJw5hfPmUiNz. DECISIONS "Online store, clic
 |---|---|
 | `online_stores` | One per business. Slug (unique across all businesses), template, brand (logo, colour, banner, headline), sections, live / taking orders, order email, add-on price override |
 | `online_store_shops` | Collection shops (`branch_id`) with hours, prep minutes, orders per slot |
-| `online_store_products` | Per product (`product_id`, the till's id): hidden, photo path, description |
+| `online_store_products` | Per product (`product_id`, the till's id): hidden, photo path, description, ingredients and allergens |
+| `online_store_banners` | OS-8: home banners (photo, headline, text, button link, on/off, order) |
 | `online_orders` | Number, shop, status, customer name / mobile / email, slot, item total `decimal(12,2)`, token hash, cancel reason, status times |
 | `online_order_lines` | Product id + name / price snapshot, quantity `decimal(14,4)`, line total `decimal(12,2)` |
 

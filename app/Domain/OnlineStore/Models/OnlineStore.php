@@ -26,6 +26,10 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string|null $brand_colour "#RRGGBB"
  * @property string|null $headline
  * @property list<array{key: string, enabled: bool}>|null $sections home page sections in order
+ * @property string|null $featured_mode OS-8: FeaturedMode value; null = best sellers
+ * @property list<string>|null $featured_product_ids OS-8: the hand-picked till product ids, in order
+ * @property list<string>|null $home_departments OS-8: the department ids with their own home row, in order
+ * @property string|null $about_text OS-8: the business's own "About us" text (else the template's)
  * @property bool $is_live
  * @property bool $taking_orders
  * @property string|null $order_email
@@ -36,6 +40,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property CarbonImmutable|null $created_at
  * @property CarbonImmutable|null $updated_at
  * @property-read Collection<int, OnlineStoreShop> $shops
+ * @property-read Collection<int, OnlineStoreBanner> $banners
  */
 class OnlineStore extends Model
 {
@@ -53,6 +58,14 @@ class OnlineStore extends Model
     }
 
     /**
+     * @return HasMany<OnlineStoreBanner, $this>
+     */
+    public function banners(): HasMany
+    {
+        return $this->hasMany(OnlineStoreBanner::class)->orderBy('position')->orderBy('id');
+    }
+
+    /**
      * @return array<string, string>
      */
     protected function casts(): array
@@ -60,6 +73,8 @@ class OnlineStore extends Model
         return [
             'template' => StoreTemplateCast::class,
             'sections' => 'array',
+            'featured_product_ids' => 'array',
+            'home_departments' => 'array',
             'is_live' => 'boolean',
             'taking_orders' => 'boolean',
             'monthly_price' => MoneyCast::class,

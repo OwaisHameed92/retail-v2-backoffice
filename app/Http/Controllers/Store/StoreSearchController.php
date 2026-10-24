@@ -24,7 +24,7 @@ class StoreSearchController extends Controller
 
         return Inertia::render('store/search', [
             'term' => $term,
-            'products' => $page === null ? [] : StorePresenter::products($context->store, $page->items),
+            'products' => $page === null ? [] : StorePresenter::products($context->store, $page->items, $shop),
             'pagination' => ['page' => $page->page ?? 1, 'lastPage' => $page?->lastPage() ?? 1, 'total' => $page->total ?? 0],
             'filters' => $request->echo(),
         ]);

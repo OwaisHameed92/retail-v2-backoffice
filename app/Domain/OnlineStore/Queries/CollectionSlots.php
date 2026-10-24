@@ -93,6 +93,9 @@ final class CollectionSlots
         return $date->greaterThanOrEqualTo($today) && $date->lessThan($today->addDays($days));
     }
 
+    /** @var array<string, Company> */
+    private array $companies = [];
+
     /**
      * Orders that are not cancelled per slot start (UTC "Y-m-d H:i:s").
      *
@@ -101,7 +104,8 @@ final class CollectionSlots
      */
     private function taken(OnlineStoreShop $shop, array $starts): array
     {
-        $company = Company::query()->findOrFail($shop->company_id);
+        // Audit OSA-28: the business is read once per request, not once per day asked.
+        $company = $this->companies[$shop->company_id] ??= Company::query()->findOrFail($shop->company_id);
 
         return $this->tenancy->runAs($company, fn (): array => OnlineOrder::query()
             ->where('company_id', $shop->company_id)

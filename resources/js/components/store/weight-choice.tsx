@@ -38,8 +38,8 @@ export function WeightChoice({
                         disabled={disabled}
                         onClick={() => onChange(kg)}
                         className={cn(
-                            'min-h-12 rounded-full px-2 font-bold tabular-nums transition disabled:cursor-not-allowed disabled:opacity-50',
-                            on ? 'bg-ink ring-ink text-white ring-2' : 'text-ink ring-line hover:ring-ink bg-white ring-1',
+                            'min-h-11 rounded-full px-2 text-sm font-semibold tabular-nums transition disabled:cursor-not-allowed disabled:opacity-50',
+                            on ? 'bg-brand text-on-brand ring-brand ring-2' : 'text-ink ring-line hover:ring-brand-text bg-white ring-1',
                         )}
                     >
                         {weightLabel(kg)}
