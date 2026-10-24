@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Domain\OnlineStore\Support\OnlineStoreSwitch;
+use App\Domain\OnlineStore\Support\PlanOnlineStore;
 use App\Domain\Plans\Actions\CreatePlan;
 use App\Domain\Plans\Actions\UpdatePlan;
 use App\Domain\Plans\Data\PlanActivity;
@@ -66,6 +68,7 @@ class PlanController extends Controller
                 'graceDays' => Plan::DEFAULT_GRACE_DAYS,
                 'sortOrder' => ((int) Plan::withTrashed()->max('sort_order')) + 10,
             ],
+            'onlineStore' => self::onlineStore(),
             'toast' => $this->flashedToast($request),
         ]);
     }
@@ -85,6 +88,7 @@ class PlanController extends Controller
             'plan' => PlanData::fromModel($plan),
             'features' => Feature::options(),
             'activity' => PlanActivity::forPlan($plan),
+            'onlineStore' => self::onlineStore(),
             'toast' => $this->flashedToast($request),
         ]);
     }
@@ -94,6 +98,7 @@ class PlanController extends Controller
         return Inertia::render('admin/plans/edit', [
             'plan' => PlanData::fromModel($plan),
             'features' => Feature::options(),
+            'onlineStore' => self::onlineStore(),
             'toast' => $this->flashedToast($request),
         ]);
     }
@@ -105,6 +110,16 @@ class PlanController extends Controller
         $this->toast($request, $plan->wasChanged() ? "{$plan->name} plan saved." : 'No changes to save.');
 
         return redirect()->route('admin.plans.show', $plan);
+    }
+
+    /**
+     * OS-7: the plan form's online store block (default price, server switch); null where the country has none.
+     *
+     * @return array{defaultPrice: string, serverOn: bool}|null
+     */
+    private static function onlineStore(): ?array
+    {
+        return PlanOnlineStore::offered() ? ['defaultPrice' => PlanOnlineStore::price(null), 'serverOn' => OnlineStoreSwitch::enabled()] : null;
     }
 
     /**

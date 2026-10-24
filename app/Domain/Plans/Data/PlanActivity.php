@@ -31,6 +31,8 @@ final class PlanActivity
         'grace_days' => 'Payment grace',
         'features' => 'Features',
         'includes_handheld' => 'Handheld (PDA) app included',
+        'includes_online_store' => 'Online store included',
+        'online_store_monthly_price' => 'Online store fee per month',
         'is_active' => 'Available for new licences',
         'is_public' => 'Shown on pricing page',
         'sort_order' => 'Sort order',
@@ -109,7 +111,7 @@ final class PlanActivity
         }
 
         return match (true) {
-            str_starts_with($key, 'price_'), $key === 'setup_fee' => self::money($value),
+            str_starts_with($key, 'price_'), $key === 'setup_fee', $key === 'online_store_monthly_price' => self::money($value),
             str_ends_with($key, '_days') => $value.' '.Str::plural('day', (int) $value),
             is_bool($value) => $value ? 'Yes' : 'No',
             $key === 'description' => Str::limit((string) $value, 80),

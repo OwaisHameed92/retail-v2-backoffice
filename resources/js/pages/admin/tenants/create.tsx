@@ -1,3 +1,4 @@
+import { StoreTemplatePicker } from '@/components/admin/billing/store-template-picker';
 import {
     emptyUpfront,
     OnboardingBillingNote,
@@ -23,12 +24,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import AdminLayout from '@/layouts/admin-layout';
-import { taxIdFor } from '@/lib/country';
+import { byHand } from '@/lib/billing-collection';
+import { taxIdFor, taxText } from '@/lib/country';
 import { cn } from '@/lib/utils';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { CircleAlert, LoaderCircle } from 'lucide-react';
 import { type FormEventHandler } from 'react';
-import { byHand } from '@/lib/billing-collection';
 
 interface CreateTenantProps {
     nations: Option<Nation>[];
@@ -41,6 +42,13 @@ interface CreateTenantProps {
     planDefaults: PlanDefaults;
     /** Module 1.13: the upfront payment and the Direct Debit deadline. */
     billing: OnboardingBillingOptions;
+    /** OS-7: active plans that include the online store (by id), the templates; null where the country has none. */
+    onlineStore: {
+        plans: Record<string, { price: string; priceLabel: string }>;
+        templates: { value: string; label: string }[];
+        serverOn: boolean;
+        defaultPrice: string;
+    } | null;
 }
 
 type CreateTenantForm = CompanyFieldsData &
@@ -67,6 +75,7 @@ type CreateTenantForm = CompanyFieldsData &
         plan_id: string;
         owner_name: string;
         owner_email: string;
+        store_template: string;
     };
 
 const statusOptions = [
@@ -74,7 +83,16 @@ const statusOptions = [
     { value: 'active', title: 'Active customer', body: 'Already agreed a plan and paying.' },
 ] as const;
 
-export default function CreateTenant({ nations, maxTills, plans, defaultPlanId, licenceOptions, planDefaults, billing }: CreateTenantProps) {
+export default function CreateTenant({
+    nations,
+    maxTills,
+    plans,
+    defaultPlanId,
+    licenceOptions,
+    planDefaults,
+    billing,
+    onlineStore,
+}: CreateTenantProps) {
     const initialPlanId = defaultPlanId ?? plans[0]?.value ?? '';
     const { data, setData, post, processing, errors, transform } = useForm<CreateTenantForm>({
         name: '',
@@ -109,6 +127,7 @@ export default function CreateTenant({ nations, maxTills, plans, defaultPlanId, 
         plan_id: initialPlanId,
         owner_name: '',
         owner_email: '',
+        store_template: '',
         ...emptyUpfront,
         max_registers: 1,
         kind: 'trial',
@@ -122,7 +141,13 @@ export default function CreateTenant({ nations, maxTills, plans, defaultPlanId, 
         max_branches: planDefaults[initialPlanId]?.multiBranch ? 2 : 1,
     });
 
-    transform((values) => ({ ...values, ...licencePayload(values), max_branches: values.multi_branch ? values.max_branches : 1 }));
+    transform((values) => ({
+        ...values,
+        ...licencePayload(values),
+        max_branches: values.multi_branch ? values.max_branches : 1,
+        // OS-7: the template only goes with a plan that includes the online store.
+        store_template: onlineStore?.plans[values.plan_id] ? values.store_template : '',
+    }));
 
     // A plan brings its features (unless customised) and multi-branch default; tills allowed never below the tills added.
     const changePlan = (planId: string) => {
@@ -153,6 +178,7 @@ export default function CreateTenant({ nations, maxTills, plans, defaultPlanId, 
     const setBranchField = <K extends keyof BranchFieldsData>(key: K, value: BranchFieldsData[K]) =>
         setData(`branch_${key}` as keyof CreateTenantForm, value as never);
 
+    const storePlan = onlineStore?.plans[data.plan_id] ?? null;
     const errorCount = Object.keys(errors).length;
 
     const submit: FormEventHandler = (e) => {
@@ -288,6 +314,35 @@ export default function CreateTenant({ nations, maxTills, plans, defaultPlanId, 
                         )}
                     </FormSection>
 
+                    {onlineStore && storePlan && (
+                        <FormSection
+                            title="Online store"
+                            description={taxText(
+                                `This plan includes the online store: ${storePlan.priceLabel} a month before VAT, its own line on the same monthly invoice, collected by the same Direct Debit (charged once a till has cloud sync).`,
+                            )}
+                        >
+                            <div className="grid gap-3 sm:col-span-2">
+                                <StoreTemplatePicker
+                                    id="store_template"
+                                    templates={onlineStore.templates}
+                                    value={data.store_template}
+                                    onChange={(value) => setData('store_template', value)}
+                                    error={errors.store_template}
+                                    hint="The store is made now from the business name: not live and not taking orders until the business publishes it. The template can be changed later on the Billing tab."
+                                />
+                                {!onlineStore.serverOn && (
+                                    <Alert variant="warning">
+                                        <CircleAlert className="size-4" />
+                                        <AlertDescription>
+                                            Online stores are switched off on this server (ONLINE_STORE), so a business cannot be put on this plan
+                                            yet. Choose another plan, or switch online stores on first.
+                                        </AlertDescription>
+                                    </Alert>
+                                )}
+                            </div>
+                        </FormSection>
+                    )}
+
                     <FormSection
                         title="Licence form"
                         description="What every till key carries: tills allowed, trial or full, length and features. Defaults come from the plan; you can change them later per branch."
@@ -362,7 +417,10 @@ export default function CreateTenant({ nations, maxTills, plans, defaultPlanId, 
 
                     <FormSection
                         title="Billing"
-                        description={byHand('Direct Debit, and what the business paid today.', 'Invoices paid by hand, and what the business paid today.')}
+                        description={byHand(
+                            'Direct Debit, and what the business paid today.',
+                            'Invoices paid by hand, and what the business paid today.',
+                        )}
                     >
                         <div className="grid gap-4 sm:col-span-2">
                             <OnboardingBillingNote options={billing} />

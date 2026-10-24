@@ -1,5 +1,5 @@
 import { PlanForm, planFormDefaults, type PlanFormData } from '@/components/admin/plans/plan-form';
-import { type FeatureOption } from '@/components/admin/plans/types';
+import { type FeatureOption, type PlanOnlineStoreSettings } from '@/components/admin/plans/types';
 import { PageHeader } from '@/components/shared/page-header';
 import AdminLayout from '@/layouts/admin-layout';
 import { Head, useForm } from '@inertiajs/react';
@@ -7,10 +7,12 @@ import { type FormEventHandler } from 'react';
 
 interface CreatePlanProps {
     features: FeatureOption[];
+    /** OS-7: null where the country has no online stores. */
+    onlineStore: PlanOnlineStoreSettings | null;
     defaults: { trialDays: number; trialGraceDays: number; graceDays: number; sortOrder: number };
 }
 
-export default function CreatePlan({ features, defaults }: CreatePlanProps) {
+export default function CreatePlan({ features, defaults, onlineStore }: CreatePlanProps) {
     const { data, setData, post, processing, errors, isDirty } = useForm<PlanFormData>(planFormDefaults(undefined, defaults));
 
     const submit: FormEventHandler = (e) => {
@@ -39,6 +41,7 @@ export default function CreatePlan({ features, defaults }: CreatePlanProps) {
                     autoCode
                     autoHandheld
                     isDirty={isDirty}
+                    onlineStore={onlineStore}
                 />
             </div>
         </AdminLayout>

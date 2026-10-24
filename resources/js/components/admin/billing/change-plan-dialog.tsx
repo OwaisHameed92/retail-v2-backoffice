@@ -1,4 +1,5 @@
 import { ChangePlanPreview } from '@/components/admin/billing/change-plan-preview';
+import { StoreTemplatePicker } from '@/components/admin/billing/store-template-picker';
 import { type CompanyRef, type PlanChangeOptions, type PlanChangePreviewData } from '@/components/admin/billing/types';
 import { MoneyInput } from '@/components/admin/plans/plan-form-fields';
 import { Field } from '@/components/admin/tenants/field';
@@ -37,6 +38,8 @@ function ChangePlanBody({ onOpenChange, company, options }: ChangePlanDialogProp
     const [planId, setPlanId] = useState<string | null>(null);
     const [step, setStep] = useState<'choose' | 'preview'>('choose');
     const [setupFee, setSetupFee] = useState('');
+    const [storeTemplate, setStoreTemplate] = useState('');
+    const [templateError, setTemplateError] = useState<string | null>(null);
     const [preview, setPreview] = useState<PlanChangePreviewData | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [feeError, setFeeError] = useState<string | null>(null);
@@ -55,7 +58,12 @@ function ChangePlanBody({ onOpenChange, company, options }: ChangePlanDialogProp
                 query.set('setup_fee', setupFee.trim());
             }
             try {
-                const result = await sendJson<PlanChangePreviewData>('GET', `${route('admin.tenants.plan-change.preview', company.id)}?${query}`, undefined, controller.signal);
+                const result = await sendJson<PlanChangePreviewData>(
+                    'GET',
+                    `${route('admin.tenants.plan-change.preview', company.id)}?${query}`,
+                    undefined,
+                    controller.signal,
+                );
                 setLoading(false);
                 if (result.ok && result.data) {
                     setPreview(result.data);
@@ -80,6 +88,8 @@ function ChangePlanBody({ onOpenChange, company, options }: ChangePlanDialogProp
     const choose = (id: string) => {
         setPlanId(id);
         setSetupFee('');
+        setStoreTemplate('');
+        setTemplateError(null);
         setPreview(null);
         setError(null);
         setFeeError(null);
@@ -92,13 +102,18 @@ function ChangePlanBody({ onOpenChange, company, options }: ChangePlanDialogProp
         setSaving(true);
         router.post(
             route('admin.tenants.plan-change.store', company.id),
-            { plan_id: planId, setup_fee: setupFee.trim() === '' ? null : setupFee.trim() },
+            {
+                plan_id: planId,
+                setup_fee: setupFee.trim() === '' ? null : setupFee.trim(),
+                store_template: needsTemplate ? storeTemplate : null,
+            },
             {
                 preserveScroll: true,
                 onSuccess: () => onOpenChange(false),
                 onError: (errors) => {
                     setFeeError(errors.setup_fee ?? null);
-                    setError(errors.plan_id ?? (errors.setup_fee ? null : (Object.values(errors)[0] ?? null)));
+                    setTemplateError(errors.store_template ?? null);
+                    setError(errors.plan_id ?? (errors.setup_fee || errors.store_template ? null : (Object.values(errors)[0] ?? null)));
                 },
                 onFinish: () => setSaving(false),
             },
@@ -106,12 +121,16 @@ function ChangePlanBody({ onOpenChange, company, options }: ChangePlanDialogProp
     };
 
     const selected = options.plans.find((plan) => plan.id === planId) ?? null;
-    const ready = preview !== null && preview.to.id === planId && !preview.blocked && !loading && feeError === null;
+    const needsTemplate = preview?.onlineStore?.needsTemplate === true;
+    const ready =
+        preview !== null && preview.to.id === planId && !preview.blocked && !loading && feeError === null && (!needsTemplate || storeTemplate !== '');
 
     return (
         <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-2xl" onInteractOutside={(event) => saving && event.preventDefault()}>
             <DialogHeader>
-                <DialogTitle>{step === 'choose' ? `Change plan for ${company.name}` : `Move ${company.name} to ${selected?.name ?? 'the new plan'}`}</DialogTitle>
+                <DialogTitle>
+                    {step === 'choose' ? `Change plan for ${company.name}` : `Move ${company.name} to ${selected?.name ?? 'the new plan'}`}
+                </DialogTitle>
                 <DialogDescription>
                     {step === 'choose'
                         ? 'Choose the new plan. You see exactly what will happen before anything changes.'
@@ -142,8 +161,14 @@ function ChangePlanBody({ onOpenChange, company, options }: ChangePlanDialogProp
                                 {plan.current && <StatusPill tone="neutral">Current plan</StatusPill>}
                             </span>
                             <span className="text-muted-foreground text-sm tabular-nums">
-                                {[plan.setupFee ? `Setup fee ${plan.setupFee}` : 'No setup fee', plan.monthly ?? plan.yearly ?? 'Nothing recurring'].join(' · ')}
+                                {[
+                                    plan.setupFee ? `Setup fee ${plan.setupFee}` : 'No setup fee',
+                                    plan.monthly ?? plan.yearly ?? 'Nothing recurring',
+                                ].join(' · ')}
                             </span>
+                            {plan.onlineStore && (
+                                <span className="text-muted-foreground text-sm tabular-nums">Online store included · {plan.onlineStore}</span>
+                            )}
                             <span className="text-muted-foreground text-xs" title={plan.features.join(', ')}>
                                 {plan.features.length === 0
                                     ? 'No features'
@@ -172,6 +197,19 @@ function ChangePlanBody({ onOpenChange, company, options }: ChangePlanDialogProp
                                 onChange={(event) => setSetupFee(event.target.value)}
                             />
                         </Field>
+                    )}
+                    {needsTemplate && preview?.onlineStore && (
+                        <StoreTemplatePicker
+                            id="plan-change-store-template"
+                            templates={preview.onlineStore.templates}
+                            value={storeTemplate}
+                            onChange={(value) => {
+                                setStoreTemplate(value);
+                                setTemplateError(null);
+                            }}
+                            error={templateError ?? undefined}
+                            hint="This plan includes the online store and the business has none yet: choose its template. The store is made from the business name, not live until the business publishes it."
+                        />
                     )}
                     {preview === null ? (
                         error ? (

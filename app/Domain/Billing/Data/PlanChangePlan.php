@@ -7,6 +7,7 @@ use App\Domain\Billing\Enums\InvoiceKind;
 use App\Domain\Billing\Models\BillingAccount;
 use App\Domain\Billing\Models\Invoice;
 use App\Domain\Licensing\Models\Licence;
+use App\Domain\OnlineStore\Data\PlanChangeOnlineStore;
 use App\Domain\Plans\Enums\Feature;
 use App\Domain\Plans\Models\Plan;
 use App\Domain\Tenancy\Models\Company;
@@ -84,6 +85,8 @@ final readonly class PlanChangePlan
         // Already open
         public array $openSetupInvoices,
         public array $openPeriodInvoices,
+        // OS-7: the online store add-on follows the new plan (null where the country has no online stores)
+        public ?PlanChangeOnlineStore $onlineStore = null,
     ) {}
 
     /** A setup fee invoice will be created (a charge above 0). */

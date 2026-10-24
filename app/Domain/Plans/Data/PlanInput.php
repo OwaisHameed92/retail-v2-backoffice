@@ -26,6 +26,12 @@ final readonly class PlanInput
 
     public PlanBillingType $billingType;
 
+    /** OS-7: null = keep the plan's (a new plan: without the online store). */
+    public ?bool $includesOnlineStore;
+
+    /** OS-7: 2 dp, or null = the default price (always null without the online store). */
+    public ?string $onlineStoreMonthlyPrice;
+
     /**
      * @param  iterable<Feature|string>  $features
      */
@@ -51,6 +57,10 @@ final readonly class PlanInput
         public ?SetupFeeMode $setupFeeMode = null,
         /** Owner 2026-10-21: the handheld (PDA) app comes with the plan; null = keep the plan's (a new plan: from its prices). */
         public ?bool $includesHandheld = null,
+        /** OS-7: the online store add-on comes with the plan (recurring plans only); null = keep the plan's. */
+        ?bool $includesOnlineStore = null,
+        /** OS-7: its monthly price before VAT; null = the default (`online_store.default_monthly_price`). */
+        string|int|null $onlineStoreMonthlyPrice = null,
     ) {
         $monthly = Money::normalise($priceMonthly);
         $yearly = Money::normalise($priceYearly);
@@ -60,6 +70,10 @@ final readonly class PlanInput
         $this->priceYearly = $this->billingType->recurs() ? $yearly : '0.00';
         $this->setupFee = $this->billingType->hasSetupFee() ? $fee : '0.00';
         $this->features = Feature::normalise($features);
+        $this->includesOnlineStore = $includesOnlineStore;
+        $this->onlineStoreMonthlyPrice = $includesOnlineStore === true && $onlineStoreMonthlyPrice !== null && $onlineStoreMonthlyPrice !== ''
+            ? Money::normalise($onlineStoreMonthlyPrice)
+            : null;
     }
 
     /**
@@ -88,6 +102,10 @@ final readonly class PlanInput
             'is_active' => $this->isActive,
             'is_public' => $this->isPublic,
             ...($this->includesHandheld !== null ? ['includes_handheld' => $this->includesHandheld] : []),
+            ...($this->includesOnlineStore !== null ? [
+                'includes_online_store' => $this->includesOnlineStore,
+                'online_store_monthly_price' => $this->onlineStoreMonthlyPrice,
+            ] : []),
             'sort_order' => $this->sortOrder,
         ];
     }

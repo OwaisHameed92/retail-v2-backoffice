@@ -37,6 +37,10 @@ use Illuminate\Validation\ValidationException;
  * first mandate whose amount goes from £0 to more gets a fresh Direct Debit deadline (StartMandateDeadline), as for
  * pricing. No rule of its own for non-payment: the period invoice's rules apply.
  *
+ * OS-7: a plan can include the add-on (FollowPlanOnlineStore calls this with `planCode`): on such a call the plan's
+ * terms replace the monthly-plan and cloud-sync checks (the line is billed only while a till has cloud sync, as
+ * always), the audit names the plan, and the caller syncs the Direct Debit (no second sync here).
+ *
  * @phpstan-type Result array{store: OnlineStore, warning: string|null}
  */
 class SetOnlineStoreAddOn
@@ -88,13 +92,13 @@ class SetOnlineStoreAddOn
 
             if ($old !== $new) {
                 $changed = true;
-                $this->audit->handle('online_store.addon_updated', $store, $old, $new, companyId: $company->id);
+                $this->audit->handle('online_store.addon_updated', $store, $old, $new, $input->byPlan() ? ['plan' => $input->planCode] : [], companyId: $company->id);
             }
 
             return $store;
         });
 
-        return ['store' => $store->refresh(), 'warning' => $changed ? $this->billing($company, $recurringBefore) : null];
+        return ['store' => $store->refresh(), 'warning' => $changed && ! $input->byPlan() ? $this->billing($company, $recurringBefore) : null];
     }
 
     /** As UpdateCompanyPricing: a fresh deadline when the amount starts to recur, then the Direct Debit amount. */
@@ -139,12 +143,17 @@ class SetOnlineStoreAddOn
             throw ValidationException::withMessages(['template' => 'Choose the store’s template.']);
         }
 
-        if (! OnlineStoreAddOn::onRecurringPlan($company)) {
+        // OS-7: a plan that includes it is a recurring plan; it is billed once a till has cloud sync (no check below).
+        if (! $input->byPlan() && ! OnlineStoreAddOn::onRecurringPlan($company)) {
             throw ValidationException::withMessages(['on' => "The online store add-on is only for businesses on a monthly plan. Move {$company->name} to a monthly plan first (Change plan)."]);
         }
 
         if (! OnlineStoreSwitch::enabled()) {
             throw ValidationException::withMessages(['on' => 'Online stores are switched off on this server (ONLINE_STORE), so the add-on cannot be switched on yet.']);
+        }
+
+        if ($input->byPlan()) {
+            return;
         }
 
         if (! OnlineStoreAddOn::hasCloudSync($company)) {

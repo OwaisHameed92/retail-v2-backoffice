@@ -2,6 +2,7 @@
 
 namespace App\Domain\Plans\Actions;
 
+use App\Domain\OnlineStore\Support\PlanOnlineStore;
 use App\Domain\Plans\Data\PlanData;
 use App\Domain\Plans\Data\PlanInput;
 use App\Domain\Plans\Models\Plan;
@@ -36,6 +37,8 @@ class UpdatePlan
 
             $before = PlanData::audit($plan);
             $plan->fill($attributes);
+            // OS-7: also when an older client leaves the box out and the plan becomes setup only.
+            PlanOnlineStore::assertValid($plan);
 
             // Compare cast values, not raw ones: SQLite hands decimals back as "30", which Eloquent would
             // count as a change from "30.00".

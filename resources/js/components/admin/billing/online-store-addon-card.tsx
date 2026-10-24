@@ -66,7 +66,11 @@ export function OnlineStoreAddOnCard({ company, addOn, canManage, cancelled = fa
     return (
         <SectionCard
             title="Online store add-on"
-            description={`Click & collect online store for businesses on a monthly plan. ${addOn.defaultPriceLabel} a month before ${taxName()} unless this business has its own price, as a line on the monthly invoice.`}
+            description={
+                addOn.byPlan
+                    ? `Click & collect online store, included in ${addOn.planName ?? 'its plan'}: ${addOn.defaultPriceLabel} a month before ${taxName()} unless this business has its own price, as a line on the monthly invoice. Change plan switches it with the plan.`
+                    : `Click & collect online store for businesses on a monthly plan. ${addOn.defaultPriceLabel} a month before ${taxName()} unless this business has its own price, as a line on the monthly invoice.`
+            }
             actions={
                 canManage && !cancelled ? (
                     <Button size="sm" variant="outline" onClick={() => setOpen(true)}>
@@ -88,7 +92,7 @@ export function OnlineStoreAddOnCard({ company, addOn, canManage, cancelled = fa
                         <span className="font-medium tabular-nums">{addOn.priceLabel} a month</span>
                         <span className="text-muted-foreground block">
                             {taxText('Before VAT')}
-                            {addOn.custom ? ' · own price' : ' · default'}
+                            {addOn.priceSource === 'business' ? ' · own price' : addOn.priceSource === 'plan' ? ' · plan price' : ' · default'}
                         </span>
                         {addOn.billed && (
                             <span className="text-muted-foreground block tabular-nums">
@@ -105,7 +109,12 @@ export function OnlineStoreAddOnCard({ company, addOn, canManage, cancelled = fa
                                     {addOn.live && addOn.available ? 'Live' : 'Not live'}
                                 </StatusPill>
                                 {addOn.live && addOn.available && addOn.url && (
-                                    <a href={addOn.url} target="_blank" rel="noreferrer" className="text-primary inline-flex items-center gap-1 hover:underline">
+                                    <a
+                                        href={addOn.url}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="text-primary inline-flex items-center gap-1 hover:underline"
+                                    >
                                         Open
                                         <ExternalLink className="size-3.5" aria-hidden />
                                     </a>
@@ -133,7 +142,15 @@ export function OnlineStoreAddOnCard({ company, addOn, canManage, cancelled = fa
     );
 }
 
-function AddOnDialogBody({ company, addOn, onOpenChange }: { company: CompanyRef; addOn: OnlineStoreAddOnData; onOpenChange: (open: boolean) => void }) {
+function AddOnDialogBody({
+    company,
+    addOn,
+    onOpenChange,
+}: {
+    company: CompanyRef;
+    addOn: OnlineStoreAddOnData;
+    onOpenChange: (open: boolean) => void;
+}) {
     const { data, setData, put, processing, errors } = useForm({
         on: true as boolean,
         monthly_price: addOn.monthlyPrice ?? '',
@@ -170,7 +187,13 @@ function AddOnDialogBody({ company, addOn, onOpenChange }: { company: CompanyRef
                     </div>
                 </div>
 
-                <Field id="addon-price" label="Monthly price" optional error={errors.monthly_price} hint={taxText(`Before VAT. Blank = the default, ${addOn.defaultPriceLabel}.`)}>
+                <Field
+                    id="addon-price"
+                    label="Monthly price"
+                    optional
+                    error={errors.monthly_price}
+                    hint={taxText(`Before VAT. Blank = ${addOn.byPlan ? 'the plan’s price' : 'the default'}, ${addOn.defaultPriceLabel}.`)}
+                >
                     <MoneyInput
                         id="addon-price"
                         placeholder={addOn.defaultPrice}

@@ -1,6 +1,6 @@
 import { PlanForm, planFormDefaults, type PlanFormData } from '@/components/admin/plans/plan-form';
 import { PlanStatusBadge } from '@/components/admin/plans/plan-status-badge';
-import { type FeatureOption, type PlanRecord } from '@/components/admin/plans/types';
+import { type FeatureOption, type PlanOnlineStoreSettings, type PlanRecord } from '@/components/admin/plans/types';
 import { PageHeader } from '@/components/shared/page-header';
 import AdminLayout from '@/layouts/admin-layout';
 import { Head, useForm } from '@inertiajs/react';
@@ -9,9 +9,11 @@ import { type FormEventHandler } from 'react';
 interface EditPlanProps {
     plan: PlanRecord;
     features: FeatureOption[];
+    /** OS-7: null where the country has no online stores. */
+    onlineStore: PlanOnlineStoreSettings | null;
 }
 
-export default function EditPlan({ plan, features }: EditPlanProps) {
+export default function EditPlan({ plan, features, onlineStore }: EditPlanProps) {
     const { data, setData, put, processing, errors, isDirty } = useForm<PlanFormData>(planFormDefaults(plan));
 
     const submit: FormEventHandler = (e) => {
@@ -39,6 +41,7 @@ export default function EditPlan({ plan, features }: EditPlanProps) {
                     submitLabel="Save changes"
                     cancelHref={route('admin.plans.show', plan.id)}
                     isDirty={isDirty}
+                    onlineStore={onlineStore}
                 />
             </div>
         </AdminLayout>

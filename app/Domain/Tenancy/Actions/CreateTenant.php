@@ -4,6 +4,9 @@ namespace App\Domain\Tenancy\Actions;
 
 use App\Domain\Licensing\Actions\UpdateBranchLimits;
 use App\Domain\Licensing\Data\BranchLicenceSettings;
+use App\Domain\Licensing\Support\DefaultPlan;
+use App\Domain\OnlineStore\Actions\FollowPlanOnlineStore;
+use App\Domain\OnlineStore\Support\PlanOnlineStore;
 use App\Domain\Plans\Models\Plan;
 use App\Domain\Shared\Actions\RecordAudit;
 use App\Domain\Tenancy\Data\NewTenant;
@@ -27,6 +30,10 @@ use Illuminate\Validation\ValidationException;
  * Module 1.11: the licence form comes with it — each branch's licence settings (tills allowed at least its
  * tills), multi-branch (on by itself with more than one shop) and branches allowed, and the owner's name for the
  * keys (the owner login's name unless given).
+ *
+ * OS-7: when the plan (the chosen one, else the portal default) includes the online store, the add-on is switched on
+ * (FollowPlanOnlineStore: the store row with the chosen template, Fresh Market when none is given; not live, not taking
+ * orders). Its "Online store" line is billed once a till has cloud sync.
  */
 class CreateTenant
 {
@@ -34,6 +41,7 @@ class CreateTenant
         private readonly AddBranch $addBranch,
         private readonly AddCompanyUser $addCompanyUser,
         private readonly RecordAudit $audit,
+        private readonly FollowPlanOnlineStore $followPlanOnlineStore,
     ) {}
 
     /**
@@ -105,6 +113,11 @@ class CreateTenant
                 $this->addBranch->handle($company, $branch->details, $branch->tills, $licence->withMaxRegisters(max($branch->tills, $branch->tillsAllowed ?? 1)));
             }
             $owner = $this->addCompanyUser->handle($company, $data->ownerName, $data->ownerEmail, CompanyRole::Owner);
+            $effectivePlan = $plan ?? DefaultPlan::portal();
+
+            if ($effectivePlan !== null && PlanOnlineStore::includes($effectivePlan)) {
+                $this->followPlanOnlineStore->handle($company, $effectivePlan, $data->storeTemplate);
+            }
 
             TenantCreated::dispatch($company, $owner);
 

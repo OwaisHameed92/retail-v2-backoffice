@@ -3,6 +3,7 @@
 namespace App\Domain\OnlineStore\Support;
 
 use App\Domain\OnlineStore\Models\OnlineStore;
+use App\Domain\Plans\Models\Plan;
 use App\Domain\Shared\Country\Country;
 use App\Domain\Tenancy\Models\Company;
 
@@ -35,10 +36,13 @@ final class OnlineStoreSwitch
             && OnlineStoreAddOn::onRecurringPlan($company);
     }
 
-    /** The add-on's monthly price before VAT: the business's own, else the default. */
-    public static function monthlyPrice(?string $override): string
+    /**
+     * The add-on's monthly price before VAT (OS-7 order): the business's own, else its plan's when the plan includes
+     * the online store (`plans.online_store_monthly_price`), else the default. £0 is a price.
+     */
+    public static function monthlyPrice(?string $override, ?Plan $plan = null): string
     {
-        return $override ?? (string) config('online_store.default_monthly_price', '20.00');
+        return $override ?? PlanOnlineStore::price($plan);
     }
 
     /** The timezone shops' hours and collection slots are in (Europe/London on GB). */
