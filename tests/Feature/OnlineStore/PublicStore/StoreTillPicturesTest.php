@@ -72,12 +72,20 @@ test('switched off: the till\'s pictures are not used (master catalogue, else no
         'E till only' => null,
     ]);
 
+    // OS-11: the department tiles show from three aisles up (StoreAisles::GOOD).
+    $this->f->product('Apples', ['department_id' => OnlineStoreFixtures::department($this->f->company, 'Fresh', 2)]);
+    $this->f->product('Milk', ['department_id' => OnlineStoreFixtures::department($this->f->company, 'Dairy', 3)]);
+
     $this->get(route('store.home', ['slug' => 'kirkgate'], false))->assertInertia(fn (AssertableInertia $page) => $page
         ->where('departmentTiles.0.photoUrl', 'https://images.example.test/beans.jpg'));
 });
 
 test('a department tile takes a till picture when none of its products has an online photo', function () {
     $tillUrl = ($this->till)($this->f->product('Bread'));
+
+    // OS-11: the department tiles show from three aisles up (StoreAisles::GOOD).
+    $this->f->product('Apples', ['department_id' => OnlineStoreFixtures::department($this->f->company, 'Fresh', 2)]);
+    $this->f->product('Milk', ['department_id' => OnlineStoreFixtures::department($this->f->company, 'Dairy', 3)]);
 
     $this->get(route('store.home', ['slug' => 'kirkgate'], false))->assertInertia(fn (AssertableInertia $page) => $page
         ->where('departmentTiles.0.photoUrl', $tillUrl));
