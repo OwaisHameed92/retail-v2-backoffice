@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\DirectDebit\DirectDebitSetupController;
+use App\Http\Controllers\Webhooks\DnaPaymentWebhookController;
 use App\Http\Controllers\Webhooks\GoCardlessWebhookController;
 use Illuminate\Support\Facades\Route;
 
@@ -12,6 +13,12 @@ use Illuminate\Support\Facades\Route;
 Route::post('webhooks/gocardless', GoCardlessWebhookController::class)
     ->middleware(['billing.direct-debit', 'throttle:120,1'])
     ->name('webhooks.gocardless');
+
+// Online store OS-9: DNA Payments card results for a store's orders, authenticated by their HMAC signature.
+Route::post('webhooks/dna/{store}', DnaPaymentWebhookController::class)
+    ->where('store', '[0-9A-Za-z]{26}')
+    ->middleware('throttle:120,1')
+    ->name('webhooks.dna');
 
 Route::middleware(['billing.direct-debit', 'web', 'signed', 'throttle:30,1'])->prefix('direct-debit/{company}')->name('direct-debit.')->whereUlid('company')->group(function () {
     Route::get('setup', [DirectDebitSetupController::class, 'setup'])->name('setup');

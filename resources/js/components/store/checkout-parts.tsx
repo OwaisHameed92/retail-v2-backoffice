@@ -9,14 +9,14 @@ export interface CheckoutDay {
     label: string;
     short: string;
     open: boolean;
+    /** OSA-13: why the shop is closed that day ("Christmas Day"). */
+    closedReason?: string | null;
 }
 
 export interface CheckoutSlot {
     from: string;
     to: string;
     label: string;
-    taken: number;
-    capacity: number;
     available: boolean;
 }
 
@@ -24,7 +24,11 @@ export interface CheckoutSlot {
 export function Step({ n, title, children, id }: { n: number; title: string; children: ReactNode; id?: string }) {
     return (
         <section aria-labelledby={id} className="flex flex-col gap-4 rounded-[28px] bg-white p-5 sm:gap-5 sm:p-7">
-            <h2 id={id} className="font-display flex items-center gap-3 text-[22px] font-extrabold tracking-[-0.03em] sm:text-[26px]">
+            <h2
+                id={id}
+                tabIndex={-1}
+                className="font-display flex items-center gap-3 text-[22px] font-extrabold tracking-[-0.03em] outline-none sm:text-[26px]"
+            >
                 <span
                     aria-hidden="true"
                     className="bg-ink text-lime flex size-9 shrink-0 items-center justify-center rounded-full font-sans text-base"
@@ -71,7 +75,7 @@ export function ShopChoice({ shop, shops, chooseUrl }: { shop: ShopInfo; shops: 
                             name={name}
                             value={option.id}
                             checked={selected}
-                            onChange={() => router.post(chooseUrl, { shopId: option.id }, { preserveScroll: true })}
+                            onChange={() => router.post(chooseUrl, { shopId: option.id }, { preserveScroll: true, preserveState: true })}
                             className="sr-only"
                         />
                         <span className="font-display flex items-center justify-between gap-2 text-xl font-extrabold">
@@ -100,6 +104,7 @@ export function SlotPicker({
     onDay,
     onSlot,
     error,
+    word = 'collection',
 }: {
     days: CheckoutDay[];
     day: string | null;
@@ -108,15 +113,23 @@ export function SlotPicker({
     onDay: (date: string) => void;
     onSlot: (from: string) => void;
     error?: string;
+    /** "collection" or "delivery" (OS-9). */
+    word?: string;
 }) {
     const dayGroup = useId();
     const slotGroup = useId();
 
     return (
         <div className="flex flex-col gap-4">
-            <div role="radiogroup" aria-labelledby={dayGroup} className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 [scrollbar-width:none]">
+            <div
+                id="checkout-days"
+                tabIndex={-1}
+                role="radiogroup"
+                aria-labelledby={dayGroup}
+                className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 [scrollbar-width:none]"
+            >
                 <span id={dayGroup} className="sr-only">
-                    Collection day
+                    {word === 'delivery' ? 'Delivery day' : 'Collection day'}
                 </span>
                 {days.map((d) => {
                     const selected = d.date === day;
@@ -135,14 +148,14 @@ export function SlotPicker({
                             )}
                         >
                             <span className="font-extrabold">{d.label}</span>
-                            <span className="text-xs">{d.open ? d.short : 'Closed'}</span>
+                            <span className="text-xs">{d.open ? d.short : (d.closedReason ?? 'Closed')}</span>
                         </button>
                     );
                 })}
             </div>
 
             {slots.length === 0 ? (
-                <p className="bg-paper text-body rounded-[18px] px-5 py-4">No collection times left on this day. Try another day.</p>
+                <p className="bg-paper text-body rounded-[18px] px-5 py-4">No {word} times left on this day. Try another day.</p>
             ) : (
                 <div
                     role="radiogroup"
@@ -150,7 +163,7 @@ export function SlotPicker({
                     className="grid grid-cols-2 gap-2.5 sm:grid-cols-[repeat(auto-fill,minmax(150px,1fr))]"
                 >
                     <span id={slotGroup} className="sr-only">
-                        Collection time
+                        {word === 'delivery' ? 'Delivery time' : 'Collection time'}
                     </span>
                     {slots.map((slot) => {
                         const selected = slot.from === value;

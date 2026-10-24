@@ -84,7 +84,7 @@ test('the order page and pick list show the lines, customer, slot and history', 
             ->where('business', 'Kirkgate Convenience')
             ->where('order.customerName', 'Asha Patel')->where('order.customerMobile', '07700 900123')->where('order.customerEmail', 'asha@example.test')
             ->where('order.shop', 'Leeds')->where('order.status', 'picking')->where('order.next', ['ready', 'cancelled'])
-            ->where('order.lines.0', ['id' => $this->order->lines()->first()?->id, 'name' => 'Beans', 'quantity' => '3', 'isWeighed' => false, 'unitPrice' => '1.00', 'lineTotal' => '3.00'])
+            ->where('order.lines.0', ['id' => $this->order->lines()->first()?->id, 'name' => 'Beans', 'quantity' => '3', 'isWeighed' => false, 'unitPrice' => '1.00', 'lineTotal' => '3.00', 'outcome' => null, 'orderedQuantity' => null])
             ->where('order.history', [
                 ['status' => 'new', 'at' => '2026-11-02T07:00:00Z', 'note' => null],
                 ['status' => 'picking', 'at' => '2026-11-02T08:15:00Z', 'note' => null],

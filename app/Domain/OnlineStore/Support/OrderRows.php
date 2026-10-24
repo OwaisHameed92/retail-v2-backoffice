@@ -35,16 +35,21 @@ final class OrderRows
             'id' => $order->id,
             'reference' => $order->reference,
             'status' => $order->status->value,
+            'statusLabel' => $order->status->label($order->fulfilment),
+            'fulfilment' => $order->fulfilment->value,
+            'deliveryPostcode' => $order->isDelivery() ? $order->delivery_postcode : null,
+            'payment' => self::payment($order),
+            'hasNote' => $order->customer_note !== null && trim($order->customer_note) !== '',
             'customer' => self::shortName($order->customer_name),
             'itemCount' => self::itemCount($order->lines),
             'preview' => self::preview($names),
             'hasWeighed' => $order->lines->contains('is_weighed', true),
-            'total' => $order->items_total,
+            'total' => $order->grandTotal(),
             'shop' => $order->branch->name ?? '',
             'collectFrom' => ApiDate::format($order->collect_from),
             'collectTo' => ApiDate::format($order->collect_to),
             'placedAt' => ApiDate::format($order->created_at),
-            'doneAt' => ApiDate::format($order->collected_at ?? $order->cancelled_at),
+            'doneAt' => ApiDate::format(self::doneAt($order)),
             'cancelReason' => $order->cancel_reason,
             'fresh' => $order->status === OnlineOrderStatus::New && $order->created_at !== null && $order->created_at->greaterThan($now->subMinutes(self::FRESH_MINUTES)),
             'late' => $open && $order->collect_to->lessThan($now),
@@ -54,7 +59,7 @@ final class OrderRows
     }
 
     /**
-     * @return array{id: string, name: string, quantity: string, isWeighed: bool, unitPrice: string, lineTotal: string}
+     * @return array{id: string, name: string, quantity: string, isWeighed: bool, unitPrice: string, lineTotal: string, outcome: string|null, orderedQuantity: string|null}
      */
     public static function line(OnlineOrderLine $line): array
     {
@@ -65,6 +70,30 @@ final class OrderRows
             'isWeighed' => $line->is_weighed,
             'unitPrice' => $line->unit_price,
             'lineTotal' => $line->line_total,
+            'outcome' => $line->outcome?->value,
+            'orderedQuantity' => $line->ordered_quantity === null ? null : self::quantity($line->ordered_quantity, $line->is_weighed),
+        ];
+    }
+
+    /** When it was finished: collected, delivered, not collected or cancelled. */
+    public static function doneAt(OnlineOrder $order): ?CarbonImmutable
+    {
+        return $order->collected_at ?? $order->delivered_at ?? $order->not_collected_at ?? $order->cancelled_at;
+    }
+
+    /**
+     * How it is paid (OS-9): "payAtShop", "payOnDelivery" or "cardOnline" with paid; a cancelled card order needs a
+     * refund in the shop's DNA portal (no refund API in S2).
+     *
+     * @return array{method: string, label: string, paid: bool, refundNeeded: bool}
+     */
+    public static function payment(OnlineOrder $order): array
+    {
+        return [
+            'method' => $order->payment_method->value,
+            'label' => $order->isPaid() ? 'Paid by card' : $order->payment_method->label(),
+            'paid' => $order->isPaid(),
+            'refundNeeded' => $order->isPaid() && $order->status === OnlineOrderStatus::Cancelled,
         ];
     }
 

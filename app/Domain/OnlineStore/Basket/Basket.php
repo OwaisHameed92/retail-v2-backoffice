@@ -6,7 +6,8 @@ namespace App\Domain\OnlineStore\Basket;
  * A customer's basket in one store (OS-2): product ids with quantities, in the order added, and the collection shop
  * chosen (null = the store's first). The product name is kept only to name a line that disappears from the
  * catalogue; prices are never kept: PriceBasket reads them from the catalogue on every view. Kept in the session
- * by the public store (StoreSession).
+ * by the public store (StoreSession). `price` (audit OSA-24) is only the last price the customer was shown, never
+ * charged: a change since then is told to the customer before an order is placed (PriceBasket).
  */
 final readonly class Basket
 {
@@ -15,7 +16,7 @@ final readonly class Basket
     private const QUANTITY = '/^\d{1,6}(\.\d{1,4})?$/';
 
     /**
-     * @param  array<string, array{qty: string, name: string}>  $lines  product id => line
+     * @param  array<string, array{qty: string, name: string, price?: string}>  $lines  product id => line
      */
     public function __construct(public array $lines = [], public ?string $shopId = null) {}
 
@@ -29,7 +30,9 @@ final readonly class Basket
             $qty = is_array($line) ? (string) ($line['qty'] ?? '') : '';
 
             if (is_string($id) && preg_match(self::ID, $id) === 1 && preg_match(self::QUANTITY, $qty) === 1) {
-                $lines[$id] = ['qty' => $qty, 'name' => mb_substr((string) ($line['name'] ?? ''), 0, 200)];
+                $price = (string) ($line['price'] ?? '');
+                $lines[$id] = ['qty' => $qty, 'name' => mb_substr((string) ($line['name'] ?? ''), 0, 200)]
+                    + (preg_match('/^\d{1,8}\.\d{2}$/', $price) === 1 ? ['price' => $price] : []);
             }
         }
 
@@ -39,7 +42,7 @@ final readonly class Basket
     }
 
     /**
-     * @return array{lines: array<string, array{qty: string, name: string}>, shopId: string|null}
+     * @return array{lines: array<string, array{qty: string, name: string, price?: string}>, shopId: string|null}
      */
     public function toArray(): array
     {
@@ -52,15 +55,21 @@ final readonly class Basket
     }
 
     /** The quantity of a product in the basket, "0" when it is not in it. */
+    /** The price last shown for a product (OSA-24), or null. */
+    public function shownPrice(string $productId): ?string
+    {
+        return $this->lines[$productId]['price'] ?? null;
+    }
+
     public function quantity(string $productId): string
     {
         return $this->lines[$productId]['qty'] ?? '0';
     }
 
-    public function with(string $productId, string $quantity, string $name): self
+    public function with(string $productId, string $quantity, string $name, ?string $price = null): self
     {
         $lines = $this->lines;
-        $lines[$productId] = ['qty' => $quantity, 'name' => $name];
+        $lines[$productId] = ['qty' => $quantity, 'name' => $name] + ($price !== null ? ['price' => $price] : []);
 
         return new self($lines, $this->shopId);
     }

@@ -2,6 +2,7 @@
 
 namespace App\Domain\OnlineStore\Models;
 
+use App\Domain\Shared\Casts\MoneyCast;
 use App\Domain\Tenancy\Concerns\BelongsToCompany;
 use App\Domain\Tenancy\Concerns\HasPortalUlid;
 use App\Domain\Tenancy\Models\Branch;
@@ -24,6 +25,15 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int $slot_minutes
  * @property int $orders_per_slot
  * @property bool $enabled
+ * @property bool $delivery_enabled OS-9: the shop delivers locally (SaveDeliverySettings)
+ * @property list<string>|null $delivery_areas postcode districts / sectors it delivers to ("B23", "B24 9")
+ * @property string $delivery_fee
+ * @property string|null $delivery_free_over items total from which delivery is free
+ * @property string|null $delivery_minimum the smallest items total it delivers
+ * @property array<string, mixed>|null $delivery_hours weekday => {open, close} or null, like opening_hours
+ * @property int $delivery_slot_minutes
+ * @property int $delivery_orders_per_slot
+ * @property int $delivery_lead_minutes the first delivery slot starts at least this long after the order
  * @property CarbonImmutable|null $created_at
  * @property CarbonImmutable|null $updated_at
  * @property-read OnlineStore $store
@@ -67,6 +77,24 @@ class OnlineStoreShop extends Model
     }
 
     /**
+     * OS-9: the delivery hours of one weekday, or null when it does not deliver that day.
+     *
+     * @return array{open: string, close: string}|null
+     */
+    public function deliveryHoursOn(string $weekday): ?array
+    {
+        $hours = $this->delivery_hours[strtolower($weekday)] ?? null;
+
+        return is_array($hours) && isset($hours['open'], $hours['close']) ? ['open' => (string) $hours['open'], 'close' => (string) $hours['close']] : null;
+    }
+
+    /** OS-9: it delivers and has an area to deliver to. */
+    public function delivers(): bool
+    {
+        return $this->delivery_enabled && ($this->delivery_areas ?? []) !== [];
+    }
+
+    /**
      * @return array<string, string>
      */
     protected function casts(): array
@@ -77,6 +105,15 @@ class OnlineStoreShop extends Model
             'slot_minutes' => 'integer',
             'orders_per_slot' => 'integer',
             'enabled' => 'boolean',
+            'delivery_enabled' => 'boolean',
+            'delivery_areas' => 'array',
+            'delivery_fee' => MoneyCast::class,
+            'delivery_free_over' => MoneyCast::class,
+            'delivery_minimum' => MoneyCast::class,
+            'delivery_hours' => 'array',
+            'delivery_slot_minutes' => 'integer',
+            'delivery_orders_per_slot' => 'integer',
+            'delivery_lead_minutes' => 'integer',
             'created_at' => 'immutable_datetime',
             'updated_at' => 'immutable_datetime',
         ];

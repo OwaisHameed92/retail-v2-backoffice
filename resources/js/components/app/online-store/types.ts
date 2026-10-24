@@ -61,12 +61,65 @@ export interface CollectionShop {
     prepMinutes: number;
     slotMinutes: number;
     ordersPerSlot: number;
+    /** Audit OSA-13: closed days and special hours from today on. */
+    closures?: ShopClosure[];
 }
 
 export interface ShopsProps {
     hasStore: boolean;
     shops: CollectionShop[];
     slotOptions: number[];
+}
+
+/** Audit OSA-13: a closed day or special hours (App\Domain\OnlineStore\Models\OnlineStoreClosure). */
+export interface ShopClosure {
+    id: string;
+    date: string;
+    opensAt: string | null;
+    closesAt: string | null;
+    reason: string | null;
+}
+
+/** OS-9: matches App\Domain\OnlineStore\Queries\DeliveryPaymentsPage::for(). */
+export interface DeliveryShop {
+    id: string;
+    name: string;
+    code: string;
+    town: string | null;
+    postcode: string | null;
+    collects: boolean;
+    enabled: boolean;
+    areas: string[];
+    fee: string;
+    freeOver: string | null;
+    minimum: string | null;
+    days: ShopDay[];
+    hoursSaved: boolean;
+    slotMinutes: number;
+    ordersPerSlot: number;
+    leadMinutes: number;
+}
+
+export type PaymentValue = 'payAtShop' | 'cardOnline' | 'payOnDelivery';
+
+export interface MethodPayments {
+    chosen: PaymentValue[];
+    options: { value: PaymentValue; label: string }[];
+}
+
+export interface DeliveryPaymentsProps {
+    hasStore: boolean;
+    canEditPayments: boolean;
+    shops: DeliveryShop[];
+    slotOptions: number[];
+    payments: { cardReady: boolean; collection: MethodPayments; delivery: MethodPayments } | null;
+    /** Only whether the DNA details are saved and their last 4 characters: never the details themselves. */
+    dna: { configured: boolean; clientId: string | null; terminalId: string | null; secret: string | null; testMode: boolean } | null;
+}
+
+/** "30 minutes", "1 hour", "1 h 30 min". */
+export function minutesLabel(m: number): string {
+    return m < 60 ? `${m} minutes` : m % 60 === 0 ? `${m / 60} ${m === 60 ? 'hour' : 'hours'}` : `${Math.floor(m / 60)} h ${m % 60} min`;
 }
 
 /** Matches App\Domain\OnlineStore\Queries\OnlineProductsPage::for(). */

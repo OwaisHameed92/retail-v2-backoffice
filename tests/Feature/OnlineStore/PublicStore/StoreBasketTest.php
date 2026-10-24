@@ -26,8 +26,8 @@ test('add, change and remove lines; the session keeps ids and quantities only, n
     ($this->add)($this->mince, '0.75');
 
     expect(($this->stored)())->toBe(['lines' => [
-        $this->beans => ['qty' => '3.0000', 'name' => 'Baked beans'],
-        $this->mince => ['qty' => '0.7500', 'name' => 'Lamb mince'],
+        $this->beans => ['qty' => '3.0000', 'name' => 'Baked beans', 'price' => '1.10'],
+        $this->mince => ['qty' => '0.7500', 'name' => 'Lamb mince', 'price' => '9.80'],
     ], 'shopId' => null]);
 
     ($this->basket)()->assertOk()->assertInertia(fn (AssertableInertia $page) => $page->component('store/basket')
@@ -89,7 +89,7 @@ test('weighed products go in 0.25 kg steps; unit products in whole numbers; limi
     ($this->add)($this->beans, '2')->assertSessionHasErrors(['quantity' => 'You can order at most 6 of Baked beans.']);
     ($this->add)($this->mince, '51')->assertSessionHasErrors(['quantity' => 'You can order at most 50 kg of Lamb mince.']);
 
-    expect(($this->stored)()['lines'])->toBe([$this->beans => ['qty' => '5.0000', 'name' => 'Baked beans']]);
+    expect(($this->stored)()['lines'])->toBe([$this->beans => ['qty' => '5.0000', 'name' => 'Baked beans', 'price' => '1.10']]);
 });
 
 test('out of stock, hidden, age-restricted or unknown products cannot be added', function () {

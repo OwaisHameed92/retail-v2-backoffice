@@ -20,6 +20,10 @@ final class StoreTestRoutes
             Route::get('/store/{slug}/order/{order}', fn () => 'order')->middleware('signed')->name('store.order');
         }
 
+        if (! Route::has('store.order-link')) {
+            Route::get('/store/o/{order}', fn () => 'order')->middleware('signed')->name('store.order-link');
+        }
+
         Route::getRoutes()->refreshNameLookups();
     }
 }

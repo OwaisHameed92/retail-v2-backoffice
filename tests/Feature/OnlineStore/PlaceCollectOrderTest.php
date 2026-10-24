@@ -113,7 +113,8 @@ test('race-safe numbers: an insert that loses the number to a parallel order is 
         ]);
     });
 
-    $order = ($this->place)([['productId' => $this->beans, 'quantity' => '1']])->order;
+    // OSA-1: one order per customer per slot, so the second order takes the next slot.
+    $order = ($this->place)([['productId' => $this->beans, 'quantity' => '1']], '2026-11-02T10:30:00Z')->order;
 
     expect($counts)->toBe(2)
         ->and($order->reference)->toBe('W-0002')
@@ -124,8 +125,9 @@ test('race-safe numbers: an insert that loses the number to a parallel order is 
 
 test('a full slot refuses the next order; another slot takes it', function () {
     $line = [['productId' => $this->beans, 'quantity' => '1']];
-    ($this->place)($line);
-    ($this->place)($line);
+    // OSA-1: one order per customer per slot, so the slot is filled by two other customers.
+    ($this->place)($line, ONLINE_ORDER_SLOT, ['customerEmail' => 'b@example.test', 'customerMobile' => '07700 900201']);
+    ($this->place)($line, ONLINE_ORDER_SLOT, ['customerEmail' => 'c@example.test', 'customerMobile' => '07700 900202']);
 
     expect(($this->error)(fn () => ($this->place)($line)))->toBe(['collectFrom' => ['That collection time is now full. Choose another one.']])
         ->and(($this->place)($line, '2026-11-02T10:30:00Z')->order->reference)->toBe('W-0003');

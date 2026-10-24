@@ -12,7 +12,7 @@ use Illuminate\Validation\ValidationException;
  *
  * - 1 to MAX_LINES products; the same product twice is one line with the quantities added.
  * - Weighed products: kg in 0.25 steps, more than 0, at most MAX_WEIGHED_KG. Others: whole numbers, 1 to MAX_UNITS.
- * - Never more than the product's `max_qty_per_sale`.
+ * - Never more than the product's `max_qty_per_sale`, nor (stock-tracked) than the stock left for online orders (OSA-12).
  * - Every product must be shown and orderable at the shop (in stock when stock-tracked).
  * - Line total = shelf price × quantity, rounded to the penny (an estimate for weighed products).
  */
@@ -104,16 +104,28 @@ final class OrderLineRules
         return $lines;
     }
 
-    /**
-     * @throws ValidationException
-     */
-    private static function checkQuantity(CatalogueItem $item, string $qty, string $key): void
+    /** The most of a product one order may have: "99", "50" (kg), its `max_qty_per_sale`, or the stock left ("3"). */
+    public static function limit(CatalogueItem $item): string
     {
         $max = $item->isWeighed ? self::MAX_WEIGHED_KG : (string) self::MAX_UNITS;
 
         if ($item->maxQtyPerSale !== null && Money::compare($item->maxQtyPerSale, $max) < 0) {
             $max = (string) $item->maxQtyPerSale;
         }
+
+        if ($item->stockLimit !== null && Money::compare($item->stockLimit, $max) < 0) {
+            $max = rtrim(rtrim(Money::normalise($item->stockLimit, 4), '0'), '.');
+        }
+
+        return $max === '' ? '0' : $max;
+    }
+
+    /**
+     * @throws ValidationException
+     */
+    private static function checkQuantity(CatalogueItem $item, string $qty, string $key): void
+    {
+        $max = self::limit($item);
 
         if ($item->isWeighed && ! Money::isZero(bcmod(Money::mul($qty, '4', 4), '1', 4))) {
             throw ValidationException::withMessages(["{$key}.quantity" => "Choose {$item->name} in steps of 0.25 kg."]);
@@ -125,6 +137,10 @@ final class OrderLineRules
 
         if (Money::compare($qty, $max) > 0) {
             $unit = $item->isWeighed ? ' kg' : '';
+
+            if ($item->stockLimit !== null && Money::compare($item->stockLimit, $max) === 0) {
+                throw ValidationException::withMessages(["{$key}.quantity" => "Only {$max}{$unit} of {$item->name} left. Change the quantity."]);
+            }
 
             throw ValidationException::withMessages(["{$key}.quantity" => "You can order at most {$max}{$unit} of {$item->name}."]);
         }

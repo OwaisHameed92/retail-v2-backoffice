@@ -22,7 +22,8 @@ final class PlaceBasketOrder
     public function __construct(private readonly PlaceCollectOrder $place) {}
 
     /**
-     * @param  array{collectFrom: string, customerName: string, customerMobile: string, customerEmail: string}  $customer
+     * @param  array<string, mixed>  $customer  the checkout's details (CollectOrderInput keys: collectFrom, customerName…, and
+     *                                          from OS-9 fulfilment, paymentMethod, the delivery address, customerNote, substitutionsOk)
      *
      * @throws ValidationException
      */
@@ -36,13 +37,10 @@ final class PlaceBasketOrder
             throw ValidationException::withMessages(['lines' => 'Your basket is empty.']);
         }
 
-        return $this->place->handle($store, new CollectOrderInput(
-            shopId: $shop->id,
-            collectFrom: $customer['collectFrom'],
-            customerName: $customer['customerName'],
-            customerMobile: $customer['customerMobile'],
-            customerEmail: $customer['customerEmail'],
-            lines: $basket->basket->orderLines(),
-        ));
+        return $this->place->handle($store, CollectOrderInput::fromArray([
+            ...$customer,
+            'shopId' => $shop->id,
+            'lines' => $basket->basket->orderLines(),
+        ]));
     }
 }

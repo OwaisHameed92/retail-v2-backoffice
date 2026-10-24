@@ -4,9 +4,12 @@ namespace App\Domain\OnlineStore\Queries;
 
 use App\Domain\Calendar\Models\ShopOpeningHour;
 use App\Domain\OnlineStore\Models\OnlineStore;
+use App\Domain\OnlineStore\Models\OnlineStoreClosure;
 use App\Domain\OnlineStore\Models\OnlineStoreShop;
+use App\Domain\OnlineStore\Support\OnlineStoreSwitch;
 use App\Domain\Tenancy\Models\Branch;
 use App\Domain\Tenancy\Models\Company;
+use Carbon\CarbonImmutable;
 use Illuminate\Support\Collection;
 
 /**
@@ -31,11 +34,16 @@ final class CollectionShopsPage
             ->when($onlyBranchId !== null, fn ($q) => $q->whereKey($onlyBranchId))
             ->orderBy('name')->get();
         $rows = $store === null ? collect() : OnlineStoreShop::query()->where('company_id', $company->id)->where('online_store_id', $store->id)->get()->keyBy('branch_id');
+        $closures = $rows->isEmpty() ? collect() : OnlineStoreClosure::query()->where('company_id', $company->id)
+            ->whereIn('online_store_shop_id', $rows->pluck('id')->all())
+            ->where('date', '>=', CarbonImmutable::now(OnlineStoreSwitch::timezone())->format('Y-m-d'))
+            ->orderBy('date')->get()->groupBy('online_store_shop_id');
         $calendar = ShopOpeningHour::query()->where('company_id', $company->id)->whereIn('branch_id', $branches->modelKeys())->get()->groupBy('branch_id');
 
         return [
             'hasStore' => $store !== null,
-            'shops' => $branches->map(fn (Branch $branch) => self::shop($branch, $rows->get($branch->id), $calendar->get($branch->id)))->values()->all(),
+            'shops' => $branches->map(fn (Branch $branch) => self::shop($branch, $rows->get($branch->id), $calendar->get($branch->id))
+                + ['closures' => self::closures($closures->get((string) data_get($rows->get($branch->id), 'id')))])->values()->all(),
             'slotOptions' => self::SLOT_OPTIONS,
         ];
     }
@@ -66,6 +74,19 @@ final class CollectionShopsPage
             'slotMinutes' => $row->slot_minutes ?? self::DEFAULTS['slotMinutes'],
             'ordersPerSlot' => $row->orders_per_slot ?? self::DEFAULTS['ordersPerSlot'],
         ];
+    }
+
+    /**
+     * Audit OSA-13: the shop's closed days and special hours from today on.
+     *
+     * @param  Collection<int, OnlineStoreClosure>|null  $closures
+     * @return list<array{id: string, date: string, opensAt: string|null, closesAt: string|null, reason: string|null}>
+     */
+    private static function closures(?Collection $closures): array
+    {
+        return ($closures ?? collect())->map(fn (OnlineStoreClosure $c) => [
+            'id' => $c->id, 'date' => substr((string) $c->date, 0, 10), 'opensAt' => $c->opens_at, 'closesAt' => $c->closes_at, 'reason' => $c->reason,
+        ])->values()->all();
     }
 
     /**

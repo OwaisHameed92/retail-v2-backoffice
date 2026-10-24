@@ -26,6 +26,6 @@ final class AddToBasket
         $total = Money::add($basket->quantity($productId), $quantity, 4);
         $item = $this->rules->check($store, $shop, $basket, $productId, $total);
 
-        return $basket->with($item->id, $total, $item->name);
+        return $basket->with($item->id, $total, $item->name, $item->price);
     }
 }

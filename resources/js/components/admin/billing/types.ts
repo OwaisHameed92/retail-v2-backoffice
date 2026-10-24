@@ -241,6 +241,8 @@ export interface OnlineStoreAddOnData {
     monthlyPlan: boolean;
     template: string | null;
     templateLabel: string | null;
+    /** Audit OSA-5: online orders still to finish (the board stays open for them after switching off). */
+    openOrders?: number;
     templates: Option<string>[];
     slug: string | null;
     url: string | null;

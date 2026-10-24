@@ -180,6 +180,6 @@ test('without a store host the store lives under /store/{slug}; with one, at htt
 
     $placed = $this->f->order([['productId' => $this->beans, 'quantity' => '1']], '2026-11-02T10:00:00Z');
     $link = app(StoreLinks::class)->orderPage($placed->order);
-    expect($hostAndPath($link))->toBe("shops.example.test/kirkgate/order/{$placed->order->id}");
+    expect($hostAndPath($link))->toBe("shops.example.test/o/{$placed->order->id}");
     $this->get($link)->assertOk();
 });

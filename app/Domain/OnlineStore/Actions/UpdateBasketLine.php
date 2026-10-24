@@ -33,6 +33,6 @@ final class UpdateBasketLine
         $quantity = Money::normalise($quantity, 4);
         $item = $this->rules->check($store, $shop, $basket, $productId, $quantity);
 
-        return $basket->with($item->id, $quantity, $item->name);
+        return $basket->with($item->id, $quantity, $item->name, $item->price);
     }
 }

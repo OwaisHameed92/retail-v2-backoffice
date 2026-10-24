@@ -35,7 +35,7 @@ test('checkout shows the shop, days and slots of the first day with room, and th
     $this->get(($this->url)('store.checkout'))->assertOk()->assertInertia(fn (AssertableInertia $page) => $page->component('store/checkout')
         ->where('shop.name', 'Leeds')->where('shops', [])
         ->where('day', '2026-11-02')->has('days', 7)->where('days.0.label', 'Today')->where('days.1.label', 'Tomorrow')
-        ->where('slots.0', ['from' => '2026-11-02T08:00:00Z', 'to' => '2026-11-02T08:30:00Z', 'label' => '08:00–08:30', 'taken' => 0, 'capacity' => 2, 'available' => true])
+        ->where('slots.0', ['from' => '2026-11-02T08:00:00Z', 'to' => '2026-11-02T08:30:00Z', 'label' => '08:00–08:30', 'available' => true])
         ->where('lines.0.lineTotal', '2.20')->where('honeypot', 'website'));
 
     $this->get(($this->url)('store.checkout', ['day' => '2026-11-04']))->assertInertia(fn (AssertableInertia $page) => $page
@@ -57,14 +57,14 @@ test('happy path: the order is placed from the session basket, the basket emptie
         ->and($order->collect_from->toIso8601ZuluString())->toBe(STORE_SLOT)
         ->and(app(CurrentCompany::class)->has())->toBeFalse();
     $location = (string) $response->headers->get('Location');
-    expect($location)->toContain("/store/kirkgate/order/{$order->id}?signature=");
+    expect($location)->toContain("/store/o/{$order->id}?expires=")->toContain('signature=');
     $response->assertRedirect($location);
     expect(session('online_store.'.$this->f->store->id)['lines'])->toBe([]);
     Event::assertDispatched(OnlineOrderPlaced::class);
 
     $this->get($location)->assertOk()->assertInertia(fn (AssertableInertia $page) => $page->component('store/order')
         ->where('justPlaced', true)->where('order.reference', 'W-0001')->where('order.estimated', true)
-        ->where('order.lines.1', ['name' => 'Lamb mince', 'quantity' => '1.25', 'isWeighed' => true, 'unitPrice' => '9.80', 'lineTotal' => '12.25'])
+        ->where('order.lines.1', ['name' => 'Lamb mince', 'quantity' => '1.25', 'isWeighed' => true, 'unitPrice' => '9.80', 'lineTotal' => '12.25', 'outcome' => null, 'orderedQuantity' => null])
         ->where('basket.count', 0));
     // The confirmation is shown once; the link keeps working as the order page.
     $this->get($location)->assertOk()->assertInertia(fn (AssertableInertia $page) => $page->where('justPlaced', false));
@@ -118,7 +118,7 @@ test('the honeypot, missing details and an empty basket place nothing (422 for J
     $this->postJson(($this->url)('store.checkout.place'), ($this->details)(['customerName' => '', 'customerMobile' => 'call me', 'collectFrom' => '']))
         ->assertUnprocessable()->assertJsonValidationErrors(['customerName', 'collectFrom']);
     $this->postJson(($this->url)('store.checkout.place'), ($this->details)(['customerMobile' => 'call me']))
-        ->assertUnprocessable()->assertJsonValidationErrors(['customerMobile' => 'Enter a mobile number we can reach you on.']);
+        ->assertUnprocessable()->assertJsonValidationErrors(['customerMobile' => 'Enter a UK mobile number, like 07700 900123.']);
     expect(($this->orders)())->toBe(0);
 
     $this->delete(($this->url)('store.basket.remove', ['product' => $this->beans]));

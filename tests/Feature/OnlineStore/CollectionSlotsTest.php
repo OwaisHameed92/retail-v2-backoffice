@@ -20,7 +20,8 @@ test('slots run from opening to closing, slot-long, the first one after the prep
     $slots = $this->slots->handle($this->f->shop, '2026-11-02');
 
     expect($slots)->toHaveCount(24)
-        ->and($slots[0]->toArray())->toBe(['from' => '2026-11-02T08:00:00Z', 'to' => '2026-11-02T08:30:00Z', 'label' => '08:00–08:30', 'taken' => 0, 'capacity' => 2, 'available' => true])
+        ->and($slots[0]->toArray())->toBe(['from' => '2026-11-02T08:00:00Z', 'to' => '2026-11-02T08:30:00Z', 'label' => '08:00–08:30', 'available' => true])
+        ->and([$slots[0]->taken, $slots[0]->capacity])->toBe([0, 2])
         ->and(end($slots)->label)->toBe('19:30–20:00');
 
     $this->travelTo(CarbonImmutable::parse('2026-11-02 09:10:00', 'UTC'));

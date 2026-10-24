@@ -75,7 +75,11 @@ test('B\'s orders never open under A, signed or not; an order placed in A belong
     $theirs = $this->b->order([['productId' => $this->bSteak, 'quantity' => '1']], '2026-11-02T10:00:00Z')->order;
 
     $this->get(URL::signedRoute('store.order', ['slug' => 'kirkgate', 'order' => $theirs->id]))->assertNotFound();
-    $this->get(str_replace('/briggate/', '/kirkgate/', app(StoreLinks::class)->orderPage($theirs)))->assertForbidden();
+    // OSA-6: the order link is signed over the order id only; it opens in its own store's frame, and a changed link is refused.
+    $link = app(StoreLinks::class)->orderPage($theirs);
+    $this->get($link)->assertOk()->assertInertia(fn (AssertableInertia $page) => $page->where('store.name', 'Briggate Butchers'));
+    $this->get(str_replace($theirs->id, $this->a->store->id, $link))->assertForbidden();
+    $this->get($link.'&slug=kirkgate')->assertForbidden();
 
     $this->post(($this->url)('store.basket.add'), ['product' => $this->aBeans, 'quantity' => '1']);
     $this->post(($this->url)('store.checkout.place'), [

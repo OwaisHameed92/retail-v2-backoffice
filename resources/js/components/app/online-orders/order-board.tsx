@@ -6,11 +6,14 @@ import { type Board, type ColumnKey } from './types';
 const COLUMNS: { key: ColumnKey; title: string; icon: LucideIcon; empty: string }[] = [
     { key: 'new', title: 'New', icon: Inbox, empty: 'No new orders. New ones appear here by themselves.' },
     { key: 'picking', title: 'Picking', icon: ShoppingBasket, empty: 'Nothing being picked.' },
-    { key: 'ready', title: 'Ready', icon: PackageCheck, empty: 'Nothing waiting to be collected.' },
-    { key: 'done', title: 'Done', icon: CheckCheck, empty: 'Collected and cancelled orders show here.' },
+    { key: 'ready', title: 'Ready', icon: PackageCheck, empty: 'Nothing waiting to be collected or delivered.' },
+    { key: 'done', title: 'Done', icon: CheckCheck, empty: 'Collected, delivered and cancelled orders show here.' },
 ];
 
-/** The four columns: New, Picking, Ready (by collection time) and Done (collected or cancelled that day, newest first). */
+/**
+ * The four columns: New, Picking, Ready (by slot; with deliveries out for delivery, OS-9) and Done (collected,
+ * delivered, not collected or cancelled that day, newest first).
+ */
 export function OrderBoard({
     board,
     isToday,

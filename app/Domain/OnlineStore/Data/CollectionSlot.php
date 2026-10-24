@@ -24,7 +24,10 @@ final readonly class CollectionSlot
     }
 
     /**
-     * @return array{from: string, to: string, label: string, taken: int, capacity: int, available: bool}
+     * What the public checkout gets: only whether the slot has room, never how many orders it has (audit OSA-25: that
+     * is the shop's trading volume).
+     *
+     * @return array{from: string, to: string, label: string, available: bool}
      */
     public function toArray(): array
     {
@@ -32,8 +35,6 @@ final readonly class CollectionSlot
             'from' => $this->from->toIso8601ZuluString(),
             'to' => $this->to->toIso8601ZuluString(),
             'label' => $this->label,
-            'taken' => $this->taken,
-            'capacity' => $this->capacity,
             'available' => $this->available(),
         ];
     }

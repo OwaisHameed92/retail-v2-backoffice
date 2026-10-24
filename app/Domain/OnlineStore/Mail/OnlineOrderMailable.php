@@ -62,12 +62,16 @@ abstract class OnlineOrderMailable extends BrandedMailable
      */
     protected function facts(): array
     {
+        $delivery = $this->data->isDelivery();
+
         return array_filter([
             'Order' => $this->data->reference,
-            'Collect from' => $this->data->shopName,
-            'Address' => $this->data->shopAddress,
+            ...($delivery
+                ? ['Delivery from' => $this->data->shopName, 'Deliver to' => $this->data->deliveryAddress,
+                    'Delivery fee' => MailFormat::money($this->data->deliveryFee), 'Total' => MailFormat::money($this->data->grandTotal ?? $this->data->itemsTotal)]
+                : ['Collect from' => $this->data->shopName, 'Address' => $this->data->shopAddress]),
             'Time' => self::slot($this->data->collectFrom, $this->data->collectTo),
-            'Payment' => 'Pay at the shop when you collect',
+            'Payment' => $this->data->paymentLabel,
         ], fn (?string $value) => $value !== null && $value !== '');
     }
 

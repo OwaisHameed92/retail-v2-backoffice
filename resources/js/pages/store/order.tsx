@@ -1,11 +1,13 @@
-import { money, quantityLabel } from '@/components/store/format';
+import { money } from '@/components/store/format';
 import { ShopCard } from '@/components/store/home-sections';
+import { OrderItems, type OrderPageLine } from '@/components/store/order-items';
 import { StoreLayout } from '@/components/store/store-layout';
 import { type ShopInfo } from '@/components/store/types';
 import { useStore } from '@/components/store/use-store';
 import { cn } from '@/lib/utils';
-import { Link } from '@inertiajs/react';
-import { Check, CircleX } from 'lucide-react';
+import { Link, router } from '@inertiajs/react';
+import { Check, CircleX, CreditCard, Loader2 } from 'lucide-react';
+import { useEffect, useRef } from 'react';
 
 interface Step {
     label: string;
@@ -17,8 +19,9 @@ interface Step {
 
 interface Order {
     reference: string;
-    status: 'new' | 'picking' | 'ready' | 'collected' | 'cancelled';
+    status: string;
     statusLabel: string;
+    fulfilment: 'collection' | 'delivery';
     cancelReason: string | null;
     cancelledAt: string | null;
     steps: Step[];
@@ -27,17 +30,90 @@ interface Order {
     customerName: string;
     customerEmail: string;
     customerMobile: string;
-    lines: { name: string; quantity: string; isWeighed: boolean; unitPrice: string; lineTotal: string }[];
+    deliveryAddress: string | null;
+    deliveryNotes: string | null;
+    customerNote: string | null;
+    substitutionsOk: boolean;
+    payment: { method: string; label: string; paid: boolean; pending: boolean; failed: boolean; paidAmount: string | null };
+    lines: OrderPageLine[];
     itemsTotal: string;
+    deliveryFee: string;
+    grandTotal: string;
     estimated: boolean;
+    changed: boolean;
 }
 
-/** The customer's order page (signed link): confirmation right after checkout, then where the order is. */
-export default function StoreOrder({ order, shop, justPlaced }: { order: Order; shop: ShopInfo; justPlaced: boolean }) {
+const POLL_MS = 3000;
+const POLL_TRIES = 40;
+
+/** The customer's order page (signed link): the confirmation after checkout, then where the order is (OS-2, OS-9). */
+export default function StoreOrder({
+    order,
+    shop,
+    justPlaced,
+    retryUrl,
+}: {
+    order: Order;
+    shop: ShopInfo;
+    justPlaced: boolean;
+    retryUrl: string | null;
+}) {
     const store = useStore();
+    const heading = useRef<HTMLHeadingElement>(null);
     const first = order.customerName.trim().split(/\s+/)[0] ?? '';
-    const cancelled = order.status === 'cancelled';
+    const delivery = order.fulfilment === 'delivery';
+    const stopped = order.status === 'cancelled' || order.status === 'notCollected' || order.payment.failed;
+    const waiting = order.payment.pending;
     const current = order.steps.find((step) => step.current);
+
+    // OSA-10: the confirmation opens at its heading, and screen readers start there.
+    useEffect(() => {
+        if (justPlaced || waiting || order.payment.failed) {
+            window.scrollTo({ top: 0 });
+            heading.current?.focus();
+        }
+    }, [justPlaced, waiting, order.payment.failed]);
+
+    // OS-9: while DNA's result is on its way, ask again every few seconds.
+    useEffect(() => {
+        if (!waiting) {
+            return;
+        }
+        let tries = 0;
+        const timer = window.setInterval(() => {
+            tries++;
+            if (tries > POLL_TRIES) {
+                window.clearInterval(timer);
+
+                return;
+            }
+            router.reload({ only: ['order', 'justPlaced', 'retryUrl', 'basket'] });
+        }, POLL_MS);
+
+        return () => window.clearInterval(timer);
+    }, [waiting]);
+
+    const title = order.payment.failed ? (
+        'Your payment did not go through.'
+    ) : waiting ? (
+        'Confirming your payment…'
+    ) : order.status === 'cancelled' ? (
+        'This order was cancelled.'
+    ) : justPlaced ? (
+        <>
+            Thanks {first},<br />
+            your order is in.
+        </>
+    ) : (
+        order.statusLabel
+    );
+    const payText = order.payment.paid
+        ? `${money(order.payment.paidAmount ?? order.grandTotal)} paid by card`
+        : order.payment.method === 'payOnDelivery'
+          ? `${money(order.grandTotal)} to pay on delivery${order.estimated ? ' (estimated)' : ''}`
+          : order.payment.method === 'cardOnline'
+            ? `${money(order.grandTotal)} by card`
+            : `${money(order.grandTotal)} to pay at the shop${order.estimated ? ' (estimated)' : ''}`;
 
     return (
         <StoreLayout title={`Order ${order.reference}`}>
@@ -45,58 +121,66 @@ export default function StoreOrder({ order, shop, justPlaced }: { order: Order; 
                 <section
                     className={cn(
                         'flex flex-col gap-4 rounded-[30px] p-6 sm:rounded-[36px] sm:p-12',
-                        cancelled ? 'bg-ink text-white' : 'bg-brand text-on-brand',
+                        stopped ? 'bg-ink text-white' : 'bg-brand text-on-brand',
                     )}
                 >
                     <span
                         aria-hidden="true"
                         className={cn(
                             'flex size-16 items-center justify-center rounded-full sm:size-[76px]',
-                            cancelled ? 'text-ink bg-white' : 'bg-lime text-ink',
+                            stopped ? 'text-ink bg-white' : 'bg-lime text-ink',
                         )}
                     >
-                        {cancelled ? (
+                        {waiting ? (
+                            <Loader2 className="size-8 animate-spin sm:size-9" />
+                        ) : stopped ? (
                             <CircleX className="size-8 sm:size-9" strokeWidth={2.4} />
                         ) : (
                             <Check className="size-8 sm:size-[38px]" strokeWidth={2.6} />
                         )}
                     </span>
-                    <h1 className="font-display text-[40px] leading-[0.92] font-extrabold tracking-[-0.045em] sm:text-[72px]">
-                        {cancelled ? (
-                            'This order was cancelled.'
-                        ) : justPlaced ? (
-                            <>
-                                Thanks {first},<br />
-                                your order is in.
-                            </>
-                        ) : (
-                            order.statusLabel
-                        )}
+                    <h1
+                        ref={heading}
+                        tabIndex={-1}
+                        className="font-display text-[40px] leading-[0.92] font-extrabold tracking-[-0.045em] outline-none sm:text-[72px]"
+                    >
+                        {title}
                     </h1>
                     <ul className="flex flex-wrap gap-2">
                         <li className="text-ink rounded-full bg-white px-3.5 py-2 font-bold">Order {order.reference}</li>
-                        {!cancelled && <li className="bg-lime text-ink rounded-full px-3.5 py-2 font-bold">Collect {order.collect}</li>}
-                        <li className="rounded-full px-3.5 py-2 font-semibold ring-1 ring-current">
-                            {money(order.itemsTotal)} {cancelled ? '' : order.estimated ? 'to pay at the shop (estimated)' : 'to pay at the shop'}
-                        </li>
+                        {!stopped && (
+                            <li className="bg-lime text-ink rounded-full px-3.5 py-2 font-bold">
+                                {delivery ? 'Delivery' : 'Collect'} {order.collect}
+                            </li>
+                        )}
+                        {!stopped && <li className="rounded-full px-3.5 py-2 font-semibold ring-1 ring-current">{payText}</li>}
                     </ul>
-                    {cancelled ? (
-                        <p className="text-[15px] opacity-90">
-                            {order.cancelReason ? `Reason: ${order.cancelReason}. ` : ''}Nothing was charged. Call the shop if you have a question.
-                        </p>
-                    ) : (
-                        <p className="text-[15px] opacity-90">
-                            We email updates to {order.customerEmail}. Keep this page: its link is in the email too.
-                        </p>
+                    <p className="text-[15px] opacity-90" role={waiting || order.payment.failed ? 'status' : undefined}>
+                        {order.payment.failed
+                            ? 'No money was taken and the time you picked is free again. Your basket is still here: try again or choose another way to pay.'
+                            : waiting
+                              ? 'Your bank is confirming the payment. This page updates by itself; please do not pay again.'
+                              : order.status === 'cancelled'
+                                ? `${order.cancelReason ? `Reason: ${order.cancelReason}. ` : ''}${order.payment.paid ? 'The shop will refund your card payment.' : 'Nothing was charged.'} Call the shop if you have a question.`
+                                : `We email updates to ${order.customerEmail}. Keep this page: its link is in the email too.`}
+                    </p>
+                    {order.payment.failed && retryUrl && (
+                        <Link
+                            href={retryUrl}
+                            className="text-ink inline-flex min-h-12 items-center gap-2 self-start rounded-full bg-white px-6 font-bold"
+                        >
+                            <CreditCard aria-hidden="true" className="size-4" />
+                            Back to checkout
+                        </Link>
                     )}
                 </section>
 
-                {!cancelled && (
+                {!stopped && !waiting && (
                     <section aria-labelledby="track-title" className="flex flex-col gap-5 rounded-[28px] bg-white p-6 sm:rounded-[32px] sm:p-8">
                         <h2 id="track-title" className="font-display text-[28px] font-extrabold tracking-[-0.03em] sm:text-[32px]">
                             Where your order is
                         </h2>
-                        <ol className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                        <ol className={cn('grid gap-3 sm:grid-cols-2', order.steps.length > 4 ? 'lg:grid-cols-5' : 'lg:grid-cols-4')}>
                             {order.steps.map((step, i) => (
                                 <li
                                     key={step.label}
@@ -128,31 +212,14 @@ export default function StoreOrder({ order, shop, justPlaced }: { order: Order; 
                 )}
 
                 <div className="grid gap-4 md:grid-cols-2">
-                    <section aria-labelledby="items-title" className="flex flex-col gap-4 rounded-[28px] bg-white p-6">
-                        <h2 id="items-title" className="font-display text-[22px] font-extrabold">
-                            Your items
-                        </h2>
-                        <ul className="divide-line flex flex-col divide-y">
-                            {order.lines.map((line, i) => (
-                                <li key={`${line.name}-${i}`} className="flex items-baseline justify-between gap-4 py-2.5">
-                                    <span>
-                                        <span className="font-bold">{quantityLabel(line.quantity, line.isWeighed)}</span>
-                                        {line.isWeighed ? ' of ' : ' × '}
-                                        {line.name}
-                                    </span>
-                                    <span className="shrink-0 font-semibold tabular-nums">{money(line.lineTotal)}</span>
-                                </li>
-                            ))}
-                        </ul>
-                        <div className="border-line flex items-baseline justify-between border-t pt-3">
-                            <span className="font-bold">{order.estimated ? 'Estimated total' : 'Total'}</span>
-                            <span className="font-display text-3xl font-extrabold tracking-tight">{money(order.itemsTotal)}</span>
-                        </div>
-                        {order.estimated && (
-                            <p className="text-muted text-sm">Items sold by weight are weighed in the shop; you pay the price on the scale.</p>
-                        )}
-                    </section>
+                    <OrderItems order={order} />
                     <ShopCard shop={shop}>
+                        {delivery && order.deliveryAddress && (
+                            <p className="text-sm">
+                                <span className="font-bold">Delivering to:</span> {order.deliveryAddress}
+                                {order.deliveryNotes ? ` (${order.deliveryNotes})` : ''}
+                            </p>
+                        )}
                         <p className="text-muted text-sm">
                             Placed {order.placedAt} by {order.customerName}, {order.customerMobile}.
                         </p>

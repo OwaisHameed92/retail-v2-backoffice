@@ -6,6 +6,8 @@ namespace App\Domain\OnlineStore\Data;
  * One product as the online store shows it at one shop (StorefrontCatalogue). Money and quantities are decimal
  * strings. `price` is the shop's live price, else the business price (a weighed product's price is per kg and only
  * an estimate: the till weighs it). Stock-tracked products with no stock are shown but not `orderable`.
+ * `stockLimit` (audit OSA-12): for a stock-tracked product, the most one order may have: the shop's stock on hand less
+ * what open online orders already hold (StorefrontCatalogue::items), whole units or 0.25 kg steps; null = not limited.
  */
 final readonly class CatalogueItem
 {
@@ -21,10 +23,20 @@ final readonly class CatalogueItem
         public ?int $maxQtyPerSale,
         public bool $stockTracked,
         public bool $orderable,
+        public ?string $stockLimit = null,
     ) {}
 
+    /** The same item with the stock left for online orders (OSA-12); nothing left = not orderable. */
+    public function withStockLimit(?string $limit): self
+    {
+        $orderable = $this->orderable && ($limit === null || bccomp($limit, '0', 4) > 0);
+
+        return new self($this->id, $this->name, $this->description, $this->photoPath, $this->departmentId, $this->price, $this->isWeighed,
+            $this->unitCode, $this->maxQtyPerSale, $this->stockTracked, $orderable, $limit);
+    }
+
     /**
-     * @return array{id: string, name: string, description: string|null, photoPath: string|null, departmentId: string|null, price: string, isWeighed: bool, unitCode: string, maxQtyPerSale: int|null, stockTracked: bool, inStock: bool, orderable: bool}
+     * @return array{id: string, name: string, description: string|null, photoPath: string|null, departmentId: string|null, price: string, isWeighed: bool, unitCode: string, maxQtyPerSale: int|null, stockTracked: bool, inStock: bool, orderable: bool, stockLimit: string|null}
      */
     public function toArray(): array
     {
@@ -41,6 +53,7 @@ final readonly class CatalogueItem
             'stockTracked' => $this->stockTracked,
             'inStock' => $this->orderable,
             'orderable' => $this->orderable,
+            'stockLimit' => $this->stockLimit,
         ];
     }
 }

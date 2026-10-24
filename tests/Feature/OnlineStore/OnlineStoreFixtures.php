@@ -4,7 +4,10 @@ namespace Tests\Feature\OnlineStore;
 
 use App\Domain\Licensing\Models\Licence;
 use App\Domain\OnlineStore\Actions\PlaceCollectOrder;
+use App\Domain\OnlineStore\Actions\SaveDeliverySettings;
+use App\Domain\OnlineStore\Actions\SaveDnaCredentials;
 use App\Domain\OnlineStore\Actions\SaveOnlineStore;
+use App\Domain\OnlineStore\Actions\SavePaymentSettings;
 use App\Domain\OnlineStore\Actions\SaveStoreShop;
 use App\Domain\OnlineStore\Actions\SetStoreLive;
 use App\Domain\OnlineStore\Actions\SetTakingOrders;
@@ -43,7 +46,9 @@ final class OnlineStoreFixtures
 
     public static function make(string $name = 'Kirkgate Convenience', string $slug = 'kirkgate'): self
     {
-        config(['online_store.enabled' => true]);
+        // OS-9 (audit OSA-1): the checkout's proof of work and the per-customer limits have their own tests
+        // (OrderAbuseTest); here one customer places many orders.
+        config(['online_store.enabled' => true, 'online_store.checkout_challenge' => false, 'online_store.customer_limits' => false]);
 
         $f = new self;
         $f->company = Company::factory()->create(['name' => $name]);
@@ -76,6 +81,44 @@ final class OnlineStoreFixtures
             'enabled' => true,
             ...$overrides,
         ];
+    }
+
+    /**
+     * OS-9: Leeds delivers to B23 and B24 9 (and LS1), every day 10:00–18:00 in 60-minute slots of 2 orders, 60 minutes'
+     * lead time, £3.50, free over £40, minimum £10.
+     *
+     * @param  array<string, mixed>  $overrides
+     */
+    public function deliveryOn(array $overrides = []): OnlineStoreShop
+    {
+        return $this->shop = app(SaveDeliverySettings::class)->handle($this->company, $this->leeds->id, self::deliveryInput($overrides));
+    }
+
+    /**
+     * @param  array<string, mixed>  $overrides
+     * @return array<string, mixed>
+     */
+    public static function deliveryInput(array $overrides = []): array
+    {
+        return [
+            'delivery_enabled' => true, 'delivery_areas' => 'B23, b24 9, LS1', 'delivery_fee' => '3.50', 'delivery_free_over' => '40',
+            'delivery_minimum' => '10.00', 'delivery_hours' => array_fill_keys(OnlineStoreShop::WEEKDAYS, ['open' => '10:00', 'close' => '18:00']),
+            'delivery_slot_minutes' => 60, 'delivery_orders_per_slot' => 2, 'delivery_lead_minutes' => 60, ...$overrides,
+        ];
+    }
+
+    public const DNA_SECRET = 'dna-secret-value-7781';
+
+    /** OS-9: the store's DNA Payments account (test mode) and the ways to pay, card online included. */
+    /**
+     * @param  list<string>  $collection
+     * @param  list<string>  $delivery
+     */
+    public function cardOn(array $collection = ['payAtShop', 'cardOnline'], array $delivery = ['cardOnline', 'payOnDelivery']): OnlineStore
+    {
+        app(SaveDnaCredentials::class)->handle($this->company, ['client_id' => 'client-1234', 'client_secret' => self::DNA_SECRET, 'terminal_id' => 'term-5678', 'test_mode' => true]);
+
+        return $this->store = app(SavePaymentSettings::class)->handle($this->company, ['collection' => $collection, 'delivery' => $delivery]);
     }
 
     public static function department(Company $company, string $name, int $position): string

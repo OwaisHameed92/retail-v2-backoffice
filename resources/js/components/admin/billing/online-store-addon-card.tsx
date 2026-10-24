@@ -184,6 +184,12 @@ function AddOnDialogBody({
                         <Label htmlFor="addon-on">Online store add-on on</Label>
                         <p className="text-muted-foreground text-sm">The business can build its store and take click & collect orders.</p>
                         {errorList.on && <p className="text-destructive text-sm">{errorList.on}</p>}
+                        {addOn.on && !data.on && (addOn.openOrders ?? 0) > 0 && (
+                            <p role="alert" className="text-warning-foreground bg-warning-soft rounded-md px-3 py-2 text-sm">
+                                {addOn.openOrders} online {addOn.openOrders === 1 ? 'order is' : 'orders are'} still open. Customers cannot place new
+                                orders once it is off, but staff can still finish the open ones on the Online orders board.
+                            </p>
+                        )}
                     </div>
                 </div>
 

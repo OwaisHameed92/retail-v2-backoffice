@@ -9,6 +9,7 @@ use App\Domain\OnlineStore\Models\OnlineStore;
 use App\Domain\OnlineStore\Models\OnlineStoreShop;
 use App\Domain\OnlineStore\Support\OnlineCatalogueQuery;
 use App\Domain\OnlineStore\Support\StoreScope;
+use App\Domain\Shared\Support\Money;
 use App\Domain\TillData\Models\Department;
 use App\Domain\TillData\Models\Product;
 use App\Domain\TillData\Models\ProductBarcode;
@@ -89,7 +90,8 @@ final class StorefrontCatalogue
     }
 
     /**
-     * Several products as shown at this shop, keyed by id; ids the store does not show are left out.
+     * Several products as shown at this shop, keyed by id; ids the store does not show are left out. A stock-tracked
+     * product carries the stock left for online orders (OSA-12: on hand less what open online orders hold).
      *
      * @param  list<string>  $productIds
      * @return array<string, CatalogueItem>
@@ -106,7 +108,15 @@ final class StorefrontCatalogue
             /** @var Collection<int, Product> $rows */
             $rows = OnlineCatalogueQuery::select(OnlineCatalogueQuery::base($shop)->whereIn('products.id', $productIds), $shop)->get();
 
-            return $rows->mapWithKeys(fn (Product $row) => [$row->id => OnlineCatalogueQuery::item($row)])->all();
+            $held = OpenOnlineQuantities::for($shop, $productIds);
+
+            return $rows->mapWithKeys(function (Product $row) use ($held): array {
+                $item = OnlineCatalogueQuery::item($row);
+                $limit = $item->stockLimit === null ? null
+                    : OnlineCatalogueQuery::stepDown(Money::sub($item->stockLimit, $held[$item->id] ?? '0', 4), $item->isWeighed);
+
+                return [$row->id => $item->withStockLimit($limit)];
+            })->all();
         });
     }
 

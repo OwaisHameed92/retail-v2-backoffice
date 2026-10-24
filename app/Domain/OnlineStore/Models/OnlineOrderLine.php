@@ -2,6 +2,7 @@
 
 namespace App\Domain\OnlineStore\Models;
 
+use App\Domain\OnlineStore\Enums\OrderLineOutcome;
 use App\Domain\Shared\Casts\MoneyCast;
 use App\Domain\Shared\Casts\QuantityCast;
 use App\Domain\Tenancy\Concerns\BelongsToCompany;
@@ -23,6 +24,8 @@ use Illuminate\Database\Eloquent\Model;
  * @property string $quantity
  * @property bool $is_weighed
  * @property string $line_total
+ * @property OrderLineOutcome|null $outcome what the shop did with it while picking (audit OSA-18); null = as ordered
+ * @property string|null $ordered_quantity the quantity first ordered, once the shop changed it
  * @property CarbonImmutable|null $created_at
  * @property CarbonImmutable|null $updated_at
  */
@@ -44,6 +47,8 @@ class OnlineOrderLine extends Model
             'quantity' => QuantityCast::class,
             'is_weighed' => 'boolean',
             'line_total' => MoneyCast::class,
+            'outcome' => OrderLineOutcome::class,
+            'ordered_quantity' => QuantityCast::class,
             'created_at' => 'immutable_datetime',
             'updated_at' => 'immutable_datetime',
         ];

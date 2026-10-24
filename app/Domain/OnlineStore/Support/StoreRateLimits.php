@@ -13,7 +13,8 @@ use Symfony\Component\HttpFoundation\Response;
  * its POST routes. Keyed per visitor (a hash of the IP) and store, so one shop's rush never slows another:
  *
  * - `online-store-basket`: basket changes and the shop choice, `online_store.basket_per_minute` (60).
- * - `online-store-checkout`: placed orders, `online_store.checkout_per_minute` (6).
+ * - `online-store-checkout`: placed orders, `online_store.checkout_per_minute` (6), and `online_store.checkout_per_hour`
+ *   (20) an hour (audit OSA-1).
  *
  * Over the limit the store answers 429 with its own page (the response callback set by the public store).
  */
@@ -37,13 +38,16 @@ final class StoreRateLimits
         self::$response = $response;
 
         RateLimiter::for(self::BASKET, fn (Request $request) => self::limit($request, 'basket', (int) config('online_store.basket_per_minute', 60)));
-        RateLimiter::for(self::CHECKOUT, fn (Request $request) => self::limit($request, 'checkout', (int) config('online_store.checkout_per_minute', 6)));
+        RateLimiter::for(self::CHECKOUT, fn (Request $request) => [
+            self::limit($request, 'checkout', (int) config('online_store.checkout_per_minute', 6)),
+            self::limit($request, 'checkout-hour', (int) config('online_store.checkout_per_hour', 20), 60),
+        ]);
     }
 
-    private static function limit(Request $request, string $bucket, int $perMinute): Limit
+    private static function limit(Request $request, string $bucket, int $perPeriod, int $minutes = 1): Limit
     {
         $store = (string) ($request->attributes->get(self::STORE_ATTRIBUTE) ?? strtolower((string) $request->route('slug')));
-        $limit = Limit::perMinute(max(1, $perMinute))->by("store-{$bucket}:{$store}|".hash('sha256', (string) $request->ip()));
+        $limit = ($minutes === 1 ? Limit::perMinute(max(1, $perPeriod)) : Limit::perMinutes($minutes, max(1, $perPeriod)))->by("store-{$bucket}:{$store}|".hash('sha256', (string) $request->ip()));
 
         return self::$response === null ? $limit : $limit->response(self::$response);
     }

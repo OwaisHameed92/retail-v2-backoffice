@@ -54,12 +54,10 @@ final class BasketRules
         return $items[$productId];
     }
 
-    /** The most of a product one order may have: "99", "50" (kg) or its `max_qty_per_sale`. */
+    /** The most of a product one order may have: "99", "50" (kg), its `max_qty_per_sale` or the stock left (OSA-12). */
     public static function limit(CatalogueItem $item): string
     {
-        $max = $item->isWeighed ? OrderLineRules::MAX_WEIGHED_KG : (string) OrderLineRules::MAX_UNITS;
-
-        return $item->maxQtyPerSale !== null && Money::compare($item->maxQtyPerSale, $max) < 0 ? (string) $item->maxQtyPerSale : $max;
+        return OrderLineRules::limit($item);
     }
 
     /** The smallest step: 0.25 kg for a weighed product, else 1. */

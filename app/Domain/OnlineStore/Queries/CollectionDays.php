@@ -3,6 +3,8 @@
 namespace App\Domain\OnlineStore\Queries;
 
 use App\Domain\OnlineStore\Data\CollectionSlot;
+use App\Domain\OnlineStore\Data\SlotPlan;
+use App\Domain\OnlineStore\Enums\FulfilmentMethod;
 use App\Domain\OnlineStore\Models\OnlineStoreShop;
 use App\Domain\OnlineStore\Support\OnlineStoreSwitch;
 use Carbon\CarbonImmutable;
@@ -10,16 +12,18 @@ use Carbon\CarbonImmutable;
 /**
  * The days a customer can pick at checkout (OS-2), from today (shop time) for `online_store.order_days_ahead`
  * days, each with whether the shop hands out orders that day, and the first slot with room (CollectionSlots).
+ * OS-9: for delivery, the days it delivers and the first delivery slot with room.
  */
 final class CollectionDays
 {
     public function __construct(private readonly CollectionSlots $slots) {}
 
     /**
-     * @return list<array{date: string, label: string, short: string, open: bool}>
+     * @return list<array{date: string, label: string, short: string, open: bool, closedReason: string|null}>
      */
-    public function days(OnlineStoreShop $shop, ?CarbonImmutable $now = null): array
+    public function days(OnlineStoreShop $shop, ?CarbonImmutable $now = null, FulfilmentMethod $method = FulfilmentMethod::Collection): array
     {
+        $plan = SlotPlan::for($shop, $method);
         $tz = OnlineStoreSwitch::timezone();
         $today = ($now ?? CarbonImmutable::now())->setTimezone($tz)->startOfDay();
         $days = [];
@@ -34,7 +38,8 @@ final class CollectionDays
                     default => $date->format('l'),
                 },
                 'short' => $date->format('j M'),
-                'open' => $shop->hoursOn(strtolower($date->englishDayOfWeek)) !== null,
+                'open' => $plan->hoursOnDate($date->format('Y-m-d')) !== null,
+                'closedReason' => $plan->closedReason($date->format('Y-m-d')),
             ];
         }
 
@@ -42,14 +47,14 @@ final class CollectionDays
     }
 
     /** The first slot with room in the bookable days, or null. */
-    public function next(OnlineStoreShop $shop, ?CarbonImmutable $now = null): ?CollectionSlot
+    public function next(OnlineStoreShop $shop, ?CarbonImmutable $now = null, FulfilmentMethod $method = FulfilmentMethod::Collection): ?CollectionSlot
     {
-        foreach ($this->days($shop, $now) as $day) {
+        foreach ($this->days($shop, $now, $method) as $day) {
             if (! $day['open']) {
                 continue;
             }
 
-            foreach ($this->slots->handle($shop, $day['date'], $now) as $slot) {
+            foreach ($this->slots->handle($shop, $day['date'], $now, $method) as $slot) {
                 if ($slot->available()) {
                     return $slot;
                 }

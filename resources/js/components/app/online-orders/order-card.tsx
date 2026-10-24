@@ -2,17 +2,19 @@ import { StatusPill } from '@/components/shared/status-badge';
 import { formatMoney, formatTime } from '@/lib/country';
 import { cn } from '@/lib/utils';
 import { Link } from '@inertiajs/react';
-import { Clock, Scale, Sparkles, Store } from 'lucide-react';
-import { dayLabel, itemsLabel, OrderStatusBadge, slotTime } from './format';
+import { Clock, CreditCard, MessageSquare, Scale, Sparkles, Store, Truck } from 'lucide-react';
+import { dayLabel, isDone, itemsLabel, OrderStatusBadge, slotTime, statusLabel } from './format';
 import { OrderActions } from './order-actions';
 import { type OrderCard as Card } from './types';
 
 /**
- * One order on the board: number, customer, items, total, collection time and "Pay at shop", with its one main
- * action. `highlight` rings a card that arrived since the last refresh.
+ * One order on the board: number, customer, items, total, collection time or delivery window (OS-9: with the
+ * postcode), how it is paid ("Paid by card"), with its one main action. `highlight` rings a card that arrived since
+ * the last refresh.
  */
 export function OrderCard({ order, showShop, highlight }: { order: Card; showShop: boolean; highlight: boolean }) {
-    const done = order.status === 'collected' || order.status === 'cancelled';
+    const done = isDone(order.status);
+    const delivery = order.fulfilment === 'delivery';
 
     return (
         <article
@@ -38,9 +40,21 @@ export function OrderCard({ order, showShop, highlight }: { order: Card; showSho
                             Just in
                         </StatusPill>
                     )}
-                    {order.late && !done && <StatusPill tone="warning">{order.status === 'ready' ? 'Not collected yet' : 'Late'}</StatusPill>}
+                    {delivery && (
+                        <StatusPill tone="info" className="gap-1">
+                            <Truck className="size-3" aria-hidden />
+                            Delivery
+                        </StatusPill>
+                    )}
+                    {order.status === 'outForDelivery' && <StatusPill tone="info">Out for delivery</StatusPill>}
+                    {order.late && !done && (
+                        <StatusPill tone="warning">
+                            {order.status === 'ready' ? (delivery ? 'Waiting to go out' : 'Not collected yet') : 'Late'}
+                        </StatusPill>
+                    )}
                     {order.dueSoon && <StatusPill tone="warning">Due soon</StatusPill>}
-                    {done && <OrderStatusBadge status={order.status} />}
+                    {done && <OrderStatusBadge status={order.status} fulfilment={order.fulfilment} />}
+                    {order.payment.refundNeeded && <StatusPill tone="danger">Refund in DNA portal</StatusPill>}
                 </div>
             </div>
 
@@ -55,9 +69,10 @@ export function OrderCard({ order, showShop, highlight }: { order: Card; showSho
                 <span className="inline-flex items-center gap-1 tabular-nums">
                     <Clock className="size-3.5" aria-hidden />
                     {done && order.doneAt
-                        ? `${order.status === 'collected' ? 'Collected' : 'Cancelled'} ${formatTime(order.doneAt)}`
-                        : `${order.late || order.otherDay ? `${dayLabel(order.collectFrom)} ` : ''}Collect ${slotTime(order)}`}
+                        ? `${statusLabel(order.status, order.fulfilment)} ${formatTime(order.doneAt)}`
+                        : `${order.late || order.otherDay ? `${dayLabel(order.collectFrom)} ` : ''}${delivery ? 'Deliver' : 'Collect'} ${slotTime(order)}`}
                 </span>
+                {delivery && order.deliveryPostcode && <span className="font-medium tabular-nums">{order.deliveryPostcode}</span>}
                 {showShop && (
                     <span className="inline-flex items-center gap-1">
                         <Store className="size-3.5" aria-hidden />
@@ -70,7 +85,24 @@ export function OrderCard({ order, showShop, highlight }: { order: Card; showSho
                         Weighed items
                     </span>
                 )}
-                {!done && <span className="text-foreground font-medium">Pay at shop</span>}
+                {order.hasNote && (
+                    <span className="inline-flex items-center gap-1">
+                        <MessageSquare className="size-3.5" aria-hidden />
+                        Note
+                    </span>
+                )}
+                {order.payment.paid ? (
+                    <span className="text-success-foreground inline-flex items-center gap-1 font-medium">
+                        <CreditCard className="size-3.5" aria-hidden />
+                        Paid by card
+                    </span>
+                ) : (
+                    !done && (
+                        <span className="text-foreground font-medium">
+                            {order.payment.method === 'payOnDelivery' ? 'Pay on delivery' : 'Pay at shop'}
+                        </span>
+                    )
+                )}
             </div>
 
             {order.status === 'cancelled' && order.cancelReason && (

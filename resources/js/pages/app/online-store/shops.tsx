@@ -1,3 +1,4 @@
+import { ClosedDays } from '@/components/app/online-store/closed-days';
 import { OnlineStoreTabs } from '@/components/app/online-store/online-store-tabs';
 import { ShopCard } from '@/components/app/online-store/shop-card';
 import { type ShopsProps } from '@/components/app/online-store/types';
@@ -38,7 +39,7 @@ export default function OnlineStoreShops({ hasStore, shops, slotOptions }: Shops
                     <AlertDescription>
                         {collecting === 0
                             ? 'Add at least one collection shop before you go live.'
-                            : `Customers can collect from ${collecting} ${collecting === 1 ? 'shop' : 'shops'}${shops.length > 1 && collecting > 1 ? ' and choose one at checkout' : ''}. They pay at the shop; the till rings the order up.`}
+                            : `Customers can collect from ${collecting} ${collecting === 1 ? 'shop' : 'shops'}${shops.length > 1 && collecting > 1 ? ' and choose one at checkout' : ''}. The till rings each order up.`}
                     </AlertDescription>
                 </Alert>
             )}
@@ -55,7 +56,12 @@ export default function OnlineStoreShops({ hasStore, shops, slotOptions }: Shops
                     }
                 />
             ) : (
-                shops.map((shop) => <ShopCard key={shop.id} shop={shop} slotOptions={slotOptions} disabled={!hasStore} />)
+                shops.map((shop) => (
+                    <div key={shop.id} className="grid gap-3">
+                        <ShopCard shop={shop} slotOptions={slotOptions} disabled={!hasStore} />
+                        {shop.saved && <ClosedDays branchId={shop.id} closures={shop.closures ?? []} disabled={!hasStore} />}
+                    </div>
+                ))
             )}
         </AppLayout>
     );

@@ -29,7 +29,9 @@ use App\Http\Controllers\App\NotificationController;
 use App\Http\Controllers\App\NotificationSettingsController;
 use App\Http\Controllers\App\OnlineOrderController;
 use App\Http\Controllers\App\OnlineProductController;
+use App\Http\Controllers\App\OnlineStoreClosureController;
 use App\Http\Controllers\App\OnlineStoreController;
+use App\Http\Controllers\App\OnlineStoreDeliveryController;
 use App\Http\Controllers\App\OnlineStoreShopController;
 use App\Http\Controllers\App\ParcelController;
 use App\Http\Controllers\App\PharmacyController;
@@ -57,6 +59,7 @@ use App\Http\Controllers\App\SwitchCompanyController;
 use App\Http\Controllers\App\SyncConflictController;
 use App\Http\Controllers\App\TillListController;
 use App\Http\Controllers\App\TransferController;
+use App\Http\Middleware\EnsureOnlineOrdersReachable;
 use App\Http\Middleware\EnsureOnlineStoreOn;
 use Illuminate\Support\Facades\Route;
 
@@ -481,13 +484,19 @@ Route::middleware(['auth:web', 'verified', 'company', 'two-factor:web'])->group(
 
     // Online store OS-4: the online orders board, an order's page and pick list, moving orders on and the "Taking
     // orders" switch. 404 while the online store is switched off; store.manage; a one-shop user: own shop's orders.
-    Route::prefix('online-orders')->name('online-orders.')->middleware([EnsureOnlineStoreOn::class, 'company.can:store.manage'])
+    // Audit OSA-5: the board and order pages stay open while the business still has orders to finish, even after the
+    // add-on, cloud sync or plan goes off (EnsureOnlineOrdersReachable); only new orders stop. OS-9 / OSA-18, 21, 22:
+    // undo the last move, change a line, send the customer their order link again.
+    Route::prefix('online-orders')->name('online-orders.')->middleware([EnsureOnlineOrdersReachable::class, 'company.can:store.manage'])
         ->controller(OnlineOrderController::class)->group(function () {
             Route::get('/', 'index')->name('index');
             Route::put('taking', 'taking')->name('taking')->middleware('throttle:30,1');
             Route::get('{order}', 'show')->name('show')->whereUlid('order');
             Route::get('{order}/pick-list', 'pickList')->name('pick-list')->whereUlid('order');
             Route::post('{order}/status', 'status')->name('status')->whereUlid('order')->middleware('throttle:120,1');
+            Route::post('{order}/undo', 'undo')->name('undo')->whereUlid('order')->middleware('throttle:60,1');
+            Route::post('{order}/lines/{line}', 'line')->name('line')->whereUlid('order')->whereUlid('line')->middleware('throttle:120,1');
+            Route::post('{order}/resend-link', 'resend')->name('resend')->whereUlid('order')->middleware('throttle:10,1');
         });
     // Online store OS-3 (docs/online-store.md): store builder, collection shops and products shown online. store.manage;
     // 404 while the online store is off (EnsureOnlineStoreOn). A one-shop user may look; they change only their own shop.
@@ -495,6 +504,7 @@ Route::middleware(['auth:web', 'verified', 'company', 'two-factor:web'])->group(
         Route::get('/', [OnlineStoreController::class, 'edit'])->name('edit');
         Route::get('shops', [OnlineStoreShopController::class, 'index'])->name('shops');
         Route::get('products', [OnlineProductController::class, 'index'])->name('products');
+        Route::get('delivery', [OnlineStoreDeliveryController::class, 'index'])->name('delivery');
         Route::middleware('throttle:60,1')->group(function () {
             Route::post('/', [OnlineStoreController::class, 'update'])->name('update');
             Route::put('live', [OnlineStoreController::class, 'live'])->name('live');
@@ -502,6 +512,14 @@ Route::middleware(['auth:web', 'verified', 'company', 'two-factor:web'])->group(
             Route::put('shops/{branch}', [OnlineStoreShopController::class, 'update'])->name('shops.update')->whereAlphaNumeric('branch');
             Route::post('products/visibility', [OnlineProductController::class, 'visibility'])->name('products.visibility');
             Route::post('products/{product}', [OnlineProductController::class, 'update'])->name('products.update')->whereAlphaNumeric('product');
+            // OS-9: delivery per shop, ways to pay, the store's DNA Payments account; OSA-13: closed days per shop.
+            Route::put('delivery/shops/{branch}', [OnlineStoreDeliveryController::class, 'shop'])->name('delivery.shop')->whereAlphaNumeric('branch');
+            Route::put('delivery/payments', [OnlineStoreDeliveryController::class, 'payments'])->name('delivery.payments');
+            Route::put('delivery/dna', [OnlineStoreDeliveryController::class, 'dna'])->name('delivery.dna');
+            Route::delete('delivery/dna', [OnlineStoreDeliveryController::class, 'removeDna'])->name('delivery.dna.remove');
+            Route::post('shops/{branch}/closures', [OnlineStoreClosureController::class, 'store'])->name('closures.store')->whereAlphaNumeric('branch');
+            Route::delete('shops/{branch}/closures/{closure}', [OnlineStoreClosureController::class, 'destroy'])->name('closures.destroy')
+                ->whereAlphaNumeric('branch')->whereUlid('closure');
         });
     });
 

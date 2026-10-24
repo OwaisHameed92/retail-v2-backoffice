@@ -2,6 +2,7 @@
 
 namespace App\Domain\OnlineStore\Support;
 
+use App\Domain\OnlineStore\Enums\OnlineOrderStatus;
 use App\Domain\OnlineStore\Models\OnlineOrder;
 use App\Domain\Tenancy\CurrentCompany;
 use Illuminate\Database\Eloquent\Builder;
@@ -9,8 +10,9 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 /**
  * The online orders the signed-in portal user may see (portal → Online orders): the current business's (company
- * scope plus an explicit `company_id` filter), and only their own shop's for a one-shop user. Anything else is a 404,
- * so another business's order id tells nothing.
+ * scope plus an explicit `company_id` filter), and only their own shop's for a one-shop user. A card order whose payment
+ * has not gone through (OS-9: awaiting payment or failed) is never shown. Anything else is a 404, so another
+ * business's order id tells nothing.
  */
 final class PortalOrders
 {
@@ -24,6 +26,7 @@ final class PortalOrders
         $company = $this->tenancy->require();
 
         return OnlineOrder::query()->where('online_orders.company_id', $company->id)
+            ->whereIn('online_orders.status', OnlineOrderStatus::staffValues())
             ->when($this->tenancy->restrictedBranchId(), fn (Builder $query, string $branchId) => $query->where('online_orders.branch_id', $branchId));
     }
 

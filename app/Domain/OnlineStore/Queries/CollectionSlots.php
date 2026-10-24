@@ -3,6 +3,8 @@
 namespace App\Domain\OnlineStore\Queries;
 
 use App\Domain\OnlineStore\Data\CollectionSlot;
+use App\Domain\OnlineStore\Data\SlotPlan;
+use App\Domain\OnlineStore\Enums\FulfilmentMethod;
 use App\Domain\OnlineStore\Enums\OnlineOrderStatus;
 use App\Domain\OnlineStore\Models\OnlineOrder;
 use App\Domain\OnlineStore\Models\OnlineStoreShop;
@@ -17,6 +19,10 @@ use Carbon\CarbonImmutable;
  * Days before today, after `online_store.order_days_ahead`, or without hours have none. Each slot carries how many of
  * its orders are not cancelled (`taken`) against `orders_per_slot`. Slot times are built on the shop's wall clock
  * and returned in UTC (as stored), so they stay right across the clock changes.
+ *
+ * OS-9: delivery slots work the same from the shop's delivery hours, slot length, orders per slot and lead time
+ * (SlotPlan); each method counts only its own orders. An order taken counts unless it is cancelled or its card
+ * payment failed; an unpaid card order counts only while its hold lasts (`payment_expires_at` after now).
  */
 final class CollectionSlots
 {
@@ -26,8 +32,9 @@ final class CollectionSlots
      * @param  string  $day  the shop's date, Y-m-d
      * @return list<CollectionSlot>
      */
-    public function handle(OnlineStoreShop $shop, string $day, ?CarbonImmutable $now = null): array
+    public function handle(OnlineStoreShop $shop, string $day, ?CarbonImmutable $now = null, FulfilmentMethod $method = FulfilmentMethod::Collection): array
     {
+        $plan = SlotPlan::for($shop, $method);
         $tz = OnlineStoreSwitch::timezone();
         $now = ($now ?? CarbonImmutable::now())->utc();
         $date = preg_match('/^\d{4}-\d{2}-\d{2}$/', $day) === 1 ? CarbonImmutable::createFromFormat('!Y-m-d', $day, $tz) : null;
@@ -36,14 +43,14 @@ final class CollectionSlots
             return [];
         }
 
-        $hours = $shop->hoursOn(strtolower($date->englishDayOfWeek));
-        $length = max(1, $shop->slot_minutes);
+        $hours = $plan->hoursOnDate($day);
+        $length = $plan->slotMinutes;
 
         if ($hours === null) {
             return [];
         }
 
-        $earliest = $now->addMinutes(max(0, $shop->prep_minutes));
+        $earliest = $now->addMinutes($plan->leadMinutes);
         $starts = [];
 
         for ($minute = self::minutes($hours['open']); $minute + $length <= self::minutes($hours['close']); $minute += $length) {
@@ -58,24 +65,24 @@ final class CollectionSlots
             return [];
         }
 
-        $taken = $this->taken($shop, array_values($starts));
+        $taken = $this->taken($shop, $method, array_values($starts), $now);
         $slots = [];
 
         foreach ($starts as $minute => $from) {
             $to = self::at($day, $minute + $length, $tz);
             $label = $from->setTimezone($tz)->format('H:i').'–'.$to->setTimezone($tz)->format('H:i');
-            $slots[] = new CollectionSlot($from, $to, $label, $taken[$from->format('Y-m-d H:i:s')] ?? 0, max(0, $shop->orders_per_slot));
+            $slots[] = new CollectionSlot($from, $to, $label, $taken[$from->format('Y-m-d H:i:s')] ?? 0, $plan->capacity);
         }
 
         return $slots;
     }
 
     /** The slot of this shop that starts at `$from` (any timezone), or null when there is none at that time. */
-    public function find(OnlineStoreShop $shop, CarbonImmutable $from, ?CarbonImmutable $now = null): ?CollectionSlot
+    public function find(OnlineStoreShop $shop, CarbonImmutable $from, ?CarbonImmutable $now = null, FulfilmentMethod $method = FulfilmentMethod::Collection): ?CollectionSlot
     {
         $day = $from->setTimezone(OnlineStoreSwitch::timezone())->format('Y-m-d');
 
-        foreach ($this->handle($shop, $day, $now) as $slot) {
+        foreach ($this->handle($shop, $day, $now, $method) as $slot) {
             if ($slot->from->equalTo($from)) {
                 return $slot;
             }
@@ -94,19 +101,22 @@ final class CollectionSlots
     }
 
     /**
-     * Orders that are not cancelled per slot start (UTC "Y-m-d H:i:s").
+     * The method's orders that hold a place per slot start (UTC "Y-m-d H:i:s").
      *
      * @param  list<CarbonImmutable>  $starts
      * @return array<string, int>
      */
-    private function taken(OnlineStoreShop $shop, array $starts): array
+    private function taken(OnlineStoreShop $shop, FulfilmentMethod $method, array $starts, CarbonImmutable $now): array
     {
         $company = Company::query()->findOrFail($shop->company_id);
 
         return $this->tenancy->runAs($company, fn (): array => OnlineOrder::query()
             ->where('company_id', $shop->company_id)
             ->where('online_store_shop_id', $shop->id)
-            ->where('status', '!=', OnlineOrderStatus::Cancelled->value)
+            ->where('fulfilment', $method->value)
+            ->whereNotIn('status', [OnlineOrderStatus::Cancelled->value, OnlineOrderStatus::PaymentFailed->value])
+            ->where(fn ($q) => $q->where('status', '!=', OnlineOrderStatus::AwaitingPayment->value)
+                ->orWhere('payment_expires_at', '>', $now->format('Y-m-d H:i:s')))
             ->whereIn('collect_from', array_map(fn (CarbonImmutable $s) => $s->format('Y-m-d H:i:s'), $starts))
             ->selectRaw('collect_from, COUNT(*) as aggregate')->groupBy('collect_from')
             ->toBase()->get()

@@ -7,6 +7,7 @@ use App\Domain\Billing\Support\BillingFormat;
 use App\Domain\Billing\Support\CompanyPricing;
 use App\Domain\Billing\Support\InvoiceMaths;
 use App\Domain\Billing\Support\Vat;
+use App\Domain\OnlineStore\Support\OnlineOrdersAccess;
 use App\Domain\OnlineStore\Support\OnlineStoreAddOn;
 use App\Domain\OnlineStore\Support\OnlineStoreSwitch;
 use App\Domain\OnlineStore\Support\PlanOnlineStore;
@@ -76,6 +77,8 @@ final class AdminAddOnData
             'serverOn' => $serverOn,
             'cloudSync' => $cloudSync,
             'available' => $on && $serverOn && $cloudSync && $monthlyPlan,
+            // Audit OSA-5: orders still to finish; switching off keeps the Online orders board open for them.
+            'openOrders' => $store === null ? 0 : OnlineOrdersAccess::openOrders($company),
         ];
     }
 }

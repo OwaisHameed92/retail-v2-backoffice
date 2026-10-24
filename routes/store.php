@@ -7,6 +7,7 @@ use App\Http\Controllers\Store\StoreDepartmentController;
 use App\Http\Controllers\Store\StoreHomeController;
 use App\Http\Controllers\Store\StoreNotFoundController;
 use App\Http\Controllers\Store\StoreOrderController;
+use App\Http\Controllers\Store\StoreOrderLinkController;
 use App\Http\Controllers\Store\StoreProductController;
 use App\Http\Controllers\Store\StoreSearchController;
 use App\Http\Controllers\Store\StoreShopController;
@@ -39,19 +40,29 @@ $pages = function () use ($id) {
     Route::get('checkout', [StoreCheckoutController::class, 'show'])->name('checkout');
     Route::post('checkout', [StoreCheckoutController::class, 'place'])->name('checkout.place')
         ->middleware('throttle:'.StoreRateLimits::CHECKOUT);
+    // OS-9: collect or delivery, and the delivery postcode (checked on the server), kept in the session.
+    Route::post('checkout/method', [StoreCheckoutController::class, 'method'])->name('checkout.method')
+        ->middleware('throttle:'.StoreRateLimits::BASKET);
 
     // Signed link to the order's id (StoreLinks::orderPage); the controller checks the signature.
     Route::get('order/{order}', StoreOrderController::class)->name('order')->where('order', $id);
 };
 
+// Audit OSA-6, OSA-22: the order page by a link signed over the order id only (works while the store is offline or
+// after its address changed; expires a while after the slot). Outside ResolveOnlineStore: the controller finds the store.
+$orderLink = fn () => Route::get('o/{order}', StoreOrderLinkController::class)->name('store.order-link')->where('order', $id)
+    ->middleware('throttle:60,1');
+
 $host = config('online_store.host');
 $store = fn () => Route::middleware(ResolveOnlineStore::class)->name('store.')->where(['slug' => '[A-Za-z0-9-]{3,40}']);
 
 if (is_string($host) && $host !== '') {
-    Route::domain($host)->group(function () use ($store, $pages) {
+    Route::domain($host)->group(function () use ($store, $pages, $orderLink) {
         Route::get('/', StoreNotFoundController::class)->name('store.root');
+        $orderLink();
         $store()->prefix('{slug}')->group($pages);
     });
 } else {
+    Route::prefix('store')->group($orderLink);
     $store()->prefix('store/{slug}')->group($pages);
 }

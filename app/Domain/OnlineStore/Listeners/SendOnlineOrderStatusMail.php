@@ -28,7 +28,9 @@ final class SendOnlineOrderStatusMail implements ShouldQueue
     {
         $to = $event->order->status;
 
-        if ($to !== OnlineOrderStatus::Ready && $to !== OnlineOrderStatus::Cancelled) {
+        // OS-9: "ready to collect" is for collections only; OSA-1: an order cancelled as spam is never emailed.
+        if (($to !== OnlineOrderStatus::Ready && $to !== OnlineOrderStatus::Cancelled) || ($to === OnlineOrderStatus::Ready && $event->order->isDelivery())
+            || ($to === OnlineOrderStatus::Cancelled && $event->order->cancelled_as_spam)) {
             return;
         }
 

@@ -43,6 +43,8 @@ final class OnlineOrderBoard
         // Closures: the 30-second refresh reloads `board` (and `store`) only.
         return [
             'store' => fn () => ($s = $store()) === null ? null : ['isLive' => $s->is_live, 'takingOrders' => $s->taking_orders],
+            // Audit OSA-5: false once the store went off while open orders are still to finish here.
+            'storeAvailable' => fn () => OnlineStoreSwitch::availableFor($this->tenancy->require()),
             'setupUrl' => fn () => $store() === null ? self::builderUrl() : null,
             'filters' => $filters->toArray(),
             'options' => fn () => ['shops' => $this->shops()],
@@ -59,19 +61,23 @@ final class OnlineOrderBoard
     {
         [$start, $end] = $filters->window();
         $new = $this->scoped($filters)->where('status', OnlineOrderStatus::New)->orderBy('collect_from')->orderBy('number')->get();
-        $open = $this->scoped($filters)->whereIn('status', [OnlineOrderStatus::Picking, OnlineOrderStatus::Ready])
+        $open = $this->scoped($filters)->whereIn('status', [OnlineOrderStatus::Picking, OnlineOrderStatus::Ready, OnlineOrderStatus::OutForDelivery])
             ->where('collect_from', '<', $end)
             ->when(! $filters->isToday(), fn (Builder $q) => $q->where('collect_from', '>=', $start))
             ->orderBy('collect_from')->orderBy('number')->get();
-        $done = $this->scoped($filters)->whereIn('status', [OnlineOrderStatus::Collected, OnlineOrderStatus::Cancelled])
-            ->where(fn (Builder $q) => $q->where(fn (Builder $c) => $c->where('collected_at', '>=', $start)->where('collected_at', '<', $end))
-                ->orWhere(fn (Builder $c) => $c->where('cancelled_at', '>=', $start)->where('cancelled_at', '<', $end)))
-            ->get()->sortByDesc(fn (OnlineOrder $o) => ($o->collected_at ?? $o->cancelled_at)?->getTimestamp())->values();
+        $finished = ['collected_at', 'delivered_at', 'not_collected_at', 'cancelled_at'];
+        $done = $this->scoped($filters)->whereIn('status', [OnlineOrderStatus::Collected, OnlineOrderStatus::Delivered, OnlineOrderStatus::NotCollected, OnlineOrderStatus::Cancelled])
+            ->where(function (Builder $q) use ($finished, $start, $end) {
+                foreach ($finished as $column) {
+                    $q->orWhere(fn (Builder $c) => $c->where($column, '>=', $start)->where($column, '<', $end));
+                }
+            })
+            ->get()->sortByDesc(fn (OnlineOrder $o) => OrderRows::doneAt($o)?->getTimestamp())->values();
 
+        // OS-9: the Ready column also holds delivery orders out for delivery.
         $columns = ['new' => $this->column($new, $now, $start, $end)];
-        foreach (['picking' => OnlineOrderStatus::Picking, 'ready' => OnlineOrderStatus::Ready] as $key => $status) {
-            $columns[$key] = $this->column($open->where('status', $status)->values(), $now);
-        }
+        $columns['picking'] = $this->column($open->where('status', OnlineOrderStatus::Picking)->values(), $now);
+        $columns['ready'] = $this->column($open->whereIn('status', [OnlineOrderStatus::Ready, OnlineOrderStatus::OutForDelivery])->values(), $now);
         $columns['done'] = $this->column($done, $now);
 
         return [
@@ -117,7 +123,7 @@ final class OnlineOrderBoard
     {
         $totals = $this->orders->query()->when($filters->shop, fn (Builder $q, string $shop) => $q->where('branch_id', $shop))
             ->where('status', '!=', OnlineOrderStatus::Cancelled)->where('collect_from', '>=', $start)->where('collect_from', '<', $end)
-            ->pluck('items_total');
+            ->get(['items_total', 'grand_total'])->map(fn (OnlineOrder $o) => $o->grandTotal());
         $value = Money::sum($totals->all());
         $count = $totals->count();
 
@@ -140,7 +146,7 @@ final class OnlineOrderBoard
         $zone = OnlineStoreSwitch::timezone();
 
         return $this->orders->query()->when($filters->shop, fn (Builder $q, string $shop) => $q->where('branch_id', $shop))
-            ->whereIn('status', [OnlineOrderStatus::New, OnlineOrderStatus::Picking, OnlineOrderStatus::Ready])
+            ->whereIn('status', [OnlineOrderStatus::New, OnlineOrderStatus::Picking, OnlineOrderStatus::Ready, OnlineOrderStatus::OutForDelivery])
             ->where('collect_from', '>=', $end)->orderBy('collect_from')->limit(1000)->pluck('collect_from')
             ->countBy(fn (CarbonImmutable $from) => $from->setTimezone($zone)->toDateString())
             ->take(7)->map(fn (int $count, string $day) => ['day' => $day, 'count' => $count])->values()->all();

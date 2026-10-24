@@ -25,7 +25,8 @@ use Illuminate\Database\Query\JoinClause;
  * `valid_from_utc` until `valid_to_utc`, latest start then highest id wins), else the business sell price.
  * Never shown: an age rule on the product or its category, `is_age_restricted`, alcohol, tobacco, lottery, knives,
  * banned, vape duty, open-price products (no shelf price), Pharmacy-only or Prescription-only medicines, and
- * products the shop's till has marked inactive there (`branch_products.is_active` false).
+ * products the shop's till has marked inactive there (`branch_products.is_active` false), products under a recall
+ * still open at the shop and products outside their availability dates (CatalogueSafetyRules, audit OSA-4, OSA-23).
  * Stock: tracked when the shop's stock line says so, else when the product does; on hand as the till last reported
  * it (no stock line = 0). Tracked with 0 or less: shown, not orderable.
  */
@@ -49,6 +50,8 @@ final class OnlineCatalogueQuery
         'vape' => 'Vape',
         'openPrice' => 'Open price (no shelf price)',
         'variantParent' => 'Has variants (the variants are shown instead)',
+        'recalled' => CatalogueSafetyRules::REASONS['recalled'],
+        'unavailable' => CatalogueSafetyRules::REASONS['unavailable'],
         'notAtShop' => 'Switched off at this shop',
         'noPrice' => 'No price at this shop',
     ];
@@ -157,7 +160,7 @@ final class OnlineCatalogueQuery
             $rules[$reason] = $off("products.{$flag}");
         }
 
-        return $rules + [
+        return $rules + CatalogueSafetyRules::rules($shop, $at) + [
             'notAtShop' => fn (Builder $q) => $q->whereNotExists(fn (QueryBuilder $s) => $s->selectRaw('1')->from('branch_products as bpi')
                 ->whereColumn('bpi.product_id', 'products.id')->where('bpi.company_id', $companyId)->where('bpi.branch_id', $shop->branch_id)
                 ->whereNull('bpi.deleted_at')->where('bpi.is_active', false)),
@@ -235,6 +238,7 @@ final class OnlineCatalogueQuery
         $tracked = $tracked === null ? (bool) ($attributes['track_stock'] ?? false) : (bool) $tracked;
         $description = trim((string) ($attributes['online_description'] ?? '')) !== '' ? (string) $attributes['online_description'] : $row->description;
         $max = $attributes['max_qty_per_sale'] ?? null;
+        $isWeighed = (bool) ($attributes['is_weighed'] ?? false);
 
         return new CatalogueItem(
             id: $row->id,
@@ -243,12 +247,23 @@ final class OnlineCatalogueQuery
             photoPath: ($attributes['online_photo'] ?? null) ?: ($row->image_path ?: null),
             departmentId: $row->department_id,
             price: Money::normalise($attributes['online_price'] ?? 0, 2),
-            isWeighed: (bool) ($attributes['is_weighed'] ?? false),
+            isWeighed: $isWeighed,
             unitCode: (string) ($attributes['unit_code'] ?? ''),
             maxQtyPerSale: $max === null || (int) $max <= 0 ? null : (int) $max,
             stockTracked: $tracked,
             orderable: ! $tracked || Money::compare($attributes['shop_qty'] ?? 0, 0) > 0,
+            stockLimit: $tracked ? self::stepDown(Money::normalise($attributes['shop_qty'] ?? 0, 4), $isWeighed) : null,
         );
+    }
+
+    /** A stock quantity down to what can be ordered: whole units, or 0.25 kg steps; never below 0 (OSA-12). */
+    public static function stepDown(string $qty, bool $weighed): string
+    {
+        if (Money::compare($qty, '0') <= 0) {
+            return '0.0000';
+        }
+
+        return $weighed ? Money::mul(bcdiv(Money::mul($qty, '4', 4), '1', 0), '0.25', 4) : Money::normalise(bcdiv($qty, '1', 0), 4);
     }
 
     /**

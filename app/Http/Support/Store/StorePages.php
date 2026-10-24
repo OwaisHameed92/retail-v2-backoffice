@@ -81,9 +81,12 @@ final class StorePages
         return ['id' => $shop->id, 'name' => $info['name'], 'address' => $info['address'], 'phone' => $info['phone']];
     }
 
-    public static function error(Request $request, int $status, ?StoreContext $context = null): Response
+    /**
+     * @param  array{0: string, 1: string}|null  $text  OS-9: the page's own title and message instead of the status's
+     */
+    public static function error(Request $request, int $status, ?StoreContext $context = null, ?array $text = null): Response
     {
-        [$title, $message] = self::ERRORS[$status] ?? self::ERRORS[404];
+        [$title, $message] = $text ?? self::ERRORS[$status] ?? self::ERRORS[404];
 
         if ($context === null) {
             $title = $status === 404 ? 'This shop isn\'t online' : $title;

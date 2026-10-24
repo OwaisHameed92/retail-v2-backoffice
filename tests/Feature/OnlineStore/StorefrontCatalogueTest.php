@@ -21,7 +21,7 @@ test('an active product with a price is shown with its shop facts', function () 
         ->and($page->items[0]->toArray())->toBe([
             'id' => $id, 'name' => 'Heinz Beans 415g', 'description' => 'Classic beans', 'photoPath' => 'products/beans.jpg',
             'departmentId' => $this->f->department, 'price' => '1.00', 'isWeighed' => false, 'unitCode' => 'each', 'maxQtyPerSale' => 6,
-            'stockTracked' => false, 'inStock' => true, 'orderable' => true,
+            'stockTracked' => false, 'inStock' => true, 'orderable' => true, 'stockLimit' => null,
         ]);
 });
 

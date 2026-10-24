@@ -55,6 +55,11 @@ Schedule::command('reports:process-dirty')->everyMinute()->onOneServer()->withou
 // on automatic anonymising (the rest stay a dry run).
 Schedule::command('privacy:retention', ['--apply'])->dailyAt('03:30')->onOneServer()->withoutOverlapping();
 
+// Online store OS-9: unpaid card orders past their hold become "payment not completed" (their slots are free already).
+Schedule::command('online-store:expire-payments')->everyMinute()->onOneServer()->withoutOverlapping(5);
+// Online store audit OSA-21, OSA-22: uncollected ready orders closed, customer details removed after the retention period.
+Schedule::command('online-store:housekeeping')->hourly()->onOneServer()->withoutOverlapping(30);
+
 // Partner onboarding API: retries of the partner webhook outbox (first attempts are queued at once).
 Schedule::command('partners:send-webhooks')->everyMinute()->onOneServer()->withoutOverlapping(10);
 

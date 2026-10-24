@@ -33,6 +33,12 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property bool $addon_on OS-6: the admin switched the online store add-on on (the store is usable)
  * @property CarbonImmutable|null $addon_on_at when the add-on was last switched on
  * @property CarbonImmutable|null $live_at
+ * @property string|null $dna_client_id OS-9: DNA Payments client id (encrypted at rest)
+ * @property string|null $dna_client_secret OS-9: DNA Payments client secret (encrypted at rest, never shown or logged)
+ * @property string|null $dna_terminal_id OS-9: DNA Payments terminal id (encrypted at rest)
+ * @property bool $dna_test_mode OS-9: DNA's test environment (no real money)
+ * @property list<string>|null $collection_payments OS-9: ways to pay for a collection; null = pay at the shop
+ * @property list<string>|null $delivery_payments OS-9: ways to pay for a delivery; null = pay on delivery
  * @property CarbonImmutable|null $created_at
  * @property CarbonImmutable|null $updated_at
  * @property-read Collection<int, OnlineStoreShop> $shops
@@ -43,6 +49,9 @@ class OnlineStore extends Model
 
     /** @var list<string> */
     protected $guarded = ['id'];
+
+    /** @var list<string> OS-9: the DNA credentials never leave the server (PaymentSettingsPage shows the last 4). */
+    protected $hidden = ['dna_client_id', 'dna_client_secret', 'dna_terminal_id'];
 
     /**
      * @return HasMany<OnlineStoreShop, $this>
@@ -66,6 +75,12 @@ class OnlineStore extends Model
             'addon_on' => 'boolean',
             'addon_on_at' => 'immutable_datetime',
             'live_at' => 'immutable_datetime',
+            'dna_client_id' => 'encrypted',
+            'dna_client_secret' => 'encrypted',
+            'dna_terminal_id' => 'encrypted',
+            'dna_test_mode' => 'boolean',
+            'collection_payments' => 'array',
+            'delivery_payments' => 'array',
             'created_at' => 'immutable_datetime',
             'updated_at' => 'immutable_datetime',
         ];

@@ -3,15 +3,15 @@
 namespace App\Domain\OnlineStore\Queries;
 
 use App\Domain\OnlineStore\Enums\OnlineOrderStatus;
-use App\Domain\OnlineStore\Support\OnlineStoreSwitch;
+use App\Domain\OnlineStore\Support\OnlineOrdersAccess;
 use App\Domain\OnlineStore\Support\PortalOrders;
 use App\Domain\Tenancy\CurrentCompany;
 use App\Domain\Tenancy\Enums\Ability;
 
 /**
  * The sidebar's "Online orders" count (shared prop `onlineOrdersNew`): the signed-in user's new orders, any day.
- * Null when the item is not shown: the store is not available to the business (switch, add-on, cloud sync), or the
- * user cannot run it (`store.manage`).
+ * Null when the item is not shown: the store is not available to the business (switch, add-on, cloud sync) and it has
+ * no open orders left to finish (OSA-5), or the user cannot run it (`store.manage`).
  */
 final class NewOnlineOrderCount
 {
@@ -21,7 +21,7 @@ final class NewOnlineOrderCount
     {
         $company = $this->tenancy->get();
 
-        if ($company === null || ! $this->tenancy->can(Ability::StoreManage) || ! OnlineStoreSwitch::availableFor($company)) {
+        if ($company === null || ! $this->tenancy->can(Ability::StoreManage) || ! OnlineOrdersAccess::reachable($company)) {
             return null;
         }
 

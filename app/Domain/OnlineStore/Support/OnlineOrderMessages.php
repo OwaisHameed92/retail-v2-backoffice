@@ -4,6 +4,7 @@ namespace App\Domain\OnlineStore\Support;
 
 use App\Domain\Notifications\Support\AlertInbox;
 use App\Domain\Notifications\Support\AlertLinks;
+use App\Domain\OnlineStore\Enums\OnlinePaymentMethod;
 use App\Domain\OnlineStore\Mail\OnlineOrderMailData;
 use App\Domain\OnlineStore\Models\OnlineOrder;
 use App\Domain\OnlineStore\Models\OnlineOrderLine;
@@ -94,6 +95,16 @@ final class OnlineOrderMessages
             portalUrl: $forCustomer ? null : self::portalUrl($order),
             cancelReason: $order->cancel_reason,
             companyId: $company->id,
+            fulfilment: $order->fulfilment->value,
+            deliveryAddress: $order->deliveryAddress(),
+            deliveryFee: $order->delivery_fee,
+            grandTotal: $order->grandTotal(),
+            paymentLabel: match (true) {
+                $order->isPaid() => 'Paid by card online',
+                $order->payment_method === OnlinePaymentMethod::PayOnDelivery => 'Pay on delivery',
+                default => 'Pay at the shop when you collect',
+            },
+            paid: $order->isPaid(),
         );
     }
 
@@ -109,8 +120,8 @@ final class OnlineOrderMessages
         $body = implode(' · ', [
             OrderRows::shortName($order->customer_name),
             OrderRows::itemCount($order->lines).' '.(OrderRows::itemCount($order->lines) === 1 ? 'item' : 'items'),
-            MoneyFormat::format($order->items_total),
-            'collect '.self::slotText($order).' at '.($order->branch->name ?? ''),
+            MoneyFormat::format($order->grandTotal()).($order->isPaid() ? ' paid' : ''),
+            ($order->isDelivery() ? 'deliver ' : 'collect ').self::slotText($order).($order->isDelivery() ? ' to '.$order->delivery_postcode : ' at '.($order->branch->name ?? '')),
         ]);
         $count = 0;
 

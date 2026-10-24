@@ -30,7 +30,19 @@ final readonly class OnlineOrderMailData
         public ?string $portalUrl = null,
         public ?string $cancelReason = null,
         public ?string $companyId = null,
+        // OS-9: delivery and payment (defaults: S1's click & collect, paid at the shop).
+        public string $fulfilment = 'collection',
+        public ?string $deliveryAddress = null,
+        public string $deliveryFee = '0.00',
+        public ?string $grandTotal = null,
+        public string $paymentLabel = 'Pay at the shop when you collect',
+        public bool $paid = false,
     ) {}
+
+    public function isDelivery(): bool
+    {
+        return $this->fulfilment === 'delivery';
+    }
 
     public function hasWeighed(): bool
     {
