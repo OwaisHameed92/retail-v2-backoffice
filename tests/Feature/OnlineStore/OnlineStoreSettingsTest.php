@@ -62,6 +62,15 @@ test('store.manage: owner and manager; shown in the role matrix only while the s
     expect(collect(RoleMatrix::rows())->pluck('key'))->not->toContain('store.manage');
 });
 
+test('with the switch on, a business sees the online store role row only while its own store is available', function () {
+    $f = OnlineStoreFixtures::make('Role Row Shop', 'role-row');
+    $without = Company::factory()->create();
+
+    expect(OnlineStoreSwitch::availableFor($f->company))->toBeTrue()
+        ->and(collect(RoleMatrix::rows($f->company))->pluck('key'))->toContain('store.manage')
+        ->and(collect(RoleMatrix::rows($without))->pluck('key'))->not->toContain('store.manage');
+});
+
 test('the first save makes the store, off line and not taking orders, with default sections; later saves change it; audited', function () {
     $store = ($this->save)(['slug' => '  Kirkgate-Leeds ', 'headline' => 'Fresh every day', 'brand_colour' => '#1f7a4d']);
 

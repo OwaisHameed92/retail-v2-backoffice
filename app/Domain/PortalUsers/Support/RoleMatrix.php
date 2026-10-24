@@ -7,6 +7,7 @@ use App\Domain\OnlineStore\Support\OnlineStoreSwitch;
 use App\Domain\Shared\Country\CountryModules;
 use App\Domain\Tenancy\Enums\Ability;
 use App\Domain\Tenancy\Enums\CompanyRole;
+use App\Domain\Tenancy\Models\Company;
 
 /**
  * The read-only "what each role can do" table (module 4.1), built from CompanyRole::abilities(), the single source of
@@ -74,15 +75,18 @@ final class RoleMatrix
     }
 
     /**
+     * `$company`: the business looking at it; its online store row shows only while its store is available (the
+     * switch alone would show it to every business without the add-on).
+     *
      * @return list<array{key: string, group: string, label: string, roles: array<string, bool>}>
      */
-    public static function rows(): array
+    public static function rows(?Company $company = null): array
     {
         $rows = [];
 
         foreach (self::LABELS as $key => [$group, $label]) {
             // The online store row only where the store is available (ONLINE_STORE switch and country flag).
-            if ($key === Ability::StoreManage->value && ! OnlineStoreSwitch::enabled()) {
+            if ($key === Ability::StoreManage->value && ! ($company !== null ? OnlineStoreSwitch::availableFor($company) : OnlineStoreSwitch::enabled())) {
                 continue;
             }
 

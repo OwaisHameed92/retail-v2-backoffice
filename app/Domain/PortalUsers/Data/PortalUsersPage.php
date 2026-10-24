@@ -74,7 +74,7 @@ final class PortalUsersPage
                 'pendingInvitations' => $invitations->where('status', 'pending')->count(),
             ],
             'roles' => RoleMatrix::roles(),
-            'matrix' => RoleMatrix::rows(),
+            'matrix' => RoleMatrix::rows($company),
             'branches' => $branches->filter(fn (Branch $branch) => $branch->is_active && $branch->deleted_at === null)
                 ->sortBy('name')
                 ->map(fn (Branch $branch) => ['id' => $branch->id, 'name' => $branch->name, 'code' => $branch->code])
