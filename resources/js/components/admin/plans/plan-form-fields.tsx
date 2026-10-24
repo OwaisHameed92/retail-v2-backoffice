@@ -72,6 +72,7 @@ export function CheckboxRow({
     label,
     help,
     error,
+    disabled = false,
 }: {
     id: string;
     checked: boolean;
@@ -79,18 +80,20 @@ export function CheckboxRow({
     label: string;
     help: string;
     error?: string;
+    disabled?: boolean;
 }) {
     return (
-        <div className="hover:bg-subtle flex items-start gap-3 rounded-lg border p-3.5 transition-colors">
+        <div className={cn('flex items-start gap-3 rounded-lg border p-3.5 transition-colors', disabled ? 'opacity-70' : 'hover:bg-subtle')}>
             <Checkbox
                 id={id}
                 checked={checked}
+                disabled={disabled}
                 onCheckedChange={(state) => onChange(state === true)}
                 className="mt-0.5"
                 aria-describedby={`${id}-help`}
             />
             <div className="grid gap-0.5">
-                <label htmlFor={id} className="cursor-pointer text-sm font-medium">
+                <label htmlFor={id} className={cn('text-sm font-medium', disabled ? 'cursor-not-allowed' : 'cursor-pointer')}>
                     {label}
                 </label>
                 <p id={`${id}-help`} className="text-muted-foreground text-sm">

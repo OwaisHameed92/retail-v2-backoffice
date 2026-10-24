@@ -5,6 +5,11 @@ namespace App\Http\Requests\Admin;
 use App\Domain\Billing\Data\UpfrontPayment;
 use App\Domain\Licensing\Data\BranchLicenceSettings;
 use App\Domain\Licensing\Signing\Sspos\TokenKind;
+use App\Domain\Licensing\Support\DefaultPlan;
+use App\Domain\OnlineStore\Data\OnlineStoreAddOnInput;
+use App\Domain\OnlineStore\Enums\StoreTemplate;
+use App\Domain\OnlineStore\Support\PlanOnlineStore;
+use App\Domain\Plans\Models\Plan;
 use App\Domain\Shared\Country\LocalText;
 use App\Domain\Tenancy\Data\NewTenant;
 use App\Domain\Tenancy\Enums\CompanyStatus;
@@ -39,11 +44,33 @@ class StoreTenantRequest extends FormRequest
             'owner_email' => ['required', 'string', 'email', 'max:255'],
             // Module 1.3: plan for the new tills; blank = the portal default plan.
             'plan_id' => ['nullable', 'string', Rule::exists('plans', 'id')->where('is_active', true)->whereNull('deleted_at')],
+            // OS-7: the online store's template, required when the plan includes the online store (after()).
+            'store_template' => ['nullable', 'string', Rule::in(array_map(fn (StoreTemplate $template) => $template->value, OnlineStoreAddOnInput::TEMPLATES))],
         ] + array_merge(LicenceFormRules::branch(false), [
             // Module 1.11: the licence form is optional here (blank = plan trial and features, one branch).
             'kind' => ['nullable', Rule::enum(TokenKind::class)],
             'max_registers' => ['nullable', 'integer', 'min:1', 'max:'.BranchLicenceSettings::MAX_REGISTERS, 'gte:tills'],
         ]) + LicenceFormRules::limits() + UpfrontPaymentRules::rules();
+    }
+
+    /**
+     * OS-7: a plan with the online store needs the store's template.
+     *
+     * @return list<callable>
+     */
+    public function after(): array
+    {
+        return [function ($validator) {
+            if ($validator->errors()->has('plan_id') || $this->filled('store_template')) {
+                return;
+            }
+
+            $plan = $this->filled('plan_id') ? Plan::query()->find((string) $this->input('plan_id')) : DefaultPlan::portal();
+
+            if (PlanOnlineStore::includes($plan)) {
+                $validator->errors()->add('store_template', 'Choose the online store’s template: '.$plan?->name.' includes the online store.');
+            }
+        }];
     }
 
     /**
@@ -61,6 +88,7 @@ class StoreTenantRequest extends FormRequest
             'owner_email.required' => 'Enter the owner’s email. We send them a link to set their password.',
             'plan_id.exists' => 'Choose an active plan.',
             'max_registers.gte' => 'Allow at least as many tills as you add now.',
+            'store_template.in' => 'Choose Fresh Market or Butcher’s Block.',
         ] + LicenceFormRules::messages() + UpfrontPaymentRules::messages();
     }
 
@@ -96,6 +124,7 @@ class StoreTenantRequest extends FormRequest
             licence: $this->filled('kind') ? LicenceFormRules::settings($this, $this->integer('tills')) : null,
             multiBranch: $this->boolean('multi_branch'),
             maxBranches: $this->filled('max_branches') ? $this->integer('max_branches') : 1,
+            storeTemplate: $this->filled('store_template') ? StoreTemplate::tryFrom((string) $this->input('store_template')) : null,
         );
     }
 }

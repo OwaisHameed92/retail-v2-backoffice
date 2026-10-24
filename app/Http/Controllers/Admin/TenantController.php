@@ -14,6 +14,7 @@ use App\Domain\Licensing\Support\DefaultPlan;
 use App\Domain\Mail\Data\TenantEmails;
 use App\Domain\Mail\Enums\EmailCategory;
 use App\Domain\Mail\Support\EmailControl;
+use App\Domain\OnlineStore\Data\PlanOnlineStoreOptions;
 use App\Domain\Shared\Models\AuditLog;
 use App\Domain\Shared\Support\TableQuery;
 use App\Domain\Sync\Data\SyncKeyData;
@@ -103,6 +104,8 @@ class TenantController extends Controller
             'planDefaults' => LicenceFormData::planDefaults(),
             // Module 1.13: the upfront payment (billing admins) and the Direct Debit deadline.
             'billing' => OnboardingBilling::options($request->user('admin')),
+            // OS-7: plans with the online store ask for the store's template; null where the country has none.
+            'onlineStore' => PlanOnlineStoreOptions::get(),
         ]);
     }
 

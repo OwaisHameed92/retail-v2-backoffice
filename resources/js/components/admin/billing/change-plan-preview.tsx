@@ -45,6 +45,7 @@ export function ChangePlanPreview({ preview }: { preview: PlanChangePreviewData 
             <Part title="Setup fee" lines={preview.setupFee.lines} />
             <Part title={preview.recurring.title} lines={preview.recurring.lines} />
             <Part title="Licences" lines={preview.licences.lines} />
+            {preview.onlineStore && <Part title={preview.onlineStore.title} lines={preview.onlineStore.lines} />}
 
             <Part title="Invoices created">
                 {preview.invoices.length === 0 ? (

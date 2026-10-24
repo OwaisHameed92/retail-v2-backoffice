@@ -16,6 +16,8 @@ use App\Domain\Billing\Support\PlanChangeMailer;
 use App\Domain\Billing\Support\PlanChangePlanner;
 use App\Domain\Billing\Support\PlanChangeSetupCharge;
 use App\Domain\Licensing\Support\DefaultPlan;
+use App\Domain\OnlineStore\Actions\FollowPlanOnlineStore;
+use App\Domain\OnlineStore\Enums\StoreTemplate;
 use App\Domain\Plans\Enums\Feature;
 use App\Domain\Plans\Enums\PlanBillingType;
 use App\Domain\Plans\Models\Plan;
@@ -40,9 +42,14 @@ use Illuminate\Validation\ValidationException;
  *    UK Direct Debit subscription follows (SyncSubscription: created, amount changed or cancelled; demo businesses are
  *    never sent); the owners get "Your plan has changed".
  *
+ * OS-7: inside the transaction the online store add-on follows the new plan (FollowPlanOnlineStore: on when it
+ * includes the online store, with the template the admin chose when the business has no store yet; off when it does
+ * not, also an add-on switched on by hand), before the first period invoice, so that invoice and the Direct Debit
+ * amount include or drop its line. A plan with the online store is refused while online stores are switched off here.
+ *
  * Returns the invoices made and, when GoCardless could not be reached, a warning (the daily reconcile retries).
  *
- * @phpstan-type Result array{setupInvoice: Invoice|null, firstInvoice: Invoice|null, licences: int, subscription: string|null, warning: string|null}
+ * @phpstan-type Result array{setupInvoice: Invoice|null, firstInvoice: Invoice|null, licences: int, subscription: string|null, warning: string|null, onlineStore: string|null}
  */
 class ChangeBusinessPlan
 {
@@ -57,27 +64,33 @@ class ChangeBusinessPlan
         private readonly SyncSubscription $syncSubscription,
         private readonly PlanChangeMailer $mailer,
         private readonly RecordAudit $audit,
+        private readonly FollowPlanOnlineStore $followOnlineStore,
     ) {}
 
     /**
      * @param  string|null  $setupFee  Net setup fee the admin entered; null = the suggested amount; "0" waives it.
+     * @param  StoreTemplate|null  $storeTemplate  OS-7: the store's template when the plan switches the online store on
+     *                                             for a business without a store (null = Fresh Market).
      * @return Result
      *
      * @throws ValidationException
      */
-    public function handle(Company $company, Plan $to, ?string $setupFee = null): array
+    public function handle(Company $company, Plan $to, ?string $setupFee = null, ?StoreTemplate $storeTemplate = null): array
     {
         $now = CarbonImmutable::now();
         $company->refresh();
         $plan = $this->check($company, $to, $setupFee, $now);
         $firstDue = $plan->firstPeriodNow && ! $plan->manual && $plan->mandateUsable ? $this->firstCollection($plan) : $plan->firstPeriodDue;
 
-        [$setupInvoice, $firstInvoice, $moved] = DB::transaction(function () use ($company, $to, $setupFee, $plan, $now, $firstDue) {
+        $onlineStore = null;
+
+        [$setupInvoice, $firstInvoice, $moved] = DB::transaction(function () use ($company, $to, $setupFee, $plan, $now, $firstDue, $storeTemplate, &$onlineStore) {
             $account = $this->accounts->lock($company);
             $this->recheck($company, $to, $setupFee, $plan, $now);
             $company->plan_id = $to->id;
             $company->save();
             $moved = $this->licences->move($company, $plan->from, $to, $now);
+            $onlineStore = $this->followOnlineStore->handle($company, $to, $storeTemplate);
 
             if ($plan->clearsOwnPrices) {
                 $account->pricing_mode_override = null;
@@ -112,7 +125,7 @@ class ChangeBusinessPlan
         [$subscription, $warning] = $this->syncDirectDebit($company->refresh(), $plan);
         $this->mailer->send($plan, $setupInvoice, $firstInvoice);
 
-        return ['setupInvoice' => $setupInvoice, 'firstInvoice' => $firstInvoice, 'licences' => $moved, 'subscription' => $subscription, 'warning' => $warning];
+        return ['setupInvoice' => $setupInvoice, 'firstInvoice' => $firstInvoice, 'licences' => $moved, 'subscription' => $subscription, 'warning' => $warning, 'onlineStore' => $onlineStore];
     }
 
     /** @throws ValidationException */
@@ -134,6 +147,10 @@ class ChangeBusinessPlan
 
         if ($plan->samePlan) {
             throw ValidationException::withMessages(['plan_id' => "{$company->name} is already on {$to->name}."]);
+        }
+
+        if ($plan->onlineStore?->blocked !== null) {
+            throw ValidationException::withMessages(['plan_id' => $plan->onlineStore->blocked]);
         }
 
         return $plan;

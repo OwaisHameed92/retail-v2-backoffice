@@ -79,6 +79,11 @@ const columns: ColumnDef<PlanRow>[] = [
                         + Handheld
                     </Badge>
                 )}
+                {row.original.includesOnlineStore && (
+                    <Badge variant="info" title="Online store included">
+                        + Online store
+                    </Badge>
+                )}
             </span>
         ),
     },

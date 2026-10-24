@@ -2,6 +2,7 @@
 
 namespace App\Domain\Plans\Data;
 
+use App\Domain\OnlineStore\Support\PlanOnlineStore;
 use App\Domain\Plans\Models\Plan;
 use App\Domain\Shared\Support\Money;
 
@@ -13,7 +14,7 @@ final class PlanData
     /**
      * Row for the plans DataTable.
      *
-     * @return array{id: string, name: string, code: string, pricingMode: string, billingType: string, billingTypeLabel: string, priceMonthly: string, priceYearly: string, currency: string, trialDays: int, featureCount: int, includesHandheld: bool, status: string, statusLabel: string, sortOrder: int}
+     * @return array{id: string, name: string, code: string, pricingMode: string, billingType: string, billingTypeLabel: string, priceMonthly: string, priceYearly: string, currency: string, trialDays: int, featureCount: int, includesHandheld: bool, includesOnlineStore: bool, status: string, statusLabel: string, sortOrder: int}
      */
     public static function row(Plan $plan): array
     {
@@ -32,6 +33,7 @@ final class PlanData
             'trialDays' => $plan->trial_days,
             'featureCount' => $plan->features->count(),
             'includesHandheld' => $plan->includes_handheld,
+            'includesOnlineStore' => PlanOnlineStore::includes($plan),
             'status' => $status->value,
             'statusLabel' => $status->label(),
             'sortOrder' => $plan->sort_order,
@@ -68,6 +70,10 @@ final class PlanData
             'yearlySavingPercent' => self::yearlySavingPercent($plan),
             'features' => $plan->featureValues(),
             'includesHandheld' => $plan->includes_handheld,
+            // OS-7: the form's values as stored, and for the detail page the add-on's price (null = not included here).
+            'includesOnlineStore' => $plan->includes_online_store,
+            'onlineStoreMonthlyPrice' => $plan->online_store_monthly_price,
+            'onlineStore' => PlanOnlineStore::summary($plan),
             'isActive' => $plan->is_active,
             'isPublic' => $plan->is_public,
             'sortOrder' => $plan->sort_order,
@@ -103,6 +109,8 @@ final class PlanData
             'grace_days' => $plan->grace_days,
             'features' => $plan->featureValues(),
             'includes_handheld' => $plan->includes_handheld,
+            'includes_online_store' => $plan->includes_online_store,
+            'online_store_monthly_price' => $plan->online_store_monthly_price,
             'is_active' => $plan->is_active,
             'is_public' => $plan->is_public,
             'sort_order' => $plan->sort_order,

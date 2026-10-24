@@ -47,6 +47,8 @@ use Illuminate\Support\Collection;
  * @property bool $is_active
  * @property bool $is_public
  * @property bool $includes_handheld Portal-only (owner 2026-10-21): the handheld (PDA) app comes with this plan.
+ * @property bool $includes_online_store Portal-only (OS-7): the online store add-on comes with this recurring plan.
+ * @property string|null $online_store_monthly_price OS-7: the add-on's monthly price before VAT; null = the default.
  * @property int $sort_order
  * @property CarbonInterface|null $created_at
  * @property CarbonInterface|null $updated_at
@@ -84,6 +86,8 @@ class Plan extends Model
         'is_active',
         'is_public',
         'includes_handheld',
+        'includes_online_store',
+        'online_store_monthly_price',
         'sort_order',
     ];
 
@@ -99,6 +103,7 @@ class Plan extends Model
         'features' => '[]',
         'is_active' => true,
         'is_public' => false,
+        'includes_online_store' => false,
         'sort_order' => 0,
     ];
 
@@ -121,6 +126,8 @@ class Plan extends Model
             'is_active' => 'boolean',
             'is_public' => 'boolean',
             'includes_handheld' => 'boolean',
+            'includes_online_store' => 'boolean',
+            'online_store_monthly_price' => MoneyCast::class,
             'sort_order' => 'integer',
         ];
     }
@@ -171,6 +178,15 @@ class Plan extends Model
     public function setupFeePerTill(): bool
     {
         return $this->setup_fee_mode === SetupFeeMode::PerTill && $this->billingType()->hasSetupFee();
+    }
+
+    /**
+     * OS-7: this plan includes the online store add-on (only a recurring plan can). Never a till Feature: the tills do
+     * not see it.
+     */
+    public function includesOnlineStore(): bool
+    {
+        return $this->includes_online_store && $this->billingType()->recurs();
     }
 
     public function hasFeature(Feature $feature): bool

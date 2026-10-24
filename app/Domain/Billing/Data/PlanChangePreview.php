@@ -13,6 +13,8 @@ use App\Domain\Demo\Support\DemoBusinesses;
 use App\Domain\Licensing\Models\Licence;
 use App\Domain\Mail\Enums\EmailCategory;
 use App\Domain\Mail\Support\EmailControl;
+use App\Domain\OnlineStore\Support\OnlineStoreAddOn;
+use App\Domain\OnlineStore\Support\PlanOnlineStore;
 use App\Domain\Plans\Enums\Feature;
 use App\Domain\Plans\Models\Plan;
 use App\Domain\Shared\Country\Country;
@@ -41,7 +43,7 @@ final class PlanChangePreview
             'blocked' => match (true) {
                 $plan->company->isCancelled() => "{$plan->company->name} is cancelled. Its plan cannot be changed.",
                 $plan->samePlan => "{$plan->company->name} is already on {$plan->to->name}.",
-                default => null,
+                default => $plan->onlineStore?->blocked,
             },
             'features' => [
                 'gained' => self::labels($plan->gained),
@@ -65,6 +67,8 @@ final class PlanChangePreview
             ],
             'recurring' => ['title' => ucfirst($per).' fee', 'lines' => PlanChangeWords::recurring($plan)],
             'licences' => ['lines' => PlanChangeWords::licences($plan)],
+            // OS-7: the online store add-on follows the plan; null when it is off before and after (or no online stores).
+            'onlineStore' => $plan->onlineStore?->toArray($plan->cycle, $plan->vatRate),
             'invoices' => self::invoices($plan),
             'notes' => self::notes($plan),
             'email' => self::email($plan),
@@ -73,8 +77,10 @@ final class PlanChangePreview
 
     /**
      * The plans a business can be moved to (active ones), for the "Change plan" dialog; `current` marks its plan now.
+     * OS-7: `onlineStore` per plan is the add-on's monthly price when the plan includes the online store, and
+     * `hasOnlineStore` whether the business already has a store (else the dialog asks for the template).
      *
-     * @return array{currentPlanId: string|null, plans: list<array<string, mixed>>}
+     * @return array{currentPlanId: string|null, plans: list<array<string, mixed>>, hasOnlineStore: bool}
      */
     public static function options(Company $company): array
     {
@@ -85,10 +91,11 @@ final class PlanChangePreview
             'monthly' => Money::isZero($plan->price_monthly) ? null : BillingFormat::money($plan->price_monthly).' per '.$plan->pricing_mode->unit().' per month',
             'yearly' => Money::isZero($plan->price_yearly) ? null : BillingFormat::money($plan->price_yearly).' per '.$plan->pricing_mode->unit().' per year',
             'features' => self::labels(Feature::normalise($plan->features)),
+            'onlineStore' => PlanOnlineStore::includes($plan) ? BillingFormat::money(PlanOnlineStore::price($plan)).' per month' : null,
             'current' => $plan->id === $current?->id,
         ])->values()->all();
 
-        return ['currentPlanId' => $current?->id, 'plans' => $plans];
+        return ['currentPlanId' => $current?->id, 'plans' => $plans, 'hasOnlineStore' => PlanOnlineStore::offered() && OnlineStoreAddOn::store($company) !== null];
     }
 
     /**

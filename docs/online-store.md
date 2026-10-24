@@ -10,6 +10,12 @@ https://claude.ai/artifact/FdsDJZ2vyhQJw5hfPmUiNz. DECISIONS "Online store, clic
   plan (cloud sync + Direct Debit) can have it; a setup-only business moves to monthly first. The default price is
   £20 + VAT a month, changeable per business, billed as its own "Online store" line on the same monthly invoice. Live only in the UK for now: the
   country flag `onlineStore` is off on PK. The `ONLINE_STORE` switch is off by default.
+- **Part of plans (OS-7, owner option B).** A monthly/yearly plan can include the online store (`plans.includes_online_store`,
+  its own `online_store_monthly_price`, blank = £20). A new business on such a plan gets the add-on switched on with
+  the template chosen in the wizard (partner onboarding: Fresh Market); Change plan switches it on (template asked when
+  the business has no store) or off (also an add-on switched on by hand) with the plan, and the preview says so. Price
+  order: the business's own > the plan's > the default. Still one "Online store" line per business on the same invoice
+  and Direct Debit. The Billing tab card stays as the exception path. Refused while `ONLINE_STORE` is off.
 - **Templates** (owner 2026-10-24): two light looks, `freshMarket` (grocery, convenience) and `butcher` (Butcher's
   Block). The Care Pharmacy template was dropped for now (a migration moves any `pharmacy` store to Fresh Market; an
   unknown stored value reads as Fresh Market). Switch & Save sets the template when switching the add-on on; the

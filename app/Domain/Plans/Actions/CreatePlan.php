@@ -2,6 +2,7 @@
 
 namespace App\Domain\Plans\Actions;
 
+use App\Domain\OnlineStore\Support\PlanOnlineStore;
 use App\Domain\Plans\Data\PlanData;
 use App\Domain\Plans\Data\PlanInput;
 use App\Domain\Plans\Models\Plan;
@@ -16,11 +17,13 @@ class CreatePlan
     /**
      * Create a plan and record `plan.created` in the audit log.
      *
-     * @throws ValidationException when the code is already used (archived plans included)
+     * @throws ValidationException when the code is already used (archived plans included), or the online store is
+     *                             ticked on a plan that cannot include it (OS-7: recurring plans only)
      */
     public function handle(PlanInput $input): Plan
     {
         $attributes = $input->toAttributes();
+        PlanOnlineStore::assertValid(new Plan($attributes));
 
         return DB::transaction(function () use ($attributes) {
             if (Plan::withTrashed()->where('code', $attributes['code'])->exists()) {

@@ -222,10 +222,16 @@ export interface OnlineStoreAddOnData {
     on: boolean;
     since: string | null;
     monthlyPrice: string | null;
+    /** What a blank price means for this business: its plan's price when the plan includes the store, else the default. */
     defaultPrice: string;
     defaultPriceLabel: string;
     priceLabel: string;
     custom: boolean;
+    /** OS-7: where the price comes from. */
+    priceSource: 'business' | 'plan' | 'default';
+    /** OS-7: the business's plan includes the online store (Change plan switches the add-on with the plan). */
+    byPlan: boolean;
+    planName: string | null;
     /** The invoice line per billing cycle, before and with VAT. */
     cycleNet: string;
     cycleGross: string;
@@ -255,8 +261,12 @@ export interface PlanChangeOptions {
         monthly: string | null;
         yearly: string | null;
         features: string[];
+        /** OS-7: "£20.00 per month" when the plan includes the online store, else null. */
+        onlineStore: string | null;
         current: boolean;
     }[];
+    /** OS-7: the business already has an online store (else a plan with it asks for the template). */
+    hasOnlineStore: boolean;
 }
 
 /** PlanChangePreview::toArray: what a plan change does, in plain words (writes nothing). */
@@ -285,6 +295,14 @@ export interface PlanChangePreviewData {
     invoices: { title: string; amount: string; when: string }[];
     notes: string[];
     email: string;
+    /** OS-7: what the plan does to the online store add-on; null when it is off before and after. */
+    onlineStore: {
+        change: 'on' | 'off' | 'stays';
+        title: string;
+        lines: string[];
+        needsTemplate: boolean;
+        templates: Option<string>[];
+    } | null;
 }
 
 export type BillingMode = 'upfrontCash' | 'directDebit';

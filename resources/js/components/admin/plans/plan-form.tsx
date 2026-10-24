@@ -1,7 +1,8 @@
 import { PlanFeaturePicker } from '@/components/admin/plans/plan-feature-picker';
 import { CheckboxRow, Field, FormSection, MoneyInput, NumberInput } from '@/components/admin/plans/plan-form-fields';
 import { formatMoney, handheldByDefault, slugify, yearlySaving } from '@/components/admin/plans/plan-format';
-import { type FeatureOption, type PlanBillingType, type PlanRecord } from '@/components/admin/plans/types';
+import { PlanOnlineStoreFields } from '@/components/admin/plans/plan-online-store-fields';
+import { type FeatureOption, type PlanBillingType, type PlanOnlineStoreSettings, type PlanRecord } from '@/components/admin/plans/types';
 import { FormCard } from '@/components/shared/form-section';
 import { StickyFormBar } from '@/components/shared/sticky-form-bar';
 import { Button } from '@/components/ui/button';
@@ -46,6 +47,8 @@ export interface PlanFormData {
     grace_days: string;
     features: string[];
     includes_handheld: boolean;
+    includes_online_store: boolean;
+    online_store_monthly_price: string;
     is_active: boolean;
     is_public: boolean;
     sort_order: string;
@@ -71,6 +74,8 @@ export function planFormDefaults(
         grace_days: String(plan?.graceDays ?? defaults?.graceDays ?? 7),
         features: plan?.features ?? [],
         includes_handheld: plan?.includesHandheld ?? false,
+        includes_online_store: plan?.includesOnlineStore ?? false,
+        online_store_monthly_price: plan?.onlineStoreMonthlyPrice ?? '',
         is_active: plan?.isActive ?? true,
         is_public: plan?.isPublic ?? false,
         sort_order: String(plan?.sortOrder ?? defaults?.sortOrder ?? 0),
@@ -92,6 +97,8 @@ interface PlanFormProps {
     autoHandheld?: boolean;
     /** From useForm: shows "unsaved changes" in the action bar. */
     isDirty?: boolean;
+    /** OS-7: the online store block; null where the country has no online stores. */
+    onlineStore?: PlanOnlineStoreSettings | null;
 }
 
 export function PlanForm({
@@ -106,6 +113,7 @@ export function PlanForm({
     autoCode = false,
     autoHandheld = false,
     isDirty = false,
+    onlineStore = null,
 }: PlanFormProps) {
     const [codeTouched, setCodeTouched] = useState(!autoCode);
     const [handheldTouched, setHandheldTouched] = useState(!autoHandheld);
@@ -117,6 +125,9 @@ export function PlanForm({
     /** Type and prices; on create the handheld tick follows them (monthly or yearly price above 0) until changed by hand. */
     const setPricing = <K extends 'billing_type' | 'price_monthly' | 'price_yearly'>(key: K, value: PlanFormData[K]) => {
         setData(key, value);
+        if (key === 'billing_type' && value === 'setupOnly') {
+            setData('includes_online_store', false);
+        }
         if (!handheldTouched) {
             const next = { ...data, [key]: value };
             setData('includes_handheld', handheldByDefault(next.billing_type, next.price_monthly, next.price_yearly));
@@ -421,6 +432,17 @@ export function PlanForm({
                         help="Staff can sign in to the Android PDA app. On by default for monthly and yearly plans. Portal only: not sent to the till."
                         error={errors.includes_handheld}
                     />
+                    {onlineStore && (
+                        <PlanOnlineStoreFields
+                            settings={onlineStore}
+                            recurs={recurs}
+                            included={data.includes_online_store}
+                            price={data.online_store_monthly_price}
+                            onIncludedChange={(checked) => setData('includes_online_store', checked)}
+                            onPriceChange={(price) => setData('online_store_monthly_price', price)}
+                            errors={errors}
+                        />
+                    )}
                 </FormSection>
 
                 <FormSection title="Availability" description="Who can be given this plan, and where it is listed.">

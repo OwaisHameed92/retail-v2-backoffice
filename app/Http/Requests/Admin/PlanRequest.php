@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Admin;
 
 use App\Domain\Admin\Enums\AdminRole;
+use App\Domain\OnlineStore\Support\PlanOnlineStore;
 use App\Domain\Plans\Data\PlanInput;
 use App\Domain\Plans\Enums\Feature;
 use App\Domain\Plans\Enums\PlanBillingType;
@@ -48,6 +49,12 @@ abstract class PlanRequest extends FormRequest
             'pricing_mode' => $this->input('pricing_mode', PricingMode::PerTill->value),
         ]);
 
+        // OS-7: a blank online store fee = the default price.
+        if ($this->has('online_store_monthly_price')) {
+            $price = $clean($this->input('online_store_monthly_price'));
+            $this->merge(['online_store_monthly_price' => $price === '' ? null : $price]);
+        }
+
         // The plan type decides which prices apply: setup only has no recurring price, recurring only no fee.
         $type = PlanBillingType::tryFrom((string) $this->input('billing_type'));
 
@@ -86,6 +93,9 @@ abstract class PlanRequest extends FormRequest
             'is_public' => ['required', 'boolean'],
             // Owner 2026-10-21: optional, so older clients keep the plan's setting (a new plan: from its prices).
             'includes_handheld' => ['sometimes', 'boolean'],
+            // OS-7: optional too (older clients keep the plan's setting; a new plan: without the online store).
+            'includes_online_store' => ['sometimes', 'boolean'],
+            'online_store_monthly_price' => ['nullable', 'string', 'regex:'.self::moneyPattern()],
             'sort_order' => ['required', 'integer', 'min:0', 'max:9999'],
         ];
     }
@@ -114,6 +124,12 @@ abstract class PlanRequest extends FormRequest
             if ($type->recurs() && ! $positive('price_monthly') && ! $positive('price_yearly')) {
                 $validator->errors()->add('price_monthly', 'Enter a monthly or yearly price above '.$zero.', or choose "Setup fee only".');
             }
+
+            if ($this->boolean('includes_online_store') && ! PlanOnlineStore::offered()) {
+                $validator->errors()->add('includes_online_store', 'Online stores are not offered in this country.');
+            } elseif ($this->boolean('includes_online_store') && ! $type->recurs()) {
+                $validator->errors()->add('includes_online_store', 'Only a monthly or yearly plan can include the online store. Untick it, or choose a plan type with a monthly fee.');
+            }
         }];
     }
 
@@ -131,6 +147,7 @@ abstract class PlanRequest extends FormRequest
             'price_monthly.regex' => $money,
             'price_yearly.regex' => $money,
             'setup_fee.regex' => $money,
+            'online_store_monthly_price.regex' => $money,
             'features.*.in' => 'Choose features from the list.',
         ];
     }
@@ -150,6 +167,8 @@ abstract class PlanRequest extends FormRequest
             'grace_days' => 'payment grace',
             'sort_order' => 'sort order',
             'includes_handheld' => 'handheld (PDA) app included',
+            'includes_online_store' => 'online store included',
+            'online_store_monthly_price' => 'online store fee per month',
         ];
     }
 
@@ -176,6 +195,8 @@ abstract class PlanRequest extends FormRequest
             billingType: PlanBillingType::tryFrom($this->string('billing_type')->value()),
             setupFeeMode: SetupFeeMode::tryFrom($this->string('setup_fee_mode')->value()),
             includesHandheld: $this->has('includes_handheld') ? $this->boolean('includes_handheld') : null,
+            includesOnlineStore: $this->has('includes_online_store') ? $this->boolean('includes_online_store') : null,
+            onlineStoreMonthlyPrice: $this->filled('online_store_monthly_price') ? $this->string('online_store_monthly_price')->value() : null,
         );
     }
 

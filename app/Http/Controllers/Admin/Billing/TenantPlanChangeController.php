@@ -26,13 +26,19 @@ class TenantPlanChangeController extends Controller
     public function store(ChangePlanRequest $request, Company $company, ChangeBusinessPlan $change): RedirectResponse
     {
         $plan = $request->plan();
-        $result = $change->handle($company, $plan, $request->setupFee());
+        $result = $change->handle($company, $plan, $request->setupFee(), $request->storeTemplate());
         $parts = ["{$company->name} is now on {$plan->name}."];
 
         foreach (['setupInvoice' => 'Setup fee', 'firstInvoice' => 'First period'] as $key => $label) {
             if ($result[$key] !== null) {
                 $parts[] = "{$label}: {$result[$key]->number} for ".BillingFormat::money($result[$key]->total).'.';
             }
+        }
+
+        if ($result['onlineStore'] !== null) {
+            $parts[] = $result['onlineStore'] === 'on'
+                ? 'The online store add-on is switched on with the plan (the store is not live until the business publishes it).'
+                : 'The online store add-on is switched off: the store is offline and its line stops from the next invoice.';
         }
 
         if ($result['warning'] !== null) {

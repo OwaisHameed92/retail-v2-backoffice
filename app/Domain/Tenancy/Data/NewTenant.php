@@ -3,6 +3,7 @@
 namespace App\Domain\Tenancy\Data;
 
 use App\Domain\Licensing\Data\BranchLicenceSettings;
+use App\Domain\OnlineStore\Enums\StoreTemplate;
 use App\Domain\Tenancy\Enums\CompanyStatus;
 
 /**
@@ -30,6 +31,8 @@ final readonly class NewTenant
         /** Module 1.11: may run more than one branch, and how many. On by itself with more than one shop. */
         public bool $multiBranch = false,
         public int $maxBranches = 1,
+        /** OS-7: the online store's template when the plan includes the online store; null = Fresh Market. */
+        public ?StoreTemplate $storeTemplate = null,
     ) {}
 
     public function totalTills(): int

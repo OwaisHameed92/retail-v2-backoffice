@@ -9,6 +9,7 @@ use App\Domain\Billing\Models\BillingAccount;
 use App\Domain\Billing\Models\Invoice;
 use App\Domain\Licensing\Actions\RenewCompanyLicences;
 use App\Domain\Licensing\Models\Licence;
+use App\Domain\OnlineStore\Data\PlanChangeOnlineStore;
 use App\Domain\Plans\Enums\Feature;
 use App\Domain\Plans\Enums\PlanBillingType;
 use App\Domain\Plans\Models\Plan;
@@ -30,6 +31,8 @@ use Illuminate\Support\Collection;
  * - UK: a recurring fee is collected by Direct Debit; starting one without a usable mandate starts the mandate setup
  *   (deadline, banner, setup link) as for a new business. Manual collection (Pakistan): invoices paid by hand.
  * - Setup fee: PlanChangeSetupFee. Licences: PlanChangeLicences.
+ * - OS-7: the online store add-on follows the new plan (PlanChangeOnlineStore); the new amounts include its line as it
+ *   will be after the change.
  */
 final class PlanChangePlanner
 {
@@ -53,7 +56,8 @@ final class PlanChangePlanner
         $ownPrices = $account->pricing_mode_override !== null || $account->price_monthly_override !== null || $account->price_yearly_override !== null;
         $clearsOwnPrices = $ownPrices && ! $to->billingType()->recurs();
         $oldRecurring = SubscriptionAmount::for($company, $account, $now)['gross'];
-        $new = self::recurring($company, $account, $to, $licences, $today, $clearsOwnPrices);
+        $onlineStore = PlanChangeOnlineStore::for($company, $from, $to);
+        $new = self::recurring($company, $account, $to, $licences, $today, $clearsOwnPrices, $onlineStore);
         $oldRecurs = ! Money::isZero($oldRecurring);
         $newRecurs = ! Money::isZero($new['gross']);
         $startsRecurring = ! $oldRecurs && $newRecurs;
@@ -70,7 +74,7 @@ final class PlanChangePlanner
         $paid = Licence::withoutCompanyScope()->whereBelongsTo($company)->live()->where('expires_at', '>', $now)->orderBy('created_at')->get();
         $firstPeriodNow = $startsRecurring && $paid->isNotEmpty() && $startedAfter;
         $periodEnd = $account->cycle->periodEnd($today);
-        $first = $firstPeriodNow ? self::firstPeriod($company, $account, $to, $licences, $paid->pluck('id')->all(), $today, $periodEnd) : null;
+        $first = $firstPeriodNow ? self::firstPeriod($company, $account, $to, $licences, $paid->pluck('id')->all(), $today, $periodEnd, $onlineStore) : null;
 
         return new PlanChangePlan(
             company: $company,
@@ -124,6 +128,7 @@ final class PlanChangePlanner
             openSetupInvoices: PlanChangeSetupFee::open($company),
             openPeriodInvoices: Invoice::withoutCompanyScope()->where('company_id', $company->id)->forPeriods()->open()
                 ->orderBy('period_start')->get()->all(),
+            onlineStore: $onlineStore,
         );
     }
 
@@ -143,7 +148,7 @@ final class PlanChangePlanner
      * @param  Collection<int, Licence>  $licences
      * @return array{gross: string, unitPrice: string|null, unit: string}
      */
-    private static function recurring(Company $company, BillingAccount $account, Plan $to, Collection $licences, CarbonImmutable $start, bool $clearOwnPrices): array
+    private static function recurring(Company $company, BillingAccount $account, Plan $to, Collection $licences, CarbonImmutable $start, bool $clearOwnPrices, ?PlanChangeOnlineStore $onlineStore): array
     {
         $account = clone $account;
 
@@ -154,9 +159,10 @@ final class PlanChangePlanner
         }
 
         $simulated = self::onPlan($licences, $to);
-        $pricing = CompanyPricing::for($company, $account, $simulated);
+        $pricing = self::withOnlineStore(CompanyPricing::for($company, $account, $simulated), $onlineStore);
         $lines = InvoiceLineBuilder::build($simulated, $start, $account->cycle->periodEnd($start), $account->cycle, Vat::rateFor($account), false, $pricing);
-        $prices = array_values(array_unique(array_column($lines, 'unit_price')));
+        $units = array_filter($lines, fn (array $line) => ! InvoiceLineBuilder::isOnlineStoreLine($line));
+        $prices = array_values(array_unique(array_column($units, 'unit_price')));
 
         return [
             'gross' => InvoiceMaths::totals($lines)['total'],
@@ -173,7 +179,7 @@ final class PlanChangePlanner
      * @param  list<string>  $paidIds
      * @return array{gross: string, units: int}
      */
-    private static function firstPeriod(Company $company, BillingAccount $account, Plan $to, Collection $licences, array $paidIds, CarbonImmutable $start, CarbonImmutable $end): array
+    private static function firstPeriod(Company $company, BillingAccount $account, Plan $to, Collection $licences, array $paidIds, CarbonImmutable $start, CarbonImmutable $end, ?PlanChangeOnlineStore $onlineStore): array
     {
         $cut = BillingDates::endOfDay($start->subDay());
         $simulated = self::onPlan($licences, $to)->map(function (Licence $licence) use ($paidIds, $cut) {
@@ -184,9 +190,21 @@ final class PlanChangePlanner
             return $licence;
         });
         $prorate = (bool) config('billing.generate.prorate', false);
-        $lines = InvoiceLineBuilder::build($simulated, $start, $end, $account->cycle, Vat::rateFor($account), $prorate, CompanyPricing::for($company, $account, $simulated));
+        $pricing = self::withOnlineStore(CompanyPricing::for($company, $account, $simulated), $onlineStore);
+        $lines = InvoiceLineBuilder::build($simulated, $start, $end, $account->cycle, Vat::rateFor($account), $prorate, $pricing);
+        $units = array_filter($lines, fn (array $line) => ! InvoiceLineBuilder::isOnlineStoreLine($line));
 
-        return ['gross' => InvoiceMaths::totals($lines)['total'], 'units' => count($lines)];
+        return ['gross' => InvoiceMaths::totals($lines)['total'], 'units' => count($units)];
+    }
+
+    /** OS-7: the add-on as it will be after the change (on or off with the new plan); a new plan recurs or bills none. */
+    private static function withOnlineStore(CompanyPricing $pricing, ?PlanChangeOnlineStore $onlineStore): CompanyPricing
+    {
+        if ($onlineStore === null) {
+            return $pricing;
+        }
+
+        return $pricing->withOnlineStore($pricing->plan?->billingType()->recurs() ? $onlineStore->billed : null);
     }
 
     /**

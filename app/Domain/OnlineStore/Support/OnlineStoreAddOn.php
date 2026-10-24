@@ -7,6 +7,7 @@ use App\Domain\Billing\Enums\BillingCycle;
 use App\Domain\Licensing\Models\Licence;
 use App\Domain\OnlineStore\Models\OnlineStore;
 use App\Domain\Plans\Enums\Feature;
+use App\Domain\Plans\Models\Plan;
 use App\Domain\Shared\Country\Country;
 use App\Domain\Shared\Support\Money;
 use App\Domain\Tenancy\Models\Company;
@@ -42,9 +43,10 @@ final class OnlineStoreAddOn
 
     /**
      * What the add-on costs this business a month before VAT while it is on and the business has cloud sync, else
-     * null. CompanyPricing asks only for a business on a recurring plan.
+     * null. CompanyPricing asks only for a business on a recurring plan and passes that plan: OS-7, the business's own
+     * price, else the plan's when it includes the online store, else the default.
      */
-    public static function billedPrice(Company|string $company): ?string
+    public static function billedPrice(Company|string $company, ?Plan $plan = null): ?string
     {
         $store = self::store($company);
 
@@ -52,7 +54,7 @@ final class OnlineStoreAddOn
             return null;
         }
 
-        return Money::normalise(OnlineStoreSwitch::monthlyPrice($store->monthly_price));
+        return Money::normalise(OnlineStoreSwitch::monthlyPrice($store->monthly_price, $plan));
     }
 
     /** The add-on's net price for one billing cycle: the monthly price, or 12 × it on a yearly cycle. */

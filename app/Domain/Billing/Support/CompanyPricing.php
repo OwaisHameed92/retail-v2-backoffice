@@ -21,7 +21,8 @@ use Illuminate\Support\Collection;
  *
  * OS-6: `onlineStoreMonthly` is the online store add-on's monthly price before VAT while it is billed (switched on by
  * an admin, a recurring plan, cloud sync; never on PK: OnlineStoreAddOn::billedPrice), else null. InvoiceLineBuilder
- * adds it as its own line on the period invoice.
+ * adds it as its own line on the period invoice. OS-7: its price is the business's own, else the plan's (when the plan
+ * includes the online store), else the default; once per business, whatever its branches and tills.
  */
 final readonly class CompanyPricing
 {
@@ -49,8 +50,17 @@ final readonly class CompanyPricing
             monthlyOverride: $account->price_monthly_override,
             yearlyOverride: $account->price_yearly_override,
             overridden: $modeOverride !== null || $account->price_monthly_override !== null || $account->price_yearly_override !== null,
-            onlineStoreMonthly: $plan?->billingType()->recurs() ? OnlineStoreAddOn::billedPrice($company) : null,
+            onlineStoreMonthly: $plan?->billingType()->recurs() ? OnlineStoreAddOn::billedPrice($company, $plan) : null,
         );
+    }
+
+    /**
+     * The same pricing with another online store add-on amount (OS-7: the Change plan preview works out the amount
+     * after the plan switches the add-on on or off). Null = no add-on line.
+     */
+    public function withOnlineStore(?string $monthly): self
+    {
+        return new self($this->mode, $this->plan, $this->monthlyOverride, $this->yearlyOverride, $this->overridden, $monthly);
     }
 
     /** Price of one unit (till or branch) for the cycle, net. `$unitPlan` is a till's own plan (per till). */

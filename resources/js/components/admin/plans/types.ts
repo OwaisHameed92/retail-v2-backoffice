@@ -18,6 +18,8 @@ export interface PlanRow {
     featureCount: number;
     /** Owner 2026-10-21: the handheld (PDA) app comes with the plan (portal only, not a till feature). */
     includesHandheld: boolean;
+    /** OS-7: the online store add-on comes with the plan (false where the country has no online stores). */
+    includesOnlineStore: boolean;
     status: PlanStatusValue;
     statusLabel: string;
     sortOrder: number;
@@ -46,6 +48,10 @@ export interface PlanRecord {
     yearlySavingPercent: number | null;
     features: string[];
     includesHandheld: boolean;
+    /** OS-7: as stored (the form's values); `onlineStore` is the add-on's price when the plan includes it here. */
+    includesOnlineStore: boolean;
+    onlineStoreMonthlyPrice: string | null;
+    onlineStore: { price: string; priceLabel: string } | null;
     isActive: boolean;
     isPublic: boolean;
     sortOrder: number;
@@ -76,4 +82,12 @@ export interface PlanToast {
     id: string;
     type: 'success' | 'error';
     message: string;
+}
+
+/** OS-7: the plan pages' online store settings (PlanController); null where the country has no online stores. */
+export interface PlanOnlineStoreSettings {
+    /** Decimal string ("20.00"): the price when the plan's own is blank. */
+    defaultPrice: string;
+    /** Online stores are switched on on this server (ONLINE_STORE). */
+    serverOn: boolean;
 }

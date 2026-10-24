@@ -2,7 +2,7 @@ import { PlanHeaderActions } from '@/components/admin/plans/plan-actions';
 import { PlanActivity } from '@/components/admin/plans/plan-activity';
 import { formatDate, formatDays, formatMoney } from '@/components/admin/plans/plan-format';
 import { PlanStatusBadge, planStatusHelp } from '@/components/admin/plans/plan-status-badge';
-import { type FeatureOption, type PlanActivityEntry, type PlanRecord } from '@/components/admin/plans/types';
+import { type FeatureOption, type PlanActivityEntry, type PlanOnlineStoreSettings, type PlanRecord } from '@/components/admin/plans/types';
 import { DescriptionList } from '@/components/shared/description-list';
 import { InitialsAvatar } from '@/components/shared/entity-cell';
 import { MoneyIcon } from '@/components/shared/money-icon';
@@ -16,12 +16,14 @@ import AdminLayout from '@/layouts/admin-layout';
 import { byHand } from '@/lib/billing-collection';
 import { taxName, taxText } from '@/lib/country';
 import { Head, Link } from '@inertiajs/react';
-import { Archive, CalendarClock, CalendarRange, Check, Clock, Layers, Minus, Pencil, Smartphone } from 'lucide-react';
+import { Archive, CalendarClock, CalendarRange, Check, Clock, Layers, Minus, Pencil, Smartphone, Store } from 'lucide-react';
 
 interface ShowPlanProps {
     plan: PlanRecord;
     features: FeatureOption[];
     activity: PlanActivityEntry[];
+    /** OS-7: null where the country has no online stores (the line is not shown). */
+    onlineStore: PlanOnlineStoreSettings | null;
 }
 
 function yearlyHint(plan: PlanRecord): string {
@@ -36,7 +38,7 @@ function yearlyHint(plan: PlanRecord): string {
     return saving < 0 ? 'More than 12 monthly payments' : 'Same as 12 monthly payments';
 }
 
-export default function ShowPlan({ plan, features, activity }: ShowPlanProps) {
+export default function ShowPlan({ plan, features, activity, onlineStore }: ShowPlanProps) {
     const archived = plan.status === 'archived';
     const included = features.filter((feature) => plan.features.includes(feature.value));
     const excluded = features.filter((feature) => !plan.features.includes(feature.value));
@@ -158,6 +160,21 @@ export default function ShowPlan({ plan, features, activity }: ShowPlanProps) {
                             Portal setting: staff sign in to the Android PDA app. Not sent to the till.
                         </span>
                     </div>
+                    {onlineStore && (
+                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t pt-4 text-sm">
+                            <Store className="text-muted-foreground size-4 shrink-0" aria-hidden />
+                            <span className="font-medium">Online store</span>
+                            <Badge variant={plan.onlineStore ? 'success' : 'neutral'}>{plan.onlineStore ? 'Included' : 'Not included'}</Badge>
+                            {plan.onlineStore && <span className="tabular-nums">{plan.onlineStore.priceLabel} / month</span>}
+                            <span className="text-muted-foreground basis-full pl-7">
+                                {plan.onlineStore
+                                    ? taxText(
+                                          'Click & collect online store, billed before VAT as its own “Online store” line on the same monthly invoice, once per business. Not sent to the till.',
+                                      )
+                                    : 'Businesses on this plan do not get the online store add-on (it can still be switched on by hand on a business’s Billing tab).'}
+                            </span>
+                        </div>
+                    )}
                     {excluded.length > 0 && (
                         <div className="grid gap-2 border-t pt-4">
                             <p className="text-muted-foreground text-sm font-medium">Not included</p>

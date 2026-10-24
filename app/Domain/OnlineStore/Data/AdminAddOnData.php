@@ -4,10 +4,12 @@ namespace App\Domain\OnlineStore\Data;
 
 use App\Domain\Billing\Models\BillingAccount;
 use App\Domain\Billing\Support\BillingFormat;
+use App\Domain\Billing\Support\CompanyPricing;
 use App\Domain\Billing\Support\InvoiceMaths;
 use App\Domain\Billing\Support\Vat;
 use App\Domain\OnlineStore\Support\OnlineStoreAddOn;
 use App\Domain\OnlineStore\Support\OnlineStoreSwitch;
+use App\Domain\OnlineStore\Support\PlanOnlineStore;
 use App\Domain\OnlineStore\Support\StoreLinks;
 use App\Domain\Shared\Country\Country;
 use App\Domain\Tenancy\Models\Company;
@@ -17,6 +19,11 @@ use App\Domain\Tenancy\Models\Company;
  * business's own or the default, before VAT) and what the invoice line comes to per cycle with VAT, the store's
  * template and address, and why it cannot be used or billed (not a monthly plan, no cloud sync, server switch off).
  * Null where the country has no online stores (Pakistan).
+ *
+ * OS-7: the price is the business's own, else its plan's when the plan includes the online store, else the default
+ * (`defaultPrice` = what a blank price means for this business; `priceSource` says which). `byPlan`: its plan includes
+ * the online store (Change plan switches the add-on with the plan); otherwise an add-on switched on here is the
+ * exception path and keeps working as before.
  */
 final class AdminAddOnData
 {
@@ -34,15 +41,25 @@ final class AdminAddOnData
         $cloudSync = OnlineStoreAddOn::hasCloudSync($company);
         $serverOn = OnlineStoreSwitch::enabled();
         $monthlyPlan = OnlineStoreAddOn::onRecurringPlan($company);
-        $monthly = OnlineStoreSwitch::monthlyPrice($store?->monthly_price);
+        $plan = CompanyPricing::for($company, $account)->plan;
+        $byPlan = PlanOnlineStore::includes($plan);
+        $blank = OnlineStoreSwitch::monthlyPrice(null, $plan);
+        $monthly = OnlineStoreSwitch::monthlyPrice($store?->monthly_price, $plan);
         $amounts = InvoiceMaths::line('1', OnlineStoreAddOn::cyclePrice($monthly, $account->cycle), Vat::rateFor($account));
 
         return [
             'on' => $on,
             'since' => $on ? $store?->addon_on_at?->toIso8601String() : null,
             'monthlyPrice' => $store?->monthly_price,
-            'defaultPrice' => OnlineStoreSwitch::monthlyPrice(null),
-            'defaultPriceLabel' => BillingFormat::money(OnlineStoreSwitch::monthlyPrice(null)),
+            'defaultPrice' => $blank,
+            'defaultPriceLabel' => BillingFormat::money($blank),
+            'priceSource' => match (true) {
+                $store?->monthly_price !== null => 'business',
+                $byPlan && $plan?->online_store_monthly_price !== null => 'plan',
+                default => 'default',
+            },
+            'byPlan' => $byPlan,
+            'planName' => $plan?->name,
             'priceLabel' => BillingFormat::money($monthly),
             'cycleNet' => BillingFormat::money($amounts['net']),
             'cycleGross' => BillingFormat::money($amounts['gross']),
