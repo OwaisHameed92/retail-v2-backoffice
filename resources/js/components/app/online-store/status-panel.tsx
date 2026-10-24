@@ -142,7 +142,18 @@ export function StatusPanel({ store, checklist, canEdit }: { store: StoreSetting
                             </>
                         )}
                     </Step>
-                    <Step done={true}>Payment: customers pay at the shop when collecting</Step>
+                    <Step done={checklist.legalMissing.length === 0}>
+                        {checklist.legalMissing.length === 0 ? (
+                            'Trader details for your terms, privacy and contact pages'
+                        ) : (
+                            <>
+                                <Link href={route('app.online-store.legal')} className="text-primary font-medium hover:underline">
+                                    Add your legal details
+                                </Link>{' '}
+                                ({checklist.legalMissing.join(', ')})
+                            </>
+                        )}
+                    </Step>
                 </ul>
             </div>
         </Card>

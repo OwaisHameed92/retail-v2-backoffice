@@ -23,7 +23,7 @@ const roleHelp: Record<CompanyRole, string> = {
     owner: 'Everything, including users and billing.',
     manager: 'Runs the shops: products, prices, stock, customers, reports.',
     accountant: 'Sales, reports and billing, read only.',
-    staff: 'Read-only views of sales, products, stock and customers.',
+    staff: 'Read-only views of sales, products, stock and customers. Works online orders where the shop has an online store.',
 };
 
 export function UserDialog(props: UserDialogProps) {

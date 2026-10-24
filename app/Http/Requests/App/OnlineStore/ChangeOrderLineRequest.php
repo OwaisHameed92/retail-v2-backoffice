@@ -9,7 +9,7 @@ use Illuminate\Validation\Rule;
 
 /**
  * Change one line of an open online order while picking it (audit OSA-18): not available, a new quantity, or back
- * as ordered. The route checks `store.manage`; the order comes through PortalOrders. Checked by ChangeOrderLine.
+ * as ordered. The route checks `orders.online`; the order comes through PortalOrders. Checked by ChangeOrderLine.
  */
 class ChangeOrderLineRequest extends FormRequest
 {

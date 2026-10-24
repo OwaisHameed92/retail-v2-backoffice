@@ -56,6 +56,12 @@ test('store.manage: owner and manager; shown in the role matrix only while the s
         ->and(CompanyRole::Manager->can('store.manage'))->toBeTrue()
         ->and(CompanyRole::Accountant->can('store.manage'))->toBeFalse()
         ->and(CompanyRole::Staff->can('store.manage'))->toBeFalse()
+        // Audit OSA-32: working orders is its own ability, staff included.
+        ->and(CompanyRole::Owner->can(Ability::OrdersOnline))->toBeTrue()
+        ->and(CompanyRole::Manager->can('orders.online'))->toBeTrue()
+        ->and(CompanyRole::Staff->can('orders.online'))->toBeTrue()
+        ->and(CompanyRole::Accountant->can('orders.online'))->toBeFalse()
+        ->and(collect(RoleMatrix::rows())->pluck('key'))->toContain('orders.online')
         ->and(collect(RoleMatrix::rows())->pluck('key'))->toContain('store.manage');
 
     config(['online_store.enabled' => false]);

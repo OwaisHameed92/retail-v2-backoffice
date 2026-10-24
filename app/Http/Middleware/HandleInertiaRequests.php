@@ -87,11 +87,11 @@ class HandleInertiaRequests extends Middleware
             'companies' => fn () => $this->companies($request),
             'companyRole' => fn () => $this->currentCompany($request)?->membership?->role->value,
             // Module 5.10: pharmacy and parcels leave the menu for businesses that do not use them.
-            // Online store: `store.manage` (its menu items) only while the online store is switched on (OnlineStoreSwitch).
+            // Online store: `store.manage` and `orders.online` (their menu items) only while the online store is switched on (OnlineStoreSwitch).
             'abilities' => fn () => ServiceModules::visibleAbilities($this->currentCompany($request), array_values(array_filter(array_map(
                 fn (Ability $ability) => $ability->value,
                 $this->currentCompany($request)?->membership?->role->abilities() ?? [],
-            ), fn (string $ability) => $ability !== Ability::StoreManage->value || OnlineStoreSwitch::enabled()))),
+            ), fn (string $ability) => ! in_array($ability, [Ability::StoreManage->value, Ability::OrdersOnline->value], true) || OnlineStoreSwitch::enabled()))),
             // Online store OS-4: the sidebar count of new online orders (null when the item is hidden).
             'onlineOrdersNew' => fn () => app(NewOnlineOrderCount::class)->get(),
             // Module 1.2: branch switcher, "login as customer" banner and flash toasts.

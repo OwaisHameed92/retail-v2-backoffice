@@ -65,6 +65,7 @@ enum CompanyRole: string
                 Ability::AiUse,
                 Ability::LabelsPrint,
                 Ability::StoreManage,
+                Ability::OrdersOnline,
             ],
             self::Accountant => [
                 Ability::DashboardView,
@@ -90,6 +91,8 @@ enum CompanyRole: string
                 Ability::CatalogueView,
                 Ability::StockView,
                 Ability::CustomersView,
+                // Audit OSA-32: shop-floor staff pick and hand over online orders, without changing the store.
+                Ability::OrdersOnline,
             ],
         };
     }

@@ -7,15 +7,16 @@ import { ProductPhoto } from './product-photo';
 import { type StoreProduct } from './types';
 import { useAddToBasket, useStore } from './use-store';
 
-/** "500 g · £3.18/kg", "Per kg, weighed in the shop" or "Each". */
+/** "500 g · £3.18/kg", "Per kg, weighed in the shop" or "Each"; a deposit return item adds "+ £0.10 deposit" (OS-11). */
 export function productSubline(product: StoreProduct): string {
     if (product.isWeighed) {
         return 'Per kg · weighed in the shop';
     }
 
     const unit = product.unitPrice ? `${money(product.unitPrice.amount)}/${product.unitPrice.unit === 'kg' ? 'kg' : 'litre'}` : null;
+    const deposit = product.deposit ? `+ ${money(product.deposit)} deposit` : null;
 
-    return [product.size, unit].filter(Boolean).join(' · ') || 'Each';
+    return [product.size, unit, deposit].filter(Boolean).join(' · ') || 'Each';
 }
 
 /**

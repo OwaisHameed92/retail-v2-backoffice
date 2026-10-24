@@ -201,13 +201,16 @@ final class OnlineStoreFixtures
 
     /**
      * OS-6: what makes a store usable besides the switch: a till with cloud sync (a live licence at `$shop`) and the
-     * add-on switched on (as the admin's SetOnlineStoreAddOn leaves it; the store row must exist).
+     * add-on switched on (as the admin's SetOnlineStoreAddOn leaves it; the store row must exist). OS-11: and the
+     * trader details going live needs (StoreTrader::REQUIRED).
      */
     public static function addOn(Company $company, Branch $shop): void
     {
         $register = Register::factory()->forBranch($shop)->create();
         Licence::factory()->forRegister($register)->create(['features' => [Feature::CloudSync->value]]);
-        OnlineStore::withoutCompanyScope()->where('company_id', $company->id)->update(['addon_on' => true, 'addon_on_at' => now()]);
+        OnlineStore::withoutCompanyScope()->where('company_id', $company->id)->update(['addon_on' => true, 'addon_on_at' => now(),
+            'trading_name' => $company->name, 'legal_name' => $company->name.' Ltd', 'legal_address' => '1 Market St, Leeds, LS1 1AA',
+            'contact_email' => 'hello@example.test']);
     }
 
     public static function asPakistan(): void

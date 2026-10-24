@@ -2,6 +2,7 @@
 
 namespace App\Domain\Pharmacy\Support;
 
+use App\Domain\OnlineStore\Support\OnlineOrdersAccess;
 use App\Domain\OnlineStore\Support\OnlineStoreSwitch;
 use App\Domain\Shared\Country\CountryModules;
 use App\Domain\Tenancy\Enums\Ability;
@@ -62,6 +63,8 @@ final class ServiceModules
             // The online store's menu items (OS-3, OS-4) only while the store is available to this business
             // (ONLINE_STORE + country flag, OS-6: its add-on and cloud sync).
             Ability::StoreManage->value => OnlineStoreSwitch::availableFor($company),
+            // Audit OSA-32, OSA-5: "Online orders" while the board can be worked (also with open orders left after the store went off).
+            Ability::OrdersOnline->value => OnlineOrdersAccess::reachable($company),
             default => true,
         }));
     }

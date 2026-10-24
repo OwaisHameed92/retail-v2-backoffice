@@ -3,6 +3,7 @@
 namespace App\Domain\Billing\Models;
 
 use App\Domain\Billing\Casts\CalendarDateCast;
+use App\Domain\Billing\Enums\InvoiceLineKind;
 use App\Domain\Licensing\Models\Licence;
 use App\Domain\Shared\Casts\MoneyCast;
 use App\Domain\Shared\Casts\QuantityCast;
@@ -23,6 +24,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string|null $licence_id
  * @property string|null $register_id
  * @property string|null $branch_id Per-branch pricing (module 1.13): the branch this line pays for.
+ * @property string|null $kind OSA-30: InvoiceLineKind value; null on lines written before it existed
  * @property string|null $plan_id
  * @property int $position
  * @property string $description
@@ -58,6 +60,17 @@ class InvoiceLine extends Model
             'period_start' => CalendarDateCast::class,
             'period_end' => CalendarDateCast::class,
         ];
+    }
+
+    /**
+     * OSA-30: the online store add-on line, by its kind; a line without a kind (older) by the old rule: no licence,
+     * no branch, and the add-on's description.
+     */
+    public function isOnlineStore(): bool
+    {
+        return $this->kind === null
+            ? $this->licence_id === null && $this->branch_id === null && str_starts_with($this->description, 'Online store · ')
+            : $this->kind === InvoiceLineKind::OnlineStore->value;
     }
 
     /**

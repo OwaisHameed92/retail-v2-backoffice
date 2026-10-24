@@ -9,10 +9,11 @@ import { ImagePicker } from './image-picker';
 import { ToggleSwitch } from './toggle-switch';
 import { type OnlineProductRow } from './types';
 
-type DetailsForm = { hidden: boolean; description: string; allergen_info: string; photo: File | null; remove_photo: boolean };
+type DetailsForm = { hidden: boolean; not_featured: boolean; description: string; allergen_info: string; photo: File | null; remove_photo: boolean };
 
 const initial = (product: OnlineProductRow): DetailsForm => ({
     hidden: product.hidden,
+    not_featured: product.notFeatured,
     description: product.description ?? '',
     allergen_info: product.allergenInfo ?? '',
     photo: null,
@@ -30,7 +31,7 @@ interface ProductDialogProps {
  * allergens shown on the product page before purchase. The till's product is never changed.
  */
 export function ProductDialog({ product, onClose, descriptionMax }: ProductDialogProps) {
-    const form = useForm<DetailsForm>({ hidden: false, description: '', allergen_info: '', photo: null, remove_photo: false });
+    const form = useForm<DetailsForm>({ hidden: false, not_featured: false, description: '', allergen_info: '', photo: null, remove_photo: false });
     const errors = form.errors as Record<string, string | undefined>;
 
     useEffect(() => {
@@ -79,6 +80,21 @@ export function ProductDialog({ product, onClose, descriptionMax }: ProductDialo
                                 checked={!form.data.hidden}
                                 disabled={form.processing}
                                 onCheckedChange={(on) => form.setData('hidden', !on)}
+                            />
+                        </div>
+
+                        <div className="flex items-start justify-between gap-4 rounded-lg border p-3">
+                            <div>
+                                <Label htmlFor="product-featured">Can be featured on the home page</Label>
+                                <p className="text-muted-foreground text-xs leading-5">
+                                    Best sellers and newest products. Turn off for carrier bags, charges and other small extras.
+                                </p>
+                            </div>
+                            <ToggleSwitch
+                                id="product-featured"
+                                checked={!form.data.not_featured}
+                                disabled={form.processing || form.data.hidden}
+                                onCheckedChange={(on) => form.setData('not_featured', !on)}
                             />
                         </div>
 

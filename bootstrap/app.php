@@ -7,6 +7,7 @@ use App\Http\Middleware\EnsureCompanyMember;
 use App\Http\Middleware\EnsureCountryFeature;
 use App\Http\Middleware\EnsureDirectDebit;
 use App\Http\Middleware\HandleInertiaRequests;
+use App\Http\Middleware\KeepStoreHostToStore;
 use App\Http\Middleware\RequireTwoFactor;
 use App\Http\Middleware\SecurityHeaders;
 use App\Http\Middleware\ThrottlePerRoute;
@@ -37,6 +38,9 @@ return Application::configure(basePath: dirname(__DIR__))
         },
     )
     ->withMiddleware(function (Middleware $middleware) {
+        // Audit OSA-8: the online store's own host (ONLINE_STORE_HOST) answers only the store.
+        $middleware->append(KeepStoreHostToStore::class);
+
         $middleware->web(append: [
             SecurityHeaders::class,
             HandleInertiaRequests::class,

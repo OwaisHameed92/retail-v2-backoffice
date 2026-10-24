@@ -4,6 +4,7 @@ namespace App\Domain\Billing\GoCardless\Actions;
 
 use App\Domain\Billing\Actions\IssueInvoice;
 use App\Domain\Billing\Enums\InvoiceKind;
+use App\Domain\Billing\Enums\InvoiceLineKind;
 use App\Domain\Billing\Enums\InvoiceStatus;
 use App\Domain\Billing\GoCardless\Support\SetupFee;
 use App\Domain\Billing\Models\Invoice;
@@ -106,6 +107,7 @@ class ChargeSetupFee
                 $invoice->save();
 
                 $line = new InvoiceLine([
+                    'kind' => InvoiceLineKind::SetupFee->value,
                     'position' => 1,
                     'description' => $label.' · '.$company->name,
                     'quantity' => '1.0000',

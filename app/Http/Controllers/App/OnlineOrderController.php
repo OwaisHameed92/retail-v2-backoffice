@@ -26,7 +26,7 @@ use Inertia\Response;
 /**
  * Portal → Online orders (OS-4, docs/online-store.md): the board, one order's page and its pick list, moving an
  * order on (and undoing the last move, OSA-21), changing a line (OSA-18), sending the customer their link again
- * (OSA-22), and the "Taking orders" switch. Routes: switch on (404 off), `store.manage`; a one-shop user works
+ * (OSA-22), and the "Taking orders" switch. Routes: switch on (404 off), `orders.online` (audit OSA-32); a one-shop user works
  * on their own shop's orders only (PortalOrders: anything else is a 404).
  */
 class OnlineOrderController extends Controller

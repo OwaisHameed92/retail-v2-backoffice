@@ -3,6 +3,7 @@
 namespace App\Domain\Billing\Support;
 
 use App\Domain\Billing\Enums\InvoiceKind;
+use App\Domain\Billing\Enums\InvoiceLineKind;
 use App\Domain\Billing\Enums\InvoiceStatus;
 use App\Domain\Billing\Models\BillingAccount;
 use App\Domain\Billing\Models\Invoice;
@@ -112,7 +113,8 @@ final class SetupFeeInvoices
      */
     private static function line(Invoice $invoice, array $attributes): void
     {
-        $row = new InvoiceLine($attributes);
+        // OSA-30: a setup fee line is marked as one (it has no branch, and the business's own fee no licence either).
+        $row = new InvoiceLine(['kind' => InvoiceLineKind::SetupFee->value, ...$attributes]);
         $row->company_id = $invoice->company_id;
         $row->invoice_id = $invoice->id;
         $row->save();

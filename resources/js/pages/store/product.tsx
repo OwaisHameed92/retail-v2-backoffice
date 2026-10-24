@@ -96,6 +96,12 @@ export default function StoreProductPage({ product, department, allergens, inBas
                             </span>
                             <span className="text-muted text-sm">{product.isWeighed ? 'Sold by weight' : productSubline(product)}</span>
                         </div>
+                        {product.deposit && (
+                            <p className="border-line rounded-xl border bg-white px-4 py-3 text-sm">
+                                <strong>Plus {money(product.deposit)} deposit.</strong> The shop adds the deposit when you pay. Return the empty
+                                container to the shop to have it refunded.
+                            </p>
+                        )}
                         {product.offer && (
                             <p className="border-line flex items-start gap-3 rounded-xl border bg-white px-4 py-3 text-sm">
                                 <Tag aria-hidden="true" className="text-sale mt-0.5 size-5 shrink-0" />

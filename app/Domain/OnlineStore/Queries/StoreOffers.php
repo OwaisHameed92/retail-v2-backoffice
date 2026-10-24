@@ -84,7 +84,7 @@ final class StoreOffers
                     ->orWhereIn('products.category_id', array_keys($targets['category']) ?: [''])
                     ->orWhereIn('products.department_id', array_keys($targets['department']) ?: ['']);
             });
-            OnlineCatalogueQuery::filter($query, $shop, new CatalogueFilters(inStockOnly: true));
+            OnlineCatalogueQuery::filter($query, $shop, new CatalogueFilters(inStockOnly: true, homeRow: true));
 
             /** @var Collection<int, Product> $rows */
             $rows = OnlineCatalogueQuery::select($query, $shop)->orderBy('products.name')->orderBy('products.id')->limit($limit)->get();

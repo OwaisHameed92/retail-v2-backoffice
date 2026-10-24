@@ -18,7 +18,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 /**
  * An online order (PlaceCollectOrder): click & collect or, from OS-9, local delivery; paid at the shop, on delivery
  * or by card online (DNA Payments). The till rings it up, so the order never writes till data. `number` is per
- * business (shown as W-0001); `token_hash` is the sha256 of the order page's secret link. `collect_from` /
+ * business (shown as W-0001). The order page is opened by a link signed over the order's id (StoreLinks); the
+ * `token_hash` column is left over from an earlier design, holds a random value nothing reads (audit OSA-27; kept
+ * because it is not null and unique). `collect_from` /
  * `collect_to` are its slot: the collection time, or the delivery window. Slot and status times are UTC. Moved on by
  * ChangeOnlineOrderStatus; a card order is moved to new by RecordCardPayment once paid.
  *
@@ -103,10 +105,13 @@ class OnlineOrder extends Model
         return mb_substr($digits, 0, 20);
     }
 
-    /** The stored form of an order page token. */
-    public static function hashToken(string $token): string
+    /**
+     * Audit OSA-27: a random, unique filler for the unused `token_hash` column (not null, unique). It is not a secret
+     * and nothing reads it: the order page link is signed over the order id (StoreLinks).
+     */
+    public static function unusedTokenHash(): string
     {
-        return hash('sha256', $token);
+        return hash('sha256', random_bytes(32));
     }
 
     public function getReferenceAttribute(): string

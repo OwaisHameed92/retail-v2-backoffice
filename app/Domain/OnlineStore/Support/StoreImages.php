@@ -10,8 +10,10 @@ use Illuminate\Validation\ValidationException;
 
 /**
  * The online store's uploaded pictures (OS-3): logo, banner and product photos. Images only (JPEG, PNG, WebP, at most
- * 4 MB), kept on the `public` disk under `online-store/{company_id}/{folder}/` with a random name and the extension
- * of the detected type; the uploaded name is never used. A business only ever deletes its own files.
+ * 4 MB), kept on the `public` disk under `online-store/{company_id}/{folder}/` with a random name; the uploaded name is
+ * never used. Audit OSA-15: the upload itself is never stored. StoreImageEncoder re-encodes it (WebP, else JPEG),
+ * which strips EXIF / GPS, turns it upright and scales it down to fit MAX_SIZE for its folder (logo 600, product
+ * 1200, banner 2400 pixels). A business only ever deletes its own files.
  *
  *     $path = StoreImages::put($company, $request->file('logo'), StoreImages::LOGO);
  *     StoreImages::delete($company, $oldPath);
@@ -28,7 +30,10 @@ final class StoreImages
 
     public const PRODUCT = 'products';
 
-    /** Detected type => stored extension. */
+    /** Longest side, in pixels, a stored picture is scaled down to (OSA-15). */
+    public const MAX_SIZE = [self::LOGO => 600, self::BANNER => 2400, self::PRODUCT => 1200];
+
+    /** Detected upload type => its extension (what is accepted; what is stored is StoreImageEncoder's). */
     public const TYPES = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/webp' => 'webp'];
 
     /**
@@ -57,21 +62,24 @@ final class StoreImages
     }
 
     /**
-     * Stores the picture and returns its path on the disk.
+     * Re-encodes the picture (StoreImageEncoder), stores the result and returns its path on the disk.
      *
-     * @throws ValidationException when the file is not a JPEG, PNG or WebP picture
+     * @throws ValidationException when the file is not a JPEG, PNG or WebP picture, or cannot be processed
      */
     public static function put(Company $company, UploadedFile $file, string $folder, string $field = 'file'): string
     {
-        $extension = self::TYPES[(string) $file->getMimeType()] ?? null;
+        $type = self::TYPES[(string) $file->getMimeType()] ?? null;
+        $max = self::MAX_SIZE[$folder] ?? null;
+        $source = $file->getRealPath();
 
-        if ($extension === null || ! in_array($folder, [self::LOGO, self::BANNER, self::PRODUCT], true)) {
+        if ($type === null || $max === null || $source === false) {
             throw ValidationException::withMessages([$field => 'Choose a JPG, PNG or WebP picture.']);
         }
 
-        $path = $file->storeAs(self::folder($company).'/'.$folder, Str::lower((string) Str::ulid()).'.'.$extension, self::DISK);
+        $image = StoreImageEncoder::encode($source, $max, $field);
+        $path = self::folder($company).'/'.$folder.'/'.Str::lower((string) Str::ulid()).'.'.$image['extension'];
 
-        if ($path === false) {
+        if (! Storage::disk(self::DISK)->put($path, $image['bytes'])) {
             throw ValidationException::withMessages([$field => 'The picture could not be saved. Try again.']);
         }
 

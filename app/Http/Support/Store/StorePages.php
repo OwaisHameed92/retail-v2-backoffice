@@ -72,7 +72,10 @@ final class StorePages
                 'basketAdd' => route('store.basket.add', [], false),
                 'checkout' => route('store.checkout', [], false),
                 'shop' => route('store.shop', [], false),
+                ...StoreLegal::urls(),
             ],
+            // OS-11 (audit OSA-2): who sells (footer, legal pages, checkout).
+            'trader' => StoreLegal::trader($context)->toArray(),
         ];
     }
 

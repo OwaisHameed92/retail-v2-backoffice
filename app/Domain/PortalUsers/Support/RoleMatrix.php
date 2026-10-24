@@ -22,7 +22,8 @@ final class RoleMatrix
         'customers.view' => ['Selling', 'See customers'],
         'customers.manage' => ['Selling', 'Add and edit customers'],
         'promotions.manage' => ['Selling', 'Manage promotions'],
-        'store.manage' => ['Selling', 'Run the online store and its orders'],
+        'store.manage' => ['Selling', 'Build the online store (look, shops, delivery, products, emails)'],
+        'orders.online' => ['Selling', 'Work online orders (pick, ready, collected, cancel)'],
         'catalogue.view' => ['Catalogue', 'See products'],
         'catalogue.manage' => ['Catalogue', 'Add and edit products'],
         'prices.manage' => ['Catalogue', 'Change prices'],
@@ -57,7 +58,7 @@ final class RoleMatrix
             CompanyRole::Owner => 'Everything, including portal users and billing. Always every shop.',
             CompanyRole::Manager => 'Runs the shops: products, prices, stock, customers, reports and settings.',
             CompanyRole::Accountant => 'Sales, reports and billing, read only.',
-            CompanyRole::Staff => 'Read-only views of sales, products, stock and customers.',
+            CompanyRole::Staff => 'Read-only views of sales, products, stock and customers. Works online orders where the shop has an online store.',
         };
     }
 
@@ -86,7 +87,7 @@ final class RoleMatrix
 
         foreach (self::LABELS as $key => [$group, $label]) {
             // The online store row only where the store is available (ONLINE_STORE switch and country flag).
-            if ($key === Ability::StoreManage->value && ! ($company !== null ? OnlineStoreSwitch::availableFor($company) : OnlineStoreSwitch::enabled())) {
+            if (in_array($key, [Ability::StoreManage->value, Ability::OrdersOnline->value], true) && ! ($company !== null ? OnlineStoreSwitch::availableFor($company) : OnlineStoreSwitch::enabled())) {
                 continue;
             }
 

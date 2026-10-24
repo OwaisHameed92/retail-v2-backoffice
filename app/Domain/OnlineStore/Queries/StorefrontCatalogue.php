@@ -57,9 +57,9 @@ final class StorefrontCatalogue
 
     /**
      * One page of products, by name: optionally a search (part of the name or brand, a code prefix or an exact
-     * barcode) and a department. `$filters` (OS-2, the public store's lists): sort by price, in stock only, price range.
+     * barcode) and a department, or (OS-11, category aisles) a category. `$filters` (OS-2, the public store's lists): sort by price, in stock only, price range.
      */
-    public function products(OnlineStore $store, OnlineStoreShop $shop, ?string $search = null, ?string $departmentId = null, int $page = 1, int $perPage = self::PER_PAGE, ?CatalogueFilters $filters = null): CataloguePage
+    public function products(OnlineStore $store, OnlineStoreShop $shop, ?string $search = null, ?string $departmentId = null, int $page = 1, int $perPage = self::PER_PAGE, ?CatalogueFilters $filters = null, ?string $categoryId = null): CataloguePage
     {
         $page = max(1, $page);
         $perPage = min(self::MAX_PER_PAGE, max(1, $perPage));
@@ -69,9 +69,10 @@ final class StorefrontCatalogue
             return new CataloguePage([], 0, $page, $perPage);
         }
 
-        return StoreScope::run($store, function () use ($store, $shop, $search, $departmentId, $page, $perPage, $filters): CataloguePage {
+        return StoreScope::run($store, function () use ($store, $shop, $search, $departmentId, $categoryId, $page, $perPage, $filters): CataloguePage {
             $query = OnlineCatalogueQuery::base($shop)
                 ->when($departmentId !== null && $departmentId !== '', fn (Builder $q) => $q->where('products.department_id', $departmentId))
+                ->when($categoryId !== null && $categoryId !== '', fn (Builder $q) => $q->where('products.category_id', $categoryId))
                 ->when(self::term($search) !== null, fn (Builder $q) => self::search($q, (string) self::term($search), $store->company_id));
             OnlineCatalogueQuery::filter($query, $shop, $filters);
             $total = (clone $query)->count();

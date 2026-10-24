@@ -7,6 +7,7 @@ use App\Domain\OnlineStore\Data\CatalogueItem;
 use App\Domain\OnlineStore\Enums\FeaturedMode;
 use App\Domain\OnlineStore\Models\OnlineStore;
 use App\Domain\OnlineStore\Models\OnlineStoreShop;
+use App\Domain\OnlineStore\Support\HomeRowRules;
 use App\Domain\OnlineStore\Support\OnlineStoreSwitch;
 use App\Domain\OnlineStore\Support\StoreScope;
 use App\Domain\Reporting\ReportTables;
@@ -22,6 +23,9 @@ use Illuminate\Support\Facades\DB;
  *   no sales yet).
  * - Hand-picked: the products the business chose, in its order (up to {@see self::MAX_PICKED}), those shown at the shop.
  * - Newest: the products most recently added on the tills, orderable now.
+ *
+ * OS-11 (HomeRowRules): never an HFSS product (audit OSA-31); best sellers and newest also leave out tiny service
+ * items (under £0.50, carrier bags, bag charges) and products the shop took out of "featured" on the Products tab.
  *
  * Read only; scoped to the store's business (StoreScope, explicit company filters).
  */
@@ -66,7 +70,7 @@ final class FeaturedProducts
      */
     public function bestSellers(OnlineStore $store, OnlineStoreShop $shop, array $branchIds, int $limit): array
     {
-        $ranked = $this->ranked($store, $branchIds);
+        $ranked = StoreScope::run($store, fn (): array => HomeRowRules::keep($shop, $this->ranked($store, $branchIds), featurable: true));
         $items = $ranked === [] ? [] : $this->catalogue->items($store, $shop, $ranked);
         $out = [];
 
@@ -93,7 +97,7 @@ final class FeaturedProducts
     public function newest(OnlineStore $store, OnlineStoreShop $shop, int $limit): array
     {
         return $this->catalogue->products($store, $shop, perPage: $limit,
-            filters: new CatalogueFilters(sort: CatalogueFilters::SORT_NEWEST, inStockOnly: true))->items;
+            filters: new CatalogueFilters(sort: CatalogueFilters::SORT_NEWEST, inStockOnly: true, homeRow: true, featurable: true))->items;
     }
 
     /**
@@ -102,6 +106,8 @@ final class FeaturedProducts
     public function picked(OnlineStore $store, OnlineStoreShop $shop): array
     {
         $ids = array_slice(self::pickedIds($store->featured_product_ids), 0, self::MAX_PICKED);
+        // OS-11 / OSA-31: never an HFSS product on the home page, even hand-picked.
+        $ids = StoreScope::run($store, fn (): array => HomeRowRules::keep($shop, $ids, featurable: false));
         $items = $ids === [] ? [] : $this->catalogue->items($store, $shop, $ids);
 
         return array_values(array_filter(array_map(fn (string $id) => $items[$id] ?? null, $ids)));

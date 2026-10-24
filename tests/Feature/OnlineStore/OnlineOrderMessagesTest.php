@@ -67,7 +67,7 @@ test('a new order emails the shop and the customer and tells the store\'s staff'
         ->and($bell->first()?->body)->toBe('Asha P. · 3 items · £7.50 · collect Mon 2 Nov, 10:00–10:30 at Leeds');
 });
 
-test('accountants, staff and another shop\'s manager get no bell entry', function () {
+test('accountants and another shop\'s manager get no bell entry; staff who work orders do (audit OSA-32)', function () {
     $accountant = C::member($this->f->company, CompanyRole::Accountant);
     $staff = C::member($this->f->company, CompanyRole::Staff);
     $bradford = C::member($this->f->company, CompanyRole::Manager, $this->f->bradford->id);
@@ -76,7 +76,7 @@ test('accountants, staff and another shop\'s manager get no bell entry', functio
     ($this->place)();
 
     $users = AlertNotification::withoutCompanyScope()->pluck('user_id')->all();
-    expect($users)->toContain($leeds->id)->not->toContain($accountant->id)->not->toContain($staff->id)->not->toContain($bradford->id);
+    expect($users)->toContain($leeds->id)->toContain($staff->id)->not->toContain($accountant->id)->not->toContain($bradford->id);
 });
 
 test('without an order email the shop email goes to the business email, never a sign-in email (OSA-14)', function () {

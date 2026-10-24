@@ -292,8 +292,26 @@ export default function StoreCheckout(props: Props) {
                     </button>
                     <p className="text-muted text-xs leading-relaxed">
                         {isDelivery
-                            ? `By placing the order you agree to have it delivered from ${shop.name}${card ? '' : ' and to pay the driver'}. Change or cancel it by calling the shop.`
-                            : `By placing the order you agree to collect it at ${shop.name}${card ? '' : ' and pay there'}. Change or cancel it by calling the shop.`}
+                            ? `By placing your order you agree to have it delivered from ${shop.name}${card ? '' : ' and to pay the driver'}`
+                            : `By placing your order you agree to collect it at ${shop.name}${card ? '' : ' and pay there'}`}
+                        {store?.urls.terms ? (
+                            <>
+                                {' '}and to our{' '}
+                                <Link href={store.urls.terms} className="text-ink font-semibold underline underline-offset-2">
+                                    Terms of sale
+                                </Link>
+                            </>
+                        ) : null}
+                        . Change or cancel it by calling the shop.
+                        {store?.urls.privacy && (
+                            <>
+                                {' '}We use your details only for this order (
+                                <Link href={store.urls.privacy} className="text-ink font-semibold underline underline-offset-2">
+                                    privacy notice
+                                </Link>
+                                ).
+                            </>
+                        )}
                     </p>
                 </OrderSummary>
             </form>

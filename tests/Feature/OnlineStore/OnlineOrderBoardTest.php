@@ -54,10 +54,12 @@ test('the board shows today\'s orders in columns with the day\'s figures; new or
             ->where('board.columns.new.cards.0.otherDay', true)->where('board.columns.new.count', 2)->where('board.later', []));
 });
 
-test('owners and managers open the board; accountants and staff get 403; guests sign in; switched off is 404', function () {
+test('owners, managers and staff open the board; accountants get 403; guests sign in; switched off is 404', function () {
     $this->actingAs(C::member($this->f->company, CompanyRole::Manager))->get('/app/online-orders')->assertOk();
+    // Audit OSA-32: staff work orders (`orders.online`); OnlineOrdersPermissionTest has the rest.
+    $this->actingAs(C::member($this->f->company, CompanyRole::Staff))->get('/app/online-orders')->assertOk();
 
-    foreach ([CompanyRole::Accountant, CompanyRole::Staff] as $role) {
+    foreach ([CompanyRole::Accountant] as $role) {
         $user = C::member($this->f->company, $role);
         $this->actingAs($user)->get('/app/online-orders')->assertForbidden();
         $this->actingAs($user)->get("/app/online-orders/{$this->order->id}")->assertForbidden();

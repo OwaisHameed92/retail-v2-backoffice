@@ -19,6 +19,7 @@ class SaveOnlineProductRequest extends CompanyWideWriteRequest
     {
         return [
             'hidden' => ['sometimes', 'boolean'],
+            'not_featured' => ['sometimes', 'boolean'],
             'description' => ['sometimes', 'nullable', 'string', 'max:'.SetOnlineProduct::DESCRIPTION_MAX],
             'allergen_info' => ['sometimes', 'nullable', 'string', 'max:'.SetOnlineProduct::DESCRIPTION_MAX],
             'remove_photo' => ['sometimes', 'boolean'],
@@ -42,7 +43,7 @@ class SaveOnlineProductRequest extends CompanyWideWriteRequest
     {
         $changes = $this->safe()->only(['description', 'allergen_info']);
 
-        foreach (['hidden', 'remove_photo'] as $key) {
+        foreach (['hidden', 'not_featured', 'remove_photo'] as $key) {
             if ($this->has($key)) {
                 $changes[$key] = $this->boolean($key);
             }

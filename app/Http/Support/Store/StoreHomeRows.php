@@ -5,6 +5,7 @@ namespace App\Http\Support\Store;
 use App\Domain\OnlineStore\Data\CatalogueFilters;
 use App\Domain\OnlineStore\Models\OnlineStoreShop;
 use App\Domain\OnlineStore\Queries\FeaturedProducts;
+use App\Domain\OnlineStore\Queries\StoreAisles;
 use App\Domain\OnlineStore\Queries\StoreBanners;
 use App\Domain\OnlineStore\Queries\StorefrontCatalogue;
 use App\Domain\OnlineStore\Queries\StoreOffers;
@@ -13,7 +14,8 @@ use App\Domain\OnlineStore\Queries\StorePhotos;
 /**
  * The public home page's rows (OS-8), as the React page draws them: banners (slides), featured products (best
  * sellers, hand-picked or newest), the "On offer" row, a row per chosen department (the store's `home_departments`
- * shown at the shop, else its first three) and the department tiles with a photo each.
+ * shown at the shop, else its first three) and the department tiles with a photo each. No HFSS product in any home
+ * row (OS-11, audit OSA-31, HomeRowRules).
  */
 final class StoreHomeRows
 {
@@ -84,8 +86,9 @@ final class StoreHomeRows
         $rows = [];
 
         foreach ($ids as $id) {
-            $items = $this->catalogue->products($context->store, $shop, departmentId: $id, perPage: self::PER_DEPARTMENT,
-                filters: new CatalogueFilters(inStockOnly: true))->items;
+            $aisle = StoreContext::aisleFilter($shown[$id]);
+            $items = $this->catalogue->products($context->store, $shop, departmentId: $aisle['departmentId'], perPage: self::PER_DEPARTMENT,
+                filters: new CatalogueFilters(inStockOnly: true, homeRow: true), categoryId: $aisle['categoryId'])->items;
 
             if ($items !== []) {
                 $department = $shown[$id];
@@ -109,17 +112,24 @@ final class StoreHomeRows
     {
         $shop = $context->shop();
         $departments = $this->departments($context);
-        $photos = $shop === null ? [] : $this->photos->departments($context->store, $shop, array_column($departments, 'id'));
+
+        // OS-11: the big aisle tiles only when there are enough real aisles to be worth it.
+        if ($shop === null || count($departments) < StoreAisles::GOOD) {
+            return [];
+        }
+
+        $need = array_values(array_filter($departments, fn (array $d) => $d['photoUrl'] === null));
+        $photos = $need === [] ? [] : $this->photos->departments($context->store, $shop, array_column($need, 'id'), StoreContext::aisleColumn($need[0]));
 
         return array_map(fn (array $d) => [
             'id' => $d['id'], 'name' => $d['name'], 'count' => $d['count'],
             'url' => route('store.department', ['department' => $d['id']], false),
-            'photoUrl' => $photos[$d['id']] ?? null,
+            'photoUrl' => $d['photoUrl'] ?? $photos[$d['id']] ?? null,
         ], $departments);
     }
 
     /**
-     * @return list<array{id: string, name: string, count: int}>
+     * @return list<array{id: string, kind: string, name: string, tillName: string, count: int, photoUrl: string|null}>
      */
     private function departments(StoreContext $context): array
     {

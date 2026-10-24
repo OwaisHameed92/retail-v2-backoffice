@@ -13,7 +13,7 @@ use Inertia\Inertia;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
- * `GET /{slug}/department/{department}` (OS-2): one department's products at the visitor's shop, with sort, "in
+ * `GET /{slug}/department/{department}` (OS-2): one aisle's products (OS-11: a department or a category, StoreAisles) at the visitor's shop, with sort, "in
  * stock only", a price range and pages, and a photo for its banner (StorePhotos, OS-8). A department with nothing
  * shown online is the store's 404.
  */
@@ -28,11 +28,13 @@ class StoreDepartmentController extends Controller
             return StorePages::error($request, 404, $context);
         }
 
-        $page = $catalogue->products($context->store, $shop, departmentId: $department, page: $request->page(), filters: $request->filters());
+        $aisle = StoreContext::aisleFilter($found);
+        $page = $catalogue->products($context->store, $shop, departmentId: $aisle['departmentId'], page: $request->page(), filters: $request->filters(),
+            categoryId: $aisle['categoryId']);
 
         return Inertia::render('store/department', [
             'department' => ['id' => $found['id'], 'name' => $found['name'], 'count' => $found['count'],
-                'photoUrl' => $photos->departments($context->store, $shop, [$found['id']])[$found['id']] ?? null],
+                'photoUrl' => $found['photoUrl'] ?? $photos->departments($context->store, $shop, [$found['id']], StoreContext::aisleColumn($found))[$found['id']] ?? null],
             'products' => StorePresenter::products($context->store, $page->items, $shop),
             'pagination' => ['page' => $page->page, 'lastPage' => $page->lastPage(), 'total' => $page->total],
             'filters' => $request->echo(),

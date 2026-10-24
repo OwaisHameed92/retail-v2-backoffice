@@ -138,8 +138,8 @@ test('saving changes the store and uploads the logo and banner to the business\'
         ->and($store->headline)->toBe('Cut to order')
         ->and($store->brand_colour)->toBe('#B42318')
         ->and($store->sections)->toBe([['key' => 'departments', 'enabled' => true], ['key' => 'hero', 'enabled' => false]])
-        ->and($store->logo_path)->toMatch('#^online-store/'.$this->company->id.'/logo/[0-9a-z]{26}\.png$#')
-        ->and($store->banner_path)->toMatch('#^online-store/'.$this->company->id.'/banner/[0-9a-z]{26}\.jpg$#');
+        ->and($store->logo_path)->toMatch('#^online-store/'.$this->company->id.'/logo/[0-9a-z]{26}\.webp$#')
+        ->and($store->banner_path)->toMatch('#^online-store/'.$this->company->id.'/banner/[0-9a-z]{26}\.webp$#');
     Storage::disk('public')->assertExists([$store->logo_path, $store->banner_path]);
     expect(AuditLog::query()->where('action', 'online_store.updated')->count())->toBe(1);
 

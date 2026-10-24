@@ -12,6 +12,7 @@ use App\Domain\OnlineStore\Support\OrderRows;
 use App\Domain\OnlineStore\Support\PortalOrders;
 use App\Domain\Shared\Support\Money;
 use App\Domain\Tenancy\CurrentCompany;
+use App\Domain\Tenancy\Enums\Ability;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
@@ -45,7 +46,8 @@ final class OnlineOrderBoard
             'store' => fn () => ($s = $store()) === null ? null : ['isLive' => $s->is_live, 'takingOrders' => $s->taking_orders],
             // Audit OSA-5: false once the store went off while open orders are still to finish here.
             'storeAvailable' => fn () => OnlineStoreSwitch::availableFor($this->tenancy->require()),
-            'setupUrl' => fn () => $store() === null ? self::builderUrl() : null,
+            // Audit OSA-32: the builder link only for users who may build the store.
+            'setupUrl' => fn () => $store() === null && $this->tenancy->can(Ability::StoreManage) ? self::builderUrl() : null,
             'filters' => $filters->toArray(),
             'options' => fn () => ['shops' => $this->shops()],
             'board' => fn () => $this->board($filters, $now),

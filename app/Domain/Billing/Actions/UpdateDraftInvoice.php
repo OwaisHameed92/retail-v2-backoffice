@@ -2,6 +2,7 @@
 
 namespace App\Domain\Billing\Actions;
 
+use App\Domain\Billing\Enums\InvoiceLineKind;
 use App\Domain\Billing\Models\Invoice;
 use App\Domain\Billing\Models\InvoiceLine;
 use App\Domain\Billing\Support\BillingAccounts;
@@ -73,6 +74,8 @@ class UpdateDraftInvoice
                 ]);
 
                 if (! $line->exists) {
+                    // OSA-30: a line typed by the admin is never mistaken for the online store add-on.
+                    $line->kind = InvoiceLineKind::Manual->value;
                     $line->company_id = $invoice->company_id;
                     $line->invoice_id = $invoice->id;
                     $line->period_start = $invoice->period_start;

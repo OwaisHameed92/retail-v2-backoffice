@@ -63,7 +63,8 @@ export type Ability =
     | 'accounts.export'
     | 'ai.use'
     | 'labels.print'
-    | 'store.manage';
+    | 'store.manage'
+    | 'orders.online';
 
 /** The company the user is working in (shared by HandleInertiaRequests). */
 export interface CurrentCompany {

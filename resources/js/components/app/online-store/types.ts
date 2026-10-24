@@ -73,7 +73,7 @@ export interface BuilderProps {
     addressPrefix: string;
     /** OSA-14: the business email used while the order email is empty (null: no order emails). */
     orderEmailFallback: string | null;
-    checklist: { collectionShops: number; productsShown: number | null; productsShop: string | null };
+    checklist: { collectionShops: number; productsShown: number | null; productsShop: string | null; legalMissing: string[] };
     canEdit: boolean;
     banners: StoreBanner[];
     bannerMax: number;
@@ -82,6 +82,11 @@ export interface BuilderProps {
     featuredMax: number;
     homeDepartmentsMax: number;
     aboutMax: number;
+    /** OS-11: the aisles at the first collection shop (App\Domain\OnlineStore\Queries\StoreAisles::all). */
+    aisles: StoreAisle[];
+    aisleSource: 'auto' | 'departments' | 'categories';
+    aisleSourceUsed: 'departments' | 'categories' | null;
+    aisleNameMax: number;
     aboutPlaceholder: string | null;
     departments: { id: string; name: string }[];
     pickedProducts: PickerProduct[];
@@ -186,6 +191,8 @@ export interface OnlineProductRow {
     allergenInfo: string | null;
     tillAllergens: string | null;
     hidden: boolean;
+    /** OS-11: kept out of the automatic featured row (best sellers, newest). */
+    notFeatured: boolean;
     shown: boolean;
     reasons: string[];
 }
@@ -224,4 +231,41 @@ export function imageProblem(file: File): string | null {
     }
 
     return file.size > IMAGE_MAX_BYTES ? 'Choose a picture of 4 MB or less.' : null;
+}
+
+/** OS-11 (audit OSA-2): the "Legal & contact" tab (App\Domain\OnlineStore\Queries\StoreLegalPage). */
+export type LegalPageKey = 'contact' | 'privacy' | 'terms' | 'cookies';
+
+export interface TraderDetails {
+    trading_name: string | null;
+    legal_name: string | null;
+    legal_address: string | null;
+    company_number: string | null;
+    vat_number: string | null;
+    contact_email: string | null;
+    contact_phone: string | null;
+}
+
+export interface LegalProps {
+    hasStore: boolean;
+    canEdit: boolean;
+    details: TraderDetails;
+    saved: boolean;
+    missing: string[];
+    extra: Record<LegalPageKey, string>;
+    extraMax: number;
+    pages: { key: LegalPageKey; label: string; url: string | null }[];
+    isLive: boolean;
+}
+
+/** OS-11: one aisle as the builder edits it. */
+export interface StoreAisle {
+    id: string;
+    kind: 'departments' | 'categories';
+    name: string;
+    tillName: string;
+    customName: string | null;
+    count: number;
+    photoUrl: string | null;
+    hidden: boolean;
 }

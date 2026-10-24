@@ -5,8 +5,8 @@ import { departmentIcon } from './department-icon';
 /**
  * A product's photo (its online photo, else the master catalogue's picture of its barcode: StorePhotos, OS-8) on a
  * square, with a shimmer until it loads and a fade in (no layout shift: the box keeps its size). Without a photo, or
- * when it fails to load: a clean branded placeholder, the department's icon on a soft tint of the store's colour
- * (never a picture of something else).
+ * when it fails to load: a clean branded placeholder, the department's small icon on a pale tint of the store's colour
+ * (never a picture of something else; OS-11: calmer, smaller icon, no pattern).
  */
 export function ProductPhoto({
     name,
@@ -63,25 +63,24 @@ export function ProductPhoto({
             role={alt === '' ? undefined : 'img'}
             aria-label={alt === '' ? undefined : (alt ?? name)}
             aria-hidden={alt === '' ? true : undefined}
-            className={cn('bg-brand-soft relative flex aspect-square w-full items-center justify-center overflow-hidden', rounded, className)}
+            className={cn(
+                'relative flex aspect-square w-full items-center justify-center overflow-hidden bg-[color-mix(in_srgb,var(--color-brand-soft)_45%,white)]',
+                rounded,
+                className,
+            )}
         >
             <span
-                aria-hidden="true"
-                className="absolute inset-0 opacity-60"
-                style={{ backgroundImage: 'radial-gradient(var(--color-brand-tint) 1.2px, transparent 1.2px)', backgroundSize: '14px 14px' }}
-            />
-            <span
                 className={cn(
-                    'text-brand-text relative flex items-center justify-center rounded-full bg-white/85 shadow-[0_1px_0_rgba(0,0,0,0.04)]',
-                    size === 'sm' && 'size-10',
-                    size === 'md' && 'size-14 sm:size-16',
-                    size === 'lg' && 'size-24 sm:size-28',
+                    'text-brand-text/70 relative flex items-center justify-center rounded-full bg-white',
+                    size === 'sm' && 'size-8',
+                    size === 'md' && 'size-11 sm:size-12',
+                    size === 'lg' && 'size-16 sm:size-20',
                 )}
             >
                 <Icon
                     aria-hidden="true"
-                    strokeWidth={1.6}
-                    className={cn(size === 'sm' && 'size-5', size === 'md' && 'size-7 sm:size-8', size === 'lg' && 'size-12 sm:size-14')}
+                    strokeWidth={1.5}
+                    className={cn(size === 'sm' && 'size-4', size === 'md' && 'size-5 sm:size-6', size === 'lg' && 'size-8 sm:size-10')}
                 />
             </span>
         </div>

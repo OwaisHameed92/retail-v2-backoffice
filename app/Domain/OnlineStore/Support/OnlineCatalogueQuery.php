@@ -52,6 +52,7 @@ final class OnlineCatalogueQuery
         'variantParent' => 'Has variants (the variants are shown instead)',
         'recalled' => CatalogueSafetyRules::REASONS['recalled'],
         'unavailable' => CatalogueSafetyRules::REASONS['unavailable'],
+        'noName' => CatalogueSafetyRules::REASONS['noName'],
         'notAtShop' => 'Switched off at this shop',
         'noPrice' => 'No price at this shop',
     ];
@@ -181,7 +182,7 @@ final class OnlineCatalogueQuery
             .'and bps.branch_id = ? and bps.deleted_at is null order by bps.id limit 1)';
 
         return $query->select(['products.id', 'products.name', 'products.description', 'products.image_path', 'products.department_id', 'products.category_id',
-            'products.is_weighed', 'products.unit_code', 'products.max_qty_per_sale', 'products.track_stock', 'products.net_mass_kg', 'products.volume_ml'])
+            'products.is_weighed', 'products.unit_code', 'products.max_qty_per_sale', 'products.track_stock', 'products.net_mass_kg', 'products.volume_ml', 'products.is_deposit_item', 'products.deposit_amount'])
             ->addSelect(['osp.description as online_description', 'osp.photo_path as online_photo', 'osp.allergen_info as online_allergens'])
             ->selectRaw("{$price} as online_price", $bindings)
             ->selectRaw($line('is_stock_tracked').' as shop_tracked', [$shop->company_id, $shop->branch_id])
@@ -209,7 +210,8 @@ final class OnlineCatalogueQuery
                 [...$shopBindings, ...$shopBindings],
             ))
             ->when($filters->minPrice !== null, fn (Builder $q) => $q->whereRaw("{$price} >= CAST(? AS DECIMAL(12,2))", [...$bindings, $filters->minPrice]))
-            ->when($filters->maxPrice !== null, fn (Builder $q) => $q->whereRaw("{$price} <= CAST(? AS DECIMAL(12,2))", [...$bindings, $filters->maxPrice]));
+            ->when($filters->maxPrice !== null, fn (Builder $q) => $q->whereRaw("{$price} <= CAST(? AS DECIMAL(12,2))", [...$bindings, $filters->maxPrice]))
+            ->when($filters->homeRow || $filters->featurable, fn (Builder $q) => HomeRowRules::apply($q, $shop, $filters->featurable, $at));
     }
 
     /**
@@ -258,6 +260,8 @@ final class OnlineCatalogueQuery
             netMassKg: self::positive($attributes['net_mass_kg'] ?? null),
             volumeMl: self::positive($attributes['volume_ml'] ?? null),
             stockLimit: $tracked ? self::stepDown(Money::normalise($attributes['shop_qty'] ?? 0, 4), $isWeighed) : null,
+            deposit: (bool) ($attributes['is_deposit_item'] ?? false) && is_numeric($attributes['deposit_amount'] ?? null)
+                && (float) $attributes['deposit_amount'] > 0 ? Money::normalise($attributes['deposit_amount'], 2) : null,
         );
     }
 
