@@ -119,7 +119,7 @@ export default function StoreCheckout(props: Props) {
     if (lines.length === 0 || shop === null) {
         return (
             <StoreLayout title="Checkout">
-                <div className="mx-auto flex max-w-xl flex-col items-start gap-4 rounded-[28px] bg-white p-8">
+                <div className="mx-auto flex max-w-xl flex-col items-start gap-4 rounded-2xl bg-white p-8">
                     <h1 className="font-display text-4xl font-extrabold tracking-tight">Checkout</h1>
                     <p className="text-body">{shop === null ? 'This shop is not taking online orders right now.' : 'Your basket is empty.'}</p>
                     <Link href={store.urls.home} className="bg-brand text-on-brand inline-flex min-h-12 items-center rounded-full px-6 font-bold">
@@ -249,7 +249,7 @@ export default function StoreCheckout(props: Props) {
                     </Step>
                     <Step n={n++} id="step-pay" title="Payment">
                         {payments.length === 0 ? (
-                            <p className="bg-paper text-body rounded-[18px] px-5 py-4">
+                            <p className="bg-paper text-body rounded-xl px-5 py-4">
                                 Delivery is not available right now. Choose click &amp; collect.
                             </p>
                         ) : (

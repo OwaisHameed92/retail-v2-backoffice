@@ -50,12 +50,12 @@ export function MethodChoice({
         <fieldset className="grid gap-3 sm:grid-cols-2">
             <legend className="sr-only">How you get your order</legend>
             <Option name={name} selected={method === 'collection'} onSelect={() => choose('collection')} icon={<Store className="size-5" />}>
-                <span className="font-display text-xl font-extrabold">Click &amp; collect</span>
+                <span className="text-base font-semibold">Click &amp; collect</span>
                 <span className="text-sm">Free, from {shopName}</span>
             </Option>
             {delivery && (
                 <Option name={name} selected={method === 'delivery'} onSelect={() => choose('delivery')} icon={<Truck className="size-5" />}>
-                    <span className="font-display text-xl font-extrabold">Delivery</span>
+                    <span className="text-base font-semibold">Delivery</span>
                     <span className="text-sm">
                         {deliveryHint}
                         {delivery.minimum ? ` · minimum ${money(delivery.minimum)}` : ''}
@@ -82,7 +82,7 @@ function Option({
     return (
         <label
             className={cn(
-                'has-[:focus-visible]:outline-ink relative flex min-h-[88px] cursor-pointer items-center gap-4 rounded-[22px] px-5 py-4 transition has-[:focus-visible]:outline-3',
+                'has-[:focus-visible]:outline-ink relative flex min-h-[88px] cursor-pointer items-center gap-4 rounded-2xl px-5 py-4 transition has-[:focus-visible]:outline-3',
                 selected ? 'bg-ink text-white' : 'bg-paper text-ink hover:bg-line',
             )}
         >
@@ -161,14 +161,14 @@ export function PostcodeCheck({
             </div>
             <div role="status" aria-live="polite">
                 {delivery.postcode && ok && (
-                    <p className="bg-lime text-ink flex items-start gap-2 rounded-[18px] px-5 py-3 font-semibold">
+                    <p className="bg-lime text-ink flex items-start gap-2 rounded-xl px-5 py-3 font-semibold">
                         <Check aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
                         We deliver to {delivery.postcode}. Delivery {Number(delivery.fee) === 0 ? 'is free' : `costs ${money(delivery.fee)}`}
                         {delivery.freeOver && Number(delivery.fee) > 0 ? `, free over ${money(delivery.freeOver)}` : ''}.
                     </p>
                 )}
                 {delivery.problem && (delivery.postcode || delivery.shortBy) && (
-                    <p className="ring-sale flex items-start gap-2 rounded-[18px] bg-white px-5 py-3 font-semibold ring-2">
+                    <p className="ring-sale flex items-start gap-2 rounded-xl bg-white px-5 py-3 font-semibold ring-2">
                         <CircleAlert aria-hidden="true" className="text-sale mt-0.5 size-4 shrink-0" />
                         {delivery.problem}
                     </p>

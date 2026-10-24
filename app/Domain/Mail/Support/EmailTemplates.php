@@ -31,6 +31,9 @@ use App\Domain\Mail\Mailables\TrialReminderMail;
 use App\Domain\Mail\Mailables\WelcomeTenantMail;
 use App\Domain\OnlineStore\Mail\NewOnlineOrderMail;
 use App\Domain\OnlineStore\Mail\OnlineOrderCancelledMail;
+use App\Domain\OnlineStore\Mail\OnlineOrderChangedMail;
+use App\Domain\OnlineStore\Mail\OnlineOrderDeliveredMail;
+use App\Domain\OnlineStore\Mail\OnlineOrderOnItsWayMail;
 use App\Domain\OnlineStore\Mail\OnlineOrderReadyMail;
 use App\Domain\OnlineStore\Mail\OnlineOrderReceivedMail;
 
@@ -70,6 +73,10 @@ final class EmailTemplates
         OnlineOrderReceivedMail::class,
         OnlineOrderReadyMail::class,
         OnlineOrderCancelledMail::class,
+        // OS-9: delivery emails and the shop changing an order while picking (audit OSA-18).
+        OnlineOrderOnItsWayMail::class,
+        OnlineOrderDeliveredMail::class,
+        OnlineOrderChangedMail::class,
     ];
 
     /**

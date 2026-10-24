@@ -1,11 +1,11 @@
-<x-mail::message>
+<x-mail::store-message :brand="$brand">
 # Your order is ready to collect
 
-Hi {{ $firstName }}, your order {{ $data->reference }} from **{{ $data->businessName }}** is packed and waiting for you.
+Hi {{ $firstName }}, your order {{ $data->reference }} from **{{ $brand->name }}** is packed and waiting for you.
 
 <x-mail::facts :rows="$facts" />
 
-Give your order number at the counter. You pay at the shop when you collect.
+Give your order number at the counter. {{ $data->paid ? 'It is paid by card.' : 'You pay at the shop when you collect.' }}
 @if ($hasWeighed)
 Weighed items are priced on the scale, so the total may change a little from {{ $total }}.
 @endif
@@ -16,9 +16,9 @@ View your order
 </x-mail::button>
 @endif
 
-{{ $data->businessName }}
+{{ $brand->name }}
 
 <x-slot:subcopy>
-Sent by Switch & Save on behalf of {{ $data->businessName }}. Can't make it? Reply to this email to let the shop know.
+Can't make it? Reply to this email to let {{ $brand->name }} know.
 </x-slot:subcopy>
-</x-mail::message>
+</x-mail::store-message>

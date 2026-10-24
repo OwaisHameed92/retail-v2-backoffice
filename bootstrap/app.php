@@ -87,6 +87,9 @@ return Application::configure(basePath: dirname(__DIR__))
         // Till staff PINs and fob codes (module 4.5) are never kept in the session either.
         $exceptions->dontFlash(['pin', 'pin_confirmation', 'rfid']);
 
+        // OS-10: an online store's own SMTP password is never kept in the session (old input) either.
+        $exceptions->dontFlash(['smtp_password']);
+
         // Branded 403/404/500/503 pages for the portal and admin; JSON callers untouched (module 7.1).
         InertiaErrorPages::register($exceptions);
     })->create();

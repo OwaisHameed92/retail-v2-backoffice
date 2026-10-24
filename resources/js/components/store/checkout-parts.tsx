@@ -23,12 +23,8 @@ export interface CheckoutSlot {
 /** A numbered checkout step card. */
 export function Step({ n, title, children, id }: { n: number; title: string; children: ReactNode; id?: string }) {
     return (
-        <section aria-labelledby={id} className="flex flex-col gap-4 rounded-[28px] bg-white p-5 sm:gap-5 sm:p-7">
-            <h2
-                id={id}
-                tabIndex={-1}
-                className="font-display flex items-center gap-3 text-[22px] font-extrabold tracking-[-0.03em] outline-none sm:text-[26px]"
-            >
+        <section aria-labelledby={id} className="flex flex-col gap-4 rounded-2xl bg-white p-5 sm:gap-5 sm:p-7">
+            <h2 id={id} tabIndex={-1} className="font-display flex items-center gap-3 text-lg font-bold tracking-[-0.01em] outline-none sm:text-xl">
                 <span
                     aria-hidden="true"
                     className="bg-ink text-lime flex size-9 shrink-0 items-center justify-center rounded-full font-sans text-base"
@@ -48,7 +44,7 @@ export function ShopChoice({ shop, shops, chooseUrl }: { shop: ShopInfo; shops: 
 
     if (shops.length <= 1) {
         return (
-            <div className="bg-paper flex flex-col gap-1 rounded-[18px] px-5 py-4">
+            <div className="bg-paper flex flex-col gap-1 rounded-xl px-5 py-4">
                 <span className="font-bold">{shop.name}</span>
                 {shop.address && <span className="text-body text-sm">{shop.address}</span>}
                 <span className="text-muted text-sm">Give your order number at the counter.</span>
@@ -66,7 +62,7 @@ export function ShopChoice({ shop, shops, chooseUrl }: { shop: ShopInfo; shops: 
                     <label
                         key={option.id}
                         className={cn(
-                            'has-[:focus-visible]:outline-ink relative flex min-h-[88px] cursor-pointer flex-col gap-1 rounded-[22px] px-5 py-4 transition has-[:focus-visible]:outline-3',
+                            'has-[:focus-visible]:outline-ink relative flex min-h-[88px] cursor-pointer flex-col gap-1 rounded-2xl px-5 py-4 transition has-[:focus-visible]:outline-3',
                             selected ? 'bg-ink text-white' : 'bg-paper text-ink hover:bg-line',
                         )}
                     >
@@ -78,7 +74,7 @@ export function ShopChoice({ shop, shops, chooseUrl }: { shop: ShopInfo; shops: 
                             onChange={() => router.post(chooseUrl, { shopId: option.id }, { preserveScroll: true, preserveState: true })}
                             className="sr-only"
                         />
-                        <span className="font-display flex items-center justify-between gap-2 text-xl font-extrabold">
+                        <span className="flex items-center justify-between gap-2 text-base font-semibold">
                             {option.name}
                             {selected && <Check aria-hidden="true" className="text-lime size-5" />}
                         </span>
@@ -143,7 +139,7 @@ export function SlotPicker({
                             disabled={!d.open}
                             onClick={() => onDay(d.date)}
                             className={cn(
-                                'flex min-h-[60px] min-w-[104px] shrink-0 flex-col items-center justify-center rounded-[18px] px-4 transition disabled:cursor-not-allowed disabled:opacity-45',
+                                'flex min-h-[60px] min-w-[104px] shrink-0 flex-col items-center justify-center rounded-xl px-4 transition disabled:cursor-not-allowed disabled:opacity-45',
                                 selected ? 'bg-ink text-white' : 'bg-paper text-ink hover:bg-line',
                             )}
                         >
@@ -155,7 +151,7 @@ export function SlotPicker({
             </div>
 
             {slots.length === 0 ? (
-                <p className="bg-paper text-body rounded-[18px] px-5 py-4">No {word} times left on this day. Try another day.</p>
+                <p className="bg-paper text-body rounded-xl px-5 py-4">No {word} times left on this day. Try another day.</p>
             ) : (
                 <div
                     role="radiogroup"

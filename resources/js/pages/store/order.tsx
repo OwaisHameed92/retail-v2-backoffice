@@ -176,7 +176,7 @@ export default function StoreOrder({
                 </section>
 
                 {!stopped && !waiting && (
-                    <section aria-labelledby="track-title" className="flex flex-col gap-5 rounded-[28px] bg-white p-6 sm:rounded-[32px] sm:p-8">
+                    <section aria-labelledby="track-title" className="flex flex-col gap-5 rounded-2xl bg-white p-6 sm:p-8">
                         <h2 id="track-title" className="font-display text-[28px] font-extrabold tracking-[-0.03em] sm:text-[32px]">
                             Where your order is
                         </h2>
@@ -186,7 +186,7 @@ export default function StoreOrder({
                                     key={step.label}
                                     aria-current={step.current ? 'step' : undefined}
                                     className={cn(
-                                        'flex flex-col gap-2.5 rounded-[22px] p-4 sm:p-5',
+                                        'flex flex-col gap-2.5 rounded-2xl p-4 sm:p-5',
                                         step.current ? 'bg-ink text-white' : step.done ? 'bg-lime text-ink' : 'bg-paper text-ink',
                                     )}
                                 >
@@ -207,7 +207,7 @@ export default function StoreOrder({
                                 </li>
                             ))}
                         </ol>
-                        {current && <p className="bg-paper text-body rounded-[18px] px-5 py-4 text-[15px]">{current.hint}</p>}
+                        {current && <p className="bg-paper text-body rounded-xl px-5 py-4 text-[15px]">{current.hint}</p>}
                     </section>
                 )}
 

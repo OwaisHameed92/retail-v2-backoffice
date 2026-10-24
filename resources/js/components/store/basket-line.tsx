@@ -21,9 +21,9 @@ export function BasketLineRow({ line, editable }: { line: BasketLine; editable: 
     const remove = () => router.delete(line.removeUrl, { preserveScroll: true, onStart: () => setBusy(true), onFinish: () => setBusy(false) });
 
     return (
-        <li className="flex flex-wrap items-center gap-x-4 gap-y-3 rounded-[24px] bg-white p-2.5 pr-3 sm:flex-nowrap">
-            <Link href={product.url} tabIndex={-1} aria-hidden="true" className="w-20 shrink-0 overflow-hidden rounded-[18px] sm:w-24">
-                <ProductPhoto name={product.name} url={product.photoUrl} alt="" rounded="rounded-[18px]" size="sm" />
+        <li className="border-line flex flex-wrap items-center gap-x-4 gap-y-3 rounded-2xl border bg-white p-2.5 pr-3 sm:flex-nowrap">
+            <Link href={product.url} tabIndex={-1} aria-hidden="true" className="w-20 shrink-0 overflow-hidden rounded-xl sm:w-24">
+                <ProductPhoto name={product.name} url={product.photoUrl} alt="" rounded="rounded-xl" size="sm" />
             </Link>
             <div className="flex min-w-0 flex-[1_1_160px] flex-col gap-1">
                 <Link href={product.url} className="text-ink -my-2.5 py-2.5 leading-snug font-bold underline-offset-4 hover:underline">
@@ -51,7 +51,7 @@ export function BasketLineRow({ line, editable }: { line: BasketLine; editable: 
                     <span className="font-bold">{quantityLabel(quantity, product.isWeighed)}</span>
                 )}
             </div>
-            <span className="font-display min-w-[84px] text-right text-2xl font-extrabold tracking-[-0.03em]">
+            <span className="min-w-[72px] text-right text-base font-bold tabular-nums">
                 {busy ? <Loader2 aria-label="Updating" className="ml-auto size-5 animate-spin" /> : money(line.lineTotal)}
             </span>
             {editable && (

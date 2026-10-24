@@ -5,6 +5,7 @@ namespace App\Http\Middleware;
 use App\Domain\OnlineStore\Basket\PriceBasket;
 use App\Domain\OnlineStore\Queries\FindStoreBySlug;
 use App\Domain\OnlineStore\Queries\StorefrontShops;
+use App\Domain\OnlineStore\Queries\StoreOffers;
 use App\Domain\OnlineStore\Support\StoreRateLimits;
 use App\Http\Support\Store\StoreContext;
 use App\Http\Support\Store\StorePages;
@@ -18,7 +19,8 @@ use Symfony\Component\HttpFoundation\Response;
  * The public store's first step (OS-2, routes/store.php): finds the store by the `{slug}` in the address
  * (FindStoreBySlug: switch on, live, business trading), else answers the store's own 404 page. Then sets the
  * request's StoreContext (container + request attribute), the store's page frame, and `slug` as the default for
- * store links; the `slug` route parameter is dropped so controllers get only their own parameters.
+ * store links; the `slug` route parameter is dropped so controllers get only their own parameters. OS-8: one
+ * StoreOffers per request (its offers are read once), and an `X-Robots-Tag` on private and duplicate pages.
  */
 class ResolveOnlineStore
 {
@@ -41,6 +43,7 @@ class ResolveOnlineStore
         $context = new StoreContext($store, $this->shops->handle($store), $request->session(), $this->pricer);
 
         app()->instance(StoreContext::class, $context);
+        app()->instance(StoreOffers::class, new StoreOffers);
         $request->attributes->set(StoreContext::class, $context);
         $request->attributes->set(StoreRateLimits::STORE_ATTRIBUTE, $store->id);
         URL::defaults(['slug' => $store->slug]);
@@ -50,6 +53,19 @@ class ResolveOnlineStore
             $route->forgetParameter('slug');
         }
 
-        return $next($request);
+        $response = $next($request);
+
+        // Audits OSA-9: private and duplicate pages are kept out of search engines (StoreMeta has the rules).
+        $robots = match (true) {
+            $request->routeIs('store.basket*', 'store.checkout*', 'store.order', 'store.shop') => 'noindex, nofollow',
+            $request->routeIs('store.search') || array_intersect(array_keys($request->query()), ['sort', 'stock', 'min', 'max', 'page', 'q']) !== [] => 'noindex, follow',
+            default => null,
+        };
+
+        if ($robots !== null && ! $response->headers->has('X-Robots-Tag')) {
+            $response->headers->set('X-Robots-Tag', $robots);
+        }
+
+        return $response;
     }
 }

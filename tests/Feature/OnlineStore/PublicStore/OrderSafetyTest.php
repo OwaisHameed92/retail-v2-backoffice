@@ -151,6 +151,7 @@ test('the order link keeps working offline and after the address changes, masks 
     $this->get($link)->assertOk()->assertInertia(fn (AssertableInertia $p) => $p->component('store/order')
         ->where('order.reference', 'W-0001')->where('order.customerMobile', '07••• •••123')->where('order.customerEmail', 'a•••@example.test')
         ->where('store.urls.home', '/store/kirkgate-new'));
+    $this->get($link)->assertHeader('X-Robots-Tag', 'noindex, nofollow');
     // (07700 900123 is also the country's example number, so only the email is searched for.)
     expect($this->get($link)->getContent())->not->toContain('asha@example.test');
 

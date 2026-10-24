@@ -65,7 +65,7 @@ final class OnlineProductsPage
 
         $query = self::listable($company)
             ->select(['products.id', 'products.name', 'products.sku', 'products.department_id', 'products.description', 'products.is_weighed'])
-            ->addSelect(['osp.hidden as online_hidden', 'osp.photo_path as online_photo', 'osp.description as online_description'])
+            ->addSelect(['osp.hidden as online_hidden', 'osp.photo_path as online_photo', 'osp.description as online_description', 'osp.allergen_info as online_allergens'])
             ->selectRaw("{$price} as shelf_price", $bindings)
             ->when($department !== null, fn (Builder $q) => $q->where('products.department_id', $department))
             ->when($table->search() !== null, fn (Builder $q) => self::search($q, (string) $table->search()))
@@ -76,7 +76,8 @@ final class OnlineProductsPage
         $page = $table->paginate($query);
         $reasons = OnlineCatalogueQuery::exclusions($shop, array_map(fn (Product $p) => $p->id, $page['data']));
         $names = Department::query()->where('company_id', $company->id)->pluck('name', 'id');
-        $page['data'] = array_map(fn (Product $p) => self::row($p, $reasons[$p->id] ?? [], $names[$p->department_id] ?? null), $page['data']);
+        $till = app(TillAllergens::class)->for($company->id, $shopId, array_map(fn (Product $p) => $p->id, $page['data']));
+        $page['data'] = array_map(fn (Product $p) => self::row($p, $reasons[$p->id] ?? [], $names[$p->department_id] ?? null, $till[$p->id] ?? null), $page['data']);
 
         return $base + [
             'products' => $page,
@@ -92,7 +93,7 @@ final class OnlineProductsPage
      * @param  list<string>  $reasons
      * @return array<string, mixed>
      */
-    private static function row(Product $p, array $reasons, ?string $department): array
+    private static function row(Product $p, array $reasons, ?string $department, ?string $tillAllergens): array
     {
         $attributes = $p->getAttributes();
         $price = $attributes['shelf_price'] ?? null;
@@ -107,6 +108,8 @@ final class OnlineProductsPage
             'photoUrl' => StoreImages::url($attributes['online_photo'] ?? null),
             'description' => $attributes['online_description'] ?? null,
             'tillDescription' => $p->description,
+            'allergenInfo' => $attributes['online_allergens'] ?? null,
+            'tillAllergens' => $tillAllergens,
             'hidden' => (bool) ($attributes['online_hidden'] ?? false),
             'shown' => $reasons === [],
             'reasons' => array_values(array_map(fn (string $r) => OnlineCatalogueQuery::REASONS[$r], array_filter($reasons, fn (string $r) => $r !== 'hidden'))),

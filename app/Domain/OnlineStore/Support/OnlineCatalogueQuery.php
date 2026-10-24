@@ -180,9 +180,9 @@ final class OnlineCatalogueQuery
         $line = fn (string $column) => "(select bps.{$column} from branch_products bps where bps.product_id = products.id and bps.company_id = ? "
             .'and bps.branch_id = ? and bps.deleted_at is null order by bps.id limit 1)';
 
-        return $query->select(['products.id', 'products.name', 'products.description', 'products.image_path', 'products.department_id',
-            'products.is_weighed', 'products.unit_code', 'products.max_qty_per_sale', 'products.track_stock'])
-            ->addSelect(['osp.description as online_description', 'osp.photo_path as online_photo'])
+        return $query->select(['products.id', 'products.name', 'products.description', 'products.image_path', 'products.department_id', 'products.category_id',
+            'products.is_weighed', 'products.unit_code', 'products.max_qty_per_sale', 'products.track_stock', 'products.net_mass_kg', 'products.volume_ml'])
+            ->addSelect(['osp.description as online_description', 'osp.photo_path as online_photo', 'osp.allergen_info as online_allergens'])
             ->selectRaw("{$price} as online_price", $bindings)
             ->selectRaw($line('is_stock_tracked').' as shop_tracked', [$shop->company_id, $shop->branch_id])
             ->selectRaw('COALESCE('.$line('qty_on_hand').', 0) as shop_qty', [$shop->company_id, $shop->branch_id]);
@@ -224,6 +224,7 @@ final class OnlineCatalogueQuery
         $sorted = match ($filters->sort) {
             CatalogueFilters::SORT_PRICE_ASC => $query->orderBy('online_price')->orderBy('products.name'),
             CatalogueFilters::SORT_PRICE_DESC => $query->orderByDesc('online_price')->orderBy('products.name'),
+            CatalogueFilters::SORT_NEWEST => $query->orderByRaw('products.created_at IS NULL')->orderByDesc('products.created_at')->orderBy('products.name'),
             default => $query->orderBy('products.name'),
         };
 
@@ -252,6 +253,10 @@ final class OnlineCatalogueQuery
             maxQtyPerSale: $max === null || (int) $max <= 0 ? null : (int) $max,
             stockTracked: $tracked,
             orderable: ! $tracked || Money::compare($attributes['shop_qty'] ?? 0, 0) > 0,
+            categoryId: isset($attributes['category_id']) ? (string) $attributes['category_id'] : null,
+            allergenInfo: trim((string) ($attributes['online_allergens'] ?? '')) !== '' ? trim((string) $attributes['online_allergens']) : null,
+            netMassKg: self::positive($attributes['net_mass_kg'] ?? null),
+            volumeMl: self::positive($attributes['volume_ml'] ?? null),
             stockLimit: $tracked ? self::stepDown(Money::normalise($attributes['shop_qty'] ?? 0, 4), $isWeighed) : null,
         );
     }
@@ -264,6 +269,12 @@ final class OnlineCatalogueQuery
         }
 
         return $weighed ? Money::mul(bcdiv(Money::mul($qty, '4', 4), '1', 0), '0.25', 4) : Money::normalise(bcdiv($qty, '1', 0), 4);
+    }
+
+    /** A positive decimal as a string, else null. */
+    private static function positive(mixed $value): ?string
+    {
+        return is_numeric($value) && (float) $value > 0 ? Money::normalise($value, 4) : null;
     }
 
     /**

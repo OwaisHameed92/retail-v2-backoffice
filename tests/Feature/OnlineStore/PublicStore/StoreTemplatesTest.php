@@ -41,7 +41,7 @@ test('Butcher\'s Block: oxblood by default, the butcher banner, Fraunces, and th
     $this->get(($this->url)('store.home'))->assertOk()
         ->assertSee('data-template="butcher"', false)
         ->assertSee('fraunces', false)
-        ->assertSee('#F7F3EC', false)
+        ->assertSee('<meta name="theme-color" content="#8F1D1D">', false)
         ->assertDontSee('bricolage-grotesque', false)
         ->assertInertia(fn (AssertableInertia $page) => $page->component('store/home')
             ->where('store.template', 'butcher')

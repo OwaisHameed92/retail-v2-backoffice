@@ -34,7 +34,7 @@ export function QtyStepper({
     const button = cn(
         'flex shrink-0 items-center justify-center rounded-full transition-colors disabled:cursor-not-allowed disabled:opacity-35',
         size === 'lg' ? 'size-14' : 'size-11',
-        tone === 'dark' ? 'text-white hover:bg-white/10' : 'text-ink hover:bg-ink/5',
+        tone === 'dark' ? 'text-white hover:bg-white/10' : 'text-ink hover:bg-brand-soft',
     );
 
     return (
@@ -57,7 +57,7 @@ export function QtyStepper({
             >
                 <Minus aria-hidden="true" className="size-5" strokeWidth={2.4} />
             </button>
-            <output aria-live="polite" className={cn('min-w-12 text-center font-extrabold tabular-nums', size === 'lg' ? 'text-lg' : 'text-base')}>
+            <output aria-live="polite" className={cn('min-w-12 text-center font-bold tabular-nums', size === 'lg' ? 'text-lg' : 'text-base')}>
                 {quantityLabel(value, weighed)}
             </output>
             <button

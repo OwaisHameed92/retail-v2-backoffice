@@ -29,9 +29,11 @@ use App\Http\Controllers\App\NotificationController;
 use App\Http\Controllers\App\NotificationSettingsController;
 use App\Http\Controllers\App\OnlineOrderController;
 use App\Http\Controllers\App\OnlineProductController;
+use App\Http\Controllers\App\OnlineStoreBannerController;
 use App\Http\Controllers\App\OnlineStoreClosureController;
 use App\Http\Controllers\App\OnlineStoreController;
 use App\Http\Controllers\App\OnlineStoreDeliveryController;
+use App\Http\Controllers\App\OnlineStoreEmailController;
 use App\Http\Controllers\App\OnlineStoreShopController;
 use App\Http\Controllers\App\ParcelController;
 use App\Http\Controllers\App\PharmacyController;
@@ -505,7 +507,19 @@ Route::middleware(['auth:web', 'verified', 'company', 'two-factor:web'])->group(
         Route::get('shops', [OnlineStoreShopController::class, 'index'])->name('shops');
         Route::get('products', [OnlineProductController::class, 'index'])->name('products');
         Route::get('delivery', [OnlineStoreDeliveryController::class, 'index'])->name('delivery');
+        // OS-10: the Emails tab (sender, Reply-To, the store's own SMTP server, test email, previews).
+        Route::get('emails', [OnlineStoreEmailController::class, 'edit'])->name('emails');
+        Route::get('emails/preview/{template}', [OnlineStoreEmailController::class, 'preview'])->name('emails.preview')
+            ->where('template', '[a-z0-9-]{1,60}')->middleware('throttle:120,1');
+        Route::put('emails', [OnlineStoreEmailController::class, 'update'])->name('emails.update')->middleware('throttle:30,1');
+        Route::post('emails/test', [OnlineStoreEmailController::class, 'test'])->name('emails.test')->middleware('throttle:5,10');
+        // OS-8: the builder's product picker (JSON) and the home banners.
+        Route::get('product-search', [OnlineStoreBannerController::class, 'products'])->name('product-search')->middleware('throttle:120,1');
         Route::middleware('throttle:60,1')->group(function () {
+            Route::post('banners', [OnlineStoreBannerController::class, 'store'])->name('banners.store');
+            Route::put('banners/order', [OnlineStoreBannerController::class, 'order'])->name('banners.order');
+            Route::post('banners/{banner}', [OnlineStoreBannerController::class, 'update'])->name('banners.update')->whereUlid('banner');
+            Route::delete('banners/{banner}', [OnlineStoreBannerController::class, 'destroy'])->name('banners.destroy')->whereUlid('banner');
             Route::post('/', [OnlineStoreController::class, 'update'])->name('update');
             Route::put('live', [OnlineStoreController::class, 'live'])->name('live');
             Route::put('taking-orders', [OnlineStoreController::class, 'takingOrders'])->name('taking-orders');

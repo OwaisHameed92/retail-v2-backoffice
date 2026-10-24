@@ -1,4 +1,4 @@
-import { type StoreTemplate } from './types';
+import { type FeaturedMode, type StoreTemplate } from './types';
 import { useStore } from './use-store';
 
 /**
@@ -31,8 +31,8 @@ export const COPY: Record<StoreTemplate, TemplateCopy> = {
         defaultHeadline: 'Your local shop, ready when you are.',
         departmentsTitle: 'Shop by aisle',
         allProducts: 'All products',
-        featuredTitle: 'On the shelves now',
-        featuredSub: "Prices and stock come live from the shop's tills",
+        featuredTitle: 'Picked for you',
+        featuredSub: "Our favourites this week. Prices and stock live from the shop's tills",
         startShopping: 'Start shopping',
         aboutLead:
             'Your local shop, now online. What you see here comes straight from our tills, so the prices and stock are what you would find in the shop today.',
@@ -50,6 +50,23 @@ export const COPY: Record<StoreTemplate, TemplateCopy> = {
         priceFact: { big: 'Real', title: 'Weight, real price', text: 'Weighed at the counter. You pay for what you get.' },
     },
 };
+
+/** The featured row's title and line by what it shows (OS-8: best sellers, hand-picked or newest). */
+export function featuredCopy(template: StoreTemplate, mode: FeaturedMode): { title: string; sub: string } {
+    const butcher = template === 'butcher';
+
+    switch (mode) {
+        case 'bestSellers':
+            return {
+                title: butcher ? 'Best-selling cuts' : 'Best sellers',
+                sub: butcher ? 'What our customers come back for. Priced by the kilo.' : 'What our customers buy most, live from our tills',
+            };
+        case 'newest':
+            return { title: butcher ? 'Fresh in' : 'Just in', sub: butcher ? 'New on the counter this week.' : 'New on our shelves' };
+        default:
+            return { title: COPY[template].featuredTitle, sub: COPY[template].featuredSub };
+    }
+}
 
 /** Soft placeholder tints per template, for products and departments without a photo. */
 export const TINTS: Record<StoreTemplate, string[]> = {

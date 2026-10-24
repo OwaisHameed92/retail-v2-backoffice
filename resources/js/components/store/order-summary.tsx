@@ -31,8 +31,8 @@ export function OrderSummary({
     const total = totals?.grand ?? basket.total;
 
     return (
-        <aside className={cn('flex flex-col gap-3.5 rounded-[28px] bg-white p-6 sm:rounded-[32px] sm:p-7', className)} aria-label={title}>
-            <h2 className="font-display text-[28px] font-extrabold tracking-[-0.03em]">{title}</h2>
+        <aside className={cn('border-line flex flex-col gap-3 rounded-2xl border bg-white p-5 sm:p-6', className)} aria-label={title}>
+            <h2 className="font-display text-xl font-bold tracking-[-0.01em]">{title}</h2>
             <div className="flex justify-between gap-4">
                 <span>Items ({basket.count})</span>
                 <span className="tabular-nums">{money(basket.total)}</span>
@@ -49,7 +49,7 @@ export function OrderSummary({
             </div>
             <div className="border-line flex items-baseline justify-between gap-4 border-t pt-4">
                 <span className="text-lg font-bold">{basket.estimated ? 'Estimated total' : 'Total'}</span>
-                <span className="font-display text-[44px] leading-none font-extrabold tracking-[-0.04em] tabular-nums">{money(total)}</span>
+                <span className="text-[28px] leading-none font-bold tracking-[-0.02em] tabular-nums">{money(total)}</span>
             </div>
             <p className="text-muted text-sm">
                 {totals?.payNote ?? 'You pay at the shop when you collect.'}

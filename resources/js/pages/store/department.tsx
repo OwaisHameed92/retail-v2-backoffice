@@ -1,40 +1,46 @@
 import { Breadcrumbs } from '@/components/store/breadcrumbs';
-import { initialOf } from '@/components/store/format';
+import { departmentIcon } from '@/components/store/department-icon';
 import { ProductList } from '@/components/store/product-list';
 import { StoreLayout } from '@/components/store/store-layout';
 import { type ListFilters, type Pagination, type StoreProduct } from '@/components/store/types';
 import { useStore } from '@/components/store/use-store';
 
 interface Props {
-    department: { id: string; name: string; count: number };
+    department: { id: string; name: string; count: number; photoUrl: string | null };
     products: StoreProduct[];
     pagination: Pagination;
     filters: ListFilters;
 }
 
-/** One department's products, with sort, filters and pages. */
+/** One department's products, with sort, filters and pages, under a banner in the store's colour with its photo. */
 export default function StoreDepartment({ department, products, pagination, filters }: Props) {
     const store = useStore();
+    const Icon = departmentIcon(department.name);
 
     return (
         <StoreLayout title={department.name}>
             <Breadcrumbs items={[{ label: 'Home', href: store?.urls.home }, { label: department.name }]} />
-            <section className="bg-brand text-on-brand relative mb-6 flex min-h-[160px] items-center overflow-hidden rounded-[28px] sm:mb-8 sm:min-h-[220px] sm:rounded-[32px]">
-                <span
-                    aria-hidden="true"
-                    className="bg-lime font-display text-ink/80 absolute top-1/2 -right-10 flex size-56 -translate-y-1/2 items-center justify-center rounded-full text-[120px] font-extrabold sm:right-10 sm:size-72 sm:text-[160px]"
-                >
-                    {initialOf(department.name)}
-                </span>
-                <div className="relative flex max-w-[680px] flex-col gap-2 p-6 pr-40 sm:p-10 sm:pr-10 md:p-12">
-                    <span className="text-[13px] font-bold tracking-[0.08em] uppercase opacity-85">Aisle</span>
-                    <h1 className="font-display text-4xl leading-[0.92] font-extrabold tracking-[-0.045em] sm:text-6xl lg:text-[72px]">
+            <section className="bg-brand text-on-brand relative mb-6 flex items-center justify-between gap-4 overflow-hidden rounded-2xl px-5 py-6 sm:px-8 sm:py-8">
+                <span aria-hidden="true" className="bg-lime absolute -bottom-20 -left-10 size-52 rounded-full opacity-20 blur-2xl" />
+                <div className="relative flex min-w-0 flex-col gap-1">
+                    <span className="text-xs font-semibold tracking-[0.08em] uppercase opacity-80">Aisle</span>
+                    <h1 className="font-display text-[28px] leading-tight font-bold tracking-[-0.02em] break-words sm:text-[36px]">
                         {department.name}
                     </h1>
-                    <span className="text-base opacity-90 sm:text-[17px]">
-                        {department.count === 1 ? '1 product' : `${department.count} products`} online
-                    </span>
+                    <span className="text-sm opacity-90">{department.count === 1 ? '1 product' : `${department.count} products`} online</span>
                 </div>
+                <span
+                    aria-hidden="true"
+                    className="relative flex size-20 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white shadow-lg sm:size-28"
+                >
+                    {department.photoUrl ? (
+                        <img src={department.photoUrl} alt="" className="size-full object-contain p-[14%]" decoding="async" />
+                    ) : (
+                        <span className="bg-brand-soft text-brand-text flex size-full items-center justify-center">
+                            <Icon className="size-9 sm:size-12" strokeWidth={1.5} />
+                        </span>
+                    )}
+                </span>
             </section>
             <ProductList
                 products={products}

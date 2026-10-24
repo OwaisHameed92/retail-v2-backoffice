@@ -64,11 +64,12 @@ final class SetOnlineProduct
      */
     private static function validate(array $changes): array
     {
-        $changes = array_intersect_key($changes, array_flip(['hidden', 'description', 'photo_path']));
+        $changes = array_intersect_key($changes, array_flip(['hidden', 'description', 'photo_path', 'allergen_info']));
 
         $data = Validator::make($changes, [
             'hidden' => ['sometimes', 'boolean'],
             'description' => ['sometimes', 'nullable', 'string', 'max:'.self::DESCRIPTION_MAX],
+            'allergen_info' => ['sometimes', 'nullable', 'string', 'max:'.self::DESCRIPTION_MAX],
             'photo_path' => ['sometimes', 'nullable', 'string', 'max:255', 'regex:/^(?!\/)(?!.*\.\.)[A-Za-z0-9_\/.-]+$/'],
         ], ['photo_path.regex' => 'That file path is not allowed.'])->validate();
 
@@ -76,7 +77,7 @@ final class SetOnlineProduct
             $data['hidden'] = (bool) $data['hidden'];
         }
 
-        foreach (['description', 'photo_path'] as $key) {
+        foreach (['description', 'photo_path', 'allergen_info'] as $key) {
             if (array_key_exists($key, $data)) {
                 $value = trim((string) $data[$key]);
                 $data[$key] = $value === '' ? null : $value;
@@ -87,10 +88,10 @@ final class SetOnlineProduct
     }
 
     /**
-     * @return array{hidden: bool, description: string|null, photo_path: string|null}
+     * @return array{hidden: bool, description: string|null, photo_path: string|null, allergen_info: string|null}
      */
     private static function snapshot(OnlineStoreProduct $row): array
     {
-        return ['hidden' => (bool) $row->hidden, 'description' => $row->description, 'photo_path' => $row->photo_path];
+        return ['hidden' => (bool) $row->hidden, 'description' => $row->description, 'photo_path' => $row->photo_path, 'allergen_info' => $row->allergen_info];
     }
 }

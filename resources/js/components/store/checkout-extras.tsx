@@ -40,7 +40,7 @@ export function CheckoutExtras({
                     {error ?? `${note.length} of ${NOTE_MAX} characters`}
                 </p>
             </div>
-            <label className="bg-paper flex cursor-pointer items-start gap-3 rounded-[18px] px-5 py-4">
+            <label className="bg-paper flex cursor-pointer items-start gap-3 rounded-xl px-5 py-4">
                 <input
                     type="checkbox"
                     checked={substitutions}

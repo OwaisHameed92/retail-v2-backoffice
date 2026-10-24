@@ -2,37 +2,41 @@
 
 namespace App\Http\Controllers\Store;
 
-use App\Domain\OnlineStore\Data\CatalogueFilters;
 use App\Domain\OnlineStore\Queries\CollectionDays;
-use App\Domain\OnlineStore\Queries\StorefrontCatalogue;
 use App\Http\Controllers\Controller;
 use App\Http\Support\Store\StoreContext;
+use App\Http\Support\Store\StoreHomeRows;
 use App\Http\Support\Store\StorePresenter;
 use Inertia\Inertia;
 use Inertia\Response;
 
 /**
- * `GET /{slug}` (OS-2, OS-5): the store's home page in its template (Fresh Market or Butcher's Block, `store.template`):
- * the sections the store turned on, in its order (banner, departments, featured products, how click & collect works,
- * shops and hours, about). Each template draws the same sections in its own style.
+ * `GET /{slug}` (OS-2, OS-5, OS-8): the store's home page in its template (Fresh Market or Butcher's Block,
+ * `store.template`): the sections the store turned on, in its order (banners, departments with photos, featured
+ * products, how click & collect works, shops and hours, about, and the optional "On offer" and department rows).
+ * Each template draws the same sections in its own style. `headline` / `bannerUrl` are the first banner's.
  */
 class StoreHomeController extends Controller
 {
-    public const FEATURED = 8;
-
-    public function __invoke(StoreContext $context, StorefrontCatalogue $catalogue, CollectionDays $days): Response
+    public function __invoke(StoreContext $context, StoreHomeRows $rows, CollectionDays $days): Response
     {
         $store = $context->store;
         $shop = $context->shop();
-        $featured = $shop === null ? [] : $catalogue->products($store, $shop, perPage: self::FEATURED, filters: new CatalogueFilters(inStockOnly: true))->items;
+        $sections = StorePresenter::sections($store);
         $next = $shop === null || ! $context->takingOrders() ? null : $days->next($shop);
+        $banners = $rows->banners($context);
 
         return Inertia::render('store/home', [
-            'sections' => StorePresenter::sections($store),
-            'headline' => trim((string) $store->headline) ?: null,
-            'bannerUrl' => StorePresenter::bannerUrl($store),
+            'sections' => $sections,
+            'banners' => $banners,
+            'headline' => $banners[0]['headline'] ?? null,
+            'bannerUrl' => $banners[0]['photoUrl'] ?? StorePresenter::bannerUrl($store),
             'nextCollection' => $next === null ? null : CollectionDays::describe($next->from, $next->to),
-            'featured' => StorePresenter::products($store, $featured),
+            ...$rows->featured($context),
+            'offers' => in_array('offers', $sections, true) ? $rows->offers($context) : [],
+            'departmentRows' => in_array('departmentRows', $sections, true) ? $rows->departmentRows($context) : [],
+            'departmentTiles' => in_array('departments', $sections, true) ? $rows->departmentTiles($context) : [],
+            'aboutText' => trim((string) $store->about_text) ?: null,
             'shops' => $context->shops->map(fn ($shop) => StorePresenter::shop($shop))->values()->all(),
         ]);
     }

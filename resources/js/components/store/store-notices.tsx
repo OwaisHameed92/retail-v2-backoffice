@@ -17,7 +17,7 @@ export function StoreNotices({ store, basket }: { store: StoreInfo; basket?: Bas
     return (
         <div className="flex flex-col gap-3 empty:hidden [&:not(:empty)]:mb-6">
             {!store.takingOrders && (
-                <div className="bg-warn-soft text-ink flex items-start gap-3 rounded-3xl px-5 py-4" role="status">
+                <div className="bg-warn-soft text-ink flex items-start gap-3 rounded-xl px-4 py-3 text-sm" role="status">
                     <Info aria-hidden="true" className="text-warn mt-0.5 size-5 shrink-0" />
                     <p>
                         <strong className="font-bold">We are not taking online orders right now.</strong> You can still look around; the prices are
@@ -26,7 +26,7 @@ export function StoreNotices({ store, basket }: { store: StoreInfo; basket?: Bas
                 </div>
             )}
             {basket && basket.notices.length > 0 && (
-                <div className="bg-lime-soft text-ink flex items-start gap-3 rounded-3xl px-5 py-4" role="status">
+                <div className="bg-lime-soft text-ink flex items-start gap-3 rounded-xl px-4 py-3 text-sm" role="status">
                     <Info aria-hidden="true" className="mt-0.5 size-5 shrink-0" />
                     <div className="flex flex-col gap-1">
                         <strong className="font-bold">Your basket has changed</strong>
@@ -39,7 +39,7 @@ export function StoreNotices({ store, basket }: { store: StoreInfo; basket?: Bas
                 </div>
             )}
             {error && (
-                <div className="text-ink ring-sale flex items-start gap-3 rounded-3xl bg-white px-5 py-4 ring-2" role="alert">
+                <div className="text-ink ring-sale flex items-start gap-3 rounded-xl bg-white px-4 py-3 text-sm ring-2" role="alert">
                     <CircleAlert aria-hidden="true" className="text-sale mt-0.5 size-5 shrink-0" />
                     <p className="font-semibold">{error}</p>
                 </div>
@@ -67,7 +67,7 @@ function Toast({ message }: { message: string | null }) {
     return (
         <div aria-live="polite" className="pointer-events-none fixed inset-x-0 bottom-24 z-50 flex justify-center px-4 md:bottom-8">
             {shown && (
-                <div className="bg-ink pointer-events-auto flex max-w-lg items-center gap-3 rounded-full py-2 pr-2 pl-4 text-sm font-semibold text-white shadow-2xl">
+                <div className="bg-brand-deep pointer-events-auto flex max-w-lg items-center gap-3 rounded-full py-2 pr-2 pl-4 text-sm font-semibold text-white shadow-2xl">
                     <CircleCheck aria-hidden="true" className="text-lime size-5 shrink-0" />
                     <span className="py-1.5">{shown}</span>
                     <button

@@ -5,6 +5,9 @@ use App\Domain\OnlineStore\Actions\PlaceCollectOrder;
 use App\Domain\OnlineStore\Actions\RecordCardPayment;
 use App\Domain\OnlineStore\Enums\OnlineOrderStatus;
 use App\Domain\OnlineStore\Mail\OnlineOrderCancelledMail;
+use App\Domain\OnlineStore\Mail\OnlineOrderChangedMail;
+use App\Domain\OnlineStore\Mail\OnlineOrderDeliveredMail;
+use App\Domain\OnlineStore\Mail\OnlineOrderOnItsWayMail;
 use App\Domain\OnlineStore\Mail\OnlineOrderReadyMail;
 use App\Domain\OnlineStore\Mail\OnlineOrderReceivedMail;
 use App\Domain\OnlineStore\Models\OnlineOrder;
@@ -60,8 +63,11 @@ test('a delivery goes new → picking → ready → out for delivery → deliver
     $order = ($this->fresh)($this->delivery);
     expect($order->status)->toBe(OnlineOrderStatus::Delivered)->and($order->out_for_delivery_at)->not->toBeNull()->and($order->delivered_at)->not->toBeNull();
     $this->actingAs($this->owner)->get('/app/online-orders')->assertInertia(fn (Assert $p) => $p->where('board.columns.done.cards.0.status', 'delivered'));
-    // "Ready to collect" is a collection email: a delivery that is packed sends none.
+    // "Ready to collect" is a collection email: a delivery that is packed sends none; it gets "on its way" and "delivered".
     Mail::assertNotQueued(OnlineOrderReadyMail::class);
+    Mail::assertQueued(OnlineOrderOnItsWayMail::class, fn (OnlineOrderOnItsWayMail $mail) => $mail->hasTo('asha@example.test')
+        && $mail->subjectLine() === 'Your order W-0001 is on its way' && str_contains($mail->render(), '£15.50'));
+    Mail::assertQueued(OnlineOrderDeliveredMail::class, fn (OnlineOrderDeliveredMail $mail) => $mail->subjectLine() === 'Your order W-0001 was delivered');
 });
 
 test('"not collected", and the last move can be undone for a few minutes', function () {
@@ -112,11 +118,14 @@ test('staff mark a line not available or change it; the totals follow and the cu
         ->and($fresh->lines[1]->ordered_quantity)->toBe('1.0000')->and($fresh->lines[1]->quantity)->toBe('0.7500')
         ->and($fresh->customer_note)->toBe('Thin slices please')->and($fresh->substitutions_ok)->toBeTrue();
 
+    ($this->move)($order, 'picking');
+    ($this->move)($order, 'ready');
+    Mail::assertQueued(OnlineOrderChangedMail::class, fn (OnlineOrderChangedMail $mail) => $mail->subjectLine() === 'We changed your order W-0002'
+        && str_contains($mail->render(), 'Beans (not available)') && str_contains($mail->render(), '£7.35'));
+
     $line($beans->id, ['action' => 'restore'])->assertSessionHasNoErrors();
     expect(($this->fresh)($order)->items_total)->toBe('11.35');
 
-    ($this->move)($order, 'picking');
-    ($this->move)($order, 'ready');
     ($this->move)($order, 'collected');
     $line($beans->id, ['action' => 'unavailable'])->assertSessionHasErrors(['line' => 'Items can be changed only before the order is handed over.']);
 });

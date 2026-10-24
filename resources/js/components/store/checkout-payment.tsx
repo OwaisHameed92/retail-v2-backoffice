@@ -38,7 +38,7 @@ export function PaymentChoice({
                         <label
                             key={option.value}
                             className={cn(
-                                'has-[:focus-visible]:outline-ink flex items-center gap-4 rounded-[22px] p-5 transition has-[:focus-visible]:outline-3',
+                                'has-[:focus-visible]:outline-ink flex items-center gap-4 rounded-2xl p-5 transition has-[:focus-visible]:outline-3',
                                 selected ? 'bg-ink text-white' : 'bg-paper text-ink hover:bg-line',
                                 option.available ? 'cursor-pointer' : 'cursor-not-allowed opacity-60',
                             )}
@@ -62,7 +62,7 @@ export function PaymentChoice({
                                 <Icon className="size-5" />
                             </span>
                             <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-                                <span className="font-display text-xl font-extrabold">{option.label}</span>
+                                <span className="text-base font-semibold">{option.label}</span>
                                 <span className={cn('text-sm', selected ? 'text-white/85' : 'text-body')}>{option.hint}</span>
                             </span>
                             {selected && <Check aria-hidden="true" className="text-lime size-5 shrink-0" />}

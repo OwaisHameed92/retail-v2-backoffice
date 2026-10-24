@@ -98,7 +98,8 @@ test('a signed-in portal user of business B sees store A without any portal data
 
     $page = $this->actingAs($user)->get(($this->url)('store.home'))->assertOk()->viewData('page');
 
-    expect($page['props']['branches'])->toBe([])
-        ->and($page['props']['billingNotice'])->toBeNull()
-        ->and(json_encode($page['props']))->not->toContain($this->a->leeds->code);
+    // Audit OSA-7: no portal props at all on a public store page.
+    expect($page['props'])->not->toHaveKeys(['auth', 'company', 'companies', 'abilities', 'branches', 'billingNotice', 'impersonation', 'quote', 'onlineOrdersNew'])
+        ->and(json_encode($page['props']))->not->toContain($this->a->leeds->code)
+        ->and(json_encode($page['props']))->not->toContain($user->email);
 });

@@ -5,9 +5,11 @@ namespace App\Domain\OnlineStore\Data;
 /**
  * One product as the online store shows it at one shop (StorefrontCatalogue). Money and quantities are decimal
  * strings. `price` is the shop's live price, else the business price (a weighed product's price is per kg and only
- * an estimate: the till weighs it). Stock-tracked products with no stock are shown but not `orderable`.
- * `stockLimit` (audit OSA-12): for a stock-tracked product, the most one order may have: the shop's stock on hand less
- * what open online orders already hold (StorefrontCatalogue::items), whole units or 0.25 kg steps; null = not limited.
+ * an estimate: the till weighs it). Stock-tracked products with no stock are shown but not `orderable`. OS-8: the
+ * category (offers), the online "Ingredients & allergens" text and the pack size from the till (`net_mass_kg`,
+ * `volume_ml`) for the size and unit price. `stockLimit` (audit OSA-12): for a stock-tracked product, the most one
+ * order may have: the shop's stock on hand less what open online orders already hold (StorefrontCatalogue::items),
+ * whole units or 0.25 kg steps; null = not limited.
  */
 final readonly class CatalogueItem
 {
@@ -23,6 +25,10 @@ final readonly class CatalogueItem
         public ?int $maxQtyPerSale,
         public bool $stockTracked,
         public bool $orderable,
+        public ?string $categoryId = null,
+        public ?string $allergenInfo = null,
+        public ?string $netMassKg = null,
+        public ?string $volumeMl = null,
         public ?string $stockLimit = null,
     ) {}
 
@@ -32,7 +38,8 @@ final readonly class CatalogueItem
         $orderable = $this->orderable && ($limit === null || bccomp($limit, '0', 4) > 0);
 
         return new self($this->id, $this->name, $this->description, $this->photoPath, $this->departmentId, $this->price, $this->isWeighed,
-            $this->unitCode, $this->maxQtyPerSale, $this->stockTracked, $orderable, $limit);
+            $this->unitCode, $this->maxQtyPerSale, $this->stockTracked, $orderable, $this->categoryId, $this->allergenInfo, $this->netMassKg,
+            $this->volumeMl, $limit);
     }
 
     /**

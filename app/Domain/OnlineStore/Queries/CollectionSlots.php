@@ -100,6 +100,9 @@ final class CollectionSlots
         return $date->greaterThanOrEqualTo($today) && $date->lessThan($today->addDays($days));
     }
 
+    /** @var array<string, Company> */
+    private array $companies = [];
+
     /**
      * The method's orders that hold a place per slot start (UTC "Y-m-d H:i:s").
      *
@@ -108,7 +111,8 @@ final class CollectionSlots
      */
     private function taken(OnlineStoreShop $shop, FulfilmentMethod $method, array $starts, CarbonImmutable $now): array
     {
-        $company = Company::query()->findOrFail($shop->company_id);
+        // Audit OSA-28: the business is read once per request, not once per day asked.
+        $company = $this->companies[$shop->company_id] ??= Company::query()->findOrFail($shop->company_id);
 
         return $this->tenancy->runAs($company, fn (): array => OnlineOrder::query()
             ->where('company_id', $shop->company_id)

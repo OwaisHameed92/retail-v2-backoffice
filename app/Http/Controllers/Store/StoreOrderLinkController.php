@@ -53,6 +53,10 @@ class StoreOrderLinkController extends Controller
             return StorePages::error($request, 403, $context, ['This link has expired', 'For your privacy, order links stop working a while after the order. Ask the shop to send it again.']);
         }
 
-        return StoreOrderPage::render($request, $context, $found);
+        $response = StoreOrderPage::render($request, $context, $found);
+        // OSA-9: the order page shows the customer's details: never indexed.
+        $response->headers->set('X-Robots-Tag', 'noindex, nofollow');
+
+        return $response;
     }
 }

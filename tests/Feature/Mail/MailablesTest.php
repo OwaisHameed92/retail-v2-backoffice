@@ -22,6 +22,7 @@ use App\Domain\Mail\Mailables\TrialEndedMail;
 use App\Domain\Mail\Mailables\TrialReminderMail;
 use App\Domain\Mail\Mailables\WelcomeTenantMail;
 use App\Domain\Mail\Support\EmailTemplates;
+use App\Domain\OnlineStore\Mail\OnlineOrderMailable;
 use Illuminate\Contracts\Queue\ShouldBeEncrypted;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Support\Carbon;
@@ -66,7 +67,22 @@ it('renders every template with the Switch & Save theme, logo and footer', funct
         ->not->toContain('Laravel');
 
     expect($mailable->renderText())->toContain('Smart Solutions for Smart Businesses')->not->toContain('<table');
-})->with(fn () => EmailTemplates::keys());
+})->with(fn () => array_values(array_filter(EmailTemplates::keys(), fn (string $key) => ! mailableInShopName($key))));
+
+// OS-10 (owner): a shop's emails to its own customers carry the shop's look, with only a small Switch & Save line.
+it('renders a shop\'s customer emails in the shop\'s look, not the Switch & Save one', function (string $key) {
+    $html = (string) EmailTemplates::sample($key)->render();
+
+    expect($html)->toContain('Online store by Switch &amp; Save')->not->toContain('switch-save-logo.png')
+        ->not->toContain('Smart Solutions for Smart Businesses')->not->toContain('<pre>')->not->toContain('Laravel');
+})->with(fn () => array_values(array_filter(EmailTemplates::keys(), fn (string $key) => mailableInShopName($key))));
+
+function mailableInShopName(string $key): bool
+{
+    $class = EmailTemplates::find($key);
+
+    return $class !== null && is_subclass_of($class, OnlineOrderMailable::class) && $class::sendsInShopName();
+}
 
 it('uses plain sentence-case subjects', function () {
     expect(WelcomeTenantMail::sample()->subjectLine())->toBe('Welcome to Switch & Save – your licence keys')
