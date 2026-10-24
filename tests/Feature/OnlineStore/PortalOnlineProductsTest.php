@@ -88,7 +88,7 @@ test('saving online details: description, photo stored per business, replaced ph
 
     $first = ($this->row)($this->milk);
     expect($first->description)->toBe('Fresh from a Yorkshire dairy.')->and($first->hidden)->toBeFalse()
-        ->and($first->photo_path)->toMatch('#^online-store/'.$this->company->id.'/products/[0-9a-z]{26}\.jpg$#');
+        ->and($first->photo_path)->toMatch('#^online-store/'.$this->company->id.'/products/[0-9a-z]{26}\.webp$#');
     Storage::disk('public')->assertExists($first->photo_path);
 
     $milk = collect(($this->rows)()['products']['data'])->firstWhere('name', 'Milk');

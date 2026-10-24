@@ -55,7 +55,10 @@ https://claude.ai/artifact/FdsDJZ2vyhQJw5hfPmUiNz. DECISIONS "Online store, clic
   - Staff work them on the portal → Online orders board.
   - New orders send an email to the business's order address, plus a portal notification.
   - The customer gets emails when the order is received, when it is ready to collect, and if it is cancelled.
-  - The order page is opened by a secret link (only its hash is stored).
+  - The order page is opened by a link signed over the order's id only (`/o/{order}`, `StoreLinks::orderPage`,
+    `StoreOrderLinkController`). It keeps working while the store is offline or after its address changed, and expires
+    `online_store.order_link_days` after the slot. Nothing secret is stored for it; the old `token_hash` column holds
+    an unused random value (audit OSA-27). The signature uses `APP_KEY`: rotating the key ends every emailed link.
 - **Emails (OS-10, portal → Online store → Emails).** Customer emails (received, ready, cancelled, and any later
   "customer" online store email) are the shop's own:
   - From name: the store's sender name, else the business name; never "Switch & Save" (refused and ignored).
@@ -101,6 +104,32 @@ https://claude.ai/artifact/FdsDJZ2vyhQJw5hfPmUiNz. DECISIONS "Online store, clic
   `noindex` (meta and `X-Robots-Tag`) on basket, checkout, order, error, search and filtered pages; `/{slug}/sitemap.xml`
   and `/{slug}/robots.txt`. Store pages carry only the store's own shared props, never the portal's.
 
+## OS-11: legal pages, aisles and the remaining audit fixes (2026-10-25)
+
+- **Legal & contact** (portal tab, audit OSA-2): trading name, legal name, business address, company number, VAT number,
+  contact email and phone (filled in from the business record until saved). Generated pages `/{slug}/contact`,
+  `/privacy`, `/terms`, `/cookies` (UK template with the store's details and what it offers: collection, delivery, card
+  by DNA, pay at the shop or on delivery; age-restricted items not sold online; 14-day cancellation except perishable
+  goods; only strictly necessary cookies), each with the shop's own extra text. Linked in the footer and at checkout
+  ("you agree to our Terms of sale"). Going live needs trading name, legal name, address and contact email saved. The
+  template wording is for the owner or a lawyer to review.
+- **Aisles** (store builder): built from the till's departments, or its categories when there are fewer than three real
+  departments (or as the shop chooses). Never the till's "no department" bucket; Title Case names; only aisles with
+  something in stock; the shop orders, renames, hides and adds a photo per aisle. The big home tiles show from three
+  aisles up. Products with no aisle are still found by search and "All products".
+- **Home rows:** no HFSS product (`is_hfss`) in featured, on offer or department rows (OSA-31); best sellers and newest
+  leave out items under £0.50, carrier bags and bag charges, and products the shop marks "not featured" on the Products
+  tab. Deposit return items show their deposit (charged by the till). Medicine pack limits stay `max_qty_per_sale`.
+- **Names and addresses:** a till name with fewer than 2 letters or digits is never shown; names in capitals show in
+  Title Case (the stored name is unchanged); shop addresses never repeat the town or postcode.
+- **Old addresses** (OSA-6): a changed store address redirects (301) to the new one for 90 days and is held from other
+  businesses (`online_store_old_slugs`).
+- **Store host** (OSA-8): with `ONLINE_STORE_HOST`, that host answers only the store (and `/up`, the DNA callback).
+- **Uploads** (OSA-15): logos, banners, product and aisle photos are re-encoded with GD to WebP (JPEG fallback),
+  EXIF/GPS removed, at most 600 / 2400 / 1200 px; the upload itself is never stored.
+- **Permissions** (OSA-32): `store.manage` builds the store; `orders.online` works the orders (owner, manager, staff).
+- **Billing** (OSA-30): invoice lines carry a `kind` (`licence`, `branch`, `onlineStore`, `setupFee`).
+
 ## Later stages
 
 - **S2:** card payment with DNA Payments (hosted payment page, webhook, money to the shop's DNA account) and local
@@ -117,7 +146,7 @@ https://claude.ai/artifact/FdsDJZ2vyhQJw5hfPmUiNz. DECISIONS "Online store, clic
 | `online_store_shops` | Collection shops (`branch_id`) with hours, prep minutes, orders per slot |
 | `online_store_products` | Per product (`product_id`, the till's id): hidden, photo path, description, ingredients and allergens |
 | `online_store_banners` | OS-8: home banners (photo, headline, text, button link, on/off, order) |
-| `online_orders` | Number, shop, status, customer name / mobile / email, slot, item total `decimal(12,2)`, token hash, cancel reason, status times |
+| `online_orders` | Number, shop, status, customer name / mobile / email, slot, item total `decimal(12,2)`, an unused `token_hash` (OSA-27), cancel reason, status times |
 | `online_order_lines` | Product id + name / price snapshot, quantity `decimal(14,4)`, line total `decimal(12,2)` |
 | `online_store_mail_settings` | OS-10: per store, sender name, reply-to, own SMTP server (password encrypted + last 4), verified time, last error |
 

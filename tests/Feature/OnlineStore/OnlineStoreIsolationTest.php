@@ -6,9 +6,9 @@ use App\Domain\OnlineStore\Actions\SetStoreLive;
 use App\Domain\OnlineStore\Models\OnlineOrder;
 use App\Domain\OnlineStore\Queries\CollectionSlots;
 use App\Domain\OnlineStore\Queries\FindStoreBySlug;
-use App\Domain\OnlineStore\Queries\OnlineOrderByToken;
 use App\Domain\OnlineStore\Queries\StorefrontCatalogue;
 use App\Domain\OnlineStore\Queries\StorefrontShops;
+use App\Domain\OnlineStore\Queries\StoreOrderById;
 use App\Domain\Shared\Support\Ulid;
 use App\Domain\Tenancy\CurrentCompany;
 use App\Domain\Tenancy\Enums\CompanyStatus;
@@ -120,8 +120,8 @@ test('orders, slot counts and order pages never cross businesses', function () {
     expect($slot?->taken)->toBe(1)
         ->and($mine->order->company_id)->toBe($this->a->company->id)
         ->and($mine->order->lines->pluck('company_id')->unique()->all())->toBe([$this->a->company->id])
-        ->and(app(OnlineOrderByToken::class)->handle($this->a->store, $theirs->token))->toBeNull()
-        ->and(app(OnlineOrderByToken::class)->handle($this->b->store, $theirs->token)?->id)->toBe($theirs->order->id)
+        ->and(app(StoreOrderById::class)->handle($this->a->store, $theirs->order->id))->toBeNull()
+        ->and(app(StoreOrderById::class)->handle($this->b->store, $theirs->order->id)?->id)->toBe($theirs->order->id)
         ->and(app(CurrentCompany::class)->runAs($this->a->company, fn () => OnlineOrder::query()->pluck('id')->all()))->toBe([$mine->order->id]);
 });
 

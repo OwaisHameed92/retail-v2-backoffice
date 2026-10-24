@@ -65,7 +65,7 @@ final class OnlineProductsPage
 
         $query = self::listable($company)
             ->select(['products.id', 'products.name', 'products.sku', 'products.department_id', 'products.description', 'products.is_weighed'])
-            ->addSelect(['osp.hidden as online_hidden', 'osp.photo_path as online_photo', 'osp.description as online_description', 'osp.allergen_info as online_allergens'])
+            ->addSelect(['osp.hidden as online_hidden', 'osp.not_featured as online_not_featured', 'osp.photo_path as online_photo', 'osp.description as online_description', 'osp.allergen_info as online_allergens'])
             ->selectRaw("{$price} as shelf_price", $bindings)
             ->when($department !== null, fn (Builder $q) => $q->where('products.department_id', $department))
             ->when($table->search() !== null, fn (Builder $q) => self::search($q, (string) $table->search()))
@@ -111,6 +111,7 @@ final class OnlineProductsPage
             'allergenInfo' => $attributes['online_allergens'] ?? null,
             'tillAllergens' => $tillAllergens,
             'hidden' => (bool) ($attributes['online_hidden'] ?? false),
+            'notFeatured' => (bool) ($attributes['online_not_featured'] ?? false),
             'shown' => $reasons === [],
             'reasons' => array_values(array_map(fn (string $r) => OnlineCatalogueQuery::REASONS[$r], array_filter($reasons, fn (string $r) => $r !== 'hidden'))),
         ];

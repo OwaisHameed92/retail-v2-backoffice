@@ -1,10 +1,12 @@
 <?php
 
+use App\Domain\OnlineStore\Legal\LegalPage;
 use App\Domain\OnlineStore\Support\StoreRateLimits;
 use App\Http\Controllers\Store\StoreBasketController;
 use App\Http\Controllers\Store\StoreCheckoutController;
 use App\Http\Controllers\Store\StoreDepartmentController;
 use App\Http\Controllers\Store\StoreHomeController;
+use App\Http\Controllers\Store\StoreLegalController;
 use App\Http\Controllers\Store\StoreNotFoundController;
 use App\Http\Controllers\Store\StoreOrderController;
 use App\Http\Controllers\Store\StoreOrderLinkController;
@@ -32,6 +34,10 @@ $pages = function () use ($id) {
     // OS-8 (audit OSA-17): the store's sitemap and crawler rules.
     Route::get('sitemap.xml', [StoreSitemapController::class, 'sitemap'])->name('sitemap');
     Route::get('robots.txt', [StoreSitemapController::class, 'robots'])->name('robots');
+    // OS-11 (audit OSA-2): contact, privacy notice, terms of sale and cookies, from the store's trader details.
+    foreach (LegalPage::values() as $legal) {
+        Route::get($legal, StoreLegalController::class)->name($legal)->defaults('legalPage', $legal);
+    }
 
     Route::get('basket', [StoreBasketController::class, 'show'])->name('basket');
     Route::middleware('throttle:'.StoreRateLimits::BASKET)->group(function () use ($id) {

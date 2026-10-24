@@ -29,11 +29,13 @@ use App\Http\Controllers\App\NotificationController;
 use App\Http\Controllers\App\NotificationSettingsController;
 use App\Http\Controllers\App\OnlineOrderController;
 use App\Http\Controllers\App\OnlineProductController;
+use App\Http\Controllers\App\OnlineStoreAisleController;
 use App\Http\Controllers\App\OnlineStoreBannerController;
 use App\Http\Controllers\App\OnlineStoreClosureController;
 use App\Http\Controllers\App\OnlineStoreController;
 use App\Http\Controllers\App\OnlineStoreDeliveryController;
 use App\Http\Controllers\App\OnlineStoreEmailController;
+use App\Http\Controllers\App\OnlineStoreLegalController;
 use App\Http\Controllers\App\OnlineStoreShopController;
 use App\Http\Controllers\App\ParcelController;
 use App\Http\Controllers\App\PharmacyController;
@@ -485,11 +487,12 @@ Route::middleware(['auth:web', 'verified', 'company', 'two-factor:web'])->group(
     });
 
     // Online store OS-4: the online orders board, an order's page and pick list, moving orders on and the "Taking
-    // orders" switch. 404 while the online store is switched off; store.manage; a one-shop user: own shop's orders.
+    // orders" switch. 404 while the online store is switched off; orders.online (audit OSA-32: staff work orders without
+    // building the store; the board's "Taking orders" switch is order work too); a one-shop user: own shop's orders.
     // Audit OSA-5: the board and order pages stay open while the business still has orders to finish, even after the
     // add-on, cloud sync or plan goes off (EnsureOnlineOrdersReachable); only new orders stop. OS-9 / OSA-18, 21, 22:
     // undo the last move, change a line, send the customer their order link again.
-    Route::prefix('online-orders')->name('online-orders.')->middleware([EnsureOnlineOrdersReachable::class, 'company.can:store.manage'])
+    Route::prefix('online-orders')->name('online-orders.')->middleware([EnsureOnlineOrdersReachable::class, 'company.can:orders.online'])
         ->controller(OnlineOrderController::class)->group(function () {
             Route::get('/', 'index')->name('index');
             Route::put('taking', 'taking')->name('taking')->middleware('throttle:30,1');
@@ -507,6 +510,9 @@ Route::middleware(['auth:web', 'verified', 'company', 'two-factor:web'])->group(
         Route::get('shops', [OnlineStoreShopController::class, 'index'])->name('shops');
         Route::get('products', [OnlineProductController::class, 'index'])->name('products');
         Route::get('delivery', [OnlineStoreDeliveryController::class, 'index'])->name('delivery');
+        // OS-11 (audit OSA-2): trader details and the shop's own text for the contact, privacy, terms and cookies pages.
+        Route::get('legal', [OnlineStoreLegalController::class, 'edit'])->name('legal');
+        Route::put('legal', [OnlineStoreLegalController::class, 'update'])->name('legal.update')->middleware('throttle:30,1');
         // OS-10: the Emails tab (sender, Reply-To, the store's own SMTP server, test email, previews).
         Route::get('emails', [OnlineStoreEmailController::class, 'edit'])->name('emails');
         Route::get('emails/preview/{template}', [OnlineStoreEmailController::class, 'preview'])->name('emails.preview')
@@ -521,6 +527,10 @@ Route::middleware(['auth:web', 'verified', 'company', 'two-factor:web'])->group(
             Route::post('banners/{banner}', [OnlineStoreBannerController::class, 'update'])->name('banners.update')->whereUlid('banner');
             Route::delete('banners/{banner}', [OnlineStoreBannerController::class, 'destroy'])->name('banners.destroy')->whereUlid('banner');
             Route::post('/', [OnlineStoreController::class, 'update'])->name('update');
+            // OS-11: the store's aisles (departments or categories; order, shown, name, photo).
+            Route::put('aisles', [OnlineStoreAisleController::class, 'update'])->name('aisles.update');
+            Route::post('aisles/{aisle}/photo', [OnlineStoreAisleController::class, 'photo'])->name('aisles.photo')->whereAlphaNumeric('aisle');
+            Route::delete('aisles/{aisle}/photo', [OnlineStoreAisleController::class, 'removePhoto'])->name('aisles.photo.remove')->whereAlphaNumeric('aisle');
             Route::put('live', [OnlineStoreController::class, 'live'])->name('live');
             Route::put('taking-orders', [OnlineStoreController::class, 'takingOrders'])->name('taking-orders');
             Route::put('shops/{branch}', [OnlineStoreShopController::class, 'update'])->name('shops.update')->whereAlphaNumeric('branch');

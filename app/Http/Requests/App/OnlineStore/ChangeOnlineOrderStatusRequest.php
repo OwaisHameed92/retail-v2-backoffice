@@ -11,7 +11,7 @@ use Illuminate\Validation\Rule;
  * Move an online order on from the board or its page (OS-4): start picking, mark ready, collected, out for delivery
  * and delivered (OS-9), not collected (OSA-21), or cancel with a reason the customer is told (or as spam, OSA-1: no
  * email). Which moves are allowed is checked by ChangeOnlineOrderStatus. The route checks
- * `store.manage`.
+ * `orders.online`.
  */
 class ChangeOnlineOrderStatusRequest extends FormRequest
 {

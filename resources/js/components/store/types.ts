@@ -45,7 +45,31 @@ export interface StoreInfo {
     /** The shops to choose from (only when there is more than one). */
     shops?: { id: string; name: string }[];
     departments: StoreDepartment[];
-    urls: { home: string; search: string; basket: string; basketAdd: string; checkout: string; shop?: string };
+    urls: {
+        home: string;
+        search: string;
+        basket: string;
+        basketAdd: string;
+        checkout: string;
+        shop?: string;
+        /** OS-11 (audit OSA-2): the generated legal pages. */
+        contact?: string;
+        privacy?: string;
+        terms?: string;
+        cookies?: string;
+    };
+    /** OS-11 (audit OSA-2): who sells (App\Domain\OnlineStore\Legal\StoreTrader). */
+    trader?: StoreTrader;
+}
+
+export interface StoreTrader {
+    tradingName: string;
+    legalName: string;
+    address: string | null;
+    companyNumber: string | null;
+    vatNumber: string | null;
+    email: string | null;
+    phone: string | null;
 }
 
 export interface BasketSummary {
@@ -73,6 +97,8 @@ export interface StoreProduct {
     /** "500 g", "750 ml" from the till's pack size. */
     size?: string | null;
     unitPrice?: { amount: string; unit: 'kg' | 'litre' } | null;
+    /** OS-11: a deposit return item's deposit ("0.10"), charged by the till at collection. */
+    deposit?: string | null;
 }
 
 /** One home banner (App\Domain\OnlineStore\Queries\StoreBanners::slides). */
@@ -116,6 +142,10 @@ export interface ShopInfo {
     phone: string | null;
     prepMinutes: number;
     hours: OpeningDay[];
+    /** OS-11: today's weekday in shop time ("Monday"), open now, and local delivery when the shop delivers. */
+    today?: string;
+    openNow?: { open: boolean; label: string };
+    delivery?: { areas: string[]; fee: string; freeOver: string | null; minimum: string | null } | null;
 }
 
 export interface Pagination {

@@ -143,11 +143,13 @@ test('department rows: the chosen departments shown at the shop, else the first 
     $this->f->product('Beans');
     $fresh = OnlineStoreFixtures::department($this->f->company, 'Fresh', 2);
     $this->f->product('Apples', ['department_id' => $fresh]);
+    // OS-11: the department tiles show from three aisles up (StoreAisles::GOOD).
+    $this->f->product('Bread', ['department_id' => OnlineStoreFixtures::department($this->f->company, 'Bakery', 3)]);
     ($this->sections)(['departmentRows', 'departments']);
 
     $this->get(($this->url)('store.home'))->assertInertia(fn (AssertableInertia $page) => $page
-        ->where('departmentRows', fn ($rows) => collect($rows)->pluck('name')->all() === ['Grocery', 'Fresh'])
-        ->has('departmentTiles', 2));
+        ->where('departmentRows', fn ($rows) => collect($rows)->pluck('name')->all() === ['Grocery', 'Fresh', 'Bakery'])
+        ->has('departmentTiles', 3));
 
     app(SaveOnlineStore::class)->handle($this->f->company, ['slug' => 'kirkgate', 'home_departments' => [$fresh],
         'sections' => [['key' => 'departmentRows', 'enabled' => true]]]);
@@ -161,6 +163,9 @@ test('photos: the online photo, else the master catalogue picture of a barcode, 
     $own = $this->f->product('Own photo');
     $master = $this->f->product('Master photo');
     $none = $this->f->product('No photo');
+    // OS-11: the department tiles show from three aisles up (StoreAisles::GOOD).
+    $this->f->product('Apples', ['department_id' => OnlineStoreFixtures::department($this->f->company, 'Fresh', 2)]);
+    $this->f->product('Bread', ['department_id' => OnlineStoreFixtures::department($this->f->company, 'Bakery', 3)]);
     app(SetOnlineProduct::class)->handle($this->f->company, $own, ['photo_path' => 'online-store/x/products/own.jpg']);
     DB::table('product_barcodes')->insert(['id' => Ulid::new(), 'company_id' => $this->f->company->id, 'product_id' => $master, 'barcode' => '5000157024671', 'row_version' => 1]);
     DB::table('master_products')->insert(['id' => strtolower(Ulid::new()), 'barcode' => '5000157024671', 'name' => 'Beans', 'image_url' => 'https://images.example.test/beans.jpg',
@@ -168,7 +173,8 @@ test('photos: the online photo, else the master catalogue picture of a barcode, 
 
     $this->get(($this->url)('store.search'))->assertInertia(fn (AssertableInertia $page) => $page
         ->where('products', fn ($items) => collect($items)->pluck('photoUrl', 'name')->all() === [
-            'Master photo' => 'https://images.example.test/beans.jpg', 'No photo' => null, 'Own photo' => Storage::disk('public')->url('online-store/x/products/own.jpg'),
+            'Apples' => null, 'Bread' => null, 'Master photo' => 'https://images.example.test/beans.jpg', 'No photo' => null,
+            'Own photo' => Storage::disk('public')->url('online-store/x/products/own.jpg'),
         ]));
 
     $this->get(($this->url)('store.home'))->assertInertia(fn (AssertableInertia $page) => $page

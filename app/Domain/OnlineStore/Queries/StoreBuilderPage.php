@@ -3,10 +3,12 @@
 namespace App\Domain\OnlineStore\Queries;
 
 use App\Domain\OnlineStore\Actions\SaveOnlineStore;
+use App\Domain\OnlineStore\Actions\SaveStoreAisles;
 use App\Domain\OnlineStore\Enums\BannerLink;
 use App\Domain\OnlineStore\Enums\FeaturedMode;
 use App\Domain\OnlineStore\Enums\StoreSection;
 use App\Domain\OnlineStore\Enums\StoreTemplate;
+use App\Domain\OnlineStore\Legal\StoreTrader;
 use App\Domain\OnlineStore\Models\OnlineStore;
 use App\Domain\OnlineStore\Models\OnlineStoreBanner;
 use App\Domain\OnlineStore\Support\OnlineCatalogueQuery;
@@ -77,10 +79,17 @@ final class StoreBuilderPage
             'departments' => Department::query()->where('company_id', $company->id)->orderBy('position')->orderBy('name')->get(['id', 'name'])
                 ->map(fn (Department $d) => ['id' => $d->id, 'name' => (string) $d->name])->values()->all(),
             'pickedProducts' => $store === null ? [] : self::picked($store),
+            // OS-11: the aisles at the first collection shop, hidden and empty ones too (StoreAisles), and what they are built from.
+            'aisles' => $store === null || $first === null ? [] : app(StoreAisles::class)->all($store, $first),
+            'aisleSource' => $store->aisle_source ?? 'auto',
+            'aisleSourceUsed' => $store === null || $first === null ? null : app(StoreAisles::class)->source($store, $first)->value,
+            'aisleNameMax' => SaveStoreAisles::NAME_MAX,
             'checklist' => [
                 'collectionShops' => $shops->count(),
                 'productsShown' => $first === null ? null : OnlineCatalogueQuery::base($first)->count(),
                 'productsShop' => $first?->branch->name,
+                // OS-11 (audit OSA-2): the trader details still to save on "Legal & contact" before going live.
+                'legalMissing' => $store === null ? array_values(StoreTrader::REQUIRED) : StoreTrader::missing($store),
             ],
             'canEdit' => $canEdit,
         ];

@@ -7,6 +7,7 @@ use App\Domain\OnlineStore\Enums\StoreSection;
 use App\Domain\OnlineStore\Enums\StoreTemplate;
 use App\Domain\OnlineStore\Models\OnlineStore;
 use App\Domain\OnlineStore\Queries\FeaturedProducts;
+use App\Domain\OnlineStore\Support\StoreOldSlugs;
 use App\Domain\OnlineStore\Support\StoreSlug;
 use App\Domain\Shared\Actions\RecordAudit;
 use App\Domain\Tenancy\CurrentCompany;
@@ -30,7 +31,7 @@ use Illuminate\Validation\ValidationException;
  *
  *     app(SaveOnlineStore::class)->handle($company, ['slug' => 'kirkgate', 'template' => 'freshMarket', ...]);
  *
- * Slug rules: StoreSlug. Unique across every business; a parallel save of the same slug loses on the unique index
+ * Slug rules: StoreSlug. A changed slug keeps the old one redirecting for 90 days (StoreOldSlugs, OSA-6). Unique across every business; a parallel save of the same slug loses on the unique index
  * and gets the same "taken" message.
  */
 final class SaveOnlineStore
@@ -67,7 +68,13 @@ final class SaveOnlineStore
             try {
                 $store = DB::transaction(function () use ($store, $company, $data): OnlineStore {
                     $store ??= new OnlineStore(['company_id' => $company->id, 'is_live' => false, 'taking_orders' => false]);
+                    $oldSlug = $store->exists ? $store->slug : null;
                     $store->fill($data)->save();
+
+                    // OS-11 (audit OSA-6): the old address redirects to the new one, and is held, for 90 days.
+                    if ($oldSlug !== null && $oldSlug !== $store->slug) {
+                        StoreOldSlugs::record($store, $oldSlug);
+                    }
 
                     return $store;
                 });
@@ -181,13 +188,15 @@ final class SaveOnlineStore
     }
 
     /**
-     * Slugs are unique across every business, so this one check reads other businesses' stores (the slug only).
+     * Slugs are unique across every business, so this one check reads other businesses' stores (the slug only), and
+     * their old addresses still held (OS-11, StoreOldSlugs).
      *
      * @phpstan-impure
      */
     private static function slugTakenElsewhere(Company $company, string $slug): bool
     {
-        return OnlineStore::withoutCompanyScope()->where('slug', $slug)->where('company_id', '!=', $company->id)->exists();
+        return OnlineStore::withoutCompanyScope()->where('slug', $slug)->where('company_id', '!=', $company->id)->exists()
+            || StoreOldSlugs::heldElsewhere($company->id, $slug);
     }
 
     private static function slugTaken(): ValidationException

@@ -5,10 +5,11 @@ namespace App\Http\Support\Store;
 use App\Domain\OnlineStore\Basket\Basket;
 use App\Domain\OnlineStore\Basket\PriceBasket;
 use App\Domain\OnlineStore\Basket\PricedBasket;
+use App\Domain\OnlineStore\Enums\AisleSource;
 use App\Domain\OnlineStore\Enums\FulfilmentMethod;
 use App\Domain\OnlineStore\Models\OnlineStore;
 use App\Domain\OnlineStore\Models\OnlineStoreShop;
-use App\Domain\OnlineStore\Queries\StorefrontCatalogue;
+use App\Domain\OnlineStore\Queries\StoreAisles;
 use Illuminate\Contracts\Session\Session;
 use Illuminate\Database\Eloquent\Collection;
 
@@ -25,7 +26,7 @@ final class StoreContext
 
     private ?PricedBasket $priced = null;
 
-    /** @var array<string, list<array{id: string, name: string, count: int}>> */
+    /** @var array<string, list<array{id: string, kind: string, name: string, tillName: string, count: int, photoUrl: string|null}>> */
     private array $departments = [];
 
     /**
@@ -47,10 +48,11 @@ final class StoreContext
     }
 
     /**
-     * The departments shown at the visitor's shop with their counts, read once per request (audit OSA-28: the frame,
-     * the home rows and the pages all need them).
+     * The aisles shown at the visitor's shop with their counts, read once per request (audit OSA-28: the frame, the
+     * home rows and the pages all need them). OS-11: the store's aisles (StoreAisles): departments or categories,
+     * never a "no department" bucket, only with orderable products, in the shop's order with its names.
      *
-     * @return list<array{id: string, name: string, count: int}>
+     * @return list<array{id: string, kind: string, name: string, tillName: string, count: int, photoUrl: string|null}>
      */
     public function departments(): array
     {
@@ -60,7 +62,34 @@ final class StoreContext
             return [];
         }
 
-        return $this->departments[$shop->id] ??= app(StorefrontCatalogue::class)->departments($this->store, $shop);
+        return $this->departments[$shop->id] ??= array_map(function (array $aisle): array {
+            unset($aisle['hidden'], $aisle['customName']);
+
+            return $aisle;
+        }, app(StoreAisles::class)->handle($this->store, $shop));
+    }
+
+    /**
+     * The catalogue filter for one aisle: its department or its category.
+     *
+     * @param  array{id: string, kind: string}  $aisle
+     * @return array{departmentId: string|null, categoryId: string|null}
+     */
+    public static function aisleFilter(array $aisle): array
+    {
+        $category = $aisle['kind'] === AisleSource::Categories->value;
+
+        return ['departmentId' => $category ? null : $aisle['id'], 'categoryId' => $category ? $aisle['id'] : null];
+    }
+
+    /**
+     * The product column an aisle groups by.
+     *
+     * @param  array{kind: string}  $aisle
+     */
+    public static function aisleColumn(array $aisle): string
+    {
+        return $aisle['kind'] === AisleSource::Categories->value ? 'category_id' : 'department_id';
     }
 
     /** Whether customers can add and order now: the store takes orders and a shop is open for collections. */

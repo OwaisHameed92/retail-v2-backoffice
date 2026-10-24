@@ -12,7 +12,8 @@ use Illuminate\Database\Query\Builder as QueryBuilder;
 
 /**
  * Two more rules for what the online store shows (online store audit OSA-4, OSA-23), merged into
- * OnlineCatalogueQuery's rules. Read only on the till's tables, filtered on the business explicitly.
+ * OnlineCatalogueQuery's rules, and (OS-11) `noName`: a till name with fewer than 2 letters or digits (",", "-").
+ * Read only on the till's tables, filtered on the business explicitly.
  *
  * - `recalled` (OSA-4): a product with a recall (`product_recalls`, not deleted) that this shop has not closed
  *   (`product_recall_branch_states`: no closed row for the shop = still open there, as RecallShops reads it).
@@ -27,7 +28,11 @@ final class CatalogueSafetyRules
     public const REASONS = [
         'recalled' => 'Under recall',
         'unavailable' => 'Not on sale now (availability dates)',
+        'noName' => 'No proper name on the till',
     ];
+
+    /** Punctuation and spaces left out when counting a name's letters and digits (`noName`). */
+    private const NAME_NOISE = [' ', ',', '.', '-', '_', '/', '\\', '*', '#', '+', '&', '(', ')', "'", '"', '!', '?', ':', ';', '=', '~', '|'];
 
     /**
      * @return array<string, Closure(Builder<Product>): mixed>
@@ -38,7 +43,15 @@ final class CatalogueSafetyRules
         $today = ($at ?? CarbonImmutable::now())->setTimezone(OnlineStoreSwitch::timezone())->format('Y-m-d');
         $dated = fn (string $column) => "{$column} LIKE '____-__-__%'";
 
+        $letters = 'TRIM(COALESCE(products.name, \'\'))';
+
+        foreach (self::NAME_NOISE as $char) {
+            $letters = "REPLACE({$letters}, ?, '')";
+        }
+
         return [
+            // OS-11: a product named "," or "-" on the till is never shown (fewer than 2 letters or digits).
+            'noName' => fn (Builder $q) => $q->whereRaw("LENGTH({$letters}) >= 2", self::NAME_NOISE),
             'recalled' => fn (Builder $q) => $q->whereNotExists(fn (QueryBuilder $s) => $s->selectRaw('1')->from('product_recalls as prc')
                 ->whereColumn('prc.product_id', 'products.id')->where('prc.company_id', $companyId)->whereNull('prc.deleted_at')
                 ->whereNotExists(fn (QueryBuilder $c) => $c->selectRaw('1')->from('product_recall_branch_states as prs')

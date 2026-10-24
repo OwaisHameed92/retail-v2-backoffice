@@ -122,7 +122,7 @@ final class OnlineOrderMessages
     }
 
     /**
-     * A bell entry for every active member who runs the online store (`store.manage`) and may see the order's shop.
+     * A bell entry for every active member who works online orders (`orders.online`, audit OSA-32) and may see the order's shop.
      * Returns how many were written.
      */
     public function notifyStaff(OnlineOrder $order, Company $company): int
@@ -139,7 +139,7 @@ final class OnlineOrderMessages
         $count = 0;
 
         foreach ($members as $member) {
-            if (CompanyRole::tryFrom((string) $member->role)?->can(Ability::StoreManage) === true) {
+            if (CompanyRole::tryFrom((string) $member->role)?->can(Ability::OrdersOnline) === true) {
                 AlertInbox::add($company->id, (int) $member->user_id, self::ALERT_TYPE, 'info', 'New online order '.$order->reference, $body, self::portalUrl($order));
                 $count++;
             }

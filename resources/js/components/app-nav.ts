@@ -79,7 +79,8 @@ export function tenantNavGroups(path: string): TenantNavGroup[] {
                     icon: ShoppingBag,
                     href: '/app/online-orders',
                     active: startsWithPath(path, '/app/online-orders'),
-                    ability: 'store.manage',
+                    // Audit OSA-32: staff work orders without building the store.
+                    ability: 'orders.online',
                 },
                 {
                     title: 'Customers',

@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 /**
- * Moves one of the business's online orders on (portal → Online orders, `store.manage`): new → picking → ready →
+ * Moves one of the business's online orders on (portal → Online orders, `orders.online`): new → picking → ready →
  * collected (or not collected, OSA-21); a delivery (OS-9) ready → out for delivery → delivered (or not delivered);
  * or cancelled with a reason from any open stage (OnlineOrderStatus::next for the order's method). Sets the stage's
  * time column (UTC) and keeps the stage it came from, so the move can be undone for a short time

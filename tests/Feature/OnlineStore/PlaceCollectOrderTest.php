@@ -9,7 +9,7 @@ use App\Domain\OnlineStore\Enums\OnlineOrderStatus;
 use App\Domain\OnlineStore\Events\OnlineOrderPlaced;
 use App\Domain\OnlineStore\Models\OnlineOrder;
 use App\Domain\OnlineStore\Models\OnlineOrderLine;
-use App\Domain\OnlineStore\Queries\OnlineOrderByToken;
+use App\Domain\OnlineStore\Queries\StoreOrderById;
 use App\Domain\Shared\Models\AuditLog;
 use App\Domain\Shared\Support\Ulid;
 use Carbon\CarbonImmutable;
@@ -38,7 +38,7 @@ beforeEach(function () {
     };
 });
 
-test('places an order: server prices, snapshot lines, W-0001, the plain token once and only its hash stored', function () {
+test('places an order: server prices, snapshot lines, W-0001, and no order token (the page link is signed over the id)', function () {
     Event::fake([OnlineOrderPlaced::class]);
     $this->f->shopPrice($this->f->leeds, $this->beans, '0.95');
 
@@ -52,10 +52,9 @@ test('places an order: server prices, snapshot lines, W-0001, the plain token on
         ->and($order->collect_to->toIso8601ZuluString())->toBe('2026-11-02T10:30:00Z')
         ->and($order->items_total)->toBe('15.10')
         ->and($order->customer_email)->toBe('asha@example.test')
-        ->and($placed->token)->toMatch('/^[a-f0-9]{64}$/')
-        ->and($order->token_hash)->toBe(hash('sha256', $placed->token))
+        ->and(property_exists($placed, 'token'))->toBeFalse()
+        ->and($order->token_hash)->toMatch('/^[a-f0-9]{64}$/')
         ->and($order->toArray())->not->toHaveKey('token_hash')
-        ->and(DB::table('online_orders')->where('token_hash', $placed->token)->exists())->toBeFalse()
         ->and($order->lines->map(fn (OnlineOrderLine $l) => [$l->name, $l->unit_price, $l->quantity, $l->is_weighed, $l->line_total])->all())->toBe([
             ['Beans', '0.95', '3.0000', false, '2.85'],
             ['Lamb mince', '9.80', '1.2500', true, '12.25'],
@@ -219,13 +218,13 @@ test('refused when the online store is switched off after the store was found', 
         ->and(OnlineOrder::withoutCompanyScope()->count())->toBe(0);
 });
 
-test('the order page: found by its token for its own store only', function () {
+test('the order page: found by its id for its own store only', function () {
     $placed = ($this->place)([['productId' => $this->beans, 'quantity' => '1']]);
-    $byToken = app(OnlineOrderByToken::class);
+    $byId = app(StoreOrderById::class);
 
-    expect($byToken->handle($this->f->store, $placed->token)?->id)->toBe($placed->order->id)
-        ->and($byToken->handle($this->f->store, $placed->token)?->lines)->toHaveCount(1)
-        ->and($byToken->handle($this->f->store, str_repeat('a', 64)))->toBeNull()
-        ->and($byToken->handle($this->f->store, $placed->order->token_hash))->toBeNull()
-        ->and($byToken->handle($this->f->store, 'short'))->toBeNull();
+    expect($byId->handle($this->f->store, $placed->order->id)?->id)->toBe($placed->order->id)
+        ->and($byId->handle($this->f->store, $placed->order->id)?->lines)->toHaveCount(1)
+        ->and($byId->handle($this->f->store, str_repeat('A', 26)))->toBeNull()
+        ->and($byId->handle($this->f->store, $placed->order->token_hash))->toBeNull()
+        ->and($byId->handle($this->f->store, 'short'))->toBeNull();
 });

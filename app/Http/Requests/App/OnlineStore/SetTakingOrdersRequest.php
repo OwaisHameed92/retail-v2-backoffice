@@ -7,7 +7,7 @@ use Illuminate\Foundation\Http\FormRequest;
 
 /**
  * The board's "Taking orders" switch (OS-4, SetTakingOrders). It stops or opens ordering for the whole business, so a
- * one-shop user may not use it. The route checks `store.manage`.
+ * one-shop user may not use it. The route checks `orders.online`.
  */
 class SetTakingOrdersRequest extends FormRequest
 {

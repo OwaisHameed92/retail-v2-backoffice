@@ -1,6 +1,8 @@
 import { currencySymbol } from '@/lib/country';
-import { Clock, CreditCard, MapPin, Phone, ShoppingBasket, Timer } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { Clock, CreditCard, MapPin, Phone, ShoppingBasket, Timer, Truck } from 'lucide-react';
 import { type ReactNode } from 'react';
+import { money } from './format';
 import { SectionHeading } from './home-sections';
 import { COPY, templateOf } from './theme';
 import { type ShopInfo, type StoreInfo, type StoreTemplate } from './types';
@@ -61,12 +63,18 @@ export function ShopsSection({ shops }: { shops: ShopInfo[] }) {
         return null;
     }
 
+    const delivers = shops.some((shop) => shop.delivery);
+
     return (
-        <section aria-labelledby="shops-title" className="flex flex-col gap-4">
-            <SectionHeading id="shops-title" title={shops.length > 1 ? 'Our shops' : 'Where to collect'} sub="Collection hours" />
-            <ul className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <section id="shops" aria-labelledby="shops-title" className="flex scroll-mt-24 flex-col gap-4">
+            <SectionHeading
+                id="shops-title"
+                title={shops.length > 1 ? 'Our shops' : delivers ? 'Collect or get it delivered' : 'Where to collect'}
+                sub={shops.length > 1 ? 'Collect from the shop nearest you' : 'Opening hours for collection'}
+            />
+            <ul className={cn('grid gap-4', shops.length > 1 && 'lg:grid-cols-2')}>
                 {shops.map((shop) => (
-                    <li key={shop.id}>
+                    <li key={shop.id} className="min-w-0">
                         <ShopCard shop={shop} />
                     </li>
                 ))}
@@ -75,39 +83,109 @@ export function ShopsSection({ shops }: { shops: ShopInfo[] }) {
     );
 }
 
+/** "Today 09:00–17:00" with a dot (green while open now), or "Closed today". */
+function TodayChip({ shop }: { shop: ShopInfo }) {
+    const today = shop.hours.find((d) => d.day === shop.today);
+
+    if (!shop.today) {
+        return null;
+    }
+
+    const open = shop.openNow?.open ?? false;
+
+    return (
+        <span
+            className={cn(
+                'inline-flex h-7 items-center gap-1.5 rounded-full px-3 text-xs font-semibold whitespace-nowrap',
+                open ? 'bg-brand-soft text-brand-text' : 'bg-paper text-body',
+            )}
+        >
+            <span aria-hidden="true" className={cn('size-2 rounded-full', open ? 'bg-ok' : 'bg-muted')} />
+            {today?.hours ? `${open ? 'Open' : 'Today'} ${today.hours.open}–${today.hours.close}` : 'Closed today'}
+        </span>
+    );
+}
+
+function DeliveryNote({ delivery }: { delivery: NonNullable<ShopInfo['delivery']> }) {
+    const fee = Number(delivery.fee) > 0 ? `${money(delivery.fee)} delivery` : 'Free delivery';
+    const extras = [
+        delivery.freeOver ? `free over ${money(delivery.freeOver)}` : null,
+        delivery.minimum ? `minimum order ${money(delivery.minimum)}` : null,
+    ].filter(Boolean);
+    const areas = delivery.areas.slice(0, 8).join(', ') + (delivery.areas.length > 8 ? ` and ${delivery.areas.length - 8} more` : '');
+
+    return (
+        <div className="bg-paper flex items-start gap-3 rounded-xl px-4 py-3 text-sm">
+            <Truck aria-hidden="true" className="text-brand-text mt-0.5 size-[18px] shrink-0" />
+            <div className="flex min-w-0 flex-col gap-0.5">
+                <span className="font-semibold">
+                    {fee}
+                    {extras.length > 0 && <span className="text-body font-normal"> · {extras.join(' · ')}</span>}
+                </span>
+                {areas && <span className="text-body">Delivers to {areas}</span>}
+            </div>
+        </div>
+    );
+}
+
+/**
+ * A collection shop (OS-8, redesigned OS-11): its name, a clean one-line address, phone, today's hours as a chip,
+ * local delivery when it delivers, and the week's hours as a two-column table (today highlighted). In a wide space
+ * the details and the hours sit side by side (container query), in a narrow one they stack.
+ */
 export function ShopCard({ shop, children }: { shop: ShopInfo; children?: ReactNode }) {
     return (
-        <div className="border-line flex h-full flex-col gap-4 rounded-2xl border bg-white p-5 sm:p-6">
-            <div className="flex flex-col gap-1.5">
-                <h3 className="font-display text-lg font-bold tracking-[-0.01em]">{shop.name}</h3>
-                {shop.address && (
-                    <p className="text-body flex items-start gap-2 text-sm">
-                        <MapPin aria-hidden="true" className="text-brand-text mt-0.5 size-4 shrink-0" />
-                        {shop.address}
-                    </p>
-                )}
-                {shop.phone && (
-                    <a
-                        href={`tel:${shop.phone.replace(/\s+/g, '')}`}
-                        className="text-brand-text flex min-h-11 items-center gap-2 self-start text-sm font-semibold hover:underline"
-                    >
-                        <Phone aria-hidden="true" className="size-4 shrink-0" />
-                        {shop.phone}
-                    </a>
-                )}
-            </div>
-            <dl className="bg-paper grid grid-cols-[auto_1fr] gap-x-6 gap-y-1 rounded-xl p-4 text-[13px]">
-                {shop.hours.map((day) => (
-                    <div key={day.day} className="contents">
-                        <dt className="font-medium">{day.day}</dt>
-                        <dd className={day.hours ? 'tabular-nums' : 'text-muted'}>
-                            {day.hours ? `${day.hours.open}–${day.hours.close}` : 'No collections'}
-                        </dd>
+        <article className="border-line @container h-full rounded-2xl border bg-white">
+            <div className="grid h-full gap-5 p-5 sm:p-6 @xl:grid-cols-[minmax(0,1fr)_minmax(15rem,18rem)] @xl:gap-8">
+                <div className="flex min-w-0 flex-col gap-3">
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+                        <h3 className="font-display text-xl leading-tight font-bold tracking-[-0.01em] break-words">{shop.name}</h3>
+                        <TodayChip shop={shop} />
                     </div>
-                ))}
-            </dl>
-            {children}
-        </div>
+                    {shop.address && (
+                        <p className="text-body flex items-start gap-2 text-[15px] leading-snug">
+                            <MapPin aria-hidden="true" className="text-brand-text mt-0.5 size-[18px] shrink-0" />
+                            <span className="min-w-0">{shop.address}</span>
+                        </p>
+                    )}
+                    {shop.phone && (
+                        <a
+                            href={`tel:${shop.phone.replace(/\s+/g, '')}`}
+                            className="text-brand-text -my-2 flex min-h-11 items-center gap-2 self-start text-[15px] font-semibold hover:underline"
+                        >
+                            <Phone aria-hidden="true" className="size-[18px] shrink-0" />
+                            {shop.phone}
+                        </a>
+                    )}
+                    {shop.openNow && !shop.openNow.open && <p className="text-muted text-sm">{shop.openNow.label}</p>}
+                    {shop.delivery && <DeliveryNote delivery={shop.delivery} />}
+                    {children}
+                </div>
+                <div className="min-w-0">
+                    <p className="text-muted mb-2 text-xs font-semibold tracking-[0.06em] uppercase">Collection hours</p>
+                    <dl className="divide-line grid divide-y text-sm">
+                        {shop.hours.map((day) => {
+                            const isToday = day.day === shop.today;
+
+                            return (
+                                <div
+                                    key={day.day}
+                                    className={cn('flex items-center justify-between gap-4 px-2 py-1.5', isToday && 'bg-brand-soft rounded-md font-semibold')}
+                                >
+                                    <dt>
+                                        {day.day}
+                                        {isToday && <span className="sr-only"> (today)</span>}
+                                    </dt>
+                                    <dd className={day.hours ? 'tabular-nums' : 'text-muted'}>
+                                        {day.hours ? `${day.hours.open}–${day.hours.close}` : 'Closed'}
+                                    </dd>
+                                </div>
+                            );
+                        })}
+                    </dl>
+                </div>
+            </div>
+        </article>
     );
 }
 

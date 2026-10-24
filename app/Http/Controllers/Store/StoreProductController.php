@@ -35,9 +35,13 @@ class StoreProductController extends Controller
             return StorePages::error($request, 404, $context);
         }
 
-        $department = $item->departmentId === null ? null : collect($context->departments())->firstWhere('id', $item->departmentId);
-        $related = $item->departmentId === null ? [] : array_values(array_filter(
-            $catalogue->products($store, $shop, departmentId: $item->departmentId, perPage: self::RELATED + 1, filters: new CatalogueFilters(inStockOnly: true))->items,
+        // OS-11: its aisle (department or category); related products from the same aisle.
+        $aisles = collect($context->departments());
+        $department = $aisles->firstWhere('id', $item->departmentId ?? '') ?? $aisles->firstWhere('id', $item->categoryId ?? '');
+        $aisle = $department === null ? null : StoreContext::aisleFilter($department);
+        $related = $aisle === null ? [] : array_values(array_filter(
+            $catalogue->products($store, $shop, departmentId: $aisle['departmentId'], perPage: self::RELATED + 1,
+                filters: new CatalogueFilters(inStockOnly: true), categoryId: $aisle['categoryId'])->items,
             fn (CatalogueItem $other) => $other->id !== $item->id,
         ));
         $next = $context->takingOrders() && $item->orderable ? $days->next($shop) : null;

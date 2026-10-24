@@ -8,7 +8,7 @@ use App\Domain\Tenancy\CurrentCompany;
 use Illuminate\Foundation\Http\FormRequest;
 
 /**
- * The online orders board (OS-4). The route checks `store.manage`. Filters are read leniently (bookmarkable URLs):
+ * The online orders board (OS-4). The route checks `orders.online`. Filters are read leniently (bookmarkable URLs):
  * `shop` (a shop id, or `all`; missing = the shop picked in the top bar) and `day` (Y-m-d, default today). A
  * one-shop user is pinned to their shop.
  */

@@ -202,7 +202,8 @@ export function DepartmentPicture({ tile, className, iconClass = 'size-8' }: { t
 }
 
 export function departmentTiles(store: StoreInfo, tiles: DepartmentTile[]): DepartmentTile[] {
-    return tiles.length > 0 ? tiles : store.departments.map((d) => ({ ...d, photoUrl: null }));
+    // OS-11: the server sends tiles only with three or more real aisles; with fewer, no tiles (the header lists them).
+    return tiles.length > 0 || store.departments.length < 3 ? tiles : store.departments.map((d) => ({ ...d, photoUrl: null }));
 }
 
 /** Fresh Market: three highlight tiles for the biggest aisles, then every aisle as a round photo. */

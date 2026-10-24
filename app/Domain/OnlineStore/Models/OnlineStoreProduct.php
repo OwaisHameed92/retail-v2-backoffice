@@ -18,6 +18,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property string|null $photo_path
  * @property string|null $description
  * @property string|null $allergen_info OS-8 (audit OSA-3): ingredients and allergens, shown before purchase
+ * @property bool $not_featured OS-11: kept out of the automatic featured row (best sellers, newest)
  * @property CarbonImmutable|null $created_at
  * @property CarbonImmutable|null $updated_at
  */
@@ -35,6 +36,7 @@ class OnlineStoreProduct extends Model
     {
         return [
             'hidden' => 'boolean',
+            'not_featured' => 'boolean',
             'created_at' => 'immutable_datetime',
             'updated_at' => 'immutable_datetime',
         ];

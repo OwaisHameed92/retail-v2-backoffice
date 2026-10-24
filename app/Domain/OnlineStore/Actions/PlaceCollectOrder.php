@@ -50,8 +50,8 @@ use Throwable;
  * (StartCardPayment sends the customer to DNA; RecordCardPayment makes it new once paid). Any other order is new at
  * once and OnlineOrderPlaced is dispatched after commit.
  *
- * Returns the order and its page's plain token, given out only here: only the token's sha256 is stored. Audited
- * (no actor: the customer). The order never writes till data.
+ * Returns the order; its page is a link signed over the order id (StoreLinks::orderPage), so no token is made
+ * (audit OSA-27). Audited (no actor: the customer). The order never writes till data.
  */
 final class PlaceCollectOrder
 {
@@ -87,14 +87,13 @@ final class PlaceCollectOrder
         $items = Money::sum(array_column($lines, 'line_total'), 2);
         $fee = $method === FulfilmentMethod::Delivery ? self::deliveryFee($shop, $address['delivery_postcode'], $items) : '0.00';
         $payment = self::payment($store, $method, $input->paymentMethod, $lines);
-        $token = bin2hex(random_bytes(32));
         $totals = ['items_total' => $items, 'delivery_fee' => $fee, 'grand_total' => Money::add($items, $fee, 2)];
         $details = [...$customer, ...$address, ...$totals, 'fulfilment' => $method, 'payment_method' => $payment];
 
         for ($attempt = 1; ; $attempt++) {
             try {
                 $order = StoreScope::run($store, fn (): OnlineOrder => DB::transaction(
-                    fn (): OnlineOrder => $this->insert($store, $shop, $from, $details, $lines, $token, $now),
+                    fn (): OnlineOrder => $this->insert($store, $shop, $from, $details, $lines, $now),
                 ));
 
                 break;
@@ -115,7 +114,7 @@ final class PlaceCollectOrder
             OnlineOrderPlaced::dispatch($order);
         }
 
-        return new PlacedOrder($order, $token);
+        return new PlacedOrder($order);
     }
 
     /**
@@ -124,7 +123,7 @@ final class PlaceCollectOrder
      *
      * @throws ValidationException
      */
-    private function insert(OnlineStore $store, OnlineStoreShop $shop, CarbonImmutable $from, array $details, array $lines, string $token, ?CarbonImmutable $now): OnlineOrder
+    private function insert(OnlineStore $store, OnlineStoreShop $shop, CarbonImmutable $from, array $details, array $lines, ?CarbonImmutable $now): OnlineOrder
     {
         $locked = OnlineStore::query()->where('company_id', $store->company_id)->whereKey($store->id)->lockForUpdate()->first();
 
@@ -156,7 +155,7 @@ final class PlaceCollectOrder
             'status' => $card ? OnlineOrderStatus::AwaitingPayment : OnlineOrderStatus::New,
             'collect_from' => $slot->from,
             'collect_to' => $slot->to,
-            'token_hash' => OnlineOrder::hashToken($token),
+            'token_hash' => OnlineOrder::unusedTokenHash(),
             ...($card ? [
                 'payment_expires_at' => ($now ?? CarbonImmutable::now())->utc()->addMinutes(max(1, (int) config('online_store.card_hold_minutes', 15))),
             ] : []),

@@ -9,7 +9,8 @@ namespace App\Domain\OnlineStore\Data;
  * category (offers), the online "Ingredients & allergens" text and the pack size from the till (`net_mass_kg`,
  * `volume_ml`) for the size and unit price. `stockLimit` (audit OSA-12): for a stock-tracked product, the most one
  * order may have: the shop's stock on hand less what open online orders already hold (StorefrontCatalogue::items),
- * whole units or 0.25 kg steps; null = not limited.
+ * whole units or 0.25 kg steps; null = not limited. `deposit` (OS-11, audit OSA-31): a deposit return item's deposit
+ * (`is_deposit_item`, `deposit_amount`), shown beside the price; the till charges it at collection.
  */
 final readonly class CatalogueItem
 {
@@ -30,6 +31,7 @@ final readonly class CatalogueItem
         public ?string $netMassKg = null,
         public ?string $volumeMl = null,
         public ?string $stockLimit = null,
+        public ?string $deposit = null,
     ) {}
 
     /** The same item with the stock left for online orders (OSA-12); nothing left = not orderable. */
@@ -39,7 +41,7 @@ final readonly class CatalogueItem
 
         return new self($this->id, $this->name, $this->description, $this->photoPath, $this->departmentId, $this->price, $this->isWeighed,
             $this->unitCode, $this->maxQtyPerSale, $this->stockTracked, $orderable, $this->categoryId, $this->allergenInfo, $this->netMassKg,
-            $this->volumeMl, $limit);
+            $this->volumeMl, $limit, $this->deposit);
     }
 
     /**

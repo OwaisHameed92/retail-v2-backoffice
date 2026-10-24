@@ -34,8 +34,16 @@ class CompanyRoleTest extends TestCase
     public function test_staff_is_read_only(): void
     {
         foreach (CompanyRole::Staff->abilities() as $ability) {
+            // Audit OSA-32: working online orders is the one shop-floor job staff do in the portal.
+            if ($ability === Ability::OrdersOnline) {
+                continue;
+            }
+
             $this->assertStringEndsWith('.view', $ability->value);
         }
+
+        $this->assertTrue(CompanyRole::Staff->can('orders.online'));
+        $this->assertFalse(CompanyRole::Staff->can('store.manage'));
 
         $this->assertFalse(CompanyRole::Staff->can('reports.view'));
         $this->assertFalse(CompanyRole::Staff->can('billing.view'));

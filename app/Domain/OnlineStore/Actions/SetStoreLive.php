@@ -2,6 +2,7 @@
 
 namespace App\Domain\OnlineStore\Actions;
 
+use App\Domain\OnlineStore\Legal\StoreTrader;
 use App\Domain\OnlineStore\Models\OnlineStore;
 use App\Domain\OnlineStore\Queries\StorefrontShops;
 use App\Domain\OnlineStore\Support\OnlineStoreSwitch;
@@ -15,7 +16,8 @@ use Illuminate\Validation\ValidationException;
 /**
  * Publishes the store (its address starts answering) or takes it off line. Publishing needs the online store to be
  * available on this instance (OnlineStoreSwitch), at least one shop customers can collect from, and (OS-6) the
- * business's add-on and cloud sync (OnlineStoreSwitch::availableFor). Taking it off
+ * business's add-on and cloud sync (OnlineStoreSwitch::availableFor), and (OS-11, audit OSA-2) the trader details
+ * saved on the Legal & contact tab (StoreTrader::missing). Taking it off
  * line always works. Nothing is written when nothing changes. Audited.
  */
 final class SetStoreLive
@@ -51,10 +53,26 @@ final class SetStoreLive
                 throw ValidationException::withMessages(['store' => 'The online store add-on is not on for this business, or none of its tills has cloud sync. Contact Switch & Save.']);
             }
 
+            // OS-11 (audit OSA-2): the trader details UK law asks an online shop to show, saved on "Legal & contact".
+            if ($live && ($missing = StoreTrader::missing($store)) !== []) {
+                throw ValidationException::withMessages(['store' => self::legalMissing($missing)]);
+            }
+
             $store->forceFill(['is_live' => $live, 'live_at' => $live ? CarbonImmutable::now('UTC') : $store->live_at])->save();
             $this->audit->handle($live ? 'online_store.published' : 'online_store.unpublished', $store, ['is_live' => ! $live], ['is_live' => $live], companyId: $company->id);
 
             return $store;
         });
+    }
+
+    /**
+     * @param  list<string>  $missing
+     */
+    public static function legalMissing(array $missing): string
+    {
+        $last = array_pop($missing);
+        $list = $missing === [] ? $last : implode(', ', $missing).' and '.$last;
+
+        return "Add your {$list} on the Legal & contact tab before you publish the store.";
     }
 }

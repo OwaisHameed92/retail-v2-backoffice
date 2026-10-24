@@ -49,20 +49,23 @@ final class StorePhotos
 
     /**
      * One photo per department (of a product shown at the shop), by department id; departments without one are left out.
+     * OS-11: `$column` `category_id` gives one per category (category aisles).
      *
      * @param  list<string>  $departmentIds
      * @return array<string, string>
      */
-    public function departments(OnlineStore $store, OnlineStoreShop $shop, array $departmentIds): array
+    public function departments(OnlineStore $store, OnlineStoreShop $shop, array $departmentIds, string $column = 'department_id'): array
     {
         if ($departmentIds === []) {
             return [];
         }
 
-        return StoreScope::run($store, function () use ($store, $shop, $departmentIds): array {
-            $own = OnlineCatalogueQuery::base($shop)->whereIn('products.department_id', $departmentIds)
+        $column = $column === 'category_id' ? 'category_id' : 'department_id';
+
+        return StoreScope::run($store, function () use ($store, $shop, $departmentIds, $column): array {
+            $own = OnlineCatalogueQuery::base($shop)->whereIn("products.{$column}", $departmentIds)
                 ->whereNotNull('osp.photo_path')->where('osp.photo_path', '!=', '')
-                ->groupBy('products.department_id')->selectRaw('products.department_id as department_id, MIN(osp.photo_path) as photo')
+                ->groupBy("products.{$column}")->selectRaw("products.{$column} as department_id, MIN(osp.photo_path) as photo")
                 ->toBase()->pluck('photo', 'department_id')
                 ->map(fn ($path) => StoreImages::url((string) $path))->filter()->all();
             $missing = array_values(array_diff($departmentIds, array_keys($own)));
@@ -71,12 +74,12 @@ final class StorePhotos
                 return $own;
             }
 
-            $master = OnlineCatalogueQuery::base($shop)->whereIn('products.department_id', $missing)
+            $master = OnlineCatalogueQuery::base($shop)->whereIn("products.{$column}", $missing)
                 ->join('product_barcodes as pbp', fn (JoinClause $j) => $j->on('pbp.product_id', '=', 'products.id')
                     ->where('pbp.company_id', '=', $store->company_id)->whereNull('pbp.deleted_at'))
                 ->join('master_products as mp', 'mp.barcode', '=', 'pbp.barcode')
                 ->whereNotNull('mp.image_url')->where('mp.image_url', '!=', '')
-                ->groupBy('products.department_id')->selectRaw('products.department_id as department_id, MIN(mp.image_url) as photo')
+                ->groupBy("products.{$column}")->selectRaw("products.{$column} as department_id, MIN(mp.image_url) as photo")
                 ->toBase()->pluck('photo', 'department_id')
                 ->map(fn ($url) => self::safeUrl((string) $url))->filter()->all();
 

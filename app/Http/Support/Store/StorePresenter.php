@@ -10,8 +10,14 @@ use App\Domain\OnlineStore\Models\OnlineStore;
 use App\Domain\OnlineStore\Models\OnlineStoreShop;
 use App\Domain\OnlineStore\Queries\StoreOffers;
 use App\Domain\OnlineStore\Queries\StorePhotos;
+use App\Domain\OnlineStore\Support\AddressLine;
+use App\Domain\OnlineStore\Support\DisplayName;
+use App\Domain\OnlineStore\Support\OnlineStoreSwitch;
 use App\Domain\OnlineStore\Support\PackSizeLabel;
+use App\Domain\OnlineStore\Support\ShopOpenNow;
+use App\Domain\Shared\Support\Money;
 use App\Domain\Tenancy\Models\Branch;
+use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Storage;
 
 /**
@@ -43,7 +49,8 @@ final class StorePresenter
     {
         return [
             'id' => $item->id,
-            'name' => $item->name,
+            // OS-11: a till name in capitals shows in Title Case (DisplayName); the stored name is unchanged.
+            'name' => DisplayName::of($item->name),
             'description' => $item->description,
             'photoUrl' => $photoUrl,
             'offer' => $offer,
@@ -51,6 +58,8 @@ final class StorePresenter
             'unitPrice' => PackSizeLabel::unitPrice($item),
             'departmentId' => $item->departmentId,
             'price' => $item->price,
+            // OS-11 (audit OSA-31): a deposit return item's deposit, charged by the till at collection.
+            'deposit' => $item->deposit,
             'isWeighed' => $item->isWeighed,
             'step' => BasketRules::display(BasketRules::step($item)),
             'max' => BasketRules::display(BasketRules::limit($item)),
@@ -97,11 +106,21 @@ final class StorePresenter
 
         return [
             'id' => $shop->id,
-            'name' => $branch === null ? 'The shop' : $branch->name,
-            'address' => $branch === null ? '' : implode(', ', array_values(array_filter([trim((string) $branch->address), trim((string) $branch->town), trim((string) $branch->postcode)]))),
+            'name' => $branch === null ? 'The shop' : DisplayName::of((string) $branch->name),
+            // OS-11: one clean line, a town or postcode already in the address is not repeated (AddressLine).
+            'address' => $branch === null ? '' : (string) AddressLine::from($branch->address, $branch->town, $branch->postcode),
             'phone' => $branch?->phone ? trim($branch->phone) : null,
             'prepMinutes' => $shop->prep_minutes,
             'hours' => array_map(fn (string $day) => ['day' => ucfirst($day), 'hours' => $shop->hoursOn($day)], OnlineStoreShop::WEEKDAYS),
+            // OS-11: today's weekday in shop time, "open now", and the shop's local delivery (areas and fees) when it delivers.
+            'today' => CarbonImmutable::now(OnlineStoreSwitch::timezone())->format('l'),
+            'openNow' => ShopOpenNow::describe($shop),
+            'delivery' => ! $shop->delivery_enabled ? null : [
+                'areas' => $shop->delivery_areas ?? [],
+                'fee' => Money::normalise($shop->delivery_fee ?? '0', 2),
+                'freeOver' => $shop->delivery_free_over === null ? null : Money::normalise($shop->delivery_free_over, 2),
+                'minimum' => $shop->delivery_minimum === null ? null : Money::normalise($shop->delivery_minimum, 2),
+            ],
         ];
     }
 

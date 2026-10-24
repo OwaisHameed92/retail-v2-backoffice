@@ -43,6 +43,16 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property bool $dna_test_mode OS-9: DNA's test environment (no real money)
  * @property list<string>|null $collection_payments OS-9: ways to pay for a collection; null = pay at the shop
  * @property list<string>|null $delivery_payments OS-9: ways to pay for a delivery; null = pay on delivery
+ * @property string|null $trading_name OS-11 (audit OSA-2): the trader details (StoreTrader, SaveStoreLegal)
+ * @property string|null $legal_name
+ * @property string|null $legal_address
+ * @property string|null $company_number
+ * @property string|null $vat_number
+ * @property string|null $contact_email
+ * @property string|null $contact_phone
+ * @property array<string, string>|null $legal_extra the shop's own text per legal page (LegalPage value => text)
+ * @property string|null $aisle_source OS-11: AisleSource value; null = automatic (StoreAisles)
+ * @property list<array<string, mixed>>|null $aisles OS-11: the shop's aisle choices, in order
  * @property CarbonImmutable|null $created_at
  * @property CarbonImmutable|null $updated_at
  * @property-read Collection<int, OnlineStoreShop> $shops
@@ -96,6 +106,8 @@ class OnlineStore extends Model
             'dna_test_mode' => 'boolean',
             'collection_payments' => 'array',
             'delivery_payments' => 'array',
+            'legal_extra' => 'array',
+            'aisles' => 'array',
             'created_at' => 'immutable_datetime',
             'updated_at' => 'immutable_datetime',
         ];

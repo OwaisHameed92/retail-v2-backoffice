@@ -11,7 +11,7 @@ use Illuminate\Validation\ValidationException;
 use Throwable;
 
 /**
- * The products page's "Online details" dialog (OS-3): shown or hidden, short description, ingredients and allergens
+ * The products page's "Online details" dialog (OS-3): shown or hidden, in the automatic featured row or not (OS-11), short description, ingredients and allergens
  * (OS-8, audit OSA-3) and photo, through
  * SetOnlineProduct. A new photo is stored first (StoreImages) and replaces the old one, which is then deleted;
  * `remove_photo` takes it off. The product must be one of the business's own (checked before anything is stored).
@@ -34,7 +34,7 @@ final class SaveOnlineProductDetails
         }
 
         $old = OnlineStoreProduct::withoutCompanyScope()->where('company_id', $company->id)->where('product_id', $productId)->value('photo_path');
-        $changes = array_intersect_key($changes, array_flip(['hidden', 'description', 'allergen_info', 'remove_photo']));
+        $changes = array_intersect_key($changes, array_flip(['hidden', 'not_featured', 'description', 'allergen_info', 'remove_photo']));
         $new = null;
 
         if ($photo !== null) {

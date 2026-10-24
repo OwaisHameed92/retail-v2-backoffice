@@ -1,8 +1,8 @@
 import { PageTabs } from '@/components/shared/page-tabs';
 
-export type OnlineStoreTab = 'store' | 'shops' | 'delivery' | 'products' | 'emails';
+export type OnlineStoreTab = 'store' | 'shops' | 'delivery' | 'products' | 'emails' | 'legal';
 
-/** Store | Collection shops | Delivery & payments (OS-9) | Products | Emails (OS-10), under the online store page headers. */
+/** Store | Collection shops | Delivery & payments (OS-9) | Products | Emails (OS-10) | Legal & contact (OS-11), under the online store page headers. */
 export function OnlineStoreTabs({ active }: { active: OnlineStoreTab }) {
     return (
         <PageTabs
@@ -13,6 +13,7 @@ export function OnlineStoreTabs({ active }: { active: OnlineStoreTab }) {
                 { label: 'Delivery & payments', href: route('app.online-store.delivery'), active: active === 'delivery' },
                 { label: 'Products', href: route('app.online-store.products'), active: active === 'products' },
                 { label: 'Emails', href: route('app.online-store.emails'), active: active === 'emails' },
+                { label: 'Legal & contact', href: route('app.online-store.legal'), active: active === 'legal' },
             ]}
         />
     );

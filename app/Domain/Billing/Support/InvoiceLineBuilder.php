@@ -3,6 +3,7 @@
 namespace App\Domain\Billing\Support;
 
 use App\Domain\Billing\Enums\BillingCycle;
+use App\Domain\Billing\Enums\InvoiceLineKind;
 use App\Domain\Licensing\Models\Licence;
 use App\Domain\Licensing\Support\LicenceTerms;
 use App\Domain\OnlineStore\Support\OnlineStoreAddOn;
@@ -27,7 +28,10 @@ use Illuminate\Support\Collection;
  * yearly cycle), VAT as the other lines, no licence or branch (paying it renews nothing). Never prorated: like a price
  * change it is charged on the invoices raised after it was switched on. Without the add-on nothing changes.
  *
- * @phpstan-type Line array{licence_id: string|null, register_id: string|null, branch_id: string|null, plan_id: string|null, description: string, quantity: string, unit_price: string, net: string, vat: string, gross: string, period_start: string, period_end: string, position: int}
+ * Audit OSA-30: every line carries its `kind` (InvoiceLineKind value: licence, branch, onlineStore), stored on the
+ * invoice line, so the add-on line is recognised by its kind, not by having no licence and no branch.
+ *
+ * @phpstan-type Line array{licence_id: string|null, register_id: string|null, branch_id: string|null, kind?: string|null, plan_id: string|null, description: string, quantity: string, unit_price: string, net: string, vat: string, gross: string, period_start: string, period_end: string, position: int}
  */
 final class InvoiceLineBuilder
 {
@@ -76,6 +80,7 @@ final class InvoiceLineBuilder
                 'licence_id' => $unit['branch'] === null ? $first->id : null,
                 'register_id' => $unit['branch'] === null ? $first->register_id : null,
                 'branch_id' => $unit['branch']?->id,
+                'kind' => ($unit['branch'] === null ? InvoiceLineKind::Licence : InvoiceLineKind::Branch)->value,
                 'plan_id' => $unit['branch'] === null ? $first->plan_id : ($pricing->plan->id ?? $first->plan_id),
                 'description' => ($unit['branch'] === null ? self::describe($first, $range) : self::describeBranch($unit['branch'], $unit['licences']->count(), $pricing, $range)).$note,
                 'quantity' => $quantity,
@@ -97,13 +102,18 @@ final class InvoiceLineBuilder
     }
 
     /**
-     * OS-6: an online store add-on line (the only line here with no licence and no branch).
+     * OS-6, OSA-30: an online store add-on line, by its `kind`. A line without a kind (built before it existed) falls
+     * back to the old rule: no licence and no branch.
      *
      * @param  Line  $line
      */
     public static function isOnlineStoreLine(array $line): bool
     {
-        return $line['licence_id'] === null && $line['branch_id'] === null;
+        $kind = $line['kind'] ?? null;
+
+        return $kind === null
+            ? $line['licence_id'] === null && $line['branch_id'] === null
+            : $kind === InvoiceLineKind::OnlineStore->value;
     }
 
     /**
@@ -120,6 +130,7 @@ final class InvoiceLineBuilder
             'licence_id' => null,
             'register_id' => null,
             'branch_id' => null,
+            'kind' => InvoiceLineKind::OnlineStore->value,
             'plan_id' => null,
             'description' => self::ONLINE_STORE.' · '.BillingDates::range($start, $end),
             'quantity' => '1.0000',

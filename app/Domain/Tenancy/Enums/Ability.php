@@ -97,6 +97,9 @@ enum Ability: string
     /** Shelf-edge labels: the shop's label queue, templates and printing (gap #6). Owner and manager (a one-shop manager: their shop). */
     case LabelsPrint = 'labels.print';
 
-    /** The online store: its builder, collection shops, products shown online and the online orders board (docs/online-store.md). Owner and manager. */
+    /** The online store: its builder, collection shops, delivery and payments, products shown online and emails (docs/online-store.md). Owner and manager. */
     case StoreManage = 'store.manage';
+
+    /** Audit OSA-32: work the online orders (board, order page, pick list, status, lines, resend link, taking orders). Owner, manager and staff (a one-shop user: their shop). */
+    case OrdersOnline = 'orders.online';
 }
