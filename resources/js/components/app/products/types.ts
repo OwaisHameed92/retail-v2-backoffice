@@ -27,6 +27,8 @@ export interface ProductRow {
     vat: string | null;
     barcode: string | null;
     barcodeCount: number;
+    /** The picture the till sent (IMG-1), or null. */
+    imageUrl: string | null;
     ageRestricted: boolean;
     isActive: boolean;
     updatedAt: string | null;
@@ -109,6 +111,14 @@ export type ProductValues = {
     units: UnitValue[];
 };
 
+/** TillPictures::forProduct */
+export interface TillImage {
+    url: string;
+    width: number;
+    height: number;
+    updatedAt: string | null;
+}
+
 export interface ProductFormProps {
     product: {
         id: string;
@@ -119,6 +129,8 @@ export interface ProductFormProps {
         updatedAt: string | null;
         lastChangedBy: string;
         nearestExpiryDate: string | null;
+        /** The picture the till sent (IMG-1, read only), or null. */
+        tillImage: TillImage | null;
     } | null;
     values: ProductValues;
     options: CatalogueOptions;

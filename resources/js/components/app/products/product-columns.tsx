@@ -21,6 +21,16 @@ export function productColumns(canManage: boolean, onArchive: (row: ProductRow) 
                     name={row.original.name}
                     subline={[row.original.barcode, row.original.sku].filter(Boolean).join(' · ') || 'No barcode'}
                     icon={Package}
+                    avatar={
+                        row.original.imageUrl ? (
+                            <img
+                                src={row.original.imageUrl}
+                                alt=""
+                                loading="lazy"
+                                className="ring-border size-8 shrink-0 rounded-lg bg-white object-contain ring-1"
+                            />
+                        ) : undefined
+                    }
                     className="max-w-96"
                 />
             ),

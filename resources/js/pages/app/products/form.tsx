@@ -3,6 +3,7 @@ import { BarcodeEditor } from '@/components/app/products/barcode-editor';
 import { BasicsSection, GroupSection, PricingSection } from '@/components/app/products/product-form-basics';
 import { RulesSection, TillSection } from '@/components/app/products/product-form-rules';
 import { StockSection, UnitEditor } from '@/components/app/products/product-form-stock';
+import { TillPictureSection } from '@/components/app/products/till-picture-section';
 import { type ProductFormProps, type ProductValues } from '@/components/app/products/types';
 import { ConfirmDialog } from '@/components/shared/confirm-dialog';
 import { FormCard } from '@/components/shared/form-section';
@@ -119,6 +120,7 @@ export default function ProductFormPage({ product, values, options, canManage }:
                     <fieldset disabled={!canManage} className="contents">
                         <FormCard>
                             <BasicsSection {...section} />
+                            {product?.tillImage && <TillPictureSection image={product.tillImage} name={product.name} />}
                             <GroupSection {...section} />
                             <PricingSection {...section} />
                             <BarcodeEditor data={data} setData={set} errors={section.errors} disabled={!canManage} />

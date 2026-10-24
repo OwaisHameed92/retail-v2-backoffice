@@ -97,7 +97,8 @@ test('a pending sample\'s endpoint is not routed yet: once it is, its samples mu
         ->map(fn ($route) => ($route->methods()[0]).' '.$route->uri())->values()->all();
 
     expect($tillRoutes)->not->toBeEmpty()
-        ->and(array_diff($tillRoutes, array_keys(ContractReplyGuard::REPLY_SCHEMAS)))->toBe([])
+        // A contract proposal's calls (IMG-1 product-images) are checked against the proposal's schemas instead.
+        ->and(array_values(array_filter(array_diff($tillRoutes, array_keys(ContractReplyGuard::REPLY_SCHEMAS)), fn (string $route) => ! ContractReplyGuard::isProposalCall($route))))->toBe([])
         ->and(array_filter(array_keys($pending), fn (string $sample) => str_starts_with($sample, 'licensing/')))->toBe([]);
 
     foreach ($pending as $sample => ['route' => $route]) {

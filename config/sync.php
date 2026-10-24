@@ -42,6 +42,22 @@ return [
     'blocked_app_versions' => array_values(array_filter(array_map('trim', explode(',', (string) env('SYNC_BLOCKED_APP_VERSIONS', ''))))),
     'rate_limit_per_minute' => max(12, (int) env('SYNC_RATE_LIMIT_PER_MINUTE', 240)),
 
+    // IMG-1, contract proposal docs/contracts/proposals/product-images: the till uploads product pictures
+    // (`PUT|DELETE sync/product-images/{productId}`, `GET sync/product-images`). Off (the default): those calls answer
+    // 501 image.not_available and nothing reads `product_images`. The limits are the proposal's.
+    'product_images' => [
+        'enabled' => (bool) env('TILL_PRODUCT_IMAGES', false),
+        // Calls per minute per sync key on the picture endpoints (on top of the sync key's own limit).
+        'per_minute' => max(6, (int) env('TILL_PRODUCT_IMAGES_PER_MINUTE', 60)),
+        'max_bytes' => 2 * 1024 * 1024,
+        'max_pixels' => 2000,
+        'min_pixels' => 16,
+        // The web copy the portal keeps: longest side at most this, WebP (JPEG when GD has no WebP).
+        'stored_max_pixels' => 1200,
+        // Retry-After of 501 image.not_available, so a till does not ask again before then.
+        'not_available_retry_after' => 3600,
+    ],
+
     // Security review M6: failed Bearer checks on sync/* and cloud/migrate/complete, counted before the key lookup.
     // Over either limit within the window → 429 rate.limited (lockout) until the window passes.
     'failed_auth' => [

@@ -75,8 +75,14 @@ export function productColumns({ canEdit, selected, setSelected, rows, onEdit, o
             cell: ({ row }) => (
                 <div className="flex min-w-0 items-center gap-3">
                     <div className="bg-muted flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-lg border">
-                        {row.original.photoUrl ? (
-                            <img src={row.original.photoUrl} alt="" className="size-full object-cover" loading="lazy" />
+                        {(row.original.photoUrl ?? row.original.tillPhotoUrl) ? (
+                            <img
+                                src={row.original.photoUrl ?? row.original.tillPhotoUrl ?? undefined}
+                                alt=""
+                                title={row.original.photoUrl ? undefined : 'Picture from your till'}
+                                className="size-full object-cover"
+                                loading="lazy"
+                            />
                         ) : (
                             <ImageIcon className="text-muted-foreground size-4" aria-label="No photo" />
                         )}

@@ -1,0 +1,7 @@
+{
+  "code": "rate.limited",
+  "message": "Too many sync requests from this shop. The till will try again shortly.",
+  "traceId": "req-3b9e25",
+  "retryAfterSeconds": 17,
+  "rejectedKey": null
+}

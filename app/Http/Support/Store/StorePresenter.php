@@ -16,9 +16,9 @@ use Illuminate\Support\Facades\Storage;
 
 /**
  * What the public store's pages show (OS-2), as plain arrays for the React pages. Product photos (StorePhotos, OS-8):
- * the online photo (`online_store_products.photo_path` on the public disk), else the master catalogue's picture of
- * one of its barcodes; the till's own `image_path` is a path on the till's PC, never a URL (contract PORTAL-CHANGES
- * 0.1.35). No photo → the page draws a branded placeholder. With the shop, a product carries its till offer's label
+ * the online photo (`online_store_products.photo_path` on the public disk), else the picture the till uploaded (IMG-1,
+ * while TILL_PRODUCT_IMAGES is on), else the master catalogue's picture of one of its barcodes; the till's own
+ * `image_path` is a path on the till's PC, never a URL (contract PORTAL-CHANGES 0.1.35). No photo → the page draws a branded placeholder. With the shop, a product carries its till offer's label
  * (StoreOffers, OS-8) to show beside the shelf price.
  */
 final class StorePresenter
@@ -158,7 +158,7 @@ final class StorePresenter
     }
 
     /**
-     * The photos of these products, by product id (StorePhotos: online photo, else the master catalogue's).
+     * The photos of these products, by product id (StorePhotos: online photo, else the till's, else the master catalogue's).
      *
      * @param  list<string>  $productIds
      * @return array<string, string>

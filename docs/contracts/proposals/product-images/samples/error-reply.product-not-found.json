@@ -1,0 +1,7 @@
+{
+  "code": "product.not_found",
+  "message": "The portal does not have this product yet. The till sends the picture again after its next sync.",
+  "traceId": "req-3b9e22",
+  "retryAfterSeconds": null,
+  "rejectedKey": "01K5T0Q8C4000000000000P009"
+}

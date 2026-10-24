@@ -178,6 +178,8 @@ export interface OnlineProductRow {
     price: string | null;
     isWeighed: boolean;
     photoUrl: string | null;
+    /** IMG-1: the picture the till sent, shown in the store when there is no online photo. */
+    tillPhotoUrl: string | null;
     description: string | null;
     tillDescription: string | null;
     /** OS-8 (audit OSA-3): the online ingredients and allergens text, and what the tills hold. */

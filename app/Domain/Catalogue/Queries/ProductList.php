@@ -3,11 +3,13 @@
 namespace App\Domain\Catalogue\Queries;
 
 use App\Domain\Shared\Support\TableQuery;
+use App\Domain\Tenancy\CurrentCompany;
 use App\Domain\TillData\Models\Category;
 use App\Domain\TillData\Models\Department;
 use App\Domain\TillData\Models\Product;
 use App\Domain\TillData\Models\ProductBarcode;
 use App\Domain\TillData\Models\VatRate;
+use App\Domain\TillImages\Queries\TillPictures;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 
@@ -17,8 +19,8 @@ use Illuminate\Http\Request;
  * - every filter is an indexed column: `(company_id, name)` for the default sort, `(company_id, department_id)`,
  *   `(company_id, category_id)`, `(company_id, sku)`; a search is an exact barcode (`(company_id, barcode)`), a code
  *   prefix or part of the name;
- * - one page of rows, then one query for that page's primary barcodes; department, category and VAT names come from
- *   small lookups, never a join per row.
+ * - one page of rows, then one query for that page's primary barcodes (and one for its till pictures, IMG-1, while
+ *   TILL_PRODUCT_IMAGES is on); department, category and VAT names come from small lookups, never a join per row.
  */
 final class ProductList
 {
@@ -49,6 +51,8 @@ final class ProductList
         $ids = array_map(fn (Product $p) => $p->id, $page['data']);
         $barcodes = [];
 
+        $pictures = TillPictures::urls((string) app(CurrentCompany::class)->id(), $ids);
+
         foreach (ProductBarcode::query()->whereIn('product_id', $ids)->orderByDesc('is_primary')->orderBy('created_at')->get(['product_id', 'barcode']) as $row) {
             $barcodes[$row->product_id][] = $row->barcode;
         }
@@ -65,6 +69,7 @@ final class ProductList
             'vat' => ($rate = $vat->get($p->vat_rate_id)) ? CatalogueOptions::percent((string) $rate->percentage) : null,
             'barcode' => $barcodes[$p->id][0] ?? null,
             'barcodeCount' => count($barcodes[$p->id] ?? []),
+            'imageUrl' => $pictures[$p->id] ?? null,
             'ageRestricted' => $p->age_rule !== null && $p->age_rule->value !== 'none',
             'isActive' => $p->is_active,
             'updatedAt' => $p->updated_at?->toIso8601ZuluString(),

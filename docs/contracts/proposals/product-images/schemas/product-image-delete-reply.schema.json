@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:sspos:web-portal-api:proposal:product-images:delete-reply",
+  "title": "product-image delete reply",
+  "description": "PROPOSAL product-images §4.2: 200 reply of DELETE /api/v1/sync/product-images/{productId} (no request body). Idempotent: a repeat answers none. New members may be added.",
+  "type": "object",
+  "properties": {
+    "productId": {
+      "type": "string",
+      "pattern": "^[0-9A-Za-z]{26}$"
+    },
+    "result": {
+      "enum": [
+        "deleted",
+        "none"
+      ],
+      "description": "deleted: the till's picture of the product is gone from the portal. none: the portal held no till picture for it."
+    }
+  },
+  "required": [
+    "productId",
+    "result"
+  ]
+}

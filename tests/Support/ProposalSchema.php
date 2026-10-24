@@ -7,7 +7,7 @@ use Opis\JsonSchema\Errors\ErrorFormatter;
 
 /**
  * JSON Schema validation against contract proposal `docs/contracts/proposals/pda-stock-drafts` (draft 2020-12, opis in
- * spec-compliant mode). The proposal's drafted-entity schemas `$ref` the v1.4.1 entity schemas by relative path, so
+ * spec-compliant mode), or another proposal folder with `errorsIn()` (product-images). The proposal's drafted-entity schemas `$ref` the v1.4.1 entity schemas by relative path, so
  * the whole `docs/contracts` folder is registered under one prefix.
  *
  *     ProposalSchema::payloadErrors($change['payload'], 'StockTake');   // [] when valid
@@ -45,11 +45,22 @@ final class ProposalSchema
      */
     public static function errors(mixed $data, string $schema): array
     {
-        if (! is_file(self::path($schema))) {
-            return ["schema {$schema} does not exist"];
+        return self::errorsIn(self::DIR, $data, $schema);
+    }
+
+    /**
+     * The same against another proposal folder (e.g. `proposals/product-images`).
+     *
+     * @param  string  $schema  path under that folder
+     * @return list<string>
+     */
+    public static function errorsIn(string $dir, mixed $data, string $schema): array
+    {
+        if (! is_file(dirname(__DIR__, 2).'/docs/contracts/'.$dir.'/'.$schema)) {
+            return ["schema {$dir}/{$schema} does not exist"];
         }
 
-        $result = self::validator()->validate(ContractSchema::objects($data), self::PREFIX.self::DIR.'/'.$schema);
+        $result = self::validator()->validate(ContractSchema::objects($data), self::PREFIX.$dir.'/'.$schema);
 
         if ($result->isValid()) {
             return [];

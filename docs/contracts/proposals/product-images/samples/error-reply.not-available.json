@@ -1,0 +1,7 @@
+{
+  "code": "image.not_available",
+  "message": "Product pictures are not switched on for the portal yet. The till keeps its pictures and tries again later.",
+  "traceId": "req-3b9e21",
+  "retryAfterSeconds": 3600,
+  "rejectedKey": null
+}

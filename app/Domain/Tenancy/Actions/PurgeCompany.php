@@ -18,9 +18,9 @@ use RuntimeException;
  * and every row that belongs to it — every table with a `company_id` (branches, tills, licences, sync keys, id map,
  * billing account, invoices, payments, GoCardless rows, sales, stock, audit rows…), the rows hanging off those
  * without one (AI messages, lead notes, local key refusals), audit rows about the company, the logins that belong to
- * no other business (with their sessions and reset tokens) and its files (imports, exports, and the online store's
- * pictures on the public disk, `online-store/{company_id}/`). One transaction;
- * files go after it commits. Other businesses are never touched: every delete is filtered on this company's id.
+ * no other business (with their sessions and reset tokens) and its files (imports, exports, the online store's
+ * pictures on the public disk, `online-store/{company_id}/`, and the till's product pictures, `till-images/{company_id}/`).
+ * One transaction; files go after it commits. Other businesses are never touched: every delete is filtered on this company's id.
  *
  * A business that has traded (an activated licence or any sale) is refused unless forced.
  */
@@ -29,8 +29,11 @@ class PurgeCompany
     /** Files kept per business on the local disk. */
     public const FILE_DIRECTORIES = ['invoice-imports', 'product-imports', 'sales-exports'];
 
-    /** Files kept per business on the public disk: the online store's logo, banner and product photos (StoreImages). */
-    public const PUBLIC_DIRECTORIES = ['online-store'];
+    /**
+     * Files kept per business on the public disk: the online store's logo, banner and product photos (StoreImages) and
+     * the till's product pictures (IMG-1, TillImageFiles).
+     */
+    public const PUBLIC_DIRECTORIES = ['online-store', 'till-images'];
 
     public function __construct(private readonly RecordAudit $audit) {}
 
@@ -133,7 +136,7 @@ class PurgeCompany
                 Storage::disk('local')->deleteDirectory($directory);
             }
 
-            // The online store's pictures (OS-6 fix): the whole `online-store/{company_id}` folder.
+            // The online store's pictures (OS-6 fix) and the till's (IMG-1): the whole `{directory}/{company_id}` folders.
             foreach ($company->id === '' ? [] : self::PUBLIC_DIRECTORIES as $directory) {
                 Storage::disk('public')->deleteDirectory($directory.'/'.$company->id);
             }

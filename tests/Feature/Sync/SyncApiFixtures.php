@@ -138,6 +138,16 @@ final class SyncApiFixtures
     }
 
     /**
+     * Any call with Leeds' (or Bradford's) §3 headers, e.g. the product-images proposal's raw-body PUT.
+     *
+     * @param  array<string, string|null>  $headers  merged over headers(); null removes one
+     */
+    public function send(string $method, string $uri, array $headers = [], ?string $content = null, bool $bradford = false): TestResponse
+    {
+        return $this->test->call($method, $uri, [], [], [], $this->server([...$this->headers($bradford), ...$headers]), $content);
+    }
+
+    /**
      * Schema errors of a reply (empty when valid); a pull reply's payloads are checked against their entity schemas.
      *
      * @return list<string>

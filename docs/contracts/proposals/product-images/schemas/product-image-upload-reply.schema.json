@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:sspos:web-portal-api:proposal:product-images:upload-reply",
+  "title": "product-image upload reply",
+  "description": "PROPOSAL product-images §4.1: 200 reply of PUT /api/v1/sync/product-images/{productId}. The same reply for a first picture (stored), a different picture (replaced) and a repeat of the picture already held (unchanged). New members may be added.",
+  "type": "object",
+  "properties": {
+    "productId": {
+      "type": "string",
+      "pattern": "^[0-9A-Za-z]{26}$",
+      "description": "The product id from the address, as the till sent it."
+    },
+    "imageHash": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$",
+      "description": "SHA-256 of the bytes the till sent (X-SSPOS-Image-Sha256) for the picture the portal now holds. The till remembers it for the product."
+    },
+    "result": {
+      "enum": [
+        "stored",
+        "replaced",
+        "unchanged"
+      ],
+      "description": "stored: the portal had no picture for the product. replaced: it had another one (removed). unchanged: it already held this picture; nothing was written."
+    },
+    "updatedAt": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "Z$",
+      "description": "When the portal stored the picture it holds (UTC)."
+    }
+  },
+  "required": [
+    "productId",
+    "imageHash",
+    "result",
+    "updatedAt"
+  ]
+}

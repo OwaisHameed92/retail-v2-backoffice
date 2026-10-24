@@ -13,6 +13,7 @@ use App\Domain\Tenancy\Models\Company;
 use App\Domain\TillData\Models\Department;
 use App\Domain\TillData\Models\Product;
 use App\Domain\TillData\Models\ProductBarcode;
+use App\Domain\TillImages\Queries\TillPictures;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Query\JoinClause;
 use Illuminate\Http\Request;
@@ -77,7 +78,9 @@ final class OnlineProductsPage
         $reasons = OnlineCatalogueQuery::exclusions($shop, array_map(fn (Product $p) => $p->id, $page['data']));
         $names = Department::query()->where('company_id', $company->id)->pluck('name', 'id');
         $till = app(TillAllergens::class)->for($company->id, $shopId, array_map(fn (Product $p) => $p->id, $page['data']));
-        $page['data'] = array_map(fn (Product $p) => self::row($p, $reasons[$p->id] ?? [], $names[$p->department_id] ?? null, $till[$p->id] ?? null), $page['data']);
+        $pictures = TillPictures::urls($company->id, array_map(fn (Product $p) => $p->id, $page['data']));
+        $page['data'] = array_map(fn (Product $p) => [...self::row($p, $reasons[$p->id] ?? [], $names[$p->department_id] ?? null, $till[$p->id] ?? null),
+            'tillPhotoUrl' => $pictures[$p->id] ?? null], $page['data']);
 
         return $base + [
             'products' => $page,

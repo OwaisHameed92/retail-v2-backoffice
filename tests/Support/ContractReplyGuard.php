@@ -14,7 +14,8 @@ use stdClass;
  * - 2xx: the endpoint's reply schema (pull: the envelope and every payload against its entity schema; licence
  *   replies: the embedded token's payload against licence-token-payload.schema.json).
  * - Anything else: `licensing/schemas/error-reply.schema.json` (the §9 envelope + `details`), and the code must be in
- *   `licensing/samples/error-codes.json` with the same HTTP status, or be listed in PENDING_CODES (docs/DECISIONS.md).
+ *   `licensing/samples/error-codes.json` with the same HTTP status, or be listed in PENDING_CODES (docs/DECISIONS.md),
+ *   or in a contract proposal's error-codes additions (PROPOSAL_CODES; its calls' replies against its schemas).
  */
 final class ContractReplyGuard
 {
@@ -39,6 +40,28 @@ final class ContractReplyGuard
         'POST api/v1/cloud/migrate' => 'licensing/schemas/migrate-reply.schema.json',
         'POST api/v1/cloud/migrate/complete' => 'licensing/schemas/migrate-complete-reply.schema.json',
     ];
+
+    /** Contract proposals whose calls the portal answers (switched on in tests): folder => error-codes additions file. */
+    public const PROPOSAL_CODES = ['proposals/product-images' => 'error-codes.additions.json'];
+
+    /** Proposal calls: path pattern (method + path) => [proposal folder, reply schema]. */
+    public const PROPOSAL_REPLY_SCHEMAS = [
+        '#^GET api/v1/sync/product-images$#' => ['proposals/product-images', 'schemas/product-image-list-reply.schema.json'],
+        '#^PUT api/v1/sync/product-images/[^/]+$#' => ['proposals/product-images', 'schemas/product-image-upload-reply.schema.json'],
+        '#^DELETE api/v1/sync/product-images/[^/]+$#' => ['proposals/product-images', 'schemas/product-image-delete-reply.schema.json'],
+    ];
+
+    /** Whether `METHOD path` is a call of a contract proposal (PROPOSAL_REPLY_SCHEMAS). */
+    public static function isProposalCall(string $what): bool
+    {
+        foreach (array_keys(self::PROPOSAL_REPLY_SCHEMAS) as $pattern) {
+            if (preg_match($pattern, $what) === 1) {
+                return true;
+            }
+        }
+
+        return false;
+    }
 
     /** @var list<array{what: string, status: int, body: string}> */
     private array $replies = [];
@@ -78,6 +101,11 @@ final class ContractReplyGuard
         if (self::$codes === null) {
             $list = json_decode((string) file_get_contents(ContractSchema::dir('licensing/samples/error-codes.json')), true, 512, JSON_THROW_ON_ERROR);
             self::$codes = [...array_column($list, 'status', 'code'), ...self::PENDING_CODES];
+
+            foreach (self::PROPOSAL_CODES as $dir => $file) {
+                $added = json_decode((string) file_get_contents(dirname(__DIR__, 2).'/docs/contracts/'.$dir.'/'.$file), true, 512, JSON_THROW_ON_ERROR);
+                self::$codes += array_column($added, 'status', 'code');
+            }
         }
 
         return self::$codes;
@@ -112,6 +140,12 @@ final class ContractReplyGuard
 
         if ($status >= 200 && $status < 300) {
             $schema = self::REPLY_SCHEMAS[$what] ?? null;
+
+            foreach ($schema === null ? self::PROPOSAL_REPLY_SCHEMAS : [] as $pattern => [$dir, $file]) {
+                if (preg_match($pattern, $what) === 1) {
+                    return ProposalSchema::errorsIn($dir, $data, $file);
+                }
+            }
 
             return match ($schema) {
                 null => [],   // a route only a test registers (e.g. a middleware probe); every real one is listed

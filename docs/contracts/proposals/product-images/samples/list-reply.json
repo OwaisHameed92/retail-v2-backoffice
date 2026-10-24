@@ -1,0 +1,16 @@
+{
+  "images": [
+    {
+      "productId": "01K5T0Q8C4000000000000P001",
+      "imageHash": "42d214eff618b7be9224a9003fa096081f5b4cbbadb12eea1cef42e9555b849b",
+      "updatedAt": "2026-10-25T09:14:03Z"
+    },
+    {
+      "productId": "01K5T0Q8C4000000000000P002",
+      "imageHash": "9604b372d5905b2781f937ac98fc30fec9d999035a6da04d5b1e52ef500eaca4",
+      "updatedAt": "2026-10-25T09:14:05Z"
+    }
+  ],
+  "nextAfter": "01K5T0Q8C4000000000000P002",
+  "hasMore": true
+}

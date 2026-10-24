@@ -93,7 +93,11 @@ export function ProductDialog({ product, onClose, descriptionMax }: ProductDialo
                                 onRemove={(r) => form.setData('remove_photo', r)}
                                 error={errors.photo}
                                 disabled={form.processing}
-                                help="A clear photo on a plain background. JPG, PNG or WebP, up to 4 MB."
+                                help={
+                                    product.tillPhotoUrl
+                                        ? 'Your till’s picture shows in the store until you add one here. JPG, PNG or WebP, up to 4 MB.'
+                                        : 'A clear photo on a plain background. JPG, PNG or WebP, up to 4 MB.'
+                                }
                             />
                         </div>
 

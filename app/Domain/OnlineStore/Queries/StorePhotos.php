@@ -11,13 +11,18 @@ use App\Domain\OnlineStore\Support\OnlineCatalogueQuery;
 use App\Domain\OnlineStore\Support\StoreImages;
 use App\Domain\OnlineStore\Support\StoreScope;
 use App\Domain\TillData\Models\ProductBarcode;
+use App\Domain\TillImages\Enums\ProductImageSource;
+use App\Domain\TillImages\Queries\TillPictures;
+use App\Domain\TillImages\Support\TillImageFiles;
+use App\Domain\TillImages\Support\TillImageSwitch;
 use Illuminate\Database\Query\JoinClause;
 
 /**
- * The photos the public store shows (OS-8). A product's photo is its online photo (store builder, public disk), else
- * the master catalogue's picture of one of its barcodes (`master_products.image_url`, any UPC/EAN form), else none
- * (the page draws a branded placeholder). The till's own `image_path` is a path on the till's PC, never a URL. A
- * department's photo is the photo of one of its products shown at the shop (online photos first).
+ * The photos the public store shows (OS-8, IMG-1). A product's photo is its online photo (store builder, public disk),
+ * else the till's picture (uploaded by the till, `product_images`, only while TILL_PRODUCT_IMAGES is on), else the
+ * master catalogue's picture of one of its barcodes (`master_products.image_url`, any UPC/EAN form), else none (the
+ * page draws a branded placeholder). The till's own `image_path` is a path on the till's PC, never a URL. A
+ * department's photo is the photo of one of its products shown at the shop, in the same order.
  *
  * Reads only: the business's rows filtered explicitly (StoreScope too); the master catalogue is platform data.
  */
@@ -42,8 +47,10 @@ final class StorePhotos
                 ->whereNotNull('photo_path')->where('photo_path', '!=', '')->pluck('photo_path', 'product_id')
                 ->map(fn ($path) => StoreImages::url((string) $path))->filter()->all();
             $missing = array_values(array_diff($productIds, array_keys($own)));
+            $till = TillPictures::urls($store->company_id, $missing);
+            $missing = array_values(array_diff($missing, array_keys($till)));
 
-            return $own + ($missing === [] ? [] : $this->masterImages($store, $missing));
+            return $own + $till + ($missing === [] ? [] : $this->masterImages($store, $missing));
         });
     }
 
@@ -66,6 +73,8 @@ final class StorePhotos
                 ->toBase()->pluck('photo', 'department_id')
                 ->map(fn ($path) => StoreImages::url((string) $path))->filter()->all();
             $missing = array_values(array_diff($departmentIds, array_keys($own)));
+            $own += $missing === [] ? [] : $this->tillDepartments($store, $shop, $missing);
+            $missing = array_values(array_diff($missing, array_keys($own)));
 
             if ($missing === []) {
                 return $own;
@@ -82,6 +91,26 @@ final class StorePhotos
 
             return $own + $master;
         });
+    }
+
+    /**
+     * One till picture per department (IMG-1), by department id; nothing while TILL_PRODUCT_IMAGES is off.
+     *
+     * @param  list<string>  $departmentIds
+     * @return array<string, string>
+     */
+    private function tillDepartments(OnlineStore $store, OnlineStoreShop $shop, array $departmentIds): array
+    {
+        if (! TillImageSwitch::enabled()) {
+            return [];
+        }
+
+        return OnlineCatalogueQuery::base($shop)->whereIn('products.department_id', $departmentIds)
+            ->join('product_images as pi', fn (JoinClause $j) => $j->on('pi.product_id', '=', 'products.id')
+                ->where('pi.company_id', '=', $store->company_id)->where('pi.source', '=', ProductImageSource::Till->value))
+            ->groupBy('products.department_id')->selectRaw('products.department_id as department_id, MIN(pi.path) as photo')
+            ->toBase()->pluck('photo', 'department_id')
+            ->map(fn ($path) => TillImageFiles::url((string) $path))->filter()->all();
     }
 
     /**

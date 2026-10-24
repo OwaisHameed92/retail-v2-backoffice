@@ -12,6 +12,7 @@ use App\Http\Controllers\Api\Pda\PdaPurchaseReturnController;
 use App\Http\Controllers\Api\Pda\PdaReceivingController;
 use App\Http\Controllers\Api\Pda\PdaStockAdjustmentController;
 use App\Http\Controllers\Api\Pda\PdaStockTakeController;
+use App\Http\Controllers\Api\ProductImageController;
 use App\Http\Controllers\Api\SyncController;
 use App\Http\Controllers\Api\TrialRequestController;
 use App\Http\Middleware\AuditPartnerCall;
@@ -21,6 +22,7 @@ use App\Http\Middleware\AuthenticateSyncKey;
 use App\Http\Middleware\EnsureTillContract;
 use App\Http\Middleware\GuardPublicTrialRequests;
 use App\Http\Middleware\GuardSyncRequest;
+use App\Http\Middleware\GuardTillProductImages;
 use App\Http\Middleware\IdempotentTillRequest;
 use App\Http\Middleware\PublicFormCors;
 use App\Http\Middleware\RequireStockDrafts;
@@ -40,6 +42,18 @@ Route::prefix('v1/sync')->name('api.sync.')
         Route::get('hello', 'hello')->name('hello');
         Route::post('push', 'push')->name('push');
         Route::get('pull', 'pull')->name('pull');
+    });
+
+// Till product pictures (IMG-1, contract proposal docs/contracts/proposals/product-images): the same sync key auth,
+// headers and limit as sync/*, then GuardTillProductImages: 501 image.not_available while TILL_PRODUCT_IMAGES is off
+// (the default), and its own per-key limit. The raw body of a PUT is the picture (TillImageBody).
+Route::prefix('v1/sync/product-images')->name('api.sync.product-images.')
+    ->middleware([EnsureTillContract::class, AuthenticateSyncKey::class, GuardSyncRequest::class, GuardTillProductImages::class])
+    ->controller(ProductImageController::class)
+    ->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::put('{productId}', 'update')->name('update');
+        Route::delete('{productId}', 'destroy')->name('destroy');
     });
 
 // Per-till licensing, EPOS contract v1.4.1 (docs/contracts/portal-api-v1.4.1/docs/web-portal-api.md §17.15, §17.7):

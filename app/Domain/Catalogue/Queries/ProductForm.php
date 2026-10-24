@@ -8,11 +8,12 @@ use App\Domain\TillData\Models\Product;
 use App\Domain\TillData\Models\ProductBarcode;
 use App\Domain\TillData\Models\ProductUnit;
 use App\Domain\TillData\Models\VatRate;
+use App\Domain\TillImages\Queries\TillPictures;
 
 /**
  * Props of the product form (create, edit, read-only view): the product's editable values as the form holds them
  * (strings for numbers, so nothing is rounded in the browser), its barcodes and units with their ids, where the
- * current content came from, and the pick lists.
+ * current content came from, the picture its till sent (IMG-1, read only) and the pick lists.
  */
 final class ProductForm
 {
@@ -53,6 +54,7 @@ final class ProductForm
                     ? 'Head office'
                     : (Branch::query()->whereKey($product->origin_branch_id)->value('name') ?? 'A shop'),
                 'nearestExpiryDate' => $product->nearest_expiry_date?->format('Y-m-d'),
+                'tillImage' => TillPictures::forProduct($product->company_id, $product->id),
             ],
             'values' => $values,
             'options' => CatalogueOptions::all(),

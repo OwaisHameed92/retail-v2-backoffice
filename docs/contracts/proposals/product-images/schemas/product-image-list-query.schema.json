@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:sspos:web-portal-api:proposal:product-images:list-query",
+  "title": "product-image list query",
+  "description": "PROPOSAL product-images §4.3: the query of GET /api/v1/sync/product-images?after={productId}&max={n}, written as a JSON object (parameter => value). Both optional. Headers: the §3 sync headers, as on sync/pull.",
+  "type": "object",
+  "properties": {
+    "after": {
+      "type": "string",
+      "pattern": "^([0-9A-Za-z]{26})?$",
+      "description": "nextAfter of the previous page; empty or left out for the first page."
+    },
+    "max": {
+      "type": "string",
+      "pattern": "^(?:[1-9]\\d{0,2}|[1-4]\\d{3}|5000)$",
+      "description": "Most entries in the page, 1 to 5000; 1000 when left out."
+    }
+  },
+  "additionalProperties": false
+}

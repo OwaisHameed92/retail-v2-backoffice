@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:sspos:web-portal-api:proposal:product-images:list-reply",
+  "title": "product-image list reply",
+  "description": "PROPOSAL product-images §4.3: 200 reply of GET /api/v1/sync/product-images. The till pictures the portal holds for the calling business, in productId order (keyset paging). A product missing from the whole list has no picture on the portal. New members may be added.",
+  "type": "object",
+  "properties": {
+    "images": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "productId": {
+            "type": "string",
+            "pattern": "^[0-9A-Za-z]{26}$"
+          },
+          "imageHash": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$",
+            "description": "SHA-256 of the bytes the till sent for the picture held. Equal to the till's own → nothing to upload."
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "Z$"
+          }
+        },
+        "required": [
+          "productId",
+          "imageHash",
+          "updatedAt"
+        ]
+      }
+    },
+    "nextAfter": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^[0-9A-Za-z]{26}$",
+      "description": "The after of the next page; null on the last page."
+    },
+    "hasMore": {
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "images",
+    "nextAfter",
+    "hasMore"
+  ]
+}
