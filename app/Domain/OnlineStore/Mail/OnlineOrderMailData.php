@@ -5,8 +5,9 @@ namespace App\Domain\OnlineStore\Mail;
 use Carbon\CarbonImmutable;
 
 /**
- * What the online order emails show (OnlineOrderMails builds it from an order): plain values only, so the queued
- * message holds no model. Money as "12.50", quantities already trimmed ("2", "0.75"), times UTC.
+ * What the online order emails show (OnlineOrderMessages builds it from an order): plain values only, so the queued
+ * message holds no model. Money as "12.50", quantities already trimmed ("2", "0.75"), times UTC. New fields are
+ * optional (with a default) and read with isset(), so an email queued before a deploy still renders.
  */
 final readonly class OnlineOrderMailData
 {
@@ -30,7 +31,41 @@ final readonly class OnlineOrderMailData
         public ?string $portalUrl = null,
         public ?string $cancelReason = null,
         public ?string $companyId = null,
+        public ?StoreMailBrand $brand = null,
+        public ?string $senderName = null,
     ) {}
+
+    /**
+     * The shop's look for customer emails (OS-10). An email queued before OS-10 has no brand: the business name on
+     * the default colour.
+     */
+    public function brand(): StoreMailBrand
+    {
+        return isset($this->brand) ? $this->brand : StoreMailBrand::plain($this->sender());
+    }
+
+    /** The From name: the store's sender name, else the business name. Never Switch & Save. */
+    public function sender(): string
+    {
+        $name = isset($this->senderName) ? trim((string) $this->senderName) : '';
+
+        return $name !== '' && ! SenderName::isPlatform($name) ? $name : $this->businessName;
+    }
+
+    /**
+     * A copy with the store's look, sender name and Reply-To (the Emails tab's previews and test email).
+     */
+    public function withStore(StoreMailBrand $brand, string $senderName, ?string $replyTo, ?string $companyId = null): self
+    {
+        $values = get_object_vars($this);
+        $values['companyId'] = $companyId ?? $this->companyId;
+        $values['brand'] = $brand;
+        $values['senderName'] = $senderName;
+        $values['replyTo'] = $replyTo;
+        $values['businessName'] = $brand->name;
+
+        return new self(...$values);
+    }
 
     public function hasWeighed(): bool
     {

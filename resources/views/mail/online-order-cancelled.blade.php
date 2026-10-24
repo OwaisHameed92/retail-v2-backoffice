@@ -1,7 +1,7 @@
-<x-mail::message>
+<x-mail::store-message :brand="$brand">
 # Your order is cancelled
 
-Hi {{ $firstName }}, we are sorry: **{{ $data->businessName }}** has had to cancel your order {{ $data->reference }}.
+Hi {{ $firstName }}, we are sorry: **{{ $brand->name }}** has had to cancel your order {{ $data->reference }}.
 
 @if ($data->cancelReason)
 <x-mail::panel>
@@ -17,9 +17,9 @@ View your order
 </x-mail::button>
 @endif
 
-{{ $data->businessName }}
+{{ $brand->name }}
 
 <x-slot:subcopy>
-Sent by Switch & Save on behalf of {{ $data->businessName }}. Questions? Reply to this email to reach the shop.
+Questions? Reply to this email to reach {{ $brand->name }}.
 </x-slot:subcopy>
-</x-mail::message>
+</x-mail::store-message>

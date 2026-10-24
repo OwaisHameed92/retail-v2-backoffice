@@ -38,6 +38,8 @@ export interface BuilderProps {
     colours: { name: string; hex: string }[];
     sectionOptions: { key: string; label: string; hint: string }[];
     addressPrefix: string;
+    /** OSA-14: the business email used while the order email is empty (null: no order emails). */
+    orderEmailFallback: string | null;
     checklist: { collectionShops: number; productsShown: number | null; productsShop: string | null };
     canEdit: boolean;
 }

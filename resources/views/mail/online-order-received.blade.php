@@ -1,7 +1,7 @@
-<x-mail::message>
+<x-mail::store-message :brand="$brand">
 # We've got your order
 
-Hi {{ $firstName }}, thank you for your order with **{{ $data->businessName }}**. We will email you again when it is ready to collect.
+Hi {{ $firstName }}, thank you for your order with **{{ $brand->name }}**. We will email you again when it is ready to collect.
 
 <x-mail::facts :rows="$facts" />
 
@@ -15,9 +15,9 @@ View your order
 </x-mail::button>
 @endif
 
-{{ $data->businessName }}
+{{ $brand->name }}
 
 <x-slot:subcopy>
-Sent by Switch & Save on behalf of {{ $data->businessName }}. Questions about your order? Reply to this email to reach the shop.
+Questions about your order? Reply to this email to reach {{ $brand->name }}.
 </x-slot:subcopy>
-</x-mail::message>
+</x-mail::store-message>

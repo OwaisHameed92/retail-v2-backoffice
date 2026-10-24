@@ -48,6 +48,8 @@ final class StoreBuilderPage
             'sectionOptions' => array_map(fn (StoreSection $s) => ['key' => $s->value, 'label' => $s->label(), 'hint' => self::SECTION_HINTS[$s->value]],
                 StoreSection::cases()),
             'addressPrefix' => StoreAddress::prefix(),
+            // OSA-14: where orders go (and customers reply) while the order email is empty: the business email, never a sign-in email.
+            'orderEmailFallback' => filter_var(trim((string) $company->email), FILTER_VALIDATE_EMAIL) ? trim((string) $company->email) : null,
             'checklist' => [
                 'collectionShops' => $shops->count(),
                 'productsShown' => $first === null ? null : OnlineCatalogueQuery::base($first)->count(),

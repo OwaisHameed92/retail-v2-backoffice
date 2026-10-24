@@ -56,6 +56,20 @@ https://claude.ai/artifact/FdsDJZ2vyhQJw5hfPmUiNz. DECISIONS "Online store, clic
   - New orders send an email to the business's order address, plus a portal notification.
   - The customer gets emails when the order is received, when it is ready to collect, and if it is cancelled.
   - The order page is opened by a secret link (only its hash is stored).
+- **Emails (OS-10, portal → Online store → Emails).** Customer emails (received, ready, cancelled, and any later
+  "customer" online store email) are the shop's own:
+  - From name: the store's sender name, else the business name; never "Switch & Save" (refused and ignored).
+    Reply-To: the store's reply-to, else the order email, else the business email. Never a user's sign-in email
+    (OSA-14); the new-order email to the shop goes to the order email, else the business email, else nobody.
+  - Look: the store's logo and brand colour (header bar, buttons, links; a readable text colour is worked out),
+    shop name, address and phone in the footer, and a small "Online store by Switch & Save" line. Plain-text part too.
+    Previews on the Emails tab.
+  - Own SMTP server (optional): host, port (25, 465, 587, 2525), TLS / SSL / none, username, password, From address.
+    The password is encrypted at rest, never sent to the browser ("saved, ending ••1234"), blank keeps it. The host
+    must be public (SSRF guard, checked again and pinned at send time). Used only after a test email gets through
+    ("Send a test email", 5 per 10 minutes, to the signed-in user). If it fails at send time, the reason is shown on
+    the Emails tab and the email goes through the platform mailer in the shop's name.
+  - The new-order email to the shop stays on the platform mailer and the Switch & Save look.
 - **Security.**
   - Public routes are rate limited and have CSRF and a honeypot.
   - A public request resolves the business from the slug and scopes every query to it explicitly. There is no
@@ -79,6 +93,7 @@ https://claude.ai/artifact/FdsDJZ2vyhQJw5hfPmUiNz. DECISIONS "Online store, clic
 | `online_store_products` | Per product (`product_id`, the till's id): hidden, photo path, description |
 | `online_orders` | Number, shop, status, customer name / mobile / email, slot, item total `decimal(12,2)`, token hash, cancel reason, status times |
 | `online_order_lines` | Product id + name / price snapshot, quantity `decimal(14,4)`, line total `decimal(12,2)` |
+| `online_store_mail_settings` | OS-10: per store, sender name, reply-to, own SMTP server (password encrypted + last 4), verified time, last error |
 
 Till tables (products, prices, stock) are read only and never changed.
 
