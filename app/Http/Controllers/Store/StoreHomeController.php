@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers\Store;
 
-use App\Domain\OnlineStore\Queries\CollectionDays;
 use App\Http\Controllers\Controller;
+use App\Http\Support\Store\NextSlot;
 use App\Http\Support\Store\StoreContext;
 use App\Http\Support\Store\StoreHomeRows;
 use App\Http\Support\Store\StorePresenter;
@@ -13,17 +13,16 @@ use Inertia\Response;
 /**
  * `GET /{slug}` (OS-2, OS-5, OS-8): the store's home page in its template (Fresh Market or Butcher's Block,
  * `store.template`): the sections the store turned on, in its order (banners, departments with photos, featured
- * products, how click & collect works, shops and hours, about, and the optional "On offer" and department rows).
+ * products, how ordering works (collection, delivery or both, OS-12), shops and hours, about, and the optional "On offer" and department rows).
  * Each template draws the same sections in its own style. `headline` / `bannerUrl` are the first banner's.
  */
 class StoreHomeController extends Controller
 {
-    public function __invoke(StoreContext $context, StoreHomeRows $rows, CollectionDays $days): Response
+    public function __invoke(StoreContext $context, StoreHomeRows $rows, NextSlot $nextSlot): Response
     {
         $store = $context->store;
-        $shop = $context->shop();
         $sections = StorePresenter::sections($store);
-        $next = $shop === null || ! $context->takingOrders() ? null : $days->next($shop);
+        $next = $nextSlot->for($context);
         $banners = $rows->banners($context);
 
         return Inertia::render('store/home', [
@@ -31,7 +30,9 @@ class StoreHomeController extends Controller
             'banners' => $banners,
             'headline' => $banners[0]['headline'] ?? null,
             'bannerUrl' => $banners[0]['photoUrl'] ?? StorePresenter::bannerUrl($store),
-            'nextCollection' => $next === null ? null : CollectionDays::describe($next->from, $next->to),
+            'nextCollection' => $next['collection'],
+            // OS-12: the first slot with room over the shop's methods ("delivery", "Today 14:00–15:00").
+            'nextSlot' => $next['next'],
             ...$rows->featured($context),
             'offers' => in_array('offers', $sections, true) ? $rows->offers($context) : [],
             'departmentRows' => in_array('departmentRows', $sections, true) ? $rows->departmentRows($context) : [],

@@ -39,7 +39,7 @@ function Filters({ shops, filters, departments }: Pick<ProductsProps, 'shops' | 
                         {shops.map((s) => (
                             <SelectItem key={s.id} value={s.id}>
                                 {s.name}
-                                {s.collects ? '' : ' (no collection)'}
+                                {s.collects ? '' : ' (not online)'}
                             </SelectItem>
                         ))}
                     </SelectContent>

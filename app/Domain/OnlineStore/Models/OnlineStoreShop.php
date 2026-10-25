@@ -11,7 +11,9 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
- * A shop customers can collect from (SaveStoreShop). `opening_hours` is keyed by weekday (`monday`…`sunday`, shop
+ * A shop of the online store (SaveStoreShop): customers collect from it (`enabled`), it delivers locally
+ * (`delivery_enabled`, OS-9, SaveDeliverySettings), or both. OS-12: a shop takes part in the public store when either
+ * is on (ShopMethods); a delivery-only shop has collection off. `opening_hours` is keyed by weekday (`monday`…`sunday`, shop
  * time): `{"open": "08:00", "close": "20:00"}`, or null / missing when it does not hand out orders that day.
  * Collection slots (CollectionSlots) run from opening to closing, `slot_minutes` long, at most `orders_per_slot`
  * orders each, the first one at least `prep_minutes` from now.
@@ -24,7 +26,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int $prep_minutes
  * @property int $slot_minutes
  * @property int $orders_per_slot
- * @property bool $enabled
+ * @property bool $enabled collection is on: customers can collect here (read through collects())
  * @property bool $delivery_enabled OS-9: the shop delivers locally (SaveDeliverySettings)
  * @property list<string>|null $delivery_areas postcode districts / sectors it delivers to ("B23", "B24 9")
  * @property string $delivery_fee
@@ -86,6 +88,12 @@ class OnlineStoreShop extends Model
         $hours = $this->delivery_hours[strtolower($weekday)] ?? null;
 
         return is_array($hours) && isset($hours['open'], $hours['close']) ? ['open' => (string) $hours['open'], 'close' => (string) $hours['close']] : null;
+    }
+
+    /** Customers can collect from this shop (OS-12: `enabled` means collection is on). */
+    public function collects(): bool
+    {
+        return (bool) $this->enabled;
     }
 
     /** OS-9: it delivers and has an area to deliver to. */

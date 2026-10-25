@@ -37,7 +37,7 @@ final class OnlineProductsPage
             ->when($onlyBranchId !== null, fn ($q) => $q->whereKey($onlyBranchId))->orderBy('name')->get(['id', 'name']);
         $store = OnlineStore::query()->where('company_id', $company->id)->first();
         $collection = $store === null ? collect() : OnlineStoreShop::query()->where('company_id', $company->id)
-            ->where('online_store_id', $store->id)->where('enabled', true)->get()->keyBy('branch_id');
+            ->where('online_store_id', $store->id)->where(fn ($q) => $q->where('enabled', true)->orWhere('delivery_enabled', true))->get()->keyBy('branch_id');
         $wanted = $request->query('shop');
         $shopId = is_string($wanted) && $shops->contains('id', $wanted) ? $wanted
             : ($shops->first(fn (Branch $b) => $collection->has($b->id)) ?? $shops->first())?->id;

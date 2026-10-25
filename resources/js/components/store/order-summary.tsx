@@ -2,6 +2,7 @@ import { cn } from '@/lib/utils';
 import { type ReactNode } from 'react';
 import { money } from './format';
 import { type BasketSummary } from './types';
+import { useStore } from './use-store';
 
 /** OS-9: the checkout's method and totals, worked out on the server (App\Http\Support\Store\CheckoutPage). */
 export interface SummaryTotals {
@@ -27,7 +28,10 @@ export function OrderSummary({
     children?: ReactNode;
     className?: string;
 }) {
-    const delivery = totals?.method === 'delivery';
+    const wording = useStore()?.wording;
+    // OS-12: before checkout (no totals) the row and note follow the store's methods (collection, delivery or both).
+    const mode = totals ? totals.method : (wording?.mode ?? 'collection');
+    const delivery = mode === 'delivery';
     const total = totals?.grand ?? basket.total;
 
     return (
@@ -38,8 +42,12 @@ export function OrderSummary({
                 <span className="tabular-nums">{money(basket.total)}</span>
             </div>
             <div className="flex justify-between gap-4">
-                <span>{delivery ? 'Delivery' : 'Click & collect'}</span>
-                {delivery && totals?.deliveryFee === null ? (
+                <span>{delivery ? 'Delivery' : mode === 'both' ? 'Collect or delivery' : 'Click & collect'}</span>
+                {delivery && !totals ? (
+                    <span className="text-muted">At checkout</span>
+                ) : mode === 'both' ? (
+                    <span className="text-muted">Free to collect</span>
+                ) : delivery && totals?.deliveryFee === null ? (
                     <span className="text-muted">Enter your postcode</span>
                 ) : delivery && totals && Number(totals.deliveryFee) > 0 ? (
                     <span className="tabular-nums">{money(totals.deliveryFee ?? '0')}</span>
@@ -52,7 +60,7 @@ export function OrderSummary({
                 <span className="text-[28px] leading-none font-bold tracking-[-0.02em] tabular-nums">{money(total)}</span>
             </div>
             <p className="text-muted text-sm">
-                {totals?.payNote ?? 'You pay at the shop when you collect.'}
+                {totals?.payNote ?? wording?.payNote ?? 'You pay at the shop when you collect.'}
                 {basket.estimated && ' Items sold by weight are weighed in the shop, so the final total may differ a little.'}
             </p>
             {children}

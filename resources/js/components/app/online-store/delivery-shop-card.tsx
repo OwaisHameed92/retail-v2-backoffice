@@ -37,7 +37,7 @@ const initial = (shop: DeliveryShop): DeliveryForm => ({
     leadMinutes: String(shop.leadMinutes),
 });
 
-/** OS-9: one collection shop's local delivery: on or off, postcode areas, fee, free-over, minimum, and its own slots. */
+/** OS-9: one shop's local delivery (OS-12: on its own when collection is off, a delivery-only shop): on or off, postcode areas, fee, free-over, minimum, and its own slots. */
 export function DeliveryShopCard({ shop, slotOptions, disabled }: { shop: DeliveryShop; slotOptions: number[]; disabled: boolean }) {
     const form = useForm<DeliveryForm>(initial(shop));
     const errors = form.errors as Record<string, string | undefined>;
@@ -74,7 +74,7 @@ export function DeliveryShopCard({ shop, slotOptions, disabled }: { shop: Delive
                     <span className="flex flex-wrap items-center gap-2">
                         {shop.name}
                         {shop.enabled ? <StatusPill tone="success">Delivering</StatusPill> : <StatusPill tone="neutral">No delivery</StatusPill>}
-                        {!shop.collects && <StatusPill tone="warning">Collection off</StatusPill>}
+                        {!shop.collects && form.data.enabled && <StatusPill tone="info">Delivery only</StatusPill>}
                     </span>
                 }
                 description={[shop.code, shop.town, shop.postcode].filter(Boolean).join(' · ')}
@@ -97,7 +97,9 @@ export function DeliveryShopCard({ shop, slotOptions, disabled }: { shop: Delive
                             {errors.branch_id ??
                                 (shop.collects
                                     ? 'Customers choose delivery at checkout when their postcode is in your area.'
-                                    : 'This shop is switched off on the Collection shops tab, so customers do not see it.')}
+                                    : form.data.enabled
+                                      ? 'Collection is off for this shop, so customers order for delivery only. Delivery works on its own.'
+                                      : 'Collection is off too, so customers do not see this shop. Turn delivery on to make it delivery-only.')}
                         </p>
                         <div className="flex gap-2">
                             {form.isDirty && (

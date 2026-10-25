@@ -14,9 +14,9 @@ use Illuminate\Contracts\Session\Session;
 use Illuminate\Database\Eloquent\Collection;
 
 /**
- * The public store a request is for (OS-2), set by ResolveOnlineStore: the store found by its address, its open
- * collection shops, and the visitor's basket in the session (one per store, keyed by the store's id so a new
- * address keeps it). The basket is priced once per request (PriceBasket) and the cleaned basket saved back.
+ * The public store a request is for (OS-2), set by ResolveOnlineStore: the store found by its address, its shops
+ * (StorefrontShops, OS-12: collecting, delivering or both), and the visitor's basket in the session (one per store,
+ * keyed by the store's id so a new address keeps it). The basket is priced once per request (PriceBasket) and the cleaned basket saved back.
  * OS-9: the checkout's choice of collect or delivery and the delivery postcode, and the card order being paid
  * (its basket is kept until DNA confirms the payment), are in the session too.
  */
@@ -39,7 +39,7 @@ final class StoreContext
         private readonly PriceBasket $pricer,
     ) {}
 
-    /** The collection shop the visitor shops at: the one chosen, else the first (by name); null when none is open. */
+    /** The shop the visitor shops at: the one chosen, else the first (by name); null when none takes orders. */
     public function shop(): ?OnlineStoreShop
     {
         $chosen = $this->basket()->shopId;
@@ -92,7 +92,7 @@ final class StoreContext
         return $aisle['kind'] === AisleSource::Categories->value ? 'category_id' : 'department_id';
     }
 
-    /** Whether customers can add and order now: the store takes orders and a shop is open for collections. */
+    /** Whether customers can add and order now: the store takes orders and a shop collects or delivers (OS-12). */
     public function takingOrders(): bool
     {
         return $this->store->taking_orders && $this->shops->isNotEmpty();

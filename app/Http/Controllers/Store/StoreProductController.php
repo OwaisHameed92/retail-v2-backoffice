@@ -5,10 +5,10 @@ namespace App\Http\Controllers\Store;
 use App\Domain\OnlineStore\Basket\BasketRules;
 use App\Domain\OnlineStore\Data\CatalogueFilters;
 use App\Domain\OnlineStore\Data\CatalogueItem;
-use App\Domain\OnlineStore\Queries\CollectionDays;
 use App\Domain\OnlineStore\Queries\StorefrontCatalogue;
 use App\Domain\OnlineStore\Queries\TillAllergens;
 use App\Http\Controllers\Controller;
+use App\Http\Support\Store\NextSlot;
 use App\Http\Support\Store\StoreContext;
 use App\Http\Support\Store\StorePages;
 use App\Http\Support\Store\StorePresenter;
@@ -25,7 +25,7 @@ class StoreProductController extends Controller
 {
     public const RELATED = 8;
 
-    public function __invoke(Request $request, StoreContext $context, StorefrontCatalogue $catalogue, CollectionDays $days, TillAllergens $allergens, string $product): Response
+    public function __invoke(Request $request, StoreContext $context, StorefrontCatalogue $catalogue, NextSlot $nextSlot, TillAllergens $allergens, string $product): Response
     {
         $store = $context->store;
         $shop = $context->shop();
@@ -44,7 +44,7 @@ class StoreProductController extends Controller
                 filters: new CatalogueFilters(inStockOnly: true), categoryId: $aisle['categoryId'])->items,
             fn (CatalogueItem $other) => $other->id !== $item->id,
         ));
-        $next = $context->takingOrders() && $item->orderable ? $days->next($shop) : null;
+        $next = $item->orderable ? $nextSlot->for($context) : ['collection' => null, 'next' => null];
 
         return Inertia::render('store/product', [
             'product' => StorePresenter::products($store, [$item], $shop)[0],
@@ -54,7 +54,8 @@ class StoreProductController extends Controller
             // Audit OSA-3: the business's own ingredients and allergens text, else what the tills hold, before purchase.
             'allergens' => $item->allergenInfo ?? ($allergens->for($store->company_id, $shop->branch_id, [$item->id])[$item->id] ?? null),
             'inBasket' => BasketRules::display($context->basket()->quantity($item->id)),
-            'nextCollection' => $next === null ? null : CollectionDays::describe($next->from, $next->to),
+            'nextCollection' => $next['collection'],
+            'nextSlot' => $next['next'],
             'related' => StorePresenter::products($store, array_slice($related, 0, self::RELATED), $shop),
         ])->toResponse($request);
     }

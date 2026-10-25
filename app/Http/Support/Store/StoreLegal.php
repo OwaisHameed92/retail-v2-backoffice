@@ -10,6 +10,7 @@ use App\Domain\OnlineStore\Legal\LegalPages;
 use App\Domain\OnlineStore\Legal\StoreTrader;
 use App\Domain\OnlineStore\Models\OnlineStoreShop;
 use App\Domain\OnlineStore\Support\PaymentOptions;
+use App\Domain\OnlineStore\Support\ShopMethods;
 use App\Domain\OnlineStore\Support\StoreScope;
 
 /**
@@ -51,7 +52,10 @@ final class StoreLegal
     public static function facts(StoreContext $context): LegalFacts
     {
         $store = $context->store;
-        $delivery = $context->shops->contains(fn (OnlineStoreShop $shop) => (bool) $shop->delivery_enabled);
+        // OS-12: what the shops offer (ShopMethods): a delivery-only store has no collection terms or pay-at-shop.
+        $methods = ShopMethods::forStore($store, $context->shops);
+        $delivery = $methods['delivery'];
+        $collection = $methods['collection'];
 
         return new LegalFacts(
             trader: self::trader($context),
@@ -61,11 +65,12 @@ final class StoreLegal
                 return ['name' => (string) $info['name'], 'address' => $info['address'] !== '' ? (string) $info['address'] : null];
             })->values()->all(),
             delivery: $delivery,
-            card: PaymentOptions::offers($store, FulfilmentMethod::Collection, OnlinePaymentMethod::CardOnline)
+            card: ($collection && PaymentOptions::offers($store, FulfilmentMethod::Collection, OnlinePaymentMethod::CardOnline))
                 || ($delivery && PaymentOptions::offers($store, FulfilmentMethod::Delivery, OnlinePaymentMethod::CardOnline)),
-            payAtShop: PaymentOptions::offers($store, FulfilmentMethod::Collection, OnlinePaymentMethod::PayAtShop),
+            payAtShop: $collection && PaymentOptions::offers($store, FulfilmentMethod::Collection, OnlinePaymentMethod::PayAtShop),
             payOnDelivery: $delivery && PaymentOptions::offers($store, FulfilmentMethod::Delivery, OnlinePaymentMethod::PayOnDelivery),
             anonymiseMonths: max(0, (int) config('online_store.anonymise_after_months', 24)),
+            collection: $collection,
         );
     }
 }

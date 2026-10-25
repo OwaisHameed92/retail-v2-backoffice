@@ -25,7 +25,6 @@ export interface StoreSettings {
     aboutText: string | null;
     featuredMode: FeaturedModeKey;
     featuredProductIds: string[];
-    homeDepartments: string[];
 }
 
 export type FeaturedModeKey = 'bestSellers' | 'handPicked' | 'newest';
@@ -73,16 +72,16 @@ export interface BuilderProps {
     addressPrefix: string;
     /** OSA-14: the business email used while the order email is empty (null: no order emails). */
     orderEmailFallback: string | null;
-    checklist: { collectionShops: number; productsShown: number | null; productsShop: string | null; legalMissing: string[] };
+    /** `collectionShops`: the shops taking orders (OS-12: collecting, delivering or both); `shopMode`: what they offer together. */
+    checklist: { collectionShops: number; shopMode?: ShopMode; productsShown: number | null; productsShop: string | null; legalMissing: string[] };
     canEdit: boolean;
     banners: StoreBanner[];
     bannerMax: number;
     linkOptions: { value: BannerLinkKey; label: string }[];
     featuredOptions: { value: FeaturedModeKey; label: string; hint: string }[];
     featuredMax: number;
-    homeDepartmentsMax: number;
     aboutMax: number;
-    /** OS-11: the aisles at the first collection shop (App\Domain\OnlineStore\Queries\StoreAisles::all). */
+    /** OS-11: the aisles at the first shop taking orders (App\Domain\OnlineStore\Queries\StoreAisles::all). */
     aisles: StoreAisle[];
     aisleSource: 'auto' | 'departments' | 'categories';
     aisleSourceUsed: 'departments' | 'categories' | null;
@@ -105,7 +104,10 @@ export interface CollectionShop {
     code: string;
     town: string | null;
     saved: boolean;
+    /** Collection is on. */
     enabled: boolean;
+    /** OS-12: delivery is on (Delivery & payments tab); with collection off the shop is delivery-only. */
+    delivers?: boolean;
     hoursSource: 'saved' | 'calendar' | 'default';
     days: ShopDay[];
     prepMinutes: number;
@@ -269,3 +271,6 @@ export interface StoreAisle {
     photoUrl: string | null;
     hidden: boolean;
 }
+
+/** OS-12: what a store's shops offer together (App\Domain\OnlineStore\Support\ShopMethods). */
+export type ShopMode = 'collection' | 'delivery' | 'both';

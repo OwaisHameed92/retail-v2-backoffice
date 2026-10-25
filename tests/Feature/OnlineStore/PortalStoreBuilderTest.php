@@ -219,7 +219,7 @@ test('go live needs a collection shop; take offline and the taking orders switch
 
     $this->f->shop->forceFill(['enabled' => false])->save();
     $this->actingAs($this->owner)->putJson('/app/online-store/live', ['on' => true])->assertUnprocessable()
-        ->assertJsonPath('errors.store.0', 'Add at least one shop customers can collect from before you publish the store.');
+        ->assertJsonPath('errors.store.0', 'Add at least one shop that takes orders (collection or delivery) before you publish the store.');
 
     $this->f->shop->forceFill(['enabled' => true])->save();
     $this->actingAs($this->owner)->put('/app/online-store/live', ['on' => true])->assertSessionHas('success');

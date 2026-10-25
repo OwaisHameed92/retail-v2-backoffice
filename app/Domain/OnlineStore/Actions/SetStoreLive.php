@@ -45,7 +45,7 @@ final class SetStoreLive
             }
 
             if ($live && $this->shops->handle($store->setRelation('company', $company))->isEmpty()) {
-                throw ValidationException::withMessages(['store' => 'Add at least one shop customers can collect from before you publish the store.']);
+                throw ValidationException::withMessages(['store' => 'Add at least one shop that takes orders (collection or delivery) before you publish the store.']);
             }
 
             // OS-6: the add-on switched on by Switch & Save, and a till with cloud sync.

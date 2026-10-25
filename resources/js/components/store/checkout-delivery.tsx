@@ -19,6 +19,35 @@ export interface DeliveryQuote {
 
 export type Fulfilment = 'collection' | 'delivery';
 
+/** The delivery fee in words: "Free delivery", "£3.00, free over £30.00", "From £3.00". */
+function feeHint(delivery: DeliveryQuote): string {
+    return Number(delivery.fee) === 0 && delivery.covered
+        ? 'Free delivery'
+        : delivery.freeOver
+          ? `${money(delivery.fee)}, free over ${money(delivery.freeOver)}`
+          : `From ${money(delivery.fee)}`;
+}
+
+/** OS-12: a delivery-only shop: no choice to make, just who delivers and what it costs. */
+export function DeliveryOnly({ delivery, shopName }: { delivery: DeliveryQuote | null; shopName: string }) {
+    return (
+        <div className="border-line flex items-start gap-3 rounded-2xl border bg-white px-4 py-3.5">
+            <span aria-hidden="true" className="bg-brand-soft text-brand-text flex size-10 shrink-0 items-center justify-center rounded-full">
+                <Truck className="size-5" />
+            </span>
+            <span className="flex min-w-0 flex-col gap-0.5">
+                <span className="text-base font-semibold">Delivered from {shopName}</span>
+                {delivery && (
+                    <span className="text-body text-sm">
+                        {feeHint(delivery)}
+                        {delivery.minimum ? ` · minimum ${money(delivery.minimum)}` : ''}
+                    </span>
+                )}
+            </span>
+        </div>
+    );
+}
+
 /** Click & collect or delivery: two big choices. Changing it reloads the slots and totals for that method. */
 export function MethodChoice({
     method,
@@ -38,13 +67,7 @@ export function MethodChoice({
             { fulfilment: value, postcode: delivery?.postcode ?? '' },
             { preserveScroll: true, preserveState: true, only: ['method', 'delivery', 'days', 'day', 'slots', 'payments', 'totals', 'errors'] },
         );
-    const deliveryHint = !delivery
-        ? ''
-        : Number(delivery.fee) === 0 && delivery.covered
-          ? 'Free delivery'
-          : delivery.freeOver
-            ? `${money(delivery.fee)}, free over ${money(delivery.freeOver)}`
-            : `From ${money(delivery.fee)}`;
+    const deliveryHint = !delivery ? '' : feeHint(delivery);
 
     return (
         <fieldset className="grid gap-3 sm:grid-cols-2">

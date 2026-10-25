@@ -20,6 +20,8 @@ final readonly class LegalFacts
         public bool $payAtShop,
         public bool $payOnDelivery,
         public int $anonymiseMonths,
+        /** OS-12: some shop collects (false for a delivery-only store) */
+        public bool $collection = true,
     ) {}
 
     /** "email@shop.test or 0113 496 0000", whichever the trader has. */

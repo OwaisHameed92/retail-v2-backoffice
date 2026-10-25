@@ -5,6 +5,7 @@ namespace App\Http\Support\Store;
 use App\Domain\OnlineStore\Basket\BasketRules;
 use App\Domain\OnlineStore\Basket\PricedBasket;
 use App\Domain\OnlineStore\Data\CatalogueItem;
+use App\Domain\OnlineStore\Enums\FulfilmentMethod;
 use App\Domain\OnlineStore\Enums\StoreSection;
 use App\Domain\OnlineStore\Models\OnlineStore;
 use App\Domain\OnlineStore\Models\OnlineStoreShop;
@@ -14,6 +15,7 @@ use App\Domain\OnlineStore\Support\AddressLine;
 use App\Domain\OnlineStore\Support\DisplayName;
 use App\Domain\OnlineStore\Support\OnlineStoreSwitch;
 use App\Domain\OnlineStore\Support\PackSizeLabel;
+use App\Domain\OnlineStore\Support\ShopMethods;
 use App\Domain\OnlineStore\Support\ShopOpenNow;
 use App\Domain\Shared\Support\Money;
 use App\Domain\Tenancy\Models\Branch;
@@ -95,7 +97,8 @@ final class StorePresenter
     }
 
     /**
-     * A collection shop with its address and hours (shop time).
+     * A shop of the store with its address and hours (shop time). OS-12: whether customers can collect there
+     * (`collects`; its collection hours are `hours`) and its delivery (areas, fees and delivery hours) when it delivers.
      *
      * @return array<string, mixed>
      */
@@ -103,6 +106,8 @@ final class StorePresenter
     {
         $branch = $shop->relationLoaded('branch') ? $shop->getRelation('branch') : null;
         $branch = $branch instanceof Branch ? $branch : null;
+        $methods = ShopMethods::ofShop($shop);
+        $delivers = in_array(FulfilmentMethod::Delivery, $methods, true);
 
         return [
             'id' => $shop->id,
@@ -111,15 +116,17 @@ final class StorePresenter
             'address' => $branch === null ? '' : (string) AddressLine::from($branch->address, $branch->town, $branch->postcode),
             'phone' => $branch?->phone ? trim($branch->phone) : null,
             'prepMinutes' => $shop->prep_minutes,
+            'collects' => in_array(FulfilmentMethod::Collection, $methods, true),
             'hours' => array_map(fn (string $day) => ['day' => ucfirst($day), 'hours' => $shop->hoursOn($day)], OnlineStoreShop::WEEKDAYS),
             // OS-11: today's weekday in shop time, "open now", and the shop's local delivery (areas and fees) when it delivers.
             'today' => CarbonImmutable::now(OnlineStoreSwitch::timezone())->format('l'),
             'openNow' => ShopOpenNow::describe($shop),
-            'delivery' => ! $shop->delivery_enabled ? null : [
+            'delivery' => ! $delivers ? null : [
                 'areas' => $shop->delivery_areas ?? [],
                 'fee' => Money::normalise($shop->delivery_fee ?? '0', 2),
                 'freeOver' => $shop->delivery_free_over === null ? null : Money::normalise($shop->delivery_free_over, 2),
                 'minimum' => $shop->delivery_minimum === null ? null : Money::normalise($shop->delivery_minimum, 2),
+                'hours' => array_map(fn (string $day) => ['day' => ucfirst($day), 'hours' => $shop->deliveryHoursOn($day)], OnlineStoreShop::WEEKDAYS),
             ],
         ];
     }

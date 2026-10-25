@@ -1,18 +1,17 @@
 import { FormField, FormSection } from '@/components/shared/form-section';
 import { Textarea } from '@/components/ui/textarea';
-import { FeaturedEditor, HomeDepartmentsEditor } from './featured-editor';
+import { FeaturedEditor } from './featured-editor';
 import { type BuilderProps, type FeaturedModeKey, type PickerProduct } from './types';
 
 export interface HomeContentData {
     about_text: string;
     featured_mode: FeaturedModeKey;
     picked: PickerProduct[];
-    home_departments: string[];
 }
 
 /**
- * The store builder's home page content (OS-8): which featured products show, the departments with their own row,
- * and the "About us" text (audit OSA-29). Part of the builder form, saved with "Save changes".
+ * The store builder's home page content (OS-8): which featured products show and the "About us" text (audit OSA-29).
+ * Part of the builder form, saved with "Save changes". OS-12: the department rows follow the Aisles (one picker).
  */
 export function HomeContentFields({
     data,
@@ -40,17 +39,6 @@ export function HomeContentFields({
                     onPicked={(picked) => set('picked', picked)}
                     disabled={disabled}
                     error={errors.featured_mode ?? firstError('featured_product_ids')}
-                />
-            </FormSection>
-
-            <FormSection title="Rows by department" description="Departments with their own row of products (turn on “Rows by department” above).">
-                <HomeDepartmentsEditor
-                    departments={props.departments}
-                    value={data.home_departments}
-                    max={props.homeDepartmentsMax}
-                    onChange={(ids) => set('home_departments', ids)}
-                    disabled={disabled}
-                    error={firstError('home_departments')}
                 />
             </FormSection>
 

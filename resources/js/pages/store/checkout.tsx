@@ -1,5 +1,5 @@
 import { type Challenge, useChallengeAnswer } from '@/components/store/checkout-challenge';
-import { AddressFields, type DeliveryQuote, type Fulfilment, MethodChoice, PostcodeCheck } from '@/components/store/checkout-delivery';
+import { AddressFields, DeliveryOnly, type DeliveryQuote, type Fulfilment, MethodChoice, PostcodeCheck } from '@/components/store/checkout-delivery';
 import { CheckoutExtras, Honeypot } from '@/components/store/checkout-extras';
 import { type CheckoutDay, type CheckoutSlot, Field, ShopChoice, SlotPicker, Step } from '@/components/store/checkout-parts';
 import { PaymentChoice, type PaymentOption } from '@/components/store/checkout-payment';
@@ -17,6 +17,8 @@ interface Props {
     shop: ShopInfo | null;
     shops: ShopInfo[];
     method: Fulfilment;
+    /** OS-12: the methods the shop offers (a delivery-only shop: just delivery). */
+    methods?: Fulfilment[];
     delivery: DeliveryQuote | null;
     days: CheckoutDay[];
     day: string | null;
@@ -44,9 +46,12 @@ const FOCUS_ORDER: [string, string][] = [
     ['paymentMethod', 'step-pay'],
 ];
 
-/** Checkout (OS-2, OS-9): shop, collect or delivery, day and slot, the customer's details, how to pay. */
+/** Checkout (OS-2, OS-9): shop, collect or delivery (OS-12: only what the shop offers), day and slot, the customer's details, how to pay. */
 export default function StoreCheckout(props: Props) {
     const { lines, shop, shops, method, delivery, days, day, slots, payments, totals, address, urls, honeypot, challenge } = props;
+    const methods: Fulfilment[] = props.methods ?? (delivery ? ['collection', 'delivery'] : ['collection']);
+    const collects = methods.includes('collection');
+    const both = collects && methods.includes('delivery');
     const { store, basket } = usePage<StorePageProps>().props;
     const answer = useChallengeAnswer(challenge);
     const form = useForm({
@@ -165,11 +170,13 @@ export default function StoreCheckout(props: Props) {
                             <ShopChoice shop={shop} shops={shops} chooseUrl={urls.shop} />
                         </Step>
                     )}
-                    <Step n={n++} id="step-method" title={delivery ? 'Collect or delivery?' : 'Click & collect'}>
-                        {delivery ? (
+                    <Step n={n++} id="step-method" title={both ? 'Collect or delivery?' : collects ? 'Click & collect' : 'Delivery'}>
+                        {both && delivery ? (
                             <MethodChoice method={method} delivery={delivery} url={urls.method} shopName={shop.name} />
-                        ) : (
+                        ) : collects ? (
                             <ShopChoice shop={shop} shops={[]} chooseUrl={urls.shop} />
+                        ) : (
+                            <DeliveryOnly delivery={delivery} shopName={shop.name} />
                         )}
                         {isDelivery && delivery && (
                             <PostcodeCheck
@@ -250,7 +257,7 @@ export default function StoreCheckout(props: Props) {
                     <Step n={n++} id="step-pay" title="Payment">
                         {payments.length === 0 ? (
                             <p className="bg-paper text-body rounded-xl px-5 py-4">
-                                Delivery is not available right now. Choose click &amp; collect.
+                                {collects ? 'Delivery is not available right now. Choose click & collect.' : 'Delivery is not available right now.'}
                             </p>
                         ) : (
                             <PaymentChoice

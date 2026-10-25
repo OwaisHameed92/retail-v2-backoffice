@@ -37,7 +37,6 @@ type BuilderForm = {
     featured_mode: FeaturedModeKey;
     /** Hand-picked products with their names (sent as `featured_product_ids`). */
     picked: PickerProduct[];
-    home_departments: string[];
 };
 
 function initial(store: StoreSettings, picked: PickerProduct[]): BuilderForm {
@@ -51,7 +50,6 @@ function initial(store: StoreSettings, picked: PickerProduct[]): BuilderForm {
         about_text: store.aboutText ?? '',
         featured_mode: store.featuredMode,
         picked,
-        home_departments: store.homeDepartments,
     };
 }
 
@@ -72,7 +70,7 @@ function NotSwitchedOn() {
                     icon={Store}
                     tone="primary"
                     title="Your online store is not switched on yet"
-                    body="Contact Switch & Save to switch it on. We set up your store's look, then you add your logo, collection shops and products here."
+                    body="Contact Switch & Save to switch it on. We set up your store's look, then you add your logo, shops and products here."
                 />
             </Card>
         </>
@@ -94,7 +92,6 @@ function Builder({ store, ...props }: BuilderProps & { store: StoreSettings }) {
             ...data,
             featured_product_ids: picked.map((p) => p.id),
             featured_product_ids_sent: '1',
-            home_departments_sent: '1',
         }));
         form.post(route('app.online-store.update'), { forceFormData: true, preserveScroll: true });
     };
@@ -125,7 +122,14 @@ function Builder({ store, ...props }: BuilderProps & { store: StoreSettings }) {
 
             <form onSubmit={submit} className="grid gap-6">
                 <FormCard>
-                    <AddressBrandFields store={store} props={props} data={form.data} set={(key, value) => form.setData(key, value as never)} errors={errors} disabled={disabled} />
+                    <AddressBrandFields
+                        store={store}
+                        props={props}
+                        data={form.data}
+                        set={(key, value) => form.setData(key, value as never)}
+                        errors={errors}
+                        disabled={disabled}
+                    />
 
                     <FormSection title="Banners" description="Up to 6 photos with a headline and a button, taking turns at the top of the home page.">
                         <BannersEditor props={props} disabled={!canEdit} />
@@ -133,17 +137,28 @@ function Builder({ store, ...props }: BuilderProps & { store: StoreSettings }) {
 
                     <FormSection
                         title="Aisles"
-                        description="How customers browse: your till departments or categories. Put them in order, rename them, add a photo or hide one. Products without one are still found by search."
+                        description="How customers browse: your till departments or categories. The aisles shown here, in this order, are the header and footer links, the “Shop by aisle” tiles and the “Rows by department” (your first six). Rename one, add a photo or hide it. Products without an aisle are still found by search."
                     >
                         <AislesEditor props={props} disabled={!canEdit} />
                     </FormSection>
 
                     <FormSection title="Home page sections" description="Turn sections on or off and put them in the order you want.">
-                        <SectionsEditor value={form.data.sections} options={props.sectionOptions} onChange={(v) => set('sections', v)} disabled={disabled} />
+                        <SectionsEditor
+                            value={form.data.sections}
+                            options={props.sectionOptions}
+                            onChange={(v) => set('sections', v)}
+                            disabled={disabled}
+                        />
                         {sectionError && <p className="text-danger-foreground text-[13px]">{sectionError}</p>}
                     </FormSection>
 
-                    <HomeContentFields data={form.data} set={(key, value) => form.setData(key, value as never)} errors={errors} props={props} disabled={disabled} />
+                    <HomeContentFields
+                        data={form.data}
+                        set={(key, value) => form.setData(key, value as never)}
+                        errors={errors}
+                        props={props}
+                        disabled={disabled}
+                    />
 
                     <FormSection
                         title="Orders"
@@ -200,8 +215,8 @@ function Builder({ store, ...props }: BuilderProps & { store: StoreSettings }) {
 }
 
 /**
- * OS-3, OS-8, OS-11: the online store builder (address, brand, banners, aisles, sections, featured products, department
- * rows, about us, order email, go live). The look is shown read only: Switch & Save sets it when switching the add-on
+ * OS-3, OS-8, OS-11: the online store builder (address, brand, banners, aisles, sections, featured products, about us,
+ * order email, go live). OS-12: one aisles picker drives the aisle tiles and the department rows. The look is shown read only: Switch & Save sets it when switching the add-on
  * on. No store yet → "not switched on". Pieces live in components/app/online-store (audit OSA-35).
  */
 export default function OnlineStoreBuilder(props: BuilderProps) {
@@ -209,7 +224,7 @@ export default function OnlineStoreBuilder(props: BuilderProps) {
     // the aisles, which save on their own, keep edits).
     const s = props.store;
     const key = JSON.stringify(
-        s && [s.slug, s.template, s.brandColour, s.logoUrl, s.sections, s.orderEmail, s.aboutText, s.featuredMode, s.featuredProductIds, s.homeDepartments],
+        s && [s.slug, s.template, s.brandColour, s.logoUrl, s.sections, s.orderEmail, s.aboutText, s.featuredMode, s.featuredProductIds],
     );
 
     return (

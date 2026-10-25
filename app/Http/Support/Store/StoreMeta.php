@@ -34,7 +34,13 @@ final class StoreMeta
         $name = (string) ($store['name'] ?? 'Online store');
         $shop = is_array($store['shop'] ?? null) ? $store['shop'] : null;
         $where = $shop === null ? '' : ' from '.$shop['name'];
-        $default = "Order online from {$name} and collect{$where}. Shelf prices and stock live from the shop, pay when you collect.";
+        // OS-12: the words follow the store's methods (StoreWording): collection, delivery or both.
+        $mode = (string) ($store['methods']['mode'] ?? 'collection');
+        $default = match ($mode) {
+            'delivery' => "Order online from {$name} and have it delivered to your door. Shelf prices and stock live from the shop.",
+            'both' => "Order online from {$name}: collect{$where} or have it delivered. Shelf prices and stock live from the shop.",
+            default => "Order online from {$name} and collect{$where}. Shelf prices and stock live from the shop, pay when you collect.",
+        };
         $meta = ['title' => $name, 'description' => $default, 'image' => null, 'canonical' => null, 'robots' => self::robots($component, (string) ($page['url'] ?? '')),
             'siteName' => $name, 'type' => 'website', 'jsonLd' => []];
 
@@ -43,9 +49,9 @@ final class StoreMeta
         }
 
         return match ($component) {
-            'store/home' => self::home($meta, $props, $store),
+            'store/home' => self::home($meta, $props, $store, $mode),
             'store/department' => self::department($meta, $props, $name),
-            'store/product' => self::product($meta, $props, $name),
+            'store/product' => self::product($meta, $props, $name, $mode),
             'store/search' => [...$meta, 'title' => 'Search · '.$name],
             default => $meta,
         };
@@ -70,7 +76,7 @@ final class StoreMeta
      * @param  array<string, mixed>  $store
      * @return array<string, mixed>
      */
-    private static function home(array $meta, array $props, array $store): array
+    private static function home(array $meta, array $props, array $store, string $mode): array
     {
         $banner = is_array($props['banners'][0] ?? null) ? $props['banners'][0] : [];
         $about = trim((string) ($props['aboutText'] ?? ''));
@@ -84,14 +90,18 @@ final class StoreMeta
             'logo' => self::absolute($store['logoUrl'] ?? null),
             'telephone' => $shop['phone'] ?? null,
             'address' => $shop === null || $shop['address'] === '' ? null : ['@type' => 'PostalAddress', 'streetAddress' => $shop['address']],
-            'openingHoursSpecification' => $shop === null ? null : array_values(array_filter(array_map(fn (array $d) => $d['hours'] === null ? null : [
+            'openingHoursSpecification' => $shop === null || ($shop['collects'] ?? true) === false ? null : array_values(array_filter(array_map(fn (array $d) => $d['hours'] === null ? null : [
                 '@type' => 'OpeningHoursSpecification', 'dayOfWeek' => 'https://schema.org/'.$d['day'],
                 'opens' => $d['hours']['open'], 'closes' => $d['hours']['close'],
             ], (array) $shop['hours']))),
         ], fn ($v) => $v !== null && $v !== []);
 
         return [...$meta,
-            'title' => $store['name'].' · Order online, click & collect',
+            'title' => $store['name'].' · Order online, '.match ($mode) {
+                'delivery' => 'local delivery',
+                'both' => 'click & collect or delivery',
+                default => 'click & collect',
+            },
             'description' => self::trim($about !== '' ? $about : ((string) ($banner['text'] ?? '') ?: $meta['description'])),
             'image' => self::absolute($banner['photoUrl'] ?? null),
             'canonical' => url((string) $store['urls']['home']),
@@ -123,7 +133,7 @@ final class StoreMeta
      * @param  array<string, mixed>  $props
      * @return array<string, mixed>
      */
-    private static function product(array $meta, array $props, string $name): array
+    private static function product(array $meta, array $props, string $name, string $mode): array
     {
         $product = is_array($props['product'] ?? null) ? $props['product'] : [];
         $title = (string) ($product['name'] ?? 'Product');
@@ -134,7 +144,11 @@ final class StoreMeta
 
         return [...$meta,
             'title' => "{$title} · {$name}",
-            'description' => self::trim($description !== '' ? $description : "{$title} at {$name}. Order online and collect in the shop."),
+            'description' => self::trim($description !== '' ? $description : "{$title} at {$name}. ".match ($mode) {
+                'delivery' => 'Order online for local delivery.',
+                'both' => 'Order online to collect in the shop or have it delivered.',
+                default => 'Order online and collect in the shop.',
+            }),
             'image' => $image,
             'canonical' => $url,
             'type' => 'product',

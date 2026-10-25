@@ -2,12 +2,13 @@
 
 namespace App\Domain\OnlineStore\Mail;
 
+use App\Domain\Mail\Support\MailFormat;
 use Illuminate\Mail\Mailables\Address;
 use Illuminate\Mail\Mailables\Envelope;
 
 /**
- * To the shop (the store's order email, else the business's contact email; OSA-14): a customer placed a click & collect order, with
- * the lines, the slot and the customer's details. Replies go to the customer.
+ * To the shop (the store's order email, else the business's contact email; OSA-14): a customer placed an order (click &
+ * collect or, OS-12, delivery), with the lines, the slot and the customer's details. Replies go to the customer.
  */
 final class NewOnlineOrderMail extends OnlineOrderMailable
 {
@@ -23,7 +24,7 @@ final class NewOnlineOrderMail extends OnlineOrderMailable
 
     public static function templateDescription(): string
     {
-        return 'Sent to the business\'s order email (else its contact email) as soon as a customer places a click & collect order in its online store.';
+        return 'Sent to the business\'s order email (else its contact email) as soon as a customer places an order (collection or delivery) in its online store.';
     }
 
     public static function audience(): string
@@ -51,15 +52,21 @@ final class NewOnlineOrderMail extends OnlineOrderMailable
 
     protected function facts(): array
     {
-        return [
+        // OS-12: a delivery order says where it goes and how it is paid, never "collect".
+        $delivery = $this->data->isDelivery();
+
+        return array_filter([
             'Order' => $this->data->reference,
             'Customer' => $this->data->customerName,
             'Mobile' => $this->data->customerMobile,
             'Email' => $this->data->customerEmail,
-            'Collect from' => $this->data->shopName,
+            ...($delivery
+                ? ['Delivery from' => $this->data->shopName, 'Deliver to' => $this->data->deliveryAddress,
+                    'Delivery fee' => MailFormat::money($this->data->deliveryFee)]
+                : ['Collect from' => $this->data->shopName]),
             'Time' => self::slot($this->data->collectFrom, $this->data->collectTo),
-            'Payment' => 'Pay at the shop',
-        ];
+            'Payment' => $delivery || $this->data->paid ? $this->data->paymentLabel : 'Pay at the shop',
+        ], fn (?string $value) => $value !== null && $value !== '');
     }
 
     protected function markdownView(): string

@@ -33,7 +33,7 @@ export default function StoreBasket({ lines }: Props) {
                                 <ShoppingBag aria-hidden="true" className="size-7" />
                             </span>
                             <p className="font-display text-2xl font-extrabold tracking-tight">Your basket is empty</p>
-                            <p className="text-body">Add a few things and pick a time to collect them.</p>
+                            <p className="text-body">{store.wording?.basketEmpty ?? 'Add a few things and pick a time to collect them.'}</p>
                             <Link
                                 href={store.urls.home}
                                 className="bg-brand text-on-brand inline-flex min-h-12 items-center gap-2 rounded-full px-6 font-bold hover:brightness-110"

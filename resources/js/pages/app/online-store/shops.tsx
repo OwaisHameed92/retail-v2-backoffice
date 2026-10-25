@@ -10,16 +10,25 @@ import AppLayout from '@/layouts/app-layout';
 import { Head, Link } from '@inertiajs/react';
 import { Info, Store, TriangleAlert } from 'lucide-react';
 
-/** OS-3: the shops customers can collect online orders from, with their hours and slot settings. */
+/**
+ * OS-3: the shops customers can collect online orders from, with their hours and slot settings. OS-12: a shop can be
+ * delivery-only (collection off here, delivery on on the Delivery & payments tab); delivery never depends on this tab.
+ */
 export default function OnlineStoreShops({ hasStore, shops, slotOptions }: ShopsProps) {
     const collecting = shops.filter((s) => s.saved && s.enabled).length;
+    const deliveryOnly = shops.filter((s) => s.saved && !s.enabled && s.delivers).length;
+    const deliveryLink = (
+        <Link href={route('app.online-store.delivery')} className="text-primary font-medium hover:underline">
+            Delivery &amp; payments
+        </Link>
+    );
 
     return (
         <AppLayout>
-            <Head title="Collection shops" />
+            <Head title="Shops & collection" />
             <PageHeader
                 title="Online store"
-                description="Choose where customers collect their orders, when, and how many orders each slot takes."
+                description="Choose the shops that take online orders, where and when customers collect, and how many orders each slot takes. A shop can also deliver only."
                 tabs={<OnlineStoreTabs active="shops" />}
             />
 
@@ -37,9 +46,14 @@ export default function OnlineStoreShops({ hasStore, shops, slotOptions }: Shops
                 <Alert variant="info">
                     <Info />
                     <AlertDescription>
-                        {collecting === 0
-                            ? 'Add at least one collection shop before you go live.'
-                            : `Customers can collect from ${collecting} ${collecting === 1 ? 'shop' : 'shops'}${shops.length > 1 && collecting > 1 ? ' and choose one at checkout' : ''}. The till rings each order up.`}
+                        <span>
+                            {collecting === 0
+                                ? deliveryOnly > 0
+                                    ? `No shop offers collection: ${deliveryOnly === 1 ? 'your shop delivers' : `${deliveryOnly} shops deliver`} only. `
+                                    : 'Add a shop for collection, or add it with collection off and turn on delivery, before you go live. '
+                                : `Customers can collect from ${collecting} ${collecting === 1 ? 'shop' : 'shops'}${shops.length > 1 && collecting > 1 ? ' and choose one at checkout' : ''}. The till rings each order up. `}
+                            Delivery is set up on {deliveryLink}, with or without collection.
+                        </span>
                     </AlertDescription>
                 </Alert>
             )}

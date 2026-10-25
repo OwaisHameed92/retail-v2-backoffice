@@ -59,7 +59,10 @@ interface ShopCardProps {
     disabled: boolean;
 }
 
-/** One shop's click & collect settings: on or off, collection hours per weekday, ready time, slot length, orders per slot. */
+/**
+ * One shop's click & collect settings: on or off, collection hours per weekday, ready time, slot length, orders per slot.
+ * OS-12: collection off with delivery on is a delivery-only shop (delivery is on the Delivery & payments tab).
+ */
 export function ShopCard({ shop, slotOptions, disabled }: ShopCardProps) {
     const form = useForm<ShopForm>(initial(shop));
     const errors = form.errors as Record<string, string | undefined>;
@@ -87,6 +90,8 @@ export function ShopCard({ shop, slotOptions, disabled }: ShopCardProps) {
         <StatusPill tone="neutral">Not set up</StatusPill>
     ) : shop.enabled ? (
         <StatusPill tone="success">Collecting</StatusPill>
+    ) : shop.delivers ? (
+        <StatusPill tone="info">Delivery only</StatusPill>
     ) : (
         <StatusPill tone="neutral">Off</StatusPill>
     );
@@ -120,7 +125,9 @@ export function ShopCard({ shop, slotOptions, disabled }: ShopCardProps) {
                             {errors.store ??
                                 (form.data.enabled
                                     ? `${cap.slots} slots over ${cap.days} ${cap.days === 1 ? 'day' : 'days'} a week, up to ${cap.orders} orders.`
-                                    : 'Not offered to customers.')}
+                                    : shop.delivers
+                                      ? 'No collection. The shop still delivers: customers order for delivery only.'
+                                      : 'No collection. To deliver only, add the shop with collection off, then turn delivery on.')}
                         </p>
                         <div className="flex gap-2">
                             {form.isDirty && (
@@ -130,7 +137,7 @@ export function ShopCard({ shop, slotOptions, disabled }: ShopCardProps) {
                             )}
                             <Button type="submit" disabled={off || (shop.saved && !form.isDirty)}>
                                 {form.processing && <LoaderCircle className="animate-spin" />}
-                                {shop.saved ? 'Save shop' : 'Add as collection shop'}
+                                {shop.saved ? 'Save shop' : form.data.enabled ? 'Add as collection shop' : 'Add shop'}
                             </Button>
                         </div>
                     </div>

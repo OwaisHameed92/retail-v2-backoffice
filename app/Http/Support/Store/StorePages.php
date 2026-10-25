@@ -4,6 +4,7 @@ namespace App\Http\Support\Store;
 
 use App\Domain\OnlineStore\Models\OnlineStoreShop;
 use App\Domain\OnlineStore\Support\BrandPalette;
+use App\Domain\OnlineStore\Support\ShopMethods;
 use App\Domain\OnlineStore\Support\ShopOpenNow;
 use App\Domain\OnlineStore\Support\StoreScope;
 use Illuminate\Http\Request;
@@ -55,6 +56,9 @@ final class StorePages
             'palette' => BrandPalette::for(StorePresenter::brand($store), $store->template),
             'template' => $store->template->value,
             'takingOrders' => $context->takingOrders(),
+            // OS-12: collection, delivery or both (ShopMethods), and the words that follow from it (StoreWording).
+            'methods' => ShopMethods::forStore($store, $context->shops),
+            'wording' => StoreWording::for($context),
             'shop' => $shop === null ? null : self::shop($shop),
             'shopCount' => $context->shops->count(),
             // Audit OSA-34: the shops to choose from in the header (only when there is a choice).
@@ -80,8 +84,8 @@ final class StorePages
     }
 
     /**
-     * The visitor's collection shop for the frame (name, and the address, phone, hours and "open now" the header and
-     * footer show).
+     * The visitor's shop for the frame (name, and the address, phone, hours and "open now" the header and footer
+     * show). OS-12: a delivery-only shop's hours are its delivery hours.
      *
      * @return array<string, mixed>
      */
@@ -89,9 +93,10 @@ final class StorePages
     {
         $shop->loadMissing('branch');
         $info = StorePresenter::shop($shop);
+        $hours = ! $info['collects'] && is_array($info['delivery']) ? $info['delivery']['hours'] : $info['hours'];
 
         return ['id' => $shop->id, 'name' => $info['name'], 'address' => $info['address'], 'phone' => $info['phone'],
-            'hours' => $info['hours'], 'openNow' => ShopOpenNow::describe($shop)];
+            'hours' => $hours, 'openNow' => ShopOpenNow::describe($shop)];
     }
 
     /**

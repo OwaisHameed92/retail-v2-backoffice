@@ -30,6 +30,10 @@ class OnlineStoreShopController extends Controller
         $shop = $save->handle($this->tenancy->require(), $branch, $request->settings());
         $name = $shop->branch->name;
 
-        return back()->with('success', $shop->enabled ? "{$name} saved. Customers can collect there." : "{$name} saved. Customers cannot collect there.");
+        return back()->with('success', match (true) {
+            $shop->collects() => "{$name} saved. Customers can collect there.",
+            $shop->delivery_enabled => "{$name} saved. No collection: customers order for delivery only.",
+            default => "{$name} saved. Customers cannot collect there.",
+        });
     }
 }

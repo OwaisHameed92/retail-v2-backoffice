@@ -8,9 +8,16 @@ import { Link, router } from '@inertiajs/react';
 import { CircleCheck, CircleDashed, Copy, Globe } from 'lucide-react';
 import { useState } from 'react';
 import { ToggleSwitch } from './toggle-switch';
-import { type BuilderProps, type StoreSettings } from './types';
+import { type BuilderProps, type ShopMode, type StoreSettings } from './types';
 
-/** Sends one of the store switches; a refusal (e.g. no collection shop yet) shows as a toast. */
+/** OS-12: the words for what the store's shops offer together (collection, delivery or both). */
+const MODE_WORDS: Record<ShopMode, { orders: string; shops: string }> = {
+    collection: { orders: 'click & collect', shops: 'collection' },
+    delivery: { orders: 'delivery', shops: 'delivery' },
+    both: { orders: 'click & collect and delivery', shops: 'collection or delivery' },
+};
+
+/** Sends one of the store switches; a refusal (e.g. no shop taking orders yet) shows as a toast. */
 export function putSwitch(name: 'app.online-store.live' | 'app.online-store.taking-orders', on: boolean, done: () => void) {
     router.put(
         route(name),
@@ -94,7 +101,7 @@ export function StatusPanel({ store, checklist, canEdit }: { store: StoreSetting
                             </label>
                             <p className="text-muted-foreground text-xs leading-5">
                                 {store.takingOrders
-                                    ? 'Customers can place click & collect orders.'
+                                    ? `Customers can place ${MODE_WORDS[checklist.shopMode ?? 'collection'].orders} orders.`
                                     : 'Paused: customers can look around but cannot order.'}
                             </p>
                         </div>
@@ -120,13 +127,16 @@ export function StatusPanel({ store, checklist, canEdit }: { store: StoreSetting
                     <Step done={store !== null}>Look, address and brand saved</Step>
                     <Step done={checklist.collectionShops > 0}>
                         {checklist.collectionShops > 0 ? (
-                            `${checklist.collectionShops} ${checklist.collectionShops === 1 ? 'shop' : 'shops'} for collection`
+                            `${checklist.collectionShops} ${checklist.collectionShops === 1 ? 'shop' : 'shops'} for ${MODE_WORDS[checklist.shopMode ?? 'collection'].shops}`
                         ) : (
                             <>
                                 <Link href={route('app.online-store.shops')} className="text-primary font-medium hover:underline">
-                                    Add a collection shop
+                                    Add a shop
                                 </Link>{' '}
-                                with its hours
+                                for collection, or turn on{' '}
+                                <Link href={route('app.online-store.delivery')} className="text-primary font-medium hover:underline">
+                                    delivery
+                                </Link>
                             </>
                         )}
                     </Step>

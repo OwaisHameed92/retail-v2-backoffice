@@ -40,7 +40,7 @@ final class TermsOfSale
                     ? 'A contract is made when we confirm your order. If you paid by card online, the contract is made when your payment is taken and we confirm the order; if we cannot supply your order, we refund you in full.'
                     : 'A contract is made when we confirm your order and you pay for it.',
             ]],
-            $facts->shops === [] ? null : ['heading' => 'Click & collect', 'paragraphs' => array_filter([
+            $facts->shops === [] || ! $facts->collection ? null : ['heading' => 'Click & collect', 'paragraphs' => array_filter([
                 'Choose the shop and a collection time at checkout. We email you when your order is ready. Please bring your order number.',
                 $notCollectedHours > 0 ? "If an order is not collected within {$notCollectedHours} hours of the chosen time, we may cancel it and put the items back on sale." : null,
             ])],

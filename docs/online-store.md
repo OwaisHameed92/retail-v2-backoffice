@@ -130,6 +130,25 @@ https://claude.ai/artifact/FdsDJZ2vyhQJw5hfPmUiNz. DECISIONS "Online store, clic
 - **Permissions** (OSA-32): `store.manage` builds the store; `orders.online` works the orders (owner, manager, staff).
 - **Billing** (OSA-30): invoice lines carry a `kind` (`licence`, `branch`, `onlineStore`, `setupFee`).
 
+## OS-12: delivery-only shops and one aisles picker (2026-10-25, live bug fixes)
+
+- **A shop takes part when collection OR delivery is on** (`ShopMethods`): `enabled` means collection is on;
+  delivery counts when the shop delivers to an area and the store has a way to pay for a delivery. Every public lookup
+  (StorefrontShops: home, catalogue shop, basket, checkout, slots, next slot, shop chooser, order placement) uses this
+  rule. A delivery-only shop has no collection slots and refuses a click & collect order; its checkout offers delivery
+  only. Going live needs one shop that collects or delivers. Portal: the "Shops & collection" tab (was "Collection
+  shops") says a shop can be delivery-only; the Delivery & payments tab no longer calls a delivery-only shop hidden.
+- **Words follow the store's methods** (`StoreWording`, shared as `store.wording`; mode collection / delivery / both):
+  top strip, hero chip ("Next delivery Today 14:00–15:00"), hero text, "How it works", "Where to collect" / "Where we
+  deliver" (areas, fee, free-over, minimum, delivery hours), footer, shop chooser, basket, product hints, the about
+  facts, page titles and descriptions, the terms of sale and the new-order email to the shop. Collection only keeps
+  the old words; delivery only never says "click & collect".
+- **One aisles picker.** The builder's "Aisles" drive the header, the "Shop by aisle" tiles and the department rows
+  (a row for each of the first six aisles shown; the section still has to be on). The "Rows by department" picker is
+  gone. Read-time fallback: a store that never saved its aisles but picked home-row departments (`home_departments`)
+  gets those as its aisles in that order, the others hidden, while its aisles are built from departments. Nothing is
+  rewritten; saving the aisles replaces it.
+
 ## Later stages
 
 - **S2:** card payment with DNA Payments (hosted payment page, webhook, money to the shop's DNA account) and local

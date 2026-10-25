@@ -37,7 +37,8 @@ use Throwable;
  * business (StoreScope).
  *
  * Refused unless the store is live and taking orders (FindStoreBySlug::takingOrders), the shop is one of its
- * shops, the slot is one of that shop's for the method and not full, and every line is shown and orderable at the
+ * shops (StorefrontShops: collection or delivery on) and offers the method (OS-12: no collection at a delivery-only
+ * shop), the slot is one of that shop's for the method and not full, and every line is shown and orderable at the
  * shop with an allowed quantity (OrderLineRules). A delivery also needs the shop to deliver to the postcode and the
  * minimum order (DeliveryQuote, which sets the fee). The way to pay must be one the store offers for the method now
  * (PaymentOptions); card online is not offered for items sold by weight (the scale sets their price). Names, prices
@@ -82,6 +83,11 @@ final class PlaceCollectOrder
 
         $shop = $this->shops->find($store, $input->shopId)
             ?? throw ValidationException::withMessages(['shopId' => 'Choose one of the shops listed.']);
+
+        // OS-12: a delivery-only shop (collection off) takes no click & collect order.
+        if ($method === FulfilmentMethod::Collection && ! $shop->collects()) {
+            throw ValidationException::withMessages(['fulfilment' => 'This shop delivers only. Choose delivery.']);
+        }
         $from = self::slotStart($input->collectFrom, $method);
         $lines = OrderLineRules::price($quantities, $this->catalogue->items($store, $shop, array_map('strval', array_keys($quantities))));
         $items = Money::sum(array_column($lines, 'line_total'), 2);

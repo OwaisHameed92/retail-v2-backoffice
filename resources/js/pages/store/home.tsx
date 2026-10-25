@@ -16,6 +16,7 @@ import {
     type DepartmentRow,
     type DepartmentTile,
     type FeaturedMode,
+    type NextSlot,
     type ShopInfo,
     type StoreInfo,
     type StoreProduct,
@@ -32,6 +33,8 @@ interface Props {
     headline: string | null;
     bannerUrl: string;
     nextCollection: string | null;
+    /** OS-12: the first slot with room over the shop's methods. */
+    nextSlot?: NextSlot | null;
     featured: StoreProduct[];
     featuredMode: FeaturedMode;
     offers: StoreProduct[];
@@ -52,7 +55,7 @@ function slidesOf(p: Props): BannerSlide[] {
 
 /** Sections every template draws the same way (their words follow the template). */
 const SHARED: Record<'shops' | 'about' | 'offers' | 'departmentRows', Draw> = {
-    shops: (p) => <ShopsSection shops={p.shops} />,
+    shops: (p, store) => <ShopsSection shops={p.shops} store={store} />,
     about: (p, store, prep) => <AboutSection store={store} prepMinutes={prep} text={p.aboutText} />,
     offers: (p, store) => <OffersSection products={p.offers} store={store} />,
     departmentRows: (p) => <DepartmentRowsSection rows={p.departmentRows} />,
@@ -65,7 +68,7 @@ const SECTIONS: Record<StoreTemplate, Record<Section, Draw>> = {
             <HeroSection
                 store={store}
                 slides={slidesOf(p)}
-                nextCollection={p.nextCollection}
+                nextSlot={p.nextSlot ?? (p.nextCollection ? { method: 'collection', when: p.nextCollection } : null)}
                 prepMinutes={prep}
                 howItWorks={p.sections.includes('howItWorks')}
                 template="freshMarket"
@@ -73,7 +76,7 @@ const SECTIONS: Record<StoreTemplate, Record<Section, Draw>> = {
         ),
         departments: (p, store) => <DepartmentsSection store={store} tiles={p.departmentTiles} />,
         featured: (p, store) => <FeaturedSection store={store} products={p.featured} mode={p.featuredMode} />,
-        howItWorks: (_p, _store, prep) => <HowItWorksSection prepMinutes={prep} />,
+        howItWorks: (_p, store, prep) => <HowItWorksSection store={store} prepMinutes={prep} />,
         ...SHARED,
     },
     butcher: {
@@ -81,7 +84,7 @@ const SECTIONS: Record<StoreTemplate, Record<Section, Draw>> = {
             <HeroSection
                 store={store}
                 slides={slidesOf(p)}
-                nextCollection={p.nextCollection}
+                nextSlot={p.nextSlot ?? (p.nextCollection ? { method: 'collection', when: p.nextCollection } : null)}
                 prepMinutes={prep}
                 howItWorks={p.sections.includes('howItWorks')}
                 template="butcher"
@@ -89,7 +92,7 @@ const SECTIONS: Record<StoreTemplate, Record<Section, Draw>> = {
         ),
         departments: (p, store) => <MeatTiles store={store} tiles={p.departmentTiles} />,
         featured: (p, store) => <ButcherPicks store={store} products={p.featured} mode={p.featuredMode} />,
-        howItWorks: (_p, _store, prep) => <HowItWorksSection prepMinutes={prep} template="butcher" />,
+        howItWorks: (_p, store, prep) => <HowItWorksSection store={store} prepMinutes={prep} template="butcher" />,
         ...SHARED,
     },
 };

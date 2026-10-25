@@ -55,14 +55,18 @@ export function StoreFooter({ store }: { store: StoreInfo }) {
                             <span className="font-display text-2xl leading-tight font-bold tracking-[-0.02em]">{store.name}</span>
                         )}
                         <p className="max-w-md text-[15px] leading-relaxed text-white/80">
-                            {butcher
-                                ? 'Cut to order by your local butcher. Order online, we weigh it at the counter and you pay the real weight.'
-                                : 'Your local shop, online. Order from the shelves you know, at the shelf price, ready when you are.'}
+                            {store.wording?.footer ??
+                                (butcher
+                                    ? 'Cut to order by your local butcher. Order online, we weigh it at the counter and you pay the real weight.'
+                                    : 'Your local shop, online. Order from the shelves you know, at the shelf price, ready when you are.')}
                         </p>
                     </div>
                     <div className="grid content-start gap-3 text-[15px] sm:grid-cols-2 sm:gap-x-8">
                         {phone && (
-                            <a href={`tel:${phone.replace(/[^\d+]/g, '')}`} className="flex min-h-10 items-center gap-2.5 font-semibold hover:underline">
+                            <a
+                                href={`tel:${phone.replace(/[^\d+]/g, '')}`}
+                                className="flex min-h-10 items-center gap-2.5 font-semibold hover:underline"
+                            >
                                 <Phone aria-hidden="true" className="size-[18px] shrink-0 text-white/70" />
                                 {phone}
                             </a>
@@ -87,7 +91,10 @@ export function StoreFooter({ store }: { store: StoreInfo }) {
                         )}
                         {shop?.openNow && (
                             <p className="flex items-center gap-2.5 text-sm text-white/85 sm:col-span-2">
-                                <span aria-hidden="true" className={cn('ml-1.5 size-2 shrink-0 rounded-full', shop.openNow.open ? 'bg-lime' : 'bg-white/50')} />
+                                <span
+                                    aria-hidden="true"
+                                    className={cn('ml-1.5 size-2 shrink-0 rounded-full', shop.openNow.open ? 'bg-lime' : 'bg-white/50')}
+                                />
                                 <span className="ml-1">{shop.openNow.label}</span>
                             </p>
                         )}
@@ -113,7 +120,7 @@ export function StoreFooter({ store }: { store: StoreInfo }) {
                             How it works
                         </Link>
                         <Link href={`${store.urls.home}#shops`} className={LINK}>
-                            Delivery &amp; collection
+                            {store.wording?.helpLink ?? 'Delivery & collection'}
                         </Link>
                         {store.urls.contact && (
                             <Link href={store.urls.contact} className={LINK}>
@@ -131,7 +138,7 @@ export function StoreFooter({ store }: { store: StoreInfo }) {
                             </Link>
                         ))}
                     </Column>
-                    <Column title="Opening hours" wide>
+                    <Column title={store.wording?.hoursTitle ?? 'Opening hours'} wide>
                         {shop?.hours && shop.hours.length > 0 ? (
                             <dl className="grid max-w-[16rem] grid-cols-[minmax(0,1fr)_auto] gap-x-6 gap-y-1.5 text-white/80">
                                 {shop.hours.map((day) => (

@@ -67,6 +67,8 @@ final class CollectionShopsPage
             'town' => $branch->town,
             'saved' => $row !== null,
             'enabled' => (bool) ($row->enabled ?? false),
+            // OS-12: it delivers (Delivery & payments tab); with collection off it is a delivery-only shop.
+            'delivers' => (bool) ($row->delivery_enabled ?? false),
             'hoursSource' => $source,
             'days' => array_map(fn (string $day, ?array $h) => ['day' => $day, 'open' => $h['open'] ?? null, 'close' => $h['close'] ?? null],
                 OnlineStoreShop::WEEKDAYS, $hours),

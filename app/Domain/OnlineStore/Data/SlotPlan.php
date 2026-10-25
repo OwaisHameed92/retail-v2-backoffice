@@ -71,6 +71,7 @@ final readonly class SlotPlan
             return $this->shop->delivers() ? $this->shop->deliveryHoursOn($weekday) : null;
         }
 
-        return $this->shop->hoursOn($weekday);
+        // OS-12: a delivery-only shop (collection off) has no collection slots.
+        return $this->shop->collects() ? $this->shop->hoursOn($weekday) : null;
     }
 }

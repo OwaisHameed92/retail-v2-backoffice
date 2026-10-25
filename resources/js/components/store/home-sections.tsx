@@ -10,6 +10,7 @@ import {
     type DepartmentRow,
     type DepartmentTile,
     type FeaturedMode,
+    type NextSlot,
     type StoreInfo,
     type StoreProduct,
     type StoreTemplate,
@@ -77,24 +78,33 @@ const BUTTON = 'inline-flex h-11 items-center gap-2 rounded-full px-5 text-[15px
 export function HeroSection({
     store,
     slides,
-    nextCollection,
+    nextSlot,
     prepMinutes,
     howItWorks,
     template,
 }: {
     store: StoreInfo;
     slides: BannerSlide[];
-    nextCollection: string | null;
+    /** OS-12: the first slot with room over the shop's methods (collection or delivery). */
+    nextSlot: NextSlot | null;
     prepMinutes: number | null;
     howItWorks: boolean;
     template: StoreTemplate;
 }) {
     const butcher = template === 'butcher';
     const start = store.departments[0]?.url ?? store.urls.search;
-    const status = store.takingOrders ? (nextCollection ? `Next collection ${nextCollection}` : 'Click & collect') : 'Browse online, shop in store';
-    const defaultText = butcher
-        ? `Choose the cut and the weight online. We prepare it for your collection time${prepMinutes ? `, ready in about ${prepMinutes} minutes` : ''}, and you pay the real weight at the counter.`
-        : `Order online and collect${store.shop ? ` from ${store.shop.name}` : ''}${prepMinutes ? ` in about ${prepMinutes} minutes` : ''}. Pay at the counter when you pick it up.`;
+    const wording = store.wording;
+    const nextLabel = nextSlot ? (wording?.nextLabel[nextSlot.method] ?? 'Next collection') : null;
+    const status = store.takingOrders
+        ? nextSlot
+            ? `${nextLabel} ${nextSlot.when}`
+            : (wording?.chip ?? 'Click & collect')
+        : 'Browse online, shop in store';
+    const defaultText =
+        wording?.heroText ??
+        (butcher
+            ? `Choose the cut and the weight online. We prepare it for your collection time${prepMinutes ? `, ready in about ${prepMinutes} minutes` : ''}, and you pay the real weight at the counter.`
+            : `Order online and collect${store.shop ? ` from ${store.shop.name}` : ''}${prepMinutes ? ` in about ${prepMinutes} minutes` : ''}. Pay at the counter when you pick it up.`);
 
     return (
         <BannerCarousel
@@ -308,7 +318,7 @@ export function OffersSection({ products, store }: { products: StoreProduct[]; s
             <SectionHeading
                 id="offers-title"
                 title="On offer"
-                sub="Taken off at the till when you collect and pay in the shop"
+                sub={store.wording?.offerHint ?? 'Taken off at the till when you collect and pay in the shop'}
                 link={{ href: store.urls.search, label: 'See all' }}
             />
             <ProductRail products={products} label="Products on offer" />

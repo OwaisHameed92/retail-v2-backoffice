@@ -32,5 +32,8 @@ test('a shop that delivers shows its areas and fees', function () {
         'delivery_free_over' => '30.00', 'delivery_minimum' => null])->save();
 
     $this->get(route('store.home', ['slug' => 'kirkgate'], false))->assertInertia(fn (AssertableInertia $page) => $page
-        ->where('shops.0.delivery', ['areas' => ['B23', 'B24 9'], 'fee' => '2.50', 'freeOver' => '30.00', 'minimum' => null]));
+        ->where('shops.0.delivery.areas', ['B23', 'B24 9'])->where('shops.0.delivery.fee', '2.50')
+        ->where('shops.0.delivery.freeOver', '30.00')->where('shops.0.delivery.minimum', null)
+        // OS-12: the delivery hours come with it (none saved here).
+        ->where('shops.0.delivery.hours.0', ['day' => 'Monday', 'hours' => null]));
 });

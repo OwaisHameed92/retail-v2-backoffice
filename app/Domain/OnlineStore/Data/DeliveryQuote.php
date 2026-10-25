@@ -35,11 +35,13 @@ final readonly class DeliveryQuote
         $minimum = $shop->delivery_minimum !== null && Money::compare($shop->delivery_minimum, '0') > 0 ? $shop->delivery_minimum : null;
         $short = $minimum !== null && Money::compare($itemsTotal, $minimum) < 0 ? Money::sub($minimum, $itemsTotal, 2) : null;
 
+        // OS-12: a delivery-only shop never suggests click & collect.
+        $collect = $shop->collects();
         $problem = match (true) {
-            ! $offered => 'This shop does not deliver. Choose click & collect.',
+            ! $offered => $collect ? 'This shop does not deliver. Choose click & collect.' : 'This shop does not deliver right now.',
             $postcode === null || trim($postcode) === '' => 'Enter your postcode to see if we deliver to you.',
             $code === null => 'Enter a full postcode, like '.self::example().'.',
-            ! $covered => "Sorry, we do not deliver to {$code} yet. Choose click & collect instead.",
+            ! $covered => "Sorry, we do not deliver to {$code} yet.".($collect ? ' Choose click & collect instead.' : ''),
             $short !== null => 'The minimum order for delivery is '.MoneyFormat::format($minimum).'. Add '.MoneyFormat::format($short).' more to have it delivered.',
             default => null,
         };

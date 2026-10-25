@@ -17,7 +17,7 @@ export function ProductPicker({
     onPick,
     chosen = [],
     title = 'Choose a product',
-    description = 'Products your online store shows at your first collection shop.',
+    description = 'Products your online store shows at its first shop.',
 }: {
     open: boolean;
     onOpenChange: (open: boolean) => void;
@@ -83,7 +83,9 @@ export function ProductPicker({
                     {problem && <p className="text-danger-foreground px-2 py-3 text-sm">{problem}</p>}
                     {!problem && !loading && results.length === 0 && (
                         <p className="text-muted-foreground px-2 py-6 text-center text-sm">
-                            {term ? 'No products shown online match that.' : 'No products are shown online yet. Add a collection shop first.'}
+                            {term
+                                ? 'No products shown online match that.'
+                                : 'No products are shown online yet. Add a shop for collection or delivery first.'}
                         </p>
                     )}
                     {loading && results.length === 0 && (

@@ -5,7 +5,7 @@ import { Badge, ProductRail, productSubline } from '@/components/store/product-c
 import { ProductPhoto } from '@/components/store/product-photo';
 import { QtyStepper } from '@/components/store/qty-stepper';
 import { StoreLayout } from '@/components/store/store-layout';
-import { type StoreProduct } from '@/components/store/types';
+import { type NextSlot, type StoreProduct } from '@/components/store/types';
 import { useAddToBasket, useStore } from '@/components/store/use-store';
 import { WeightChoice } from '@/components/store/weight-choice';
 import { cn } from '@/lib/utils';
@@ -20,6 +20,8 @@ interface Props {
     allergens: string | null;
     inBasket: string;
     nextCollection: string | null;
+    /** OS-12: the first slot with room over the shop's methods. */
+    nextSlot?: NextSlot | null;
     related: StoreProduct[];
 }
 
@@ -28,8 +30,10 @@ interface Props {
  * stock at the shop, quantity and "Add to basket", ingredients and allergens before purchase, and more from its
  * department; on phones a sticky add bar.
  */
-export default function StoreProductPage({ product, department, allergens, inBasket, nextCollection, related }: Props) {
+export default function StoreProductPage({ product, department, allergens, inBasket, nextCollection, nextSlot, related }: Props) {
     const store = useStore();
+    const wording = store?.wording;
+    const next: NextSlot | null = nextSlot ?? (nextCollection ? { method: 'collection', when: nextCollection } : null);
     const { add, busy } = useAddToBasket();
     const [quantity, setQuantity] = useState(defaultQuantity(product));
     const canAdd = product.orderable && (store?.takingOrders ?? false);
@@ -106,23 +110,26 @@ export default function StoreProductPage({ product, department, allergens, inBas
                             <p className="border-line flex items-start gap-3 rounded-xl border bg-white px-4 py-3 text-sm">
                                 <Tag aria-hidden="true" className="text-sale mt-0.5 size-5 shrink-0" />
                                 <span>
-                                    <strong>In-shop offer: {product.offer}.</strong> The till takes it off when you collect and pay in the shop; the
-                                    basket shows the shelf price.
+                                    <strong>In-shop offer: {product.offer}.</strong>{' '}
+                                    {wording && wording.mode !== 'collection'
+                                        ? 'The till takes it off when the shop rings up your order'
+                                        : 'The till takes it off when you collect and pay in the shop'}
+                                    ; the basket shows the shelf price.
                                 </span>
                             </p>
                         )}
                         <p className="border-line flex items-center gap-2.5 rounded-xl border bg-white px-4 py-3 text-sm font-medium">
                             <span aria-hidden="true" className={cn('size-2.5 shrink-0 rounded-full', product.orderable ? 'bg-ok' : 'bg-sale')} />
                             {product.orderable
-                                ? `In stock${store?.shop ? ` at ${store.shop.name}` : ''}${nextCollection ? ` · collect ${nextCollection}` : ''}`
+                                ? `In stock${store?.shop ? ` at ${store.shop.name}` : ''}${next ? ` · ${next.method === 'delivery' ? 'delivery' : 'collect'} ${next.when}` : ''}`
                                 : 'Out of stock at the moment'}
                         </p>
                         {product.isWeighed && (
                             <p className="bg-lime-soft flex items-start gap-3 rounded-xl px-4 py-3 text-sm">
                                 <Scale aria-hidden="true" className="mt-0.5 size-5 shrink-0" />
                                 <span>
-                                    <strong>Estimated price.</strong> Choose the weight in 0.25 kg steps; the shop weighs it and you pay the final
-                                    price on the scale when you collect.
+                                    <strong>Estimated price.</strong> Choose the weight in 0.25 kg steps; the shop weighs it and you pay the final{' '}
+                                    {wording?.weighedHint ?? 'price on the scale when you collect.'}
                                 </span>
                             </p>
                         )}
@@ -158,12 +165,16 @@ export default function StoreProductPage({ product, department, allergens, inBas
                         )}
                         <div className="grid grid-cols-2 gap-2.5">
                             <div className="bg-brand text-on-brand flex flex-col gap-0.5 rounded-xl p-4">
-                                <span className="text-[15px] font-semibold">{nextCollection ?? 'Click & collect'}</span>
-                                <span className="text-xs opacity-90">{nextCollection ? 'Next collection time' : 'Choose a time at checkout'}</span>
+                                <span className="text-[15px] font-semibold">{next?.when ?? wording?.chip ?? 'Click & collect'}</span>
+                                <span className="text-xs opacity-90">
+                                    {next ? (wording?.nextHint[next.method] ?? 'Next collection time') : 'Choose a time at checkout'}
+                                </span>
                             </div>
                             <div className="bg-lime text-on-lime flex flex-col gap-0.5 rounded-xl p-4">
-                                <span className="text-[15px] font-semibold">Pay in the shop</span>
-                                <span className="text-xs">Card or cash when you collect</span>
+                                <span className="text-[15px] font-semibold">
+                                    {!wording || wording.mode === 'collection' ? 'Pay in the shop' : wording.mode === 'delivery' ? 'Paying' : 'Pay your way'}
+                                </span>
+                                <span className="text-xs">{wording?.payHint ?? 'Card or cash when you collect'}</span>
                             </div>
                         </div>
                         {product.description && (

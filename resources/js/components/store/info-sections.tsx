@@ -5,39 +5,57 @@ import { type ReactNode } from 'react';
 import { money } from './format';
 import { SectionHeading } from './home-sections';
 import { COPY, templateOf } from './theme';
-import { type ShopInfo, type StoreInfo, type StoreTemplate } from './types';
+import { type OpeningDay, type ShopInfo, type StoreInfo, type StoreTemplate } from './types';
 
-/* The home page's information sections (OS-8), shared by both templates: how click & collect works, shops and about. */
+/*
+ * The home page's information sections (OS-8), shared by both templates: how ordering works, shops and about. OS-12:
+ * their words follow the store's methods (collection, delivery or both: `store.wording`, App\Http\Support\Store\StoreWording).
+ */
 
-export function HowItWorksSection({ prepMinutes, template = 'freshMarket' }: { prepMinutes: number | null; template?: StoreTemplate }) {
-    const butcher = template === 'butcher';
-    const steps = [
+/** The collect-only words (also used before the server sends `store.wording`). */
+function collectSteps(butcher: boolean, prepMinutes: number | null) {
+    return [
         {
-            icon: ShoppingBasket,
             title: butcher ? 'Choose your cut' : 'Fill your basket',
             text: butcher
                 ? 'Pick the meat and the weight. Weighed cuts show an estimated price.'
                 : 'Everything is at the shelf price, straight from our tills.',
         },
-        { icon: Timer, title: 'Pick a time', text: `Choose a collection slot. We need about ${prepMinutes ?? 30} minutes to get it ready.` },
+        { title: 'Pick a time', text: `Choose a collection slot. We need about ${prepMinutes ?? 30} minutes to get it ready.` },
         {
-            icon: CreditCard,
             title: 'Collect and pay',
             text: butcher
                 ? 'We weigh it at the counter and you pay the real weight, by card or cash.'
                 : 'Give your order number at the counter and pay there, by card or cash.',
         },
     ];
+}
+
+export function HowItWorksSection({
+    store,
+    prepMinutes,
+    template = 'freshMarket',
+}: {
+    store?: StoreInfo;
+    prepMinutes: number | null;
+    template?: StoreTemplate;
+}) {
+    const how = store?.wording?.how;
+    const delivery = store?.wording?.mode === 'delivery';
+    const icons = [ShoppingBasket, Timer, delivery ? Truck : CreditCard];
+    const steps = (how?.steps ?? collectSteps(template === 'butcher', prepMinutes)).map((step, i) => ({ ...step, icon: icons[i] ?? CreditCard }));
 
     return (
         <section id="how-it-works" aria-labelledby="how-title" className="bg-brand-soft scroll-mt-24 rounded-2xl p-6 sm:p-8 lg:p-10">
             <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:gap-10">
                 <div className="flex flex-col gap-2 lg:w-[300px] lg:shrink-0">
-                    <span className="text-brand-text text-xs font-semibold tracking-[0.08em] uppercase">Click &amp; collect</span>
+                    <span className="text-brand-text text-xs font-semibold tracking-[0.08em] uppercase">{how?.eyebrow ?? 'Click & collect'}</span>
                     <h2 id="how-title" className="font-display text-[22px] leading-tight font-bold tracking-[-0.02em] sm:text-[28px]">
-                        Shop online, skip the queue
+                        {how?.title ?? 'Shop online, skip the queue'}
                     </h2>
-                    <p className="text-body text-sm leading-relaxed">No account and no card online. You pay in the shop when you collect.</p>
+                    <p className="text-body text-sm leading-relaxed">
+                        {how?.lead ?? 'No account and no card online. You pay in the shop when you collect.'}
+                    </p>
                 </div>
                 <ol className="grid flex-1 gap-3 sm:grid-cols-3">
                     {steps.map((step, i) => (
@@ -58,19 +76,20 @@ export function HowItWorksSection({ prepMinutes, template = 'freshMarket' }: { p
     );
 }
 
-export function ShopsSection({ shops }: { shops: ShopInfo[] }) {
+export function ShopsSection({ shops, store }: { shops: ShopInfo[]; store?: StoreInfo }) {
     if (shops.length === 0) {
         return null;
     }
 
     const delivers = shops.some((shop) => shop.delivery);
+    const where = store?.wording?.where;
 
     return (
         <section id="shops" aria-labelledby="shops-title" className="flex scroll-mt-24 flex-col gap-4">
             <SectionHeading
                 id="shops-title"
-                title={shops.length > 1 ? 'Our shops' : delivers ? 'Collect or get it delivered' : 'Where to collect'}
-                sub={shops.length > 1 ? 'Collect from the shop nearest you' : 'Opening hours for collection'}
+                title={where?.title ?? (shops.length > 1 ? 'Our shops' : delivers ? 'Collect or get it delivered' : 'Where to collect')}
+                sub={where?.sub ?? (shops.length > 1 ? 'Collect from the shop nearest you' : 'Opening hours for collection')}
             />
             <ul className={cn('grid gap-4', shops.length > 1 && 'lg:grid-cols-2')}>
                 {shops.map((shop) => (
@@ -83,9 +102,15 @@ export function ShopsSection({ shops }: { shops: ShopInfo[] }) {
     );
 }
 
-/** "Today 09:00–17:00" with a dot (green while open now), or "Closed today". */
+/** The hours the shop's chip and "open now" follow: collection hours, or delivery hours for a delivery-only shop (OS-12). */
+function mainHours(shop: ShopInfo): OpeningDay[] {
+    return shop.collects === false && shop.delivery?.hours ? shop.delivery.hours : shop.hours;
+}
+
+/** "Today 09:00–17:00" with a dot (green while open now), or "Closed today" ("No deliveries today" for a delivery-only shop). */
 function TodayChip({ shop }: { shop: ShopInfo }) {
-    const today = shop.hours.find((d) => d.day === shop.today);
+    const today = mainHours(shop).find((d) => d.day === shop.today);
+    const deliveryOnly = shop.collects === false;
 
     if (!shop.today) {
         return null;
@@ -101,7 +126,11 @@ function TodayChip({ shop }: { shop: ShopInfo }) {
             )}
         >
             <span aria-hidden="true" className={cn('size-2 rounded-full', open ? 'bg-ok' : 'bg-muted')} />
-            {today?.hours ? `${open ? 'Open' : 'Today'} ${today.hours.open}–${today.hours.close}` : 'Closed today'}
+            {today?.hours
+                ? `${open ? (deliveryOnly ? 'Delivering' : 'Open') : 'Today'} ${today.hours.open}–${today.hours.close}`
+                : deliveryOnly
+                  ? 'No deliveries today'
+                  : 'Closed today'}
         </span>
     );
 }
@@ -128,10 +157,40 @@ function DeliveryNote({ delivery }: { delivery: NonNullable<ShopInfo['delivery']
     );
 }
 
+/** The week's hours as a two-column table, today highlighted. */
+function HoursTable({ title, days, today }: { title: string; days: OpeningDay[]; today?: string }) {
+    return (
+        <div className="min-w-0">
+            <p className="text-muted mb-2 text-xs font-semibold tracking-[0.06em] uppercase">{title}</p>
+            <dl className="divide-line grid divide-y text-sm">
+                {days.map((day) => {
+                    const isToday = day.day === today;
+
+                    return (
+                        <div
+                            key={day.day}
+                            className={cn('flex items-center justify-between gap-4 px-2 py-1.5', isToday && 'bg-brand-soft rounded-md font-semibold')}
+                        >
+                            <dt>
+                                {day.day}
+                                {isToday && <span className="sr-only"> (today)</span>}
+                            </dt>
+                            <dd className={day.hours ? 'tabular-nums' : 'text-muted'}>
+                                {day.hours ? `${day.hours.open}–${day.hours.close}` : 'Closed'}
+                            </dd>
+                        </div>
+                    );
+                })}
+            </dl>
+        </div>
+    );
+}
+
 /**
- * A collection shop (OS-8, redesigned OS-11): its name, a clean one-line address, phone, today's hours as a chip,
- * local delivery when it delivers, and the week's hours as a two-column table (today highlighted). In a wide space
- * the details and the hours sit side by side (container query), in a narrow one they stack.
+ * A shop (OS-8, redesigned OS-11): its name, a clean one-line address, phone, today's hours as a chip, local delivery
+ * when it delivers, and the week's hours as a two-column table (today highlighted). In a wide space the details and
+ * the hours sit side by side (container query), in a narrow one they stack. OS-12: collection hours only when it
+ * collects; delivery hours when it delivers (a delivery-only shop shows those alone).
  */
 export function ShopCard({ shop, children }: { shop: ShopInfo; children?: ReactNode }) {
     return (
@@ -161,28 +220,9 @@ export function ShopCard({ shop, children }: { shop: ShopInfo; children?: ReactN
                     {shop.delivery && <DeliveryNote delivery={shop.delivery} />}
                     {children}
                 </div>
-                <div className="min-w-0">
-                    <p className="text-muted mb-2 text-xs font-semibold tracking-[0.06em] uppercase">Collection hours</p>
-                    <dl className="divide-line grid divide-y text-sm">
-                        {shop.hours.map((day) => {
-                            const isToday = day.day === shop.today;
-
-                            return (
-                                <div
-                                    key={day.day}
-                                    className={cn('flex items-center justify-between gap-4 px-2 py-1.5', isToday && 'bg-brand-soft rounded-md font-semibold')}
-                                >
-                                    <dt>
-                                        {day.day}
-                                        {isToday && <span className="sr-only"> (today)</span>}
-                                    </dt>
-                                    <dd className={day.hours ? 'tabular-nums' : 'text-muted'}>
-                                        {day.hours ? `${day.hours.open}–${day.hours.close}` : 'Closed'}
-                                    </dd>
-                                </div>
-                            );
-                        })}
-                    </dl>
+                <div className="flex min-w-0 flex-col gap-5">
+                    {shop.collects !== false && <HoursTable title="Collection hours" days={shop.hours} today={shop.today} />}
+                    {shop.delivery?.hours && <HoursTable title="Delivery hours" days={shop.delivery.hours} today={shop.today} />}
                 </div>
             </div>
         </article>
@@ -191,10 +231,11 @@ export function ShopCard({ shop, children }: { shop: ShopInfo; children?: ReactN
 
 export function AboutSection({ store, prepMinutes, text }: { store: StoreInfo; prepMinutes: number | null; text: string | null }) {
     const copy = COPY[templateOf(store.template)];
+    const own = store.wording?.facts;
     const facts = [
-        { big: `${prepMinutes ?? 30} min`, title: 'Ready to collect', text: 'We get your order ready for the time you choose.' },
+        own?.ready ?? { big: `${prepMinutes ?? 30} min`, title: 'Ready to collect', text: 'We get your order ready for the time you choose.' },
         { big: copy.priceFact.big ?? `${currencySymbol()}0`, title: copy.priceFact.title, text: copy.priceFact.text },
-        { big: 'Pay', title: 'At the counter', text: 'Card or cash when you collect. Nothing to pay online.' },
+        own?.pay ?? { big: 'Pay', title: 'At the counter', text: 'Card or cash when you collect. Nothing to pay online.' },
     ];
 
     return (

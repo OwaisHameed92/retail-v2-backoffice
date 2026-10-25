@@ -33,6 +33,10 @@ export interface StoreInfo {
     palette?: StorePalette;
     template: StoreTemplate;
     takingOrders: boolean;
+    /** OS-12: what the store's shops offer together (App\Domain\OnlineStore\Support\ShopMethods). */
+    methods?: { collection: boolean; delivery: boolean; mode: StoreMode };
+    /** OS-12: the words that follow the store's methods (App\Http\Support\Store\StoreWording). */
+    wording?: StoreWording;
     shop: {
         id: string;
         name: string;
@@ -60,6 +64,46 @@ export interface StoreInfo {
     };
     /** OS-11 (audit OSA-2): who sells (App\Domain\OnlineStore\Legal\StoreTrader). */
     trader?: StoreTrader;
+}
+
+/** OS-12: collection only, delivery only, or both. */
+export type StoreMode = 'collection' | 'delivery' | 'both';
+
+export type Fulfilment = 'collection' | 'delivery';
+
+/** OS-12: the next slot with room over the shop's methods ("delivery", "Today 14:00–15:00"). */
+export interface NextSlot {
+    method: Fulfilment;
+    when: string;
+}
+
+interface WordingFact {
+    big: string;
+    title: string;
+    text: string;
+}
+
+/** App\Http\Support\Store\StoreWording::make. */
+export interface StoreWording {
+    mode: StoreMode;
+    chip: string;
+    strip: string;
+    heroText: string;
+    how: { eyebrow: string; title: string; lead: string; steps: { title: string; text: string }[] };
+    where: { title: string; sub: string };
+    footer: string;
+    helpLink: string;
+    hoursTitle: string;
+    shopLabel: string;
+    shopHint: string;
+    basketEmpty: string;
+    nextLabel: Partial<Record<Fulfilment, string>>;
+    nextHint: Partial<Record<Fulfilment, string>>;
+    payHint: string;
+    payNote: string;
+    offerHint: string;
+    weighedHint: string;
+    facts: { ready: WordingFact; pay: WordingFact };
 }
 
 export interface StoreTrader {
@@ -141,11 +185,13 @@ export interface ShopInfo {
     address: string;
     phone: string | null;
     prepMinutes: number;
+    /** OS-12: customers can collect here (`hours` are its collection hours); false for a delivery-only shop. */
+    collects?: boolean;
     hours: OpeningDay[];
     /** OS-11: today's weekday in shop time ("Monday"), open now, and local delivery when the shop delivers. */
     today?: string;
     openNow?: { open: boolean; label: string };
-    delivery?: { areas: string[]; fee: string; freeOver: string | null; minimum: string | null } | null;
+    delivery?: { areas: string[]; fee: string; freeOver: string | null; minimum: string | null; hours?: OpeningDay[] } | null;
 }
 
 export interface Pagination {

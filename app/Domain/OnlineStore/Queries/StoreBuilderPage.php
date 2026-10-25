@@ -12,6 +12,7 @@ use App\Domain\OnlineStore\Legal\StoreTrader;
 use App\Domain\OnlineStore\Models\OnlineStore;
 use App\Domain\OnlineStore\Models\OnlineStoreBanner;
 use App\Domain\OnlineStore\Support\OnlineCatalogueQuery;
+use App\Domain\OnlineStore\Support\ShopMethods;
 use App\Domain\OnlineStore\Support\StoreAddress;
 use App\Domain\OnlineStore\Support\StoreImages;
 use App\Domain\Tenancy\Models\Company;
@@ -41,13 +42,13 @@ final class StoreBuilderPage
     /** What each home section shows. */
     private const SECTION_HINTS = [
         'hero' => 'Your banners at the top, one after another.',
-        'departments' => 'Photo tiles for each department with products online.',
+        'departments' => 'Photo tiles for your aisles (set in Aisles), from three aisles up.',
         'featured' => 'Best sellers, hand-picked or newest products (set below).',
-        'howItWorks' => 'Order online, pick a time, pay at the shop.',
-        'shops' => 'Your collection shops with their opening hours.',
+        'howItWorks' => 'Order online, pick a time, collect or have it delivered.',
+        'shops' => 'Your shops: collection hours, and delivery areas and fees.',
         'about' => 'A short note about your business.',
         'offers' => 'Products with a till offer on today, with the offer.',
-        'departmentRows' => 'A row of products for each department you choose (set below).',
+        'departmentRows' => 'A row of products for each of your first six aisles (set in Aisles).',
     ];
 
     /**
@@ -73,7 +74,6 @@ final class StoreBuilderPage
             'linkOptions' => BannerLink::options(),
             'featuredOptions' => FeaturedMode::options(),
             'featuredMax' => FeaturedProducts::MAX_PICKED,
-            'homeDepartmentsMax' => SaveOnlineStore::MAX_HOME_DEPARTMENTS,
             'aboutMax' => SaveOnlineStore::ABOUT_MAX,
             'aboutPlaceholder' => $store === null ? null : self::ABOUT_PLACEHOLDER[$store->template->value],
             'departments' => Department::query()->where('company_id', $company->id)->orderBy('position')->orderBy('name')->get(['id', 'name'])
@@ -85,7 +85,9 @@ final class StoreBuilderPage
             'aisleSourceUsed' => $store === null || $first === null ? null : app(StoreAisles::class)->source($store, $first)->value,
             'aisleNameMax' => SaveStoreAisles::NAME_MAX,
             'checklist' => [
+                // OS-12: shops taking orders (collecting, delivering or both), and what they offer together.
                 'collectionShops' => $shops->count(),
+                'shopMode' => $store === null ? ShopMethods::COLLECTION : ShopMethods::mode($store, $shops),
                 'productsShown' => $first === null ? null : OnlineCatalogueQuery::base($first)->count(),
                 'productsShop' => $first?->branch->name,
                 // OS-11 (audit OSA-2): the trader details still to save on "Legal & contact" before going live.
@@ -116,7 +118,6 @@ final class StoreBuilderPage
             'aboutText' => $store->about_text,
             'featuredMode' => FeaturedMode::fromStored($store->featured_mode)->value,
             'featuredProductIds' => FeaturedProducts::pickedIds($store->featured_product_ids),
-            'homeDepartments' => FeaturedProducts::pickedIds($store->home_departments),
         ];
     }
 

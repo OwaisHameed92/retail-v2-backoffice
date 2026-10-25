@@ -39,7 +39,8 @@ export function StoreLogo({ store, size = 'md', withName = true }: { store: Stor
 }
 
 /**
- * The store's header (OS-8): a thin strip in the store's colour (click & collect, open now), then a slim bar with the
+ * The store's header (OS-8): a thin strip in the store's colour (how it gets orders to you, OS-12: collect, delivery
+ * or both; open now), then a slim bar with the
  * logo, search, the collection shop (changeable on every screen size, audit OSA-34) and the basket, sticky on larger
  * screens; then the departments as chips (a swipeable row on phones), the current one in the store's colour.
  */
@@ -61,8 +62,12 @@ export function StoreHeader({ store, basket }: { store: StoreInfo; basket?: Bask
             <div className="bg-brand text-on-brand text-xs">
                 <div className="mx-auto flex h-9 max-w-[1280px] items-center justify-between gap-6 px-4 sm:px-6">
                     <p className="flex min-w-0 items-center gap-2">
-                        <span className="bg-lime text-on-lime shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold">Click &amp; collect</span>
-                        <span className="min-w-0 truncate">Order online, pay when you collect{store.shop ? ` at ${store.shop.name}` : ''}</span>
+                        <span className="bg-lime text-on-lime shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold">
+                            {store.wording?.chip ?? 'Click & collect'}
+                        </span>
+                        <span className="min-w-0 truncate">
+                            {store.wording?.strip ?? `Order online, pay when you collect${store.shop ? ` at ${store.shop.name}` : ''}`}
+                        </span>
                     </p>
                     <p className="hidden shrink-0 items-center gap-5 sm:flex">
                         {store.shop?.openNow && (

@@ -23,6 +23,8 @@ use App\Domain\TillData\Models\Department;
  * - Only aisles with at least one product that can be ordered now at the shop (shown and in stock), counted.
  * - Names in Title Case (DisplayName) unless the shop gave its own; the shop's order first, then the till's; aisles
  *   the shop hid are left out (`aisles` settings: id, name, photo, hidden).
+ * - OS-12: the one choice of departments for the store: they drive the header, the "Shop by aisle" tiles and the
+ *   department rows. A store with no saved aisles uses its old home-row departments ({@see self::settings()}).
  *
  * Read only; scoped to the store's business.
  */
@@ -52,23 +54,16 @@ final class StoreAisles
     public function all(OnlineStore $store, OnlineStoreShop $shop): array
     {
         $source = $this->source($store, $shop);
-        $settings = [];
-
-        foreach (is_array($store->aisles) ? $store->aisles : [] as $i => $row) {
-            if (is_string($row['id'] ?? null)) {
-                $settings[$row['id']] = ['position' => $i, 'name' => self::text($row['name'] ?? null), 'photo' => self::text($row['photo'] ?? null),
-                    'hidden' => (bool) ($row['hidden'] ?? false)];
-            }
-        }
-
+        $candidates = $this->candidates($store, $shop, $source);
+        [$settings, $hideOthers] = self::settings($store, $source, array_column($candidates, 'id'));
         $aisles = [];
 
-        foreach ($this->candidates($store, $shop, $source) as $i => $c) {
+        foreach ($candidates as $i => $c) {
             $own = $settings[$c['id']] ?? null;
             $aisles[] = [
                 'id' => $c['id'], 'kind' => $source->value, 'tillName' => $c['name'],
                 'name' => $own['name'] ?? DisplayName::of($c['name']), 'customName' => $own['name'] ?? null,
-                'count' => $c['count'], 'photoUrl' => StoreImages::url($own['photo'] ?? null), 'hidden' => $own['hidden'] ?? false,
+                'count' => $c['count'], 'photoUrl' => StoreImages::url($own['photo'] ?? null), 'hidden' => $own['hidden'] ?? $hideOthers,
                 'order' => [$own === null ? 1 : 0, $own['position'] ?? $i],
             ];
         }
@@ -80,6 +75,45 @@ final class StoreAisles
 
             return $a;
         }, $aisles);
+    }
+
+    /**
+     * The shop's aisle settings by id (position, name, photo, hidden), and whether aisles without one are hidden.
+     *
+     * OS-12 (read-time fallback): a store that never saved its aisles but picked departments for its home rows
+     * (`home_departments`, the builder's old second picker) gets those departments as its aisles, in that order, and
+     * the others hidden, while its aisles are built from departments and at least one of them is an aisle. Saving the
+     * aisles replaces this; nothing is rewritten.
+     *
+     * @param  list<string>  $candidateIds
+     * @return array{0: array<string, array{position: int, name: string|null, photo: string|null, hidden: bool}>, 1: bool}
+     */
+    private static function settings(OnlineStore $store, AisleSource $source, array $candidateIds): array
+    {
+        $settings = [];
+
+        foreach (is_array($store->aisles) ? $store->aisles : [] as $i => $row) {
+            if (is_string($row['id'] ?? null)) {
+                $settings[$row['id']] = ['position' => $i, 'name' => self::text($row['name'] ?? null), 'photo' => self::text($row['photo'] ?? null),
+                    'hidden' => (bool) ($row['hidden'] ?? false)];
+            }
+        }
+
+        if ($settings !== [] || $source !== AisleSource::Departments) {
+            return [$settings, false];
+        }
+
+        $picked = array_values(array_intersect(FeaturedProducts::pickedIds($store->home_departments), $candidateIds));
+
+        if ($picked === []) {
+            return [[], false];
+        }
+
+        foreach ($picked as $i => $id) {
+            $settings[$id] = ['position' => $i, 'name' => null, 'photo' => null, 'hidden' => false];
+        }
+
+        return [$settings, true];
     }
 
     /** Departments or categories for this store (its choice, else the better of the two). */

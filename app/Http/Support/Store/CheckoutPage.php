@@ -11,13 +11,14 @@ use App\Domain\OnlineStore\Queries\CollectionDays;
 use App\Domain\OnlineStore\Queries\CollectionSlots;
 use App\Domain\OnlineStore\Support\OnlineStoreSwitch;
 use App\Domain\OnlineStore\Support\PaymentOptions;
+use App\Domain\OnlineStore\Support\ShopMethods;
 use App\Domain\Shared\Country\Country;
 use App\Domain\Shared\Support\Money;
 use App\Http\Requests\Store\PlaceStoreOrderRequest;
 
 /**
- * The public checkout's props (OS-2, OS-9): the basket, the shop, collect or delivery (delivery only when the shop
- * delivers and has a way to pay for it), the delivery quote for the postcode chosen (DeliveryQuote, worked out on
+ * The public checkout's props (OS-2, OS-9): the basket, the shop, the methods it offers (OS-12, ShopMethods: collect,
+ * delivery when it delivers and has a way to pay for it, or both; a delivery-only shop offers no collection), the delivery quote for the postcode chosen (DeliveryQuote, worked out on
  * the server), the days and slots of the chosen method, the ways to pay it, and the totals. Everything is priced
  * again when the order is placed (PlaceCollectOrder).
  */
@@ -33,8 +34,10 @@ final class CheckoutPage
         $shop = $context->shop();
         $priced = $context->priced();
         $choice = $context->checkoutChoice();
-        $deliveryOffered = $shop !== null && self::deliveryOffered($context, $shop);
-        $method = $deliveryOffered ? $choice['method'] : FulfilmentMethod::Collection;
+        $methods = $shop === null ? [] : ShopMethods::of($context->store, $shop);
+        $deliveryOffered = in_array(FulfilmentMethod::Delivery, $methods, true);
+        // OS-12: only what the shop offers; a delivery-only shop has no collect option.
+        $method = in_array($choice['method'], $methods, true) ? $choice['method'] : ($methods[0] ?? FulfilmentMethod::Collection);
         $quote = $shop !== null && $deliveryOffered ? DeliveryQuote::for($shop, $choice['postcode'], $priced->total) : null;
         $fee = $method === FulfilmentMethod::Delivery && $quote?->covered === true ? $quote->fee : '0.00';
         [$dayList, $selected, $slots] = $this->slotsFor($shop, $method, $askedDay);
@@ -44,6 +47,7 @@ final class CheckoutPage
             'shop' => $shop === null ? null : StorePresenter::shop($shop),
             'shops' => $context->shops->count() > 1 ? $context->shops->map(fn ($s) => StorePresenter::shop($s))->values()->all() : [],
             'method' => $method->value,
+            'methods' => array_map(fn (FulfilmentMethod $m) => $m->value, $methods),
             'delivery' => $quote?->toArray(),
             'days' => $dayList,
             'day' => $selected,
@@ -58,12 +62,6 @@ final class CheckoutPage
             ],
             'honeypot' => PlaceStoreOrderRequest::HONEYPOT,
         ];
-    }
-
-    /** The shop delivers and the store has a way to pay for a delivery. */
-    public static function deliveryOffered(StoreContext $context, OnlineStoreShop $shop): bool
-    {
-        return $shop->delivers() && PaymentOptions::for($context->store, FulfilmentMethod::Delivery) !== [];
     }
 
     /**

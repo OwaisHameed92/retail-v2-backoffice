@@ -13,8 +13,8 @@ use App\Domain\OnlineStore\Queries\StorePhotos;
 
 /**
  * The public home page's rows (OS-8), as the React page draws them: banners (slides), featured products (best
- * sellers, hand-picked or newest), the "On offer" row, a row per chosen department (the store's `home_departments`
- * shown at the shop, else its first three) and the department tiles with a photo each. No HFSS product in any home
+ * sellers, hand-picked or newest), the "On offer" row, a row for each of the first six aisles shown at the shop
+ * (OS-12: the same aisles as the header and the tiles, in the store's order) and the aisle tiles with a photo each. No HFSS product in any home
  * row (OS-11, audit OSA-31, HomeRowRules).
  */
 final class StoreHomeRows
@@ -25,7 +25,8 @@ final class StoreHomeRows
 
     public const PER_DEPARTMENT = 10;
 
-    public const DEFAULT_DEPARTMENT_ROWS = 3;
+    /** OS-12: a row for each of the first this many aisles (the old picker's maximum). */
+    public const DEPARTMENT_ROWS = 6;
 
     public function __construct(
         private readonly StorefrontCatalogue $catalogue,
@@ -81,8 +82,8 @@ final class StoreHomeRows
             return [];
         }
 
-        $chosen = array_values(array_filter(FeaturedProducts::pickedIds($context->store->home_departments), fn (string $id) => $shown->has($id)));
-        $ids = $chosen !== [] ? $chosen : $shown->keys()->take(self::DEFAULT_DEPARTMENT_ROWS)->all();
+        // OS-12: one choice: the aisles shown, in the store's order (StoreAisles; old home-row picks are its fallback).
+        $ids = $shown->keys()->take(self::DEPARTMENT_ROWS)->all();
         $rows = [];
 
         foreach ($ids as $id) {

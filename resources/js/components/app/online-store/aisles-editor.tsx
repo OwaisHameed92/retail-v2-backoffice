@@ -34,7 +34,11 @@ function AislePhoto({ aisle, disabled }: { aisle: StoreAisle; disabled: boolean 
     return (
         <div className="flex items-center gap-1.5">
             <span className="bg-muted flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-md border">
-                {aisle.photoUrl ? <img src={aisle.photoUrl} alt="" className="size-full object-cover" /> : <ImageIcon className="text-muted-foreground size-4" />}
+                {aisle.photoUrl ? (
+                    <img src={aisle.photoUrl} alt="" className="size-full object-cover" />
+                ) : (
+                    <ImageIcon className="text-muted-foreground size-4" />
+                )}
             </span>
             <input
                 ref={input}
@@ -93,7 +97,11 @@ export function AislesEditor({ props, disabled }: { props: Omit<BuilderProps, 's
         next.splice(index + step, 0, row);
         form.setData('aisles', next);
     };
-    const update = (index: number, change: Partial<Row>) => form.setData('aisles', form.data.aisles.map((r, i) => (i === index ? { ...r, ...change } : r)));
+    const update = (index: number, change: Partial<Row>) =>
+        form.setData(
+            'aisles',
+            form.data.aisles.map((r, i) => (i === index ? { ...r, ...change } : r)),
+        );
     const save = () => {
         form.transform((data) => ({ source: data.source === 'auto' ? null : data.source, aisles: data.aisles }));
         form.put(route('app.online-store.aisles.update'), { preserveScroll: true, onSuccess: () => form.setDefaults() });
@@ -103,8 +111,8 @@ export function AislesEditor({ props, disabled }: { props: Omit<BuilderProps, 's
         <div className="grid gap-3">
             <div className="flex flex-col gap-2">
                 <p className="text-muted-foreground text-sm">
-                    {aisleSourceUsed ? `Showing your till ${aisleSourceUsed}.` : 'Add a collection shop to see your aisles.'} Aisles with nothing in
-                    stock are hidden from customers.
+                    {aisleSourceUsed ? `Showing your till ${aisleSourceUsed}.` : 'Add a shop for collection or delivery to see your aisles.'} Aisles
+                    with nothing in stock are hidden from customers.
                 </p>
                 <Select value={form.data.source} onValueChange={(v) => form.setData('source', v)} disabled={locked}>
                     <SelectTrigger className="w-full sm:max-w-xs" aria-label="Build aisles from">

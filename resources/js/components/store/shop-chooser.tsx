@@ -77,7 +77,7 @@ export function ShopChooser({ store, variant }: { store: StoreInfo; variant: 'ba
                         <Store aria-hidden="true" className="size-[16px]" />
                     </span>
                     <span className="flex min-w-0 flex-col leading-tight">
-                        <span className="text-muted text-[11px]">Collect from</span>
+                        <span className="text-muted text-[11px]">{store.wording?.shopLabel ?? 'Collect from'}</span>
                         <span className="truncate text-sm font-bold">{store.shop.name}</span>
                     </span>
                 </span>
@@ -93,8 +93,14 @@ export function ShopChooser({ store, variant }: { store: StoreInfo; variant: 'ba
                         variant === 'pill' ? 'right-0' : 'left-0',
                     )}
                 >
-                    <p className="text-muted px-3 pt-2 pb-1 text-xs font-semibold">Prices and stock follow the shop you collect from.</p>
-                    <ul role="radiogroup" aria-label="Collection shop" className="flex flex-col gap-1">
+                    <p className="text-muted px-3 pt-2 pb-1 text-xs font-semibold">
+                        {store.wording?.shopHint ?? 'Prices and stock follow the shop you collect from.'}
+                    </p>
+                    <ul
+                        role="radiogroup"
+                        aria-label={!store.wording || store.wording.mode === 'collection' ? 'Collection shop' : 'Shop'}
+                        className="flex flex-col gap-1"
+                    >
                         {shops.map((shop) => {
                             const current = shop.id === store.shop?.id;
 

@@ -10,7 +10,7 @@ import AppLayout from '@/layouts/app-layout';
 import { Head, Link } from '@inertiajs/react';
 import { Info, TriangleAlert, Truck } from 'lucide-react';
 
-/** OS-9: local delivery per collection shop, the ways to pay, and card payments online with DNA Payments. */
+/** OS-9: local delivery per shop (OS-12: with or without collection), the ways to pay, and card payments online with DNA Payments. */
 export default function OnlineStoreDelivery({ hasStore, canEditPayments, shops, slotOptions, payments, dna }: DeliveryPaymentsProps) {
     const delivering = shops.filter((s) => s.enabled).length;
 
@@ -47,11 +47,11 @@ export default function OnlineStoreDelivery({ hasStore, canEditPayments, shops, 
             {shops.length === 0 ? (
                 <EmptyState
                     icon={Truck}
-                    title="No collection shops yet"
-                    body="Add a collection shop first: delivery is set up per collection shop."
+                    title="No shops added yet"
+                    body="Add the shop on the Shops & collection tab first (collection can stay off for a delivery-only shop), then set up its delivery here."
                     action={
                         <Button variant="outline" asChild>
-                            <Link href={route('app.online-store.shops')}>Collection shops</Link>
+                            <Link href={route('app.online-store.shops')}>Shops &amp; collection</Link>
                         </Button>
                     }
                 />

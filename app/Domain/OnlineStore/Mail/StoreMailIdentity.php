@@ -36,7 +36,7 @@ final class StoreMailIdentity
         return $own !== '' && filter_var($own, FILTER_VALIDATE_EMAIL) ? $own : $orderAddress;
     }
 
-    /** The look, for the order's shop (address and phone in the footer), else the store's first collection shop. */
+    /** The look, for the order's shop (address and phone in the footer), else the store's first shop (collecting or delivering, OS-12). */
     public static function brand(OnlineStore $store, Company $company, ?OnlineStoreMailSettings $settings, ?Branch $shop = null): StoreMailBrand
     {
         $shop ??= self::firstShop($store);
@@ -48,7 +48,7 @@ final class StoreMailIdentity
     private static function firstShop(OnlineStore $store): ?Branch
     {
         $branchId = OnlineStoreShop::withoutCompanyScope()->where('company_id', $store->company_id)->where('online_store_id', $store->id)
-            ->where('enabled', true)->orderBy('created_at')->value('branch_id');
+            ->where(fn ($q) => $q->where('enabled', true)->orWhere('delivery_enabled', true))->orderBy('created_at')->value('branch_id');
 
         return $branchId === null ? null : Branch::withoutCompanyScope()->where('company_id', $store->company_id)->find($branchId);
     }
