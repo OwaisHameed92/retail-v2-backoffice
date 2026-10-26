@@ -175,6 +175,15 @@ final class PlanChangeWords
      */
     public static function licences(PlanChangePlan $plan): array
     {
+        // OS-13: online store only: no tills before and/or after the change.
+        if ($plan->liveLicences === 0 && $plan->to->isOnlineStoreOnly()) {
+            return ["No tills: {$plan->to->name} is an online store only plan, so no licence key is issued on it."];
+        }
+
+        if ($plan->liveLicences === 0 && ($plan->onlineStore->fromOnlineOnly ?? false)) {
+            return ["No tills yet (online store only). After the change, add its tills on the Licences tab (Add till): each gets its licence key on {$plan->to->name}, and the tills pull the products made in the portal."];
+        }
+
         $lines = [($plan->liveLicences === 1 ? '1 till licence moves' : "{$plan->liveLicences} till licences move")." to {$plan->to->name}. Each till picks up its new features and dates at its next check-in."];
 
         if ($plan->firstPeriodNow && $plan->periodEnd !== null) {

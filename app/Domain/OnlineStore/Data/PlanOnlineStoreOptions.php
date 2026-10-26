@@ -14,7 +14,7 @@ use App\Domain\Plans\Models\Plan;
 final class PlanOnlineStoreOptions
 {
     /**
-     * @return array{plans: array<string, array{price: string, priceLabel: string}>, templates: list<array{value: string, label: string}>, serverOn: bool, defaultPrice: string}|null
+     * @return array{plans: array<string, array{price: string, priceLabel: string, onlineOnly?: bool}>, templates: list<array{value: string, label: string}>, serverOn: bool, defaultPrice: string}|null
      */
     public static function get(): ?array
     {
@@ -28,7 +28,8 @@ final class PlanOnlineStoreOptions
             $summary = PlanOnlineStore::summary($plan);
 
             if ($summary !== null) {
-                $plans[$plan->id] = $summary;
+                // OS-13: an online store only plan is marked (no tills: the form asks for none).
+                $plans[$plan->id] = $summary + ($plan->isOnlineStoreOnly() ? ['onlineOnly' => true] : []);
             }
         }
 

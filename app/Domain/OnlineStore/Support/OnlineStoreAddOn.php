@@ -21,7 +21,8 @@ use App\Domain\Tenancy\Models\Company;
  * public store runs without a current company), never through the ambient scope. Nothing goes to the tills.
  *
  * - On (`isOn`): the add-on is on and the country runs online stores (flag `onlineStore`: never on PK).
- * - Billed (`billedPrice`, read by CompanyPricing only on a recurring plan): on, and the business has cloud sync.
+ * - Billed (`billedPrice`, read by CompanyPricing only on a recurring plan): on, and the business has cloud sync
+ *   (OS-13: or sells without tills, OnlineStoreOnly).
  * - Usable (`OnlineStoreSwitch::availableFor`): billed, a recurring plan, and the `ONLINE_STORE` server switch on.
  *   A business that leaves its monthly plan (or loses cloud sync) stops paying for it and its store goes off line.
  */
@@ -42,15 +43,15 @@ final class OnlineStoreAddOn
     }
 
     /**
-     * What the add-on costs this business a month before VAT while it is on and the business has cloud sync, else
-     * null. CompanyPricing asks only for a business on a recurring plan and passes that plan: OS-7, the business's own
+     * What the add-on costs this business a month before VAT while it is on and the business has cloud sync (OS-13: or
+     * sells without tills), else null. CompanyPricing asks only for a business on a recurring plan and passes that plan: OS-7, the business's own
      * price, else the plan's when it includes the online store, else the default.
      */
-    public static function billedPrice(Company|string $company, ?Plan $plan = null): ?string
+    public static function billedPrice(Company $company, ?Plan $plan = null): ?string
     {
         $store = self::store($company);
 
-        if ($store === null || ! self::isOn($company, $store) || ! self::hasCloudSync($company)) {
+        if ($store === null || ! self::isOn($company, $store) || ! self::hasCatalogue($company, $store)) {
             return null;
         }
 
@@ -67,6 +68,16 @@ final class OnlineStoreAddOn
     public static function onRecurringPlan(Company $company): bool
     {
         return ApplySetupFeeTerms::planType($company)?->recurs() ?? false;
+    }
+
+    /**
+     * The store has products to sell (OS-13): cloud sync on a till (the tills' products, prices and stock), or the
+     * business sells without tills (OnlineStoreOnly: the portal's products and the shop's own stock). Only one or the
+     * other can hold: once a till is live, cloud sync is needed again.
+     */
+    public static function hasCatalogue(Company $company, ?OnlineStore $store = null): bool
+    {
+        return self::hasCloudSync($company) || OnlineStoreOnly::sellsWithoutTills($company, $store);
     }
 
     /**

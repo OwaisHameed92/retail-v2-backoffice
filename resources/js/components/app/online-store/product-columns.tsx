@@ -37,9 +37,36 @@ interface ColumnOptions {
     rows: OnlineProductRow[];
     onEdit: (row: OnlineProductRow) => void;
     onVisibility: (ids: string[], hidden: boolean) => void;
+    /** OS-13: no live till: show the shop's own stock. */
+    manualStock?: boolean;
 }
 
-export function productColumns({ canEdit, selected, setSelected, rows, onEdit, onVisibility }: ColumnOptions): ColumnDef<OnlineProductRow>[] {
+/** OS-13: the shop's own stock: out of stock, a count, or in stock (not counted). */
+function ManualStockCell({ row }: { row: OnlineProductRow }) {
+    if (row.outOfStock) {
+        return <StatusPill tone="warning">Out of stock</StatusPill>;
+    }
+    if (row.stockCount === null) {
+        return <span className="text-muted-foreground">In stock</span>;
+    }
+
+    return (
+        <span className="tabular-nums">
+            {row.stockCount}
+            {row.isWeighed ? ' kg' : ''}
+        </span>
+    );
+}
+
+export function productColumns({
+    canEdit,
+    selected,
+    setSelected,
+    rows,
+    onEdit,
+    onVisibility,
+    manualStock = false,
+}: ColumnOptions): ColumnDef<OnlineProductRow>[] {
     const all = rows.length > 0 && rows.every((r) => selected.includes(r.id));
     const columns: ColumnDef<OnlineProductRow>[] = [];
 
@@ -118,6 +145,10 @@ export function productColumns({ canEdit, selected, setSelected, rows, onEdit, o
         },
         { id: 'status', header: 'Online', cell: ({ row }) => <OnlineStatus row={row.original} />, meta: { mobile: 'aside' } },
     );
+
+    if (manualStock) {
+        columns.push({ id: 'stock', header: 'Stock', cell: ({ row }) => <ManualStockCell row={row.original} />, meta: { align: 'right' } });
+    }
 
     if (canEdit) {
         columns.push({

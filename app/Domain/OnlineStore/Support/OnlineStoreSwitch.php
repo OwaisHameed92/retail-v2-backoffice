@@ -27,12 +27,12 @@ final class OnlineStoreSwitch
 
     /**
      * This business may use its online store now (portal pages, menu items, public store): the switch is on, its
-     * add-on is on, it has cloud sync and it is on a monthly (recurring) plan, so the add-on is billed. `$store` saves a
-     * read when the caller already has the row.
+     * add-on is on, it has cloud sync (OS-13: or sells without tills, OnlineStoreOnly) and it is on a monthly (recurring)
+     * plan, so the add-on is billed. `$store` saves a read when the caller already has the row.
      */
     public static function availableFor(Company $company, ?OnlineStore $store = null): bool
     {
-        return self::enabled() && OnlineStoreAddOn::isOn($company, $store) && OnlineStoreAddOn::hasCloudSync($company)
+        return self::enabled() && OnlineStoreAddOn::isOn($company, $store) && OnlineStoreAddOn::hasCatalogue($company, $store)
             && OnlineStoreAddOn::onRecurringPlan($company);
     }
 

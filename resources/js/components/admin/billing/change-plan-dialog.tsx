@@ -167,7 +167,9 @@ function ChangePlanBody({ onOpenChange, company, options }: ChangePlanDialogProp
                                 ].join(' · ')}
                             </span>
                             {plan.onlineStore && (
-                                <span className="text-muted-foreground text-sm tabular-nums">Online store included · {plan.onlineStore}</span>
+                                <span className="text-muted-foreground text-sm tabular-nums">
+                                    {plan.onlineStoreOnly ? 'Online store only, no tills' : 'Online store included'} · {plan.onlineStore}
+                                </span>
                             )}
                             <span className="text-muted-foreground text-xs" title={plan.features.join(', ')}>
                                 {plan.features.length === 0

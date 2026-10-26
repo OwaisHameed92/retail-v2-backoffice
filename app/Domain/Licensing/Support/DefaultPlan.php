@@ -15,6 +15,8 @@ use App\Domain\Tenancy\Models\Company;
  * 3. else the first active plan by sort order;
  * 4. else none (no plan can be offered yet: tills stay unlicensed until one exists).
  *
+ * OS-13: an online store only plan (no tills) is never the portal default (steps 2 and 3).
+ *
  * A till added to a business that already has live tills follows them instead (`forNewTill`, audit BILL-1).
  */
 final class DefaultPlan
@@ -56,15 +58,16 @@ final class DefaultPlan
     {
         $code = (string) config('licence.default_plan', '');
 
+        // OS-13: an online store only plan has no tills, so it is never the plan new tills get by default.
         if ($code !== '') {
-            $configured = Plan::query()->where('code', $code)->where('is_active', true)->first();
+            $configured = Plan::query()->where('code', $code)->where('is_active', true)->where('online_store_only', false)->first();
 
             if ($configured !== null) {
                 return $configured;
             }
         }
 
-        return Plan::query()->where('is_active', true)->ordered()->first();
+        return Plan::query()->where('is_active', true)->where('online_store_only', false)->ordered()->first();
     }
 
     /** A plan may be given to new or changed licences: active and not archived. */

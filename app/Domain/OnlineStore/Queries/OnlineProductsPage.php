@@ -4,6 +4,7 @@ namespace App\Domain\OnlineStore\Queries;
 
 use App\Domain\OnlineStore\Models\OnlineStore;
 use App\Domain\OnlineStore\Models\OnlineStoreShop;
+use App\Domain\OnlineStore\Support\ManualStock;
 use App\Domain\OnlineStore\Support\OnlineCatalogueQuery;
 use App\Domain\OnlineStore\Support\StoreImages;
 use App\Domain\Shared\Support\Money;
@@ -23,6 +24,7 @@ use Illuminate\Http\Request;
  * the store does with them at one shop (its shelf price, shown or not and why, OnlineCatalogueQuery's rules) and the
  * online details (hidden, photo, short description). Filters: shop, status (all, shown, not shown, hidden by you),
  * department; search by name, code prefix or exact barcode. One page of rows, then the reasons for that page.
+ * OS-13: a business with no live till that sells without tills (`manualStock`) also sets each product's own stock here.
  */
 final class OnlineProductsPage
 {
@@ -52,6 +54,8 @@ final class OnlineProductsPage
             'hasStore' => $store !== null,
             'canEdit' => $canEdit,
             'descriptionMax' => 1000,
+            // OS-13: no live till (online store only): the shop sets each product's stock here.
+            'manualStock' => ManualStock::applies($company->id),
         ];
 
         if ($shopId === null) {
@@ -66,7 +70,8 @@ final class OnlineProductsPage
 
         $query = self::listable($company)
             ->select(['products.id', 'products.name', 'products.sku', 'products.department_id', 'products.description', 'products.is_weighed'])
-            ->addSelect(['osp.hidden as online_hidden', 'osp.not_featured as online_not_featured', 'osp.photo_path as online_photo', 'osp.description as online_description', 'osp.allergen_info as online_allergens'])
+            ->addSelect(['osp.hidden as online_hidden', 'osp.not_featured as online_not_featured', 'osp.photo_path as online_photo', 'osp.description as online_description', 'osp.allergen_info as online_allergens',
+                'osp.out_of_stock as online_out_of_stock', 'osp.stock_count as online_stock_count'])
             ->selectRaw("{$price} as shelf_price", $bindings)
             ->when($department !== null, fn (Builder $q) => $q->where('products.department_id', $department))
             ->when($table->search() !== null, fn (Builder $q) => self::search($q, (string) $table->search()))
@@ -115,6 +120,8 @@ final class OnlineProductsPage
             'tillAllergens' => $tillAllergens,
             'hidden' => (bool) ($attributes['online_hidden'] ?? false),
             'notFeatured' => (bool) ($attributes['online_not_featured'] ?? false),
+            'outOfStock' => (bool) ($attributes['online_out_of_stock'] ?? false),
+            'stockCount' => isset($attributes['online_stock_count']) ? self::quantity((string) $attributes['online_stock_count']) : null,
             'shown' => $reasons === [],
             'reasons' => array_values(array_map(fn (string $r) => OnlineCatalogueQuery::REASONS[$r], array_filter($reasons, fn (string $r) => $r !== 'hidden'))),
         ];
@@ -145,6 +152,14 @@ final class OnlineProductsPage
         $query->where(fn (Builder $q) => $q->where('products.name', 'like', '%'.$term.'%')
             ->orWhere('products.sku', 'like', $term.'%')
             ->orWhereIn('products.id', ProductBarcode::query()->select('product_id')->where('barcode', $term)));
+    }
+
+    /** "12", "2.5": a stock count without trailing zeros. */
+    private static function quantity(string $value): string
+    {
+        $qty = Money::normalise($value, 4);
+
+        return str_contains($qty, '.') ? rtrim(rtrim($qty, '0'), '.') : $qty;
     }
 
     private static function id(mixed $value): ?string

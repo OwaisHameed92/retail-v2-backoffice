@@ -16,6 +16,7 @@ use Illuminate\Mail\Mailables\Content;
 
 /**
  * Sent once when a tenant is set up (trial approved, module 1.6). The only place licence keys are ever shown.
+ * OS-13: for an online store only business (no tills) it welcomes the owner to their online store instead (no keys).
  */
 final class WelcomeTenantMail extends BrandedMailable
 {
@@ -62,7 +63,8 @@ final class WelcomeTenantMail extends BrandedMailable
 
     public function subjectLine(): string
     {
-        return 'Welcome to Switch & Save – your licence keys';
+        // OS-13: an online store only business has no tills and no keys.
+        return $this->data->onlineStoreOnly() ? 'Welcome to Switch & Save – your online store' : 'Welcome to Switch & Save – your licence keys';
     }
 
     public function companyId(): ?string
@@ -77,11 +79,20 @@ final class WelcomeTenantMail extends BrandedMailable
             'tills' => count($this->data->tills),
             'branches' => $this->data->branchCount(),
             'trial_days' => $this->data->trialDays,
+            ...($this->data->onlineStoreOnly() ? ['online_store_only' => true] : []),
         ];
     }
 
     public function content(): Content
     {
+        if ($this->data->onlineStoreOnly()) {
+            return new Content(markdown: 'mail.welcome-online-store', with: [
+                'firstName' => MailFormat::firstName($this->data->ownerName),
+                'storeUrl' => $this->data->onlineStoreUrl,
+                'showDirectDebit' => $this->data->billingUrl !== null && $this->stillRecurs(),
+            ]);
+        }
+
         return new Content(markdown: 'mail.welcome-tenant', with: [
             'firstName' => MailFormat::firstName($this->data->ownerName),
             'tillCount' => MailFormat::count(count($this->data->tills), 'till'),

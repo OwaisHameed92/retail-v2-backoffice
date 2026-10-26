@@ -12,6 +12,7 @@ use App\Domain\OnlineStore\Legal\StoreTrader;
 use App\Domain\OnlineStore\Models\OnlineStore;
 use App\Domain\OnlineStore\Models\OnlineStoreBanner;
 use App\Domain\OnlineStore\Support\OnlineCatalogueQuery;
+use App\Domain\OnlineStore\Support\OnlineStoreOnly;
 use App\Domain\OnlineStore\Support\ShopMethods;
 use App\Domain\OnlineStore\Support\StoreAddress;
 use App\Domain\OnlineStore\Support\StoreImages;
@@ -94,6 +95,8 @@ final class StoreBuilderPage
                 'legalMissing' => $store === null ? array_values(StoreTrader::REQUIRED) : StoreTrader::missing($store),
             ],
             'canEdit' => $canEdit,
+            // OS-13: no tills (online store only): the products are the portal's, with the shop's own stock.
+            'sellsWithoutTills' => OnlineStoreOnly::sellsWithoutTills($company, $store),
         ];
     }
 

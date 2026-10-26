@@ -15,6 +15,7 @@ use App\Domain\Mail\Data\TenantEmails;
 use App\Domain\Mail\Enums\EmailCategory;
 use App\Domain\Mail\Support\EmailControl;
 use App\Domain\OnlineStore\Data\PlanOnlineStoreOptions;
+use App\Domain\OnlineStore\Support\OnlineStoreOnly;
 use App\Domain\Shared\Models\AuditLog;
 use App\Domain\Shared\Support\TableQuery;
 use App\Domain\Sync\Data\SyncKeyData;
@@ -97,7 +98,8 @@ class TenantController extends Controller
         return Inertia::render('admin/tenants/create', [
             'nations' => Nation::options(),
             'maxTills' => NewTenant::MAX_TILLS,
-            'plans' => LicenceData::planOptions(),
+            // OS-13: online store only plans too (a business with no tills).
+            'plans' => LicenceData::planOptions(withOnlineStoreOnly: true),
             'defaultPlanId' => DefaultPlan::portal()?->id,
             // Module 1.11: the licence form, with each plan's defaults.
             'licenceOptions' => LicenceFormData::options(),
@@ -114,6 +116,14 @@ class TenantController extends Controller
         $company = $onboardTenant->handle($request->toNewTenant(), $request->upfront());
 
         $keys = $company->licences()->withoutGlobalScopes()->count();
+
+        // OS-13: online store only: no tills and no keys; the welcome email is about the online store.
+        if ($keys === 0 && OnlineStoreOnly::ownPlan($company) !== null) {
+            return EmailControl::sendsAutomatically(EmailCategory::Welcome)
+                ? redirect()->route('admin.tenants.show', $company)->with('success', "{$company->name} is set up with the online store only (no tills). The owner gets a welcome email about their online store (and a set-password email if they are new).")
+                : redirect()->route('admin.tenants.show', ['company' => $company, 'tab' => 'emails'])
+                    ->with('success', "{$company->name} is set up with the online store only (no tills). Its welcome email is held: check the business, then send it here.");
+        }
 
         // P11: with "Welcome and licence keys" not sent automatically, the email waits on the business's Emails tab.
         if ($keys > 0 && ! EmailControl::sendsAutomatically(EmailCategory::Welcome)) {

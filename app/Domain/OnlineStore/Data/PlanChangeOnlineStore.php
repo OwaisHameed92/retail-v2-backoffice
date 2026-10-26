@@ -7,8 +7,10 @@ use App\Domain\Billing\Support\BillingFormat;
 use App\Domain\Billing\Support\InvoiceMaths;
 use App\Domain\OnlineStore\Models\OnlineStore;
 use App\Domain\OnlineStore\Support\OnlineStoreAddOn;
+use App\Domain\OnlineStore\Support\OnlineStoreOnly;
 use App\Domain\OnlineStore\Support\OnlineStoreSwitch;
 use App\Domain\OnlineStore\Support\PlanOnlineStore;
+use App\Domain\Plans\Enums\Feature;
 use App\Domain\Plans\Models\Plan;
 use App\Domain\Shared\Country\Country;
 use App\Domain\Shared\Support\Money;
@@ -19,6 +21,10 @@ use App\Domain\Tenancy\Models\Company;
  * add-on follows the new plan: on when it includes the online store, off when it does not, also for an add-on that was
  * switched on by hand on the Billing tab. `billed` is the add-on's monthly price on the invoices after the change (on,
  * and a till has cloud sync), which the preview's new amount includes. Reads only.
+ *
+ * OS-13: a business with no live till that sells without tills (online store only) is billed for the store without
+ * cloud sync, before and after a move to a plan with tills, until its first till is live; the preview says so. A move
+ * of a business with live tills to an online store only plan is blocked.
  */
 final readonly class PlanChangeOnlineStore
 {
@@ -32,6 +38,14 @@ final readonly class PlanChangeOnlineStore
         public bool $cloudSync,
         public ?string $blocked,
         public string $toName,
+        /** OS-13: the business sells without tills before the change (online store only, no live till). */
+        public bool $fromOnlineOnly = false,
+        /** OS-13: and after it (no live till yet): the store line bills alone, the store keeps the shop's own stock. */
+        public bool $withoutTillsAfter = false,
+        /** OS-13: the new plan includes cloud sync (needed by the store once a till is live). */
+        public bool $toCloudSync = true,
+        /** OS-13: the new plan is online store only (no tills). */
+        public bool $toOnlineOnly = false,
     ) {}
 
     /** Null where the country has no online stores (Pakistan). */
@@ -44,7 +58,11 @@ final readonly class PlanChangeOnlineStore
         $store = OnlineStoreAddOn::store($company);
         $before = $store !== null && $store->addon_on;
         $after = PlanOnlineStore::includes($to);
-        $cloudSync = ($before || $after) && OnlineStoreAddOn::hasCloudSync($company);
+        // OS-13: without a live till, a business on (or started on) an online store only plan sells without tills.
+        $liveTills = OnlineStoreOnly::hasLiveTills($company);
+        $fromOnlineOnly = ! $liveTills && OnlineStoreOnly::sellsWithoutTills($company, $store);
+        $withoutTillsAfter = ! $liveTills && ($fromOnlineOnly || $to->isOnlineStoreOnly());
+        $cloudSync = ($before || $after) && ($withoutTillsAfter || OnlineStoreAddOn::hasCloudSync($company));
         $monthly = Money::normalise(OnlineStoreSwitch::monthlyPrice($store?->monthly_price, $after ? $to : $from));
 
         return new self(
@@ -55,10 +73,16 @@ final readonly class PlanChangeOnlineStore
             monthly: $monthly,
             billed: $after && $cloudSync ? $monthly : null,
             cloudSync: $cloudSync,
-            blocked: $after && ! $before && ! OnlineStoreSwitch::enabled()
-                ? "{$to->name} includes the online store, but online stores are switched off on this server (ONLINE_STORE). Choose another plan, or switch online stores on first."
-                : null,
+            blocked: match (true) {
+                $to->isOnlineStoreOnly() && $liveTills => "{$to->name} is an online store only plan: it has no tills, and {$company->name} has live tills. Choose a plan with tills.",
+                $after && ! $before && ! OnlineStoreSwitch::enabled() => "{$to->name} includes the online store, but online stores are switched off on this server (ONLINE_STORE). Choose another plan, or switch online stores on first.",
+                default => null,
+            },
             toName: $to->name,
+            fromOnlineOnly: $fromOnlineOnly,
+            withoutTillsAfter: $withoutTillsAfter,
+            toCloudSync: $to->hasFeature(Feature::CloudSync),
+            toOnlineOnly: $to->isOnlineStoreOnly(),
         );
     }
 
@@ -130,6 +154,26 @@ final readonly class PlanChangeOnlineStore
         $lines[] = $this->billed !== null
             ? $inAmount
             : 'Not charged until one of its tills has cloud sync (the online dashboard): the store needs it.';
+
+        return [...$lines, ...$this->withoutTillsLines()];
+    }
+
+    /**
+     * OS-13: what happens to a business that sells without tills (online store only) when it moves to a plan with tills.
+     *
+     * @return list<string>
+     */
+    private function withoutTillsLines(): array
+    {
+        if (! $this->fromOnlineOnly || ! $this->withoutTillsAfter || ! $this->after || $this->toOnlineOnly) {
+            return [];
+        }
+
+        $lines = ['Until its first till is live the store keeps selling the products made in the portal at the business price, with the shop’s own stock. Once a till is live it uses the tills’ stock and prices automatically (the shop’s own stock counts are no longer used).'];
+
+        if (! $this->toCloudSync) {
+            $lines[] = "Careful: {$this->toName} does not include cloud sync. Once a till is live the store needs it: without it the store goes offline and its line stops. Choose a plan with cloud sync, or give the tills cloud sync.";
+        }
 
         return $lines;
     }

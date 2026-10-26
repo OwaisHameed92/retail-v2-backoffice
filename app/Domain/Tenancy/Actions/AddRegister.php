@@ -2,10 +2,12 @@
 
 namespace App\Domain\Tenancy\Actions;
 
+use App\Domain\OnlineStore\Support\OnlineStoreOnly;
 use App\Domain\Shared\Actions\RecordAudit;
 use App\Domain\Tenancy\CurrentCompany;
 use App\Domain\Tenancy\Events\RegisterAdded;
 use App\Domain\Tenancy\Models\Branch;
+use App\Domain\Tenancy\Models\Company;
 use App\Domain\Tenancy\Models\Register;
 use App\Domain\Tenancy\Support\TenantLimits;
 use Illuminate\Support\Facades\DB;
@@ -39,6 +41,8 @@ class AddRegister
             }
 
             TenantLimits::ensureCanAddTill($branch);
+            // OS-13: no till on an online store only plan (Change plan to one with tills first).
+            OnlineStoreOnly::ensureCanAddTill(Company::query()->findOrFail($branch->company_id));
 
             if ($code === null || $code === '') {
                 $code = RegisterCodes::next($branch);

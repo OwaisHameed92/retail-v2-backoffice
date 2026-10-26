@@ -105,6 +105,7 @@ final class HeldEmailMessage
             companyId: $data->companyId,
             billingUrl: $data->billingUrl,
             directDebitDays: $data->directDebitDays,
+            onlineStoreUrl: $data->onlineStoreUrl ?? null,
         ));
     }
 

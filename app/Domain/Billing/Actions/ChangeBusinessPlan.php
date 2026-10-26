@@ -18,6 +18,7 @@ use App\Domain\Billing\Support\PlanChangeSetupCharge;
 use App\Domain\Licensing\Support\DefaultPlan;
 use App\Domain\OnlineStore\Actions\FollowPlanOnlineStore;
 use App\Domain\OnlineStore\Enums\StoreTemplate;
+use App\Domain\OnlineStore\Support\OnlineStoreOnly;
 use App\Domain\Plans\Enums\Feature;
 use App\Domain\Plans\Enums\PlanBillingType;
 use App\Domain\Plans\Models\Plan;
@@ -90,6 +91,12 @@ class ChangeBusinessPlan
             $company->plan_id = $to->id;
             $company->save();
             $moved = $this->licences->move($company, $plan->from, $to, $now);
+
+            // OS-13: from online store only to a plan with tills: the store keeps selling without tills until a till is live.
+            if ($plan->onlineStore->fromOnlineOnly ?? false) {
+                OnlineStoreOnly::remember($company);
+            }
+
             $onlineStore = $this->followOnlineStore->handle($company, $to, $storeTemplate);
 
             if ($plan->clearsOwnPrices) {

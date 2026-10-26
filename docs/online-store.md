@@ -149,6 +149,31 @@ https://claude.ai/artifact/FdsDJZ2vyhQJw5hfPmUiNz. DECISIONS "Online store, clic
   gets those as its aisles in that order, the others hidden, while its aisles are built from departments. Nothing is
   rewritten; saving the aisles replaces it.
 
+## OS-13: "Online store only" for a business with no till yet (owner 2026-10-26)
+
+- **Plan.** A monthly/yearly plan can be "Online store only (no tills)" (`plans.online_store_only`, Plan::isOnlineStoreOnly):
+  it includes the online store and its whole monthly fee is `online_store_monthly_price` (help text suggests £30; blank =
+  the default), once per business. No till prices, features or handheld app. A setup fee only when the admin sets one
+  (Setup fee + monthly). Never the portal default plan, never in the licence plan pickers, and no licence is ever
+  issued on it (IssueLicence, ChangeLicencePlan, ChangeCompanyPlan, AddRegister refuse). Once businesses use it, the
+  "online store only" tick cannot change. Hidden on PK.
+- **New business.** The wizard asks for no tills or licence form on such a plan: company, first shop, owner login,
+  online store (template chosen), Direct Debit with the usual mandate deadline. No keys, so the welcome email is
+  "Welcome to Switch & Save – your online store" (held like any welcome email).
+- **Selling without tills** (`OnlineStoreOnly::sellsWithoutTills`): no live till licence, and the business is on such a
+  plan or started on one (`online_stores.sells_without_tills`). Then the store needs no cloud sync (switch, country
+  flag, add-on and a recurring plan still apply), shows the products made in Products at the business price, and uses
+  the shop's own stock (ManualStock: `online_store_products.out_of_stock` and an optional `stock_count`, set on the
+  Products tab). A counted product loses what an order took when the order is collected or delivered (undo puts it
+  back); open orders hold it meanwhile. Never written to the till tables.
+- **Billing.** The period invoice has the single "Online store" line (VAT as usual), collected by Direct Debit like any
+  monthly business (SubscriptionAmount, MandateDeadline). Non-payment: the monthly rules (overdue, then suspension;
+  no mandate by the deadline, suspension); with no tills, suspension takes the store offline until it is paid.
+- **Adding tills later.** Change plan to a plan with tills: the preview says the store keeps selling the portal's
+  products with the shop's own stock until a till is live, then uses the tills' stock and prices; it warns when the new
+  plan lacks cloud sync, and says the store is switched off when the plan does not include it. Tills are then added as
+  usual; they pull the portal's products. A business with live tills cannot move to an online store only plan.
+
 ## Later stages
 
 - **S2:** card payment with DNA Payments (hosted payment page, webhook, money to the shop's DNA account) and local

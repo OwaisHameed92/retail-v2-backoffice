@@ -8,6 +8,7 @@ use App\Domain\Licensing\Models\Licence;
 use App\Domain\Licensing\Support\BranchLicenceTerm;
 use App\Domain\Licensing\Support\DefaultPlan;
 use App\Domain\Licensing\Support\UniqueLicenceKey;
+use App\Domain\OnlineStore\Support\OnlineStoreOnly;
 use App\Domain\Plans\Models\Plan;
 use App\Domain\Shared\Actions\RecordAudit;
 use App\Domain\Tenancy\Models\Branch;
@@ -139,6 +140,9 @@ class IssueLicence
         if ($plan === null) {
             throw ValidationException::withMessages(['plan' => 'There is no active plan to licence tills with. Create a plan first.']);
         }
+
+        // OS-13: never a till licence on an online store only plan (it has no tills).
+        OnlineStoreOnly::assertTillPlan($plan, 'register');
 
         // A plan no longer offered stays the plan of a business whose live tills are on it (BILL-1): its new tills too.
         if (! DefaultPlan::isOffered($plan) && ! DefaultPlan::isKeptFor($plan, $company)) {

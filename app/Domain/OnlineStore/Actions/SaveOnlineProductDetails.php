@@ -34,7 +34,7 @@ final class SaveOnlineProductDetails
         }
 
         $old = OnlineStoreProduct::withoutCompanyScope()->where('company_id', $company->id)->where('product_id', $productId)->value('photo_path');
-        $changes = array_intersect_key($changes, array_flip(['hidden', 'not_featured', 'description', 'allergen_info', 'remove_photo']));
+        $changes = array_intersect_key($changes, array_flip(['hidden', 'not_featured', 'description', 'allergen_info', 'remove_photo', 'out_of_stock', 'stock_count']));
         $new = null;
 
         if ($photo !== null) {

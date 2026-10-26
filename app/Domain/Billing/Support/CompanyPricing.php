@@ -7,6 +7,7 @@ use App\Domain\Billing\Models\BillingAccount;
 use App\Domain\Licensing\Models\Licence;
 use App\Domain\Licensing\Support\DefaultPlan;
 use App\Domain\OnlineStore\Support\OnlineStoreAddOn;
+use App\Domain\OnlineStore\Support\OnlineStoreOnly;
 use App\Domain\Plans\Enums\PricingMode;
 use App\Domain\Plans\Models\Plan;
 use App\Domain\Tenancy\Models\Company;
@@ -23,6 +24,10 @@ use Illuminate\Support\Collection;
  * an admin, a recurring plan, cloud sync; never on PK: OnlineStoreAddOn::billedPrice), else null. InvoiceLineBuilder
  * adds it as its own line on the period invoice. OS-7: its price is the business's own, else the plan's (when the plan
  * includes the online store), else the default; once per business, whatever its branches and tills.
+ *
+ * OS-13: `withoutTills` is true for a business with no live till that sells without tills (OnlineStoreOnly: an online
+ * store only plan, or started on one): its invoice is the "Online store" line alone. The plan of such a business is
+ * its own (`companies.plan_id`) even when that plan is no longer offered.
  */
 final readonly class CompanyPricing
 {
@@ -33,6 +38,8 @@ final readonly class CompanyPricing
         public ?string $yearlyOverride = null,
         public bool $overridden = false,
         public ?string $onlineStoreMonthly = null,
+        /** OS-13: no live till and the business sells without tills (OnlineStoreOnly): the store line bills alone. */
+        public bool $withoutTills = false,
     ) {}
 
     /**
@@ -41,8 +48,10 @@ final readonly class CompanyPricing
     public static function for(Company $company, BillingAccount $account, ?Collection $licences = null): self
     {
         $licensed = $licences?->first(fn (Licence $licence) => $licence->plan !== null);
-        $plan = $licensed instanceof Licence ? $licensed->plan : DefaultPlan::for($company);
+        // OS-13: an online store only business keeps its own plan even when it is no longer offered (inactive).
+        $plan = $licensed instanceof Licence ? $licensed->plan : (OnlineStoreOnly::ownPlan($company) ?? DefaultPlan::for($company));
         $modeOverride = $account->pricing_mode_override;
+        $recurs = $plan?->billingType()->recurs() ?? false;
 
         return new self(
             mode: $modeOverride ?? $plan->pricing_mode ?? PricingMode::PerTill,
@@ -50,17 +59,18 @@ final readonly class CompanyPricing
             monthlyOverride: $account->price_monthly_override,
             yearlyOverride: $account->price_yearly_override,
             overridden: $modeOverride !== null || $account->price_monthly_override !== null || $account->price_yearly_override !== null,
-            onlineStoreMonthly: $plan?->billingType()->recurs() ? OnlineStoreAddOn::billedPrice($company, $plan) : null,
+            onlineStoreMonthly: $recurs ? OnlineStoreAddOn::billedPrice($company, $plan) : null,
+            withoutTills: $recurs && ($licences === null || $licences->isEmpty()) && OnlineStoreOnly::sellsWithoutTills($company),
         );
     }
 
     /**
      * The same pricing with another online store add-on amount (OS-7: the Change plan preview works out the amount
-     * after the plan switches the add-on on or off). Null = no add-on line.
+     * after the plan switches the add-on on or off). Null = no add-on line. OS-13: `$withoutTills` as it will be after.
      */
-    public function withOnlineStore(?string $monthly): self
+    public function withOnlineStore(?string $monthly, ?bool $withoutTills = null): self
     {
-        return new self($this->mode, $this->plan, $this->monthlyOverride, $this->yearlyOverride, $this->overridden, $monthly);
+        return new self($this->mode, $this->plan, $this->monthlyOverride, $this->yearlyOverride, $this->overridden, $monthly, $withoutTills ?? $this->withoutTills);
     }
 
     /** Price of one unit (till or branch) for the cycle, net. `$unitPlan` is a till's own plan (per till). */

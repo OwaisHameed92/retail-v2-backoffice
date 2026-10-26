@@ -4,6 +4,7 @@ namespace App\Domain\Licensing\Listeners;
 
 use App\Domain\Licensing\Support\IssuedKeys;
 use App\Domain\Licensing\Support\LicenceMailer;
+use App\Domain\OnlineStore\Support\OnlineStoreOnly;
 use App\Domain\Tenancy\Events\TenantCreated;
 
 /**
@@ -21,6 +22,13 @@ final class SendWelcomeEmailWithKeys
     public function handle(TenantCreated $event): void
     {
         $issued = $this->issuedKeys->pullForCompany($event->company->id);
+
+        // OS-13: an online store only business has no tills and no keys: it is welcomed to its online store.
+        if ($issued === [] && OnlineStoreOnly::ownPlan($event->company) !== null) {
+            $this->mailer->welcomeOnlineStore($event->company, $event->owner);
+
+            return;
+        }
 
         if ($issued === []) {
             return;

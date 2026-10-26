@@ -22,7 +22,16 @@ final readonly class WelcomeTenantData
         /** Module 1.13: the portal Billing page where the owner sets up Direct Debit, and the days they have. */
         public ?string $billingUrl = null,
         public ?int $directDebitDays = null,
+        /** OS-13: an online store only business (no tills, no keys): the portal page where it builds its store. Read
+         * with `?? null` (a welcome email held before OS-13 has no such property). */
+        public ?string $onlineStoreUrl = null,
     ) {}
+
+    /** OS-13: the welcome email of an online store only business (no tills, no keys). */
+    public function onlineStoreOnly(): bool
+    {
+        return ($this->onlineStoreUrl ?? null) !== null;
+    }
 
     public function branchCount(): int
     {

@@ -44,7 +44,8 @@ interface CreateTenantProps {
     billing: OnboardingBillingOptions;
     /** OS-7: active plans that include the online store (by id), the templates; null where the country has none. */
     onlineStore: {
-        plans: Record<string, { price: string; priceLabel: string }>;
+        /** OS-13: `onlineOnly` = online store only (no tills). */
+        plans: Record<string, { price: string; priceLabel: string; onlineOnly?: boolean }>;
         templates: { value: string; label: string }[];
         serverOn: boolean;
         defaultPrice: string;
@@ -147,6 +148,8 @@ export default function CreateTenant({
         max_branches: values.multi_branch ? values.max_branches : 1,
         // OS-7: the template only goes with a plan that includes the online store.
         store_template: onlineStore?.plans[values.plan_id] ? values.store_template : '',
+        // OS-13: an online store only plan has no tills.
+        ...(onlineStore?.plans[values.plan_id]?.onlineOnly ? { tills: 0 } : {}),
     }));
 
     // A plan brings its features (unless customised) and multi-branch default; tills allowed never below the tills added.
@@ -179,6 +182,8 @@ export default function CreateTenant({
         setData(`branch_${key}` as keyof CreateTenantForm, value as never);
 
     const storePlan = onlineStore?.plans[data.plan_id] ?? null;
+    // OS-13: online store only: no tills, no licence keys.
+    const onlineOnly = storePlan?.onlineOnly ?? false;
     const errorCount = Object.keys(errors).length;
 
     const submit: FormEventHandler = (e) => {
@@ -272,17 +277,31 @@ export default function CreateTenant({
                         </Field>
                     </FormSection>
 
-                    <FormSection title="First branch" description="The shop the tills are in. You can add more branches later.">
+                    <FormSection
+                        title={onlineOnly ? 'Shop' : 'First branch'}
+                        description={
+                            onlineStore && onlineOnly
+                                ? 'The shop customers collect from or that delivers. Its address is on the online store. You can add more branches later.'
+                                : 'The shop the tills are in. You can add more branches later.'
+                        }
+                    >
                         <BranchFields prefix="branch_" data={branch} setField={setBranchField} errors={errors} nations={nations} />
                     </FormSection>
 
                     <FormSection
-                        title="Tills and licences"
-                        description="One licence per till, issued now. The keys go to the owner in the welcome email. The first till is the main till: it syncs with the portal."
+                        title={onlineOnly ? 'Plan' : 'Tills and licences'}
+                        description={
+                            onlineOnly
+                                ? 'Online store only: no tills and no licence keys. The business can move to a plan with tills later (Change plan); its products are then pulled by the tills.'
+                                : 'One licence per till, issued now. The keys go to the owner in the welcome email. The first till is the main till: it syncs with the portal.'
+                        }
                     >
-                        <div className="sm:col-span-2">
-                            <TillCountPicker value={data.tills} max={maxTills} onChange={changeTills} error={errors.tills} />
-                        </div>
+                        {!onlineOnly && (
+                            <div className="sm:col-span-2">
+                                <TillCountPicker value={data.tills} max={maxTills} onChange={changeTills} error={errors.tills} />
+                            </div>
+                        )}
+                        {onlineOnly && errors.tills && <p className="text-danger-foreground text-sm sm:col-span-2">{errors.tills}</p>}
                         {plans.length > 0 ? (
                             <Field
                                 id="plan_id"
@@ -318,7 +337,9 @@ export default function CreateTenant({
                         <FormSection
                             title="Online store"
                             description={taxText(
-                                `This plan includes the online store: ${storePlan.priceLabel} a month before VAT, its own line on the same monthly invoice, collected by the same Direct Debit (charged once a till has cloud sync).`,
+                                onlineOnly
+                                    ? `Online store only: ${storePlan.priceLabel} a month before VAT, the only line on the monthly invoice, collected by Direct Debit. The store sells the products the business adds in the portal, with its own stock.`
+                                    : `This plan includes the online store: ${storePlan.priceLabel} a month before VAT, its own line on the same monthly invoice, collected by the same Direct Debit (charged once a till has cloud sync).`,
                             )}
                         >
                             <div className="grid gap-3 sm:col-span-2">
@@ -343,50 +364,52 @@ export default function CreateTenant({
                         </FormSection>
                     )}
 
-                    <FormSection
-                        title="Licence form"
-                        description="What every till key carries: tills allowed, trial or full, length and features. Defaults come from the plan; you can change them later per branch."
-                    >
-                        <div className="sm:col-span-2">
-                            <LicenceFormFields
-                                values={data}
-                                setValue={(key, value) => setData(key, value as never)}
-                                errors={errors}
-                                options={licenceOptions}
-                                showStart={false}
-                                tillsInUse={data.tills}
-                                trialDays={planDefaults[data.plan_id]?.trialDays}
-                                planFeatures={planDefaults[data.plan_id]?.features ?? []}
-                            />
-                        </div>
-                        <div className="flex items-start gap-3 sm:col-span-2">
-                            <Checkbox
-                                id="multi_branch"
-                                checked={data.multi_branch}
-                                onCheckedChange={(checked) => setData('multi_branch', checked === true)}
-                                className="mt-0.5"
-                            />
-                            <div className="grid gap-1">
-                                <Label htmlFor="multi_branch">Multi-branch</Label>
-                                <p className="text-muted-foreground text-sm">The business may run more than one shop.</p>
-                            </div>
-                        </div>
-                        {data.multi_branch && (
-                            <Field id="max_branches" label="Branches allowed" error={errors.max_branches}>
-                                <Input
-                                    id="max_branches"
-                                    type="number"
-                                    inputMode="numeric"
-                                    min={1}
-                                    max={licenceOptions.maxBranches}
-                                    value={data.max_branches}
-                                    onChange={(e) => setData('max_branches', Number.parseInt(e.target.value || '0', 10))}
-                                    className="max-w-32 tabular-nums"
-                                    aria-invalid={!!errors.max_branches}
+                    {!onlineOnly && (
+                        <FormSection
+                            title="Licence form"
+                            description="What every till key carries: tills allowed, trial or full, length and features. Defaults come from the plan; you can change them later per branch."
+                        >
+                            <div className="sm:col-span-2">
+                                <LicenceFormFields
+                                    values={data}
+                                    setValue={(key, value) => setData(key, value as never)}
+                                    errors={errors}
+                                    options={licenceOptions}
+                                    showStart={false}
+                                    tillsInUse={data.tills}
+                                    trialDays={planDefaults[data.plan_id]?.trialDays}
+                                    planFeatures={planDefaults[data.plan_id]?.features ?? []}
                                 />
-                            </Field>
-                        )}
-                    </FormSection>
+                            </div>
+                            <div className="flex items-start gap-3 sm:col-span-2">
+                                <Checkbox
+                                    id="multi_branch"
+                                    checked={data.multi_branch}
+                                    onCheckedChange={(checked) => setData('multi_branch', checked === true)}
+                                    className="mt-0.5"
+                                />
+                                <div className="grid gap-1">
+                                    <Label htmlFor="multi_branch">Multi-branch</Label>
+                                    <p className="text-muted-foreground text-sm">The business may run more than one shop.</p>
+                                </div>
+                            </div>
+                            {data.multi_branch && (
+                                <Field id="max_branches" label="Branches allowed" error={errors.max_branches}>
+                                    <Input
+                                        id="max_branches"
+                                        type="number"
+                                        inputMode="numeric"
+                                        min={1}
+                                        max={licenceOptions.maxBranches}
+                                        value={data.max_branches}
+                                        onChange={(e) => setData('max_branches', Number.parseInt(e.target.value || '0', 10))}
+                                        className="max-w-32 tabular-nums"
+                                        aria-invalid={!!errors.max_branches}
+                                    />
+                                </Field>
+                            )}
+                        </FormSection>
+                    )}
 
                     <FormSection title="Owner login" description="We email the owner a link to set their password.">
                         <Field id="owner_name" label="Owner’s name" hint="Also the till’s first user in the licence keys." error={errors.owner_name}>
@@ -438,7 +461,14 @@ export default function CreateTenant({
                     </FormSection>
                 </FormCard>
 
-                <StickyFormBar message={'The owner gets a welcome email with their licence keys.'} className="mt-6">
+                <StickyFormBar
+                    message={
+                        onlineOnly
+                            ? 'The owner gets a welcome email about their online store.'
+                            : 'The owner gets a welcome email with their licence keys.'
+                    }
+                    className="mt-6"
+                >
                     <Button variant="outline" asChild>
                         <Link href={route('admin.tenants.index')}>Cancel</Link>
                     </Button>

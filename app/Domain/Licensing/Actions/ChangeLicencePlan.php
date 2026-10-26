@@ -7,6 +7,7 @@ use App\Domain\Licensing\Models\Licence;
 use App\Domain\Licensing\Support\DefaultPlan;
 use App\Domain\Licensing\Support\LicenceGuard;
 use App\Domain\Licensing\Support\LicenceTerms;
+use App\Domain\OnlineStore\Support\OnlineStoreOnly;
 use App\Domain\Plans\Enums\Feature;
 use App\Domain\Plans\Models\Plan;
 use App\Domain\Shared\Actions\RecordAudit;
@@ -30,6 +31,9 @@ class ChangeLicencePlan
         if (! DefaultPlan::isOffered($plan)) {
             throw ValidationException::withMessages(['plan_id' => "{$plan->name} is not offered any more. Choose an active plan."]);
         }
+
+        // OS-13: a till licence never goes on an online store only plan.
+        OnlineStoreOnly::assertTillPlan($plan);
 
         return DB::transaction(function () use ($licence, $plan) {
             $licence = LicenceGuard::lock($licence);

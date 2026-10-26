@@ -9,6 +9,7 @@ use App\Domain\Billing\Support\InvoiceMaths;
 use App\Domain\Billing\Support\Vat;
 use App\Domain\OnlineStore\Support\OnlineOrdersAccess;
 use App\Domain\OnlineStore\Support\OnlineStoreAddOn;
+use App\Domain\OnlineStore\Support\OnlineStoreOnly;
 use App\Domain\OnlineStore\Support\OnlineStoreSwitch;
 use App\Domain\OnlineStore\Support\PlanOnlineStore;
 use App\Domain\OnlineStore\Support\StoreLinks;
@@ -39,7 +40,9 @@ final class AdminAddOnData
 
         $store = OnlineStoreAddOn::store($company);
         $on = OnlineStoreAddOn::isOn($company, $store);
-        $cloudSync = OnlineStoreAddOn::hasCloudSync($company);
+        // OS-13: a business selling without tills (online store only) needs no cloud sync: its products are the portal's.
+        $withoutTills = OnlineStoreOnly::sellsWithoutTills($company, $store);
+        $cloudSync = $withoutTills || OnlineStoreAddOn::hasCloudSync($company);
         $serverOn = OnlineStoreSwitch::enabled();
         $monthlyPlan = OnlineStoreAddOn::onRecurringPlan($company);
         $plan = CompanyPricing::for($company, $account)->plan;
@@ -76,6 +79,7 @@ final class AdminAddOnData
             'live' => (bool) $store?->is_live,
             'serverOn' => $serverOn,
             'cloudSync' => $cloudSync,
+            'withoutTills' => $withoutTills,
             'available' => $on && $serverOn && $cloudSync && $monthlyPlan,
             // Audit OSA-5: orders still to finish; switching off keeps the Online orders board open for them.
             'openOrders' => $store === null ? 0 : OnlineOrdersAccess::openOrders($company),

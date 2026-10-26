@@ -20,6 +20,9 @@ export interface PlanRow {
     includesHandheld: boolean;
     /** OS-7: the online store add-on comes with the plan (false where the country has no online stores). */
     includesOnlineStore: boolean;
+    /** OS-13: online store only (no tills), with the store fee (its whole monthly fee). */
+    onlineStoreOnly: boolean;
+    onlineStorePrice: string | null;
     status: PlanStatusValue;
     statusLabel: string;
     sortOrder: number;
@@ -52,6 +55,8 @@ export interface PlanRecord {
     includesOnlineStore: boolean;
     onlineStoreMonthlyPrice: string | null;
     onlineStore: { price: string; priceLabel: string } | null;
+    /** OS-13: as stored. */
+    onlineStoreOnly: boolean;
     isActive: boolean;
     isPublic: boolean;
     sortOrder: number;

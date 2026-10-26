@@ -49,6 +49,7 @@ export interface PlanFormData {
     includes_handheld: boolean;
     includes_online_store: boolean;
     online_store_monthly_price: string;
+    online_store_only: boolean;
     is_active: boolean;
     is_public: boolean;
     sort_order: string;
@@ -76,6 +77,7 @@ export function planFormDefaults(
         includes_handheld: plan?.includesHandheld ?? false,
         includes_online_store: plan?.includesOnlineStore ?? false,
         online_store_monthly_price: plan?.onlineStoreMonthlyPrice ?? '',
+        online_store_only: plan?.onlineStoreOnly ?? false,
         is_active: plan?.isActive ?? true,
         is_public: plan?.isPublic ?? false,
         sort_order: String(plan?.sortOrder ?? defaults?.sortOrder ?? 0),
@@ -121,12 +123,16 @@ export function PlanForm({
     const unit = data.pricing_mode === 'perBranch' ? 'branch' : 'till';
     const recurs = data.billing_type !== 'setupOnly';
     const hasSetupFee = data.billing_type !== 'recurringOnly';
+    // OS-13: an online store only plan has no till prices or features: its fee is the online store's.
+    const onlineOnly = recurs && data.includes_online_store && data.online_store_only;
+    const tillPrices = recurs && !onlineOnly;
 
     /** Type and prices; on create the handheld tick follows them (monthly or yearly price above 0) until changed by hand. */
     const setPricing = <K extends 'billing_type' | 'price_monthly' | 'price_yearly'>(key: K, value: PlanFormData[K]) => {
         setData(key, value);
         if (key === 'billing_type' && value === 'setupOnly') {
             setData('includes_online_store', false);
+            setData('online_store_only', false);
         }
         if (!handheldTouched) {
             const next = { ...data, [key]: value };
@@ -228,7 +234,7 @@ export function PlanForm({
                     description={`In ${currencyName()} (${country().currency}), before ${taxName()}. A business can have its own pricing on its Billing tab.`}
                 >
                     <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-                        {recurs && (
+                        {tillPrices && (
                             <Field
                                 id="pricing_mode"
                                 label="Charge"
@@ -250,8 +256,8 @@ export function PlanForm({
                                 </Select>
                             </Field>
                         )}
-                        {recurs && <div className="hidden sm:block" aria-hidden />}
-                        {recurs && (
+                        {tillPrices && <div className="hidden sm:block" aria-hidden />}
+                        {tillPrices && (
                             <Field
                                 id="price_monthly"
                                 label={`Monthly price per ${unit}`}
@@ -268,7 +274,7 @@ export function PlanForm({
                                 />
                             </Field>
                         )}
-                        {recurs && (
+                        {tillPrices && (
                             <Field
                                 id="price_yearly"
                                 label={`Yearly price per ${unit}`}
@@ -415,23 +421,31 @@ export function PlanForm({
                 </FormSection>
 
                 <FormSection title="Features" description="Areas of the till and portal this plan switches on.">
-                    <PlanFeaturePicker
-                        options={features}
-                        value={data.features}
-                        onChange={(value) => setData('features', value)}
-                        error={errors.features ?? Object.entries(errors).find(([key]) => key.startsWith('features.'))?.[1]}
-                    />
-                    <CheckboxRow
-                        id="includes_handheld"
-                        checked={data.includes_handheld}
-                        onChange={(checked) => {
-                            setHandheldTouched(true);
-                            setData('includes_handheld', checked);
-                        }}
-                        label="Handheld (PDA) app included"
-                        help="Staff can sign in to the Android PDA app. On by default for monthly and yearly plans. Portal only: not sent to the till."
-                        error={errors.includes_handheld}
-                    />
+                    {onlineOnly ? (
+                        <p className="text-muted-foreground text-[13px]">
+                            Online store only: no tills, so no till features, handheld app or licence keys. The online store fee is set below.
+                        </p>
+                    ) : (
+                        <PlanFeaturePicker
+                            options={features}
+                            value={data.features}
+                            onChange={(value) => setData('features', value)}
+                            error={errors.features ?? Object.entries(errors).find(([key]) => key.startsWith('features.'))?.[1]}
+                        />
+                    )}
+                    {!onlineOnly && (
+                        <CheckboxRow
+                            id="includes_handheld"
+                            checked={data.includes_handheld}
+                            onChange={(checked) => {
+                                setHandheldTouched(true);
+                                setData('includes_handheld', checked);
+                            }}
+                            label="Handheld (PDA) app included"
+                            help="Staff can sign in to the Android PDA app. On by default for monthly and yearly plans. Portal only: not sent to the till."
+                            error={errors.includes_handheld}
+                        />
+                    )}
                     {onlineStore && (
                         <PlanOnlineStoreFields
                             settings={onlineStore}
@@ -440,6 +454,8 @@ export function PlanForm({
                             price={data.online_store_monthly_price}
                             onIncludedChange={(checked) => setData('includes_online_store', checked)}
                             onPriceChange={(price) => setData('online_store_monthly_price', price)}
+                            onlineOnly={onlineOnly}
+                            onOnlineOnlyChange={(checked) => setData('online_store_only', checked)}
                             errors={errors}
                         />
                     )}

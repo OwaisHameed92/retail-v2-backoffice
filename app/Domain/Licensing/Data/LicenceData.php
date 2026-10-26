@@ -156,17 +156,21 @@ final class LicenceData
     }
 
     /**
-     * Active plans a licence can move to, for the plan pickers.
+     * Active plans a licence can move to, for the plan pickers. OS-13: an online store only plan has no tills, so it is
+     * left out unless `$withOnlineStoreOnly` (the new-tenant form, where it means "no tills").
      *
      * @return list<array{value: string, label: string, description: string|null}>
      */
-    public static function planOptions(): array
+    public static function planOptions(bool $withOnlineStoreOnly = false): array
     {
         return Plan::query()->where('is_active', true)->ordered()->get()
+            ->filter(fn (Plan $plan) => $withOnlineStoreOnly || ! $plan->isOnlineStoreOnly())
             ->map(fn (Plan $plan) => [
                 'value' => $plan->id,
                 'label' => $plan->name,
-                'description' => count($plan->features).' features · '.$plan->trial_days.'-day trial · '.$plan->grace_days.' grace days',
+                'description' => $plan->isOnlineStoreOnly()
+                    ? 'Online store only: no tills or licence keys'
+                    : count($plan->features).' features · '.$plan->trial_days.'-day trial · '.$plan->grace_days.' grace days',
             ])->values()->all();
     }
 

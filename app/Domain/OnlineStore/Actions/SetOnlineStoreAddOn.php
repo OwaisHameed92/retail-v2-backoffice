@@ -156,7 +156,8 @@ class SetOnlineStoreAddOn
             return;
         }
 
-        if (! OnlineStoreAddOn::hasCloudSync($company)) {
+        // OS-13: a business selling without tills (online store only) needs no cloud sync: its products are the portal's.
+        if (! OnlineStoreAddOn::hasCatalogue($company)) {
             throw ValidationException::withMessages(['on' => "{$company->name} has no till with cloud sync (the online dashboard). The store needs it: its products come from the tills."]);
         }
     }

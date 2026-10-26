@@ -54,6 +54,9 @@ function initial(store: StoreSettings, picked: PickerProduct[]): BuilderForm {
 }
 
 const DESCRIPTION = 'Add your logo, choose what the home page shows and go live. Products, prices and stock come from your tills.';
+/** OS-13: no tills yet (online store only). */
+const DESCRIPTION_NO_TILLS =
+    'Add your logo, choose what the home page shows and go live. Products and prices come from Products; set the stock on the Products tab.';
 
 /** No store row yet: Switch & Save switches the add-on on (and picks the look) before the business can build it. */
 function NotSwitchedOn() {
@@ -100,7 +103,7 @@ function Builder({ store, ...props }: BuilderProps & { store: StoreSettings }) {
         <>
             <PageHeader
                 title="Online store"
-                description={DESCRIPTION}
+                description={props.sellsWithoutTills ? DESCRIPTION_NO_TILLS : DESCRIPTION}
                 status={
                     <StatusBadge
                         status={store.isLive ? 'live' : 'offline'}

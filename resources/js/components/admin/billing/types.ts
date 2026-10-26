@@ -249,6 +249,8 @@ export interface OnlineStoreAddOnData {
     live: boolean;
     serverOn: boolean;
     cloudSync: boolean;
+    /** OS-13: no live till, online store only: the store sells the portal's products with the shop's own stock. */
+    withoutTills?: boolean;
     available: boolean;
 }
 
@@ -265,6 +267,8 @@ export interface PlanChangeOptions {
         features: string[];
         /** OS-7: "£20.00 per month" when the plan includes the online store, else null. */
         onlineStore: string | null;
+        /** OS-13: online store only (no tills): its fee is the online store's. */
+        onlineStoreOnly?: boolean;
         current: boolean;
     }[];
     /** OS-7: the business already has an online store (else a plan with it asks for the template). */

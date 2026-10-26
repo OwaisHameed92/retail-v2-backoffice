@@ -14,7 +14,7 @@ final class PlanData
     /**
      * Row for the plans DataTable.
      *
-     * @return array{id: string, name: string, code: string, pricingMode: string, billingType: string, billingTypeLabel: string, priceMonthly: string, priceYearly: string, currency: string, trialDays: int, featureCount: int, includesHandheld: bool, includesOnlineStore: bool, status: string, statusLabel: string, sortOrder: int}
+     * @return array{id: string, name: string, code: string, pricingMode: string, billingType: string, billingTypeLabel: string, priceMonthly: string, priceYearly: string, currency: string, trialDays: int, featureCount: int, includesHandheld: bool, includesOnlineStore: bool, onlineStoreOnly: bool, onlineStorePrice: string|null, status: string, statusLabel: string, sortOrder: int}
      */
     public static function row(Plan $plan): array
     {
@@ -34,6 +34,8 @@ final class PlanData
             'featureCount' => $plan->features->count(),
             'includesHandheld' => $plan->includes_handheld,
             'includesOnlineStore' => PlanOnlineStore::includes($plan),
+            'onlineStoreOnly' => PlanOnlineStore::includes($plan) && $plan->isOnlineStoreOnly(),
+            'onlineStorePrice' => PlanOnlineStore::includes($plan) && $plan->isOnlineStoreOnly() ? PlanOnlineStore::price($plan) : null,
             'status' => $status->value,
             'statusLabel' => $status->label(),
             'sortOrder' => $plan->sort_order,
@@ -74,6 +76,8 @@ final class PlanData
             'includesOnlineStore' => $plan->includes_online_store,
             'onlineStoreMonthlyPrice' => $plan->online_store_monthly_price,
             'onlineStore' => PlanOnlineStore::summary($plan),
+            // OS-13: no tills; the online store fee is the plan's whole monthly fee.
+            'onlineStoreOnly' => $plan->online_store_only,
             'isActive' => $plan->is_active,
             'isPublic' => $plan->is_public,
             'sortOrder' => $plan->sort_order,
@@ -111,6 +115,7 @@ final class PlanData
             'includes_handheld' => $plan->includes_handheld,
             'includes_online_store' => $plan->includes_online_store,
             'online_store_monthly_price' => $plan->online_store_monthly_price,
+            'online_store_only' => $plan->online_store_only,
             'is_active' => $plan->is_active,
             'is_public' => $plan->is_public,
             'sort_order' => $plan->sort_order,
