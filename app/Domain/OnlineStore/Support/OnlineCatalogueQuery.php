@@ -28,7 +28,8 @@ use Illuminate\Database\Query\JoinClause;
  * products the shop's till has marked inactive there (`branch_products.is_active` false), products under a recall
  * still open at the shop and products outside their availability dates (CatalogueSafetyRules, audit OSA-4, OSA-23).
  * Stock: tracked when the shop's stock line says so, else when the product does; on hand as the till last reported
- * it (no stock line = 0). Tracked with 0 or less: shown, not orderable.
+ * it (no stock line = 0). Tracked with 0 or less: shown, not orderable. OS-13: a business with no live till that sells
+ * without tills (online store only) uses the shop's own stock instead (ManualStock); its price is the business price.
  */
 final class OnlineCatalogueQuery
 {
@@ -181,11 +182,17 @@ final class OnlineCatalogueQuery
         $line = fn (string $column) => "(select bps.{$column} from branch_products bps where bps.product_id = products.id and bps.company_id = ? "
             .'and bps.branch_id = ? and bps.deleted_at is null order by bps.id limit 1)';
 
-        return $query->select(['products.id', 'products.name', 'products.description', 'products.image_path', 'products.department_id', 'products.category_id',
+        $query->select(['products.id', 'products.name', 'products.description', 'products.image_path', 'products.department_id', 'products.category_id',
             'products.is_weighed', 'products.unit_code', 'products.max_qty_per_sale', 'products.track_stock', 'products.net_mass_kg', 'products.volume_ml', 'products.is_deposit_item', 'products.deposit_amount'])
             ->addSelect(['osp.description as online_description', 'osp.photo_path as online_photo', 'osp.allergen_info as online_allergens'])
-            ->selectRaw("{$price} as online_price", $bindings)
-            ->selectRaw($line('is_stock_tracked').' as shop_tracked', [$shop->company_id, $shop->branch_id])
+            ->selectRaw("{$price} as online_price", $bindings);
+
+        // OS-13: no live till (online store only): the shop's own stock, never the till tables.
+        if (ManualStock::applies($shop->company_id)) {
+            return $query->selectRaw(ManualStock::TRACKED_SQL.' as shop_tracked')->selectRaw(ManualStock::QTY_SQL.' as shop_qty');
+        }
+
+        return $query->selectRaw($line('is_stock_tracked').' as shop_tracked', [$shop->company_id, $shop->branch_id])
             ->selectRaw('COALESCE('.$line('qty_on_hand').', 0) as shop_qty', [$shop->company_id, $shop->branch_id]);
     }
 
@@ -204,8 +211,11 @@ final class OnlineCatalogueQuery
             .'and bpf.branch_id = ? and bpf.deleted_at is null order by bpf.id limit 1)';
         $shopBindings = [$shop->company_id, $shop->branch_id];
 
+        $manual = $filters->inStockOnly && ManualStock::applies($shop->company_id);
+
         return $query
-            ->when($filters->inStockOnly, fn (Builder $q) => $q->whereRaw(
+            ->when($manual, fn (Builder $q) => $q->whereRaw(ManualStock::IN_STOCK_SQL))
+            ->when($filters->inStockOnly && ! $manual, fn (Builder $q) => $q->whereRaw(
                 '(COALESCE('.$line('is_stock_tracked').', products.track_stock, 0) = 0 OR COALESCE('.$line('qty_on_hand').', 0) > 0)',
                 [...$shopBindings, ...$shopBindings],
             ))

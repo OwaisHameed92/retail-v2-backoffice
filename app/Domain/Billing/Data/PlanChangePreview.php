@@ -92,6 +92,8 @@ final class PlanChangePreview
             'yearly' => Money::isZero($plan->price_yearly) ? null : BillingFormat::money($plan->price_yearly).' per '.$plan->pricing_mode->unit().' per year',
             'features' => self::labels(Feature::normalise($plan->features)),
             'onlineStore' => PlanOnlineStore::includes($plan) ? BillingFormat::money(PlanOnlineStore::price($plan)).' per month' : null,
+            // OS-13: no tills on this plan; its fee is the online store's.
+            'onlineStoreOnly' => PlanOnlineStore::includes($plan) && $plan->isOnlineStoreOnly(),
             'current' => $plan->id === $current?->id,
         ])->values()->all();
 

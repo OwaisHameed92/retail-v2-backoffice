@@ -10,6 +10,7 @@ use App\Domain\Plans\Enums\PricingMode;
 use App\Domain\Plans\Enums\SetupFeeMode;
 use App\Domain\Shared\Casts\MoneyCast;
 use App\Domain\Shared\Support\Money;
+use App\Domain\Tenancy\Models\Company;
 use App\Domain\Tenancy\Scopes\CompanyScope;
 use Carbon\CarbonInterface;
 use Database\Factories\PlanFactory;
@@ -49,6 +50,7 @@ use Illuminate\Support\Collection;
  * @property bool $includes_handheld Portal-only (owner 2026-10-21): the handheld (PDA) app comes with this plan.
  * @property bool $includes_online_store Portal-only (OS-7): the online store add-on comes with this recurring plan.
  * @property string|null $online_store_monthly_price OS-7: the add-on's monthly price before VAT; null = the default.
+ * @property bool $online_store_only OS-13: no tills; the online store fee is the plan's whole monthly fee.
  * @property int $sort_order
  * @property CarbonInterface|null $created_at
  * @property CarbonInterface|null $updated_at
@@ -88,6 +90,7 @@ class Plan extends Model
         'includes_handheld',
         'includes_online_store',
         'online_store_monthly_price',
+        'online_store_only',
         'sort_order',
     ];
 
@@ -104,6 +107,7 @@ class Plan extends Model
         'is_active' => true,
         'is_public' => false,
         'includes_online_store' => false,
+        'online_store_only' => false,
         'sort_order' => 0,
     ];
 
@@ -128,6 +132,7 @@ class Plan extends Model
             'includes_handheld' => 'boolean',
             'includes_online_store' => 'boolean',
             'online_store_monthly_price' => MoneyCast::class,
+            'online_store_only' => 'boolean',
             'sort_order' => 'integer',
         ];
     }
@@ -189,6 +194,15 @@ class Plan extends Model
         return $this->includes_online_store && $this->billingType()->recurs();
     }
 
+    /**
+     * OS-13: an "Online store only (no tills)" plan: a recurring plan that includes the online store, whose monthly fee
+     * is the online store fee, once per business. No till licence is ever issued on it.
+     */
+    public function isOnlineStoreOnly(): bool
+    {
+        return $this->online_store_only && $this->includesOnlineStore();
+    }
+
     public function hasFeature(Feature $feature): bool
     {
         return $this->features->contains($feature);
@@ -219,7 +233,9 @@ class Plan extends Model
      */
     public function isInUse(): bool
     {
-        return $this->licences()->exists();
+        // OS-13: an online store only plan has no licences; the businesses on it use it.
+        return $this->licences()->exists()
+            || ($this->online_store_only && Company::query()->where('plan_id', $this->id)->exists());
     }
 
     /**

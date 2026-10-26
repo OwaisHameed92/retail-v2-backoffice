@@ -4,6 +4,7 @@ namespace App\Domain\OnlineStore\Actions;
 
 use App\Domain\OnlineStore\Enums\OnlineOrderStatus;
 use App\Domain\OnlineStore\Models\OnlineOrder;
+use App\Domain\OnlineStore\Support\ManualStock;
 use App\Domain\Shared\Actions\RecordAudit;
 use App\Domain\Tenancy\CurrentCompany;
 use App\Domain\Tenancy\Models\Company;
@@ -46,6 +47,11 @@ final class UndoOnlineOrderStatus
                 ...($column !== null ? [$column => null] : []),
                 ...($from === OnlineOrderStatus::Cancelled ? ['cancel_reason' => null, 'cancelled_as_spam' => false] : []),
             ])->save();
+
+            // OS-13: undoing a completion gives the shop's own stock counts back.
+            if (ManualStock::completes($from)) {
+                ManualStock::putBack($order);
+            }
 
             $this->audit->handle('online_order.status_undone', $order, ['status' => $from->value], ['status' => $back->value],
                 ['number' => $order->reference], companyId: $company->id);

@@ -36,6 +36,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string|null $monthly_price the add-on's price for this business; null = the default
  * @property bool $addon_on OS-6: the admin switched the online store add-on on (the store is usable)
  * @property CarbonImmutable|null $addon_on_at when the add-on was last switched on
+ * @property bool $sells_without_tills OS-13: started on an online store only plan (OnlineStoreOnly)
  * @property CarbonImmutable|null $live_at
  * @property string|null $dna_client_id OS-9: DNA Payments client id (encrypted at rest)
  * @property string|null $dna_client_secret OS-9: DNA Payments client secret (encrypted at rest, never shown or logged)
@@ -98,6 +99,7 @@ class OnlineStore extends Model
             'taking_orders' => 'boolean',
             'monthly_price' => MoneyCast::class,
             'addon_on' => 'boolean',
+            'sells_without_tills' => 'boolean',
             'addon_on_at' => 'immutable_datetime',
             'live_at' => 'immutable_datetime',
             'dna_client_id' => 'encrypted',

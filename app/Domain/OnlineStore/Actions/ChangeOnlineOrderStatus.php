@@ -5,6 +5,7 @@ namespace App\Domain\OnlineStore\Actions;
 use App\Domain\OnlineStore\Enums\OnlineOrderStatus;
 use App\Domain\OnlineStore\Events\OnlineOrderStatusChanged;
 use App\Domain\OnlineStore\Models\OnlineOrder;
+use App\Domain\OnlineStore\Support\ManualStock;
 use App\Domain\Shared\Actions\RecordAudit;
 use App\Domain\Tenancy\CurrentCompany;
 use App\Domain\Tenancy\Models\Company;
@@ -67,6 +68,11 @@ final class ChangeOnlineOrderStatus
                 ...($column !== null ? [$column => $now] : []),
                 ...($to === OnlineOrderStatus::Cancelled ? ['cancel_reason' => $reason, 'cancelled_as_spam' => $spam] : []),
             ])->save();
+
+            // OS-13: a business without tills keeps its own stock counts: a completed order takes its items off.
+            if (ManualStock::completes($to)) {
+                ManualStock::takeOff($order);
+            }
 
             $this->audit->handle('online_order.status_changed', $order, ['status' => $from->value], array_filter([
                 'status' => $to->value, 'cancel_reason' => $to === OnlineOrderStatus::Cancelled ? $reason : null,

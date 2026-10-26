@@ -75,6 +75,8 @@ export interface BuilderProps {
     /** `collectionShops`: the shops taking orders (OS-12: collecting, delivering or both); `shopMode`: what they offer together. */
     checklist: { collectionShops: number; shopMode?: ShopMode; productsShown: number | null; productsShop: string | null; legalMissing: string[] };
     canEdit: boolean;
+    /** OS-13: no tills (online store only): products from Products, stock set on the Products tab. */
+    sellsWithoutTills?: boolean;
     banners: StoreBanner[];
     bannerMax: number;
     linkOptions: { value: BannerLinkKey; label: string }[];
@@ -195,6 +197,9 @@ export interface OnlineProductRow {
     hidden: boolean;
     /** OS-11: kept out of the automatic featured row (best sellers, newest). */
     notFeatured: boolean;
+    /** OS-13: the shop's own stock (used only while the business has no live till). */
+    outOfStock: boolean;
+    stockCount: string | null;
     shown: boolean;
     reasons: string[];
 }
@@ -208,6 +213,8 @@ export interface ProductsProps {
     hasStore: boolean;
     canEdit: boolean;
     descriptionMax: number;
+    /** OS-13: no live till (online store only): the shop sets each product's stock here. */
+    manualStock: boolean;
 }
 
 export const PRODUCTS_ONLY = ['products', 'filters', 'counts'];

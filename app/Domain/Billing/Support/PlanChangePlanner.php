@@ -163,10 +163,12 @@ final class PlanChangePlanner
         $lines = InvoiceLineBuilder::build($simulated, $start, $account->cycle->periodEnd($start), $account->cycle, Vat::rateFor($account), false, $pricing);
         $units = array_filter($lines, fn (array $line) => ! InvoiceLineBuilder::isOnlineStoreLine($line));
         $prices = array_values(array_unique(array_column($units, 'unit_price')));
+        // OS-13: without tills there is no unit price to show (only the online store line).
+        $noUnits = $prices === [] && ($onlineStore->withoutTillsAfter ?? false);
 
         return [
             'gross' => InvoiceMaths::totals($lines)['total'],
-            'unitPrice' => count($prices) === 1 ? $prices[0] : ($prices === [] ? $pricing->unitPrice($account->cycle) : null),
+            'unitPrice' => count($prices) === 1 ? $prices[0] : ($prices === [] && ! $noUnits ? $pricing->unitPrice($account->cycle) : null),
             'unit' => $pricing->mode->unit(),
         ];
     }
@@ -204,7 +206,7 @@ final class PlanChangePlanner
             return $pricing;
         }
 
-        return $pricing->withOnlineStore($pricing->plan?->billingType()->recurs() ? $onlineStore->billed : null);
+        return $pricing->withOnlineStore($pricing->plan?->billingType()->recurs() ? $onlineStore->billed : null, $onlineStore->withoutTillsAfter);
     }
 
     /**

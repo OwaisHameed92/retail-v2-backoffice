@@ -10,6 +10,9 @@ interface PlanOnlineStoreFieldsProps {
     price: string;
     onIncludedChange: (included: boolean) => void;
     onPriceChange: (price: string) => void;
+    /** OS-13: online store only (no tills): the store fee is the plan's whole monthly fee. */
+    onlineOnly: boolean;
+    onOnlineOnlyChange: (onlineOnly: boolean) => void;
     errors: Partial<Record<string, string>>;
 }
 
@@ -18,7 +21,17 @@ interface PlanOnlineStoreFieldsProps {
  * the online store add-on: its own "Online store" line on the same monthly invoice, once per business. Only monthly or
  * yearly plans can include it. Not rendered where the country has no online stores.
  */
-export function PlanOnlineStoreFields({ settings, recurs, included, price, onIncludedChange, onPriceChange, errors }: PlanOnlineStoreFieldsProps) {
+export function PlanOnlineStoreFields({
+    settings,
+    recurs,
+    included,
+    price,
+    onIncludedChange,
+    onPriceChange,
+    onlineOnly,
+    onOnlineOnlyChange,
+    errors,
+}: PlanOnlineStoreFieldsProps) {
     const defaultLabel = formatMoney(settings.defaultPrice);
 
     return (
@@ -26,7 +39,7 @@ export function PlanOnlineStoreFields({ settings, recurs, included, price, onInc
             <CheckboxRow
                 id="includes_online_store"
                 checked={recurs && included}
-                disabled={!recurs}
+                disabled={!recurs || onlineOnly}
                 onChange={onIncludedChange}
                 label="Online store included"
                 help={
@@ -37,11 +50,25 @@ export function PlanOnlineStoreFields({ settings, recurs, included, price, onInc
                 error={errors.includes_online_store}
             />
             {recurs && included && (
+                <CheckboxRow
+                    id="online_store_only"
+                    checked={onlineOnly}
+                    onChange={onOnlineOnlyChange}
+                    label="Online store only (no tills)"
+                    help="For a business with no till yet: it gets only the online store and sells the products made in the portal, with its own stock. No till prices, features or licence keys: the online store fee below is the plan’s whole monthly fee, once per business. It can move to a plan with tills later (Change plan)."
+                    error={errors.online_store_only}
+                />
+            )}
+            {recurs && included && (
                 <Field
                     id="online_store_monthly_price"
-                    label={`Online store fee per month (before ${taxName()})`}
+                    label={onlineOnly ? `Monthly fee (before ${taxName()})` : `Online store fee per month (before ${taxName()})`}
                     error={errors.online_store_monthly_price}
-                    help={`Blank = the default, ${defaultLabel}. 0 for no charge. A business can still have its own price on its Billing tab.`}
+                    help={
+                        onlineOnly
+                            ? `The online store fee, once per business, collected by Direct Debit. We suggest ${formatMoney('30')}. Blank = the default, ${defaultLabel}.`
+                            : `Blank = the default, ${defaultLabel}. 0 for no charge. A business can still have its own price on its Billing tab.`
+                    }
                     className="max-w-xs"
                 >
                     <MoneyInput

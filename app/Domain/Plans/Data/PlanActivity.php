@@ -33,6 +33,7 @@ final class PlanActivity
         'includes_handheld' => 'Handheld (PDA) app included',
         'includes_online_store' => 'Online store included',
         'online_store_monthly_price' => 'Online store fee per month',
+        'online_store_only' => 'Online store only (no tills)',
         'is_active' => 'Available for new licences',
         'is_public' => 'Shown on pricing page',
         'sort_order' => 'Sort order',

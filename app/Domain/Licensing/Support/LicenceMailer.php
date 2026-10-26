@@ -58,6 +58,27 @@ final class LicenceMailer
     }
 
     /**
+     * OS-13: the welcome email of an online store only business (no tills, so no keys): its online store, the portal
+     * and the Direct Debit to set up (the online store fee recurs). Held like any welcome email (P11).
+     */
+    public function welcomeOnlineStore(Company $company, User $owner): void
+    {
+        $recurs = ! ManualCollection::active();
+
+        Mail::to($owner->email)->queue(new WelcomeTenantMail(new WelcomeTenantData(
+            businessName: $company->name,
+            ownerName: $owner->name,
+            ownerEmail: $owner->email,
+            loginUrl: config('sspos.portal_url').'/login',
+            tills: [],
+            companyId: $company->id,
+            billingUrl: $recurs ? config('sspos.portal_url').'/app/billing' : null,
+            directDebitDays: $recurs ? max(0, (int) config('billing.direct_debit.mandate_deadline_days', 3)) : null,
+            onlineStoreUrl: config('sspos.portal_url').'/app/online-store',
+        )));
+    }
+
+    /**
      * New or replaced keys to every active owner. Returns how many owners were emailed.
      *
      * @param  list<IssuedLicence>  $issued

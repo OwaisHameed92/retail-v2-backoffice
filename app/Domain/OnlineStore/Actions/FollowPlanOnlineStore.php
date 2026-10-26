@@ -5,6 +5,7 @@ namespace App\Domain\OnlineStore\Actions;
 use App\Domain\OnlineStore\Data\OnlineStoreAddOnInput;
 use App\Domain\OnlineStore\Enums\StoreTemplate;
 use App\Domain\OnlineStore\Support\OnlineStoreAddOn;
+use App\Domain\OnlineStore\Support\OnlineStoreOnly;
 use App\Domain\OnlineStore\Support\PlanOnlineStore;
 use App\Domain\Plans\Models\Plan;
 use App\Domain\Tenancy\Models\Company;
@@ -20,6 +21,8 @@ use Illuminate\Validation\ValidationException;
  * - The plan includes it and the add-on is on: nothing changes (its template and price stay).
  * - The plan does not include it and the add-on is on (by a plan or by hand on the Billing tab): switched off, so the
  *   store closes and the "Online store" line stops from the next invoice (the store's settings are kept).
+ *
+ * OS-13: on an online store only plan the store is also marked as selling without tills (OnlineStoreOnly::remember).
  *
  * Nothing where the country has no online stores (PK). The caller updates the Direct Debit amount afterwards. Never
  * touches licences or anything the tills receive. Returns 'on', 'off' or null (nothing changed).
@@ -41,6 +44,8 @@ class FollowPlanOnlineStore
         $on = $store !== null && $store->addon_on;
 
         if (PlanOnlineStore::includes($plan) === $on) {
+            self::rememberOnlineOnly($company, $plan);
+
             return null;
         }
 
@@ -56,6 +61,16 @@ class FollowPlanOnlineStore
             throw ValidationException::withMessages(['plan_id' => $on ? $why : "{$plan->name} includes the online store. {$why}"]);
         }
 
+        self::rememberOnlineOnly($company, $plan);
+
         return $on ? 'off' : 'on';
+    }
+
+    /** OS-13: a business put on an online store only plan sells without tills until it has a live till. */
+    private static function rememberOnlineOnly(Company $company, Plan $plan): void
+    {
+        if (PlanOnlineStore::includes($plan) && $plan->isOnlineStoreOnly()) {
+            OnlineStoreOnly::remember($company);
+        }
     }
 }

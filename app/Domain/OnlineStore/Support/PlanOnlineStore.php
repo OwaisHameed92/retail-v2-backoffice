@@ -6,6 +6,7 @@ use App\Domain\Billing\Support\BillingFormat;
 use App\Domain\Plans\Models\Plan;
 use App\Domain\Shared\Country\Country;
 use App\Domain\Shared\Support\Money;
+use App\Domain\Tenancy\Models\Company;
 use Illuminate\Validation\ValidationException;
 
 /**
@@ -61,6 +62,8 @@ final class PlanOnlineStore
      */
     public static function assertValid(Plan $plan): void
     {
+        self::assertOnlineOnlyValid($plan);
+
         if (! $plan->includes_online_store) {
             return;
         }
@@ -75,6 +78,24 @@ final class PlanOnlineStore
 
         if ($plan->online_store_monthly_price !== null && Money::isNegative($plan->online_store_monthly_price)) {
             throw ValidationException::withMessages(['online_store_monthly_price' => 'The online store fee cannot be below 0.']);
+        }
+    }
+
+    /**
+     * OS-13: an online store only plan includes the online store and recurs; once businesses use a plan, it cannot be
+     * switched between "online store only" and "with tills" (their billing and tills depend on it): make a new plan.
+     *
+     * @throws ValidationException
+     */
+    private static function assertOnlineOnlyValid(Plan $plan): void
+    {
+        if ($plan->online_store_only && (! $plan->includes_online_store || ! $plan->billingType()->recurs())) {
+            throw ValidationException::withMessages(['online_store_only' => 'An online store only plan is paid monthly or yearly and includes the online store.']);
+        }
+
+        if ($plan->exists && $plan->isDirty('online_store_only')
+            && ($plan->licences()->exists() || Company::query()->where('plan_id', $plan->id)->exists())) {
+            throw ValidationException::withMessages(['online_store_only' => 'Businesses are on this plan, so “Online store only” cannot be changed. Make a new plan instead.']);
         }
     }
 }

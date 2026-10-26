@@ -39,7 +39,8 @@ class StoreTenantRequest extends FormRequest
             'owner_name' => ['required', 'string', 'max:120'],
         ] + TenantRules::company() + TenantRules::branch('branch_') + [
             'status' => ['required', Rule::in([CompanyStatus::Trial->value, CompanyStatus::Active->value])],
-            'tills' => ['required', 'integer', 'min:1', 'max:'.NewTenant::MAX_TILLS],
+            // OS-13: an online store only plan has no tills (the form sends 0).
+            'tills' => ['required', 'integer', 'min:'.($this->onlineStoreOnly() ? 0 : 1), 'max:'.NewTenant::MAX_TILLS],
             'owner_name' => ['required', 'string', 'max:120'],
             'owner_email' => ['required', 'string', 'email', 'max:255'],
             // Module 1.3: plan for the new tills; blank = the portal default plan.
@@ -105,6 +106,14 @@ class StoreTenantRequest extends FormRequest
         ];
     }
 
+    /** OS-13: the chosen plan (else the portal default) is online store only: no tills, no licence form. */
+    public function onlineStoreOnly(): bool
+    {
+        $plan = $this->filled('plan_id') ? Plan::query()->where('is_active', true)->find((string) $this->input('plan_id')) : DefaultPlan::portal();
+
+        return $plan?->isOnlineStoreOnly() ?? false;
+    }
+
     /** Module 1.13: the upfront payment staff took (billing admins only), or null. */
     public function upfront(): ?UpfrontPayment
     {
@@ -116,12 +125,12 @@ class StoreTenantRequest extends FormRequest
         return new NewTenant(
             company: TenantRules::companyDetails($this),
             branch: TenantRules::branchDetails($this, 'branch_'),
-            tills: $this->integer('tills'),
+            tills: $this->onlineStoreOnly() ? 0 : $this->integer('tills'),
             ownerName: (string) $this->input('owner_name'),
             ownerEmail: (string) $this->input('owner_email'),
             status: CompanyStatus::from((string) $this->input('status')),
             planId: $this->filled('plan_id') ? (string) $this->input('plan_id') : null,
-            licence: $this->filled('kind') ? LicenceFormRules::settings($this, $this->integer('tills')) : null,
+            licence: $this->filled('kind') && ! $this->onlineStoreOnly() ? LicenceFormRules::settings($this, $this->integer('tills')) : null,
             multiBranch: $this->boolean('multi_branch'),
             maxBranches: $this->filled('max_branches') ? $this->integer('max_branches') : 1,
             storeTemplate: $this->filled('store_template') ? StoreTemplate::tryFrom((string) $this->input('store_template')) : null,

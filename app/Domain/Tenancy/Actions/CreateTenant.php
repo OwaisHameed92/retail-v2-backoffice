@@ -34,6 +34,10 @@ use Illuminate\Validation\ValidationException;
  * OS-7: when the plan (the chosen one, else the portal default) includes the online store, the add-on is switched on
  * (FollowPlanOnlineStore: the store row with the chosen template, Fresh Market when none is given; not live, not taking
  * orders). Its "Online store" line is billed once a till has cloud sync.
+ *
+ * OS-13: on an online store only plan the business gets no tills (0 in the form; any till is refused): its company,
+ * its first shop (address, collection, delivery), the owner login and the online store, which sells without tills
+ * (FollowPlanOnlineStore marks it). No licence keys, so the welcome email is about the online store.
  */
 class CreateTenant
 {
@@ -49,24 +53,32 @@ class CreateTenant
      */
     public function handle(NewTenant $data): Company
     {
-        if ($data->tills < 1 || $data->tills > NewTenant::MAX_TILLS) {
+        $plan = $data->planId === null ? null : Plan::query()->whereKey($data->planId)->where('is_active', true)->first();
+
+        if ($data->planId !== null && $plan === null) {
+            throw ValidationException::withMessages(['plan_id' => 'Choose an active plan.']);
+        }
+
+        // OS-13: an online store only plan has no tills; every other plan needs at least one.
+        $chosen = $plan ?? DefaultPlan::portal();
+        $onlineOnly = $chosen !== null && $chosen->isOnlineStoreOnly();
+
+        if ($chosen !== null && $onlineOnly && $data->totalTills() > 0) {
+            throw ValidationException::withMessages(['tills' => "{$chosen->name} is an online store only plan: it has no tills. Add none, or choose a plan with tills."]);
+        }
+
+        if (! $onlineOnly && ($data->tills < 1 || $data->tills > NewTenant::MAX_TILLS)) {
             throw ValidationException::withMessages(['tills' => 'Choose between 1 and '.NewTenant::MAX_TILLS.' tills.']);
         }
 
         foreach ($data->moreBranches as $index => $branch) {
-            if ($branch->tills < 1 || $branch->tills > NewTenant::MAX_TILLS) {
+            if (! $onlineOnly && ($branch->tills < 1 || $branch->tills > NewTenant::MAX_TILLS)) {
                 throw ValidationException::withMessages(["branches.{$index}.tills" => 'Choose between 1 and '.NewTenant::MAX_TILLS.' tills.']);
             }
         }
 
         if (! in_array($data->status, [CompanyStatus::Trial, CompanyStatus::Active], true)) {
             throw ValidationException::withMessages(['status' => 'A new business starts as a trial or active customer.']);
-        }
-
-        $plan = $data->planId === null ? null : Plan::query()->whereKey($data->planId)->where('is_active', true)->first();
-
-        if ($data->planId !== null && $plan === null) {
-            throw ValidationException::withMessages(['plan_id' => 'Choose an active plan.']);
         }
 
         $data->licence?->validate();

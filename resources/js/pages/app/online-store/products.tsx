@@ -89,7 +89,7 @@ function Filters({ shops, filters, departments }: Pick<ProductsProps, 'shops' | 
 
 /** OS-3: what the online store shows, why a product is not shown, and each product's online photo and description. */
 export default function OnlineStoreProducts(props: ProductsProps) {
-    const { products, counts, canEdit, shops, filters } = props;
+    const { products, counts, canEdit, shops, filters, manualStock } = props;
     const [selected, setSelected] = useState<string[]>([]);
     const [editing, setEditing] = useState<OnlineProductRow | null>(null);
     const [sending, setSending] = useState(false);
@@ -109,8 +109,8 @@ export default function OnlineStoreProducts(props: ProductsProps) {
     };
 
     const columns = useMemo(
-        () => productColumns({ canEdit, selected, setSelected, rows: products.data, onEdit: setEditing, onVisibility: setVisibility }),
-        [canEdit, selected, products.data],
+        () => productColumns({ canEdit, selected, setSelected, rows: products.data, onEdit: setEditing, onVisibility: setVisibility, manualStock }),
+        [canEdit, selected, products.data, manualStock],
     );
     const filtered = Boolean(products.meta.search) || filters.status !== 'all' || filters.department !== null;
 
@@ -119,7 +119,11 @@ export default function OnlineStoreProducts(props: ProductsProps) {
             <Head title="Online products" />
             <PageHeader
                 title="Online store"
-                description="Products, prices and stock come from your tills. Hide what you do not want online and add photos and short descriptions."
+                description={
+                    manualStock
+                        ? 'Your products from Products, at their price. Set each one’s stock here, hide what you do not want online and add photos and short descriptions.'
+                        : 'Products, prices and stock come from your tills. Hide what you do not want online and add photos and short descriptions.'
+                }
                 tabs={<OnlineStoreTabs active="products" />}
             />
 
@@ -151,7 +155,10 @@ export default function OnlineStoreProducts(props: ProductsProps) {
                 <Info />
                 <AlertDescription>
                     Age-restricted products, alcohol, tobacco, lottery, knives, vapes and pharmacy or prescription medicines are never sold online. A
-                    product also needs a price at the shop. Stock and prices follow your tills.
+                    product also needs a price at the shop.{' '}
+                    {manualStock
+                        ? 'You have no tills yet, so the store uses the stock you set here. Once a till is live, its stock and prices are used instead.'
+                        : 'Stock and prices follow your tills.'}
                 </AlertDescription>
             </Alert>
 
@@ -195,7 +202,9 @@ export default function OnlineStoreProducts(props: ProductsProps) {
                 </StickyFormBar>
             )}
 
-            {canEdit && <ProductDialog product={editing} onClose={() => setEditing(null)} descriptionMax={props.descriptionMax} />}
+            {canEdit && (
+                <ProductDialog product={editing} onClose={() => setEditing(null)} descriptionMax={props.descriptionMax} manualStock={manualStock} />
+            )}
         </AppLayout>
     );
 }

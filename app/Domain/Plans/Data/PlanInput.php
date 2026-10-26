@@ -32,6 +32,9 @@ final readonly class PlanInput
     /** OS-7: 2 dp, or null = the default price (always null without the online store). */
     public ?string $onlineStoreMonthlyPrice;
 
+    /** OS-13: online store only (no tills); null = keep the plan's (a new plan: with tills). */
+    public ?bool $onlineStoreOnly;
+
     /**
      * @param  iterable<Feature|string>  $features
      */
@@ -61,7 +64,19 @@ final readonly class PlanInput
         ?bool $includesOnlineStore = null,
         /** OS-7: its monthly price before VAT; null = the default (`online_store.default_monthly_price`). */
         string|int|null $onlineStoreMonthlyPrice = null,
+        /** OS-13: no tills; the online store fee is the whole monthly fee (implies the online store). Null = keep. */
+        ?bool $onlineStoreOnly = null,
     ) {
+        // OS-13: an online store only plan includes the online store; it has no till prices, features or handheld app.
+        if ($onlineStoreOnly === true) {
+            $includesOnlineStore = true;
+            $priceMonthly = '0';
+            $priceYearly = '0';
+            $features = [];
+            $billingType ??= Money::isZero(Money::normalise($setupFee)) ? PlanBillingType::RecurringOnly : PlanBillingType::SetupAndRecurring;
+        }
+
+        $this->onlineStoreOnly = $onlineStoreOnly;
         $monthly = Money::normalise($priceMonthly);
         $yearly = Money::normalise($priceYearly);
         $fee = Money::normalise($setupFee);
@@ -102,10 +117,13 @@ final readonly class PlanInput
             'is_active' => $this->isActive,
             'is_public' => $this->isPublic,
             ...($this->includesHandheld !== null ? ['includes_handheld' => $this->includesHandheld] : []),
+            // OS-13: no tills, so no handheld app.
+            ...($this->onlineStoreOnly === true ? ['includes_handheld' => false] : []),
             ...($this->includesOnlineStore !== null ? [
                 'includes_online_store' => $this->includesOnlineStore,
                 'online_store_monthly_price' => $this->onlineStoreMonthlyPrice,
             ] : []),
+            ...($this->onlineStoreOnly !== null ? ['online_store_only' => $this->onlineStoreOnly] : []),
             'sort_order' => $this->sortOrder,
         ];
     }

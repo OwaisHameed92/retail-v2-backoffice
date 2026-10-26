@@ -67,9 +67,11 @@ export function OnlineStoreAddOnCard({ company, addOn, canManage, cancelled = fa
         <SectionCard
             title="Online store add-on"
             description={
-                addOn.byPlan
-                    ? `Click & collect online store, included in ${addOn.planName ?? 'its plan'}: ${addOn.defaultPriceLabel} a month before ${taxName()} unless this business has its own price, as a line on the monthly invoice. Change plan switches it with the plan.`
-                    : `Click & collect online store for businesses on a monthly plan. ${addOn.defaultPriceLabel} a month before ${taxName()} unless this business has its own price, as a line on the monthly invoice.`
+                addOn.withoutTills
+                    ? `Online store only (no tills yet): the store sells the products made in the portal at the business price, with the shop’s own stock. ${addOn.priceLabel} a month before ${taxName()}, the only line on the monthly invoice.`
+                    : addOn.byPlan
+                      ? `Click & collect online store, included in ${addOn.planName ?? 'its plan'}: ${addOn.defaultPriceLabel} a month before ${taxName()} unless this business has its own price, as a line on the monthly invoice. Change plan switches it with the plan.`
+                      : `Click & collect online store for businesses on a monthly plan. ${addOn.defaultPriceLabel} a month before ${taxName()} unless this business has its own price, as a line on the monthly invoice.`
             }
             actions={
                 canManage && !cancelled ? (

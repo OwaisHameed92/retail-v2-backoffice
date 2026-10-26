@@ -46,6 +46,11 @@ const columns: ColumnDef<PlanRow>[] = [
         cell: ({ row }) =>
             row.original.billingType === 'setupOnly' ? (
                 <span className="text-muted-foreground">Setup fee only</span>
+            ) : row.original.onlineStoreOnly && row.original.onlineStorePrice !== null ? (
+                <span className="font-medium tabular-nums">
+                    {formatMoney(row.original.onlineStorePrice)}
+                    <span className="text-muted-foreground font-normal"> / business</span>
+                </span>
             ) : (
                 <span className="font-medium tabular-nums">
                     {formatMoney(row.original.priceMonthly)}
@@ -80,8 +85,8 @@ const columns: ColumnDef<PlanRow>[] = [
                     </Badge>
                 )}
                 {row.original.includesOnlineStore && (
-                    <Badge variant="info" title="Online store included">
-                        + Online store
+                    <Badge variant="info" title={row.original.onlineStoreOnly ? 'Online store only, no tills' : 'Online store included'}>
+                        {row.original.onlineStoreOnly ? 'Online store only' : '+ Online store'}
                     </Badge>
                 )}
             </span>

@@ -27,6 +27,8 @@ use Illuminate\Support\Collection;
  * "Online store · 1 Nov – 30 Nov 2026", for the whole period at the add-on's price for the cycle (12 months on a
  * yearly cycle), VAT as the other lines, no licence or branch (paying it renews nothing). Never prorated: like a price
  * change it is charged on the invoices raised after it was switched on. Without the add-on nothing changes.
+ * OS-13: with no licences the line is added only for a business that sells without tills (CompanyPricing::withoutTills,
+ * an online store only business): its invoice is that one line.
  *
  * Audit OSA-30: every line carries its `kind` (InvoiceLineKind value: licence, branch, onlineStore), stored on the
  * invoice line, so the add-on line is recognised by its kind, not by having no licence and no branch.
@@ -94,7 +96,8 @@ final class InvoiceLineBuilder
             ];
         }
 
-        if ($pricing->onlineStoreMonthly !== null && $licences->isNotEmpty()) {
+        // OS-13: a business without tills (online store only) has the add-on line alone; any other needs live tills.
+        if ($pricing->onlineStoreMonthly !== null && ($licences->isNotEmpty() || $pricing->withoutTills)) {
             $lines[] = self::onlineStoreLine($pricing->onlineStoreMonthly, $start, $end, $cycle, $vatRate, count($lines) + 1);
         }
 

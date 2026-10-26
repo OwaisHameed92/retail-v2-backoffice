@@ -24,6 +24,9 @@ class SaveOnlineProductRequest extends CompanyWideWriteRequest
             'allergen_info' => ['sometimes', 'nullable', 'string', 'max:'.SetOnlineProduct::DESCRIPTION_MAX],
             'remove_photo' => ['sometimes', 'boolean'],
             'photo' => StoreImages::rules(),
+            // OS-13: the shop's own stock (businesses without tills).
+            'out_of_stock' => ['sometimes', 'boolean'],
+            'stock_count' => ['sometimes', 'nullable', 'numeric', 'min:0', 'max:'.SetOnlineProduct::STOCK_MAX],
         ];
     }
 
@@ -33,7 +36,9 @@ class SaveOnlineProductRequest extends CompanyWideWriteRequest
     public function messages(): array
     {
         return [...StoreImages::messages('photo'), 'description.max' => 'Keep the description to '.SetOnlineProduct::DESCRIPTION_MAX.' characters or fewer.',
-            'allergen_info.max' => 'Keep the ingredients and allergens to '.SetOnlineProduct::DESCRIPTION_MAX.' characters or fewer.'];
+            'allergen_info.max' => 'Keep the ingredients and allergens to '.SetOnlineProduct::DESCRIPTION_MAX.' characters or fewer.',
+            'stock_count.numeric' => 'Enter the stock as a number, or leave it blank.', 'stock_count.min' => 'The stock cannot be below 0.',
+            'stock_count.max' => 'Enter up to '.SetOnlineProduct::STOCK_MAX.'.'];
     }
 
     /**
@@ -43,7 +48,11 @@ class SaveOnlineProductRequest extends CompanyWideWriteRequest
     {
         $changes = $this->safe()->only(['description', 'allergen_info']);
 
-        foreach (['hidden', 'not_featured', 'remove_photo'] as $key) {
+        if ($this->has('stock_count')) {
+            $changes['stock_count'] = $this->filled('stock_count') ? (string) $this->input('stock_count') : null;
+        }
+
+        foreach (['hidden', 'not_featured', 'remove_photo', 'out_of_stock'] as $key) {
             if ($this->has($key)) {
                 $changes[$key] = $this->boolean($key);
             }

@@ -4,6 +4,7 @@ namespace App\Domain\Licensing\Actions;
 
 use App\Domain\Licensing\Models\Licence;
 use App\Domain\Licensing\Support\DefaultPlan;
+use App\Domain\OnlineStore\Support\OnlineStoreOnly;
 use App\Domain\Plans\Models\Plan;
 use App\Domain\Shared\Actions\RecordAudit;
 use App\Domain\Tenancy\Models\Company;
@@ -29,6 +30,9 @@ class ChangeCompanyPlan
         if (! DefaultPlan::isOffered($plan)) {
             throw ValidationException::withMessages(['plan_id' => "{$plan->name} is not offered any more. Choose an active plan."]);
         }
+
+        // OS-13: the Licences-tab plan change is for tills; an online store only plan goes through Change plan.
+        OnlineStoreOnly::assertTillPlan($plan);
 
         return DB::transaction(function () use ($company, $plan, $applyToLicences) {
             $company->refresh();

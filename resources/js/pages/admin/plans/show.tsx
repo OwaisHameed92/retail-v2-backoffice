@@ -89,6 +89,13 @@ export default function ShowPlan({ plan, features, activity, onlineStore }: Show
                         )}
                         icon={MoneyIcon}
                     />
+                ) : plan.onlineStoreOnly && plan.onlineStore ? (
+                    <StatCard
+                        label="Monthly fee"
+                        value={plan.onlineStore.priceLabel}
+                        hint={`Online store only, no tills: once per business ${byHand('by Direct Debit', 'invoiced')} + ${taxName()}`}
+                        icon={MoneyIcon}
+                    />
                 ) : (
                     <StatCard
                         label="Monthly price"
@@ -164,14 +171,20 @@ export default function ShowPlan({ plan, features, activity, onlineStore }: Show
                         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t pt-4 text-sm">
                             <Store className="text-muted-foreground size-4 shrink-0" aria-hidden />
                             <span className="font-medium">Online store</span>
-                            <Badge variant={plan.onlineStore ? 'success' : 'neutral'}>{plan.onlineStore ? 'Included' : 'Not included'}</Badge>
+                            <Badge variant={plan.onlineStore ? 'success' : 'neutral'}>
+                                {plan.onlineStore ? (plan.onlineStoreOnly ? 'Online store only (no tills)' : 'Included') : 'Not included'}
+                            </Badge>
                             {plan.onlineStore && <span className="tabular-nums">{plan.onlineStore.priceLabel} / month</span>}
                             <span className="text-muted-foreground basis-full pl-7">
-                                {plan.onlineStore
+                                {plan.onlineStore && plan.onlineStoreOnly
                                     ? taxText(
-                                          'Click & collect online store, billed before VAT as its own “Online store” line on the same monthly invoice, once per business. Not sent to the till.',
+                                          'For a business with no till yet: it sells the products made in the portal with its own stock. The online store fee, before VAT, is its only line on the monthly invoice, once per business. No licence keys are issued on this plan.',
                                       )
-                                    : 'Businesses on this plan do not get the online store add-on (it can still be switched on by hand on a business’s Billing tab).'}
+                                    : plan.onlineStore
+                                      ? taxText(
+                                            'Click & collect online store, billed before VAT as its own “Online store” line on the same monthly invoice, once per business. Not sent to the till.',
+                                        )
+                                      : 'Businesses on this plan do not get the online store add-on (it can still be switched on by hand on a business’s Billing tab).'}
                             </span>
                         </div>
                     )}

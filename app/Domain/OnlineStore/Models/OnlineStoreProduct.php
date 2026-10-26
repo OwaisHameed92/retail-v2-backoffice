@@ -19,6 +19,8 @@ use Illuminate\Database\Eloquent\Model;
  * @property string|null $description
  * @property string|null $allergen_info OS-8 (audit OSA-3): ingredients and allergens, shown before purchase
  * @property bool $not_featured OS-11: kept out of the automatic featured row (best sellers, newest)
+ * @property bool $out_of_stock OS-13: the shop marked it out of stock (used only while the business has no live till)
+ * @property string|null $stock_count OS-13: the shop's own stock count; null = not counted (ManualStock)
  * @property CarbonImmutable|null $created_at
  * @property CarbonImmutable|null $updated_at
  */
@@ -37,6 +39,7 @@ class OnlineStoreProduct extends Model
         return [
             'hidden' => 'boolean',
             'not_featured' => 'boolean',
+            'out_of_stock' => 'boolean',
             'created_at' => 'immutable_datetime',
             'updated_at' => 'immutable_datetime',
         ];
