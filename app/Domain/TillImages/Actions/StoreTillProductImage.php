@@ -8,6 +8,7 @@ use App\Domain\Tenancy\CurrentCompany;
 use App\Domain\Tenancy\Models\Company;
 use App\Domain\TillData\Models\Product;
 use App\Domain\TillImages\Data\TillImageUpload;
+use App\Domain\TillImages\Enums\ProductImageOrigin;
 use App\Domain\TillImages\Enums\ProductImageSource;
 use App\Domain\TillImages\Models\ProductImage;
 use App\Domain\TillImages\Support\ImageReencoder;
@@ -25,12 +26,16 @@ use Illuminate\Support\Facades\Log;
  * 1. The product must be the calling business's and not deleted → else 404 product.not_found (another business's
  *    product looks exactly like an unknown one).
  * 2. Size, then `X-SSPOS-Image-Sha256` must be the sha256 of the bytes → 413 image.too_large / 422 image.hash_mismatch.
- * 3. Same hash as the picture held → 200 `unchanged`, nothing written (idempotent: retries and the "Find pictures"
- *    sweep cost nothing).
+ * 3. Same hash as the picture held → 200 `unchanged`, nothing re-encoded (idempotent: retries and the "Find pictures"
+ *    sweep cost nothing). IMG-2: only the picture's origin may change then (`unchanged()`), the file and `updatedAt` stay.
  * 4. Else the picture is checked and re-encoded (ImageReencoder: type, size in pixels, EXIF gone), the web copy is
  *    written under a new name, the row upserted, and the old file removed → `stored` / `replaced`.
  *
  * One product at a time (cache lock), so two uploads of one product never leave two files. Logged without the bytes.
+ *
+ * IMG-2: the origin (`X-SSPOS-Image-Source`, ProductImageOrigin) is stored with a stored or replaced picture as sent,
+ * `unknown` included. On an `unchanged` upload a known origin (own, library, found) replaces the one held; `unknown`
+ * never overwrites a known one (the till said it does not know, so what it said before stays).
  */
 class StoreTillProductImage
 {
@@ -59,7 +64,7 @@ class StoreTillProductImage
             }
 
             if (($held = $this->held($company, $productId)) !== null && $held->hash === $upload->sha256) {
-                return $this->reply($held, 'unchanged');
+                return $this->unchanged($held, $upload->origin);
             }
 
             $encoded = $this->encoder->encode($productId, $upload->bytes, $upload->contentType);
@@ -69,7 +74,7 @@ class StoreTillProductImage
                     $held = $this->held($company, $upload->productId);
 
                     if ($held !== null && $held->hash === $upload->sha256) {
-                        return $this->reply($held, 'unchanged');
+                        return $this->unchanged($held, $upload->origin);
                     }
 
                     $path = TillImageFiles::path($company->id, $upload->productId, $upload->sha256, $encoded->extension);
@@ -80,7 +85,7 @@ class StoreTillProductImage
 
                     $old = $held?->path;
                     $image = $held ?? new ProductImage(['company_id' => $company->id, 'product_id' => $upload->productId, 'source' => ProductImageSource::Till]);
-                    $image->fill(['path' => $path, 'hash' => $upload->sha256, 'bytes' => strlen($encoded->bytes), 'width' => $encoded->width, 'height' => $encoded->height])->save();
+                    $image->fill(['path' => $path, 'hash' => $upload->sha256, 'origin' => $upload->origin, 'bytes' => strlen($encoded->bytes), 'width' => $encoded->width, 'height' => $encoded->height])->save();
 
                     if ($old !== null && $old !== $path) {
                         TillImageFiles::delete($company->id, $old);
@@ -96,6 +101,25 @@ class StoreTillProductImage
                 throw SyncApiErrors::busy(5);
             }
         });
+    }
+
+    /**
+     * The same bytes again: the picture stays; a known origin different from the one held is saved (without touching
+     * `updated_at`, which says when the picture last changed).
+     *
+     * @return array{productId: string, imageHash: string, result: 'stored'|'replaced'|'unchanged', updatedAt: string}
+     */
+    private function unchanged(ProductImage $held, ProductImageOrigin $origin): array
+    {
+        if ($origin !== ProductImageOrigin::Unknown && $held->origin !== $origin) {
+            $held->origin = $origin;
+            $held->timestamps = false;
+            $held->save();
+            $held->timestamps = true;
+            Log::info('Till product picture origin changed', ['company_id' => $held->company_id, 'product_id' => $held->product_id, 'origin' => $origin->value]);
+        }
+
+        return $this->reply($held, 'unchanged');
     }
 
     private function held(Company $company, string $productId): ?ProductImage

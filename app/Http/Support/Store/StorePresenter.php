@@ -26,7 +26,9 @@ use Illuminate\Support\Facades\Storage;
  * What the public store's pages show (OS-2), as plain arrays for the React pages. Product photos (StorePhotos, OS-8):
  * the online photo (`online_store_products.photo_path` on the public disk), else the picture the till uploaded (IMG-1,
  * while TILL_PRODUCT_IMAGES is on), else the master catalogue's picture of one of its barcodes; the till's own
- * `image_path` is a path on the till's PC, never a URL (contract PORTAL-CHANGES 0.1.35). No photo → the page draws a branded placeholder. With the shop, a product carries its till offer's label
+ * `image_path` is a path on the till's PC, never a URL (contract PORTAL-CHANGES 0.1.35). No photo → the page draws a branded placeholder.
+ * IMG-2: `photoCredit` is the credit to show with the photo (an Open Food Facts till picture: "Photo: Open Food Facts
+ * (CC BY-SA)"), else null. With the shop, a product carries its till offer's label
  * (StoreOffers, OS-8) to show beside the shelf price.
  */
 final class StorePresenter
@@ -40,14 +42,16 @@ final class StorePresenter
         $photos = self::photos($store, array_map(fn (CatalogueItem $item) => $item->id, $items));
         $offers = $shop === null ? [] : app(StoreOffers::class)->labels($store, $shop, $items);
 
-        return array_map(fn (CatalogueItem $item) => self::product($item, $photos[$item->id] ?? null, $offers[$item->id] ?? null), $items);
+        return array_map(fn (CatalogueItem $item) => self::product($item, $photos[$item->id]['url'] ?? null, $offers[$item->id] ?? null,
+            $photos[$item->id]['credit'] ?? null), $items);
     }
 
     /**
      * @param  string|null  $photoUrl  the photo's address (StorePhotos)
+     * @param  string|null  $photoCredit  IMG-2: the credit to show with it (StorePhotos::productsWithCredit)
      * @return array<string, mixed>
      */
-    public static function product(CatalogueItem $item, ?string $photoUrl, ?string $offer = null): array
+    public static function product(CatalogueItem $item, ?string $photoUrl, ?string $offer = null, ?string $photoCredit = null): array
     {
         return [
             'id' => $item->id,
@@ -55,6 +59,7 @@ final class StorePresenter
             'name' => DisplayName::of($item->name),
             'description' => $item->description,
             'photoUrl' => $photoUrl,
+            'photoCredit' => $photoUrl === null ? null : $photoCredit,
             'offer' => $offer,
             'size' => PackSizeLabel::size($item),
             'unitPrice' => PackSizeLabel::unitPrice($item),
@@ -80,7 +85,7 @@ final class StorePresenter
         $photos = self::photos($store, array_map(fn (array $line) => $line['item']->id, $basket->lines));
 
         return array_map(fn (array $line) => [
-            'product' => self::product($line['item'], $photos[$line['item']->id] ?? null),
+            'product' => self::product($line['item'], $photos[$line['item']->id]['url'] ?? null, null, $photos[$line['item']->id]['credit'] ?? null),
             'quantity' => BasketRules::display($line['quantity']),
             'lineTotal' => $line['lineTotal'],
             'updateUrl' => route('store.basket.update', ['product' => $line['item']->id], false),
@@ -184,13 +189,14 @@ final class StorePresenter
     }
 
     /**
-     * The photos of these products, by product id (StorePhotos: online photo, else the till's, else the master catalogue's).
+     * The photos of these products with their credit, by product id (StorePhotos: online photo, else the till's, else
+     * the master catalogue's).
      *
      * @param  list<string>  $productIds
-     * @return array<string, string>
+     * @return array<string, array{url: string, credit: string|null}>
      */
     private static function photos(OnlineStore $store, array $productIds): array
     {
-        return app(StorePhotos::class)->products($store, $productIds);
+        return app(StorePhotos::class)->productsWithCredit($store, $productIds);
     }
 }

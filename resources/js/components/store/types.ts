@@ -64,6 +64,8 @@ export interface StoreInfo {
     };
     /** OS-11 (audit OSA-2): who sells (App\Domain\OnlineStore\Legal\StoreTrader). */
     trader?: StoreTrader;
+    /** IMG-2: one footer line while some product photos are Open Food Facts pictures (CC BY-SA), else null. */
+    photoCredit?: string | null;
 }
 
 /** OS-12: collection only, delivery only, or both. */
@@ -128,6 +130,8 @@ export interface StoreProduct {
     name: string;
     description: string | null;
     photoUrl: string | null;
+    /** IMG-2: the credit to show with the photo ("Photo: Open Food Facts (CC BY-SA)"), else null. */
+    photoCredit?: string | null;
     departmentId: string | null;
     price: string;
     isWeighed: boolean;

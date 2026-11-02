@@ -4,6 +4,7 @@ import { BannersEditor } from '@/components/app/online-store/banners-editor';
 import { BuilderActions } from '@/components/app/online-store/builder-actions';
 import { HomeContentFields } from '@/components/app/online-store/home-content-fields';
 import { OnlineStoreTabs } from '@/components/app/online-store/online-store-tabs';
+import { PhotoSettingsFields } from '@/components/app/online-store/photo-settings-fields';
 import { SectionsEditor } from '@/components/app/online-store/sections-editor';
 import { StatusPanel } from '@/components/app/online-store/status-panel';
 import {
@@ -37,6 +38,8 @@ type BuilderForm = {
     featured_mode: FeaturedModeKey;
     /** Hand-picked products with their names (sent as `featured_product_ids`). */
     picked: PickerProduct[];
+    /** IMG-2: sent only while the till's pictures are switched on. */
+    show_found_pictures: boolean;
 };
 
 function initial(store: StoreSettings, picked: PickerProduct[]): BuilderForm {
@@ -50,6 +53,7 @@ function initial(store: StoreSettings, picked: PickerProduct[]): BuilderForm {
         about_text: store.aboutText ?? '',
         featured_mode: store.featuredMode,
         picked,
+        show_found_pictures: store.showFoundPictures ?? false,
     };
 }
 
@@ -91,8 +95,9 @@ function Builder({ store, ...props }: BuilderProps & { store: StoreSettings }) {
     const submit = (e: React.FormEvent) => {
         e.preventDefault();
         // Empty lists are not sent in a form, so `*_sent` says the lists are there (and may be empty).
-        form.transform(({ picked, ...data }) => ({
+        form.transform(({ picked, show_found_pictures, ...data }) => ({
             ...data,
+            ...(props.tillPictures ? { show_found_pictures } : {}),
             featured_product_ids: picked.map((p) => p.id),
             featured_product_ids_sent: '1',
         }));
@@ -163,6 +168,14 @@ function Builder({ store, ...props }: BuilderProps & { store: StoreSettings }) {
                         disabled={disabled}
                     />
 
+                    {props.tillPictures && (
+                        <PhotoSettingsFields
+                            checked={form.data.show_found_pictures}
+                            onChange={(on) => set('show_found_pictures', on)}
+                            disabled={disabled}
+                        />
+                    )}
+
                     <FormSection
                         title="Orders"
                         description={
@@ -227,7 +240,18 @@ export default function OnlineStoreBuilder(props: BuilderProps) {
     // the aisles, which save on their own, keep edits).
     const s = props.store;
     const key = JSON.stringify(
-        s && [s.slug, s.template, s.brandColour, s.logoUrl, s.sections, s.orderEmail, s.aboutText, s.featuredMode, s.featuredProductIds],
+        s && [
+            s.slug,
+            s.template,
+            s.brandColour,
+            s.logoUrl,
+            s.sections,
+            s.orderEmail,
+            s.aboutText,
+            s.featuredMode,
+            s.featuredProductIds,
+            s.showFoundPictures,
+        ],
     );
 
     return (

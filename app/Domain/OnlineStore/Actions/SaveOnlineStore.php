@@ -27,7 +27,8 @@ use Illuminate\Validation\ValidationException;
  * out, Fresh Market for a new store); the portal never sends it (SaveStoreBuilder drops it), only Switch & Save sets
  * it. OS-8, optional (kept when left out): `featured_mode` (FeaturedMode), `featured_product_ids` (hand-picked, the
  * business's own products, up to 24, in order) and `home_departments` (its own departments with a home row, up to 6).
- * `about_text` (up to 600 characters) is the "About us" text. The add-on price (`monthly_price`) is the admin's (OS-6), never set here. Audited.
+ * `about_text` (up to 600 characters) is the "About us" text. IMG-2, optional (kept when left out):
+ * `show_found_pictures`, the public store also shows till pictures found online or of unknown source. The add-on price (`monthly_price`) is the admin's (OS-6), never set here. Audited.
  *
  *     app(SaveOnlineStore::class)->handle($company, ['slug' => 'kirkgate', 'template' => 'freshMarket', ...]);
  *
@@ -37,7 +38,7 @@ use Illuminate\Validation\ValidationException;
 final class SaveOnlineStore
 {
     private const FIELDS = ['slug', 'template', 'headline', 'brand_colour', 'logo_path', 'banner_path', 'sections', 'order_email',
-        'featured_mode', 'featured_product_ids', 'home_departments', 'about_text'];
+        'featured_mode', 'featured_product_ids', 'home_departments', 'about_text', 'show_found_pictures'];
 
     public const ABOUT_MAX = 600;
 
@@ -118,6 +119,7 @@ final class SaveOnlineStore
             'order_email' => ['nullable', 'email', 'max:255'],
             'featured_mode' => ['sometimes', 'nullable', Rule::enum(FeaturedMode::class)],
             'about_text' => ['sometimes', 'nullable', 'string', 'max:'.self::ABOUT_MAX],
+            'show_found_pictures' => ['sometimes', 'boolean'],
             'featured_product_ids' => ['sometimes', 'nullable', 'array', 'max:'.FeaturedProducts::MAX_PICKED],
             'featured_product_ids.*' => ['string', 'distinct', Rule::exists(Product::class, 'id')->where('company_id', $companyId)->whereNull('deleted_at')],
             'home_departments' => ['sometimes', 'nullable', 'array', 'max:'.self::MAX_HOME_DEPARTMENTS],
@@ -145,6 +147,10 @@ final class SaveOnlineStore
         $data['brand_colour'] = isset($data['brand_colour']) ? strtoupper((string) $data['brand_colour']) : null;
         $data['order_email'] = self::text($data['order_email'] ?? null);
         $data['sections'] = array_values(array_map(fn (array $s) => ['key' => (string) $s['key'], 'enabled' => (bool) $s['enabled']], (array) $data['sections']));
+
+        if (array_key_exists('show_found_pictures', $data)) {
+            $data['show_found_pictures'] = (bool) $data['show_found_pictures'];
+        }
 
         if (array_key_exists('about_text', $data)) {
             $data['about_text'] = self::text($data['about_text']);
@@ -177,6 +183,7 @@ final class SaveOnlineStore
             'featured_product_ids' => $store->featured_product_ids,
             'home_departments' => $store->home_departments,
             'about_text' => $store->about_text,
+            'show_found_pictures' => (bool) $store->show_found_pictures,
         ];
     }
 

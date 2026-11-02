@@ -5,6 +5,7 @@ namespace App\Http\Support;
 use App\Domain\Shared\Exceptions\ApiException;
 use App\Domain\Sync\Support\SyncApiErrors;
 use App\Domain\TillImages\Data\TillImageUpload;
+use App\Domain\TillImages\Enums\ProductImageOrigin;
 use App\Domain\TillImages\Support\ImageReencoder;
 use App\Domain\TillImages\Support\TillImageErrors;
 use App\Domain\TillImages\Support\TillImageSwitch;
@@ -19,6 +20,9 @@ use Illuminate\Http\Request;
  * - `Content-Type` is image/jpeg, image/png or image/webp → else 415 image.unsupported_type;
  * - `Content-Length` (and the bytes really read) at most `max_bytes` → else 413 image.too_large, without reading a
  *   larger body into memory.
+ *
+ * IMG-2: `X-SSPOS-Image-Source` (own | library | found | unknown, any case, trimmed) is never a reason to refuse: missing,
+ * empty or anything else reads as `unknown`.
  */
 final class TillImageBody
 {
@@ -67,7 +71,7 @@ final class TillImageBody
             throw SyncApiErrors::invalid('The picture is empty.');
         }
 
-        return new TillImageUpload($productId, $bytes, $type, $hash);
+        return new TillImageUpload($productId, $bytes, $type, $hash, ProductImageOrigin::fromHeader($request->header(ProductImageOrigin::HEADER)));
     }
 
     /**

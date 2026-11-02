@@ -7,6 +7,8 @@ use App\Domain\OnlineStore\Support\BrandPalette;
 use App\Domain\OnlineStore\Support\ShopMethods;
 use App\Domain\OnlineStore\Support\ShopOpenNow;
 use App\Domain\OnlineStore\Support\StoreScope;
+use App\Domain\TillImages\Enums\ProductImageOrigin;
+use App\Domain\TillImages\Queries\TillPictures;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Symfony\Component\HttpFoundation\Response;
@@ -80,6 +82,8 @@ final class StorePages
             ],
             // OS-11 (audit OSA-2): who sells (footer, legal pages, checkout).
             'trader' => StoreLegal::trader($context)->toArray(),
+            // IMG-2: one credit line in the footer while the business holds Open Food Facts till pictures (CC BY-SA).
+            'photoCredit' => StoreScope::run($store, fn () => TillPictures::hasLibrary($store->company_id)) ? ProductImageOrigin::FOOTER_CREDIT : null,
         ];
     }
 

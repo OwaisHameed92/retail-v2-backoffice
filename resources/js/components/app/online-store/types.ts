@@ -25,6 +25,8 @@ export interface StoreSettings {
     aboutText: string | null;
     featuredMode: FeaturedModeKey;
     featuredProductIds: string[];
+    /** IMG-2: the public store also shows till pictures found online or of unknown source. */
+    showFoundPictures?: boolean;
 }
 
 export type FeaturedModeKey = 'bestSellers' | 'handPicked' | 'newest';
@@ -77,6 +79,8 @@ export interface BuilderProps {
     canEdit: boolean;
     /** OS-13: no tills (online store only): products from Products, stock set on the Products tab. */
     sellsWithoutTills?: boolean;
+    /** IMG-2: the till's pictures are switched on (TILL_PRODUCT_IMAGES), so "Show found pictures" is shown. */
+    tillPictures?: boolean;
     banners: StoreBanner[];
     bannerMax: number;
     linkOptions: { value: BannerLinkKey; label: string }[];

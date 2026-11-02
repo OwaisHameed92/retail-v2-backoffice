@@ -3,6 +3,7 @@
 namespace App\Http\Requests\App\OnlineStore;
 
 use App\Domain\OnlineStore\Support\StoreImages;
+use App\Domain\TillImages\Support\TillImageSwitch;
 use App\Http\Requests\App\Setup\CompanyWideWriteRequest;
 
 /**
@@ -10,7 +11,8 @@ use App\Http\Requests\App\Setup\CompanyWideWriteRequest;
  * `store.manage`; a one-shop user may look but not change the business's store (403). The settings themselves are
  * checked by SaveOnlineStore; picture paths never come from the browser. OS-8: the featured products setting and the
  * departments with a home row (banners have their own routes, OnlineStoreBannerController). There is no `template` field: the store's
- * look is set by Switch & Save (admin), so one sent here is ignored.
+ * look is set by Switch & Save (admin), so one sent here is ignored. IMG-2: "Show found pictures"
+ * (`show_found_pictures`), taken only while TILL_PRODUCT_IMAGES is on (the switch is hidden otherwise).
  */
 class SaveStoreRequest extends CompanyWideWriteRequest
 {
@@ -33,6 +35,7 @@ class SaveStoreRequest extends CompanyWideWriteRequest
             'featured_product_ids.*' => ['string', 'max:64'],
             'home_departments' => ['sometimes', 'nullable', 'array', 'max:20'],
             'home_departments.*' => ['string', 'max:64'],
+            'show_found_pictures' => ['sometimes', 'boolean'],
             'remove_logo' => ['sometimes', 'boolean'],
             'remove_banner' => ['sometimes', 'boolean'],
             'logo' => StoreImages::rules(),
@@ -59,6 +62,12 @@ class SaveStoreRequest extends CompanyWideWriteRequest
         $data['sections'] = array_map(fn (array $s) => ['key' => (string) $s['key'], 'enabled' => filter_var($s['enabled'], FILTER_VALIDATE_BOOLEAN)], (array) $data['sections']);
         $data['remove_logo'] = $this->boolean('remove_logo');
         $data['remove_banner'] = $this->boolean('remove_banner');
+
+        if (! TillImageSwitch::enabled() || ! $this->has('show_found_pictures')) {
+            unset($data['show_found_pictures']);
+        } else {
+            $data['show_found_pictures'] = $this->boolean('show_found_pictures');
+        }
 
         foreach (['featured_product_ids', 'home_departments'] as $list) {
             if ($this->has($list) || $this->has("{$list}_sent")) {

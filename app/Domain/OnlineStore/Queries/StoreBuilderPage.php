@@ -19,6 +19,7 @@ use App\Domain\OnlineStore\Support\StoreImages;
 use App\Domain\Tenancy\Models\Company;
 use App\Domain\TillData\Models\Department;
 use App\Domain\TillData\Models\Product;
+use App\Domain\TillImages\Support\TillImageSwitch;
 
 /**
  * The portal's store builder page (OS-3, `app/online-store/builder`): the business's store settings as React edits
@@ -97,6 +98,8 @@ final class StoreBuilderPage
             'canEdit' => $canEdit,
             // OS-13: no tills (online store only): the products are the portal's, with the shop's own stock.
             'sellsWithoutTills' => OnlineStoreOnly::sellsWithoutTills($company, $store),
+            // IMG-2: the "Show found pictures" switch is shown only while the till's pictures are switched on.
+            'tillPictures' => TillImageSwitch::enabled(),
         ];
     }
 
@@ -121,6 +124,7 @@ final class StoreBuilderPage
             'aboutText' => $store->about_text,
             'featuredMode' => FeaturedMode::fromStored($store->featured_mode)->value,
             'featuredProductIds' => FeaturedProducts::pickedIds($store->featured_product_ids),
+            'showFoundPictures' => (bool) $store->show_found_pictures,
         ];
     }
 

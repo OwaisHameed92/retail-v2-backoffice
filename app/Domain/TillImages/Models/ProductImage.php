@@ -4,6 +4,7 @@ namespace App\Domain\TillImages\Models;
 
 use App\Domain\Tenancy\Concerns\BelongsToCompany;
 use App\Domain\Tenancy\Concerns\HasPortalUlid;
+use App\Domain\TillImages\Enums\ProductImageOrigin;
 use App\Domain\TillImages\Enums\ProductImageSource;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
@@ -16,6 +17,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property string $company_id
  * @property string $product_id the till product's id
  * @property ProductImageSource $source
+ * @property ProductImageOrigin $origin IMG-2: where the till got it (`X-SSPOS-Image-Source`); `unknown` before 0.1.83
  * @property string $path the web copy on the public disk (TillImageFiles)
  * @property string $hash sha256 hex of the bytes the till sent
  * @property int $bytes size of the web copy
@@ -38,6 +40,7 @@ class ProductImage extends Model
     {
         return [
             'source' => ProductImageSource::class,
+            'origin' => ProductImageOrigin::class,
             'bytes' => 'integer',
             'width' => 'integer',
             'height' => 'integer',

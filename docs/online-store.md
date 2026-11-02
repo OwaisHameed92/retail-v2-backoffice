@@ -95,8 +95,13 @@ https://claude.ai/artifact/FdsDJZ2vyhQJw5hfPmUiNz. DECISIONS "Online store, clic
 - **Optional home rows** (off until turned on in "Home page sections"): "On offer" (till offers live today for everyone,
   all day, at the shop; the offer shows on every product card, and the till takes it off at collection) and "Rows by
   department" (chosen departments, else the first three). "About us" has its own text.
-- **Photos:** the online photo, else the master catalogue picture of one of the product's barcodes, else a branded
-  placeholder with the department's icon. Department tiles use a product photo from the department, else an icon.
+- **Photos:** the online photo, else the till's picture (IMG-1, while `TILL_PRODUCT_IMAGES` is on), else the master
+  catalogue picture of one of the product's barcodes, else a branded placeholder with the department's icon. IMG-2: a
+  till picture is used only when the shop chose it (`own`) or it is from Open Food Facts (`library`, credited "Photo:
+  Open Food Facts (CC BY-SA)" under the product page photo and once in the footer); pictures the till found by web
+  search or of unknown source only with the store builder's "Show found pictures" (off by default). A hidden till
+  picture falls through to the master catalogue, then the placeholder. Department tiles use a product photo from the
+  department in the same order, else an icon.
   Cards show pack size and price per kg or litre from the till's weight and volume.
 - **Food information:** "Ingredients & allergens" per product (Products page), else the tills' allergen data, shown on
   the product page before ordering with "check the label, ask the shop".

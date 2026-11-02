@@ -26,7 +26,7 @@ interface Props {
 }
 
 /**
- * One product (OS-8): a big photo, price in the store's colour with its pack size and unit price, the till offer,
+ * One product (OS-8): a big photo (IMG-2: with its credit underneath when it is an Open Food Facts picture), price in the store's colour with its pack size and unit price, the till offer,
  * stock at the shop, quantity and "Add to basket", ingredients and allergens before purchase, and more from its
  * department; on phones a sticky add bar.
  */
@@ -67,21 +67,26 @@ export default function StoreProductPage({ product, department, allergens, inBas
             />
             <div className="flex flex-col gap-12 sm:gap-14">
                 <section className="grid items-start gap-6 md:grid-cols-2 md:gap-10 lg:gap-14">
-                    <div className="border-line relative overflow-hidden rounded-2xl border bg-white md:sticky md:top-24">
-                        <ProductPhoto
-                            name={product.name}
-                            url={product.photoUrl}
-                            rounded="rounded-none"
-                            size="lg"
-                            department={department?.name}
-                            priority
-                            sizes="(min-width: 768px) 50vw, 100vw"
-                        />
-                        <span className="absolute top-4 left-4 flex flex-wrap gap-2">
-                            {product.offer && <Badge tone="sale">{product.offer}</Badge>}
-                            {product.isWeighed && <Badge tone="highlight">By weight</Badge>}
-                        </span>
-                    </div>
+                    <figure className="flex flex-col gap-2 md:sticky md:top-24">
+                        <div className="border-line relative overflow-hidden rounded-2xl border bg-white">
+                            <ProductPhoto
+                                name={product.name}
+                                url={product.photoUrl}
+                                rounded="rounded-none"
+                                size="lg"
+                                department={department?.name}
+                                priority
+                                sizes="(min-width: 768px) 50vw, 100vw"
+                            />
+                            <span className="absolute top-4 left-4 flex flex-wrap gap-2">
+                                {product.offer && <Badge tone="sale">{product.offer}</Badge>}
+                                {product.isWeighed && <Badge tone="highlight">By weight</Badge>}
+                            </span>
+                        </div>
+                        {product.photoUrl && product.photoCredit && (
+                            <figcaption className="text-muted px-1 text-xs">{product.photoCredit}</figcaption>
+                        )}
+                    </figure>
                     <div className="flex flex-col gap-4">
                         {department && (
                             <Link
@@ -172,7 +177,11 @@ export default function StoreProductPage({ product, department, allergens, inBas
                             </div>
                             <div className="bg-lime text-on-lime flex flex-col gap-0.5 rounded-xl p-4">
                                 <span className="text-[15px] font-semibold">
-                                    {!wording || wording.mode === 'collection' ? 'Pay in the shop' : wording.mode === 'delivery' ? 'Paying' : 'Pay your way'}
+                                    {!wording || wording.mode === 'collection'
+                                        ? 'Pay in the shop'
+                                        : wording.mode === 'delivery'
+                                          ? 'Paying'
+                                          : 'Pay your way'}
                                 </span>
                                 <span className="text-xs">{wording?.payHint ?? 'Card or cash when you collect'}</span>
                             </div>

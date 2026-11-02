@@ -23,6 +23,15 @@
             "type": "string",
             "format": "date-time",
             "pattern": "Z$"
+          },
+          "origin": {
+            "enum": [
+              "own",
+              "library",
+              "found",
+              "unknown"
+            ],
+            "description": "Added member (IMG-2): the origin the portal holds for the picture (X-SSPOS-Image-Source of the upload; unknown for pictures from before it). A till that knows better may PUT the same bytes again with its header: the reply is unchanged and only the origin changes."
           }
         },
         "required": [

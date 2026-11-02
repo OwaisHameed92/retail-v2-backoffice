@@ -82,3 +82,23 @@ test('the schemas refuse what the till must not send or the portal must not answ
         ->and(ContractReplyGuard::check('PUT api/v1/sync/product-images/01K5T0Q8C4000000000000P001', 400, (string) json_encode([...imagesProposalJson('samples/error-reply.too-large.json')])))
         ->toContain('code image.too_large is HTTP 413 in error-codes.json');
 });
+
+test('IMG-2: X-SSPOS-Image-Source is optional with four values, and the list reply may carry the origin', function () {
+    $headers = imagesProposalJson('samples/upload-request.headers.json');
+    $schema = 'schemas/product-image-upload-headers.schema.json';
+    $without = array_diff_key($headers, ['X-SSPOS-Image-Source' => true]);
+
+    expect($headers['X-SSPOS-Image-Source'])->toBe('own')
+        ->and(ProposalSchema::errorsIn(IMAGES_PROPOSAL, $without, $schema))->toBe([]);
+
+    foreach (['own', 'library', 'found', 'unknown'] as $origin) {
+        expect(ProposalSchema::errorsIn(IMAGES_PROPOSAL, [...$headers, 'X-SSPOS-Image-Source' => $origin], $schema))->toBe([], $origin);
+    }
+
+    expect(ProposalSchema::errorsIn(IMAGES_PROPOSAL, [...$headers, 'X-SSPOS-Image-Source' => 'web'], $schema))->not->toBe([]);
+
+    $list = imagesProposalJson('samples/list-reply.json');
+    expect(array_column($list['images'], 'origin'))->toBe(['own', 'library']);
+    $list['images'][0]['origin'] = 'stolen';
+    expect(ProposalSchema::errorsIn(IMAGES_PROPOSAL, $list, 'schemas/product-image-list-reply.schema.json'))->not->toBe([]);
+});

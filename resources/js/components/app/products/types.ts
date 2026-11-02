@@ -8,7 +8,13 @@ export interface Option {
 /** CatalogueOptions::all() */
 export interface CatalogueOptions {
     departments: (Option & { isActive: boolean; defaultVatRateId: string | null })[];
-    categories: (Option & { departmentId: string; parentId: string | null; isActive: boolean; defaultVatRateId: string | null; ageRuleDefault: string | null })[];
+    categories: (Option & {
+        departmentId: string;
+        parentId: string | null;
+        isActive: boolean;
+        defaultVatRateId: string | null;
+        ageRuleDefault: string | null;
+    })[];
     vatRates: (Option & { code: string; percentage: string; isDefault: boolean })[];
     units: (Option & { code: string; isActive: boolean })[];
     ageRules: Option[];
@@ -117,6 +123,9 @@ export interface TillImage {
     width: number;
     height: number;
     updatedAt: string | null;
+    /** IMG-2: where the till got it (`own`, `library` Open Food Facts, `found` web search, `unknown`) and its label. */
+    origin?: 'own' | 'library' | 'found' | 'unknown';
+    originLabel?: string;
 }
 
 export interface ProductFormProps {

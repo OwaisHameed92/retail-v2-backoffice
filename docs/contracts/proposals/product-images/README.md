@@ -1,12 +1,32 @@
 # Contract proposal: product pictures from the till (`product-images`)
 
-**For:** the SSPOS EPOS till team. **From:** the Switch & Save portal team. **Date:** 2026-10-25.
+**For:** the SSPOS EPOS till team. **From:** the Switch & Save portal team. **Date:** 2026-10-25, revised 2026-11-02.
 **Builds on:** contract v1.4.1 (`docs/contracts/portal-api-v1.4.1`): §3 transport, §9 errors, §17.12 rate limits,
 §18.9 "No big blobs in sync", PORTAL-CHANGES-2026-10-06 §7 "Product pictures" (0.1.35).
 **Status:** PROPOSAL. Additive only: `X-SSPOS-Contract` stays `1`; no v1.4.1 endpoint, entity, member or code changes.
 Three new calls under `sync/`, seven new error codes (`error-codes.additions.json`).
 **Portal side:** built and switched off (`TILL_PRODUCT_IMAGES=false`). Until it is switched on every new call answers
 `501 image.not_available`, and the portal reads no picture anywhere.
+
+> **Revision 2026-11-02 (IMG-2)**, after the till team's answers (`ANSWERS-2026-11-02.md`; first till version 0.1.83).
+> Agreed as proposed: raw bytes, the three calls, the limits, the list call (no `imageHash` in `Product`), 501 as the
+> capability check. Added or changed here:
+> - **New optional header `X-SSPOS-Image-Source: own | library | found | unknown`** on every upload (§4.1), stored as
+>   the picture's origin; the list reply carries it as an added member `origin` (§4.3). The public online store shows
+>   `own` and `library` (credited) by default, `found` / `unknown` only when the shop turns on "Show found pictures" (§6).
+> - **The till deletes only pictures it sent itself** and then removed: no sweep step 3; the portal never deletes a
+>   till picture on its own (§5).
+> - **Product row first, picture after:** the till uploads once the `Product` row is acknowledged by push, so
+>   `404 product.not_found` is rare; when it comes the till backs off 10 min → 1 h → 6 h → daily (§5).
+> - **401 / 403 / 426 on a picture call pause pictures only, for a day;** push and pull never stop over a picture
+>   answer (a really wrong key is caught by push as before) (§5).
+> - **Speed:** at most one picture call every 2 seconds (30 a minute, half our limit), lists at `max=200`, paused while
+>   a sale is open on the main till (§3, §5).
+> - **Only the branch's main till uploads** (or a single till); in a business with several shops the shop whose main
+>   till holds the file sends it (§3).
+> - **The till sends JPEG or PNG only** (never WebP); a file over 2 MB / 2000 px is sent as a copy ≤ 1200 px (JPEG 85)
+>   and the hash of the copy is remembered; nothing under 16 px is sent (§4.1, §5).
+> - **Q10:** portal → till pictures later as optional hub-owned `Product.imageUrl` + `imageHash` (§8).
 
 ## 1. Why
 
@@ -33,10 +53,10 @@ needs its own call.
 | | |
 |---|---|
 | Auth | `Authorization: Bearer <sync.hub_api_key>` (the branch's sync key) and every §3 identity header (`X-SSPOS-Company-Id`, `X-SSPOS-Branch-Id`, `X-SSPOS-Register-Id`, `X-SSPOS-Contract: 1`, `X-SSPOS-App-Version`; `X-SSPOS-Store-Protocol` optional). Same 401 / 403 / 409 / 426 answers as `sync/hello` (§4.1). Never a key in the address |
-| Who calls | The branch's main till (the one that syncs and holds the files). Any branch's key may upload for the business's products: products are company-wide |
+| Who calls | Only the branch's main till (or a single till); an extra till never uploads (2026-11-02). Any branch's key may upload for the business's products: products are company-wide, and in a business with several shops the shop whose main till holds the file sends it |
 | Scope | Only products of the key's business. A product of another business looks exactly like an unknown one: `404 product.not_found` |
 | Errors | §9 body `{code, message, traceId, retryAfterSeconds, rejectedKey}`; `rejectedKey` = the product id where there is one. Codes: v1.4.1 ones (`request.invalid`, `auth.*`, `rate.limited`, `server.busy`, `server.error`) plus §7 below |
-| Rate limit | Counted in the sync key's general limit (§17.12) **and** in its own: 60 calls a minute per sync key (portal setting). Over it → `429 rate.limited` + `Retry-After`. Upload one picture at a time, never in parallel |
+| Rate limit | Counted in the sync key's general limit (§17.12) **and** in its own: 60 calls a minute per sync key (portal setting). Over it → `429 rate.limited` + `Retry-After`. Upload one picture at a time, never in parallel. The till (0.1.83) makes at most one picture call every 2 seconds (30 a minute) |
 | Switch | Portal not switched on → `501 image.not_available`, `Retry-After: 3600`, after the key check and before the body is read |
 | Compression | None: no `Content-Encoding` (pictures are already compressed) |
 
@@ -48,6 +68,13 @@ needs its own call.
 - **Headers:** §3 + `Content-Type` (`image/jpeg`, `image/png` or `image/webp`; must be the type of the bytes),
   `Content-Length`, `X-SSPOS-Image-Sha256` (lower-case hex of exactly the bytes sent). No `Idempotency-Key`: the
   hash is the key. Schema `schemas/product-image-upload-headers.schema.json`, sample `samples/upload-request.headers.json`.
+  The till sends JPEG or PNG only (WebP is still accepted).
+- **Origin (2026-11-02, optional):** `X-SSPOS-Image-Source` = `own` (the shop chose the picture), `library` (Open Food
+  Facts by barcode, CC BY-SA), `found` (web image search, copyright unknown) or `unknown` (a picture from before the
+  till sent the header). Trimmed, any case. Missing, empty or any other value is stored as `unknown`: the portal never
+  refuses an upload over this header. A `200 unchanged` upload (same bytes) with a different known origin (`own`,
+  `library`, `found`) changes only the origin the portal holds (no new file, same `updatedAt`); `unknown` never
+  overwrites a known origin. A stored or replaced picture takes the origin sent with it.
 - **Body:** the picture file's bytes. Not JSON, not multipart, not base64.
 - **Limits:** at most **2 MB** (2,097,152 bytes) and **16 to 2000 pixels** wide and high. JPEG, PNG or WebP (no
   animation). EXIF orientation is honoured.
@@ -68,37 +95,47 @@ Not needed when a product is archived or deleted: the portal stops showing those
 
 The till pictures the portal holds for the business, in product id order, `max` per page (1 to 5000, default 1000).
 `after` = the previous page's `nextAfter` (leave it out for the first page). Reply 200
-(`schemas/product-image-list-reply.schema.json`): `images[]` (`productId`, `imageHash`, `updatedAt`), `nextAfter`
+(`schemas/product-image-list-reply.schema.json`): `images[]` (`productId`, `imageHash`, `updatedAt`, and since
+2026-11-02 the added member `origin`: the origin the portal holds, see §4.1), `nextAfter`
 (null on the last page), `hasMore`. Query schema `schemas/product-image-list-query.schema.json`. Samples
 `samples/list-request.query.json`, `samples/list-reply*.json`. A product not in the list has no picture on the portal.
 
 It is also the cheapest way to learn whether the portal has pictures switched on (`501 image.not_available` if not).
+The till (0.1.83) lists after the upgrade, on "Find pictures" and once a week, at `max=200`, one page every 2 seconds.
 
 ## 5. What the till does
 
 **Normal work (one picture at a time):** when a picture is saved for a product (auto picture a few seconds after a
-create, a picture chosen by hand, a picture found by "Find pictures"), queue `(productId, file)`. A background worker
+create, a picture chosen by hand, a picture found by "Find pictures"), queue `(productId, file)`, and send it only once
+the product's `Product` row has been acknowledged by push (product row first, picture after). A background worker
 (never on the till's UI thread, never during a sale) sends the queue in order, one `PUT` at a time, at most one a
 second, and remembers per product the last hash the portal accepted (`imageHash` of the reply). A picture removed at
 the till queues a `DELETE`. The queue survives a restart; a product deleted before its turn is dropped.
 
 **Sweep ("Find pictures", first run after the upgrade, a till that was offline for long):**
-1. `GET sync/product-images` page by page (one call per page; 100,000 products = 100 calls at 1000).
+1. `GET sync/product-images` page by page (one call per page; the till uses `max=200`: 100,000 products ≈ 500 calls).
 2. For each product with a local picture: hash the file; upload it when the portal has no hash or another hash.
-3. For each portal entry whose product has no local picture any more: `DELETE`.
-4. Throttle: at most one upload a second, back off on 429 / 503 / 5xx (`Retry-After` wins), stop the sweep while
-   the till is busy at the counter, carry on later. A catalogue of thousands of pictures goes up over hours, which is
-   fine.
+3. ~~For each portal entry whose product has no local picture any more: `DELETE`.~~ **Dropped (2026-11-02).** In a
+   business with several shops "no picture on this till" often means the file is on another shop's main till, or this
+   till has not pulled the newest `imagePath` yet. The till deletes **only a picture it sent itself and then removed**,
+   and repeats a lost `DELETE` until it gets 200. The portal never deletes a till picture on its own.
+4. Throttle: at most one call every 2 seconds, back off on 429 / 503 (`Retry-After` wins) and on 5xx / no answer
+   (1 → 2 → 5 → 15 minutes), pause while a sale is open on the main till, carry on later. A catalogue of thousands of
+   pictures goes up over hours (5,000 ≈ 3 hours), which is fine.
 
 **Hash what you send.** If the till resizes before sending (a file over 2 MB or 2000 px), it should keep the resized
 copy as its local picture (or remember the hash of what it sent), so the next sweep compares the same bytes and does
 not upload again.
 
-**Errors:** 401/403/409/426: as for push (stop syncing pictures until the key or app changes). 413 / 415 /
+**Errors (as agreed 2026-11-02):** 401 / 403 / 426 on a picture call: **pictures only** pause for a day; push and pull
+never stop over a picture answer (a really wrong key is caught by push, as before). 409: as for push. A 404 on the list
+call (portal without these calls) is treated like 501. 413 / 415 /
 `image.dimensions`: make a compliant copy once (≤ 2000 px, JPEG quality 85) and send that; never the same bytes
 again. `image.invalid`: show the product on Sync status; send again only when the picture changes. `image.hash_mismatch`,
-429, 503, 5xx, timeouts: retry later, same bytes. `product.not_found`: retry after the next push. `image.not_available`:
-stop; ask again after `Retry-After`, then at most daily.
+429, 503, 5xx, timeouts: retry later, same bytes. `product.not_found` (rare, the product row goes first): retry after
+10 min → 1 h → 6 h → then daily. `image.not_available`: stop; ask again after `Retry-After` (at least an hour), then at
+most daily. 413 / 415 / `image.dimensions`: the till sends one compliant JPEG copy (≤ 1200 px, quality 85); refused
+again → the picture is "refused" on Sync status.
 
 ## 6. What the portal does with a picture
 
@@ -109,6 +146,11 @@ stop; ask again after `Retry-After`, then at most daily.
   so a replaced picture never shows from a cache; the old file is removed.
 - Shows it in the **online store** (order: the shop's own online photo > **the till's picture** > the shared
   catalogue's picture of the barcode > a placeholder) and on the portal's **Products** list and product page.
+- **Origin on the public store (2026-11-02):** by default only `own` and `library` till pictures are shown; a `library`
+  picture is credited "Photo: Open Food Facts (CC BY-SA)" under the product page photo, with one footer line while the
+  business holds such pictures. `found` and `unknown` pictures are shown only when the shop turns on "Show found
+  pictures" in the store builder; otherwise the store goes on to the catalogue picture or the placeholder, as if there
+  were no till picture. The portal's own Products pages show every till picture, labelled with its origin.
 - Logs `business, product, first 16 of the hash, size` only; never the bytes or the key.
 
 ## 7. New error codes (`error-codes.additions.json`, same shape as `licensing/samples/error-codes.json`)
@@ -135,16 +177,26 @@ portal's copy) and `imageHash`; the till downloads the file on demand (§18.9: a
 same till (§19.2), and the newest of till and portal wins by `updatedAt`. The portal's table already has a
 `source` (`till` / `portal`) for this. Nothing of it is in this proposal's calls.
 
+**Till team's answer (Q10, 2026-11-02):** yes, later, as optional hub-owned members `Product.imageUrl` + `imageHash`
+(a URL per §18.9, not a separate table); the till downloads on demand and fills its own `imagePath`. To be agreed
+separately once uploads are live.
+
 ## 9. What the till team builds (checklist)
 
 1. A background upload queue for pictures (§5), fed by every picture save, removal and "Find pictures".
-2. `PUT`, `DELETE` and `GET` of §4 with the §3 headers, hash of the exact bytes, Content-Type from the file.
+2. `PUT`, `DELETE` and `GET` of §4 with the §3 headers, hash of the exact bytes, Content-Type from the file, and
+   `X-SSPOS-Image-Source` (2026-11-02).
 3. A resize step for files over 2 MB / 2000 px (keep the copy, or remember its hash).
 4. The sweep of §5 at "Find pictures", after the upgrade, and after a long time offline.
 5. The error handling of §5; refused pictures on the Sync status screen.
 6. Tell us the first till version that has it; we switch the portal on when that version ships.
 
 ## 10. Open questions for the till team
+
+Answered 2026-11-02 (`ANSWERS-2026-11-02.md`), in short: Q1 raw bytes; Q2 limits fine (the till sends ≤ 512 px hand
+pictures, ~320–400 px found ones, JPEG / PNG only); Q3 the `X-SSPOS-Image-Source` header (§4.1, §6); Q4 the list call;
+Q5 501 is enough; Q6 main till only; Q7 yes, `DELETE` on "remove picture", replace = new `PUT`; Q8 one call every
+2 seconds; Q9 merged products keep their own picture, no call; Q10 later via `Product.imageUrl` + `imageHash` (§8).
 
 - **Q1 — body:** raw bytes with `Content-Type` (our proposal; simplest for `HttpClient` + `ByteArrayContent`), or would
   you rather send `multipart/form-data`?
@@ -180,4 +232,4 @@ same till (§19.2), and the newest of till and portal wins by `updatedAt`. The p
 
 Portal tests: `tests/Feature/Contract/ProductImagesProposalTest.php` (samples valid against these schemas and the
 v1.4.1 error-reply schema; codes only added), `tests/Feature/Sync/ProductImagesApiTest.php` (the calls, each reply
-checked against these schemas).
+checked against these schemas), `tests/Feature/Sync/ProductImageOriginTest.php` (the origin header, 2026-11-02).

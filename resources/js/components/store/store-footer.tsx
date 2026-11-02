@@ -21,7 +21,7 @@ function Column({ title, children, wide = false }: { title: string; children: Re
  * The store's footer (OS-8, redesigned OS-11 for the owner): on a deep shade of the store's colour (white text at 7:1
  * or more). A top row with the logo (or the name), a short line, the phone, email and collection shop address; then
  * evenly spaced columns (Shop, Help, Legal, Opening hours); then a bottom bar with the trader's details (audit OSA-2)
- * and "Online store by Switch & Save". Nothing is squeezed: columns stack two by two on tablets and one by one at 360 px.
+ * and "Online store by Switch & Save" (IMG-2: plus the Open Food Facts photo credit when the store shows such photos). Nothing is squeezed: columns stack two by two on tablets and one by one at 360 px.
  */
 export function StoreFooter({ store }: { store: StoreInfo }) {
     const butcher = useTemplate() === 'butcher';
@@ -155,9 +155,12 @@ export function StoreFooter({ store }: { store: StoreInfo }) {
                 </div>
 
                 <div className="flex flex-col gap-3 border-t border-white/15 pt-6 text-xs leading-relaxed text-white/65 md:flex-row md:items-end md:justify-between md:gap-10">
-                    <p className="max-w-3xl">
-                        &copy; {new Date().getFullYear()} {company.join(' · ')}
-                    </p>
+                    <div className="flex max-w-3xl flex-col gap-1">
+                        <p>
+                            &copy; {new Date().getFullYear()} {company.join(' · ')}
+                        </p>
+                        {store.photoCredit && <p>{store.photoCredit}</p>}
+                    </div>
                     <p className="shrink-0">Online store by Switch &amp; Save</p>
                 </div>
             </div>

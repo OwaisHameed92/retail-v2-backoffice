@@ -49,6 +49,15 @@
       "type": "string",
       "pattern": "^[0-9a-f]{64}$",
       "description": "SHA-256 of exactly the bytes in the body, lower-case hex. Same value as the picture the portal holds → 200 unchanged, nothing stored. Not the hash of the body → 422 image.hash_mismatch."
+    },
+    "X-SSPOS-Image-Source": {
+      "enum": [
+        "own",
+        "library",
+        "found",
+        "unknown"
+      ],
+      "description": "Optional (IMG-2, till 0.1.83): where the till got the picture. own = the shop chose it; library = Open Food Facts by barcode (CC BY-SA, credited on the public store); found = a web image search (copyright unknown); unknown = a picture from before the till sent this header. The public online store shows own and library by default, found and unknown only when the shop turns on \"Show found pictures\". The portal never refuses an upload over this header: missing, empty or any other value is stored as unknown (trimmed, any case). On a 200 unchanged upload a different known value (own, library, found) updates only the origin held; unknown never overwrites a known one."
     }
   },
   "required": [

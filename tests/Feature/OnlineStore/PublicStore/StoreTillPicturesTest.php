@@ -4,6 +4,7 @@ use App\Domain\OnlineStore\Actions\SetOnlineProduct;
 use App\Domain\Shared\Support\Ulid;
 use App\Domain\TillImages\Actions\StoreTillProductImage;
 use App\Domain\TillImages\Data\TillImageUpload;
+use App\Domain\TillImages\Enums\ProductImageOrigin;
 use App\Domain\TillImages\Models\ProductImage;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
@@ -26,7 +27,7 @@ beforeEach(function () {
     $this->search = route('store.search', ['slug' => 'kirkgate'], false);
     $this->till = function (string $productId, ?OnlineStoreFixtures $f = null): string {
         $jpeg = Img::jpeg(30 + strlen($productId) % 7, 30);
-        app(StoreTillProductImage::class)->handle(($f ?? $this->f)->company, new TillImageUpload($productId, $jpeg, 'image/jpeg', hash('sha256', $jpeg)));
+        app(StoreTillProductImage::class)->handle(($f ?? $this->f)->company, new TillImageUpload($productId, $jpeg, 'image/jpeg', hash('sha256', $jpeg), ProductImageOrigin::Own));
 
         return Storage::disk('public')->url(ProductImage::withoutCompanyScope()->where('product_id', $productId)->sole()->path);
     };

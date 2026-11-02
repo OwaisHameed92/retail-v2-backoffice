@@ -13,7 +13,9 @@ use App\Domain\TillImages\Models\ProductImage;
  * `GET sync/product-images?after={productId}&max={n}` (contract proposal product-images §4.3): the till pictures the
  * portal holds for the calling business, one page in product id order, so the till's "Find pictures" sweep (and a
  * till upgrading with an old catalogue) uploads only what is missing or different. Keyset paging on the product id:
- * `after` = the last `productId` of the previous page (`nextAfter`), empty or missing the first time.
+ * `after` = the last `productId` of the previous page (`nextAfter`), empty or missing the first time. IMG-2: each
+ * entry also carries the picture's `origin` (an added member: the reply schema allows new members), so a till can
+ * send the same bytes again with its origin when the portal holds `unknown`.
  */
 final class TillImageList
 {
@@ -22,7 +24,7 @@ final class TillImageList
     public const MAX = 5000;
 
     /**
-     * @return array{images: list<array{productId: string, imageHash: string, updatedAt: string}>, nextAfter: string|null, hasMore: bool}
+     * @return array{images: list<array{productId: string, imageHash: string, updatedAt: string, origin: string}>, nextAfter: string|null, hasMore: bool}
      *
      * @throws ApiException 400 request.invalid on a bad `after` or `max`
      */
@@ -42,7 +44,7 @@ final class TillImageList
         $rows = app(CurrentCompany::class)->runAs($company, fn () => ProductImage::query()
             ->where('company_id', $company->id)->where('source', ProductImageSource::Till)
             ->when($after !== '', fn ($q) => $q->where('product_id', '>', $after))
-            ->orderBy('product_id')->limit($max + 1)->get(['product_id', 'hash', 'updated_at']));
+            ->orderBy('product_id')->limit($max + 1)->get(['product_id', 'hash', 'origin', 'updated_at']));
 
         $hasMore = $rows->count() > $max;
         $page = $rows->take($max)->values();
@@ -52,6 +54,7 @@ final class TillImageList
                 'productId' => $image->product_id,
                 'imageHash' => $image->hash,
                 'updatedAt' => ($image->updated_at ?? now())->utc()->format('Y-m-d\TH:i:s\Z'),
+                'origin' => $image->origin->value,
             ])->all(),
             'nextAfter' => $hasMore ? $page->last()?->product_id : null,
             'hasMore' => $hasMore,
