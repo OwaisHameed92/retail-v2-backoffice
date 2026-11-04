@@ -1,5 +1,6 @@
 <?php
 
+use App\Domain\Licensing\Models\Licence;
 use App\Domain\StockDrafts\Models\StockDraft;
 use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Support\Facades\DB;
@@ -7,6 +8,7 @@ use Tests\Feature\Handheld\HandheldFixtures as H;
 use Tests\Feature\Handheld\StockDraftFixtures as S;
 use Tests\Feature\Purchasing\PurchasingFixtures as F;
 use Tests\Feature\Sync\SyncApiFixtures;
+use Tests\Feature\TillData\TillFixtures as T;
 
 /*
  * PDA_STOCK_DRAFTS off (the default; contract proposal pda-stock-drafts): every handheld stock call answers 501
@@ -73,9 +75,49 @@ test('off: the pull is byte-identical and never reads the draft tables, even wit
 test('on with a minimum till version: an older till does not get the drafts, a new enough one does', function () {
     S::on();
     config(['handheld.stock_drafts_min_till' => '3.1.0']);   // the fixtures' till reports 3.0.412
+    Licence::factory()->forRegister($this->sync->tills[T::TILL_1])->create(['last_app_version' => '3.1.0']);   // the shop's main till is new enough
     $since = $this->sync->pull(0)->json('highestVersion');
     $this->postJson('/api/pda/stock-adjustments', $this->adjust, $this->headers)->assertCreated();
 
     expect(S::drafted($this->sync->pull($since)))->toBe([])
         ->and(S::drafted($this->sync->pull($since, headers: ['X-SSPOS-App-Version' => '3.1.0'])))->toHaveCount(1);
+});
+
+test('on with a minimum till version: the stock calls open only for a shop whose main till reports it', function () {
+    S::on();
+    config(['handheld.stock_drafts_min_till' => '0.1.90']);
+    $main = $this->sync->tills[T::TILL_1];
+    $extra = $this->sync->tills[T::TILL_2];
+
+    // No licence has reported a version yet: still "Coming soon".
+    $this->getJson('/api/pda/stock-adjustments?per_page=1', $this->headers)->assertStatus(501)->assertJsonPath('code', 'NOT_AVAILABLE_YET');
+
+    $licence = Licence::factory()->forRegister($main)->create(['last_app_version' => '0.1.83']);
+    Licence::factory()->forRegister($extra)->create(['last_app_version' => '0.1.95']);
+    $this->getJson('/api/pda/stock-adjustments?per_page=1', $this->headers)->assertStatus(501);
+    $this->postJson('/api/pda/stock-adjustments', $this->adjust, $this->headers)->assertStatus(501);
+    expect(StockDraft::withoutCompanyScope()->count())->toBe(0);
+
+    $licence->forceFill(['last_app_version' => '0.1.90'])->save();
+    $this->getJson('/api/pda/stock-adjustments?per_page=1', $this->headers)->assertOk();
+    $this->postJson('/api/pda/stock-adjustments', $this->adjust, $this->headers)->assertCreated();
+});
+
+test('on with a minimum till version and no main till marked: every live till of the shop must report it', function () {
+    S::on();
+    config(['handheld.stock_drafts_min_till' => '0.1.90']);
+    $tills = [$this->sync->tills[T::TILL_1], $this->sync->tills[T::TILL_2]];
+    $tills[0]->forceFill(['is_main_till' => false])->save();
+    Licence::factory()->forRegister($tills[0])->create(['last_app_version' => '0.1.91']);
+    $old = Licence::factory()->forRegister($tills[1])->create(['last_app_version' => '0.1.82']);
+
+    $this->getJson('/api/pda/stock-adjustments?per_page=1', $this->headers)->assertStatus(501);
+
+    $old->forceFill(['last_app_version' => '0.1.90'])->save();
+    $this->getJson('/api/pda/stock-adjustments?per_page=1', $this->headers)->assertOk();
+});
+
+test('on without a minimum till version: every shop is open, as before', function () {
+    S::on();
+    $this->getJson('/api/pda/stock-adjustments?per_page=1', $this->headers)->assertOk();
 });
