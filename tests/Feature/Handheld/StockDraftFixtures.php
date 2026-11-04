@@ -2,6 +2,8 @@
 
 namespace Tests\Feature\Handheld;
 
+use App\Domain\Licensing\Models\Licence;
+use App\Domain\Plans\Enums\Feature;
 use Illuminate\Testing\TestResponse;
 use Tests\Feature\Sync\PullTestHelpers as Pull;
 use Tests\Feature\Sync\SyncApiFixtures;
@@ -20,6 +22,17 @@ final class StockDraftFixtures
     public static function on(): void
     {
         config(['handheld.stock_drafts' => true]);
+    }
+
+    /**
+     * A live licence with `purchasing` for every till of the fixtures (the stock calls answer 403 FEATURE_NOT_INCLUDED
+     * without it), version 3.0.412 as the fixtures' till reports.
+     */
+    public static function licensed(SyncApiFixtures $sync): void
+    {
+        foreach ($sync->tills as $register) {
+            Licence::factory()->forRegister($register)->create(['features' => [Feature::Purchasing->value], 'last_app_version' => '3.0.412']);
+        }
     }
 
     /**

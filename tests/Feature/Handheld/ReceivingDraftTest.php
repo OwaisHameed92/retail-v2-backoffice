@@ -23,6 +23,7 @@ beforeEach(function () {
     $this->travelTo('2026-10-22 09:00:00');
     S::on();
     $this->sync = new SyncApiFixtures($this);
+    S::licensed($this->sync);
     $this->company = $this->sync->company;
     H::monthlyPlan($this->company);
     F::catalogue($this->company);

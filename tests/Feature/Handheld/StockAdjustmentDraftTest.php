@@ -1,6 +1,8 @@
 <?php
 
+use App\Domain\Licensing\Models\Licence;
 use App\Domain\StockDrafts\Models\StockDraft;
+use App\Domain\Tenancy\Models\Register;
 use App\Domain\TillData\Models\Product;
 use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Support\Facades\DB;
@@ -20,6 +22,7 @@ beforeEach(function () {
     $this->travelTo('2026-10-22 09:00:00');
     S::on();
     $this->sync = new SyncApiFixtures($this);
+    S::licensed($this->sync);
     $this->company = $this->sync->company;
     H::monthlyPlan($this->company);
     F::catalogue($this->company);
@@ -148,6 +151,8 @@ test('shop and business isolation: another shop\'s adjustment is not found, its 
 
     $other = H::otherBusiness();
     H::monthlyPlan($other['company']);
+    Licence::factory()->forRegister(Register::factory()->forBranch($other['shop'])->create(['is_main_till' => true]))
+        ->create(['features' => ['purchasing']]);
     $outsider = H::headers(H::token($this, H::user($other['company'], $other['shop'], ['email' => 'out@other.test', 'can_adjust_stock' => true])));
     $this->postJson("/api/pda/stock-adjustments/{$id}/cancel", [], $outsider)->assertNotFound();
     $this->getJson('/api/pda/stock-adjustments', $outsider)->assertJsonPath('data.total', 0);

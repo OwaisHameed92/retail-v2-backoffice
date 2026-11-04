@@ -2,6 +2,7 @@
 
 use App\Domain\Licensing\Models\Licence;
 use App\Domain\StockDrafts\Models\StockDraft;
+use App\Domain\Tenancy\Models\Register;
 use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Support\Facades\DB;
 use Tests\Feature\Handheld\HandheldFixtures as H;
@@ -20,6 +21,7 @@ use Tests\Feature\TillData\TillFixtures as T;
 beforeEach(function () {
     $this->travelTo('2026-10-22 09:00:00');
     $this->sync = new SyncApiFixtures($this);
+    S::licensed($this->sync);
     $this->company = $this->sync->company;
     H::monthlyPlan($this->company);
     F::catalogue($this->company);
@@ -75,7 +77,7 @@ test('off: the pull is byte-identical and never reads the draft tables, even wit
 test('on with a minimum till version: an older till does not get the drafts, a new enough one does', function () {
     S::on();
     config(['handheld.stock_drafts_min_till' => '3.1.0']);   // the fixtures' till reports 3.0.412
-    Licence::factory()->forRegister($this->sync->tills[T::TILL_1])->create(['last_app_version' => '3.1.0']);   // the shop's main till is new enough
+    Licence::withoutCompanyScope()->where('register_id', $this->sync->tills[T::TILL_1]->id)->update(['last_app_version' => '3.1.0']);   // the shop's main till is new enough
     $since = $this->sync->pull(0)->json('highestVersion');
     $this->postJson('/api/pda/stock-adjustments', $this->adjust, $this->headers)->assertCreated();
 
@@ -83,22 +85,27 @@ test('on with a minimum till version: an older till does not get the drafts, a n
         ->and(S::drafted($this->sync->pull($since, headers: ['X-SSPOS-App-Version' => '3.1.0'])))->toHaveCount(1);
 });
 
+function tillVersion(Register $register, ?string $version): void
+{
+    Licence::withoutCompanyScope()->where('register_id', $register->id)->update(['last_app_version' => $version]);
+}
+
 test('on with a minimum till version: the stock calls open only for a shop whose main till reports it', function () {
     S::on();
     config(['handheld.stock_drafts_min_till' => '0.1.90']);
-    $main = $this->sync->tills[T::TILL_1];
-    $extra = $this->sync->tills[T::TILL_2];
+    [$main, $extra] = [$this->sync->tills[T::TILL_1], $this->sync->tills[T::TILL_2]];
 
-    // No licence has reported a version yet: still "Coming soon".
+    // The main till has not reported a version yet: still "Coming soon".
+    tillVersion($main, null);
     $this->getJson('/api/pda/stock-adjustments?per_page=1', $this->headers)->assertStatus(501)->assertJsonPath('code', 'NOT_AVAILABLE_YET');
 
-    $licence = Licence::factory()->forRegister($main)->create(['last_app_version' => '0.1.83']);
-    Licence::factory()->forRegister($extra)->create(['last_app_version' => '0.1.95']);
+    tillVersion($main, '0.1.83');
+    tillVersion($extra, '0.1.95');
     $this->getJson('/api/pda/stock-adjustments?per_page=1', $this->headers)->assertStatus(501);
     $this->postJson('/api/pda/stock-adjustments', $this->adjust, $this->headers)->assertStatus(501);
     expect(StockDraft::withoutCompanyScope()->count())->toBe(0);
 
-    $licence->forceFill(['last_app_version' => '0.1.90'])->save();
+    tillVersion($main, '0.1.90');
     $this->getJson('/api/pda/stock-adjustments?per_page=1', $this->headers)->assertOk();
     $this->postJson('/api/pda/stock-adjustments', $this->adjust, $this->headers)->assertCreated();
 });
@@ -106,18 +113,48 @@ test('on with a minimum till version: the stock calls open only for a shop whose
 test('on with a minimum till version and no main till marked: every live till of the shop must report it', function () {
     S::on();
     config(['handheld.stock_drafts_min_till' => '0.1.90']);
-    $tills = [$this->sync->tills[T::TILL_1], $this->sync->tills[T::TILL_2]];
-    $tills[0]->forceFill(['is_main_till' => false])->save();
-    Licence::factory()->forRegister($tills[0])->create(['last_app_version' => '0.1.91']);
-    $old = Licence::factory()->forRegister($tills[1])->create(['last_app_version' => '0.1.82']);
+    [$first, $second] = [$this->sync->tills[T::TILL_1], $this->sync->tills[T::TILL_2]];
+    $first->forceFill(['is_main_till' => false])->save();
+    tillVersion($first, '0.1.91');
+    tillVersion($second, '0.1.82');
 
     $this->getJson('/api/pda/stock-adjustments?per_page=1', $this->headers)->assertStatus(501);
 
-    $old->forceFill(['last_app_version' => '0.1.90'])->save();
+    tillVersion($second, '0.1.90');
     $this->getJson('/api/pda/stock-adjustments?per_page=1', $this->headers)->assertOk();
 });
 
 test('on without a minimum till version: every shop is open, as before', function () {
     S::on();
+    $this->getJson('/api/pda/stock-adjustments?per_page=1', $this->headers)->assertOk();
+});
+
+test('on: a shop whose main till licence leaves out purchasing gets 403 FEATURE_NOT_INCLUDED on every stock call; the rest of the app works', function () {
+    S::on();
+    Licence::withoutCompanyScope()->where('register_id', $this->sync->tills[T::TILL_1]->id)->update(['features' => json_encode(['cloud_sync'])]);
+
+    foreach ([['GET', '/api/pda/stock-adjustments?per_page=1', []], ['POST', '/api/pda/stock-adjustments', $this->adjust], ['GET', '/api/pda/stock-takes', []], ['GET', '/api/pda/purchase-returns', []]] as [$method, $url, $body]) {
+        $this->json($method, $url, $body, $this->headers)->assertForbidden()->assertJson(['success' => false, 'code' => 'FEATURE_NOT_INCLUDED']);
+    }
+
+    expect(StockDraft::withoutCompanyScope()->count())->toBe(0);
+    $this->getJson('/api/pda/products?per_page=1', $this->headers)->assertOk();
+    $this->getJson('/api/pda/me', $this->headers)->assertOk();
+
+    // Licence not included wins over an old till ("Not in licence", not "Coming soon").
+    config(['handheld.stock_drafts_min_till' => '9.0.0']);
+    $this->getJson('/api/pda/stock-adjustments?per_page=1', $this->headers)->assertForbidden()->assertJsonPath('code', 'FEATURE_NOT_INCLUDED');
+
+    // Off is still 501 for everyone, whatever the licence.
+    config(['handheld.stock_drafts' => false]);
+    $this->getJson('/api/pda/stock-adjustments?per_page=1', $this->headers)->assertStatus(501);
+});
+
+test('on: a shop with no live till licence gets 403 FEATURE_NOT_INCLUDED; adding purchasing opens it', function () {
+    S::on();
+    Licence::withoutCompanyScope()->where('branch_id', $this->sync->leeds->id)->update(['status' => 'revoked', 'live_register_id' => null]);
+    $this->getJson('/api/pda/stock-adjustments?per_page=1', $this->headers)->assertForbidden()->assertJsonPath('code', 'FEATURE_NOT_INCLUDED');
+
+    Licence::withoutCompanyScope()->where('branch_id', $this->sync->leeds->id)->update(['status' => 'issued', 'live_register_id' => DB::raw('register_id')]);
     $this->getJson('/api/pda/stock-adjustments?per_page=1', $this->headers)->assertOk();
 });

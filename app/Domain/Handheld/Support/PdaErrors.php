@@ -53,6 +53,9 @@ final class PdaErrors
 
     public const NOT_AVAILABLE_YET = 'NOT_AVAILABLE_YET';
 
+    /** 403: the shop's till licence leaves the handheld stock screens out (no `purchasing`, owner 2026-11-04). */
+    public const FEATURE_NOT_INCLUDED = 'FEATURE_NOT_INCLUDED';
+
     public static function invalidCredentials(): ApiException
     {
         return new ApiException(self::INVALID_CREDENTIALS, 'The email or password is wrong.', 401);
@@ -81,6 +84,11 @@ final class PdaErrors
     public static function cancelled(): ApiException
     {
         return new ApiException(self::BUSINESS_CANCELLED, 'This business’s account is closed.', 403);
+    }
+
+    public static function featureNotIncluded(): ApiException
+    {
+        return new ApiException(self::FEATURE_NOT_INCLUDED, 'Stock work on the handheld is part of the Purchasing feature, which this shop\'s licence does not include. Ask Switch & Save to add it.', 403);
     }
 
     public static function planNotIncluded(): ApiException

@@ -62,6 +62,7 @@ Validation errors are **422** `VALIDATION_FAILED` with `errors` (field → messa
 | 422 | `VALIDATION_FAILED` | Body or query not valid (`errors` lists the fields) |
 | 422 | `PRODUCT_ARCHIVED` | Price, cost or stock change on an archived product |
 | 403 | `STOCK_CHANGE_NOT_ALLOWED` | A stock write (adjustment, stock take, receiving, return) by a user without "can adjust stock" (stock documents) |
+| 403 | `FEATURE_NOT_INCLUDED` | Every stock call (adjustments, stock takes, receiving, receipts, returnable, returns) for a shop whose till licence leaves out the **Purchasing** feature (the shop's main till's licence; every live till's when none is marked main; a shop with no live licence too). Checked once `PDA_STOCK_DRAFTS` is on, before the till-version check (owner 2026-11-04). Show "Not in licence"; keep the session |
 | 409 | `ADJUSTMENT_OWNED_BY_TILL` / `STOCK_TAKE_OWNED_BY_TILL` / `RETURN_OWNED_BY_TILL` | Edit or cancel after the shop's till took the document (stock documents) |
 | 409 | `ADJUSTMENT_CANCELLED` / `STOCK_TAKE_CANCELLED` / `RETURN_CANCELLED` | Edit or cancel a cancelled document (stock documents) |
 | 409 | `PO_NOT_RECEIVABLE` | Receiving against an order still in `draft` (not placed) (stock documents) |
@@ -77,7 +78,7 @@ Validation errors are **422** `VALIDATION_FAILED` with `errors` (field → messa
 | Do | Codes | Why |
 |---|---|---|
 | **Sign out** (drop the token, show the message on the sign-in screen) | `401 UNAUTHENTICATED`, `403 ACCOUNT_INACTIVE`, `SHOP_CLOSED`, `BUSINESS_SUSPENDED`, `BUSINESS_CANCELLED` | This account cannot work until the owner fixes it on the portal (or Switch & Save does). Signing in again answers the same 403 until then. Switching a user off also revokes its tokens, so the next call is 401 anyway |
-| **Show the message, keep the session** | `403 PLAN_NOT_INCLUDED`, `PRICE_CHANGE_NOT_ALLOWED`, `COST_CHANGE_NOT_ALLOWED`, `FORBIDDEN` (and `STOCK_CHANGE_NOT_ALLOWED` when stock comes) | Only this feature (or, for the plan, the app) is not allowed; the token stays valid and works again as soon as the plan or the permission changes. For `PLAN_NOT_INCLUDED` stop and show the message |
+| **Show the message, keep the session** | `403 PLAN_NOT_INCLUDED`, `FEATURE_NOT_INCLUDED`, `PRICE_CHANGE_NOT_ALLOWED`, `COST_CHANGE_NOT_ALLOWED`, `FORBIDDEN` (and `STOCK_CHANGE_NOT_ALLOWED` when stock comes) | Only this feature (or, for the plan, the app) is not allowed; the token stays valid and works again as soon as the plan or the permission changes. For `PLAN_NOT_INCLUDED` stop and show the message |
 
 There are no other 403 codes. New ones will be added to this table first.
 
