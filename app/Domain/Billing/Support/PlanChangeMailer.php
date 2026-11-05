@@ -3,6 +3,8 @@
 namespace App\Domain\Billing\Support;
 
 use App\Domain\Billing\Data\PlanChangePlan;
+use App\Domain\Billing\Enums\InvoiceKind;
+use App\Domain\Billing\GoCardless\Support\SetupFeeByDirectDebit;
 use App\Domain\Billing\Models\Invoice;
 use App\Domain\Licensing\Support\LicenceMailer;
 use App\Domain\Mail\Data\PlanChangedData;
@@ -32,7 +34,8 @@ final class PlanChangeMailer
                 fromPlan: $plan->from?->name,
                 toPlan: $plan->to->name,
                 changedOn: $plan->today,
-                changes: self::changes($plan, $firstInvoice),
+                changes: self::changes($plan, $firstInvoice, $setupInvoice !== null && $setupInvoice->kind === InvoiceKind::SetupFee
+                    && SetupFeeByDirectDebit::on(app(BillingAccounts::class)->for($company))),
                 setupFee: $setupInvoice?->total,
                 setupInvoice: $setupInvoice?->number,
                 directDebitUrl: $needsMandate ? config('sspos.portal_url').'/app/billing' : null,
@@ -50,7 +53,7 @@ final class PlanChangeMailer
     /**
      * @return list<string>
      */
-    private static function changes(PlanChangePlan $plan, ?Invoice $firstInvoice): array
+    private static function changes(PlanChangePlan $plan, ?Invoice $firstInvoice, bool $setupByDirectDebit = false): array
     {
         $names = fn (array $features) => implode(', ', array_map(fn (Feature $f) => $f->label(), $features));
         $per = $plan->cycle->value === 'yearly' ? 'a year' : 'a month';
@@ -68,7 +71,9 @@ final class PlanChangeMailer
             $lines[] = "{$shop['name']} keeps the features set up for it.";
         }
 
-        if ($plan->chargesSetupFee()) {
+        if ($plan->chargesSetupFee() && $setupByDirectDebit) {
+            $lines[] = 'Setup fee: we have emailed you the invoice; it is collected by Direct Debit.'; // owner 2026-11-05
+        } elseif ($plan->chargesSetupFee()) {
             $lines[] = 'Setup fee: we have emailed you the invoice, to pay by '.($plan->manual ? ManualCollection::methodsText() : 'cash, card or bank transfer').'.';
         }
 

@@ -1,7 +1,7 @@
 import { ChangePlanDialog } from '@/components/admin/billing/change-plan-dialog';
 import { formatDate, formatDay } from '@/components/admin/billing/format';
 import { PricingDialog } from '@/components/admin/billing/pricing-dialog';
-import { type CompanyRef, type DirectDebitData, type PlanChangeOptions, type SetupFeeStatus } from '@/components/admin/billing/types';
+import { type CompanyRef, type DirectDebitData, type PlanChangeOptions, type SetupFeePart, type SetupFeeStatus } from '@/components/admin/billing/types';
 import { UndoUpfrontDialog } from '@/components/admin/billing/undo-upfront-dialog';
 import { emptyUpfront, type OnboardingBillingOptions, UpfrontPaymentFields } from '@/components/admin/billing/upfront-payment-fields';
 import { SectionCard } from '@/components/shared/section-card';
@@ -40,6 +40,29 @@ const feeTones: Record<SetupFeeStatus, StatusTone> = { none: 'neutral', unpaid: 
  * Tenant Billing tab (owner rules 2026-10-05): the plan type and pricing, the setup fee (upfront, always paid by hand)
  * and the monthly or yearly fee (always by Direct Debit) with the mandate and the next collection.
  */
+/** Owner 2026-11-05: " · part 2 of 3 scheduled for 5 Dec 2026" for a setup fee collected by Direct Debit. */
+function nextPart(parts: SetupFeePart[]): string {
+    const next = parts.find((part) => part.state !== 'paid');
+
+    if (!next) {
+        return '';
+    }
+
+    const what = parts.length > 1 ? next.label.toLowerCase() : 'setup fee';
+    const where: Record<SetupFeePart['state'], string> = {
+        scheduled: `scheduled for ${formatDay(next.chargeDate)}`,
+        planned: `scheduled for ${formatDay(next.chargeDate)}`,
+        submitted: 'submitted to the bank',
+        failed: 'failed',
+        waiting: 'waiting for the mandate',
+        collected: 'collected',
+        paid: 'paid',
+        byHand: `due ${formatDay(next.dueDate)}`,
+    };
+
+    return ` · ${what} ${where[next.state]}`;
+}
+
 export function PricingPanel({ company, directDebit, canManage, planChange = null, cancelled = false }: PricingPanelProps) {
     const [dialog, setDialog] = useState<'pricing' | 'upfront' | 'undo' | 'plan' | null>(null);
     const close = (open: boolean) => !open && setDialog(null);
@@ -51,7 +74,9 @@ export function PricingPanel({ company, directDebit, canManage, planChange = nul
         <SectionCard
             title="Plan and payments"
             description={byHand(
-                'The setup fee is paid by hand (cash, card or bank transfer). The monthly or yearly fee is collected by Direct Debit.',
+                directDebit.setupFee.collectedByDirectDebit
+                    ? 'The setup fee (exception) and the monthly or yearly fee are collected by Direct Debit.'
+                    : 'The setup fee is paid by hand (cash, card or bank transfer). The monthly or yearly fee is collected by Direct Debit.',
                 `The setup fee and every monthly or yearly invoice are paid by hand (${manualMethodsText()}).`,
             )}
             actions={
@@ -107,7 +132,9 @@ export function PricingPanel({ company, directDebit, canManage, planChange = nul
                             ? `${upfront.method ?? 'Recorded'}${upfront.recordedAt ? ` · ${formatDate(upfront.recordedAt)}` : ''}`
                             : upfront.status === 'none'
                               ? 'Nothing to pay'
-                              : `${upfront.owed} to pay by ${byHand('cash, card or bank transfer', manualMethodsText())}${upfront.nextDue ? ` · next due ${formatDay(upfront.nextDue)}` : ''}`}
+                              : directDebit.setupFee.collectedByDirectDebit
+                                ? `${upfront.owed} by Direct Debit${nextPart(directDebit.setupFee.parts)}`
+                                : `${upfront.owed} to pay by ${byHand('cash, card or bank transfer', manualMethodsText())}${upfront.nextDue ? ` · next due ${formatDay(upfront.nextDue)}` : ''}`}
                     </span>
                     {canManage && upfront.undo && (
                         <Button

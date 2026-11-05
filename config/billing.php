@@ -100,6 +100,9 @@ return [
         'setup_link_days' => 14,
         // Most setup fee instalments.
         'max_instalments' => 12,
+        // Owner 2026-11-05 (setup fee by Direct Debit, a per-business exception): days before an instalment's due date
+        // its GoCardless payment is created, so Bacs can collect it on the due date.
+        'setup_fee_lead_days' => (int) env('BILLING_SETUP_FEE_DD_LEAD_DAYS', 10),
         // How far back the daily reconcile compares payments with GoCardless.
         'reconcile_days' => 45,
     ],

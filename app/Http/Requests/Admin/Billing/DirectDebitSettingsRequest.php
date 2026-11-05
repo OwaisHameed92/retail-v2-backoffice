@@ -38,6 +38,8 @@ class DirectDebitSettingsRequest extends BillingRequest
             // P11: the business's own setup fee for each till added later (per-till plans); blank = the plan's.
             'till_setup_fee_override' => ['sometimes', 'nullable', 'string', 'regex:'.self::moneyPattern()],
             'setup_fee_instalments' => ['required', 'integer', 'min:1', 'max:'.(int) config('billing.direct_debit.max_instalments', 12)],
+            // Owner 2026-11-05: "Setup fee: By Direct Debit" (a per-business exception); absent = keep the current choice.
+            'setup_fee_by_direct_debit' => ['sometimes', 'boolean'],
         ];
     }
 
@@ -65,6 +67,7 @@ class DirectDebitSettingsRequest extends BillingRequest
             instalments: (int) $this->validated('setup_fee_instalments'),
             tillFeeGiven: $this->has('till_setup_fee_override'),
             tillSetupFeeOverride: is_string($tillFee) ? $tillFee : null,
+            setupFeeByDirectDebit: $this->has('setup_fee_by_direct_debit') ? $this->boolean('setup_fee_by_direct_debit') : null,
         );
     }
 }

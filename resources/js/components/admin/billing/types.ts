@@ -313,6 +313,18 @@ export interface PlanChangePreviewData {
 
 export type BillingMode = 'upfrontCash' | 'directDebit';
 
+/** One setup fee instalment invoice and how it is being paid (owner 2026-11-05: by hand, or by Direct Debit). */
+export interface SetupFeePart {
+    number: string | null;
+    label: string;
+    amount: string;
+    dueDate: string | null;
+    state: 'paid' | 'scheduled' | 'submitted' | 'failed' | 'collected' | 'planned' | 'waiting' | 'byHand';
+    stateLabel: string;
+    /** The Direct Debit day (scheduled, submitted, failed) or the planned one (the due date). */
+    chargeDate: string | null;
+}
+
 export type SetupFeeMethod = 'manual' | 'directDebit';
 
 export type SetupFeeStatus = 'none' | 'unpaid' | 'partPaid' | 'paid';
@@ -370,6 +382,14 @@ export interface DirectDebitData {
         tills: number;
         coveredTills: number | null;
         heldTills: number;
+        /** Owner 2026-11-05: staff chose "Setup fee: By Direct Debit" (a per-business exception; default by hand). */
+        byDirectDebit: boolean;
+        /** It applies now (the business pays by Direct Debit, on a Direct Debit instance). */
+        collectedByDirectDebit: boolean;
+        /** The choice can be offered here (UK, GoCardless connected). */
+        directDebitAvailable: boolean;
+        /** Each setup fee invoice and where it stands. */
+        parts: SetupFeePart[];
     };
     mandate: {
         id: string | null;

@@ -84,7 +84,9 @@ export default function Billing(props: PortalBillingProps) {
                             ? `Paid${upfront.method ? ` by ${upfront.method.toLowerCase()}` : ''}${upfront.recordedAt ? ` · ${formatDate(upfront.recordedAt)}` : ''}`
                             : upfront.status === 'none'
                               ? 'Nothing to pay'
-                              : `${upfront.statusLabel} · ${upfront.owed} to pay by ${byHand('cash, card or bank transfer', manualMethodsText())}`
+                              : upfront.byDirectDebit
+                                ? `${upfront.statusLabel} · ${upfront.owed} by Direct Debit${upfront.parts > 1 ? `, in ${upfront.parts} instalments` : ''}`
+                                : `${upfront.statusLabel} · ${upfront.owed} to pay by ${byHand('cash, card or bank transfer', manualMethodsText())}`
                     }
                     icon={Receipt}
                     tone={upfront.status === 'unpaid' ? 'warning' : 'neutral'}

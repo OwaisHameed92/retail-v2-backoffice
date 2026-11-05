@@ -78,7 +78,12 @@ export function SubscriptionCard({
 
 /** Module 4.10: the one-off setup fee, in one payment or monthly instalments. */
 export function SetupFeeCard({ setupFee }: { setupFee: NonNullable<PortalBillingProps['setupFee']> }) {
-    const how = byHand(
+    // Owner 2026-11-05: a setup fee Switch & Save collects by Direct Debit (an exception for this business).
+    const parts = setupFee.parts.length;
+    const directDebitHow = setupFee.charged
+        ? `Collected by Direct Debit${parts > 1 ? `, in ${parts} instalments` : ''}: each part is its own invoice below, taken on its due date.`
+        : `Collected by Direct Debit${parts > 1 ? `, in ${parts} instalments` : ''}. Your tills stay on the free trial until the first part is paid.`;
+    const how = setupFee.method === 'directDebit' ? directDebitHow : byHand(
         setupFee.charged
             ? 'Each part is its own invoice below. Pay by cash, card or bank transfer; it is never taken by Direct Debit.'
             : 'Paid by cash, card or bank transfer, never by Direct Debit. Your tills stay on the free trial until it is paid.',
@@ -113,6 +118,14 @@ export function SetupFeeCard({ setupFee }: { setupFee: NonNullable<PortalBilling
                                         <StatusPill tone="neutral">{part.statusLabel}</StatusPill>
                                     ) : (
                                         <InvoiceStatusBadge status={part.status as InvoiceStatus} />
+                                    )}
+                                    {part.directDebit && part.status !== 'paid' && (
+                                        <div className="text-muted-foreground mt-1 text-xs">
+                                            {part.directDebit.label}
+                                            {part.directDebit.date && ['scheduled', 'planned'].includes(part.directDebit.state)
+                                                ? ` ${formatDay(part.directDebit.date)}`
+                                                : ''}
+                                        </div>
                                     )}
                                 </TableCell>
                             </TableRow>

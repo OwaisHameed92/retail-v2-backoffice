@@ -2,6 +2,7 @@
 
 namespace App\Domain\Billing\Actions;
 
+use App\Domain\Billing\GoCardless\Actions\CollectSetupFeeByDirectDebit;
 use App\Domain\Billing\GoCardless\Actions\EnforceDirectDebit;
 use App\Domain\Billing\Support\ManualCollection;
 use App\Domain\Shared\Support\BusinessFailures;
@@ -35,6 +36,7 @@ class RunBilling
         private readonly IssueManualInvoices $issueManualInvoices,
         private readonly SendPaymentReminders $sendPaymentReminders,
         private readonly BusinessFailures $failures,
+        private readonly CollectSetupFeeByDirectDebit $collectSetupFee,
     ) {}
 
     /**
@@ -55,6 +57,9 @@ class RunBilling
         $suspended = $this->suspendForUnpaidInvoices->handle($now);
         $trial = $this->sendTrialEmails->handle($now);
         $directDebit = $this->enforceDirectDebit->handle($now);
+        // Owner 2026-11-05: setup fee instalments of businesses staff switched to "By Direct Debit" go on the mandate
+        // as they come due (none for anyone else; the result keeps its keys).
+        $this->collectSetupFee->daily($now);
 
         return [
             'invoicesCreated' => count($created),

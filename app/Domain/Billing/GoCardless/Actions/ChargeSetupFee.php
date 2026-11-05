@@ -3,10 +3,12 @@
 namespace App\Domain\Billing\GoCardless\Actions;
 
 use App\Domain\Billing\Actions\IssueInvoice;
+use App\Domain\Billing\Actions\SendInvoice;
 use App\Domain\Billing\Enums\InvoiceKind;
 use App\Domain\Billing\Enums\InvoiceLineKind;
 use App\Domain\Billing\Enums\InvoiceStatus;
 use App\Domain\Billing\GoCardless\Support\SetupFee;
+use App\Domain\Billing\GoCardless\Support\SetupFeeByDirectDebit;
 use App\Domain\Billing\Models\Invoice;
 use App\Domain\Billing\Models\InvoiceLine;
 use App\Domain\Billing\Support\Actor;
@@ -27,6 +29,11 @@ use Illuminate\Validation\ValidationException;
  * paid by hand (cash, card or bank transfer, recorded by an admin) and NEVER collected by Direct Debit, whatever the
  * billing mode or the legacy `setup_fee_method` value. The invoices are emailed as usual (unless `$send` is false)
  * and paid through Record payment / Record setup fee payment.
+ *
+ * Exception (owner 2026-11-05): staff switched "Setup fee: By Direct Debit" on for this business
+ * (SetupFeeByDirectDebit::on). The same invoices are made; before they are emailed, CollectSetupFeeByDirectDebit puts
+ * the ones coming due on the mandate (when it works), so each email says the day it is collected by Direct Debit.
+ * `$collect` false (a payment recorded by hand at the same time) leaves them for the daily run.
  */
 class ChargeSetupFee
 {
@@ -34,6 +41,8 @@ class ChargeSetupFee
         private readonly BillingAccounts $accounts,
         private readonly IssueInvoice $issueInvoice,
         private readonly RecordAudit $audit,
+        private readonly CollectSetupFeeByDirectDebit $collect,
+        private readonly SendInvoice $sendInvoice,
     ) {}
 
     /**
@@ -41,9 +50,10 @@ class ChargeSetupFee
      *
      * @throws ValidationException
      */
-    public function handle(Company $company, bool $send = true): array
+    public function handle(Company $company, bool $send = true, bool $collect = true): array
     {
         $account = $this->accounts->for($company);
+        $byDirectDebit = SetupFeeByDirectDebit::on($account);
 
         if ($account->setup_fee_invoiced_at !== null) {
             throw ValidationException::withMessages(['setup_fee' => "The setup fee for {$company->name} is already invoiced."]);
@@ -63,10 +73,34 @@ class ChargeSetupFee
         $invoices = [];
 
         foreach ($this->createDrafts($company, $schedule, $first) as $i => $draft) {
-            $invoices[] = $this->issueInvoice->handle($draft, send: $send, dueDate: $i === 0 ? null : $first->addMonthsNoOverflow($i));
+            $invoices[] = $this->issueInvoice->handle($draft, send: $send && ! $byDirectDebit, dueDate: $i === 0 ? null : $first->addMonthsNoOverflow($i));
         }
 
-        return $invoices;
+        return $byDirectDebit ? $this->byDirectDebit($company, $invoices, $send, $collect) : $invoices;
+    }
+
+    /**
+     * Owner 2026-11-05: the instalments coming due go on the mandate first, then every invoice is emailed (each says
+     * when it is collected by Direct Debit, or that it will be once the Direct Debit is set up).
+     *
+     * @param  list<Invoice>  $invoices
+     * @return list<Invoice>
+     */
+    private function byDirectDebit(Company $company, array $invoices, bool $send, bool $collect): array
+    {
+        if ($collect) {
+            $this->collect->handle($company);
+        }
+
+        foreach ($send ? $invoices : [] as $invoice) {
+            try {
+                $this->sendInvoice->handle($invoice->refresh(), resent: false);
+            } catch (ValidationException) {
+                // Nobody to email yet: staff can send it from the invoice.
+            }
+        }
+
+        return array_map(fn (Invoice $invoice) => $invoice->refresh(), $invoices);
     }
 
     /**
@@ -135,7 +169,7 @@ class ChargeSetupFee
             $this->audit->handle('billing.setup_fee_invoiced', $account, null, [
                 'net' => SetupFee::net($company, $account),
                 'instalments' => $count,
-            ], ['method' => 'manual', 'mode' => $account->billing_mode->value], companyId: $company->id);
+            ], ['method' => SetupFeeByDirectDebit::on($account) ? 'directDebit' : 'manual', 'mode' => $account->billing_mode->value], companyId: $company->id);
 
             return $drafts;
         });

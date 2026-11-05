@@ -7,6 +7,7 @@ use App\Domain\Billing\Enums\BillingMode;
 use App\Domain\Billing\Enums\InvoiceKind;
 use App\Domain\Billing\GoCardless\Enums\PaymentStatus;
 use App\Domain\Billing\GoCardless\Models\GoCardlessPayment;
+use App\Domain\Billing\GoCardless\Support\SetupFeeByDirectDebit;
 use App\Domain\Billing\Models\Invoice;
 use App\Domain\Billing\Models\InvoiceLine;
 use App\Domain\Licensing\Enums\LicenceStatus;
@@ -70,6 +71,12 @@ final class BillingMailer
         // A per-business line (licence_id null, e.g. a business price) covers every till the business has.
         $tills = $tills > 0 ? $tills : Licence::withoutCompanyScope()->where('company_id', $company->id)->whereNot('status', LicenceStatus::Revoked)->count();
         $directDebitOn = $this->directDebitDate($invoice);
+        // Owner 2026-11-05: a setup fee staff chose to collect by Direct Debit is never "pay by cash or bank transfer".
+        $setupFeeByDirectDebit = $invoice->kind === InvoiceKind::SetupFee && SetupFeeByDirectDebit::on($this->accounts->for($company));
+
+        if ($setupFeeByDirectDebit && $directDebitOn === null && $invoice->isOpen() && $this->accounts->for($company)->hasUsableMandate()) {
+            $directDebitOn = $invoice->due_date; // put on the mandate a few days before it is due (CollectSetupFeeByDirectDebit)
+        }
 
         return new InvoiceMail(new InvoiceMailData(
             businessName: $company->name,
@@ -89,8 +96,9 @@ final class BillingMailer
             companyId: $company->id,
             directDebitOn: $directDebitOn,
             howToPay: ManualCollection::active() ? ManualCollection::howToPay($invoice->number) : null,
-            directDebit: $directDebitOn === null && ! ManualCollection::active() && $invoice->kind === InvoiceKind::Subscription
-                && $this->accounts->for($company)->billing_mode === BillingMode::DirectDebit,
+            directDebit: ($directDebitOn === null && ! ManualCollection::active() && $invoice->kind === InvoiceKind::Subscription
+                && $this->accounts->for($company)->billing_mode === BillingMode::DirectDebit)
+                || ($directDebitOn === null && $setupFeeByDirectDebit),
         ));
     }
 

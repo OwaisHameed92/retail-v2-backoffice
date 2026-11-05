@@ -50,6 +50,7 @@ final class DirectDebitMailer
                 companyId: $company->id,
                 deadline: $deadline,
                 reminder: $reminder,
+                setupFeeByDirectDebit: SetupFeeByDirectDebit::on($account),
             )));
         }
 

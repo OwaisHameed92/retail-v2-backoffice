@@ -24,6 +24,8 @@ type FormData = {
     setup_fee_override: string;
     setup_fee_instalments: string;
     till_setup_fee_override: string;
+    /** Owner 2026-11-05: "byHand" (the default) or "directDebit" (a per-business exception). */
+    setup_fee_collection: 'byHand' | 'directDebit';
 };
 
 /** How the business pays its recurring fee (Direct Debit, or upfront as an exception) and its setup fee: amount, instalments. */
@@ -38,16 +40,28 @@ export function DirectDebitSettingsDialog(props: DirectDebitSettingsDialogProps)
 function SettingsBody({ onOpenChange, company, directDebit }: DirectDebitSettingsDialogProps) {
     const { setupFee, options } = directDebit;
     const locked = setupFee.invoicedAt !== null;
-    const { data, setData, put, processing, errors } = useForm<FormData>({
+    const { data, setData, put, processing, errors, transform } = useForm<FormData>({
         billing_mode: directDebit.mode,
         setup_fee_override: setupFee.override ?? '',
         setup_fee_instalments: String(setupFee.instalments),
         till_setup_fee_override: setupFee.tillFeeOverride ?? '',
+        setup_fee_collection: setupFee.byDirectDebit ? 'directDebit' : 'byHand',
     });
     const covered = setupFee.coveredTills ?? setupFee.tills;
+    // The choice is offered only on a Direct Debit instance with GoCardless connected, for a Direct Debit business.
+    const offerDirectDebit = !manualCollection() && setupFee.directDebitAvailable && data.billing_mode === 'directDebit';
+    const feeByDirectDebit = offerDirectDebit && data.setup_fee_collection === 'directDebit';
 
     const submit: FormEventHandler = (event) => {
         event.preventDefault();
+        transform((form) => ({
+            billing_mode: form.billing_mode,
+            setup_fee_override: form.setup_fee_override,
+            setup_fee_instalments: form.setup_fee_instalments,
+            till_setup_fee_override: form.till_setup_fee_override,
+            // Sent only where it can be chosen; otherwise the business keeps what it has (by hand unless staff chose).
+            ...(setupFee.directDebitAvailable && !manualCollection() ? { setup_fee_by_direct_debit: feeByDirectDebit } : {}),
+        }));
         put(route('admin.billing.tenants.direct-debit.settings', company.id), { preserveScroll: true, onSuccess: () => onOpenChange(false) });
     };
 
@@ -110,7 +124,7 @@ function SettingsBody({ onOpenChange, company, directDebit }: DirectDebitSetting
                         id="dd-instalments"
                         label="Instalments"
                         error={errors.setup_fee_instalments}
-                        hint="1 = paid at once; more = monthly payments by hand."
+                        hint={feeByDirectDebit ? '1 = collected at once; more = monthly Direct Debit payments.' : '1 = paid at once; more = monthly payments by hand.'}
                     >
                         <Input
                             id="dd-instalments"
@@ -153,10 +167,42 @@ function SettingsBody({ onOpenChange, company, directDebit }: DirectDebitSetting
                     </div>
                 )}
 
-                <p className="text-muted-foreground text-sm">
-                    The setup fee is always paid by hand: {byHand('cash, card or bank transfer', manualMethodsText())}, recorded with{' '}
-                    <span className="font-medium">Record setup fee payment</span>.{byHand(' It is never taken by Direct Debit.', '')}
-                </p>
+                {offerDirectDebit ? (
+                    <Field
+                        id="dd-setup-fee-collection"
+                        label="Setup fee"
+                        error={(errors as Partial<Record<string, string>>).setup_fee_by_direct_debit}
+                        hint={
+                            feeByDirectDebit
+                                ? 'Exception: GoCardless collects each instalment on its due date from the mandate (once it is set up). An instalment already paid by hand is never collected.'
+                                : 'Paid by hand (cash, card or bank transfer), recorded with Record setup fee payment.'
+                        }
+                    >
+                        <Select
+                            value={data.setup_fee_collection}
+                            onValueChange={(value) => setData('setup_fee_collection', value as FormData['setup_fee_collection'])}
+                        >
+                            <SelectTrigger id="dd-setup-fee-collection">
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="byHand">By hand (default)</SelectItem>
+                                <SelectItem value="directDebit">By Direct Debit</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </Field>
+                ) : (
+                    <p className="text-muted-foreground text-sm">
+                        The setup fee is paid by hand: {byHand('cash, card or bank transfer', manualMethodsText())}, recorded with{' '}
+                        <span className="font-medium">Record setup fee payment</span>.
+                        {byHand(
+                            setupFee.directDebitAvailable
+                                ? ' Collecting it by Direct Debit (an exception) is offered only to a business that pays by Direct Debit.'
+                                : ' It is never taken by Direct Debit.',
+                            '',
+                        )}
+                    </p>
+                )}
 
                 <DialogFooter className="gap-2">
                     <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={processing}>

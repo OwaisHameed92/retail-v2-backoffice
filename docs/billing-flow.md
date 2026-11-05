@@ -7,10 +7,38 @@ How customers pay, and what happens when they do not. Code: `app/Domain/Billing`
 
 | Money | How it is paid | Who records it |
 |---|---|---|
-| **Setup fee (upfront)** | Cash, card (our card machine) or bank transfer. Once, or in monthly instalments. **Never by Direct Debit.** | An admin with `billing.manage` (owner or accounts). |
+| **Setup fee (upfront)** | Cash, card (our card machine) or bank transfer. Once, or in monthly instalments. **Not by Direct Debit**, unless staff chose it for that business (below). | An admin with `billing.manage` (owner or accounts). |
 | **Monthly or yearly fee** | **Always by GoCardless Direct Debit.** | GoCardless. We record each payment automatically. |
 
 "Setup fee" and "upfront payment" are the same thing: the one-time amount paid at the start.
+
+### Exception: setup fee by Direct Debit (owner 2026-11-05)
+
+For one business, staff may collect the setup fee (and its instalments) by Direct Debit instead. Everyone else stays
+by hand: it is off by default, and the old "Direct Debit" setup fee method on a few old accounts does nothing.
+
+**Example: S & S Store** (setup fee £950 + VAT = £1,140 in 3 instalments, £16 + VAT a month by Direct Debit, no
+mandate yet, setup fee not invoiced yet). An admin with `billing.manage`, on the business's Billing tab:
+
+1. **Direct Debit → Payment settings**: Billing mode Direct Debit, Setup fee £950, Instalments 3, **Setup fee: By
+   Direct Debit**. Save. (Only offered on the UK with GoCardless connected, for a business on Direct Debit.)
+2. **Invoice setup fee**: three invoices of £380.00, due in 7 days, then a month and two months later. Each email
+   says it is collected by Direct Debit (no mandate yet: "set it up from Billing"), never cash or bank transfer.
+3. **Send setup email** (if the owner has not set up the Direct Debit yet). The setup email says the Direct Debit
+   collects the setup fee too.
+
+| When | What happens |
+|---|---|
+| The owner sets up the Direct Debit | Instalment 1 goes on the mandate for its due date (or the first day GoCardless allows, if later). Every open instalment is emailed again with its Direct Debit day. |
+| 10 days before each later instalment is due (`BILLING_SETUP_FEE_DD_LEAD_DAYS`) | The daily billing run puts it on the mandate for its due date: £380 on the 2nd and on the 3rd due date. |
+| A payment is collected | The instalment invoice is paid. After the first one, the monthly Direct Debit subscription starts (as for a setup fee paid by hand). |
+| A payment fails or is charged back | The payment is reversed, the instalment is owed again, "Direct Debit failed" email (and a reminder after 5 days), overdue and suspension as for any unpaid invoice. Staff can press **Retry** on the payment. The same instalment never gets a second payment by itself. |
+| An instalment was paid by hand | It is never collected. Record setup fee payment refuses an instalment GoCardless is already collecting. |
+| Staff switch it on after invoicing | The unpaid instalments coming due are put on the mandate and every open instalment is emailed again with its day. |
+| Staff switch it off | Nothing new is collected; payments already with GoCardless stay and are shown. |
+
+The Direct Debit card shows each instalment: Upcoming (with its day), Scheduled, Submitted, Paid or Failed. The
+owner's My subscription page says "by Direct Debit, in 3 instalments" and each part's day.
 
 An admin can still record a monthly payment by hand as an exception (Billing tab → invoice → Record payment).
 
@@ -55,7 +83,7 @@ The Direct Debit does not start until the setup fee (or its first instalment) is
 
 | Problem | Customer | Admin | Till | How it ends |
 |---|---|---|---|---|
-| **No Direct Debit** within 3 days of onboarding (`BILLING_MANDATE_DEADLINE_DAYS`) | Banner every day. One reminder email when less than 2 days are left. Then "Account suspended" email with the setup link. | Billing tab warning, then the business shows **Suspended** ("No Direct Debit set up"). | **Suspended** at its next check-in. | The owner sets up the Direct Debit: the suspension lifts **at once**. Money taken by hand does not lift it. |
+| **No Direct Debit** within 3 days of onboarding (`BILLING_MANDATE_DEADLINE_DAYS`) | Banner every day. One reminder email when less than 2 days are left. Deadline passed: My subscription says "Your tills lock on <date of the next billing run> unless your Direct Debit is set up"; "are locked" only once suspended. Then "Account suspended" email with the setup link. | Billing tab warning, then the business shows **Suspended** ("No Direct Debit set up"). | **Suspended** at its next check-in. | The owner sets up the Direct Debit: the suspension lifts **at once**. Money taken by hand does not lift it. |
 | **Direct Debit cancelled** by the customer (or failed, expired, blocked) | "Your Direct Debit has stopped" email with a new link. Reminder before the deadline. Then suspended. | Copy of the email. Billing tab: "Direct Debit stopped". Subscription paused. | Keeps working for 3 days (`BILLING_MANDATE_GRACE_DAYS`), then **suspended**. | A new mandate: suspension lifted at once, subscription moved to the new mandate. |
 | **Payment failed** | "Direct Debit failed" email, a reminder after 5 days. Portal banner on every page once the invoice is overdue: "£X is overdue — your tills lock on <date>" (Go to Billing for the owner; the others are told to ask the owner). | Copy of the email. Invoice shows **Overdue** the next day. | Paid date stays. After it passes: **grace** for the plan's payment grace days (7), then **expired**. After 7 days unpaid (`BILLING_SUSPEND_AFTER_DAYS`, the same as the payment grace — owner 2026-10-05): **suspended**. | GoCardless retries (if Success+ retries are on in GoCardless), the next collection pays the oldest unpaid invoice, or the admin records a payment. Paid: **active** again at once. A payment that failed **after** it was confirmed (late failure) and is then retried and collected is recorded again (once). |
 | **Charged back** (bank reversed a paid payment) | "Payment reversed" email. | Copy. The invoice is owed again. | The paid date is **not** shortened. Suspended only 7 days **after the chargeback**, not after the old due date. | Same as a failed payment. A chargeback GoCardless cancels (the money comes back) is recorded again. |

@@ -10,6 +10,7 @@ use App\Domain\Billing\Enums\SetupFeeMethod;
 use App\Domain\Billing\Events\SetupFeePaymentRecorded;
 use App\Domain\Billing\GoCardless\Actions\ChargeSetupFee;
 use App\Domain\Billing\GoCardless\Support\SetupFee;
+use App\Domain\Billing\GoCardless\Support\SetupFeeByDirectDebit;
 use App\Domain\Billing\Models\BillingAccount;
 use App\Domain\Billing\Models\Invoice;
 use App\Domain\Billing\Models\Payment;
@@ -103,7 +104,8 @@ class RecordUpfrontPayment
             return $this->accounts->for($company);
         }
 
-        $created = $net !== null ? $this->chargeSetupFee->handle($company, send: false) : [];
+        // Paid by hand now: no Direct Debit for this instalment (the option's daily run collects the later ones).
+        $created = $net !== null ? $this->chargeSetupFee->handle($company, send: false, collect: false) : [];
         $invoice = $this->nextUnpaid($company);
 
         if ($invoice === null) {
@@ -113,6 +115,8 @@ class RecordUpfrontPayment
 
             throw ValidationException::withMessages(['upfront_amount' => "The setup fee for {$company->name} is already paid."]);
         }
+
+        $this->refuseWhileCollecting($invoice);
 
         $result = $this->recordPayment->handle($company, new NewPayment(
             method: $input->method,
@@ -152,6 +156,23 @@ class RecordUpfrontPayment
     {
         return $input->idempotencyKey !== null
             && Payment::withoutCompanyScope()->where('company_id', $company->id)->where('idempotency_key', $input->idempotencyKey)->exists();
+    }
+
+    /**
+     * Owner 2026-11-05 (setup fee by Direct Debit): an instalment GoCardless is collecting is not also recorded by
+     * hand, or the customer would pay it twice. Only such an instalment has a pending setup fee Direct Debit payment.
+     *
+     * @throws ValidationException
+     */
+    private function refuseWhileCollecting(Invoice $invoice): void
+    {
+        $payment = SetupFeeByDirectDebit::paymentFor($invoice);
+
+        if ($payment !== null && $payment->status->isPending()) {
+            $day = $payment->charge_date !== null ? ' on '.$payment->charge_date->format('j M Y') : '';
+
+            throw ValidationException::withMessages(['upfront_amount' => "{$invoice->number} is being collected by Direct Debit{$day}. Record it by hand only if that payment fails."]);
+        }
     }
 
     private function nextUnpaid(Company $company): ?Invoice

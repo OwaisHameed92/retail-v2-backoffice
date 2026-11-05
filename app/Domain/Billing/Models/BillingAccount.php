@@ -41,6 +41,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property SetupFeeMethod $setup_fee_method
  * @property int $setup_fee_instalments
  * @property CarbonImmutable|null $setup_fee_invoiced_at
+ * @property bool $setup_fee_by_direct_debit Owner 2026-11-05: staff chose to collect the setup fee (each instalment) by Direct Debit. Default false; never the legacy `setup_fee_method`.
  * @property int|null $setup_fee_covered_tills P11: tills a setup fee accounts for; null = untracked (see SetupFeeTills).
  * @property string|null $till_setup_fee_override P11: setup fee per added till (net); null = the plan's.
  * @property CarbonImmutable|null $recurring_starts_on Change plan: the first recurring period's start (a calendar day), which the next Direct Debit subscription collects from.
@@ -95,6 +96,7 @@ class BillingAccount extends Model
         'billing_mode' => 'upfrontCash',
         'setup_fee_method' => 'manual',
         'setup_fee_instalments' => 1,
+        'setup_fee_by_direct_debit' => false,
     ];
 
     /**
@@ -117,6 +119,7 @@ class BillingAccount extends Model
             'setup_fee_method' => SetupFeeMethod::class,
             'setup_fee_instalments' => 'integer',
             'setup_fee_invoiced_at' => 'immutable_datetime',
+            'setup_fee_by_direct_debit' => 'boolean',
             'setup_fee_covered_tills' => 'integer',
             'till_setup_fee_override' => MoneyCast::class,
             'recurring_starts_on' => CalendarDateCast::class,

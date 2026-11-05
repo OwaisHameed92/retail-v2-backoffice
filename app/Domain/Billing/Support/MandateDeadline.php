@@ -4,7 +4,9 @@ namespace App\Domain\Billing\Support;
 
 use App\Domain\Billing\GoCardless\Support\SubscriptionAmount;
 use App\Domain\Billing\Models\BillingAccount;
+use App\Domain\Shared\Country\Country;
 use App\Domain\Shared\Support\Money;
+use App\Domain\Tenancy\Enums\CompanyStatus;
 use App\Domain\Tenancy\Models\Company;
 use Carbon\CarbonImmutable;
 
@@ -95,7 +97,10 @@ final class MandateDeadline
     /**
      * For the portal banner and billing page: null when no mandate is needed.
      *
-     * @return array{deadline: string, daysLeft: int, passed: bool}|null
+     * `locked`: the business is suspended now (the tills are locked); a passed deadline alone is not (owner
+     * 2026-11-05: billing:run suspends at its next run, `lockOn`, the London day of that run).
+     *
+     * @return array{deadline: string, daysLeft: int, passed: bool, locked: bool, lockOn: string|null}|null
      */
     public static function state(Company $company, BillingAccount $account, ?CarbonImmutable $now = null): ?array
     {
@@ -106,11 +111,26 @@ final class MandateDeadline
         $now ??= CarbonImmutable::now();
         $deadline = $account->mandate_deadline_at;
         $hours = $now->diffInHours($deadline, false);
+        $passed = $hours <= 0;
+        $locked = $passed && $company->status === CompanyStatus::Suspended;
 
         return [
             'deadline' => $deadline->toIso8601String(),
-            'daysLeft' => $hours <= 0 ? 0 : (int) ceil($hours / 24),
-            'passed' => $hours <= 0,
+            'daysLeft' => $passed ? 0 : (int) ceil($hours / 24),
+            'passed' => $passed,
+            'locked' => $locked,
+            'lockOn' => $passed && ! $locked ? self::nextRunDay($now) : null,
         ];
+    }
+
+    /**
+     * The London day of the next daily billing:run (06:00 in the app's time zone, routes/console.php), when a passed
+     * deadline suspends the business.
+     */
+    public static function nextRunDay(CarbonImmutable $now): string
+    {
+        $run = $now->setTimezone((string) config('app.timezone', 'UTC'))->setTime(6, 0);
+
+        return ($run->lessThanOrEqualTo($now) ? $run->addDay() : $run)->setTimezone(Country::zone())->format('Y-m-d');
     }
 }

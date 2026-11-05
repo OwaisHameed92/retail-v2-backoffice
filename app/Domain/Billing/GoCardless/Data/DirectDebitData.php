@@ -9,6 +9,7 @@ use App\Domain\Billing\GoCardless\Contracts\GoCardlessClient;
 use App\Domain\Billing\GoCardless\Models\GoCardlessPayment;
 use App\Domain\Billing\GoCardless\Support\NoDirectDebitClient;
 use App\Domain\Billing\GoCardless\Support\SetupFee;
+use App\Domain\Billing\GoCardless\Support\SetupFeeByDirectDebit;
 use App\Domain\Billing\GoCardless\Support\SubscriptionAmount;
 use App\Domain\Billing\Support\BillingAccounts;
 use App\Domain\Billing\Support\BillingFormat;
@@ -123,6 +124,12 @@ final class DirectDebitData
                 'tills' => SetupFeeTills::count($company),
                 'coveredTills' => $account->setup_fee_covered_tills,
                 'heldTills' => count(SetupFeeTills::heldLicenceIds($company->id)),
+                // Owner 2026-11-05: "Setup fee: By Direct Debit" (a per-business exception; off = by hand) and where
+                // each instalment stands (scheduled for a day, submitted, paid, failed…).
+                'byDirectDebit' => $account->setup_fee_by_direct_debit,
+                'collectedByDirectDebit' => SetupFeeByDirectDebit::on($account),
+                'directDebitAvailable' => ! $manual && $client->enabled(),
+                'parts' => SetupFeeByDirectDebit::parts($company, $account),
             ],
             'mandate' => [
                 'id' => $account->gc_mandate_id,

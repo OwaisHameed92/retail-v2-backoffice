@@ -1,4 +1,4 @@
-import { formatDate } from '@/components/admin/billing/format';
+import { formatDate, formatDay } from '@/components/admin/billing/format';
 import { SectionCard } from '@/components/shared/section-card';
 import { StatusBadge } from '@/components/shared/status-badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -71,14 +71,18 @@ export function DirectDebitCard({
                         <Alert variant={deadline.passed ? 'destructive' : 'default'}>
                             <TriangleAlert className="size-4" />
                             <AlertTitle>
-                                {deadline.passed
+                                {deadline.locked
                                     ? 'Your tills are locked until your Direct Debit is set up'
-                                    : `${deadline.daysLeft} ${deadline.daysLeft === 1 ? 'day' : 'days'} left to set up your Direct Debit`}
+                                    : deadline.passed
+                                      ? `Your tills lock ${deadline.lockOn ? `on ${formatDay(deadline.lockOn)}` : 'soon'} unless your Direct Debit is set up`
+                                      : `${deadline.daysLeft} ${deadline.daysLeft === 1 ? 'day' : 'days'} left to set up your Direct Debit`}
                             </AlertTitle>
                             <AlertDescription>
-                                {deadline.passed
+                                {deadline.locked
                                     ? 'Set it up now and your tills unlock at their next check-in.'
-                                    : `Please set it up by ${formatDate(deadline.deadline)}, or your tills lock until you do.`}
+                                    : deadline.passed
+                                      ? `The deadline was ${formatDate(deadline.deadline)}. Set it up now and your tills keep working.`
+                                      : `Please set it up by ${formatDate(deadline.deadline)}, or your tills lock until you do.`}
                             </AlertDescription>
                         </Alert>
                     ) : pricing.isZero ? (

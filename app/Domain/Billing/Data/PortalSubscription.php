@@ -7,6 +7,7 @@ use App\Domain\Billing\Enums\InvoiceKind;
 use App\Domain\Billing\Enums\InvoiceStatus;
 use App\Domain\Billing\GoCardless\Models\GoCardlessPayment;
 use App\Domain\Billing\GoCardless\Support\SetupFee;
+use App\Domain\Billing\GoCardless\Support\SetupFeeByDirectDebit;
 use App\Domain\Billing\Models\BillingAccount;
 use App\Domain\Billing\Models\Invoice;
 use App\Domain\Billing\Models\Payment;
@@ -94,10 +95,15 @@ final class PortalSubscription
         $invoices = Invoice::query()->where('kind', InvoiceKind::SetupFee->value)->where('status', '!=', InvoiceStatus::Draft->value)
             ->orderBy('due_date')->orderBy('number')->get();
 
+        // Owner 2026-11-05: staff chose to collect it by Direct Debit (default by hand): each part says when.
+        $byDirectDebit = SetupFeeByDirectDebit::on($account);
+
         if ($invoices->isNotEmpty()) {
+            $collection = $byDirectDebit ? collect(SetupFeeByDirectDebit::parts($company, $account))->keyBy('number') : collect();
+
             return [
                 'charged' => true,
-                'method' => null,
+                'method' => $byDirectDebit ? 'directDebit' : null,
                 'total' => BillingFormat::money($invoices->reduce(fn (string $sum, Invoice $invoice) => Money::add($sum, $invoice->total), '0.00')),
                 'parts' => $invoices->values()->map(fn (Invoice $invoice, int $i) => [
                     'label' => $invoices->count() > 1 ? 'Part '.($i + 1).' of '.$invoices->count() : 'Setup fee',
@@ -106,6 +112,7 @@ final class PortalSubscription
                     'status' => $invoice->status->value,
                     'statusLabel' => $invoice->status->label(),
                     'number' => $invoice->number,
+                    ...($byDirectDebit ? ['directDebit' => self::collection($collection->get((string) $invoice->number))] : []),
                 ])->all(),
             ];
         }
@@ -118,7 +125,7 @@ final class PortalSubscription
 
         return $schedule === [] ? null : [
             'charged' => false,
-            'method' => 'manual', // always paid by hand (owner rule 2026-10-05)
+            'method' => $byDirectDebit ? 'directDebit' : 'manual', // by hand, unless staff chose Direct Debit (owner 2026-11-05)
             'total' => BillingFormat::money(SetupFee::totals($company, $account)['gross']),
             'parts' => array_map(fn (array $part, int $i) => [
                 'label' => count($schedule) > 1 ? 'Part '.($i + 1).' of '.count($schedule) : 'Setup fee',
@@ -129,6 +136,30 @@ final class PortalSubscription
                 'number' => null,
             ], $schedule, array_keys($schedule)),
         ];
+    }
+
+    /**
+     * One setup fee part's Direct Debit, in the customer's words: "Collected by Direct Debit on 12 Nov 2026".
+     *
+     * @param  array{state: string, stateLabel: string, chargeDate: string|null}|null  $part
+     * @return array{state: string, label: string, date: string|null}|null
+     */
+    private static function collection(?array $part): ?array
+    {
+        if ($part === null) {
+            return null;
+        }
+
+        $label = match ($part['state']) {
+            'paid' => $part['stateLabel'],
+            'scheduled', 'planned' => 'Collected by Direct Debit on',
+            'submitted' => 'Being collected by Direct Debit',
+            'failed' => 'Direct Debit '.mb_strtolower($part['stateLabel']),
+            'waiting' => 'Collected by Direct Debit once it is set up',
+            default => $part['stateLabel'],
+        };
+
+        return ['state' => $part['state'], 'label' => $label, 'date' => $part['chargeDate']];
     }
 
     /**

@@ -26,5 +26,7 @@ final readonly class DirectDebitSetupData
         public ?CarbonInterface $deadline = null,
         /** The reminder billing:run sends before the deadline (other subject line). */
         public bool $reminder = false,
+        /** Owner 2026-11-05: staff chose to collect this business's setup fee by this Direct Debit too. */
+        public bool $setupFeeByDirectDebit = false,
     ) {}
 }

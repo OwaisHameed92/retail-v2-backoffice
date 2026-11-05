@@ -16,13 +16,15 @@ use App\Domain\Tenancy\Models\Company;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Throwable;
 
 /**
  * Applies a mandate's status to the company (webhook, return page or reconcile; idempotent).
  *
  * - Usable (pending submission, submitted, active) and new to us: store it, create the subscription (or move it
  *   onto this mandate) and lift a billing hold (the "no Direct Debit" suspension, an overdue flag). The setup fee
- *   is never collected here: it is always paid by hand (owner rule 2026-10-05).
+ *   is paid by hand (owner rule 2026-10-05), except for a business staff switched to "Setup fee: By Direct Debit"
+ *   (owner 2026-11-05): its instalments coming due are put on the mandate (CollectSetupFeeByDirectDebit).
  * - Lost (cancelled, failed, expired…): treated like "no mandate" (owner rule 2026-10-05): a new deadline of
  *   `billing.direct_debit.mandate_grace_days` starts, the subscription is paused, owners and staff are emailed
  *   once, and billing:run suspends the business when the deadline passes without a new mandate.
@@ -38,6 +40,7 @@ class ApplyMandate
         private readonly ApplySetupFeeTerms $setupFeeTerms,
         private readonly DirectDebitMailer $mailer,
         private readonly RecordAudit $audit,
+        private readonly CollectSetupFeeByDirectDebit $collectSetupFee,
     ) {}
 
     /**
@@ -138,6 +141,15 @@ class ApplyMandate
 
         if (! $account->isDirectDebit()) {
             return;
+        }
+
+        // Owner 2026-11-05: only for a business whose setup fee staff chose to collect by Direct Debit (default off):
+        // the instalments coming due go on the mandate now, and the customer gets each invoice with its day.
+        try {
+            $this->collectSetupFee->handle($company, email: true);
+        } catch (Throwable $exception) {
+            // billing:run tries again every day; the invoices stay issued meanwhile.
+            Log::warning('Setup fee Direct Debit not created after the mandate', ['company_id' => $company->id, 'error' => $exception->getMessage()]);
         }
 
         try {

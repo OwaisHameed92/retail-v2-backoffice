@@ -38,13 +38,18 @@ export interface PortalBillingProps {
         statusLabel: string;
         total: string;
         owed: string;
+        /** Owner 2026-11-05: collected by Direct Debit (a per-business exception) instead of by hand. */
+        byDirectDebit: boolean;
+        /** How many parts (instalments) it is paid in. */
+        parts: number;
     };
     directDebit: {
         directDebit: boolean;
         available: boolean;
         mandate: { usable: boolean; status: string | null; statusLabel: string; activeAt: string | null; lost: boolean };
         nextCollection: { date: string; amount: string } | null;
-        deadline: { deadline: string; daysLeft: number; passed: boolean } | null;
+        /** `locked`: suspended now; `lockOn`: the day the tills lock when the deadline passed and they are not locked yet. */
+        deadline: { deadline: string; daysLeft: number; passed: boolean; locked: boolean; lockOn: string | null } | null;
         canSetUp: boolean;
     };
     invoices: {
@@ -72,9 +77,18 @@ export interface PortalBillingProps {
     collections: { id: string; chargeDate: string | null; amount: string; what: string; statusLabel: string }[];
     setupFee: {
         charged: boolean;
-        method: 'manual' | null;
+        method: 'manual' | 'directDebit' | null;
         total: string;
-        parts: { label: string; dueDate: string | null; amount: string; status: string; statusLabel: string; number: string | null }[];
+        parts: {
+            label: string;
+            dueDate: string | null;
+            amount: string;
+            status: string;
+            statusLabel: string;
+            number: string | null;
+            /** Owner 2026-11-05: only when the setup fee is collected by Direct Debit. */
+            directDebit?: { state: string; label: string; date: string | null } | null;
+        }[];
     } | null;
     requests: {
         id: string;

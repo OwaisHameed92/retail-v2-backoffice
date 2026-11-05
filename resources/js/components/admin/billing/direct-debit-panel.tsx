@@ -1,6 +1,7 @@
 import { DirectDebitPayments, directDebitTones as tones } from '@/components/admin/billing/direct-debit-payments';
 import { DirectDebitSettingsDialog } from '@/components/admin/billing/direct-debit-settings-dialog';
 import { formatDate, formatDay } from '@/components/admin/billing/format';
+import { SetupFeeParts } from '@/components/admin/billing/setup-fee-parts';
 import { type CompanyRef, type DirectDebitData } from '@/components/admin/billing/types';
 import { ConfirmDialog } from '@/components/shared/confirm-dialog';
 import { SectionCard } from '@/components/shared/section-card';
@@ -39,6 +40,10 @@ export function DirectDebitPanel({ company, directDebit, canManage }: { company:
     const showDirectDebit = isDirectDebit || mandate.id !== null || payments.data.length > 0;
     // The setup fee is always paid by hand (owner rule 2026-10-05): invoice it to send it before it is paid.
     const canInvoiceSetup = setupFee.hasFee && setupFee.invoicedAt === null;
+    // Owner 2026-11-05: a per-business exception collects the setup fee by Direct Debit (default: by hand).
+    const feeByDirectDebit = setupFee.collectedByDirectDebit;
+    const showParts =
+        setupFee.parts.length > 0 && (feeByDirectDebit || setupFee.parts.some((part) => part.state !== 'byHand' && part.state !== 'paid'));
     const url = (name: string, params: Record<string, string> = {}) =>
         route(`admin.billing.tenants.direct-debit.${name}`, { company: company.id, ...params });
 
@@ -58,7 +63,7 @@ export function DirectDebitPanel({ company, directDebit, canManage }: { company:
                 manual
                     ? `Every monthly or yearly period is an invoice, emailed and paid by hand (${manual.methodsText}); record each payment on the invoice. The setup fee is paid by hand too.`
                     : isDirectDebit
-                      ? 'GoCardless collects the monthly or yearly fee; every payment has its own invoice. The setup fee is paid by hand.'
+                      ? `GoCardless collects the monthly or yearly fee; every payment has its own invoice. ${feeByDirectDebit ? 'The setup fee is collected by Direct Debit too (exception).' : 'The setup fee is paid by hand.'}`
                       : 'This business pays each period by hand (exception): cash, card or bank transfer.'
             }
             actions={
@@ -140,9 +145,9 @@ export function DirectDebitPanel({ company, directDebit, canManage }: { company:
                         </span>
                         <span className="text-muted-foreground text-sm">
                             {setupFee.invoicedTotal !== null
-                                ? 'As invoiced · paid by hand'
+                                ? `As invoiced · ${feeByDirectDebit ? 'by Direct Debit' : 'paid by hand'}`
                                 : setupFee.hasFee
-                                  ? `${setupFee.override !== null ? 'Custom' : 'Plan fee'} · ${setupFee.instalments > 1 ? `${setupFee.instalments} monthly payments` : 'one payment'} · paid by hand`
+                                  ? `${setupFee.override !== null ? 'Custom' : 'Plan fee'} · ${setupFee.instalments > 1 ? `${setupFee.instalments} monthly payments` : 'one payment'} · ${feeByDirectDebit ? 'by Direct Debit' : 'paid by hand'}`
                                   : 'No setup fee on this plan'}
                         </span>
                         {setupFee.invoicedAt && (
@@ -208,6 +213,8 @@ export function DirectDebitPanel({ company, directDebit, canManage }: { company:
                     </div>
                 )}
 
+                {showParts && <SetupFeeParts parts={setupFee.parts} />}
+
                 {showDirectDebit && <DirectDebitPayments payments={payments.data} />}
             </div>
 
@@ -218,7 +225,11 @@ export function DirectDebitPanel({ company, directDebit, canManage }: { company:
                         open={action === 'setup-email'}
                         onOpenChange={close}
                         title="Send the Direct Debit setup email?"
-                        description="The owners get a secure link to the GoCardless page. Once they finish, the subscription starts automatically (after the setup fee is paid). The setup fee is never taken by Direct Debit."
+                        description={
+                            feeByDirectDebit
+                                ? 'The owners get a secure link to the GoCardless page. Once they finish, the setup fee instalments are collected by Direct Debit on their due dates and the subscription starts after the first one is paid.'
+                                : 'The owners get a secure link to the GoCardless page. Once they finish, the subscription starts automatically (after the setup fee is paid). The setup fee is never taken by Direct Debit.'
+                        }
                         confirmLabel="Send email"
                         onConfirm={() => post(url('setup-email'))}
                     />
@@ -229,7 +240,11 @@ export function DirectDebitPanel({ company, directDebit, canManage }: { company:
                         description={
                             manual
                                 ? `The invoice (one per instalment) is emailed now. Record the payment (${manual.methodsText}) with Record setup fee payment.`
-                                : 'The invoice (one per instalment) is emailed now. Record the cash, card or bank transfer with Record setup fee payment.'
+                                : feeByDirectDebit
+                                  ? mandate.usable
+                                      ? 'The invoice (one per instalment) is emailed now. GoCardless collects each one on its due date (the first as soon as the bank allows).'
+                                      : 'The invoice (one per instalment) is emailed now. Each one is collected by Direct Debit once the owner sets it up.'
+                                  : 'The invoice (one per instalment) is emailed now. Record the cash, card or bank transfer with Record setup fee payment.'
                         }
                         confirmLabel="Invoice setup fee"
                         onConfirm={() => post(url('setup-fee'))}

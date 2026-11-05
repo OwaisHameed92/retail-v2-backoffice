@@ -20,7 +20,11 @@ Set up Direct Debit
 
 ## Good to know
 
+@if ($data->setupFeeByDirectDebit)
+- The Direct Debit collects your monthly or yearly fee and your setup fee. We email you each setup fee invoice with the day it is collected.
+@else
 - The Direct Debit collects your monthly or yearly fee only. The setup fee is never taken by Direct Debit.
+@endif
 - GoCardless emails you before every collection, and your payments are protected by the Direct Debit Guarantee.
 - We email you an invoice for every payment.
 - The link works for {{ $linkDays }} days. Reply to this email if you need a new one.

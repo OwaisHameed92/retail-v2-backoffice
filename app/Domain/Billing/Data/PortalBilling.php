@@ -4,6 +4,7 @@ namespace App\Domain\Billing\Data;
 
 use App\Domain\Billing\Enums\InvoiceStatus;
 use App\Domain\Billing\GoCardless\Contracts\GoCardlessClient;
+use App\Domain\Billing\GoCardless\Support\SetupFeeByDirectDebit;
 use App\Domain\Billing\GoCardless\Support\SubscriptionAmount;
 use App\Domain\Billing\Models\BillingAccount;
 use App\Domain\Billing\Models\Invoice;
@@ -69,6 +70,9 @@ final class PortalBilling
                 'statusLabel' => $fee->label(),
                 'total' => BillingFormat::money($fee->total),
                 'owed' => BillingFormat::money($fee->owed()),
+                // Owner 2026-11-05: staff chose to collect this business's setup fee by Direct Debit (default by hand).
+                'byDirectDebit' => SetupFeeByDirectDebit::on($account),
+                'parts' => max(1, $fee->parts),
             ],
             'directDebit' => self::directDebit($company, $account, $now, $canManage),
             'invoices' => self::invoices(),
