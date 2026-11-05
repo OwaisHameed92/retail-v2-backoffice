@@ -160,6 +160,18 @@ test('S & S Store: three £380 instalments collected by Direct Debit on their du
         ->where('setupFee.parts.1.directDebit.date', '2026-12-05'));
 });
 
+test('the billing status card says the unpaid setup fee is collected by Direct Debit, never cash or bank transfer', function () {
+    $company = ssStore($this);
+    switchSetupFeeToDirectDebit($this, $company);
+
+    $this->actingAs($this->ownerOf($company), 'web')->get('/app/billing')->assertOk()->assertInertia(fn (Assert $page) => $page
+        ->where('status.setupFee.text', '£1,140.00 — not paid yet (by Direct Debit, in 3 instalments)'));
+
+    switchSetupFeeToDirectDebit($this, $company, false);
+    $this->actingAs($this->ownerOf($company), 'web')->get('/app/billing')->assertOk()->assertInertia(fn (Assert $page) => $page
+        ->where('status.setupFee.text', '£1,140.00 — not paid yet (cash, card or bank transfer, in 3 instalments)'));
+});
+
 test('a failed instalment is reversed and emailed, never collected twice, and staff can retry it', function () {
     $company = ssStore($this);
     $this->setUpMandate($company);

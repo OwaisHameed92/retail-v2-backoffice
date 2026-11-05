@@ -104,7 +104,12 @@ final class BillingStatusData
                 'status' => 'partPaid',
                 'tone' => 'info',
             ],
-            default => ['text' => ManualCollection::active() ? ManualStatusText::setupFeeUnpaid($status) : "{$total} — not paid yet (cash, card or bank transfer".($fee->parts > 1 ? ", in {$fee->parts} instalments" : '').')', 'status' => 'unpaid', 'tone' => 'warning'],
+            default => ['text' => match (true) {
+                ManualCollection::active() => ManualStatusText::setupFeeUnpaid($status),
+                // Owner 2026-11-05: Switch & Save collects this business's setup fee by Direct Debit.
+                $status->account->setup_fee_by_direct_debit => "{$total} — not paid yet (by Direct Debit".($fee->parts > 1 ? ", in {$fee->parts} instalments" : '').')',
+                default => "{$total} — not paid yet (cash, card or bank transfer".($fee->parts > 1 ? ", in {$fee->parts} instalments" : '').')',
+            }, 'status' => 'unpaid', 'tone' => 'warning'],
         };
     }
 
