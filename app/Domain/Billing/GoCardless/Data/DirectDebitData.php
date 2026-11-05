@@ -18,6 +18,7 @@ use App\Domain\Billing\Support\ManualCollection;
 use App\Domain\Billing\Support\SetupFeePayment;
 use App\Domain\Billing\Support\SetupFeeState;
 use App\Domain\Billing\Support\SetupFeeTills;
+use App\Domain\Billing\Support\UpfrontUndo;
 use App\Domain\Billing\Support\Vat;
 use App\Domain\Handheld\Support\HandheldAccess;
 use App\Domain\Licensing\Support\DefaultPlan;
@@ -47,6 +48,7 @@ final class DirectDebitData
         $query = GoCardlessPayment::withoutCompanyScope()->with('invoice')->where('company_id', $company->id);
         $pricing = CompanyPricing::for($company, $account);
         $fee = SetupFeeState::for($company, $account);
+        $undo = UpfrontUndo::check($company, $account);
         $planType = $pricing->plan?->billingType();
 
         return [
@@ -93,6 +95,12 @@ final class DirectDebitData
                 'invoiced' => $fee->invoiced,
                 'nextDue' => $fee->nextDue?->format('Y-m-d'),
                 'methods' => PaymentMethod::setupFeeOptions(),
+                // Owner 2026-11-05: "Undo upfront payment (recorded by mistake)", when UndoUpfrontPayment allows it.
+                'undo' => $undo->allowed() ? [
+                    'payment' => $undo->payment?->number,
+                    'amount' => BillingFormat::money($undo->payment->amount ?? $account->upfront_amount ?? '0.00'),
+                    'invoices' => array_map(fn ($invoice) => (string) $invoice->number, $undo->invoices),
+                ] : null,
             ],
             'deadline' => MandateDeadline::state($company, $account),
             'setupFee' => [

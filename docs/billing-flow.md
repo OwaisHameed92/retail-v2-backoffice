@@ -80,6 +80,7 @@ browser retry): the form sends a key and the second submit records nothing ("alr
 | Record a setup fee payment (cash, card, bank transfer) | Billing tab → Record setup fee payment |
 | Change or waive the setup fee (set it to £0) before it is invoiced | Billing tab → Payment settings |
 | Void a setup fee invoice (waives it) | Invoice → Void |
+| Undo a setup fee recorded as paid when no money came in (payment reversed, setup fee invoice voided, no email); then set the instalments, invoice the setup fee and record each payment | Billing tab → Setup fee (upfront) → Undo upfront payment; then Payment settings → Instalments, Invoice setup fee, Record setup fee payment |
 | Record a monthly payment by hand (exception) | Invoice → Record payment |
 | Extend a licence | Licence → Renew |
 | Lift a suspension | Tenant → Unsuspend |

@@ -317,6 +317,14 @@ export type SetupFeeMethod = 'manual' | 'directDebit';
 
 export type SetupFeeStatus = 'none' | 'unpaid' | 'partPaid' | 'paid';
 
+/** What "Undo upfront payment" would reverse and void (UndoUpfrontPayment). `payment` is null for a £0 record. */
+export interface UpfrontUndo {
+    payment: string | null;
+    /** Formatted, VAT included. */
+    amount: string;
+    invoices: string[];
+}
+
 export type PlanBillingType = 'setupOnly' | 'setupAndRecurring' | 'recurringOnly';
 
 /** One GoCardless payment (DirectDebitData::for). Money formatted, dates "YYYY-MM-DD". */
@@ -426,6 +434,8 @@ export interface DirectDebitData {
         invoiced: boolean;
         nextDue: string | null;
         methods: Option<string>[];
+        /** "Undo upfront payment (recorded by mistake)" is allowed (owner 2026-11-05); null hides it. */
+        undo: UpfrontUndo | null;
     };
     /** Waiting for the customer's first mandate: the deadline (null when none is needed). */
     deadline: MandateDeadline | null;

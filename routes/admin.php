@@ -333,6 +333,8 @@ Route::middleware(['auth:admin', AdminIsActive::class, BlockAdminWhileImpersonat
         // Module 1.13: the company's own pricing, and the upfront payment when it was not taken at onboarding.
         Route::put('tenants/{company}/pricing', [TenantPricingController::class, 'pricing'])->name('tenants.pricing');
         Route::post('tenants/{company}/upfront-payment', [TenantPricingController::class, 'upfront'])->name('tenants.upfront');
+        // Owner 2026-11-05: an upfront payment recorded by mistake (no money came in): reversed, setup fee invoice voided.
+        Route::post('tenants/{company}/upfront-payment/undo', [TenantPricingController::class, 'undoUpfront'])->name('tenants.upfront.undo');
 
         // GoCardless Direct Debit (module 1.12).
         Route::prefix('tenants/{company}/direct-debit')->name('tenants.direct-debit.')->group(function () {

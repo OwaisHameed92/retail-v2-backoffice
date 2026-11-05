@@ -53,6 +53,8 @@ final class BillingActivity
             'billing.trial_ended_sent' => 'Sent the “trial ended” email',
             'billing.plan_changed' => 'Changed the plan from '.($meta['from_plan_name'] ?? $before['plan'] ?? 'no plan').' to '.($meta['to_plan_name'] ?? $after['plan'] ?? 'a new plan'),
             'billing.setup_fee_waived' => 'Waived the setup fee'.(isset($meta['reason']) ? ' ('.$meta['reason'].')' : ''),
+            'billing.upfront_undone' => 'Undid the upfront payment of '.self::money($meta['amount'] ?? null)
+                .(isset($meta['payment']) ? ' ('.$meta['payment'].')' : '').' recorded by mistake: '.($meta['reason'] ?? ''),
             'company.overdue' => 'Marked the business as overdue'.(isset($meta['reason']) ? ': '.$meta['reason'] : ''),
             default => $entry->action,
         };

@@ -1,7 +1,9 @@
 <?php
 
 use App\Domain\Admin\Enums\AdminRole;
+use App\Domain\Billing\Actions\RecordUpfrontPayment;
 use App\Domain\Billing\Data\NewInvoice;
+use App\Domain\Billing\Data\UpfrontPayment;
 use App\Domain\Billing\Enums\InvoiceStatus;
 use App\Domain\Billing\Enums\PaymentMethod;
 use App\Domain\Billing\GoCardless\Enums\PaymentKind;
@@ -66,6 +68,8 @@ $billingRoutes = [
     // Module 1.13: pricing override, and the upfront payment (£0, on a second business with nothing invoiced).
     ['admin.billing.tenants.pricing', 'put', ['company' => 'company'], 'manage', ['pricing_mode' => 'perBranch', 'price_monthly' => '40.00', 'price_yearly' => '']],
     ['admin.billing.tenants.upfront', 'post', ['company' => 'fresh'], 'manage', ['upfront_amount' => '0', 'upfront_method' => 'cash']],
+    // Owner 2026-11-05: undo an upfront record made by mistake (a £0 "nothing to pay" record, so no invoice numbers move).
+    ['admin.billing.tenants.upfront.undo', 'post', ['company' => 'undoable'], 'manage', ['reason' => 'Recorded by mistake']],
 ];
 
 /**
@@ -103,6 +107,9 @@ $billingFixture = function (object $test): array {
     $row->company_id = $retry->id;
     $row->save();
 
+    $undoable = $test->payingTenant('Undo '.uniqid(), 1, 'UND');
+    app(RecordUpfrontPayment::class)->handle($undoable, new UpfrontPayment('0', PaymentMethod::Cash));
+
     return [
         'retryCompany' => $retry->id,
         'failedPayment' => $row->id,
@@ -112,6 +119,7 @@ $billingFixture = function (object $test): array {
         'payment' => $payment->id,
         'pause' => 'pause',
         'fresh' => $test->payingTenant('Fresh '.uniqid(), 1, 'FRS')->id,
+        'undoable' => $undoable->id,
     ];
 };
 
@@ -131,7 +139,7 @@ test('the table covers every billing route', function () use ($billingRoutes) {
         ->map(fn (RoutingRoute $route) => $route->getName())
         ->sort()->values()->all();
 
-    expect($registered)->toHaveCount(26)
+    expect($registered)->toHaveCount(27)
         ->and(collect($billingRoutes)->pluck(0)->sort()->values()->all())->toBe($registered);
 });
 
@@ -176,6 +184,7 @@ test('sales and support cannot read or change billing (owner and accounts only)'
         ->and($this->fresh(Invoice::withoutCompanyScope()->findOrFail($fixture['issued1']))->sent_count)->toBe(1)
         ->and($this->billingAccountOf(Company::query()->findOrFail($fixture['company']))->billing_name)->toBeNull()
         ->and($this->billingAccountOf(Company::query()->findOrFail($fixture['company']))->billing_mode->value)->toBe('upfrontCash')
+        ->and($this->billingAccountOf(Company::query()->findOrFail($fixture['undoable']))->upfront_recorded_at)->not->toBeNull()
         ->and($this->gc->calls)->not->toContain('pauseSubscription')
         ->and($this->gc->calls)->not->toContain('retryPayment');
 })->with([AdminRole::Sales, AdminRole::Support]);
@@ -214,6 +223,7 @@ test('accounts and owner admins can use every billing route', function (AdminRol
         ->and(Invoice::withoutCompanyScope()->where('kind', 'setupFee')->sole()->total)->toBe('120.00')
         ->and($this->billingAccountOf($company)->pricing_mode_override?->value)->toBe('perBranch')
         ->and($this->billingAccountOf(Company::query()->findOrFail($fixture['fresh']))->upfront_amount)->toBe('0.00')
+        ->and($this->billingAccountOf(Company::query()->findOrFail($fixture['undoable']))->upfront_recorded_at)->toBeNull()
         ->and(GoCardlessPayment::withoutCompanyScope()->findOrFail($fixture['failedPayment'])->status)->toBe(PaymentStatus::PendingSubmission);
 })->with([AdminRole::Accounts, AdminRole::Owner]);
 

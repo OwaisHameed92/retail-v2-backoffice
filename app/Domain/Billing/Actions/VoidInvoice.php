@@ -30,11 +30,13 @@ class VoidInvoice
     ) {}
 
     /**
+     * `$releaseHolds` false: the caller (UndoUpfrontPayment) changes no suspension and sends no email.
+     *
      * @return array{0: Invoice, 1: Invoice|null} the void invoice and the new draft (when asked for)
      *
      * @throws ValidationException
      */
-    public function handle(Invoice $invoice, string $reason, bool $redraft = false): array
+    public function handle(Invoice $invoice, string $reason, bool $redraft = false, bool $releaseHolds = true): array
     {
         $reason = trim($reason);
 
@@ -82,7 +84,9 @@ class VoidInvoice
             return [$invoice, $draft];
         });
 
-        $this->releaseHolds->handle($company);
+        if ($releaseHolds) {
+            $this->releaseHolds->handle($company);
+        }
 
         return $result;
     }

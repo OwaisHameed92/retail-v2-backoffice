@@ -2,6 +2,7 @@ import { ChangePlanDialog } from '@/components/admin/billing/change-plan-dialog'
 import { formatDate, formatDay } from '@/components/admin/billing/format';
 import { PricingDialog } from '@/components/admin/billing/pricing-dialog';
 import { type CompanyRef, type DirectDebitData, type PlanChangeOptions, type SetupFeeStatus } from '@/components/admin/billing/types';
+import { UndoUpfrontDialog } from '@/components/admin/billing/undo-upfront-dialog';
 import { emptyUpfront, type OnboardingBillingOptions, UpfrontPaymentFields } from '@/components/admin/billing/upfront-payment-fields';
 import { SectionCard } from '@/components/shared/section-card';
 import { StatusPill, type StatusTone } from '@/components/shared/status-badge';
@@ -11,7 +12,7 @@ import { byHand, manualMethodsText } from '@/lib/billing-collection';
 import { formatMoney } from '@/lib/country';
 import { idempotencyKey } from '@/lib/idempotency';
 import { useForm } from '@inertiajs/react';
-import { ArrowRightLeft, Banknote, LoaderCircle, Smartphone, Tags } from 'lucide-react';
+import { ArrowRightLeft, Banknote, LoaderCircle, Smartphone, Tags, Undo2 } from 'lucide-react';
 import { type FormEventHandler, type ReactNode, useState } from 'react';
 
 function Tile({ label, children }: { label: string; children: ReactNode }) {
@@ -40,7 +41,7 @@ const feeTones: Record<SetupFeeStatus, StatusTone> = { none: 'neutral', unpaid: 
  * and the monthly or yearly fee (always by Direct Debit) with the mandate and the next collection.
  */
 export function PricingPanel({ company, directDebit, canManage, planChange = null, cancelled = false }: PricingPanelProps) {
-    const [dialog, setDialog] = useState<'pricing' | 'upfront' | 'plan' | null>(null);
+    const [dialog, setDialog] = useState<'pricing' | 'upfront' | 'undo' | 'plan' | null>(null);
     const close = (open: boolean) => !open && setDialog(null);
     const { pricing, upfront, mandate, subscription, planType } = directDebit;
     const cycleLabel = pricing.per === 'per year' ? 'Yearly' : 'Monthly';
@@ -108,6 +109,17 @@ export function PricingPanel({ company, directDebit, canManage, planChange = nul
                               ? 'Nothing to pay'
                               : `${upfront.owed} to pay by ${byHand('cash, card or bank transfer', manualMethodsText())}${upfront.nextDue ? ` · next due ${formatDay(upfront.nextDue)}` : ''}`}
                     </span>
+                    {canManage && upfront.undo && (
+                        <Button
+                            size="sm"
+                            variant="ghost"
+                            className="text-danger-foreground -ml-2 justify-self-start"
+                            onClick={() => setDialog('undo')}
+                        >
+                            <Undo2 />
+                            Undo upfront payment
+                        </Button>
+                    )}
                 </Tile>
                 <Tile label={`${cycleLabel} fee`}>
                     <span className="font-medium tabular-nums">
@@ -145,6 +157,7 @@ export function PricingPanel({ company, directDebit, canManage, planChange = nul
                 <>
                     <PricingDialog open={dialog === 'pricing'} onOpenChange={close} company={company} pricing={pricing} />
                     {planChange && <ChangePlanDialog open={dialog === 'plan'} onOpenChange={close} company={company} options={planChange} />}
+                    {upfront.undo && <UndoUpfrontDialog open={dialog === 'undo'} onOpenChange={close} company={company} undo={upfront.undo} />}
                     <Dialog open={dialog === 'upfront'} onOpenChange={close}>
                         {dialog === 'upfront' && <UpfrontBody company={company} directDebit={directDebit} onOpenChange={close} />}
                     </Dialog>
