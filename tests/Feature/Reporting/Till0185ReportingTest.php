@@ -110,3 +110,39 @@ it('shows Paid in BikeBook as its own non-cash tender line, never in cash or the
             ->and(SaleReceipt::for(Sale::query()->findOrFail(ReportFixtures::saleId('000520')))['payments'][0]['kind'])->toBe('elsewhere');
     });
 });
+
+it('keeps the till\'s out-of-scope SaleVat row (vatRateId "", code E) for NHS charges and PPCs out of the VAT report and every VAT box', function () {
+    // EPOS 2026-11-08: RX-CHARGE / RX-PPC-* lines carry vatRateId "" and 0%; the sale's VAT rows then hold one row
+    // vatRateId "", percentage 0, vat 0, net = gross = the NHS money, code "E" (out of scope, not exempt).
+    $outOfScope = fn (string $number, string $at, int $seq, string $code, string $name) => array_map(function (array $row) use ($number) {
+        if ($row['entityId'] === "01K5VB0000000SN1R001{$number}") {
+            $row['payload']['vatRateId'] = '';
+        }
+
+        if ($row['entityId'] === "01K5VB0000000SVZR001{$number}") {
+            [$row['payload']['vatRateId'], $row['payload']['code']] = ['', 'E'];
+        }
+
+        return $row;
+    }, ($this->rxBasket)($number, $at, $seq, $code, $name));
+
+    $result = ReportFixtures::push($this->company, $this->leeds, [
+        ...$outOfScope('000601', '2026-09-24T10:00:00Z', 600, 'RX-CHARGE', 'NHS prescription charge'),
+        ...$outOfScope('000602', '2026-09-24T11:00:00Z', 610, 'RX-PPC-3M', 'Prepayment certificate 3 months'),
+    ]);
+    expect($result->rejected)->toBe([]);
+
+    expect(ReportFixtures::daily(TillFixtures::LEEDS, TillFixtures::TILL_1, '2026-09-24'))->toMatchArray([
+        'gross' => '7.40', 'net' => '6.16', 'vat' => '1.24', 'nhs_charges' => '2.90', 'takings' => '10.30',
+    ]);
+
+    ($this->asCompany)(function () {
+        $scope = ReportScope::tenant('2026-09-24', '2026-09-24', [TillFixtures::LEEDS]);
+        $rates = app(VatReport::class)->byRate($scope);
+
+        expect(array_map(fn ($v) => [$v->code, $v->net, $v->vat], $rates))->toBe([['S', '6.16', '1.24']]);
+
+        $boxes = collect(VatReturnHelper::for(new AccountsFilters('2026-07-01', '2026-09-30'), new VatQuarter(CarbonImmutable::parse('2026-07-01')))['boxes'])->pluck('amount', 'box');
+        expect([$boxes[1], $boxes[6]])->toBe(['1.24', '6']);
+    });
+});

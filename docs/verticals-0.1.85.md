@@ -88,3 +88,8 @@ till.
   sale's `SaleVat` rows like order deposits (the reports take them off SaleVat).
 - A pulled `vertical.*` / `setup.business_type` that one shop pushed is still relayed to the business's other shops as
   before (0.1.85 tills skip it); not changed so existing shops see no difference.
+
+## EPOS answers (2026-11-08)
+
+1. **"Paid in BikeBook" on the Z:** `totalsJson.tenders[]` has one line per payment type that took money in the shift. The "Paid in BikeBook" line is `notCounted: true`, with expected = declared and variance 0. This matches how we show it (its own non-cash line).
+2. **RX-CHARGE / RX-PPC-* and VAT:** these lines carry `vatRateId: ""` (out of scope). The sale's VAT rows include one row with `vatRateId ""`, percentage 0, vat 0, net = gross = the NHS money, code `E`. Identify it by `vatRateId == ""`, not by the code. We take these lines off that row, so no `E` row is left in the VAT report and none of it reaches a VAT box. Test: `Till0185ReportingTest` "out-of-scope SaleVat row". `RX-PRIVATE` goes on the shop's 0% rate as a normal sale.
