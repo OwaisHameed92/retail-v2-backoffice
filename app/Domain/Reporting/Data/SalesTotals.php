@@ -8,7 +8,8 @@ use App\Domain\Shared\Support\Money;
  * The KPI tiles of DASHBOARD.md §2.2 for a scope. Money as fixed-scale strings (pounds), never floats. Refund
  * values are shown positive; every other figure is already net of refunds. `grossProfit` is null when no line had a
  * cost (§1.2: most shops enter none — hide the tile). Averages are null when there were no transactions ("—").
- * `orderDeposits` and `charity` are not in any sales figure (till 0.1.15); they are in `takings` (money taken).
+ * `orderDeposits` and `charity` are not in any sales figure (till 0.1.15), nor `nhsCharges` (a pharmacy's NHS
+ * prescription charges and prepayment certificates, till 0.1.85); they are in `takings` (money taken).
  */
 final readonly class SalesTotals
 {
@@ -31,6 +32,7 @@ final readonly class SalesTotals
         public string $staffDiscount = '0.00',
         public string $orderDeposits = '0.00',
         public string $charity = '0.00',
+        public string $nhsCharges = '0.00',
     ) {}
 
     /**
@@ -44,6 +46,7 @@ final readonly class SalesTotals
             (string) $sums['discount'], (string) $sums['promo'], (string) $sums['coupon'], (string) $sums['cost'],
             (string) $sums['container_deposits'], (string) $sums['takings'], (int) $sums['void_count'], (string) $sums['void_total'],
             (string) $sums['staff_discount'], (string) $sums['order_deposits'], (string) $sums['charity'],
+            (string) ($sums['nhs_charges'] ?? '0.00'),
         );
     }
 

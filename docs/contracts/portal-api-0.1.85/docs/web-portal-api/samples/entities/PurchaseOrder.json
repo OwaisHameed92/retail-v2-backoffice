@@ -1,0 +1,52 @@
+{
+  "supplierId": "01K5T0Q8C4000000000000S001",
+  "number": 123,
+  "status": "sent",
+  "expectedDate": "2026-09-25",
+  "sentAt": "2026-09-24T08:30:00Z",
+  "sentByUserId": null,
+  "cancelledAt": null,
+  "cancelledByUserId": null,
+  "cancelReason": null,
+  "notes": "Weekly top-up agreed with head office",
+  "netTotal": 60.96,
+  "vatTotal": 7.49,
+  "grossTotal": 68.45,
+  "discountAmount": 0.00,
+  "discountReasonId": null,
+  "origin": "headOffice",
+  "isFromHeadOffice": true,
+  "orderNo": "HO-000123",
+  "branchCode": "LDS",
+  "reference": "HO-LDS-000123",
+  "hasReceivingStarted": false,
+  "net": {
+    "amount": 60.96,
+    "pence": 6096,
+    "isZero": false,
+    "isNegative": false
+  },
+  "vat": {
+    "amount": 7.49,
+    "pence": 749,
+    "isZero": false,
+    "isNegative": false
+  },
+  "gross": {
+    "amount": 68.45,
+    "pence": 6845,
+    "isZero": false,
+    "isNegative": false
+  },
+  "isEditable": false,
+  "isOpen": true,
+  "branchId": "01K5T0Q8C4000000000000B001",
+  "id": "01K5W2B9J000000000HQ000123",
+  "companyId": "01K5T0Q8C4000000000000C001",
+  "createdAt": "2026-09-24T08:30:00Z",
+  "updatedAt": "2026-09-24T08:30:00Z",
+  "rowVersion": 1,
+  "deletedAt": null,
+  "isDeleted": false,
+  "domainEvents": []
+}

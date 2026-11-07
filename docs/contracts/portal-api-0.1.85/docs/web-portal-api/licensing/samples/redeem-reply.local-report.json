@@ -1,0 +1,27 @@
+{
+  "result": "recorded",
+  "status": "active",
+  "licenceToken": null,
+  "licence": {
+    "licenceId": "01K5M1GR8T000000000000Y004",
+    "kind": "full",
+    "source": "local",
+    "companyId": "01K5M1GR8T000000000000C004",
+    "branchId": "01K5M1GR8T000000000000B004",
+    "businessName": "Allerton News Ltd",
+    "branchName": "Chapel Allerton",
+    "installCode": "Q3EG-1RNC",
+    "validFrom": "2026-09-28T00:00:00Z",
+    "expiresAt": "2027-09-28T23:59:59Z",
+    "maxRegisters": 2,
+    "features": [
+      "loyalty"
+    ],
+    "limits": {
+      "branches": 1
+    }
+  },
+  "portalTimeUtc": "2026-09-28T11:02:14Z",
+  "nextCheckAfterSeconds": 86400,
+  "messages": []
+}

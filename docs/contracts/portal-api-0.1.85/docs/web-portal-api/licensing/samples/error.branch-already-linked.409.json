@@ -1,0 +1,12 @@
+{
+  "code": "device.branch_already_linked",
+  "message": "Leeds Kirkgate is already linked to KIRKGATE-TILL1. Release that till first, on the portal or on the old till.",
+  "traceId": "req-8a21f0",
+  "retryAfterSeconds": null,
+  "rejectedKey": null,
+  "details": {
+    "registerId": "01K5T0Q8C4000000000000R001",
+    "deviceName": "KIRKGATE-TILL1",
+    "lastSeenUtc": "2026-10-04T16:58:00Z"
+  }
+}

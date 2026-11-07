@@ -64,7 +64,11 @@ final class ExceptionReport
     }
 
     /** Types whose words are not just the split name (PORTAL-CHANGES-2026-10-02-cash-reports §1, till 0.1.28). */
-    private const LABELS = ['CartCleared' => 'Sale cleared before payment', 'HeldSaleDiscarded' => 'Held sale thrown away'];
+    private const LABELS = [
+        'CartCleared' => 'Sale cleared before payment', 'HeldSaleDiscarded' => 'Held sale thrown away',
+        // Till 2026-10-13 (Teya): a card refund with no card sale on this till to limit it.
+        'CardRefundUncapped' => 'Card refund with no card sale to match',
+    ];
 
     /** Words for a till exception type ("NoSale" → "No sale", "PriceOverride" → "Price override"). */
     public static function typeLabel(string $type): string

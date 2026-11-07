@@ -1,0 +1,247 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:sspos:web-portal-api:v1:Sale",
+  "title": "Sale",
+  "description": "Payload of a Sale row.",
+  "type": "object",
+  "properties": {
+    "shiftId": {
+      "type": "string"
+    },
+    "userId": {
+      "type": "string"
+    },
+    "customerId": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "number": {
+      "type": [
+        "string",
+        "integer"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)$"
+    },
+    "receiptNumber": {
+      "type": "string"
+    },
+    "type": {
+      "enum": [
+        "sale",
+        "refund",
+        "exchange",
+        "quote",
+        "training",
+        "deposit"
+      ]
+    },
+    "status": {
+      "enum": [
+        "open",
+        "held",
+        "completed",
+        "voided"
+      ]
+    },
+    "originalSaleId": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "noReceipt": {
+      "type": "boolean"
+    },
+    "refundPriceBasis": {
+      "type": "string"
+    },
+    "reasonId": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "approvedBy": {
+      "type": "string"
+    },
+    "voidReasonId": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "voidedBy": {
+      "type": "string"
+    },
+    "subtotal": {
+      "type": [
+        "string",
+        "number"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$"
+    },
+    "discountTotal": {
+      "type": [
+        "string",
+        "number"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$"
+    },
+    "promoTotal": {
+      "type": [
+        "string",
+        "number"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$"
+    },
+    "depositTotal": {
+      "type": [
+        "string",
+        "number"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$"
+    },
+    "vatTotal": {
+      "type": [
+        "string",
+        "number"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$"
+    },
+    "total": {
+      "type": [
+        "string",
+        "number"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$"
+    },
+    "heldName": {
+      "type": "string"
+    },
+    "completedAt": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "receiptJson": {
+      "type": "string"
+    },
+    "idempotencyKey": {
+      "type": "string"
+    },
+    "isCompleted": {
+      "type": "boolean"
+    },
+    "registerId": {
+      "type": "string"
+    },
+    "branchId": {
+      "type": "string"
+    },
+    "id": {
+      "type": "string"
+    },
+    "companyId": {
+      "type": "string"
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "rowVersion": {
+      "type": [
+        "string",
+        "integer"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)$"
+    },
+    "deletedAt": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "isDeleted": {
+      "type": "boolean"
+    },
+    "domainEvents": {
+      "type": [
+        "array",
+        "null"
+      ],
+      "items": {
+        "type": "object",
+        "properties": {
+          "eventId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "occurredAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "version": {
+            "type": [
+              "string",
+              "integer"
+            ],
+            "pattern": "^-?(?:0|[1-9]\\d*)$"
+          }
+        },
+        "required": [
+          "eventId",
+          "occurredAt",
+          "version"
+        ]
+      }
+    }
+  },
+  "required": [
+    "shiftId",
+    "userId",
+    "customerId",
+    "number",
+    "receiptNumber",
+    "type",
+    "status",
+    "originalSaleId",
+    "noReceipt",
+    "refundPriceBasis",
+    "reasonId",
+    "approvedBy",
+    "voidReasonId",
+    "voidedBy",
+    "subtotal",
+    "discountTotal",
+    "promoTotal",
+    "depositTotal",
+    "vatTotal",
+    "total",
+    "heldName",
+    "completedAt",
+    "receiptJson",
+    "idempotencyKey",
+    "isCompleted",
+    "registerId",
+    "branchId",
+    "id",
+    "companyId",
+    "createdAt",
+    "updatedAt",
+    "rowVersion",
+    "deletedAt",
+    "isDeleted",
+    "domainEvents"
+  ]
+}

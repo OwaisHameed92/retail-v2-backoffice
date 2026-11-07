@@ -1,0 +1,41 @@
+{
+  "v": 1,
+  "kid": "k13799fa4",
+  "licenceId": "01K5T0Q8C4000000000000Y101",
+  "kind": "full",
+  "source": "portal",
+  "issuer": "SSPOS Portal",
+  "companyId": "01K5T0Q8C4000000000000C001",
+  "branchId": "01K5T0Q8C4000000000000B001",
+  "businessName": "Kirkgate Stores Ltd",
+  "branchName": "Leeds Kirkgate",
+  "installCode": "AC4F-3FHG",
+  "maxRegisters": 3,
+  "features": [
+    "whatsapp",
+    "multi_branch"
+  ],
+  "issuedAt": "2026-09-27T09:05:01Z",
+  "validFrom": "2026-09-27T09:05:01Z",
+  "expiresAt": "2027-09-27T23:59:59Z",
+  "onlineCheck": {
+    "required": true,
+    "intervalHours": 24,
+    "graceDays": 14
+  },
+  "limits": {
+    "branches": 2
+  },
+  "notes": "Annual plan - Till 1 of 3",
+  "company": {
+    "businessType": "ConvenienceOffLicence",
+    "address": "14 Kirkgate",
+    "town": "Leeds",
+    "postcode": "LS1 6BY",
+    "phone": "0113 496 0123",
+    "email": "shop@kirkgate-stores.example.co.uk",
+    "vatNumber": "GB123456789",
+    "ownerName": "Imran Shah",
+    "receiptFooter": "Thank you for shopping at Kirkgate Stores"
+  }
+}

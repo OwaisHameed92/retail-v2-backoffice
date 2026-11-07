@@ -1,0 +1,38 @@
+{
+  "status": "active",
+  "licenceToken": "SSPOS1.eyJ2IjoxLCJraWQiOiJrMTM3OTlmYTQiLCJsaWNlbmNlSWQiOiIwMUs1VDBROEM0MDAwMDAwMDAwMDAwWTEwMSIsImtpbmQiOiJmdWxsIiwic291cmNlIjoicG9ydGFsIiwiaXNzdWVyIjoiU1NQT1MgUG9ydGFsIiwiY29tcGFueUlkIjoiMDFLNVQwUThDNDAwMDAwMDAwMDAwMEMwMDEiLCJicmFuY2hJZCI6IjAxSzVUMFE4QzQwMDAwMDAwMDAwMDBCMDAxIiwiYnVzaW5lc3NOYW1lIjoiS2lya2dhdGUgU3RvcmVzIEx0ZCIsImJyYW5jaE5hbWUiOiJMZWVkcyBLaXJrZ2F0ZSIsImluc3RhbGxDb2RlIjoiQUM0Ri0zRkhHIiwibWF4UmVnaXN0ZXJzIjozLCJmZWF0dXJlcyI6WyJ3aGF0c2FwcCIsIm11bHRpX2JyYW5jaCJdLCJpc3N1ZWRBdCI6IjIwMjYtMDktMjdUMDk6MDU6MDFaIiwidmFsaWRGcm9tIjoiMjAyNi0wOS0yN1QwOTowNTowMVoiLCJleHBpcmVzQXQiOiIyMDI3LTA5LTI3VDIzOjU5OjU5WiIsIm9ubGluZUNoZWNrIjp7InJlcXVpcmVkIjp0cnVlLCJpbnRlcnZhbEhvdXJzIjoyNCwiZ3JhY2VEYXlzIjoxNH0sImxpbWl0cyI6eyJicmFuY2hlcyI6Mn0sIm5vdGVzIjoiQW5udWFsIHBsYW4gLSBUaWxsIDEgb2YgMyIsImNvbXBhbnkiOnsiYnVzaW5lc3NUeXBlIjoiQ29udmVuaWVuY2VPZmZMaWNlbmNlIiwiYWRkcmVzcyI6IjE0IEtpcmtnYXRlIiwidG93biI6IkxlZWRzIiwicG9zdGNvZGUiOiJMUzEgNkJZIiwicGhvbmUiOiIwMTEzIDQ5NiAwMTIzIiwiZW1haWwiOiJzaG9wQGtpcmtnYXRlLXN0b3Jlcy5leGFtcGxlLmNvLnVrIiwidmF0TnVtYmVyIjoiR0IxMjM0NTY3ODkiLCJvd25lck5hbWUiOiJJbXJhbiBTaGFoIiwicmVjZWlwdEZvb3RlciI6IlRoYW5rIHlvdSBmb3Igc2hvcHBpbmcgYXQgS2lya2dhdGUgU3RvcmVzIn19.5uDSZrD92hJe52FVGc_-QWp_xhLIiYm37Io0WIGS1P0ZwtlqHlIHRBQDW2WgU6FlTr4th9aK15Qmki4g5yIYDg",
+  "licence": {
+    "licenceId": "01K5T0Q8C4000000000000Y101",
+    "kind": "full",
+    "source": "portal",
+    "companyId": "01K5T0Q8C4000000000000C001",
+    "branchId": "01K5T0Q8C4000000000000B001",
+    "businessName": "Kirkgate Stores Ltd",
+    "branchName": "Leeds Kirkgate",
+    "installCode": "AC4F-3FHG",
+    "validFrom": "2026-09-27T09:05:01Z",
+    "expiresAt": "2027-09-27T23:59:59Z",
+    "maxRegisters": 3,
+    "features": [
+      "whatsapp",
+      "multi_branch"
+    ],
+    "limits": {
+      "branches": 2
+    },
+    "company": {
+      "businessType": "ConvenienceOffLicence",
+      "address": "14 Kirkgate",
+      "town": "Leeds",
+      "postcode": "LS1 6BY",
+      "phone": "0113 496 0123",
+      "email": "shop@kirkgate-stores.example.co.uk",
+      "vatNumber": "GB123456789",
+      "ownerName": "Imran Shah",
+      "receiptFooter": "Thank you for shopping at Kirkgate Stores"
+    }
+  },
+  "portalTimeUtc": "2026-09-27T09:05:01Z",
+  "nextCheckAfterSeconds": 86400,
+  "messages": []
+}

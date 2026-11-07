@@ -22,6 +22,12 @@ use Illuminate\Support\Facades\DB;
  * `isCharityRoundUp`, held on 2250). Their lines are kept out of `lines()` and `staffReturns()` and come back from
  * `nonSaleLines()`, which the builder takes off the SaleVat figures and reports on their own. A `deposit` sale is not
  * a transaction.
+ *
+ * Till 0.1.85 (PORTAL-CHANGES-pharmacy items 9 and 14): the NHS money a pharmacy collects is not its sales either. An
+ * NHS prescription charge (line `RX-CHARGE`, posted to 4050, outside the scope of VAT) and a prepayment certificate
+ * (`RX-PPC-3M` / `RX-PPC-12M` / `RX-PPC-HRT`, owed to NHSBSA on 2270) are kind `nhs`: out of every sales and VAT figure
+ * (so never in VAT box 6), summed on their own, still in takings. A private prescription (`RX-PRIVATE`, 0%) and a
+ * pharmacy service (`RX-SERVICE`) are sales like any line with no product row. No other shop sends an `RX-` line.
  */
 final readonly class SaleFacts
 {
@@ -39,9 +45,15 @@ final readonly class SaleFacts
 
     public const CHARITY_ROUND_UP = 'CHARITY-ROUNDUP';
 
-    /** What a line is: `goods` (a sale), `deposit` or `charity` (not sales). Null-safe: a line with no product is goods. */
+    public const NHS_CHARGE = 'RX-CHARGE';
+
+    /** Prepayment certificates: RX-PPC-3M, RX-PPC-12M, RX-PPC-HRT. */
+    public const NHS_PPC_PREFIX = 'RX-PPC-';
+
+    /** What a line is: `goods` (a sale), `deposit`, `charity` or `nhs` (not sales). Null-safe: a line with no product is goods. */
     private const LINE_KIND = "CASE WHEN l.product_id = '".self::ORDER_DEPOSIT."' THEN 'deposit'"
-        ." WHEN l.product_id = '".self::CHARITY_ROUND_UP."' OR l.is_charity_round_up = 1 THEN 'charity' ELSE 'goods' END";
+        ." WHEN l.product_id = '".self::CHARITY_ROUND_UP."' OR l.is_charity_round_up = 1 THEN 'charity'"
+        ." WHEN l.product_id = '".self::NHS_CHARGE."' OR l.product_id LIKE '".self::NHS_PPC_PREFIX."%' THEN 'nhs' ELSE 'goods' END";
 
     /** The manual-style share of a line's discount (lineDiscount already includes the promotion and coupon shares). */
     private const OWN_DISCOUNT = 'l.line_discount - COALESCE(l.promotion_discount, 0) - COALESCE(l.coupon_discount, 0)';
@@ -119,7 +131,7 @@ final readonly class SaleFacts
     }
 
     /**
-     * Order-deposit and charity round-up lines per till, cashier, hour, VAT rate and kind: taken off the SaleVat
+     * Order-deposit, charity round-up and NHS charge / PPC lines per till, cashier, hour, VAT rate and kind: taken off the SaleVat
      * figures (they are in the sale's SaleVat rows) and summed on their own.
      *
      * @return list<object>
@@ -195,7 +207,7 @@ final readonly class SaleFacts
         return $this->base()->where('s.status', 'completed')->whereNotNull('s.completed_at');
     }
 
-    /** Lines of counted sales: goods only (default), or only the order-deposit and charity lines. */
+    /** Lines of counted sales: goods only (default), or only the order-deposit, charity and NHS lines. */
     private function lineQuery(bool $goods = true): Builder
     {
         return $this->counted()

@@ -23,7 +23,9 @@ use App\Domain\TillData\Concerns\ShopPriceRows;
 use App\Domain\TillData\Concerns\StockMovementQueries;
 
 return [
-    'contract' => 'docs/contracts/portal-api-v1.4.1/docs/web-portal-api',
+    // Till 0.1.85 pack (2026-11-08, W1): the released folder as the EPOS team sent it. Contract tests still validate
+    // against v1.4.1 too (an older till's rows must keep passing); the 0.1.85 schemas are a superset of it.
+    'contract' => 'docs/contracts/portal-api-0.1.85/docs/web-portal-api',
 
     /*
      * The contract release this run writes migrations for. Migrations are additive: <prefix>00_create_till_<release>
@@ -31,7 +33,7 @@ return [
      * missing columns and indexes. database/till-schema.json records what each release's migrations made (v1.1:
      * the ten 2026_09_27_1100NN group migrations). For the next contract: new name and a later prefix.
      */
-    'release' => ['name' => '0.1.52', 'migrationPrefix' => '2026_11_25_1000'],
+    'release' => ['name' => '0.1.85', 'migrationPrefix' => '2026_12_14_1000'],
 
     /* Entity groups: the order tables are created in. Every schema entity must be in exactly one group. */
     'groups' => [
@@ -175,6 +177,8 @@ return [
         'receiptFile', 'text', 'unlockReason', 'varianceFlags', 'verificationDetail', 'voidReason', 'weekdays',
         'days', 'afterValue', 'beforeValue', 'directions', 'allergensCsv', 'handOverIdCheckNote', 'declineReason',
         'resolutionReason', 'attributeFilter', 'Setting.value', 'lastReminderError',
+        // Till 0.1.85: a prescriber's address is free text; an outside system's order id has no length we know.
+        'prescriberAddress', 'CustomerOrder.externalOrderId', 'CustomerOrder.externalReference',
     ],
 
     /* Integers that may exceed 2^31. */

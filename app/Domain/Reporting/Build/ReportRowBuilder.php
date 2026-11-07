@@ -10,7 +10,8 @@ use App\Domain\Shared\Support\Money;
  * Turns SaleFacts' grouped rows into the rows of every `rpt_*` table for one shop's trading days (DASHBOARD.md
  * §4.2–4.6). Pure: nothing is written. Sums are whole units added with bcmath; refunds are already negative in the
  * raw rows, so everything is a signed sum and only the "refunds" columns are negated to show them positive (§1.5).
- * Order deposits and charity round-ups are not sales (till 0.1.15): taken off every SaleVat figure, summed on their own.
+ * Order deposits and charity round-ups are not sales (till 0.1.15), nor a pharmacy's NHS charges and prescription
+ * prepayment certificates (till 0.1.85): taken off every SaleVat figure, summed on their own.
  */
 final class ReportRowBuilder
 {
@@ -123,7 +124,7 @@ final class ReportRowBuilder
         $this->add(ReportTables::PRODUCT_DAILY, $day, ['register_id' => $register, 'product_id' => self::id($r->product_id)], $product, [], ['last_name' => $name], (string) $r->latest.'|'.$name);
     }
 
-    /** An order-deposit or charity line group: out of the SaleVat figures it is part of, into its own column. */
+    /** An order-deposit, charity or NHS line group: out of the SaleVat figures it is part of, into its own column. */
     private function nonSale(object $r): void
     {
         $day = self::day($r);
@@ -132,7 +133,11 @@ final class ReportRowBuilder
         $vat = Units::of($r->vat);
         $net = Units::sub($gross, $vat);
         $less = ['gross' => Units::neg($gross), 'net' => Units::neg($net)];
-        $own = $r->kind === 'deposit' ? 'order_deposits' : 'charity';
+        $own = match ($r->kind) {
+            'deposit' => 'order_deposits',
+            'nhs' => 'nhs_charges',
+            default => 'charity',
+        };
 
         $this->add(ReportTables::SALES_DAILY, $day, ['register_id' => $register], [...$less, 'vat' => Units::neg($vat), $own => $gross]);
         $this->add(ReportTables::STAFF_DAILY, $day, ['register_id' => $register, 'user_id' => self::id($r->user_id)], $less);

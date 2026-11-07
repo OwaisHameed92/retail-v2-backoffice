@@ -1,0 +1,11 @@
+{
+  "registerId": "01K5T0Q8C4000000000000R002",
+  "seat": "deactivated",
+  "seatsInUse": 1,
+  "maxRegisters": 2,
+  "apiKeyRevoked": false,
+  "transferCode": null,
+  "transferCodeExpiresAt": null,
+  "portalTimeUtc": "2026-10-04T17:00:01Z",
+  "messages": []
+}

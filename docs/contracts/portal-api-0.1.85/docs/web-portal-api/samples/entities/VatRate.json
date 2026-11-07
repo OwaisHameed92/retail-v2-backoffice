@@ -1,0 +1,18 @@
+{
+  "name": "Standard",
+  "code": "S",
+  "percentage": 20.00,
+  "treatment": "apply",
+  "effectiveFrom": "2011-01-04",
+  "effectiveTo": null,
+  "isDefault": true,
+  "isZeroValued": false,
+  "id": "01K5T0Q8C4000000000000V001",
+  "companyId": "01K5T0Q8C4000000000000C001",
+  "createdAt": "2026-09-01T08:00:00Z",
+  "updatedAt": "2026-09-01T08:00:00Z",
+  "rowVersion": 1,
+  "deletedAt": null,
+  "isDeleted": false,
+  "domainEvents": []
+}

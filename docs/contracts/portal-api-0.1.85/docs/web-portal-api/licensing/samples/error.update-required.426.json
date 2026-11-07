@@ -1,0 +1,10 @@
+{
+  "code": "app.update_required",
+  "message": "This till needs updating before it can link. Settings > Updates > Check now.",
+  "traceId": "req-8a21f0",
+  "retryAfterSeconds": null,
+  "rejectedKey": null,
+  "details": {
+    "minimumAppVersion": "3.0.400"
+  }
+}

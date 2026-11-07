@@ -1,0 +1,8 @@
+{
+  "code": "migrate.activate_first",
+  "message": "Activate this till's licence key first (Settings - Licence - Enter key), then press Connect again with the same sync key.",
+  "traceId": "req-5d20c4",
+  "retryAfterSeconds": null,
+  "rejectedKey": null,
+  "details": null
+}

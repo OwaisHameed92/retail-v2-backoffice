@@ -1,0 +1,30 @@
+{
+  "v": 1,
+  "kid": "k13799fa4",
+  "licenceId": "01K5T0Q8C4000000000000Y001",
+  "kind": "full",
+  "source": "portal",
+  "issuer": "SSPOS Portal",
+  "companyId": "01K5T0Q8C4000000000000C001",
+  "branchId": "01K5T0Q8C4000000000000B001",
+  "businessName": "Kirkgate Stores Ltd",
+  "branchName": "Leeds Kirkgate",
+  "maxRegisters": 3,
+  "issuedAt": "2026-10-02T09:05:00Z",
+  "validFrom": "2026-10-02T09:05:00Z",
+  "expiresAt": "2027-10-02T23:59:59Z",
+  "onlineCheck": {
+    "required": true,
+    "intervalHours": 24,
+    "graceDays": 14
+  },
+  "notes": "Annual plan, 3 tills",
+  "features": [
+    "whatsapp",
+    "multi_branch"
+  ],
+  "limits": {
+    "users": 10,
+    "branches": 2
+  }
+}

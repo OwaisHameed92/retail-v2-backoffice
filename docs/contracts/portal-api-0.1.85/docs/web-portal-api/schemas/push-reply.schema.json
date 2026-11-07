@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:sspos:web-portal-api:v1:push-reply",
+  "title": "push-reply",
+  "description": "POST /api/v1/sync/push reply.",
+  "type": "object",
+  "properties": {
+    "acknowledgedSeq": {
+      "type": [
+        "string",
+        "integer"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)$"
+    },
+    "accepted": {
+      "type": [
+        "string",
+        "integer"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)$"
+    },
+    "receivedAt": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "Z$",
+      "description": "When the portal durably stored this batch, by the portal clock, UTC with Z (section 6.1). Store it on every row of the batch; a retried batch is answered with the time its rows were first stored."
+    }
+  },
+  "required": [
+    "acknowledgedSeq",
+    "accepted",
+    "receivedAt"
+  ]
+}

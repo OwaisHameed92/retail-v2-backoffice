@@ -1,0 +1,21 @@
+{
+  "v": 1,
+  "kid": "k76b44696",
+  "licenceId": "01K5M1GR8T000000000000Y002",
+  "kind": "full",
+  "source": "local",
+  "issuer": "SSPOS Licence Generator - Owner PC",
+  "companyId": "",
+  "branchId": "",
+  "businessName": "Hyde Park News Ltd",
+  "branchName": "Hyde Park",
+  "installCode": "0M01-TFG6",
+  "maxRegisters": 2,
+  "features": [
+    "whatsapp"
+  ],
+  "issuedAt": "2026-03-31T10:00:00Z",
+  "validFrom": "2026-03-31T00:00:00Z",
+  "expiresAt": "2027-03-31T23:59:59Z",
+  "notes": "Paid by bank transfer, invoice 1042"
+}

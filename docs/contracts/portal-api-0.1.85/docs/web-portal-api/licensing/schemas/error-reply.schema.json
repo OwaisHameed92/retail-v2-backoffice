@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "error-reply (licensing)",
+  "description": "Every non-2xx reply from the section 17 endpoints: the section 9 error body plus an optional open details object. The full code list is samples/error-codes.json.",
+  "allOf": [
+    {
+      "$ref": "../../schemas/error-reply.schema.json"
+    }
+  ],
+  "type": "object",
+  "properties": {
+    "code": {
+      "type": "string",
+      "pattern": "^[a-z]+(_[a-z]+)*\\.[a-z]+(_[a-z]+)*$"
+    },
+    "details": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "description": "Machine-readable extras for this code (e.g. maxRegisters). Open: new keys may appear."
+    }
+  }
+}

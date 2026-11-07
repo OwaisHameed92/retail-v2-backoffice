@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "migrate-complete-request",
+  "description": "POST /api/v1/cloud/migrate/complete body - after the last initial batch was acknowledged.",
+  "type": "object",
+  "properties": {
+    "uploadId": {
+      "$ref": "common.schema.json#/$defs/ulid"
+    },
+    "totalRows": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "highestSeq": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Last upload seq sent (= totalRows)."
+    },
+    "rowCounts": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "integer",
+        "minimum": 0
+      }
+    },
+    "snapshotChangeLogSeq": {
+      "type": "integer",
+      "minimum": 0
+    }
+  },
+  "required": [
+    "uploadId",
+    "totalRows",
+    "highestSeq",
+    "rowCounts",
+    "snapshotChangeLogSeq"
+  ]
+}

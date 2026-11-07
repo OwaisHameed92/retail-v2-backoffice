@@ -1,0 +1,10 @@
+{
+  "code": "activation.use_migrate",
+  "message": "This till already has sales for another install. Use 'Move my shop to the cloud' so your history is kept.",
+  "traceId": "req-8a21f0",
+  "retryAfterSeconds": null,
+  "rejectedKey": null,
+  "details": {
+    "branchId": "01K5T0Q8C4000000000000B001"
+  }
+}

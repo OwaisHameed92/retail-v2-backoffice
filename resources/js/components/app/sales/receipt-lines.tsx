@@ -107,7 +107,7 @@ export function ReceiptLines({
                                     <div className="mt-1 flex flex-wrap gap-1">
                                         {line.isRefundLine && <StatusPill tone="warning">Returned</StatusPill>}
                                         {line.flags.map((flag) => (
-                                            <StatusPill key={flag} tone={flag === 'orderDeposit' || flag === 'charity' ? 'violet' : 'neutral'}>
+                                            <StatusPill key={flag} tone={flag === 'orderDeposit' || flag === 'charity' || flag === 'nhs' ? 'violet' : 'neutral'}>
                                                 {LINE_FLAGS[flag] ?? flag}
                                             </StatusPill>
                                         ))}

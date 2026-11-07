@@ -1,0 +1,20 @@
+{
+  "departmentId": "01K5T0Q8C4000000000000D001",
+  "parentCategoryId": null,
+  "name": "Bread and Rolls",
+  "position": 3,
+  "colourHex": "#C98A2B",
+  "isActive": true,
+  "isVisibleOnTill": true,
+  "ageRuleDefault": "none",
+  "defaultVatRateId": "01K5T0Q8C4000000000000V002",
+  "negativeStockMode": null,
+  "id": "01K5T0Q8C4000000000000E001",
+  "companyId": "01K5T0Q8C4000000000000C001",
+  "createdAt": "2026-09-01T08:00:00Z",
+  "updatedAt": "2026-09-01T08:00:00Z",
+  "rowVersion": 1,
+  "deletedAt": null,
+  "isDeleted": false,
+  "domainEvents": []
+}

@@ -15,7 +15,11 @@ use Illuminate\Support\Arr;
  */
 final class TillFixtures
 {
-    public const CONTRACT = 'docs/contracts/portal-api-v1.4.1/docs/web-portal-api';
+    /** The contract pack the entity store is generated from (definitions.php `contract`): till 0.1.85 since W1. */
+    public const CONTRACT = 'docs/contracts/portal-api-0.1.85/docs/web-portal-api';
+
+    /** The v1.4.1 pack (till ≤ 0.1.84 shapes): replayed to prove an older till's push is answered exactly as before. */
+    public const LEGACY_CONTRACT = 'docs/contracts/portal-api-v1.4.1/docs/web-portal-api';
 
     public const COMPANY = '01K5T0Q8C4000000000000C001';
 

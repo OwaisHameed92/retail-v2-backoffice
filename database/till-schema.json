@@ -6239,6 +6239,52 @@
                     }
                 }
             }
+        },
+        {
+            "release": "0.1.85",
+            "migrations": [
+                "2026_12_14_100001_add_till_0_1_85_columns.php"
+            ],
+            "tables": {
+                "customer_orders": {
+                    "columns": {
+                        "source": "string('source', 40)->nullable()",
+                        "external_provider": "string('external_provider', 255)->nullable()",
+                        "external_order_id": "text('external_order_id')->nullable()",
+                        "external_reference": "text('external_reference')->nullable()"
+                    },
+                    "indexes": []
+                },
+                "dispensing_items": {
+                    "columns": {
+                        "free_of_charge_reason": "string('free_of_charge_reason', 40)->nullable()"
+                    },
+                    "indexes": []
+                },
+                "dispensing_records": {
+                    "columns": {
+                        "prescriber_address": "text('prescriber_address')->nullable()",
+                        "exemption_evidence": "string('exemption_evidence', 40)->nullable()",
+                        "sale_line_position": "integer('sale_line_position')->nullable()",
+                        "charge_settled_at": "dateTime('charge_settled_at')->nullable()",
+                        "charge_refunded": "decimal('charge_refunded', 12, 2)->nullable()",
+                        "charge_kept": "decimal('charge_kept', 12, 2)->nullable()"
+                    },
+                    "indexes": []
+                },
+                "payment_attempts": {
+                    "columns": {
+                        "on_record_at": "dateTime('on_record_at')->nullable()"
+                    },
+                    "indexes": []
+                },
+                "products": {
+                    "columns": {
+                        "workshop_exposure": "string('workshop_exposure', 40)->nullable()"
+                    },
+                    "indexes": []
+                }
+            }
         }
     ]
 }

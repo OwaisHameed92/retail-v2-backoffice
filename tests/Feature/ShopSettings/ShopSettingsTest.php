@@ -32,7 +32,7 @@ beforeEach(function () {
 });
 
 test('the catalogue holds only shared keys of the contract, never a deny-listed one, each with a known type', function () {
-    $file = json_decode((string) file_get_contents(base_path('docs/contracts/portal-api-v1.4.1/docs/web-portal-api/samples/settings-local-only.json')), true);
+    $file = json_decode((string) file_get_contents(base_path('docs/contracts/portal-api-0.1.85/docs/web-portal-api/samples/settings-local-only.json')), true);
 
     foreach (SettingCatalogue::all() as $key => $definition) {
         expect($file['sharedKeys'])->toContain($key)

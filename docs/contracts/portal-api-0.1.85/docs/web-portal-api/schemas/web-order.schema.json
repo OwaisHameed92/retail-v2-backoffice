@@ -1,0 +1,162 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:sspos:web-portal-api:v1:web-order",
+  "title": "web-order",
+  "description": "Payload of a pulled WebOrder row (proposal).",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string"
+    },
+    "companyId": {
+      "type": "string"
+    },
+    "branchId": {
+      "type": "string"
+    },
+    "reference": {
+      "type": "string"
+    },
+    "customer": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "phone": {
+          "type": "string"
+        },
+        "email": {
+          "type": "string"
+        },
+        "customerId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "name",
+        "phone",
+        "email",
+        "customerId"
+      ]
+    },
+    "lines": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "productId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "qty": {
+            "type": [
+              "string",
+              "number"
+            ],
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$"
+          },
+          "unitPrice": {
+            "type": [
+              "string",
+              "number"
+            ],
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$"
+          },
+          "vatRateId": {
+            "type": "string"
+          },
+          "vatPercentage": {
+            "type": [
+              "string",
+              "number"
+            ],
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$"
+          },
+          "lineTotal": {
+            "type": [
+              "string",
+              "number"
+            ],
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$"
+          },
+          "vatAmount": {
+            "type": [
+              "string",
+              "number"
+            ],
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$"
+          }
+        },
+        "required": [
+          "productId",
+          "name",
+          "qty",
+          "unitPrice",
+          "vatRateId",
+          "vatPercentage",
+          "lineTotal",
+          "vatAmount"
+        ]
+      }
+    },
+    "money": {
+      "type": "object",
+      "properties": {
+        "goodsTotal": {
+          "type": [
+            "string",
+            "number"
+          ],
+          "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$"
+        },
+        "paidOnline": {
+          "type": [
+            "string",
+            "number"
+          ],
+          "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$"
+        },
+        "paymentReference": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "goodsTotal",
+        "paidOnline",
+        "paymentReference"
+      ]
+    },
+    "collectBy": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "placedAt": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "id",
+    "companyId",
+    "branchId",
+    "reference",
+    "customer",
+    "lines",
+    "money",
+    "collectBy",
+    "notes",
+    "placedAt"
+  ]
+}

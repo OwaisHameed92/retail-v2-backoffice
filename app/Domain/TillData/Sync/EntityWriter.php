@@ -45,6 +45,7 @@ final class EntityWriter
         $outcomes = [];
         $pending = [];
         $tombstones = [];
+        $salvaged = [];
 
         foreach ($changes as $mapped) {
             $change = $mapped->change;
@@ -55,6 +56,10 @@ final class EntityWriter
                 $outcomes[$change->index] = Rejection::for($change, 'entity.id_taken', "This {$def->entity} id is already used by another company.");
 
                 continue;
+            }
+
+            if ($mapped->row !== null && isset(TillOwnedFields::FIELDS[$def->entity])) {
+                $mapped->row = TillOwnedFields::carry($def, $mapped->row, $current);   // an older till sends none of them
             }
 
             $hash = $def->isHubOwned() && $mapped->row !== null ? RowHash::of($def, $mapped->row) : null;
@@ -85,6 +90,11 @@ final class EntityWriter
             if ($current !== null && $def->isHubOwned() && $this->portalWins($def, $mapped, $current)) {
                 $outcomes[$change->index] = ChangeOutcome::Conflict;
 
+                if (($update = TillOwnedFields::salvage($def, $mapped->row, $current)) !== null) {
+                    $salvaged[$id] = $update;
+                    $state[$id] = [...$current, ...$update];
+                }
+
                 continue;
             }
 
@@ -114,7 +124,7 @@ final class EntityWriter
         $this->upsert($def, array_values($pending));
         BranchDepartures::fromPush($def, $this->context, $before, $pending);
 
-        foreach ($tombstones as $id => $values) {
+        foreach ([...$tombstones, ...$salvaged] as $id => $values) {
             DB::table($def->table)->where('id', $id)->where('company_id', $this->context->companyId)->update($values);
         }
 
@@ -233,7 +243,7 @@ final class EntityWriter
         $columns = ['id', 'company_id', 'row_version', 'updated_at', 'portal_received_at'];
 
         if ($def->isHubOwned()) {
-            array_push($columns, 'hub_edited_at', 'deleted_at', ...EntityDefinition::HUB_COLUMNS, ...(BranchDepartures::applies($def) ? ['branch_id'] : []));
+            array_push($columns, 'hub_edited_at', 'deleted_at', ...EntityDefinition::HUB_COLUMNS, ...(BranchDepartures::applies($def) ? ['branch_id'] : []), ...TillOwnedFields::columns($def));
         }
 
         $columns = $def->immutable !== null ? ['*'] : $columns;

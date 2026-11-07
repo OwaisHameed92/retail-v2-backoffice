@@ -1,0 +1,25 @@
+{
+  "licenceKey": "SSPK-4F7Q-XM2D-9KTR-B6WN",
+  "installId": "01K5T0Q8C4000000000000J001",
+  "installCode": "AC4F-3FHG",
+  "deviceName": "TILL-1",
+  "appVersion": "3.0.412",
+  "os": {
+    "name": "Windows",
+    "version": "10.0.26200",
+    "architecture": "x64"
+  },
+  "tillClockUtc": "2026-09-27T09:05:00Z",
+  "approverKids": [
+    "k76b44696"
+  ],
+  "trustedKids": [
+    "k13799fa4",
+    "k76b44696"
+  ],
+  "existingIds": {
+    "companyId": "01K5T0Q8C4000000000000C001",
+    "branchId": "01K5T0Q8C4000000000000B001",
+    "registerId": "01K5T0Q8C4000000000000R001"
+  }
+}

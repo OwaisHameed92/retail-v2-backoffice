@@ -1,0 +1,11 @@
+{
+  "code": "licence.seat_limit",
+  "message": "Your plan allows 2 tills and 2 are in use. Add a till to your plan on the portal.",
+  "traceId": "req-8a21f0",
+  "retryAfterSeconds": null,
+  "rejectedKey": null,
+  "details": {
+    "maxRegisters": 2,
+    "registersInUse": 2
+  }
+}

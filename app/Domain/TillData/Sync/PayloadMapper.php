@@ -28,9 +28,16 @@ final class PayloadMapper
 
     /**
      * What a missing (or null) member stands for when the type's default would be wrong: a Customer row from a till
-     * before 0.1.32 has no `earnsPoints` and is read as true, never false (PORTAL-CHANGES-2026-10-06 §2.7).
+     * before 0.1.32 has no `earnsPoints` and is read as true, never false (PORTAL-CHANGES-2026-10-06 §2.7). Till 0.1.85:
+     * an older till's dispensing row has no evidence recorded and no free-of-charge reason (PORTAL-CHANGES-pharmacy
+     * items 2, 3), and every order made before BikeBook came from the till (UPCOMING-CHANGES 2026-11-06).
      */
-    private const ABSENT_DEFAULTS = ['Customer' => ['earnsPoints' => true]];
+    private const ABSENT_DEFAULTS = [
+        'Customer' => ['earnsPoints' => true],
+        'DispensingRecord' => ['exemptionEvidence' => 'notRecorded'],
+        'DispensingItem' => ['freeOfChargeReason' => 'none'],
+        'CustomerOrder' => ['source' => 'till'],
+    ];
 
     /** Decimal types: [scale, digits before the point] (Values has the full rules). */
     private const DECIMALS = ['money' => [2, 10], 'cost' => [4, 10], 'quantity' => [4, 10], 'percent' => [4, 5], 'rate' => [6, 10]];
@@ -68,7 +75,16 @@ final class PayloadMapper
         $errors = [];
         $unknownEnums = [];
 
+        $tillOwned = TillOwnedFields::FIELDS[$def->entity] ?? [];
+
         foreach ($def->plan as [$name, $column, $type, $nullable, $max, $enum]) {
+            // A till-owned member of a hub row (Product.workshopExposure) a till does not send: no change, not a default.
+            if ($tillOwned !== [] && isset($tillOwned[$name]) && ($payload[$name] ?? null) === null) {
+                $row[$column] = null;
+
+                continue;
+            }
+
             if (($payload[$name] ?? null) === null && isset(self::ABSENT_DEFAULTS[$def->entity][$name])) {
                 $row[$column] = Values::toColumn($def->fields[$name], self::ABSENT_DEFAULTS[$def->entity][$name]);
 

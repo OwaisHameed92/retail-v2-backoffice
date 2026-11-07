@@ -1,0 +1,62 @@
+[
+  {
+    "seq": 1,
+    "entity": "VatRate",
+    "entityId": "01K5T0Q8C4000000000000V001",
+    "op": "I",
+    "version": 1,
+    "companyId": "01K5M1GR8T000000000000C009",
+    "branchId": "",
+    "registerId": "",
+    "at": "2026-09-01T08:00:00Z",
+    "payload": {
+      "name": "Standard",
+      "code": "S",
+      "percentage": 20.0,
+      "treatment": "apply",
+      "effectiveFrom": "2011-01-04",
+      "effectiveTo": null,
+      "isDefault": true,
+      "isZeroValued": false,
+      "id": "01K5T0Q8C4000000000000V001",
+      "companyId": "01K5M1GR8T000000000000C009",
+      "createdAt": "2026-09-01T08:00:00Z",
+      "updatedAt": "2026-09-01T08:00:00Z",
+      "rowVersion": 1,
+      "deletedAt": null,
+      "isDeleted": false,
+      "domainEvents": []
+    },
+    "key": "VatRate:01K5T0Q8C4000000000000V001:1"
+  },
+  {
+    "seq": 2,
+    "entity": "VatRate",
+    "entityId": "01K5T0Q8C4000000000000V002",
+    "op": "I",
+    "version": 1,
+    "companyId": "01K5M1GR8T000000000000C009",
+    "branchId": "",
+    "registerId": "",
+    "at": "2026-09-01T08:00:00Z",
+    "payload": {
+      "name": "Zero",
+      "code": "Z",
+      "percentage": 0.0,
+      "treatment": "apply",
+      "effectiveFrom": "1973-04-01",
+      "effectiveTo": null,
+      "isDefault": false,
+      "isZeroValued": true,
+      "id": "01K5T0Q8C4000000000000V002",
+      "companyId": "01K5M1GR8T000000000000C009",
+      "createdAt": "2026-09-01T08:00:00Z",
+      "updatedAt": "2026-09-01T08:00:00Z",
+      "rowVersion": 1,
+      "deletedAt": null,
+      "isDeleted": false,
+      "domainEvents": []
+    },
+    "key": "VatRate:01K5T0Q8C4000000000000V002:1"
+  }
+]

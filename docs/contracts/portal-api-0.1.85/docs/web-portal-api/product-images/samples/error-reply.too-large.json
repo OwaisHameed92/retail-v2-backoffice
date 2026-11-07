@@ -1,0 +1,7 @@
+{
+  "code": "image.too_large",
+  "message": "This picture is larger than 2 MB. Make it smaller and send it again.",
+  "traceId": "req-3b9e23",
+  "retryAfterSeconds": null,
+  "rejectedKey": "01K5T0Q8C4000000000000P001"
+}

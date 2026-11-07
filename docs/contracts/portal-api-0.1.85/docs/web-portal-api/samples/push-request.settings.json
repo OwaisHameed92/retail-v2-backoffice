@@ -1,0 +1,53 @@
+[
+  {
+    "seq": 18261,
+    "entity": "Setting",
+    "entityId": "D9FR992FKMEN9BGPG7H9MME95C",
+    "op": "U",
+    "version": 18261,
+    "companyId": "01K5T0Q8C4000000000000C001",
+    "branchId": "01K5T0Q8C4000000000000B001",
+    "registerId": "",
+    "at": "2026-09-23T09:53:12Z",
+    "payload": {
+      "scope": "branch",
+      "scopeId": "01K5T0Q8C4000000000000B001",
+      "key": "receipt.footer_text",
+      "value": "Thank you for shopping at Kirkgate!",
+      "updatedAt": "2026-09-23T09:53:12Z"
+    },
+    "key": "Setting:D9FR992FKMEN9BGPG7H9MME95C:18261"
+  },
+  {
+    "seq": 18262,
+    "entity": "RolePermission",
+    "entityId": "878P6SA19AH0CCWX77Q8BN37VD",
+    "op": "I",
+    "version": 18262,
+    "companyId": "01K5T0Q8C4000000000000C001",
+    "branchId": "",
+    "registerId": "",
+    "at": "2026-09-23T09:53:12Z",
+    "payload": {
+      "roleId": "01K5T0Q8C4000000000000G002",
+      "permissionKey": "sale.refund"
+    },
+    "key": "RolePermission:878P6SA19AH0CCWX77Q8BN37VD:18262"
+  },
+  {
+    "seq": 18263,
+    "entity": "RolePermission",
+    "entityId": "TKYMJC286YQBH7ZNCCDNSR5X4W",
+    "op": "D",
+    "version": 18263,
+    "companyId": "01K5T0Q8C4000000000000C001",
+    "branchId": "",
+    "registerId": "",
+    "at": "2026-09-23T09:53:12Z",
+    "payload": {
+      "roleId": "01K5T0Q8C4000000000000G002",
+      "permissionKey": "sale.no_sale"
+    },
+    "key": "RolePermission:TKYMJC286YQBH7ZNCCDNSR5X4W:18263"
+  }
+]

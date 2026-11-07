@@ -1,0 +1,46 @@
+{
+  "status": "seatLimit",
+  "licenceToken": null,
+  "licence": {
+    "licenceId": "01K5T0Q8C4000000000000Y001",
+    "kind": "trial",
+    "source": "portal",
+    "expiresAt": "2026-10-03T09:00:00Z",
+    "maxRegisters": 2,
+    "features": null,
+    "limits": null
+  },
+  "registers": [
+    {
+      "registerId": "01K5T0Q8C4000000000000R001",
+      "seat": "allowed"
+    },
+    {
+      "registerId": "01K5T0Q8C4000000000000R002",
+      "seat": "allowed"
+    },
+    {
+      "registerId": "01K5T0Q8C4000000000000R004",
+      "seat": "refused"
+    }
+  ],
+  "apiKey": null,
+  "minimumAppVersion": null,
+  "portalTimeUtc": "2026-09-28T09:05:01Z",
+  "nextCheckAfterSeconds": 86400,
+  "messages": [
+    {
+      "id": "01K5T0Q8C4000000000000M005",
+      "level": "warning",
+      "title": "Too many tills",
+      "text": "Your plan allows 2 tills and 3 are in use. Till 3 is locked until you add a till to your plan or remove one.",
+      "showFromUtc": null,
+      "showUntilUtc": null,
+      "dismissible": false,
+      "link": {
+        "label": "Add a till",
+        "url": "https://portal.example.co.uk/billing/tills"
+      }
+    }
+  ]
+}

@@ -18,7 +18,7 @@ final class SettingSyncPolicy
 
     public const LOCAL_PREFIXES = [
         'licence.', 'install.', 'sync.', 'server.', 'update.', 'backup.', 'devices.', 'printers.', 'payments.terminal_',
-        'payments.dna_', 'payments.dojo_', 'messaging.smtp_', 'messaging.whatsapp_gateway_',
+        'payments.dna_', 'payments.dojo_', 'payments.teya_', 'messaging.smtp_', 'messaging.whatsapp_gateway_',
         // Per-user screen settings (EPOS 2026-10-02, next till release).
         'grid.layout.', 'help.tour_dismissed.',
     ];
@@ -31,19 +31,49 @@ final class SettingSyncPolicy
 
     /**
      * `localOnlyKeys` of the contract file that no rule above catches, sorted (ANSWERS-2026-09-29-b added
-     * receipt.print_switch, till.beep_on_add, till.beep_on_not_found, till.popup_keyboard, till_ease.simple_mode).
+     * receipt.print_switch, till.beep_on_add, till.beep_on_not_found, till.popup_keyboard, till_ease.simple_mode; the
+     * till 0.1.85 pack display.tile_pictures, payments.open_drawer_on_voucher and three pharmacy dm+d keys).
      * A test keeps this list exactly equal to the file's keys the rules miss, so drift either way fails.
      */
     public const LOCAL_KEYS = [
         'display.button_size', 'display.font_scale', 'display.fullscreen_kiosk', 'display.language',
         'display.layout_profile', 'display.start_with_windows', 'display.text_size', 'display.theme',
-        'payments.offline_card_mode', 'payments.open_drawer_on_card', 'payments.open_drawer_on_cash',
-        'receipt.number_prefix', 'receipt.number_start', 'receipt.print_switch', 'retention.clock_check_enabled',
+        'display.tile_pictures', 'payments.offline_card_mode', 'payments.open_drawer_on_card',
+        'payments.open_drawer_on_cash', 'payments.open_drawer_on_voucher', 'pharmacy.dmd_problem',
+        'pharmacy.dmd_server_client_id', 'pharmacy.dmd_source', 'receipt.number_prefix', 'receipt.number_start', 'receipt.print_switch', 'retention.clock_check_enabled',
         'retention.clock_tolerance_minutes', 'till.audio_cues_enabled', 'till.audio_cues_set', 'till.audio_cues_volume',
         'till.beep_on_add', 'till.beep_on_not_found', 'till.category_full_panel', 'till.category_tile_height',
         'till.category_tile_width', 'till.keyboard_macros', 'till.popup_keyboard', 'till_ease.big_text',
         'till_ease.layout_profile', 'till_ease.scan_feedback_enabled', 'till_ease.simple_mode',
     ];
+
+    /**
+     * Shared keys that only a till writes (till 0.1.85, PORTAL-CHANGES-pharmacy item 7, WORKSHOP-BIKEBOOK.md): the shop
+     * type (`setup.business_type`, every `vertical.*`, set by the till's setup wizard; a pulled value is skipped) and
+     * `workshop.connection_status` (the main till's own BikeBook status). `workshop.connector_status` is the portal's
+     * once the BikeBook connector exists; until then nothing writes it. The portal stores and shows what tills push,
+     * and never writes one of these (SaveTillSetting refuses them).
+     */
+    public const TILL_WRITES_ONLY = ['setup.business_type', 'workshop.connection_status', 'workshop.connector_status'];
+
+    public const TILL_WRITES_ONLY_PREFIXES = ['vertical.'];
+
+    public static function tillWritesOnly(string $key): bool
+    {
+        $key = strtolower(trim($key));
+
+        if (in_array($key, self::TILL_WRITES_ONLY, true)) {
+            return true;
+        }
+
+        foreach (self::TILL_WRITES_ONLY_PREFIXES as $prefix) {
+            if (str_starts_with($key, $prefix)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
 
     public static function isLocalOnly(mixed $scope, mixed $key): bool
     {

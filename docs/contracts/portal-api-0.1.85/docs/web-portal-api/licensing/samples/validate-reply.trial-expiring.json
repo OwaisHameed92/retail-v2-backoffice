@@ -1,0 +1,42 @@
+{
+  "status": "expiring",
+  "licenceToken": null,
+  "licence": {
+    "licenceId": "01K5T0Q8C4000000000000Y001",
+    "kind": "trial",
+    "source": "portal",
+    "expiresAt": "2026-10-03T09:00:00Z",
+    "maxRegisters": 2,
+    "features": null,
+    "limits": null
+  },
+  "registers": [
+    {
+      "registerId": "01K5T0Q8C4000000000000R001",
+      "seat": "allowed"
+    },
+    {
+      "registerId": "01K5T0Q8C4000000000000R002",
+      "seat": "allowed"
+    }
+  ],
+  "apiKey": null,
+  "minimumAppVersion": null,
+  "portalTimeUtc": "2026-09-27T09:05:01Z",
+  "nextCheckAfterSeconds": 86400,
+  "messages": [
+    {
+      "id": "01K5T0Q8C4000000000000M002",
+      "level": "warning",
+      "title": "Trial ends soon",
+      "text": "Your trial ends on 3 October 2026. Choose a plan to keep trading.",
+      "showFromUtc": null,
+      "showUntilUtc": "2026-10-03T09:00:00Z",
+      "dismissible": true,
+      "link": {
+        "label": "Choose a plan",
+        "url": "https://portal.example.co.uk/billing"
+      }
+    }
+  ]
+}

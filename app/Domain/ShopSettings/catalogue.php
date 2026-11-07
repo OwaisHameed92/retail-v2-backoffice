@@ -81,6 +81,9 @@ return [
             'till.bag_charge_amount' => ['label' => 'Bag charge amount', 'type' => 'money', 'min' => 0, 'max' => 5, 'help' => 'For example 0.10.'],
             'till.charity_round_up_enabled' => ['label' => 'Charity round-up', 'type' => 'bool', 'help' => 'Customers can round up their total for a charity. Kept apart from your sales.'],
             'till.charity_name' => ['label' => 'Charity name', 'type' => 'text', 'max' => 80, 'help' => 'Shown on the till and the receipt.'],
+            // Till 0.1.54 (UPCOMING-CHANGES 2026-10-06): the chips at the start of the till's category row.
+            'till.show_all_chip' => ['label' => 'All chip on the category row', 'type' => 'bool', 'default' => 'true', 'help' => 'A chip that shows every product.'],
+            'till.show_top_sellers_chip' => ['label' => 'Top sellers chip on the category row', 'type' => 'bool', 'default' => 'true', 'help' => 'A chip that shows the shop\'s best sellers.'],
         ],
     ],
     'refunds' => [
@@ -174,6 +177,8 @@ return [
             'catalogue.auto_product_images' => ['label' => 'Find product pictures', 'type' => 'bool', 'default' => 'true', 'everyShopOnly' => true, 'help' => 'The main till finds a picture for each new product and keeps it on that PC.'],
             'library.lookup_enabled' => ['label' => 'Look up new barcodes', 'type' => 'bool', 'default' => 'true', 'help' => 'An unknown barcode is looked up in the shared product library.'],
             'library.share_new_products' => ['label' => 'Share new products', 'type' => 'bool', 'default' => 'true', 'help' => 'Products you add help other shops (name and barcode only, never prices).'],
+            // UPCOMING-CHANGES 2026-10-12: the till keeps it itself (brands added on the product form that no product has yet).
+            'catalogue.brands' => ['label' => 'Brands not used yet', 'type' => 'multiline', 'max' => 4000, 'everyShopOnly' => true, 'readOnly' => true, 'help' => 'Brands added on a till\'s product form that no product carries yet, separated by ";". The tills keep this list.'],
             'library.url' => ['label' => 'Product library address', 'type' => 'text', 'max' => 200, 'everyShopOnly' => true, 'readOnly' => true, 'help' => 'Set at a till, only when your dealer asks. Blank means the standard library.'],
         ],
     ],

@@ -1,0 +1,7 @@
+{
+  "code": "image.hash_mismatch",
+  "message": "The picture did not arrive whole (its SHA-256 does not match). The till sends it again.",
+  "traceId": "req-3b9e24",
+  "retryAfterSeconds": null,
+  "rejectedKey": "01K5T0Q8C4000000000000P001"
+}

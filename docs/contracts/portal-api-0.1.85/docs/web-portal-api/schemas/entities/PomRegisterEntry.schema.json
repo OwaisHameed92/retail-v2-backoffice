@@ -1,0 +1,228 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:sspos:web-portal-api:v1:PomRegisterEntry",
+  "title": "PomRegisterEntry",
+  "description": "Payload of a PomRegisterEntry row.",
+  "type": "object",
+  "properties": {
+    "entryNumber": {
+      "type": [
+        "string",
+        "integer"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)$"
+    },
+    "kind": {
+      "enum": [
+        "privatePrescription",
+        "emergencyPrescriberRequest",
+        "emergencyPatientRequest",
+        "otherExemptSupply"
+      ]
+    },
+    "suppliedOn": {
+      "type": "string",
+      "format": "date"
+    },
+    "medicine": {
+      "type": "string"
+    },
+    "strength": {
+      "type": "string"
+    },
+    "form": {
+      "type": "string"
+    },
+    "quantity": {
+      "type": [
+        "string",
+        "number"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$"
+    },
+    "unit": {
+      "type": "string"
+    },
+    "patientCustomerId": {
+      "type": "string"
+    },
+    "patientName": {
+      "type": "string"
+    },
+    "patientAddress": {
+      "type": "string"
+    },
+    "prescriberName": {
+      "type": "string"
+    },
+    "prescriberAddress": {
+      "type": "string"
+    },
+    "prescriptionDate": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date"
+    },
+    "repeatOfEntryId": {
+      "type": "string"
+    },
+    "natureOfEmergency": {
+      "type": "string"
+    },
+    "cdSchedule": {
+      "enum": [
+        "notControlled",
+        "schedule2",
+        "schedule3",
+        "schedule4",
+        "schedule5"
+      ]
+    },
+    "phenobarbitalForEpilepsy": {
+      "type": "boolean"
+    },
+    "daysTreatment": {
+      "type": [
+        "string",
+        "integer",
+        "null"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)$"
+    },
+    "previouslyPrescribed": {
+      "type": "boolean"
+    },
+    "lateEntryReason": {
+      "type": "string"
+    },
+    "recipientOccupation": {
+      "type": "string"
+    },
+    "purpose": {
+      "type": "string"
+    },
+    "medicineText": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "recordedByUserId": {
+      "type": "string"
+    },
+    "recordedByName": {
+      "type": "string"
+    },
+    "recordedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "branchId": {
+      "type": "string"
+    },
+    "id": {
+      "type": "string"
+    },
+    "companyId": {
+      "type": "string"
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "rowVersion": {
+      "type": [
+        "string",
+        "integer"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)$"
+    },
+    "deletedAt": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "isDeleted": {
+      "type": "boolean"
+    },
+    "domainEvents": {
+      "type": [
+        "array",
+        "null"
+      ],
+      "items": {
+        "type": "object",
+        "properties": {
+          "eventId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "occurredAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "version": {
+            "type": [
+              "string",
+              "integer"
+            ],
+            "pattern": "^-?(?:0|[1-9]\\d*)$"
+          }
+        },
+        "required": [
+          "eventId",
+          "occurredAt",
+          "version"
+        ]
+      }
+    }
+  },
+  "required": [
+    "entryNumber",
+    "kind",
+    "suppliedOn",
+    "medicine",
+    "strength",
+    "form",
+    "quantity",
+    "unit",
+    "patientCustomerId",
+    "patientName",
+    "patientAddress",
+    "prescriberName",
+    "prescriberAddress",
+    "prescriptionDate",
+    "repeatOfEntryId",
+    "natureOfEmergency",
+    "cdSchedule",
+    "phenobarbitalForEpilepsy",
+    "daysTreatment",
+    "previouslyPrescribed",
+    "lateEntryReason",
+    "recipientOccupation",
+    "purpose",
+    "medicineText",
+    "recordedByUserId",
+    "recordedByName",
+    "recordedAt",
+    "branchId",
+    "id",
+    "companyId",
+    "createdAt",
+    "updatedAt",
+    "rowVersion",
+    "deletedAt",
+    "isDeleted",
+    "domainEvents"
+  ]
+}

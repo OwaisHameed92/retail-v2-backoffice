@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "deactivate-request",
+  "description": "POST /api/v1/devices/deactivate body - free a seat or move the main till to another PC. Sent by the branch's main till.",
+  "type": "object",
+  "properties": {
+    "registerId": {
+      "$ref": "common.schema.json#/$defs/ulid"
+    },
+    "installId": {
+      "anyOf": [
+        {
+          "$ref": "common.schema.json#/$defs/ulid"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "The PC being released, when known."
+    },
+    "reason": {
+      "type": "string",
+      "description": "Why. Known values: transfer, replaced, removed, closed, other. Treat an unknown value as described in docs/web-portal-api.md section 17.11.",
+      "examples": [
+        "transfer",
+        "replaced",
+        "removed",
+        "closed",
+        "other"
+      ]
+    },
+    "note": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 200
+    },
+    "tokenSha256": {
+      "anyOf": [
+        {
+          "$ref": "common.schema.json#/$defs/sha256Hex"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "Optional (till 0.1.53+): SHA-256 (hex) of the licence token this install holds, as in licence/validate. When present and not the token given to this install: 403 device.token_mismatch. Missing or null (older tills, or no token held): check as before."
+    },
+    "installCode": {
+      "anyOf": [
+        {
+          "$ref": "common.schema.json#/$defs/installCode"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "Optional (till 0.1.53+): this PC's install code, as in licence/validate."
+    }
+  },
+  "required": [
+    "registerId",
+    "installId",
+    "reason",
+    "note"
+  ]
+}

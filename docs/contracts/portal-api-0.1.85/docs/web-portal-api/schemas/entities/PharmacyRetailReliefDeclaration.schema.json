@@ -1,0 +1,132 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:sspos:web-portal-api:v1:PharmacyRetailReliefDeclaration",
+  "title": "PharmacyRetailReliefDeclaration",
+  "description": "Payload of a PharmacyRetailReliefDeclaration row.",
+  "type": "object",
+  "properties": {
+    "saleId": {
+      "type": "string"
+    },
+    "customerName": {
+      "type": "string"
+    },
+    "customerAddress": {
+      "type": "string"
+    },
+    "condition": {
+      "type": "string"
+    },
+    "paperDeclarationSigned": {
+      "type": "boolean"
+    },
+    "items": {
+      "type": "string"
+    },
+    "vatRelieved": {
+      "type": [
+        "string",
+        "number"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$"
+    },
+    "recordedByUserId": {
+      "type": "string"
+    },
+    "recordedByName": {
+      "type": "string"
+    },
+    "declaredAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "branchId": {
+      "type": "string"
+    },
+    "id": {
+      "type": "string"
+    },
+    "companyId": {
+      "type": "string"
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "rowVersion": {
+      "type": [
+        "string",
+        "integer"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)$"
+    },
+    "deletedAt": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "isDeleted": {
+      "type": "boolean"
+    },
+    "domainEvents": {
+      "type": [
+        "array",
+        "null"
+      ],
+      "items": {
+        "type": "object",
+        "properties": {
+          "eventId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "occurredAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "version": {
+            "type": [
+              "string",
+              "integer"
+            ],
+            "pattern": "^-?(?:0|[1-9]\\d*)$"
+          }
+        },
+        "required": [
+          "eventId",
+          "occurredAt",
+          "version"
+        ]
+      }
+    }
+  },
+  "required": [
+    "saleId",
+    "customerName",
+    "customerAddress",
+    "condition",
+    "paperDeclarationSigned",
+    "items",
+    "vatRelieved",
+    "recordedByUserId",
+    "recordedByName",
+    "declaredAt",
+    "branchId",
+    "id",
+    "companyId",
+    "createdAt",
+    "updatedAt",
+    "rowVersion",
+    "deletedAt",
+    "isDeleted",
+    "domainEvents"
+  ]
+}

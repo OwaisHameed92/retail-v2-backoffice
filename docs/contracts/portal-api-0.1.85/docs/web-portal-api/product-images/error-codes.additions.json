@@ -1,0 +1,82 @@
+[
+  {
+    "code": "image.not_available",
+    "status": 501,
+    "endpoints": [
+      "GET sync/product-images",
+      "PUT sync/product-images/{productId}",
+      "DELETE sync/product-images/{productId}"
+    ],
+    "meaning": "The portal has not switched product pictures on yet (answered after the sync key check, before the body is read).",
+    "tillDoes": "Keeps its pictures, sends none, and asks again (GET sync/product-images) no sooner than Retry-After (3600 s), then at most once a day. Push and pull are unaffected.",
+    "details": null,
+    "retryable": true
+  },
+  {
+    "code": "product.not_found",
+    "status": 404,
+    "endpoints": [
+      "PUT sync/product-images/{productId}",
+      "DELETE sync/product-images/{productId}"
+    ],
+    "meaning": "The portal has no product with this id for the calling business (not pushed yet, deleted, or another business's). rejectedKey = the product id.",
+    "tillDoes": "Keeps the picture waiting and sends it again after a push that carried the Product row; never more than once a day for the same product.",
+    "details": null,
+    "retryable": true
+  },
+  {
+    "code": "image.too_large",
+    "status": 413,
+    "endpoints": [
+      "PUT sync/product-images/{productId}"
+    ],
+    "meaning": "The body (Content-Length) is over 2 MB (2097152 bytes). rejectedKey = the product id.",
+    "tillDoes": "Makes a smaller copy (≤ 2000 px, JPEG quality 85) and sends that; does not send the same bytes again.",
+    "details": null,
+    "retryable": false
+  },
+  {
+    "code": "image.unsupported_type",
+    "status": 415,
+    "endpoints": [
+      "PUT sync/product-images/{productId}"
+    ],
+    "meaning": "Not a JPEG, PNG or WebP picture, or the Content-Type is not the type of the bytes. rejectedKey = the product id.",
+    "tillDoes": "Converts the picture to JPEG and sends that; does not send the same bytes again.",
+    "details": null,
+    "retryable": false
+  },
+  {
+    "code": "image.hash_mismatch",
+    "status": 422,
+    "endpoints": [
+      "PUT sync/product-images/{productId}"
+    ],
+    "meaning": "X-SSPOS-Image-Sha256 is not the SHA-256 of the body: the upload was cut or changed on the way. rejectedKey = the product id.",
+    "tillDoes": "Sends it again at the next run (same bytes, same hash).",
+    "details": null,
+    "retryable": true
+  },
+  {
+    "code": "image.dimensions",
+    "status": 422,
+    "endpoints": [
+      "PUT sync/product-images/{productId}"
+    ],
+    "meaning": "Width or height is under 16 or over 2000 pixels. rejectedKey = the product id.",
+    "tillDoes": "Sends a copy scaled to at most 2000 px on its longest side; a picture under 16 px is not sent.",
+    "details": null,
+    "retryable": false
+  },
+  {
+    "code": "image.invalid",
+    "status": 422,
+    "endpoints": [
+      "PUT sync/product-images/{productId}"
+    ],
+    "meaning": "The portal cannot read the picture (damaged file, animated WebP). rejectedKey = the product id.",
+    "tillDoes": "Marks the product's picture as refused on Sync status; sends it again only when the picture changes.",
+    "details": null,
+    "retryable": false
+  }
+]

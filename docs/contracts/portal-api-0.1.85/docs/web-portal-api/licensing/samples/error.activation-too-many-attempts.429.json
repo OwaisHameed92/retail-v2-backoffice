@@ -1,0 +1,8 @@
+{
+  "code": "activation.too_many_attempts",
+  "message": "Too many wrong codes. Try again in 15 minutes.",
+  "traceId": "req-8a21f0",
+  "retryAfterSeconds": 900,
+  "rejectedKey": null,
+  "details": null
+}

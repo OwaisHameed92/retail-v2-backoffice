@@ -1,0 +1,138 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:sspos:web-portal-api:v1:Parcel",
+  "title": "Parcel",
+  "description": "Payload of a Parcel row.",
+  "type": "object",
+  "properties": {
+    "carrierId": {
+      "type": "string"
+    },
+    "trackingCode": {
+      "type": "string"
+    },
+    "customerName": {
+      "type": "string"
+    },
+    "direction": {
+      "enum": [
+        "dropOff",
+        "collection"
+      ]
+    },
+    "status": {
+      "enum": [
+        "open",
+        "handedOver"
+      ]
+    },
+    "registeredAtUtc": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "registeredByUserId": {
+      "type": "string"
+    },
+    "handedOverAtUtc": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "handedOverByUserId": {
+      "type": "string"
+    },
+    "handOverIdCheckNote": {
+      "type": "string"
+    },
+    "branchId": {
+      "type": "string"
+    },
+    "id": {
+      "type": "string"
+    },
+    "companyId": {
+      "type": "string"
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "rowVersion": {
+      "type": [
+        "string",
+        "integer"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)$"
+    },
+    "deletedAt": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "isDeleted": {
+      "type": "boolean"
+    },
+    "domainEvents": {
+      "type": [
+        "array",
+        "null"
+      ],
+      "items": {
+        "type": "object",
+        "properties": {
+          "eventId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "occurredAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "version": {
+            "type": [
+              "string",
+              "integer"
+            ],
+            "pattern": "^-?(?:0|[1-9]\\d*)$"
+          }
+        },
+        "required": [
+          "eventId",
+          "occurredAt",
+          "version"
+        ]
+      }
+    }
+  },
+  "required": [
+    "carrierId",
+    "trackingCode",
+    "customerName",
+    "direction",
+    "status",
+    "registeredAtUtc",
+    "registeredByUserId",
+    "handedOverAtUtc",
+    "handedOverByUserId",
+    "handOverIdCheckNote",
+    "branchId",
+    "id",
+    "companyId",
+    "createdAt",
+    "updatedAt",
+    "rowVersion",
+    "deletedAt",
+    "isDeleted",
+    "domainEvents"
+  ]
+}

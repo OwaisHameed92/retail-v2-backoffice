@@ -223,6 +223,8 @@ return [
                     'hidden' => [
                         'till.keypad_price_in_pence', 'compliance.mup_*', 'compliance.challenge25_*', 'compliance.nicotine_products_gated',
                         'compliance.energy_drink_age_gate', 'compliance.generational_*',
+                        // Till 0.1.85 pack (UK line, 2026-10-12): not in the Pak POS pack yet.
+                        'catalogue.brands',
                     ],
                     // Shared settings only the Pak POS line has, section => key => definition (catalogue.php's shape).
                     'added' => [

@@ -10,9 +10,10 @@ use Opis\JsonSchema\Errors\ValidationError;
 use stdClass;
 
 /**
- * JSON Schema (draft 2020-12) validation against the EPOS contract v1.4.1 (module 2.6), with opis/json-schema in
- * spec-compliant mode. Every schema is loaded by its path under `docs/web-portal-api/`, so the licensing schemas'
- * relative `$ref`s (`common.schema.json#/$defs/…`, `../../schemas/error-reply.schema.json`) resolve across files.
+ * JSON Schema (draft 2020-12) validation against the EPOS contract (module 2.6; the till 0.1.85 pack since W1, a
+ * superset of v1.4.1), with opis/json-schema in spec-compliant mode. Every schema is loaded by its path under
+ * `docs/web-portal-api/`, so the licensing schemas' relative `$ref`s (`common.schema.json#/$defs/…`,
+ * `../../schemas/error-reply.schema.json`) resolve across files.
  *
  *     ContractSchema::errors($data, 'schemas/push-reply.schema.json');            // [] when valid
  *     ContractSchema::errors($data, 'licensing/schemas/validate-reply.schema.json');
@@ -22,7 +23,8 @@ use stdClass;
  */
 final class ContractSchema
 {
-    public const ROOT = 'docs/contracts/portal-api-v1.4.1/docs/web-portal-api';
+    /** The current pack (till 0.1.85, W1): a superset of v1.4.1, so an older till's rows validate too. */
+    public const ROOT = 'docs/contracts/portal-api-0.1.85/docs/web-portal-api';
 
     private const PREFIX = 'https://contract.sspos.test/';
 

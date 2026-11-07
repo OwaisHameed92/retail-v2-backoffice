@@ -1,0 +1,12 @@
+{
+  "code": "key.used_on_another_install",
+  "message": "This key is already used on another PC - contact your dealer.",
+  "traceId": "req-5d19be",
+  "retryAfterSeconds": null,
+  "rejectedKey": null,
+  "details": {
+    "licenceId": "01K5M1GR8T000000000000Y004",
+    "installCode": "Q3EG-1RNC",
+    "firstSeenUtc": "2026-09-28T11:02:14Z"
+  }
+}

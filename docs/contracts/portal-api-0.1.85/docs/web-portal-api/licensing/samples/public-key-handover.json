@@ -1,0 +1,9 @@
+{
+  "kid": "k<first 8 hex of SHA-256(public key)>",
+  "alg": "Ed25519",
+  "publicKeyBase64Url": "<43 characters: base64url of the raw 32-byte public key>",
+  "publicKeyPem": "-----BEGIN PUBLIC KEY-----\n<base64 SubjectPublicKeyInfo>\n-----END PUBLIC KEY-----",
+  "notBefore": "2026-10-01T00:00:00Z",
+  "contact": "who to call if the key is lost or leaked",
+  "notes": "Send this to the SSPOS owner over a trusted channel. Never send the private key. You get back a signer certificate (SSPOSCERT1...): put it in every token as signerCert (docs/web-portal-api.md 17.17). No till release is needed."
+}

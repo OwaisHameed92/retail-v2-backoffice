@@ -91,7 +91,7 @@ export interface ReceiptLine {
 export interface ReceiptPayment {
     id: string;
     name: string;
-    kind: 'points' | 'deposit' | 'cash' | 'card' | 'voucher' | 'account' | 'other';
+    kind: 'points' | 'deposit' | 'cash' | 'card' | 'voucher' | 'account' | 'elsewhere' | 'other';
     amount: string;
     cashback: string;
     change: string;

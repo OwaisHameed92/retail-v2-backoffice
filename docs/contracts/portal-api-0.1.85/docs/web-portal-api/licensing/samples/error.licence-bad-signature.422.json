@@ -1,0 +1,8 @@
+{
+  "code": "licence.bad_signature",
+  "message": "This licence key is not genuine or has been changed. Paste it again or ask your dealer.",
+  "traceId": "req-8a21f0",
+  "retryAfterSeconds": null,
+  "rejectedKey": null,
+  "details": null
+}

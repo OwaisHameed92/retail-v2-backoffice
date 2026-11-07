@@ -1,0 +1,58 @@
+{
+  "companyId": "01K5M1GR8T000000000000C009",
+  "branchId": "01K5M1GR8T000000000000B009",
+  "registers": [
+    {
+      "registerId": "01K5M1GR8T000000000000R009",
+      "seat": "allowed"
+    }
+  ],
+  "hubUrl": "https://portal.example.co.uk",
+  "apiKey": "sspos_br_SAMPLE_c4d2a9e0f7b3418e95aa",
+  "licenceToken": "SSPOS1.eyJ2IjoxLCJraWQiOiJrMTM3OTlmYTQiLCJsaWNlbmNlSWQiOiIwMUs1VDBROEM0MDAwMDAwMDAwMDAwWTAwMyIsImtpbmQiOiJmdWxsIiwic291cmNlIjoicG9ydGFsIiwiaXNzdWVyIjoiU1NQT1MgUG9ydGFsIiwiY29tcGFueUlkIjoiMDFLNU0xR1I4VDAwMDAwMDAwMDAwMEMwMDkiLCJicmFuY2hJZCI6IjAxSzVNMUdSOFQwMDAwMDAwMDAwMDBCMDA5IiwiYnVzaW5lc3NOYW1lIjoiSHlkZSBQYXJrIE5ld3MgTHRkIiwiYnJhbmNoTmFtZSI6Ikh5ZGUgUGFyayIsIm1heFJlZ2lzdGVycyI6MiwiZmVhdHVyZXMiOlsid2hhdHNhcHAiXSwiaXNzdWVkQXQiOiIyMDI2LTA5LTI2VDExOjMwOjAwWiIsInZhbGlkRnJvbSI6IjIwMjYtMDktMjZUMTE6MzA6MDBaIiwiZXhwaXJlc0F0IjoiMjAyNy0wMy0zMVQyMzo1OTo1OVoiLCJvbmxpbmVDaGVjayI6eyJyZXF1aXJlZCI6dHJ1ZSwiaW50ZXJ2YWxIb3VycyI6MjQsImdyYWNlRGF5cyI6MTR9LCJub3RlcyI6Ik1vdmVkIGZyb20gbG9jYWwgbGljZW5jZSAwMUs1TTFHUjhUMDAwMDAwMDAwMDAwWTAwMiAoMTg2IGRheXMgY2FycmllZCBvdmVyKSJ9.VIVGeb_kRwrle0a1DPgXGplq4Snr61SOB4qewKN_lJ9Z3Bs88nTudB1K1CHQCkOybamSeW0l1oBjshiLNNq3DQ",
+  "licence": {
+    "licenceId": "01K5T0Q8C4000000000000Y003",
+    "kind": "full",
+    "source": "portal",
+    "expiresAt": "2027-03-31T23:59:59Z",
+    "maxRegisters": 2,
+    "features": [
+      "whatsapp"
+    ],
+    "limits": null
+  },
+  "carriedOverDays": 186,
+  "upload": {
+    "uploadId": "01K5TA00000000000000000G01",
+    "mode": "initial",
+    "maxRowsPerBatch": 5000,
+    "resumeFromSeq": 0
+  },
+  "settingsBootstrap": null,
+  "portalTimeUtc": "2026-09-26T11:30:00Z",
+  "nextCheckAfterSeconds": 86400,
+  "messages": [
+    {
+      "id": "01K5T0Q8C4000000000000M007",
+      "level": "info",
+      "title": "Uploading your history",
+      "text": "Your sales history is being copied to the portal in the background. Keep trading as normal.",
+      "showFromUtc": null,
+      "showUntilUtc": null,
+      "dismissible": true,
+      "link": null
+    }
+  ],
+  "idMapping": {
+    "company": {
+      "localId": "01K5M1GR8T000000000000C009",
+      "portalId": "01K5T0Q8C4000000000000C001",
+      "action": "aliased"
+    },
+    "branch": {
+      "localId": "01K5M1GR8T000000000000B009",
+      "portalId": "01K5M1GR8T000000000000B009",
+      "action": "adopted"
+    }
+  }
+}

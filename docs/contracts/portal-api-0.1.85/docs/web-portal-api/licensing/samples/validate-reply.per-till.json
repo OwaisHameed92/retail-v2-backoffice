@@ -1,0 +1,29 @@
+{
+  "status": "active",
+  "licenceToken": null,
+  "licence": {
+    "licenceId": "01K5T0Q8C4000000000000Y101",
+    "kind": "full",
+    "source": "portal",
+    "companyId": "01K5T0Q8C4000000000000C001",
+    "branchId": "01K5T0Q8C4000000000000B001",
+    "businessName": "Kirkgate Stores Ltd",
+    "branchName": "Leeds Kirkgate",
+    "installCode": "AC4F-3FHG",
+    "validFrom": "2026-09-27T09:05:01Z",
+    "expiresAt": "2027-09-27T23:59:59Z",
+    "maxRegisters": 3,
+    "features": [
+      "whatsapp",
+      "multi_branch"
+    ],
+    "limits": {
+      "branches": 2
+    }
+  },
+  "apiKey": null,
+  "minimumAppVersion": null,
+  "portalTimeUtc": "2026-09-28T09:05:01Z",
+  "nextCheckAfterSeconds": 86400,
+  "messages": []
+}

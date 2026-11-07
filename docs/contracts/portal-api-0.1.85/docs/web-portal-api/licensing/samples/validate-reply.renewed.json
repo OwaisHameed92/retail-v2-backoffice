@@ -1,0 +1,45 @@
+{
+  "status": "active",
+  "licenceToken": "SSPOS1.eyJ2IjoxLCJraWQiOiJrMTM3OTlmYTQiLCJsaWNlbmNlSWQiOiIwMUs1VDBROEM0MDAwMDAwMDAwMDAwWTAwMSIsImtpbmQiOiJmdWxsIiwic291cmNlIjoicG9ydGFsIiwiaXNzdWVyIjoiU1NQT1MgUG9ydGFsIiwiY29tcGFueUlkIjoiMDFLNVQwUThDNDAwMDAwMDAwMDAwMEMwMDEiLCJicmFuY2hJZCI6IjAxSzVUMFE4QzQwMDAwMDAwMDAwMDBCMDAxIiwiYnVzaW5lc3NOYW1lIjoiS2lya2dhdGUgU3RvcmVzIEx0ZCIsImJyYW5jaE5hbWUiOiJMZWVkcyBLaXJrZ2F0ZSIsIm1heFJlZ2lzdGVycyI6MywiaXNzdWVkQXQiOiIyMDI2LTEwLTAyVDA5OjA1OjAwWiIsInZhbGlkRnJvbSI6IjIwMjYtMTAtMDJUMDk6MDU6MDBaIiwiZXhwaXJlc0F0IjoiMjAyNy0xMC0wMlQyMzo1OTo1OVoiLCJvbmxpbmVDaGVjayI6eyJyZXF1aXJlZCI6dHJ1ZSwiaW50ZXJ2YWxIb3VycyI6MjQsImdyYWNlRGF5cyI6MTR9LCJub3RlcyI6IkFubnVhbCBwbGFuLCAzIHRpbGxzIiwiZmVhdHVyZXMiOlsid2hhdHNhcHAiLCJtdWx0aV9icmFuY2giXSwibGltaXRzIjp7InVzZXJzIjoxMCwiYnJhbmNoZXMiOjJ9fQ.NKDHN7Q69KhiEHCWFyDK-SKk8MUH_ESBp9yWyeryAgQpfByutZktbUAGR8ts2c5l34eCIIqnWscrKXN4ZeZFDA",
+  "licence": {
+    "licenceId": "01K5T0Q8C4000000000000Y001",
+    "kind": "full",
+    "source": "portal",
+    "expiresAt": "2027-10-02T23:59:59Z",
+    "maxRegisters": 3,
+    "features": [
+      "whatsapp",
+      "multi_branch"
+    ],
+    "limits": {
+      "users": 10,
+      "branches": 2
+    }
+  },
+  "registers": [
+    {
+      "registerId": "01K5T0Q8C4000000000000R001",
+      "seat": "allowed"
+    },
+    {
+      "registerId": "01K5T0Q8C4000000000000R002",
+      "seat": "allowed"
+    }
+  ],
+  "apiKey": null,
+  "minimumAppVersion": null,
+  "portalTimeUtc": "2026-10-02T09:05:01Z",
+  "nextCheckAfterSeconds": 86400,
+  "messages": [
+    {
+      "id": "01K5T0Q8C4000000000000M003",
+      "level": "info",
+      "title": "Thank you",
+      "text": "Your annual plan is active until 2 October 2027.",
+      "showFromUtc": null,
+      "showUntilUtc": null,
+      "dismissible": true,
+      "link": null
+    }
+  ]
+}

@@ -25,10 +25,16 @@ final class RowHash
     {
         $parts = [];
         $derived = OwnershipRules::derivedColumns($def->entity);
+        $tillOwned = TillOwnedFields::columns($def);
 
         foreach ($def->fields as $field) {
             foreach ($field->columns() as $column) {
                 if ($derived !== [] && in_array($column, $derived, true)) {
+                    continue;
+                }
+
+                // Till 0.1.85: a till-owned column counts only once it holds a value, so older hashes stay valid.
+                if ($tillOwned !== [] && in_array($column, $tillOwned, true) && ($row[$column] ?? null) === null) {
                     continue;
                 }
 

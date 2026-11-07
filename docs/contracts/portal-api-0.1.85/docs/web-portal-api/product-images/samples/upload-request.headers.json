@@ -1,0 +1,12 @@
+{
+  "Authorization": "Bearer sspos_sync_REDACTED",
+  "X-SSPOS-Company-Id": "01K5T0Q8C4000000000000C001",
+  "X-SSPOS-Branch-Id": "01K5T0Q8C4000000000000B001",
+  "X-SSPOS-Register-Id": "01K5T0Q8C4000000000000R001",
+  "X-SSPOS-Contract": "1",
+  "X-SSPOS-Store-Protocol": "3",
+  "X-SSPOS-App-Version": "0.1.60",
+  "Content-Type": "image/jpeg",
+  "Content-Length": "184233",
+  "X-SSPOS-Image-Sha256": "42d214eff618b7be9224a9003fa096081f5b4cbbadb12eea1cef42e9555b849b"
+}

@@ -1,0 +1,117 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "migrate-reply",
+  "description": "POST /api/v1/cloud/migrate 200 reply. In v1 the till always keeps its own ids; idMapping says what the portal did on its side.",
+  "type": "object",
+  "properties": {
+    "companyId": {
+      "allOf": [
+        {
+          "$ref": "common.schema.json#/$defs/ulid"
+        }
+      ],
+      "description": "The id the till keeps using (= the one it sent)."
+    },
+    "branchId": {
+      "$ref": "common.schema.json#/$defs/ulid"
+    },
+    "idMapping": {
+      "type": "object",
+      "properties": {
+        "company": {
+          "$ref": "common.schema.json#/$defs/idMapping"
+        },
+        "branch": {
+          "$ref": "common.schema.json#/$defs/idMapping"
+        }
+      },
+      "required": [
+        "company",
+        "branch"
+      ]
+    },
+    "registers": {
+      "type": "array",
+      "items": {
+        "$ref": "common.schema.json#/$defs/registerSeat"
+      }
+    },
+    "hubUrl": {
+      "type": "string",
+      "format": "uri",
+      "pattern": "^https://"
+    },
+    "apiKey": {
+      "$ref": "common.schema.json#/$defs/apiKey"
+    },
+    "licenceToken": {
+      "$ref": "common.schema.json#/$defs/licenceToken"
+    },
+    "licence": {
+      "$ref": "common.schema.json#/$defs/licenceSummary"
+    },
+    "carriedOverDays": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Days of the local licence honoured by the cloud licence."
+    },
+    "upload": {
+      "type": "object",
+      "properties": {
+        "uploadId": {
+          "$ref": "common.schema.json#/$defs/ulid"
+        },
+        "mode": {
+          "type": "string",
+          "enum": [
+            "initial"
+          ]
+        },
+        "maxRowsPerBatch": {
+          "type": "integer",
+          "minimum": 100,
+          "maximum": 5000
+        },
+        "resumeFromSeq": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "0 on a new upload; on a retried migrate, the highest upload seq the portal already holds."
+        }
+      },
+      "required": [
+        "uploadId",
+        "mode",
+        "maxRowsPerBatch",
+        "resumeFromSeq"
+      ]
+    },
+    "settingsBootstrap": {
+      "$ref": "common.schema.json#/$defs/settingsBootstrap"
+    },
+    "portalTimeUtc": {
+      "$ref": "common.schema.json#/$defs/utc"
+    },
+    "nextCheckAfterSeconds": {
+      "type": "integer",
+      "minimum": 60,
+      "maximum": 2592000,
+      "description": "When to call licence/validate next (the till adds a little random jitter)."
+    },
+    "messages": {
+      "$ref": "common.schema.json#/$defs/messages"
+    }
+  },
+  "required": [
+    "companyId",
+    "branchId",
+    "idMapping",
+    "registers",
+    "hubUrl",
+    "apiKey",
+    "licenceToken",
+    "carriedOverDays",
+    "upload",
+    "portalTimeUtc",
+    "nextCheckAfterSeconds"
+  ]
+}

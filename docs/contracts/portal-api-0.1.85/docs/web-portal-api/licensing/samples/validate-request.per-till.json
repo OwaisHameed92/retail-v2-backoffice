@@ -1,0 +1,27 @@
+{
+  "installId": "01K5T0Q8C4000000000000J001",
+  "installCode": "AC4F-3FHG",
+  "licenceId": "01K5T0Q8C4000000000000Y101",
+  "tokenSha256": "b0ce7b537eb32cc17fb3d9cd9a3fff83e15a7f4a52ca937e34ebd9f35558740a",
+  "deviceName": "TILL-1",
+  "appVersion": "3.0.412",
+  "os": {
+    "name": "Windows",
+    "version": "10.0.26200",
+    "architecture": "x64"
+  },
+  "approverKids": [
+    "k76b44696"
+  ],
+  "trustedKids": [
+    "k13799fa4",
+    "k76b44696"
+  ],
+  "tillClockUtc": "2026-09-28T09:05:00Z",
+  "clockWatermarkUtc": "2026-09-28T09:05:00Z",
+  "lastValidatedAtUtc": "2026-09-27T09:05:01Z",
+  "lock": {
+    "locked": false,
+    "reason": null
+  }
+}

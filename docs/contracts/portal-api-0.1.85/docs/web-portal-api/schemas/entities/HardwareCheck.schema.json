@@ -1,0 +1,158 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:sspos:web-portal-api:v1:HardwareCheck",
+  "title": "HardwareCheck",
+  "description": "Payload of a HardwareCheck row.",
+  "type": "object",
+  "properties": {
+    "kind": {
+      "enum": [
+        "receiptPrinter",
+        "cashDrawer",
+        "scanner",
+        "scale",
+        "labelPrinter",
+        "paymentTerminal",
+        "customerDisplay",
+        "cctv"
+      ]
+    },
+    "result": {
+      "enum": [
+        "notConfigured",
+        "needsConfirmation",
+        "pass",
+        "fail"
+      ]
+    },
+    "adapter": {
+      "type": "string"
+    },
+    "port": {
+      "type": "string"
+    },
+    "evidence": {
+      "type": "string"
+    },
+    "instruction": {
+      "type": "string"
+    },
+    "elapsedMs": {
+      "type": [
+        "string",
+        "integer"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)$"
+    },
+    "at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "userId": {
+      "type": "string"
+    },
+    "userName": {
+      "type": "string"
+    },
+    "confirmsCheckId": {
+      "type": "string"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "registerId": {
+      "type": "string"
+    },
+    "branchId": {
+      "type": "string"
+    },
+    "id": {
+      "type": "string"
+    },
+    "companyId": {
+      "type": "string"
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "rowVersion": {
+      "type": [
+        "string",
+        "integer"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)$"
+    },
+    "deletedAt": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "isDeleted": {
+      "type": "boolean"
+    },
+    "domainEvents": {
+      "type": [
+        "array",
+        "null"
+      ],
+      "items": {
+        "type": "object",
+        "properties": {
+          "eventId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "occurredAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "version": {
+            "type": [
+              "string",
+              "integer"
+            ],
+            "pattern": "^-?(?:0|[1-9]\\d*)$"
+          }
+        },
+        "required": [
+          "eventId",
+          "occurredAt",
+          "version"
+        ]
+      }
+    }
+  },
+  "required": [
+    "kind",
+    "result",
+    "adapter",
+    "port",
+    "evidence",
+    "instruction",
+    "elapsedMs",
+    "at",
+    "userId",
+    "userName",
+    "confirmsCheckId",
+    "notes",
+    "registerId",
+    "branchId",
+    "id",
+    "companyId",
+    "createdAt",
+    "updatedAt",
+    "rowVersion",
+    "deletedAt",
+    "isDeleted",
+    "domainEvents"
+  ]
+}

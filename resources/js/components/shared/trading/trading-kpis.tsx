@@ -15,12 +15,13 @@ function previousFooter(previous: string | null, label: string, format: (v: stri
     return `${format(previous)} ${label.replace(/^vs /, '')}`;
 }
 
-/** What the takings include that is not a sale: container deposits, order deposits, charity round-ups. */
+/** What the takings include that is not a sale: container deposits, order deposits, charity round-ups, NHS charges. */
 function takingsHint(totals: SalesTotals): string {
     const parts = [
         ['container deposits', totals.containerDeposits],
         ['order deposits', totals.orderDeposits],
         ['charity', totals.charity],
+        ['NHS charges', totals.nhsCharges ?? '0'],
     ].filter(([, value]) => Number(value) !== 0);
 
     return parts.length === 0 ? 'Payments less change and cashback' : `Incl. ${parts.map(([name, value]) => `${name} ${money(value)}`).join(', ')}`;

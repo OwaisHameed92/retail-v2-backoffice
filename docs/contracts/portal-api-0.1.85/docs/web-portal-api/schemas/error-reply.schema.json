@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:sspos:web-portal-api:v1:error-reply",
+  "title": "error-reply",
+  "description": "Body of every non-2xx reply.",
+  "type": "object",
+  "properties": {
+    "code": {
+      "type": "string"
+    },
+    "message": {
+      "type": "string"
+    },
+    "traceId": {
+      "type": "string"
+    },
+    "retryAfterSeconds": {
+      "type": [
+        "string",
+        "integer",
+        "null"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)$"
+    },
+    "rejectedKey": {
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  },
+  "required": [
+    "code",
+    "message",
+    "traceId",
+    "retryAfterSeconds",
+    "rejectedKey"
+  ]
+}

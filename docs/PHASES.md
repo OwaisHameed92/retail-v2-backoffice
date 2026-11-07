@@ -177,6 +177,18 @@ and 24 h retries. UK only (country flag `partnerApi`, off on PK). Status: done.
 | OS-12 | Live fixes (2026-10-25): a shop takes part when collection OR delivery is on (a delivery-only store worked nowhere before), checkout offers only the shop's methods, every customer text and the shop's order email adapt to collect / delivery / both; one Aisles picker drives Shop by aisle, the tiles and the department rows (read-time fallback to `home_departments`) | done |
 | OS-13 | Online store only (no tills yet): `plans.online_store_only` (never the portal default, no till licences), tenant without licences, store available without cloud sync, the single "Online store" line at the plan fee by DD (yearly 12×), non-payment suspends the business so only its store goes offline; portal products with in/out of stock or manual stock (taken off when collected/delivered, held by open orders), store marker `sells_without_tills` until the first live till; Change plan to EPOS keeps working (live tills take over stock/prices); a business with live tills cannot move to an online-only plan. No existing test changed | done |
 
+## SSPOS 3 verticals: pharmacy, BikeBook, salon (2026-11-08; `docs/verticals-0.1.85.md`)
+
+EPOS summary `README-PHARMACY-BIKEBOOK-SALON.md` (2026-11-08); contract pack `docs/contracts/portal-api-0.1.85/`.
+
+| # | Module | Status |
+|---|---|---|
+| W1 | Till 0.1.85 sync acceptance, pharmacy + BikeBook: generator on the 0.1.85 pack (new columns on DispensingRecord / DispensingItem / CustomerOrder / Product / PaymentAttempt, 22 exemption values, 26 local tables skipped), `Product.workshopExposure` till-owned, NHS charges / PPCs out of sales and VAT (`nhs_charges`), "Paid in BikeBook" as its own non-cash line, read-only pharmacy / workshop / shop-type settings for matching shops, rights and audit words, Part D labels. No existing shop's push, pull, report or bill changes | done |
+| W2 | Salon sync acceptance: 41 `Salon*` tables, new list values (CashMovement tips, Consent sources, journal ref types), `salon.*` settings and rights, accounts 2280 / 2290 / 2300 / 4200 | todo |
+| W3 | Salon calls (`sync/salon/*`, 501 until switched on) and the online booking, queue join, manage-link and iCal pages | todo |
+| W4 | dm+d release server for pharmacy tills (`GET /api/v1/pharmacy/dmd/latest`, weekly TRUD job, two weeks kept) | todo |
+| W5 | BikeBook POS connector (OAuth / API key, products, stock, customers, sales orders, webhooks), `WorkshopOrder` pull row, `workshop.connector_status`, admin card | todo (waits for BikeBook to register SSPOS) |
+
 ## Phase 8: Later — 0/5
 
 Web orders / click and collect · Online payments · Dealers and resellers · Public marketing site · EPOS update

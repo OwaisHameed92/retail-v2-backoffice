@@ -1,0 +1,17 @@
+{
+  "name": "Grocery",
+  "position": 1,
+  "colourHex": "#1F7A4D",
+  "isActive": true,
+  "isVisibleOnTill": true,
+  "showInReport": true,
+  "defaultVatRateId": "01K5T0Q8C4000000000000V002",
+  "id": "01K5T0Q8C4000000000000D001",
+  "companyId": "01K5T0Q8C4000000000000C001",
+  "createdAt": "2026-09-01T08:00:00Z",
+  "updatedAt": "2026-09-01T08:00:00Z",
+  "rowVersion": 1,
+  "deletedAt": null,
+  "isDeleted": false,
+  "domainEvents": []
+}

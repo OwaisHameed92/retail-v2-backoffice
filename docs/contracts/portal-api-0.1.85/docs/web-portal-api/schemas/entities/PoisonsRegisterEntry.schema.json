@@ -1,0 +1,188 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:sspos:web-portal-api:v1:PoisonsRegisterEntry",
+  "title": "PoisonsRegisterEntry",
+  "description": "Payload of a PoisonsRegisterEntry row.",
+  "type": "object",
+  "properties": {
+    "recordedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "kind": {
+      "enum": [
+        "supplied",
+        "refused",
+        "suspiciousReported",
+        "correction"
+      ]
+    },
+    "substanceKind": {
+      "enum": [
+        "none",
+        "regulatedPoison",
+        "regulatedPrecursor",
+        "reportableSubstance"
+      ]
+    },
+    "productId": {
+      "type": "string"
+    },
+    "substanceName": {
+      "type": "string"
+    },
+    "quantity": {
+      "type": [
+        "string",
+        "number"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$"
+    },
+    "saleId": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "eppLicenceNumber": {
+      "type": "string"
+    },
+    "licenceAndIdMatch": {
+      "type": "boolean"
+    },
+    "licenceCoversSubstance": {
+      "type": "boolean"
+    },
+    "buyerName": {
+      "type": "string"
+    },
+    "buyerAddress": {
+      "type": "string"
+    },
+    "statedPurpose": {
+      "type": "string"
+    },
+    "buyerSignedPaperRegister": {
+      "type": "boolean"
+    },
+    "pharmacistUserId": {
+      "type": "string"
+    },
+    "pharmacistName": {
+      "type": "string"
+    },
+    "recordedByUserId": {
+      "type": "string"
+    },
+    "recordedByName": {
+      "type": "string"
+    },
+    "relatesToEntryId": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "notes": {
+      "type": "string"
+    },
+    "branchId": {
+      "type": "string"
+    },
+    "id": {
+      "type": "string"
+    },
+    "companyId": {
+      "type": "string"
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "rowVersion": {
+      "type": [
+        "string",
+        "integer"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)$"
+    },
+    "deletedAt": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "isDeleted": {
+      "type": "boolean"
+    },
+    "domainEvents": {
+      "type": [
+        "array",
+        "null"
+      ],
+      "items": {
+        "type": "object",
+        "properties": {
+          "eventId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "occurredAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "version": {
+            "type": [
+              "string",
+              "integer"
+            ],
+            "pattern": "^-?(?:0|[1-9]\\d*)$"
+          }
+        },
+        "required": [
+          "eventId",
+          "occurredAt",
+          "version"
+        ]
+      }
+    }
+  },
+  "required": [
+    "recordedAt",
+    "kind",
+    "substanceKind",
+    "productId",
+    "substanceName",
+    "quantity",
+    "saleId",
+    "eppLicenceNumber",
+    "licenceAndIdMatch",
+    "licenceCoversSubstance",
+    "buyerName",
+    "buyerAddress",
+    "statedPurpose",
+    "buyerSignedPaperRegister",
+    "pharmacistUserId",
+    "pharmacistName",
+    "recordedByUserId",
+    "recordedByName",
+    "relatesToEntryId",
+    "notes",
+    "branchId",
+    "id",
+    "companyId",
+    "createdAt",
+    "updatedAt",
+    "rowVersion",
+    "deletedAt",
+    "isDeleted",
+    "domainEvents"
+  ]
+}

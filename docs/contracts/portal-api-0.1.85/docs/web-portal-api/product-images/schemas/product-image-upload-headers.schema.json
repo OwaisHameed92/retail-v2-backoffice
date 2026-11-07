@@ -1,0 +1,79 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:sspos:web-portal-api:proposal:product-images:upload-headers",
+  "title": "product-image upload request headers",
+  "description": "PROPOSAL product-images §4.1: the headers of PUT /api/v1/sync/product-images/{productId}, written as a JSON object (header name => value). The body is the picture's bytes exactly as hashed: no JSON, no multipart, no Content-Encoding. Every §3 sync header is sent as on sync/push (Authorization, X-SSPOS-Company-Id, X-SSPOS-Branch-Id, X-SSPOS-Register-Id, X-SSPOS-Contract, X-SSPOS-App-Version, optional X-SSPOS-Store-Protocol); no Idempotency-Key (the picture's SHA-256 is the idempotency key).",
+  "type": "object",
+  "properties": {
+    "Authorization": {
+      "type": "string",
+      "pattern": "^Bearer \\S+$",
+      "description": "The branch's sync key, as on every sync/* call (never in the address)."
+    },
+    "X-SSPOS-Company-Id": {
+      "type": "string",
+      "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$"
+    },
+    "X-SSPOS-Branch-Id": {
+      "type": "string",
+      "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$"
+    },
+    "X-SSPOS-Register-Id": {
+      "type": "string",
+      "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$"
+    },
+    "X-SSPOS-Contract": {
+      "const": "1"
+    },
+    "X-SSPOS-Store-Protocol": {
+      "type": "string"
+    },
+    "X-SSPOS-App-Version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "Content-Type": {
+      "enum": [
+        "image/jpeg",
+        "image/png",
+        "image/webp"
+      ],
+      "description": "Must be the type of the bytes (the portal reads the type from the bytes and refuses a mismatch with 415 image.unsupported_type)."
+    },
+    "Content-Length": {
+      "type": "string",
+      "pattern": "^[1-9]\\d*$",
+      "description": "The number of bytes sent. At most 2097152 (2 MB); larger → 413 image.too_large before the body is read."
+    },
+    "X-SSPOS-Image-Sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$",
+      "description": "SHA-256 of exactly the bytes in the body, lower-case hex. Same value as the picture the portal holds → 200 unchanged, nothing stored. Not the hash of the body → 422 image.hash_mismatch."
+    }
+  },
+  "required": [
+    "Authorization",
+    "X-SSPOS-Company-Id",
+    "X-SSPOS-Branch-Id",
+    "X-SSPOS-Register-Id",
+    "X-SSPOS-Contract",
+    "X-SSPOS-App-Version",
+    "Content-Type",
+    "Content-Length",
+    "X-SSPOS-Image-Sha256"
+  ],
+  "not": {
+    "anyOf": [
+      {
+        "required": [
+          "Content-Encoding"
+        ]
+      },
+      {
+        "required": [
+          "Idempotency-Key"
+        ]
+      }
+    ]
+  }
+}

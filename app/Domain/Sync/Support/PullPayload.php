@@ -33,9 +33,10 @@ final class PullPayload
     /**
      * Members never sent while blank (null or ""): the till keeps its own value when a member is missing
      * (ANSWERS-2026-09-29-b A.1, §10.7). A blank `rfid` wiped the fob on tills up to 0.1.8; a blank `pinHash` never
-     * clears a PIN. The till's own values arrive by push; the portal only sends one it holds.
+     * clears a PIN. The till's own values arrive by push; the portal only sends one it holds. Till 0.1.85: a
+     * product's `workshopExposure` is the till's (TillOwnedFields), never sent before a till set it.
      */
-    public const KEPT_WHEN_BLANK = ['User' => ['pinHash', 'rfid']];
+    public const KEPT_WHEN_BLANK = ['User' => ['pinHash', 'rfid'], 'Product' => ['workshopExposure']];
 
     /**
      * `derivedColumns` that are still sent: a customer's balance and points are the portal's own sum over the ledger

@@ -3,6 +3,7 @@
 namespace App\Domain\ShopSettings\Queries;
 
 use App\Domain\ShopSettings\Support\SettingCatalogue;
+use App\Domain\ShopSettings\Support\VerticalSettings;
 use App\Domain\Tenancy\Models\Branch;
 use App\Domain\Tenancy\Models\Company;
 use App\Domain\TillData\Enums\SettingScope;
@@ -13,7 +14,8 @@ use Illuminate\Support\Collection;
  * Props for the Till settings page (module 4.9). Runs inside the company scope. For every shop: the business's
  * values and which shops have their own. For one shop: that shop's own values and what it gets otherwise (every
  * shop's value, else the till's default when the contract states it). Values include what the tills pushed (§10.3:
- * a till sends every shared setting it holds), so the page shows what the tills really use.
+ * a till sends every shared setting it holds), so the page shows what the tills really use. Till 0.1.85: the
+ * shop-type sections (pharmacy, bike workshop, shop type; VerticalSettings) follow, read-only, for matching shops only.
  */
 final class ShopSettingsPage
 {
@@ -24,7 +26,8 @@ final class ShopSettingsPage
     {
         $shops = Branch::query()->active()->when($restrictedBranchId !== null, fn ($q) => $q->whereKey($restrictedBranchId))
             ->orderBy('name')->get(['id', 'name', 'code']);
-        $catalogue = SettingCatalogue::all();
+        $verticals = VerticalSettings::sections($company);
+        $catalogue = [...SettingCatalogue::all(), ...VerticalSettings::all($company)];
         $rows = TillSetting::query()->whereIn('scope', [SettingScope::Company->value, SettingScope::Branch->value])
             ->whereIn('setting_key', array_keys($catalogue))->get(['scope', 'scope_id', 'setting_key', 'value', 'updated_at']);
 
@@ -37,7 +40,7 @@ final class ShopSettingsPage
             'shop' => $shop === null ? null : ['id' => $shop->id, 'name' => $shop->name, 'code' => $shop->code],
             'shops' => $shops->map(fn (Branch $b) => ['id' => $b->id, 'name' => $b->name, 'code' => $b->code])->values()->all(),
             'canEveryShop' => $restrictedBranchId === null,
-            'sections' => self::sections($shop !== null),
+            'sections' => self::sections([...SettingCatalogue::sections(), ...$verticals], $shop !== null),
             'values' => (object) ($shop === null ? $business : $own)->all(),
             'inherited' => (object) ($shop === null ? [] : self::inherited($catalogue, $business)),
             'overrides' => (object) ($shop === null ? self::overrides($rows, $shops) : []),
@@ -45,13 +48,14 @@ final class ShopSettingsPage
     }
 
     /**
+     * @param  array<string, array{title: string, description: string, settings: array<string, array<string, mixed>>}>  $catalogue
      * @return list<array<string, mixed>>
      */
-    private static function sections(bool $forShop): array
+    private static function sections(array $catalogue, bool $forShop): array
     {
         $sections = [];
 
-        foreach (SettingCatalogue::sections() as $id => $section) {
+        foreach ($catalogue as $id => $section) {
             $settings = [];
             foreach ($section['settings'] as $key => $definition) {
                 if ($forShop && ($definition['everyShopOnly'] ?? false)) {

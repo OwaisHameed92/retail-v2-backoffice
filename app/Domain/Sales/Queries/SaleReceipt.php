@@ -2,6 +2,8 @@
 
 namespace App\Domain\Sales\Queries;
 
+use App\Domain\Cash\Support\PaidElsewhere;
+use App\Domain\Reporting\Build\SaleFacts;
 use App\Domain\Sales\Support\SaleNames;
 use App\Domain\Shared\Country\Country;
 use App\Domain\Shared\Support\Money;
@@ -94,7 +96,9 @@ final class SaleReceipt
     /** @return array<string, mixed> */
     private static function line(SaleLine $l, SaleNames $names): array
     {
-        $special = in_array($l->product_id, ['ORDER-DEPOSIT', 'CHARITY-ROUNDUP'], true);
+        // Till lines with no product row behind them: deposits, round-ups and a pharmacy's RX- lines (till 0.1.85).
+        $special = in_array($l->product_id, ['ORDER-DEPOSIT', 'CHARITY-ROUNDUP'], true) || str_starts_with((string) $l->product_id, 'RX-');
+        $nhs = $l->product_id === SaleFacts::NHS_CHARGE || str_starts_with((string) $l->product_id, SaleFacts::NHS_PPC_PREFIX);
 
         return [
             'id' => $l->id,
@@ -122,6 +126,7 @@ final class SaleReceipt
             'flags' => array_keys(array_filter([
                 'orderDeposit' => $l->product_id === 'ORDER-DEPOSIT',
                 'charity' => $l->is_charity_round_up || $l->product_id === 'CHARITY-ROUNDUP',
+                'nhs' => $nhs,
                 'bagCharge' => (bool) $l->is_bag_charge,
                 'weighed' => (bool) $l->is_weighed,
                 'ageRestricted' => (bool) $l->is_age_restricted,
@@ -144,6 +149,7 @@ final class SaleReceipt
             $type !== null && $type->is_card => 'card',
             $type !== null && $type->is_voucher => 'voucher',
             $type !== null && $type->is_account => 'account',
+            PaidElsewhere::matches($type, $name) => 'elsewhere',
             default => 'other',
         };
 

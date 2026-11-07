@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:sspos:web-portal-api:v1:RolePermission",
+  "title": "RolePermission",
+  "description": "Payload of a RolePermission row (keyed by roleId, permissionKey; section 10.3).",
+  "type": "object",
+  "properties": {
+    "roleId": {
+      "type": "string"
+    },
+    "permissionKey": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "roleId",
+    "permissionKey"
+  ]
+}

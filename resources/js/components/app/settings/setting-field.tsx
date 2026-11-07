@@ -52,7 +52,7 @@ export function SettingField({ definition, value, onChange, inherited, overrides
             return (
                 <Input
                     id={id}
-                    value={value === '' ? 'Not set' : value}
+                    value={value === '' ? 'Not set' : (displayValue(definition, value) ?? value)}
                     readOnly
                     disabled
                     className={cn(value === '' && 'text-muted-foreground')}

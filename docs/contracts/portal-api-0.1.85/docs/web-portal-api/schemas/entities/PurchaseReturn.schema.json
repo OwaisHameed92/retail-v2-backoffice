@@ -1,0 +1,220 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:sspos:web-portal-api:v1:PurchaseReturn",
+  "title": "PurchaseReturn",
+  "description": "Payload of a PurchaseReturn row.",
+  "type": "object",
+  "properties": {
+    "supplierId": {
+      "type": "string"
+    },
+    "supplierName": {
+      "type": "string"
+    },
+    "number": {
+      "type": [
+        "string",
+        "integer"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)$"
+    },
+    "reference": {
+      "type": "string"
+    },
+    "status": {
+      "enum": [
+        "draft",
+        "sent",
+        "credited",
+        "cancelled"
+      ]
+    },
+    "returnDate": {
+      "type": "string",
+      "format": "date"
+    },
+    "goodsReceiptId": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "purchaseOrderId": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "netAmount": {
+      "type": [
+        "string",
+        "number"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$"
+    },
+    "vatAmount": {
+      "type": [
+        "string",
+        "number"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$"
+    },
+    "grossAmount": {
+      "type": [
+        "string",
+        "number"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$"
+    },
+    "createdByUserId": {
+      "type": "string"
+    },
+    "sentAt": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "sentByUserId": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "creditNoteNumber": {
+      "type": "string"
+    },
+    "creditDate": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date"
+    },
+    "creditedAt": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "supplierCreditNoteId": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "cancelledAt": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "note": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "branchId": {
+      "type": "string"
+    },
+    "id": {
+      "type": "string"
+    },
+    "companyId": {
+      "type": "string"
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "rowVersion": {
+      "type": [
+        "string",
+        "integer"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)$"
+    },
+    "deletedAt": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "isDeleted": {
+      "type": "boolean"
+    },
+    "domainEvents": {
+      "type": [
+        "array",
+        "null"
+      ],
+      "items": {
+        "type": "object",
+        "properties": {
+          "eventId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "occurredAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "version": {
+            "type": [
+              "string",
+              "integer"
+            ],
+            "pattern": "^-?(?:0|[1-9]\\d*)$"
+          }
+        },
+        "required": [
+          "eventId",
+          "occurredAt",
+          "version"
+        ]
+      }
+    }
+  },
+  "required": [
+    "supplierId",
+    "supplierName",
+    "number",
+    "reference",
+    "status",
+    "returnDate",
+    "goodsReceiptId",
+    "purchaseOrderId",
+    "netAmount",
+    "vatAmount",
+    "grossAmount",
+    "createdByUserId",
+    "sentAt",
+    "sentByUserId",
+    "creditNoteNumber",
+    "creditDate",
+    "creditedAt",
+    "supplierCreditNoteId",
+    "cancelledAt",
+    "note",
+    "branchId",
+    "id",
+    "companyId",
+    "createdAt",
+    "updatedAt",
+    "rowVersion",
+    "deletedAt",
+    "isDeleted",
+    "domainEvents"
+  ]
+}

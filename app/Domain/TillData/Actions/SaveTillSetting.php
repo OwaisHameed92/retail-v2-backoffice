@@ -19,7 +19,8 @@ use Illuminate\Validation\ValidationException;
  * value removes the setting (soft delete, pulled as `D`: the till falls back to the wider scope or its default).
  *
  * Refused: register scope and every deny-listed key (SettingSyncPolicy: device, licence and sync settings, secrets),
- * which never leave a till and are never applied from a pull; values over 4,000 characters. The settings editor
+ * which never leave a till and are never applied from a pull; the keys only a till writes (the shop type
+ * `setup.business_type` / `vertical.*`, `workshop.connection_status`; till 0.1.85); values over 4,000 characters. The settings editor
  * (Phase 4) calls this; the value is text exactly as the till stores it ("true", "20", "Thank you for shopping!").
  *
  *     app(SaveTillSetting::class)->handle($company, SettingScope::Company, null, 'receipt.footer_text', 'Thank you');
@@ -39,6 +40,10 @@ final class SaveTillSetting
 
         if ($scope === SettingScope::Register || SettingSyncPolicy::isLocalOnly($scope->value, $key)) {
             throw ValidationException::withMessages(['key' => 'This setting belongs to each till and cannot be changed from the portal.']);
+        }
+
+        if (SettingSyncPolicy::tillWritesOnly($key)) {
+            throw ValidationException::withMessages(['key' => 'This setting is set at the till. The portal only shows it.']);
         }
 
         if ($scope === SettingScope::Branch && ($branch === null || $branch->company_id !== $company->id)) {

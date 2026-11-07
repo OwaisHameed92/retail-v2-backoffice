@@ -1,0 +1,185 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:sspos:web-portal-api:v1:PriceChangeBatch",
+  "title": "PriceChangeBatch",
+  "description": "Payload of a PriceChangeBatch row.",
+  "type": "object",
+  "properties": {
+    "reference": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string"
+    },
+    "status": {
+      "enum": [
+        "draft",
+        "approved",
+        "scheduled",
+        "live",
+        "cancelled"
+      ]
+    },
+    "effectiveAt": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "reason": {
+      "type": "string"
+    },
+    "source": {
+      "type": "string"
+    },
+    "createdByUserId": {
+      "type": "string"
+    },
+    "approvedByUserId": {
+      "type": "string"
+    },
+    "approvalOverrideUserId": {
+      "type": "string"
+    },
+    "approvedAt": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "wentLiveByUserId": {
+      "type": "string"
+    },
+    "wentLiveAt": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "cancelledByUserId": {
+      "type": "string"
+    },
+    "cancelledAt": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "cancelReason": {
+      "type": "string"
+    },
+    "isEditable": {
+      "type": "boolean"
+    },
+    "canGoLive": {
+      "type": "boolean"
+    },
+    "canCancel": {
+      "type": "boolean"
+    },
+    "isClosed": {
+      "type": "boolean"
+    },
+    "branchId": {
+      "type": "string"
+    },
+    "id": {
+      "type": "string"
+    },
+    "companyId": {
+      "type": "string"
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "rowVersion": {
+      "type": [
+        "string",
+        "integer"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)$"
+    },
+    "deletedAt": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "isDeleted": {
+      "type": "boolean"
+    },
+    "domainEvents": {
+      "type": [
+        "array",
+        "null"
+      ],
+      "items": {
+        "type": "object",
+        "properties": {
+          "eventId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "occurredAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "version": {
+            "type": [
+              "string",
+              "integer"
+            ],
+            "pattern": "^-?(?:0|[1-9]\\d*)$"
+          }
+        },
+        "required": [
+          "eventId",
+          "occurredAt",
+          "version"
+        ]
+      }
+    }
+  },
+  "required": [
+    "reference",
+    "name",
+    "status",
+    "effectiveAt",
+    "reason",
+    "source",
+    "createdByUserId",
+    "approvedByUserId",
+    "approvalOverrideUserId",
+    "approvedAt",
+    "wentLiveByUserId",
+    "wentLiveAt",
+    "cancelledByUserId",
+    "cancelledAt",
+    "cancelReason",
+    "isEditable",
+    "canGoLive",
+    "canCancel",
+    "isClosed",
+    "branchId",
+    "id",
+    "companyId",
+    "createdAt",
+    "updatedAt",
+    "rowVersion",
+    "deletedAt",
+    "isDeleted",
+    "domainEvents"
+  ]
+}

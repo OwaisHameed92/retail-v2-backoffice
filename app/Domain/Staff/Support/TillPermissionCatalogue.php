@@ -23,8 +23,38 @@ final class TillPermissionCatalogue
         'business.apply_all_shops' => ['Apply changes at every shop', 'Set a price, offer or standing discount for every shop, not just this one.'],
     ];
 
+    /**
+     * Words for the shop-type permissions (till 0.1.85): only pharmacy tills send `pharmacy.*` and only shops linked to
+     * BikeBook send `workshop.*`, so they are labelled when a till sent them and never offered to any other shop
+     * (unlike KNOWN, they are not added to keys()).
+     *
+     * @var array<string, array{0: string, 1: string}>
+     */
+    public const SHOP_TYPE = [
+        'pharmacy.sale_confirm' => ['Confirm pharmacy medicine sales', 'Approve a P medicine sale after the questions.'],
+        'pharmacy.dispense' => ['Dispense prescriptions', 'Record a dispensing and take the NHS charge.'],
+        'pharmacy.poisons_register' => ['Poisons register', 'Record a sale in the poisons register.'],
+        'pharmacy.registers_record' => ['Write in the registers', 'POM, specials and other legal registers.'],
+        'pharmacy.cd_register' => ['Controlled drugs register', 'Record controlled drugs received and supplied.'],
+        'pharmacy.cd_witness' => ['Witness controlled drugs', 'Witness a controlled drugs entry or destruction.'],
+        'pharmacy.responsible_pharmacist' => ['Sign in as Responsible Pharmacist', 'Sign the RP record.'],
+        'pharmacy.patients' => ['Patients', 'Add and change patient records.'],
+        'pharmacy.ready_message' => ['Send ready messages', 'Tell a patient their prescription is ready.'],
+        'pharmacy.retail_manage' => ['Pharmacy products and services', 'Set up pharmacy retail products and services.'],
+        'pharmacy.vat_relief' => ['VAT relief', 'Record a VAT relief declaration.'],
+        'pharmacy.medicine_data' => ['Medicine data', 'Change medicine classes and dictionary links.'],
+        'pharmacy.wholesaler_orders' => ['Send orders to wholesalers', 'Send a purchase order to a wholesaler.'],
+        'workshop.manage' => ['Manage the BikeBook link', 'Connect, disconnect and set up the bike workshop link.'],
+        'workshop.book' => ['Book repairs', 'Book a repair into BikeBook from the till.'],
+        'workshop.price_override' => ['Change repair prices', 'Change a price on a BikeBook order at the till.'],
+        'workshop.cancel_hold' => ['Release held parts', 'Cancel the hold on parts kept for a repair.'],
+    ];
+
     /** @var array<string, string> */
-    private const GROUPS = ['sale' => 'Selling', 'business' => 'Business', 'stock' => 'Stock', 'cash' => 'Cash', 'report' => 'Reports'];
+    private const GROUPS = [
+        'sale' => 'Selling', 'business' => 'Business', 'stock' => 'Stock', 'cash' => 'Cash', 'report' => 'Reports',
+        'pharmacy' => 'Pharmacy', 'workshop' => 'Bike workshop',
+    ];
 
     /** @return list<string> every key the editor may grant, sorted */
     public function keys(): array
@@ -60,8 +90,8 @@ final class TillPermissionCatalogue
             $label = self::GROUPS[$prefix] ?? Str::headline($prefix);
             $groups[$label][] = [
                 'key' => $key,
-                'label' => self::KNOWN[$key][0] ?? Str::ucfirst(str_replace(['_', '.'], ' ', Str::after($key, '.'))),
-                'help' => self::KNOWN[$key][1] ?? null,
+                'label' => (self::KNOWN[$key] ?? self::SHOP_TYPE[$key] ?? null)[0] ?? Str::ucfirst(str_replace(['_', '.'], ' ', Str::after($key, '.'))),
+                'help' => (self::KNOWN[$key] ?? self::SHOP_TYPE[$key] ?? null)[1] ?? null,
             ];
         }
 

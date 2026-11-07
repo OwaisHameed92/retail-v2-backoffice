@@ -1,0 +1,240 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:sspos:web-portal-api:v1:CdRegisterEntry",
+  "title": "CdRegisterEntry",
+  "description": "Payload of a CdRegisterEntry row.",
+  "type": "object",
+  "properties": {
+    "pageId": {
+      "type": "string"
+    },
+    "lineNumber": {
+      "type": [
+        "string",
+        "integer"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)$"
+    },
+    "kind": {
+      "enum": [
+        "broughtForward",
+        "received",
+        "supplied",
+        "destroyed",
+        "balanceCheck",
+        "correction"
+      ]
+    },
+    "entryDate": {
+      "type": "string",
+      "format": "date"
+    },
+    "quantity": {
+      "type": [
+        "string",
+        "number"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$"
+    },
+    "supplierName": {
+      "type": "string"
+    },
+    "supplierAddress": {
+      "type": "string"
+    },
+    "invoiceReference": {
+      "type": "string"
+    },
+    "patientCustomerId": {
+      "type": "string"
+    },
+    "patientName": {
+      "type": "string"
+    },
+    "patientAddress": {
+      "type": "string"
+    },
+    "prescriberName": {
+      "type": "string"
+    },
+    "prescriberAddress": {
+      "type": "string"
+    },
+    "collectedBy": {
+      "enum": [
+        "notApplicable",
+        "patient",
+        "patientRepresentative",
+        "healthcareProfessional"
+      ]
+    },
+    "collectorName": {
+      "type": "string"
+    },
+    "collectorAddress": {
+      "type": "string"
+    },
+    "idRequested": {
+      "type": "boolean"
+    },
+    "idProvided": {
+      "type": "boolean"
+    },
+    "witnessName": {
+      "type": "string"
+    },
+    "witnessRole": {
+      "type": "string"
+    },
+    "expectedBalance": {
+      "type": [
+        "string",
+        "number",
+        "null"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$"
+    },
+    "adjustsBalance": {
+      "type": "boolean"
+    },
+    "correctsEntryId": {
+      "type": "string"
+    },
+    "correctedQuantity": {
+      "type": [
+        "string",
+        "number",
+        "null"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$"
+    },
+    "note": {
+      "type": "string"
+    },
+    "discrepancy": {
+      "type": [
+        "string",
+        "number",
+        "null"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$"
+    },
+    "recordedByUserId": {
+      "type": "string"
+    },
+    "recordedByName": {
+      "type": "string"
+    },
+    "recordedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "branchId": {
+      "type": "string"
+    },
+    "id": {
+      "type": "string"
+    },
+    "companyId": {
+      "type": "string"
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "rowVersion": {
+      "type": [
+        "string",
+        "integer"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)$"
+    },
+    "deletedAt": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "isDeleted": {
+      "type": "boolean"
+    },
+    "domainEvents": {
+      "type": [
+        "array",
+        "null"
+      ],
+      "items": {
+        "type": "object",
+        "properties": {
+          "eventId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "occurredAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "version": {
+            "type": [
+              "string",
+              "integer"
+            ],
+            "pattern": "^-?(?:0|[1-9]\\d*)$"
+          }
+        },
+        "required": [
+          "eventId",
+          "occurredAt",
+          "version"
+        ]
+      }
+    }
+  },
+  "required": [
+    "pageId",
+    "lineNumber",
+    "kind",
+    "entryDate",
+    "quantity",
+    "supplierName",
+    "supplierAddress",
+    "invoiceReference",
+    "patientCustomerId",
+    "patientName",
+    "patientAddress",
+    "prescriberName",
+    "prescriberAddress",
+    "collectedBy",
+    "collectorName",
+    "collectorAddress",
+    "idRequested",
+    "idProvided",
+    "witnessName",
+    "witnessRole",
+    "expectedBalance",
+    "adjustsBalance",
+    "correctsEntryId",
+    "correctedQuantity",
+    "note",
+    "discrepancy",
+    "recordedByUserId",
+    "recordedByName",
+    "recordedAt",
+    "branchId",
+    "id",
+    "companyId",
+    "createdAt",
+    "updatedAt",
+    "rowVersion",
+    "deletedAt",
+    "isDeleted",
+    "domainEvents"
+  ]
+}

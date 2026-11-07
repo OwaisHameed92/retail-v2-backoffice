@@ -1,0 +1,168 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:sspos:web-portal-api:v1:PromotionRedemption",
+  "title": "PromotionRedemption",
+  "description": "Payload of a PromotionRedemption row.",
+  "type": "object",
+  "properties": {
+    "saleId": {
+      "type": "string"
+    },
+    "saleLineId": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "promotionRuleId": {
+      "type": "string"
+    },
+    "promotionName": {
+      "type": "string"
+    },
+    "type": {
+      "enum": [
+        "percentOff",
+        "fixedOff",
+        "fixedPrice",
+        "multiBuy",
+        "bogof",
+        "mixMatch",
+        "mealDeal",
+        "quantityPrice",
+        "buyGet"
+      ]
+    },
+    "scope": {
+      "enum": [
+        "product",
+        "category",
+        "department",
+        "itemGroup",
+        "customerGroup",
+        "branch",
+        "basket",
+        "style"
+      ]
+    },
+    "source": {
+      "enum": [
+        "manual",
+        "promotion",
+        "customerGroup",
+        "staff",
+        "coupon"
+      ]
+    },
+    "amountOff": {
+      "type": [
+        "string",
+        "number"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$"
+    },
+    "couponCode": {
+      "type": "string"
+    },
+    "userId": {
+      "type": "string"
+    },
+    "registerId": {
+      "type": "string"
+    },
+    "branchId": {
+      "type": "string"
+    },
+    "tradingDate": {
+      "type": "string",
+      "format": "date"
+    },
+    "id": {
+      "type": "string"
+    },
+    "companyId": {
+      "type": "string"
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "rowVersion": {
+      "type": [
+        "string",
+        "integer"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)$"
+    },
+    "deletedAt": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "isDeleted": {
+      "type": "boolean"
+    },
+    "domainEvents": {
+      "type": [
+        "array",
+        "null"
+      ],
+      "items": {
+        "type": "object",
+        "properties": {
+          "eventId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "occurredAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "version": {
+            "type": [
+              "string",
+              "integer"
+            ],
+            "pattern": "^-?(?:0|[1-9]\\d*)$"
+          }
+        },
+        "required": [
+          "eventId",
+          "occurredAt",
+          "version"
+        ]
+      }
+    }
+  },
+  "required": [
+    "saleId",
+    "saleLineId",
+    "promotionRuleId",
+    "promotionName",
+    "type",
+    "scope",
+    "source",
+    "amountOff",
+    "couponCode",
+    "userId",
+    "registerId",
+    "branchId",
+    "tradingDate",
+    "id",
+    "companyId",
+    "createdAt",
+    "updatedAt",
+    "rowVersion",
+    "deletedAt",
+    "isDeleted",
+    "domainEvents"
+  ]
+}

@@ -1,0 +1,165 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:sspos:web-portal-api:v1:PharmacyWholesalerOrderSend",
+  "title": "PharmacyWholesalerOrderSend",
+  "description": "Payload of a PharmacyWholesalerOrderSend row.",
+  "type": "object",
+  "properties": {
+    "linkId": {
+      "type": "string"
+    },
+    "supplierId": {
+      "type": "string"
+    },
+    "purchaseOrderId": {
+      "type": "string"
+    },
+    "orderNo": {
+      "type": "string"
+    },
+    "sentAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "kind": {
+      "enum": [
+        "other",
+        "aah",
+        "alliance",
+        "phoenix",
+        "sigma"
+      ]
+    },
+    "method": {
+      "enum": [
+        "manual",
+        "file",
+        "email",
+        "api"
+      ]
+    },
+    "outcome": {
+      "enum": [
+        "accepted",
+        "manual",
+        "rejected",
+        "notConnected",
+        "failed"
+      ]
+    },
+    "reference": {
+      "type": "string"
+    },
+    "errorCode": {
+      "type": "string"
+    },
+    "errorMessage": {
+      "type": "string"
+    },
+    "lineCount": {
+      "type": [
+        "string",
+        "integer"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)$"
+    },
+    "sentByUserId": {
+      "type": "string"
+    },
+    "sentByName": {
+      "type": "string"
+    },
+    "branchId": {
+      "type": "string"
+    },
+    "id": {
+      "type": "string"
+    },
+    "companyId": {
+      "type": "string"
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "rowVersion": {
+      "type": [
+        "string",
+        "integer"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)$"
+    },
+    "deletedAt": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "isDeleted": {
+      "type": "boolean"
+    },
+    "domainEvents": {
+      "type": [
+        "array",
+        "null"
+      ],
+      "items": {
+        "type": "object",
+        "properties": {
+          "eventId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "occurredAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "version": {
+            "type": [
+              "string",
+              "integer"
+            ],
+            "pattern": "^-?(?:0|[1-9]\\d*)$"
+          }
+        },
+        "required": [
+          "eventId",
+          "occurredAt",
+          "version"
+        ]
+      }
+    }
+  },
+  "required": [
+    "linkId",
+    "supplierId",
+    "purchaseOrderId",
+    "orderNo",
+    "sentAt",
+    "kind",
+    "method",
+    "outcome",
+    "reference",
+    "errorCode",
+    "errorMessage",
+    "lineCount",
+    "sentByUserId",
+    "sentByName",
+    "branchId",
+    "id",
+    "companyId",
+    "createdAt",
+    "updatedAt",
+    "rowVersion",
+    "deletedAt",
+    "isDeleted",
+    "domainEvents"
+  ]
+}

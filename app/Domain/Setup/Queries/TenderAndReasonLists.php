@@ -2,6 +2,7 @@
 
 namespace App\Domain\Setup\Queries;
 
+use App\Domain\Cash\Support\PaidElsewhere;
 use App\Domain\Setup\Actions\SavePaymentType;
 use App\Domain\Setup\Support\PaymentTypeGroup;
 use App\Domain\Shared\Support\TableQuery;
@@ -96,6 +97,7 @@ final class TenderAndReasonLists
             (bool) $t->is_points => 'Loyalty points',
             (bool) $t->is_account => 'Customer account',
             (bool) $t->is_drs_refund => 'Deposit return',
+            PaidElsewhere::matches($t, (string) $t->name) => 'Paid elsewhere',
             default => 'Other',
         };
     }

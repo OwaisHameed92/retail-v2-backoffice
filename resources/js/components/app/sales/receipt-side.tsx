@@ -3,11 +3,20 @@ import { SectionCard } from '@/components/shared/section-card';
 import { StatusPill } from '@/components/shared/status-badge';
 import { Timeline, type TimelineItem } from '@/components/shared/timeline';
 import { Link } from '@inertiajs/react';
-import { Banknote, Coins, CreditCard, History, PiggyBank, ShieldCheck, Ticket, Wallet, XCircle } from 'lucide-react';
+import { Banknote, Coins, CreditCard, ExternalLink, History, PiggyBank, ShieldCheck, Ticket, Wallet, XCircle } from 'lucide-react';
 import { actionLabel, Amount, formatDateTime, money, SaleKindPill } from './format';
 import { type ReceiptPayment, type SaleShowProps } from './types';
 
-const PAYMENT_ICONS = { cash: Banknote, card: CreditCard, points: Coins, deposit: PiggyBank, voucher: Ticket, account: Wallet, other: Wallet };
+const PAYMENT_ICONS = {
+    cash: Banknote,
+    card: CreditCard,
+    points: Coins,
+    deposit: PiggyBank,
+    voucher: Ticket,
+    account: Wallet,
+    elsewhere: ExternalLink,
+    other: Wallet,
+};
 
 function CustomerLink({ customer, canView }: { customer: { id: string; name: string } | null; canView: boolean }) {
     if (!customer) {
@@ -49,6 +58,7 @@ function PaymentRow({ payment, canViewCustomers }: { payment: ReceiptPayment; ca
                     </p>
                 )}
                 {payment.kind === 'deposit' && <p className="text-muted-foreground text-xs">Paid earlier as an order deposit</p>}
+                {payment.kind === 'elsewhere' && <p className="text-muted-foreground text-xs">Paid before, outside the till (not cash)</p>}
                 {facts.length > 0 && <p className="text-muted-foreground truncate text-xs">{facts.join(' · ')}</p>}
                 <div className="mt-1 flex flex-wrap gap-1">
                     {payment.status && payment.status !== 'approved' && (

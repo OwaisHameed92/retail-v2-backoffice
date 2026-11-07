@@ -52,6 +52,8 @@ export interface SalesTotals {
     staffDiscount: string;
     orderDeposits: string;
     charity: string;
+    /** A pharmacy's NHS prescription charges and prepayment certificates (not sales; till 0.1.85). */
+    nhsCharges?: string;
     averageBasketExVat: string | null;
     averageBasketIncVat: string | null;
     manualDiscount: string;

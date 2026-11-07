@@ -1,0 +1,22 @@
+{
+  "productId": "01K5T0Q8C4000000000000P001",
+  "productUnitId": null,
+  "price": 1.25,
+  "validFromUtc": "2026-09-30T23:00:00Z",
+  "validToUtc": "2026-11-01T00:00:00Z",
+  "priceIncVat": {
+    "amount": 1.25,
+    "pence": 125,
+    "isZero": false,
+    "isNegative": false
+  },
+  "branchId": "01K5T0Q8C4000000000000B001",
+  "id": "01K5W2B9J000000000BP000001",
+  "companyId": "01K5T0Q8C4000000000000C001",
+  "createdAt": "2026-09-24T08:30:00Z",
+  "updatedAt": "2026-09-24T08:30:00Z",
+  "rowVersion": 1,
+  "deletedAt": null,
+  "isDeleted": false,
+  "domainEvents": []
+}
