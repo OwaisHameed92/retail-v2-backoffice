@@ -2,8 +2,8 @@
 
 The till's Salon / Barber part is built on its `feat/salon-barber` branch and **not released**. W2 makes the ordinary
 push and pull accept everything a salon's till will send, so nothing is refused on release day, and records the
-words, settings and error codes W3 builds on. No new endpoint or page: the five `sync/salon/*` calls, the booking page,
-manage link, queue join and iCal feed are W3. Plan: `docs/PHASES.md` "SSPOS 3 verticals". Decision: `docs/DECISIONS.md`
+words, settings and error codes W3 builds on. No new endpoint or page in W2: the five `sync/salon/*` calls, the booking page,
+manage link and queue join are W3a; the iCal feed and the Salon page are W3b (below). Plan: `docs/PHASES.md` "SSPOS 3 verticals". Decision: `docs/DECISIONS.md`
 "Salon / Barber sync acceptance (W2)". W1 (pharmacy, BikeBook): `docs/verticals-0.1.85.md`.
 
 ## The contract pack
@@ -95,6 +95,48 @@ payment reference, expiresAt) and status `pending` / `cancelled` / `expired`. Th
 - Audit: words for the 39 salon audit actions (`resources/js/components/app/sales/salon-words.ts`).
 - Errors: `Salon\Support\SalonApiErrors` (`salon.not_available` 501 + Retry-After 3600, `salon.not_a_salon` 403,
   `salon.page_too_large` 413, `salon.join_not_found` 404), for W3.
+
+## W3b: staff calendar feed and the Salon page (behind `SALON_ONLINE`)
+
+Switch: `SALON_ONLINE` → config `salon.online` in `config/salon.php` (default false; off in production until the salon
+release). `Salon\Support\SalonOnline::enabled()` / `availableFor($company)` (= switch on and `SalonShops::anySalon`).
+Decision: `docs/DECISIONS.md` "Salon staff calendar feed and Salon page (W3b)".
+
+### Staff calendar feed (iCal), README §12
+
+- **Address:** `GET /salon/ical/{branchId}/{userId}/{feedToken}.ics` (`routes/salon-ical.php`, no web middleware: no
+  session or cookie; `throttle:salon-ical`, `salon.ical_per_minute` = 60 per IP). `userId` is the stylist's till user id.
+- **Table** `salon_calendar_feeds` (portal-owned, tenant-scoped, never synced): company, shop, `user_id`, `token_hash`
+  (SHA-256) + `token_last4`, `enabled`, `issued_at`, `revoked_at`, `last_fetched_at` (stamped at most every 15 min),
+  `created_by_user_id`. One row per stylist and shop.
+- **Token** (`Salon\Calendar\FeedToken`): 43-character base64url of 32 random bytes, in the JSON reply only, with the
+  `webcal://` form and a server-made QR SVG (`FeedLink`). New address = new hash (old 404s at once); off = hash cleared.
+  Audit `salon.calendar_feed_enabled` / `_regenerated` / `_revoked` with shop and stylist, never the token.
+- **Content** (`Salon\Calendar\StylistCalendar`, `ICalWriter`): one VEVENT per SalonAppointmentService of that shop
+  where the person is stylist or assistant; 7 days back to 60 ahead; no-shows out; cancelled kept 7 days after
+  `cancelledAt` as `STATUS:CANCELLED`; `UID` `{appointmentServiceId}@sspos`; `SUMMARY` "Service – FirstName"; times
+  UTC `Z`; CRLF, TEXT escaping, 75-octet folding that never splits a UTF-8 character. No phone, e-mail, surname, notes,
+  price, deposit or health data. `Cache-Control: private, max-age=300`.
+- **404, always the same:** switch off, malformed / unknown / off / renewed token, another shop or stylist, closed shop,
+  shop no longer a salon, cancelled business (`Salon\Actions\BuildCalendarFeed`).
+
+### Tenant "Salon" page (`/app/salon`)
+
+- `salon.manage` (owner, manager); menu item and role-matrix row only for a business with a salon shop while the
+  switch is on; routes behind `EnsureSalonOnline` (404). A one-shop manager sees and changes only their shop.
+- Per salon shop: the till's stylists (SalonStaffProfile, plus anyone whose feed is still on after leaving the till)
+  with a "Calendar feed" switch, "Give it a new address" and "Turn the feed off" (confirmed). `POST /app/salon/feeds`
+  `{shopId, userId}` (on / new address, JSON with the address shown once), `DELETE /app/salon/feeds/{feed}` (off).
+- Today's appointments (Europe/London day, not cancelled or no-show), requests waiting.
+- Online booking requests (SalonOnlineBooking), read only: reference, kind, status, time asked for, first name, shop;
+  search and status filter.
+- **W3a slot:** the "Online booking" card renders the `onlineBooking` prop (`SalonPage`, null today, "Soon" state):
+  W3a sets it to `{accepting, lastHeardAt, bookingUrl, queueJoinUrl}` from its heartbeat and booking page.
+
+### Admin
+
+The tenant page shows a read-only "Salon" card (`Salon\Queries\SalonAdminSummary`) for a salon business while the
+switch is on: salon shops, stylists, calendar feeds on, online requests this week (from Monday) and waiting.
 
 ## Questions for EPOS
 
