@@ -42,13 +42,18 @@ final class ContractReplyGuard
     ];
 
     /** Contract proposals whose calls the portal answers (switched on in tests): folder => error-codes additions file. */
-    public const PROPOSAL_CODES = ['proposals/product-images' => 'error-codes.additions.json'];
+    public const PROPOSAL_CODES = [
+        'proposals/product-images' => 'error-codes.additions.json',
+        // W4: the dm+d manifest (PORTAL-CHANGES-pharmacy.md item 12 as files; the folder's README).
+        'proposals/pharmacy-dmd' => 'error-codes.additions.json',
+    ];
 
     /** Proposal calls: path pattern (method + path) => [proposal folder, reply schema]. */
     public const PROPOSAL_REPLY_SCHEMAS = [
         '#^GET api/v1/sync/product-images$#' => ['proposals/product-images', 'schemas/product-image-list-reply.schema.json'],
         '#^PUT api/v1/sync/product-images/[^/]+$#' => ['proposals/product-images', 'schemas/product-image-upload-reply.schema.json'],
         '#^DELETE api/v1/sync/product-images/[^/]+$#' => ['proposals/product-images', 'schemas/product-image-delete-reply.schema.json'],
+        '#^GET api/v1/pharmacy/dmd/latest$#' => ['proposals/pharmacy-dmd', 'schemas/dmd-manifest-reply.schema.json'],
     ];
 
     /** Whether `METHOD path` is a call of a contract proposal (PROPOSAL_REPLY_SCHEMAS). */
@@ -75,7 +80,8 @@ final class ContractReplyGuard
         $app['events']->listen(RequestHandled::class, function (RequestHandled $event) use ($guard) {
             $path = $event->request->path();
 
-            if (preg_match('#^api/v1/(sync|licence|devices|cloud)(/|$)#', $path) !== 1) {
+            // The dm+d manifest is a till call too (W4); its zip is not JSON and is checked by its own tests.
+            if (preg_match('#^api/v1/(sync|licence|devices|cloud)(/|$)|^api/v1/pharmacy/dmd/latest$#', $path) !== 1) {
                 return;
             }
 

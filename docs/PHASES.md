@@ -186,7 +186,7 @@ EPOS summary `README-PHARMACY-BIKEBOOK-SALON.md` (2026-11-08); contract pack `do
 | W1 | Till 0.1.85 sync acceptance, pharmacy + BikeBook: generator on the 0.1.85 pack (new columns on DispensingRecord / DispensingItem / CustomerOrder / Product / PaymentAttempt, 22 exemption values, 26 local tables skipped), `Product.workshopExposure` till-owned, NHS charges / PPCs out of sales and VAT (`nhs_charges`), "Paid in BikeBook" as its own non-cash line, read-only pharmacy / workshop / shop-type settings for matching shops, rights and audit words, Part D labels. No existing shop's push, pull, report or bill changes | done |
 | W2 | Salon sync acceptance: 41 `Salon*` tables, new list values (CashMovement tips, Consent sources, journal ref types), `salon.*` settings and rights, accounts 2280 / 2290 / 2300 / 4200 | todo |
 | W3 | Salon calls (`sync/salon/*`, 501 until switched on) and the online booking, queue join, manage-link and iCal pages | todo |
-| W4 | dm+d release server for pharmacy tills (`GET /api/v1/pharmacy/dmd/latest`, weekly TRUD job, two weeks kept) | todo |
+| W4 | dm+d release server for pharmacy tills (`GET /api/v1/pharmacy/dmd/latest` + signed zip link, `pharmacy:dmd-fetch` Monday / Tuesday from TRUD item 24, newest + two weeks kept, admin card on Till health). Behind `PHARMACY_DMD`, off | done, OFF |
 | W5 | BikeBook POS connector (OAuth / API key, products, stock, customers, sales orders, webhooks), `WorkshopOrder` pull row, `workshop.connector_status`, admin card | todo (waits for BikeBook to register SSPOS) |
 
 ## Phase 8: Later — 0/5

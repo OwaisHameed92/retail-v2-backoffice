@@ -1318,3 +1318,14 @@ in v1.4.1. We wrote the contract proposal for the EPOS till team and built the p
 | Paid in BikeBook | Tender kind `PaidElsewhere` is till-internal; the portal knows the payment type by name ("Paid in BikeBook" / "Paid elsewhere", no flags). Being not cash it is already out of cash takings, the drawer and variance; own line by name everywhere |
 | Shop-type settings | Pharmacy, bike workshop and shop-type settings are shown read-only and only to the matching shop. The portal never writes `setup.business_type`, `vertical.*`, `workshop.connection_status`, nor `workshop.connector_status` until the connector exists |
 | Rights | `pharmacy.*` / `workshop.*` rights get words when a till sent them; they are never added to the list another shop can grant |
+
+## Pharmacy dm+d release server (W4) (2026-11-08; `docs/verticals-0.1.85.md` "dm+d release server")
+
+| Topic | Decision |
+|---|---|
+| Switch | `PHARMACY_DMD` (config `pharmacy.dmd`), **off** by default and on no server yet. Off: `GET /api/v1/pharmacy/dmd/latest` and the zip link answer 501, the weekly fetch does nothing; no shop's sync changes. On only after the owner has our own NHS TRUD key and has checked TRUD's redistribution terms |
+| Error codes | The contract names only `dmd.no_release` (404). Ours: `dmd.not_available` (501, Retry-After 3600; the till treats 501 like 5xx: TRUD now, again in an hour), `dmd.not_pharmacy` (403), `dmd.link_invalid` (403, bad or expired zip link). Listed in `docs/contracts/proposals/pharmacy-dmd/` (portal-written; the pack has no schema) |
+| Who is a pharmacy | The sync key's shop: business type Pharmacy, or a till sent `setup.business_type` = Pharmacy / `vertical.pharmacy` = true for the business or for that shop. Never where the country profile hides the pharmacy module |
+| Zip link | `downloadUrl` is our own https route signed over path and query (relative signature, so a TLS proxy does not break it), valid 48 h (never under 24 h) from each manifest; no headers needed, nothing secret in it. The zip is streamed unchanged with `Cache-Control: public, max-age=31536000, immutable`; the manifest is `no-cache` |
+| Publishing | The zip is downloaded to a temp file, its size and SHA-256 must equal TRUD's, it is stored under `{releaseId}/` with the OGL attribution, and only then is the `dmd_releases` row written (one write): the manifest never names a zip that is not fully stored. Kept: the newest week and the previous two |
+| TRUD key | Our key in `PHARMACY_DMD_TRUD_KEY` only. TRUD puts it in the URL path, so every TRUD error is redacted before it is logged or stored; the admin card says "Set" / "Not set" only |

@@ -1,0 +1,11 @@
+{
+  "releaseId": "nhsbsa_dmd_10.3.0_20261026000001",
+  "name": "Release 10.3.0",
+  "releaseDate": "2026-10-26",
+  "week": "2026-W44",
+  "archiveFileName": "nhsbsa_dmd_10.3.0_20261026000001.zip",
+  "downloadUrl": "https://portal.sspos.co.uk/api/v1/pharmacy/dmd/packages/nhsbsa_dmd_10.3.0_20261026000001.zip",
+  "sizeBytes": 41234567,
+  "sha256": "9F86D081884C7D659A2FEAA0C55AD015A3BF4F1B2B0B822CD15D6C15B0F00A08",
+  "publishedAt": "2026-10-26T07:12:00Z"
+}
