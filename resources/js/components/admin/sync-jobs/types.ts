@@ -19,6 +19,7 @@ export type RunState = 'succeeded' | 'failed' | 'running' | 'unfinished';
 export interface ScheduledTask {
     key: string;
     task: string;
+    label: string;
     frequency: string;
     expression: string;
     timezone: string;

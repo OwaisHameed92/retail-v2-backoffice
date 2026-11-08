@@ -14,7 +14,8 @@ const columns: ListColumn<ScheduledTask>[] = [
         className: 'max-w-80',
         cell: (task) => (
             <div className="min-w-0">
-                <div className="text-foreground font-mono text-[13px] break-all">{task.task}</div>
+                <div className="text-foreground text-sm font-medium">{task.label}</div>
+                {task.label !== task.task && <div className="text-muted-foreground mt-0.5 font-mono text-[11px] break-all">{task.task}</div>}
                 <div className="text-muted-foreground mt-0.5 text-xs" title={task.expression}>
                     {task.frequency}
                     {task.timezone !== 'UTC' ? ` (${task.timezone})` : ' (UTC)'}

@@ -4,6 +4,7 @@ namespace App\Domain\Operations\Queries;
 
 use App\Domain\Operations\Models\ScheduledTaskRun;
 use App\Domain\Operations\Support\CronText;
+use App\Domain\Operations\Support\ScheduledTaskLabel;
 use App\Domain\Operations\Support\ScheduledTaskName;
 use App\Domain\Operations\Support\SecretText;
 use Carbon\CarbonImmutable;
@@ -20,7 +21,7 @@ use Throwable;
  * failures over 7 days, and when it is next due.
  *
  * @phpstan-type LastRun array{startedAt: string, finishedAt: string|null, durationMs: int|null, state: string, error: string|null}
- * @phpstan-type TaskRow array{key: string, task: string, frequency: string, expression: string, timezone: string, nextDueAt: string|null, lastRun: LastRun|null, late: bool, runs7d: int, failed7d: int}
+ * @phpstan-type TaskRow array{key: string, task: string, label: string, frequency: string, expression: string, timezone: string, nextDueAt: string|null, lastRun: LastRun|null, late: bool, runs7d: int, failed7d: int}
  */
 final class ScheduledTaskList
 {
@@ -62,6 +63,7 @@ final class ScheduledTaskList
             $rows[] = [
                 'key' => substr(hash('sha256', $key), 0, 16),
                 'task' => $task,
+                'label' => ScheduledTaskLabel::for($task),
                 'frequency' => CronText::describe($expression),
                 'expression' => $expression,
                 'timezone' => $timezone,

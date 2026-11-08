@@ -133,6 +133,15 @@ test('scheduled tasks list every task in routes/console.php with its last run, 7
     });
 });
 
+test('every scheduled task has a plain-English label, so a new task in routes/console.php needs one too', function () {
+    $this->actingAs($this->admin(), 'admin')->get('/admin/sync-jobs')->assertOk()->assertInertia(function (Assert $page) {
+        $tasks = collect($page->toArray()['props']['tasks']);
+
+        expect($tasks->firstWhere('task', 'billing:run')['label'])->toBe('Billing run (invoices, Direct Debits, reminders)')
+            ->and($tasks->filter(fn (array $task) => $task['label'] === $task['task'])->pluck('task')->all())->toBe([]);
+    });
+});
+
 test('sync problems group refused pushes, unknown entities and open conflicts by business, shop, till and entity', function () {
     $khan = $this->tenant('Khan Mini Mart');
     $patel = $this->tenant('Patel News', 1, 'PNW');
