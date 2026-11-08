@@ -33,10 +33,19 @@ export function OnlineBookingStatusCard({ status }: { status: OnlineBookingStatu
                 </div>
             ) : (
                 <dl className="grid gap-3 text-sm sm:grid-cols-2">
+                    {status.shopName && (
+                        <div className="grid gap-1 sm:col-span-2">
+                            <dt className="text-muted-foreground">Shop</dt>
+                            <dd>{status.shopName}</dd>
+                        </div>
+                    )}
                     <div className="grid gap-1">
                         <dt className="text-muted-foreground">Taking requests</dt>
                         <dd>
-                            <StatusBadge status={status.accepting ? 'active' : 'inactive'} label={status.accepting ? 'Yes' : 'Closed'} />
+                            <StatusBadge
+                                status={!status.accepting ? 'inactive' : status.state === 'offline' ? 'pending' : 'active'}
+                                label={!status.accepting ? 'Closed' : status.state === 'offline' ? 'Request only (till away)' : 'Yes'}
+                            />
                         </dd>
                     </div>
                     <div className="grid gap-1">

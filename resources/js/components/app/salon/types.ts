@@ -50,6 +50,9 @@ export interface OnlineBookingStatus {
     lastHeardAt: string | null;
     bookingUrl: string | null;
     queueJoinUrl: string | null;
+    /** W3a: the shop the card is about, and open / offline ("request only") / closed. */
+    shopName?: string;
+    state?: 'open' | 'offline' | 'closed';
 }
 
 export interface SalonPageProps {

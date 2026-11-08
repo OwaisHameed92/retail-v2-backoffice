@@ -96,6 +96,70 @@ payment reference, expiresAt) and status `pending` / `cancelled` / `expired`. Th
 - Errors: `Salon\Support\SalonApiErrors` (`salon.not_available` 501 + Retry-After 3600, `salon.not_a_salon` 403,
   `salon.page_too_large` 413, `salon.join_not_found` 404), for W3.
 
+## W3a: the salon calls and the public pages (behind `SALON_ONLINE`, off)
+
+Salon README §3–§11. Everything below is behind the switch `SALON_ONLINE` (`config/salon.php`), **default off and
+off in production** until the owner says so. Off: every `sync/salon/*` call answers `501 salon.not_available` with
+`Retry-After: 3600` (after the sync key check, before the body is read) and every public page is a 404. Decisions:
+`docs/DECISIONS.md` "Salon online booking and queue join (W3a)". The iCal feed and the tenant "Salon" page are W3b.
+
+### The five calls (`routes/api.php`, `SalonOnlineController`)
+
+Same auth, `X-SSPOS-*` headers and error body as `sync/*`, then `GuardSalonOnline`: the switch (501), 60 salon calls a
+minute per key (`salon.online_per_minute`, 429 `rate.limited`), and only a salon shop's main (or single) till (403
+`salon.not_a_salon`; `SalonShops` + `registers.is_main_till`).
+
+| Call | Action | Notes |
+|---|---|---|
+| `PUT sync/salon/booking-page` | `StoreBookingPage` | gzip or plain, ≤ 8 MB unzipped (413 `salon.page_too_large`); checked by `BookingPageReader` (422 `request.invalid`, `rejectedKey` = path); whole page per shop in `salon_online_shops.page` without the key; `manage_key` encrypted; `stored` / `unchanged` (same content or older `generatedAt`); replies `bookingUrl`, `queueJoinUrl`, `manageUrl` |
+| `PUT sync/salon/heartbeat` | `RecordSalonHeartbeat` | `last_heard_at` = our clock; flags (`accepting`, `queueJoinOpen`, `pendingRequests`, `offlineAfterMin`) only from a newer `at`; `{result: ok}` |
+| `GET sync/salon/queue-joins?max=20` | `QueueJoinsForTill` | unanswered joins of the shop, oldest first, `max` 1–100, `hasMore`; joins older than 15 minutes are dropped first |
+| `POST sync/salon/queue-joins/{joinId}/answer` | `AnswerQueueJoin` | `joined` / `refused`, kept whole; the same body again → 200; unknown, another shop's or dropped → 404 `salon.join_not_found` (`rejectedKey` = id); body `joinId` must match |
+| `PUT sync/salon/queue` | `StoreQueueState` | today's phone joiners' places; newest `at` kept (`stored` / `unchanged`); no names or phones in it |
+
+Tests: `tests/Feature/Salon/SalonOnlineApiTest.php`, `SalonQueueJoinTest.php`; every reply is also checked against the
+pack's schemas and codes by `ContractReplyGuard` (salon folder added to its proposal lists).
+
+### Public pages (`routes/salon.php`, `resources/js/pages/salon-public/*`)
+
+`ResolveSalonShop` finds the shop by slug (404 when the switch is off, the address is unknown, no page is published,
+the shop or business is closed, or the shop is no longer a salon). The shop's name, phone and addresses come from the
+page and the branch; never the manage-link key. Inertia pages share only the minimal props (as the online store).
+
+| Address | Page | What it does |
+|---|---|---|
+| `/book/{slug}` (`?src=`, `?embed=1`) | `book` | services by category with options (per-stylist price and minutes), add-ons, client-group filter, stylists + Any (+ any female / male when the team has both), day / time picker from `/book/{slug}/times`, details (name, phone, e-mail, the shop's questions, patch test when needed, terms, three marketing boxes never pre-ticked). Offline: "Request this time — the shop will confirm"; closed: the shop's phone |
+| `POST /book/{slug}` | (JSON) | `RequestOnlineBooking`: re-checks the time against the published ranges, links / creates the Customer first, writes the pending `SalonOnlineBooking` (`OnlineRequestWriter`), records `src`; 201 `{redirect}` |
+| `/book/{slug}/r/{requestId}` | `request` | polls every 5 s: pending (never "booked"), accepted (with the manage link), declined (the till's reason), withdrawn; "Withdraw my request" while pending |
+| `/book/{slug}/m/{appointmentId}.{token}` | `manage` | `ManagedAppointment`: token checked, the appointment as pushed; move (`/times`, `/move`) and cancel (`/cancel`) until `changeWindowHours` before, else "Please ring the shop"; marketing choices (`/preferences`) any time. Each a new request (`RequestAppointmentChange`) |
+| `/book/{slug}/queue` | `queue` | `JoinSalonQueue` with the desk's rules; offline / paused: "please ask at the desk" |
+| `/book/{slug}/queue/{joinId}` | `queue-position` | polls every 20 s: sent, waiting (ticket, place, minutes), called ("Please come to the desk now"), in service, done, refused (the till's message), dropped |
+
+Free times: `Availability\FreeTimes` + `PageMenu` + `LondonClock` (Europe/London, the clock-change hour never offered),
+holds from `Online\SalonBookingHolds`. Public writes are JSON without session or CSRF (they work in another site's
+frame), rate limited per visitor and shop (`SalonPublicRateLimits`), each with the form's own key (a double tap is one).
+`embed=1` lets any site frame the booking page and its request page only (`SecurityHeaders::FRAME_ANY_SITE`).
+
+Tests: `SalonFreeTimesTest` (one stylist, Any, basket grid, notice, DST days, holds), `SalonBookingFlowTest` (request →
+pull → accept / decline, offline, closed, withdraw, double tap, customer match, `src`), `SalonManageLinkTest`,
+`SalonQueueJoinTest`, `SalonPublicPagesTest` (switch off 404, framing, rate limits, nothing in the log, the pack's
+checklist §17 as far as the portal can prove it).
+
+### Before a real salon is connected (README §17)
+
+Proven by tests: 1 (501 until on; push / pull carry on), 2 (stored, addresses, `unchanged`), 3–4 (request pulled; the
+till's accept / decline shown; a clash stays pending on the till), 5 (withdraw → `cancelled`; after an answer refused),
+6 (offline → request only, answered when back), 7 (token, window, preferences), 8 (join → ticket, twice → one, refusal
+shown, called), 9 (a grocery's key → 403; no salon row in its pull). Needs a real till: auto-accept within a minute, the
+till's `SyncConflict` on a late withdrawal, Consent rows written on accept, the till's own texts. 10 (iCal) is W3b.
+
+### Points to watch
+
+- `request.invalid` is 422 on the salon calls (salon README) but 400 elsewhere in the contract.
+- The pack's own sample ids (`CU001`) are not valid ULIDs; the portal's push validator refuses such ids.
+- The shop's own questions may invite health answers ("Any allergies?"); the page asks clients to keep medical details
+  for the shop. The answer is stored only on the request row the contract defines.
+
 ## W3b: staff calendar feed and the Salon page (behind `SALON_ONLINE`)
 
 Switch: `SALON_ONLINE` → config `salon.online` in `config/salon.php` (default false; off in production until the salon

@@ -21,7 +21,7 @@ use Illuminate\Http\Request;
  * and the online booking requests, read only (the till decides them): status, time, client first name, reference.
  * Never a phone, e-mail, note, answer, deposit or token.
  *
- * `onlineBooking` is the slot for the booking page status (heartbeat, booking and queue links) that W3a fills.
+ * `onlineBooking`: the booking page status (heartbeat, booking and queue links), from W3a's OnlineBookingSummary.
  */
 final class SalonPage
 {
@@ -85,8 +85,8 @@ final class SalonPage
             'requestFilters' => ['status' => $status],
             'requestStatuses' => array_map(fn (SalonOnlineBookingStatus $s) => $s->value, SalonOnlineBookingStatus::cases()),
             'shopFilter' => $current !== null && $shops->isEmpty() ? $current->name : null,
-            // W3a: the booking page status (last heartbeat, accepting, booking / queue / manage links) goes here.
-            'onlineBooking' => null,
+            // W3a: the booking page status (taking requests, last heartbeat, booking and queue links).
+            'onlineBooking' => OnlineBookingSummary::for($ids, $now),
         ];
     }
 

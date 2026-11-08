@@ -44,9 +44,14 @@ final class ContractReplyGuard
     /** Contract proposals whose calls the portal answers (switched on in tests): folder => error-codes additions file. */
     public const PROPOSAL_CODES = [
         'proposals/product-images' => 'error-codes.additions.json',
+        // W3a: the salon pack's five calls.
+        self::SALON => 'error-codes.additions.json',
         // W4: the dm+d manifest (PORTAL-CHANGES-pharmacy.md item 12 as files; the folder's README).
         'proposals/pharmacy-dmd' => 'error-codes.additions.json',
     ];
+
+    /** The salon pack's own folder (salon/README.md §15 codes, salon/schemas/* replies). */
+    public const SALON = 'salon-barber-2026-11-08/docs/web-portal-api/salon';
 
     /** Proposal calls: path pattern (method + path) => [proposal folder, reply schema]. */
     public const PROPOSAL_REPLY_SCHEMAS = [
@@ -54,6 +59,12 @@ final class ContractReplyGuard
         '#^PUT api/v1/sync/product-images/[^/]+$#' => ['proposals/product-images', 'schemas/product-image-upload-reply.schema.json'],
         '#^DELETE api/v1/sync/product-images/[^/]+$#' => ['proposals/product-images', 'schemas/product-image-delete-reply.schema.json'],
         '#^GET api/v1/pharmacy/dmd/latest$#' => ['proposals/pharmacy-dmd', 'schemas/dmd-manifest-reply.schema.json'],
+        // W3a (salon README §4): heartbeat, answer and queue replies have no schema in the pack (`{result}`; their
+        // tests check them).
+        '#^PUT api/v1/sync/salon/booking-page$#' => [self::SALON, 'schemas/booking-page-reply.schema.json'],
+        '#^GET api/v1/sync/salon/queue-joins$#' => [self::SALON, 'schemas/queue-joins-reply.schema.json'],
+        '#^PUT api/v1/sync/salon/(heartbeat|queue)$#' => [self::SALON, null],
+        '#^POST api/v1/sync/salon/queue-joins/[^/]+/answer$#' => [self::SALON, null],
     ];
 
     /** Whether `METHOD path` is a call of a contract proposal (PROPOSAL_REPLY_SCHEMAS). */
@@ -149,7 +160,7 @@ final class ContractReplyGuard
 
             foreach ($schema === null ? self::PROPOSAL_REPLY_SCHEMAS : [] as $pattern => [$dir, $file]) {
                 if (preg_match($pattern, $what) === 1) {
-                    return ProposalSchema::errorsIn($dir, $data, $file);
+                    return $file === null ? [] : ProposalSchema::errorsIn($dir, $data, $file);
                 }
             }
 
@@ -164,9 +175,12 @@ final class ContractReplyGuard
         $code = $data instanceof stdClass && is_string($data->code ?? null) ? $data->code : null;
         $known = self::knownCodes();
 
+        // Salon README §4.1: a salon body that breaks its schema is `422 request.invalid` (`rejectedKey` = the path).
+        $salonInvalid = $code === 'request.invalid' && $status === 422 && str_contains($what, ' api/v1/sync/salon/');
+
         if ($code !== null && ! array_key_exists($code, $known)) {
             $errors[] = "code {$code} is not in error-codes.json";
-        } elseif ($code !== null && $known[$code] !== $status) {
+        } elseif ($code !== null && $known[$code] !== $status && ! $salonInvalid) {
             $errors[] = "code {$code} is HTTP {$known[$code]} in error-codes.json";
         }
 
