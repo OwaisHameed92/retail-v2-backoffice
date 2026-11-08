@@ -30,6 +30,7 @@ use App\Http\Controllers\Admin\Catalogue\MasterImportController;
 use App\Http\Controllers\Admin\CloudLinkController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\DataRequestController;
+use App\Http\Controllers\Admin\DeviceController;
 use App\Http\Controllers\Admin\EmailLogController;
 use App\Http\Controllers\Admin\EmailSettingsController;
 use App\Http\Controllers\Admin\EmailTemplateController;
@@ -280,6 +281,9 @@ Route::middleware(['auth:admin', AdminIsActive::class, BlockAdminWhileImpersonat
 
     // Till health (module 2.7): every till's online state, versions, sync and clock, across businesses. Read only.
     Route::get('till-health', [TillHealthController::class, 'index'])->name('till-health.index')->middleware('can:'.AdminRole::TENANTS_VIEW);
+
+    // Devices: every till (licence) and handheld of every business, searchable, read only. Release reuses licences.release.
+    Route::get('devices', [DeviceController::class, 'index'])->name('devices.index')->middleware('can:'.AdminRole::TENANTS_VIEW);
 
     // Cloud link (module 2.8): shops moving to the cloud and the local key register; clearing a record: licences.manage.
     Route::get('cloud-link', [CloudLinkController::class, 'index'])->name('cloud-link.index')->middleware('can:'.AdminRole::TENANTS_VIEW);

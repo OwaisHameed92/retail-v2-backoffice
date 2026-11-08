@@ -191,6 +191,12 @@ EPOS summary `README-PHARMACY-BIKEBOOK-SALON.md` (2026-11-08); contract pack `do
 | W4 | dm+d release server for pharmacy tills (`GET /api/v1/pharmacy/dmd/latest` + signed zip link, `pharmacy:dmd-fetch` Monday / Tuesday from TRUD item 24, newest + two weeks kept, admin card on Till health). Behind `PHARMACY_DMD`, off | done, OFF |
 | W5 | BikeBook POS connector (OAuth / API key, products, stock, customers, sales orders, webhooks), `WorkshopOrder` pull row (proposal `docs/contracts/proposals/workshop-order`), `workshop.connector_status`, `workshop_integration` add-on, admin card + sync log, tenant card. Behind `WORKSHOP_CONNECTOR` (off): nothing changes for any shop | done, OFF (waits for BikeBook to register SSPOS and a till release that applies `WorkshopOrder`) |
 
+## Admin operations pages (2026-11-08)
+
+| # | Module | Status |
+|---|---|---|
+| AO-1 | Admin **Devices** (`/admin/devices`, `admin.devices.index`, `tenants.view`, read only): every till (one row per licence, from `LicenceQuery::admin()` + the till health row for the last sync contact) and every signed-in handheld (`handheld_tokens`) of every business in one searchable, paged list; filters kind, status (active / expiring / released / not activated / expired / suspended / revoked; handheld signed in / out), old EPOS version (semver, default = newest seen), not seen in N days (default 7); summary strip; row links to the licence and the business, Release reuses `admin.licences.release` (`licences.manage`) | done |
+
 ## Phase 8: Later — 0/5
 
 Web orders / click and collect · Online payments · Dealers and resellers · Public marketing site · EPOS update
