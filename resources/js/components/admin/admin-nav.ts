@@ -125,7 +125,14 @@ export const adminNavItems: AdminNavItem[] = [
         ability: 'catalogue.manage',
         group: 'Operations',
     },
-    { title: 'Devices', icon: MonitorSmartphone, group: 'Operations' },
+    {
+        title: 'Devices',
+        icon: MonitorSmartphone,
+        route: 'admin.devices.index',
+        activePattern: 'admin.devices.*',
+        ability: 'tenants.view',
+        group: 'Operations',
+    },
     { title: 'Sync & jobs', icon: RefreshCw, group: 'Operations' },
     { title: 'EPOS versions', icon: MonitorDown, group: 'Operations' },
     {
