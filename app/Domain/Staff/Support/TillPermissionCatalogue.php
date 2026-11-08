@@ -2,6 +2,7 @@
 
 namespace App\Domain\Staff\Support;
 
+use App\Domain\Salon\Support\SalonRights;
 use App\Domain\TillData\Models\TillRole;
 use App\Domain\TillData\Models\TillRolePermission;
 use Illuminate\Support\Str;
@@ -26,7 +27,7 @@ final class TillPermissionCatalogue
     /**
      * Words for the shop-type permissions (till 0.1.85): only pharmacy tills send `pharmacy.*` and only shops linked to
      * BikeBook send `workshop.*`, so they are labelled when a till sent them and never offered to any other shop
-     * (unlike KNOWN, they are not added to keys()).
+     * (unlike KNOWN, they are not added to keys()). The salon pack's `salon.*` rights the same way (SalonRights, W2).
      *
      * @var array<string, array{0: string, 1: string}>
      */
@@ -53,7 +54,7 @@ final class TillPermissionCatalogue
     /** @var array<string, string> */
     private const GROUPS = [
         'sale' => 'Selling', 'business' => 'Business', 'stock' => 'Stock', 'cash' => 'Cash', 'report' => 'Reports',
-        'pharmacy' => 'Pharmacy', 'workshop' => 'Bike workshop',
+        'pharmacy' => 'Pharmacy', 'workshop' => 'Bike workshop', 'salon' => 'Salon',
     ];
 
     /** @return list<string> every key the editor may grant, sorted */
@@ -88,10 +89,11 @@ final class TillPermissionCatalogue
         foreach ($this->keys() as $key) {
             $prefix = Str::before($key, '.');
             $label = self::GROUPS[$prefix] ?? Str::headline($prefix);
+            $words = self::KNOWN[$key] ?? self::SHOP_TYPE[$key] ?? SalonRights::WORDS[$key] ?? null;
             $groups[$label][] = [
                 'key' => $key,
-                'label' => (self::KNOWN[$key] ?? self::SHOP_TYPE[$key] ?? null)[0] ?? Str::ucfirst(str_replace(['_', '.'], ' ', Str::after($key, '.'))),
-                'help' => (self::KNOWN[$key] ?? self::SHOP_TYPE[$key] ?? null)[1] ?? null,
+                'label' => $words[0] ?? Str::ucfirst(str_replace(['_', '.'], ' ', Str::after($key, '.'))),
+                'help' => $words[1] ?? null,
             ];
         }
 

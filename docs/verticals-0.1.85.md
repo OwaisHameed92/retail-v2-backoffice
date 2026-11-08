@@ -80,7 +80,7 @@ till.
 
 ## Waiting for EPOS or later waves
 
-- Salon / Barber (41 tables, list values, settings, rights, accounts 2280–2300 / 4200, `sync/salon/*`): W2, W3.
+- Salon / Barber: sync acceptance done in W2 (`docs/salon.md`); the `sync/salon/*` calls and pages are W3.
 - dm+d release server (`GET /api/v1/pharmacy/dmd/latest`): W4.
 - BikeBook connector, `WorkshopOrder` pull row, webhooks, `workshop.connector_status`: W5, once BikeBook registers SSPOS.
 - Editing pharmacy settings from the portal: not in W1 (shown read-only).

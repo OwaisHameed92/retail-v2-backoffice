@@ -32,7 +32,9 @@ final class SettingSyncPolicy
     /**
      * `localOnlyKeys` of the contract file that no rule above catches, sorted (ANSWERS-2026-09-29-b added
      * receipt.print_switch, till.beep_on_add, till.beep_on_not_found, till.popup_keyboard, till_ease.simple_mode; the
-     * till 0.1.85 pack display.tile_pictures, payments.open_drawer_on_voucher and three pharmacy dm+d keys).
+     * till 0.1.85 pack display.tile_pictures, payments.open_drawer_on_voucher and three pharmacy dm+d keys; the salon pack
+     * (W2) the four `salon.queue.*` keys of one PC's screens. Its three salon secrets end in `token` / `_key` or hold
+     * `secret`, so the rules catch them).
      * A test keeps this list exactly equal to the file's keys the rules miss, so drift either way fails.
      */
     public const LOCAL_KEYS = [
@@ -41,7 +43,8 @@ final class SettingSyncPolicy
         'display.tile_pictures', 'payments.offline_card_mode', 'payments.open_drawer_on_card',
         'payments.open_drawer_on_cash', 'payments.open_drawer_on_voucher', 'pharmacy.dmd_problem',
         'pharmacy.dmd_server_client_id', 'pharmacy.dmd_source', 'receipt.number_prefix', 'receipt.number_start', 'receipt.print_switch', 'retention.clock_check_enabled',
-        'retention.clock_tolerance_minutes', 'till.audio_cues_enabled', 'till.audio_cues_set', 'till.audio_cues_volume',
+        'retention.clock_tolerance_minutes', 'salon.queue.board_monitor', 'salon.queue.board_on', 'salon.queue.checkin_monitor',
+        'salon.queue.checkin_on', 'till.audio_cues_enabled', 'till.audio_cues_set', 'till.audio_cues_volume',
         'till.beep_on_add', 'till.beep_on_not_found', 'till.category_full_panel', 'till.category_tile_height',
         'till.category_tile_width', 'till.keyboard_macros', 'till.popup_keyboard', 'till_ease.big_text',
         'till_ease.layout_profile', 'till_ease.scan_feedback_enabled', 'till_ease.simple_mode',
@@ -56,7 +59,11 @@ final class SettingSyncPolicy
      */
     public const TILL_WRITES_ONLY = ['setup.business_type', 'workshop.connection_status', 'workshop.connector_status'];
 
-    public const TILL_WRITES_ONLY_PREFIXES = ['vertical.'];
+    /**
+     * Salon pack (W2): every `salon.*` key is set on the salon's till ("the till never takes a pulled `salon.*` value"),
+     * `vertical.salon` only by its setup wizard; the portal shows them read-only.
+     */
+    public const TILL_WRITES_ONLY_PREFIXES = ['vertical.', 'salon.'];
 
     public static function tillWritesOnly(string $key): bool
     {

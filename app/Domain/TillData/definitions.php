@@ -27,13 +27,18 @@ return [
     // against v1.4.1 too (an older till's rows must keep passing); the 0.1.85 schemas are a superset of it.
     'contract' => 'docs/contracts/portal-api-0.1.85/docs/web-portal-api',
 
+    // Salon / Barber pack (2026-11-08, W2): the till's `feat/salon-barber` branch, NOT released. It only adds to 0.1.85
+    // (41 Salon* tables, new list values, settings keys); its files win over the contract's, every other file is read
+    // from the contract (Generator\ContractFiles). docs/salon.md.
+    'overlay' => 'docs/contracts/salon-barber-2026-11-08/docs/web-portal-api',
+
     /*
      * The contract release this run writes migrations for. Migrations are additive: <prefix>00_create_till_<release>
      * _tables.php creates the tables earlier releases lack, <prefix>01_add_till_<release>_columns.php adds their
      * missing columns and indexes. database/till-schema.json records what each release's migrations made (v1.1:
      * the ten 2026_09_27_1100NN group migrations). For the next contract: new name and a later prefix.
      */
-    'release' => ['name' => '0.1.85', 'migrationPrefix' => '2026_12_14_1000'],
+    'release' => ['name' => 'salon-2026-11-08', 'migrationPrefix' => '2026_12_15_1000'],
 
     /* Entity groups: the order tables are created in. Every schema entity must be in exactly one group. */
     'groups' => [
@@ -85,6 +90,18 @@ return [
         'compliance' => [
             'DiaryCheckDefinition', 'DiaryCheckRecord', 'TemperatureUnit', 'IncidentReport', 'DispensingRecord',
             'DispensingItem',
+        ],
+        // Salon / Barber (W2, unreleased till branch). SalonClientMedical is `local`: no table, never stored.
+        'salon' => [
+            'SalonCommissionPlan', 'SalonCommissionTier', 'SalonCommissionCategoryRate', 'SalonCommissionFixedService',
+            'SalonLevel', 'SalonResource', 'SalonServiceDetail', 'SalonServiceLevelPrice', 'SalonServiceAddOn',
+            'SalonStampCardRule', 'SalonPackageDefinition', 'SalonConsultationFormTemplate', 'SalonOnlineBooking',
+            'SalonStaffProfile', 'SalonStaffService', 'SalonBlock', 'SalonRepeatRule', 'SalonAppointment',
+            'SalonAppointmentService', 'SalonWaitlistEntry', 'SalonQueueEntry', 'SalonQueueEntryService',
+            'SalonSaleLineStaff', 'SalonLineStaffCorrection', 'SalonTip', 'SalonTipShare', 'SalonTipPayout',
+            'SalonRenterAgreement', 'SalonRenterStatement', 'SalonClientCard', 'SalonTechnicalRecord', 'SalonClientPhoto',
+            'SalonConsultationAnswer', 'SalonPatchTest', 'SalonStampCard', 'SalonStampEvent', 'SalonPackageHolding',
+            'SalonPackageUse', 'SalonMessageTemplate', 'SalonMessageOutboxItem',
         ],
     ],
 
@@ -146,6 +163,8 @@ return [
             'avgCost', 'caseCost', 'consignmentCost', 'cost', 'costAtSale', 'costPrice', 'expectedUnitCost',
             'lastCost', 'lineCost', 'newCost', 'oldCost', 'supplierPrice', 'unitCost', 'unitCostSnapshot',
             'varianceCost', 'RebateAgreement.rate', 'dispatchedCost', 'receivedCost',
+            // Salon: the cost a commission plan may take off before the rate (SalonSaleLineStaff).
+            'SalonSaleLineStaff.costAmount',
         ],
         'quantity' => [
             'conversionFactor', 'countedQty', 'expectedQty', 'maxQty', 'maxShiftHours', 'maxStockQty', 'mileageMiles',
@@ -161,6 +180,8 @@ return [
             'abvPercent', 'changePercent', 'defaultDepreciationRatePercent', 'depreciationRatePercent',
             'flatRatePercent', 'markdownPercent', 'percent', 'percentage', 'recountThresholdPercent', 'upliftPercent',
             'vatPercentage',
+            // Salon commission, rent and card-fee rates.
+            'sharePercent', 'servicePercent', 'retailPercent', 'rentPercent', 'cardFeePercent', 'commissionPercentAtSale',
         ],
         'rate' => ['exchangeRate', 'ExchangeRate.rate'],
     ],
@@ -179,6 +200,12 @@ return [
         'resolutionReason', 'attributeFilter', 'Setting.value', 'lastReminderError',
         // Till 0.1.85: a prescriber's address is free text; an outside system's order id has no length we know.
         'prescriberAddress', 'CustomerOrder.externalOrderId', 'CustomerOrder.externalReference',
+        // Salon (W2): client notes, message bodies and the like have no length limit worth enforcing.
+        'SalonClientCard.tags', 'SalonClientCard.alertText', 'SalonClientPhoto.caption', 'SalonConsultationAnswer.signatureFilePath',
+        'SalonMessageOutboxItem.subject', 'SalonMessageOutboxItem.body', 'SalonMessageOutboxItem.providerMessageId',
+        'SalonMessageTemplate.subject', 'SalonMessageTemplate.body', 'SalonOnlineBooking.decisionReason',
+        'SalonServiceDetail.onlineDescription', 'SalonStaffProfile.onlineBio', 'SalonTechnicalRecord.formula',
+        'SalonTechnicalRecord.productsUsed', 'SalonTechnicalRecord.title', 'SalonPatchTest.productUsed',
     ],
 
     /* Integers that may exceed 2^31. */
@@ -429,5 +456,8 @@ return [
         'IncidentReport' => ['indexes' => [['company_id', 'branch_id', 'occurred_at']]],
         'DispensingRecord' => ['indexes' => [['company_id', 'branch_id', 'dispensed_at'], ['company_id', 'patient_customer_id'], ['sale_id']]],
         'DispensingItem' => ['parent' => ['DispensingRecord', 'dispensingRecordId'], 'scope' => 'branch'],
+
+        // Salon / Barber (W2): app/Domain/TillData/definitions-salon.php.
+        ...require __DIR__.'/definitions-salon.php',
     ],
 ];

@@ -8,14 +8,15 @@ use RuntimeException;
 /**
  * Reads the till contract (schemas/entities, samples/ownership.json, samples/enums.json) and definitions.php and
  * builds one EntitySpec per schema entity, sorted by name. Throws on anything inconsistent so a bad override
- * fails the generator instead of producing a silently wrong store.
+ * fails the generator instead of producing a silently wrong store. An `overlay` pack in definitions.php adds to the
+ * contract (ContractFiles: its files win).
  */
 final class SchemaCatalog
 {
     /** @var array<string, mixed> */
     private array $definitions;
 
-    private string $contractPath;
+    private ContractFiles $files;
 
     /** @var array<string, EntitySpec>|null */
     private ?array $entities = null;
@@ -23,7 +24,12 @@ final class SchemaCatalog
     public function __construct(private readonly string $basePath, ?string $definitionsFile = null)
     {
         $this->definitions = require $definitionsFile ?? $basePath.'/app/Domain/TillData/definitions.php';
-        $this->contractPath = $basePath.'/'.$this->definitions['contract'];
+        $this->files = new ContractFiles($basePath, $this->definitions['contract'], $this->definitions['overlay'] ?? null);
+    }
+
+    public function files(): ContractFiles
+    {
+        return $this->files;
     }
 
     /**
@@ -86,13 +92,11 @@ final class SchemaCatalog
         $ownership = $this->ownership();
         $specs = [];
 
-        foreach (glob($this->contractPath.'/schemas/entities/*.schema.json') ?: [] as $file) {
-            $name = basename($file, '.schema.json');
-
+        foreach ($this->files->entitySchemas() as $name => $file) {
             if (($ownership[$name] ?? null) === 'local') {
                 continue;
             }
-            $specs[$name] = $this->buildEntity($name, $this->readJson('schemas/entities/'.basename($file)), $ownership, $typer);
+            $specs[$name] = $this->buildEntity($name, $this->readJson($file), $ownership, $typer);
         }
 
         ksort($specs);
@@ -315,13 +319,6 @@ final class SchemaCatalog
      */
     private function readJson(string $relative): array
     {
-        $path = $this->contractPath.'/'.$relative;
-        $json = file_get_contents($path);
-
-        if ($json === false) {
-            throw new RuntimeException("Cannot read {$path}.");
-        }
-
-        return json_decode($json, true, 512, JSON_THROW_ON_ERROR);
+        return $this->files->json($relative);
     }
 }

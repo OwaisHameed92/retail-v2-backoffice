@@ -30,8 +30,9 @@ final class ModelWriter
     /**
      * @param  array<string, EntitySpec>  $all
      */
-    public function write(EntitySpec $entity, array $all): string
+    public function write(EntitySpec $entity, array $all, ?string $source = null): string
     {
+        $source ??= $this->contract;
         $imports = [
             BelongsToCompany::class,
             'Carbon\\CarbonImmutable',
@@ -58,7 +59,7 @@ final class ModelWriter
 
         return "<?php\n\nnamespace App\\Domain\\TillData\\Models;\n\n".Php::imports($imports)."\n\n"
             ."/**\n * Till entity `{$entity->name}`: {$owner}, {$scope}. Table `{$entity->table}`.\n *\n"
-            .' * '.Php::GENERATED_TAG." from\n * {$this->contract}/schemas/entities/{$entity->name}.schema.json and\n"
+            .' * '.Php::GENERATED_TAG." from\n * {$source}/schemas/entities/{$entity->name}.schema.json and\n"
             ." * app/Domain/TillData/definitions.php. Do not edit: change the definitions or a hand-written trait and regenerate.\n *\n"
             .$this->properties($entity)
             ." */\nfinal class {$entity->class} extends Model\n{\n"

@@ -6285,6 +6285,1610 @@
                     "indexes": []
                 }
             }
+        },
+        {
+            "release": "salon-2026-11-08",
+            "migrations": [
+                "2026_12_15_100000_create_till_salon_2026_11_08_tables.php"
+            ],
+            "tables": {
+                "salon_appointment_services": {
+                    "columns": {
+                        "id": "string('id', 26)->primary()",
+                        "company_id": "string('company_id', 26)",
+                        "branch_id": "string('branch_id', 26)->nullable()",
+                        "appointment_id": "string('appointment_id', 64)->nullable()",
+                        "product_id": "string('product_id', 64)->nullable()",
+                        "stylist_user_id": "string('stylist_user_id', 64)->nullable()",
+                        "assistant_user_id": "string('assistant_user_id', 64)->nullable()",
+                        "level_id": "string('level_id', 64)->nullable()",
+                        "starts_at": "dateTime('starts_at')->nullable()",
+                        "ends_at": "dateTime('ends_at')->nullable()",
+                        "active_min": "integer('active_min')->nullable()",
+                        "processing_min": "integer('processing_min')->nullable()",
+                        "finish_min": "integer('finish_min')->nullable()",
+                        "price": "decimal('price', 12, 2)->nullable()",
+                        "resource_id": "string('resource_id', 64)->nullable()",
+                        "is_requested": "boolean('is_requested')->nullable()",
+                        "sort_order": "integer('sort_order')->nullable()",
+                        "row_version": "unsignedBigInteger('row_version')->default(0)",
+                        "created_at": "dateTime('created_at')->nullable()",
+                        "updated_at": "dateTime('updated_at')->nullable()",
+                        "deleted_at": "dateTime('deleted_at')->nullable()",
+                        "synced_at": "dateTime('synced_at')->nullable()",
+                        "sync_seq": "unsignedBigInteger('sync_seq')->nullable()",
+                        "extra": "json('extra')->nullable()",
+                        "portal_received_at": "dateTime('portal_received_at')->nullable()"
+                    },
+                    "indexes": {
+                        "salon_appointment_services_company_id_updated_at_index": [
+                            "company_id",
+                            "updated_at"
+                        ],
+                        "salon_appointment_services_company_id_branch_id_index": [
+                            "company_id",
+                            "branch_id"
+                        ],
+                        "salon_appointment_services_appointment_id_index": [
+                            "appointment_id"
+                        ],
+                        "salon_appointment_services_5e1746cd_idx": [
+                            "company_id",
+                            "stylist_user_id",
+                            "starts_at"
+                        ]
+                    }
+                },
+                "salon_appointments": {
+                    "columns": {
+                        "id": "string('id', 26)->primary()",
+                        "company_id": "string('company_id', 26)",
+                        "branch_id": "string('branch_id', 26)->nullable()",
+                        "customer_id": "string('customer_id', 64)->nullable()",
+                        "client_name": "string('client_name', 255)->nullable()",
+                        "client_phone": "string('client_phone', 255)->nullable()",
+                        "client_email": "string('client_email', 255)->nullable()",
+                        "starts_at": "dateTime('starts_at')->nullable()",
+                        "ends_at": "dateTime('ends_at')->nullable()",
+                        "status": "string('status', 40)->nullable()",
+                        "source": "string('source', 40)->nullable()",
+                        "is_rebook": "boolean('is_rebook')->nullable()",
+                        "booked_by_user_id": "string('booked_by_user_id', 64)->nullable()",
+                        "notes": "text('notes')->nullable()",
+                        "repeat_rule_id": "string('repeat_rule_id', 64)->nullable()",
+                        "online_booking_id": "string('online_booking_id', 64)->nullable()",
+                        "deposit_amount": "decimal('deposit_amount', 12, 2)->nullable()",
+                        "deposit_sale_id": "string('deposit_sale_id', 64)->nullable()",
+                        "arrived_at": "dateTime('arrived_at')->nullable()",
+                        "completed_at": "dateTime('completed_at')->nullable()",
+                        "cancelled_by": "string('cancelled_by', 40)->nullable()",
+                        "cancel_reason": "text('cancel_reason')->nullable()",
+                        "cancelled_at": "dateTime('cancelled_at')->nullable()",
+                        "fee_amount": "decimal('fee_amount', 12, 2)->nullable()",
+                        "fee_sale_id": "string('fee_sale_id', 64)->nullable()",
+                        "sale_id": "string('sale_id', 64)->nullable()",
+                        "row_version": "unsignedBigInteger('row_version')->default(0)",
+                        "created_at": "dateTime('created_at')->nullable()",
+                        "updated_at": "dateTime('updated_at')->nullable()",
+                        "deleted_at": "dateTime('deleted_at')->nullable()",
+                        "synced_at": "dateTime('synced_at')->nullable()",
+                        "sync_seq": "unsignedBigInteger('sync_seq')->nullable()",
+                        "extra": "json('extra')->nullable()",
+                        "portal_received_at": "dateTime('portal_received_at')->nullable()"
+                    },
+                    "indexes": {
+                        "salon_appointments_company_id_updated_at_index": [
+                            "company_id",
+                            "updated_at"
+                        ],
+                        "salon_appointments_company_id_branch_id_index": [
+                            "company_id",
+                            "branch_id"
+                        ],
+                        "salon_appointments_company_id_branch_id_starts_at_index": [
+                            "company_id",
+                            "branch_id",
+                            "starts_at"
+                        ],
+                        "salon_appointments_company_id_customer_id_index": [
+                            "company_id",
+                            "customer_id"
+                        ],
+                        "salon_appointments_online_booking_id_index": [
+                            "online_booking_id"
+                        ]
+                    }
+                },
+                "salon_blocks": {
+                    "columns": {
+                        "id": "string('id', 26)->primary()",
+                        "company_id": "string('company_id', 26)",
+                        "branch_id": "string('branch_id', 26)->nullable()",
+                        "user_id": "string('user_id', 64)->nullable()",
+                        "resource_id": "string('resource_id', 64)->nullable()",
+                        "kind": "string('kind', 40)->nullable()",
+                        "starts_at": "dateTime('starts_at')->nullable()",
+                        "ends_at": "dateTime('ends_at')->nullable()",
+                        "reason": "text('reason')->nullable()",
+                        "repeat_rule_id": "string('repeat_rule_id', 64)->nullable()",
+                        "created_by_user_id": "string('created_by_user_id', 64)->nullable()",
+                        "row_version": "unsignedBigInteger('row_version')->default(0)",
+                        "created_at": "dateTime('created_at')->nullable()",
+                        "updated_at": "dateTime('updated_at')->nullable()",
+                        "deleted_at": "dateTime('deleted_at')->nullable()",
+                        "synced_at": "dateTime('synced_at')->nullable()",
+                        "sync_seq": "unsignedBigInteger('sync_seq')->nullable()",
+                        "extra": "json('extra')->nullable()",
+                        "portal_received_at": "dateTime('portal_received_at')->nullable()"
+                    },
+                    "indexes": {
+                        "salon_blocks_company_id_updated_at_index": [
+                            "company_id",
+                            "updated_at"
+                        ],
+                        "salon_blocks_company_id_branch_id_index": [
+                            "company_id",
+                            "branch_id"
+                        ],
+                        "salon_blocks_company_id_branch_id_starts_at_index": [
+                            "company_id",
+                            "branch_id",
+                            "starts_at"
+                        ]
+                    }
+                },
+                "salon_client_cards": {
+                    "columns": {
+                        "id": "string('id', 26)->primary()",
+                        "company_id": "string('company_id', 26)",
+                        "branch_id": "string('branch_id', 26)->nullable()",
+                        "customer_id": "string('customer_id', 64)->nullable()",
+                        "client_group": "string('client_group', 40)->nullable()",
+                        "stylist_preference": "string('stylist_preference', 40)->nullable()",
+                        "preferred_user_id": "string('preferred_user_id', 64)->nullable()",
+                        "source": "string('source', 255)->nullable()",
+                        "referrer_customer_id": "string('referrer_customer_id', 64)->nullable()",
+                        "tags": "text('tags')->nullable()",
+                        "alert_text": "text('alert_text')->nullable()",
+                        "notes": "text('notes')->nullable()",
+                        "external_ref": "string('external_ref', 255)->nullable()",
+                        "external_system": "string('external_system', 255)->nullable()",
+                        "row_version": "unsignedBigInteger('row_version')->default(0)",
+                        "created_at": "dateTime('created_at')->nullable()",
+                        "updated_at": "dateTime('updated_at')->nullable()",
+                        "deleted_at": "dateTime('deleted_at')->nullable()",
+                        "synced_at": "dateTime('synced_at')->nullable()",
+                        "sync_seq": "unsignedBigInteger('sync_seq')->nullable()",
+                        "extra": "json('extra')->nullable()",
+                        "portal_received_at": "dateTime('portal_received_at')->nullable()"
+                    },
+                    "indexes": {
+                        "salon_client_cards_company_id_updated_at_index": [
+                            "company_id",
+                            "updated_at"
+                        ],
+                        "salon_client_cards_company_id_branch_id_index": [
+                            "company_id",
+                            "branch_id"
+                        ],
+                        "salon_client_cards_company_id_customer_id_index": [
+                            "company_id",
+                            "customer_id"
+                        ]
+                    }
+                },
+                "salon_client_photos": {
+                    "columns": {
+                        "id": "string('id', 26)->primary()",
+                        "company_id": "string('company_id', 26)",
+                        "branch_id": "string('branch_id', 26)->nullable()",
+                        "customer_id": "string('customer_id', 64)->nullable()",
+                        "kind": "string('kind', 40)->nullable()",
+                        "file_path": "text('file_path')->nullable()",
+                        "sha256": "string('sha256', 255)->nullable()",
+                        "taken_at": "dateTime('taken_at')->nullable()",
+                        "taken_by_user_id": "string('taken_by_user_id', 64)->nullable()",
+                        "appointment_id": "string('appointment_id', 64)->nullable()",
+                        "technical_record_id": "string('technical_record_id', 64)->nullable()",
+                        "caption": "text('caption')->nullable()",
+                        "may_share": "boolean('may_share')->nullable()",
+                        "row_version": "unsignedBigInteger('row_version')->default(0)",
+                        "created_at": "dateTime('created_at')->nullable()",
+                        "updated_at": "dateTime('updated_at')->nullable()",
+                        "deleted_at": "dateTime('deleted_at')->nullable()",
+                        "synced_at": "dateTime('synced_at')->nullable()",
+                        "sync_seq": "unsignedBigInteger('sync_seq')->nullable()",
+                        "extra": "json('extra')->nullable()",
+                        "portal_received_at": "dateTime('portal_received_at')->nullable()"
+                    },
+                    "indexes": {
+                        "salon_client_photos_company_id_updated_at_index": [
+                            "company_id",
+                            "updated_at"
+                        ],
+                        "salon_client_photos_company_id_branch_id_index": [
+                            "company_id",
+                            "branch_id"
+                        ],
+                        "salon_client_photos_company_id_customer_id_index": [
+                            "company_id",
+                            "customer_id"
+                        ]
+                    }
+                },
+                "salon_commission_category_rates": {
+                    "columns": {
+                        "id": "string('id', 26)->primary()",
+                        "company_id": "string('company_id', 26)",
+                        "plan_id": "string('plan_id', 64)->nullable()",
+                        "category": "string('category', 255)->nullable()",
+                        "percent": "decimal('percent', 9, 4)->nullable()",
+                        "row_version": "unsignedBigInteger('row_version')->default(0)",
+                        "created_at": "dateTime('created_at')->nullable()",
+                        "updated_at": "dateTime('updated_at')->nullable()",
+                        "deleted_at": "dateTime('deleted_at')->nullable()",
+                        "hub_version": "unsignedBigInteger('hub_version')->nullable()",
+                        "hub_edited_at": "dateTime('hub_edited_at')->nullable()",
+                        "hub_hash": "char('hub_hash', 64)->nullable()",
+                        "origin_branch_id": "string('origin_branch_id', 26)->nullable()",
+                        "synced_at": "dateTime('synced_at')->nullable()",
+                        "sync_seq": "unsignedBigInteger('sync_seq')->nullable()",
+                        "extra": "json('extra')->nullable()",
+                        "portal_received_at": "dateTime('portal_received_at')->nullable()"
+                    },
+                    "indexes": {
+                        "salon_commission_category_rates_company_id_updated_at_index": [
+                            "company_id",
+                            "updated_at"
+                        ],
+                        "salon_commission_category_rates_plan_id_index": [
+                            "plan_id"
+                        ]
+                    }
+                },
+                "salon_commission_fixed_services": {
+                    "columns": {
+                        "id": "string('id', 26)->primary()",
+                        "company_id": "string('company_id', 26)",
+                        "plan_id": "string('plan_id', 64)->nullable()",
+                        "product_id": "string('product_id', 64)->nullable()",
+                        "amount_per_unit": "decimal('amount_per_unit', 12, 2)->nullable()",
+                        "row_version": "unsignedBigInteger('row_version')->default(0)",
+                        "created_at": "dateTime('created_at')->nullable()",
+                        "updated_at": "dateTime('updated_at')->nullable()",
+                        "deleted_at": "dateTime('deleted_at')->nullable()",
+                        "hub_version": "unsignedBigInteger('hub_version')->nullable()",
+                        "hub_edited_at": "dateTime('hub_edited_at')->nullable()",
+                        "hub_hash": "char('hub_hash', 64)->nullable()",
+                        "origin_branch_id": "string('origin_branch_id', 26)->nullable()",
+                        "synced_at": "dateTime('synced_at')->nullable()",
+                        "sync_seq": "unsignedBigInteger('sync_seq')->nullable()",
+                        "extra": "json('extra')->nullable()",
+                        "portal_received_at": "dateTime('portal_received_at')->nullable()"
+                    },
+                    "indexes": {
+                        "salon_commission_fixed_services_company_id_updated_at_index": [
+                            "company_id",
+                            "updated_at"
+                        ],
+                        "salon_commission_fixed_services_plan_id_index": [
+                            "plan_id"
+                        ]
+                    }
+                },
+                "salon_commission_plans": {
+                    "columns": {
+                        "id": "string('id', 26)->primary()",
+                        "company_id": "string('company_id', 26)",
+                        "name": "string('name', 255)->nullable()",
+                        "service_percent": "decimal('service_percent', 9, 4)->nullable()",
+                        "retail_percent": "decimal('retail_percent', 9, 4)->nullable()",
+                        "tier_mode": "string('tier_mode', 40)->nullable()",
+                        "period": "string('period', 40)->nullable()",
+                        "cost_deduction": "string('cost_deduction', 40)->nullable()",
+                        "rebook_credit": "decimal('rebook_credit', 12, 2)->nullable()",
+                        "pay_rule": "string('pay_rule', 40)->nullable()",
+                        "is_active": "boolean('is_active')->nullable()",
+                        "note": "text('note')->nullable()",
+                        "row_version": "unsignedBigInteger('row_version')->default(0)",
+                        "created_at": "dateTime('created_at')->nullable()",
+                        "updated_at": "dateTime('updated_at')->nullable()",
+                        "deleted_at": "dateTime('deleted_at')->nullable()",
+                        "hub_version": "unsignedBigInteger('hub_version')->nullable()",
+                        "hub_edited_at": "dateTime('hub_edited_at')->nullable()",
+                        "hub_hash": "char('hub_hash', 64)->nullable()",
+                        "origin_branch_id": "string('origin_branch_id', 26)->nullable()",
+                        "synced_at": "dateTime('synced_at')->nullable()",
+                        "sync_seq": "unsignedBigInteger('sync_seq')->nullable()",
+                        "extra": "json('extra')->nullable()",
+                        "portal_received_at": "dateTime('portal_received_at')->nullable()"
+                    },
+                    "indexes": {
+                        "salon_commission_plans_company_id_updated_at_index": [
+                            "company_id",
+                            "updated_at"
+                        ]
+                    }
+                },
+                "salon_commission_tiers": {
+                    "columns": {
+                        "id": "string('id', 26)->primary()",
+                        "company_id": "string('company_id', 26)",
+                        "plan_id": "string('plan_id', 64)->nullable()",
+                        "from_amount": "decimal('from_amount', 12, 2)->nullable()",
+                        "percent": "decimal('percent', 9, 4)->nullable()",
+                        "row_version": "unsignedBigInteger('row_version')->default(0)",
+                        "created_at": "dateTime('created_at')->nullable()",
+                        "updated_at": "dateTime('updated_at')->nullable()",
+                        "deleted_at": "dateTime('deleted_at')->nullable()",
+                        "hub_version": "unsignedBigInteger('hub_version')->nullable()",
+                        "hub_edited_at": "dateTime('hub_edited_at')->nullable()",
+                        "hub_hash": "char('hub_hash', 64)->nullable()",
+                        "origin_branch_id": "string('origin_branch_id', 26)->nullable()",
+                        "synced_at": "dateTime('synced_at')->nullable()",
+                        "sync_seq": "unsignedBigInteger('sync_seq')->nullable()",
+                        "extra": "json('extra')->nullable()",
+                        "portal_received_at": "dateTime('portal_received_at')->nullable()"
+                    },
+                    "indexes": {
+                        "salon_commission_tiers_company_id_updated_at_index": [
+                            "company_id",
+                            "updated_at"
+                        ],
+                        "salon_commission_tiers_plan_id_index": [
+                            "plan_id"
+                        ]
+                    }
+                },
+                "salon_consultation_answers": {
+                    "columns": {
+                        "id": "string('id', 26)->primary()",
+                        "company_id": "string('company_id', 26)",
+                        "branch_id": "string('branch_id', 26)->nullable()",
+                        "customer_id": "string('customer_id', 64)->nullable()",
+                        "template_id": "string('template_id', 64)->nullable()",
+                        "template_version": "integer('template_version')->nullable()",
+                        "answers_json": "longText('answers_json')->nullable()",
+                        "signed_name": "string('signed_name', 255)->nullable()",
+                        "signature_file_path": "text('signature_file_path')->nullable()",
+                        "signed_at": "dateTime('signed_at')->nullable()",
+                        "recorded_by_user_id": "string('recorded_by_user_id', 64)->nullable()",
+                        "appointment_id": "string('appointment_id', 64)->nullable()",
+                        "expires_on": "date('expires_on')->nullable()",
+                        "row_version": "unsignedBigInteger('row_version')->default(0)",
+                        "created_at": "dateTime('created_at')->nullable()",
+                        "updated_at": "dateTime('updated_at')->nullable()",
+                        "deleted_at": "dateTime('deleted_at')->nullable()",
+                        "synced_at": "dateTime('synced_at')->nullable()",
+                        "sync_seq": "unsignedBigInteger('sync_seq')->nullable()",
+                        "extra": "json('extra')->nullable()",
+                        "portal_received_at": "dateTime('portal_received_at')->nullable()"
+                    },
+                    "indexes": {
+                        "salon_consultation_answers_company_id_updated_at_index": [
+                            "company_id",
+                            "updated_at"
+                        ],
+                        "salon_consultation_answers_company_id_branch_id_index": [
+                            "company_id",
+                            "branch_id"
+                        ],
+                        "salon_consultation_answers_company_id_customer_id_index": [
+                            "company_id",
+                            "customer_id"
+                        ]
+                    }
+                },
+                "salon_consultation_form_templates": {
+                    "columns": {
+                        "id": "string('id', 26)->primary()",
+                        "company_id": "string('company_id', 26)",
+                        "name": "string('name', 255)->nullable()",
+                        "questions_json": "longText('questions_json')->nullable()",
+                        "version": "integer('version')->nullable()",
+                        "is_medical": "boolean('is_medical')->nullable()",
+                        "requires_signature": "boolean('requires_signature')->nullable()",
+                        "valid_days": "integer('valid_days')->nullable()",
+                        "is_active": "boolean('is_active')->nullable()",
+                        "row_version": "unsignedBigInteger('row_version')->default(0)",
+                        "created_at": "dateTime('created_at')->nullable()",
+                        "updated_at": "dateTime('updated_at')->nullable()",
+                        "deleted_at": "dateTime('deleted_at')->nullable()",
+                        "hub_version": "unsignedBigInteger('hub_version')->nullable()",
+                        "hub_edited_at": "dateTime('hub_edited_at')->nullable()",
+                        "hub_hash": "char('hub_hash', 64)->nullable()",
+                        "origin_branch_id": "string('origin_branch_id', 26)->nullable()",
+                        "synced_at": "dateTime('synced_at')->nullable()",
+                        "sync_seq": "unsignedBigInteger('sync_seq')->nullable()",
+                        "extra": "json('extra')->nullable()",
+                        "portal_received_at": "dateTime('portal_received_at')->nullable()"
+                    },
+                    "indexes": {
+                        "salon_consultation_form_templates_company_id_updated_at_index": [
+                            "company_id",
+                            "updated_at"
+                        ]
+                    }
+                },
+                "salon_levels": {
+                    "columns": {
+                        "id": "string('id', 26)->primary()",
+                        "company_id": "string('company_id', 26)",
+                        "name": "string('name', 255)->nullable()",
+                        "level_rank": "integer('level_rank')->nullable()",
+                        "commission_plan_id": "string('commission_plan_id', 64)->nullable()",
+                        "is_active": "boolean('is_active')->nullable()",
+                        "row_version": "unsignedBigInteger('row_version')->default(0)",
+                        "created_at": "dateTime('created_at')->nullable()",
+                        "updated_at": "dateTime('updated_at')->nullable()",
+                        "deleted_at": "dateTime('deleted_at')->nullable()",
+                        "hub_version": "unsignedBigInteger('hub_version')->nullable()",
+                        "hub_edited_at": "dateTime('hub_edited_at')->nullable()",
+                        "hub_hash": "char('hub_hash', 64)->nullable()",
+                        "origin_branch_id": "string('origin_branch_id', 26)->nullable()",
+                        "synced_at": "dateTime('synced_at')->nullable()",
+                        "sync_seq": "unsignedBigInteger('sync_seq')->nullable()",
+                        "extra": "json('extra')->nullable()",
+                        "portal_received_at": "dateTime('portal_received_at')->nullable()"
+                    },
+                    "indexes": {
+                        "salon_levels_company_id_updated_at_index": [
+                            "company_id",
+                            "updated_at"
+                        ]
+                    }
+                },
+                "salon_line_staff_corrections": {
+                    "columns": {
+                        "id": "string('id', 26)->primary()",
+                        "company_id": "string('company_id', 26)",
+                        "branch_id": "string('branch_id', 26)->nullable()",
+                        "sale_id": "string('sale_id', 64)->nullable()",
+                        "sale_line_id": "string('sale_line_id', 64)->nullable()",
+                        "replaced_line_staff_id": "string('replaced_line_staff_id', 64)->nullable()",
+                        "replacement_line_staff_id": "string('replacement_line_staff_id', 64)->nullable()",
+                        "reason": "text('reason')->nullable()",
+                        "corrected_by_user_id": "string('corrected_by_user_id', 64)->nullable()",
+                        "corrected_at": "dateTime('corrected_at')->nullable()",
+                        "row_version": "unsignedBigInteger('row_version')->default(0)",
+                        "created_at": "dateTime('created_at')->nullable()",
+                        "updated_at": "dateTime('updated_at')->nullable()",
+                        "deleted_at": "dateTime('deleted_at')->nullable()",
+                        "synced_at": "dateTime('synced_at')->nullable()",
+                        "sync_seq": "unsignedBigInteger('sync_seq')->nullable()",
+                        "extra": "json('extra')->nullable()",
+                        "portal_received_at": "dateTime('portal_received_at')->nullable()"
+                    },
+                    "indexes": {
+                        "salon_line_staff_corrections_company_id_updated_at_index": [
+                            "company_id",
+                            "updated_at"
+                        ],
+                        "salon_line_staff_corrections_company_id_branch_id_index": [
+                            "company_id",
+                            "branch_id"
+                        ],
+                        "salon_line_staff_corrections_sale_id_index": [
+                            "sale_id"
+                        ]
+                    }
+                },
+                "salon_message_outbox_items": {
+                    "columns": {
+                        "id": "string('id', 26)->primary()",
+                        "company_id": "string('company_id', 26)",
+                        "branch_id": "string('branch_id', 26)->nullable()",
+                        "automation_key": "string('automation_key', 255)->nullable()",
+                        "purpose": "string('purpose', 40)->nullable()",
+                        "customer_id": "string('customer_id', 64)->nullable()",
+                        "to_phone": "string('to_phone', 255)->nullable()",
+                        "to_email": "string('to_email', 255)->nullable()",
+                        "channel_order": "string('channel_order', 255)->nullable()",
+                        "subject": "text('subject')->nullable()",
+                        "body": "text('body')->nullable()",
+                        "due_at": "dateTime('due_at')->nullable()",
+                        "status": "string('status', 40)->nullable()",
+                        "attempts": "integer('attempts')->nullable()",
+                        "last_error": "text('last_error')->nullable()",
+                        "idempotency_key": "string('idempotency_key', 255)->nullable()",
+                        "ref_type": "string('ref_type', 255)->nullable()",
+                        "ref_id": "string('ref_id', 64)->nullable()",
+                        "sent_channel": "string('sent_channel', 40)->nullable()",
+                        "sent_at": "dateTime('sent_at')->nullable()",
+                        "provider_message_id": "text('provider_message_id')->nullable()",
+                        "row_version": "unsignedBigInteger('row_version')->default(0)",
+                        "created_at": "dateTime('created_at')->nullable()",
+                        "updated_at": "dateTime('updated_at')->nullable()",
+                        "deleted_at": "dateTime('deleted_at')->nullable()",
+                        "synced_at": "dateTime('synced_at')->nullable()",
+                        "sync_seq": "unsignedBigInteger('sync_seq')->nullable()",
+                        "extra": "json('extra')->nullable()",
+                        "portal_received_at": "dateTime('portal_received_at')->nullable()"
+                    },
+                    "indexes": {
+                        "salon_message_outbox_items_company_id_updated_at_index": [
+                            "company_id",
+                            "updated_at"
+                        ],
+                        "salon_message_outbox_items_company_id_branch_id_index": [
+                            "company_id",
+                            "branch_id"
+                        ],
+                        "salon_message_outbox_items_company_id_branch_id_due_at_index": [
+                            "company_id",
+                            "branch_id",
+                            "due_at"
+                        ]
+                    }
+                },
+                "salon_message_templates": {
+                    "columns": {
+                        "id": "string('id', 26)->primary()",
+                        "company_id": "string('company_id', 26)",
+                        "branch_id": "string('branch_id', 26)->nullable()",
+                        "automation_key": "string('automation_key', 255)->nullable()",
+                        "channel": "string('channel', 40)->nullable()",
+                        "purpose": "string('purpose', 40)->nullable()",
+                        "subject": "text('subject')->nullable()",
+                        "body": "text('body')->nullable()",
+                        "is_enabled": "boolean('is_enabled')->nullable()",
+                        "row_version": "unsignedBigInteger('row_version')->default(0)",
+                        "created_at": "dateTime('created_at')->nullable()",
+                        "updated_at": "dateTime('updated_at')->nullable()",
+                        "deleted_at": "dateTime('deleted_at')->nullable()",
+                        "synced_at": "dateTime('synced_at')->nullable()",
+                        "sync_seq": "unsignedBigInteger('sync_seq')->nullable()",
+                        "extra": "json('extra')->nullable()",
+                        "portal_received_at": "dateTime('portal_received_at')->nullable()"
+                    },
+                    "indexes": {
+                        "salon_message_templates_company_id_updated_at_index": [
+                            "company_id",
+                            "updated_at"
+                        ],
+                        "salon_message_templates_company_id_branch_id_index": [
+                            "company_id",
+                            "branch_id"
+                        ]
+                    }
+                },
+                "salon_online_bookings": {
+                    "columns": {
+                        "id": "string('id', 26)->primary()",
+                        "company_id": "string('company_id', 26)",
+                        "branch_id": "string('branch_id', 26)->nullable()",
+                        "reference": "string('reference', 255)->nullable()",
+                        "kind": "string('kind', 40)->nullable()",
+                        "appointment_id": "string('appointment_id', 64)->nullable()",
+                        "requested_starts_at": "dateTime('requested_starts_at')->nullable()",
+                        "requested_user_id": "string('requested_user_id', 64)->nullable()",
+                        "services_json": "longText('services_json')->nullable()",
+                        "client_first_name": "string('client_first_name', 255)->nullable()",
+                        "client_last_name": "string('client_last_name', 255)->nullable()",
+                        "client_phone": "string('client_phone', 255)->nullable()",
+                        "client_email": "string('client_email', 255)->nullable()",
+                        "customer_id": "string('customer_id', 64)->nullable()",
+                        "notes": "text('notes')->nullable()",
+                        "answers_json": "longText('answers_json')->nullable()",
+                        "terms_accepted_at": "dateTime('terms_accepted_at')->nullable()",
+                        "marketing_sms": "boolean('marketing_sms')->nullable()",
+                        "marketing_email": "boolean('marketing_email')->nullable()",
+                        "marketing_whats_app": "boolean('marketing_whats_app')->nullable()",
+                        "deposit_paid": "decimal('deposit_paid', 12, 2)->nullable()",
+                        "payment_reference": "string('payment_reference', 255)->nullable()",
+                        "status": "string('status', 40)->nullable()",
+                        "expires_at": "dateTime('expires_at')->nullable()",
+                        "decided_at": "dateTime('decided_at')->nullable()",
+                        "decided_by_user_id": "string('decided_by_user_id', 64)->nullable()",
+                        "decision_reason": "text('decision_reason')->nullable()",
+                        "row_version": "unsignedBigInteger('row_version')->default(0)",
+                        "created_at": "dateTime('created_at')->nullable()",
+                        "updated_at": "dateTime('updated_at')->nullable()",
+                        "deleted_at": "dateTime('deleted_at')->nullable()",
+                        "hub_version": "unsignedBigInteger('hub_version')->nullable()",
+                        "hub_edited_at": "dateTime('hub_edited_at')->nullable()",
+                        "hub_hash": "char('hub_hash', 64)->nullable()",
+                        "origin_branch_id": "string('origin_branch_id', 26)->nullable()",
+                        "synced_at": "dateTime('synced_at')->nullable()",
+                        "sync_seq": "unsignedBigInteger('sync_seq')->nullable()",
+                        "extra": "json('extra')->nullable()",
+                        "portal_received_at": "dateTime('portal_received_at')->nullable()"
+                    },
+                    "indexes": {
+                        "salon_online_bookings_company_id_updated_at_index": [
+                            "company_id",
+                            "updated_at"
+                        ],
+                        "salon_online_bookings_company_id_branch_id_index": [
+                            "company_id",
+                            "branch_id"
+                        ],
+                        "salon_online_bookings_company_id_branch_id_status_index": [
+                            "company_id",
+                            "branch_id",
+                            "status"
+                        ],
+                        "salon_online_bookings_company_id_reference_index": [
+                            "company_id",
+                            "reference"
+                        ]
+                    }
+                },
+                "salon_package_definitions": {
+                    "columns": {
+                        "id": "string('id', 26)->primary()",
+                        "company_id": "string('company_id', 26)",
+                        "name": "string('name', 255)->nullable()",
+                        "product_id": "string('product_id', 64)->nullable()",
+                        "covered_product_ids_json": "longText('covered_product_ids_json')->nullable()",
+                        "sessions": "integer('sessions')->nullable()",
+                        "price": "decimal('price', 12, 2)->nullable()",
+                        "valid_days": "integer('valid_days')->nullable()",
+                        "is_active": "boolean('is_active')->nullable()",
+                        "row_version": "unsignedBigInteger('row_version')->default(0)",
+                        "created_at": "dateTime('created_at')->nullable()",
+                        "updated_at": "dateTime('updated_at')->nullable()",
+                        "deleted_at": "dateTime('deleted_at')->nullable()",
+                        "hub_version": "unsignedBigInteger('hub_version')->nullable()",
+                        "hub_edited_at": "dateTime('hub_edited_at')->nullable()",
+                        "hub_hash": "char('hub_hash', 64)->nullable()",
+                        "origin_branch_id": "string('origin_branch_id', 26)->nullable()",
+                        "synced_at": "dateTime('synced_at')->nullable()",
+                        "sync_seq": "unsignedBigInteger('sync_seq')->nullable()",
+                        "extra": "json('extra')->nullable()",
+                        "portal_received_at": "dateTime('portal_received_at')->nullable()"
+                    },
+                    "indexes": {
+                        "salon_package_definitions_company_id_updated_at_index": [
+                            "company_id",
+                            "updated_at"
+                        ]
+                    }
+                },
+                "salon_package_holdings": {
+                    "columns": {
+                        "id": "string('id', 26)->primary()",
+                        "company_id": "string('company_id', 26)",
+                        "branch_id": "string('branch_id', 26)->nullable()",
+                        "customer_id": "string('customer_id', 64)->nullable()",
+                        "definition_id": "string('definition_id', 64)->nullable()",
+                        "name": "string('name', 255)->nullable()",
+                        "covered_product_ids_json": "longText('covered_product_ids_json')->nullable()",
+                        "sale_id": "string('sale_id', 64)->nullable()",
+                        "sale_line_id": "string('sale_line_id', 64)->nullable()",
+                        "sessions": "integer('sessions')->nullable()",
+                        "sessions_used": "integer('sessions_used')->nullable()",
+                        "price": "decimal('price', 12, 2)->nullable()",
+                        "purchased_at": "dateTime('purchased_at')->nullable()",
+                        "expires_on": "date('expires_on')->nullable()",
+                        "status": "string('status', 40)->nullable()",
+                        "row_version": "unsignedBigInteger('row_version')->default(0)",
+                        "created_at": "dateTime('created_at')->nullable()",
+                        "updated_at": "dateTime('updated_at')->nullable()",
+                        "deleted_at": "dateTime('deleted_at')->nullable()",
+                        "synced_at": "dateTime('synced_at')->nullable()",
+                        "sync_seq": "unsignedBigInteger('sync_seq')->nullable()",
+                        "extra": "json('extra')->nullable()",
+                        "portal_received_at": "dateTime('portal_received_at')->nullable()"
+                    },
+                    "indexes": {
+                        "salon_package_holdings_company_id_updated_at_index": [
+                            "company_id",
+                            "updated_at"
+                        ],
+                        "salon_package_holdings_company_id_branch_id_index": [
+                            "company_id",
+                            "branch_id"
+                        ],
+                        "salon_package_holdings_company_id_customer_id_index": [
+                            "company_id",
+                            "customer_id"
+                        ]
+                    }
+                },
+                "salon_package_uses": {
+                    "columns": {
+                        "id": "string('id', 26)->primary()",
+                        "company_id": "string('company_id', 26)",
+                        "branch_id": "string('branch_id', 26)->nullable()",
+                        "holding_id": "string('holding_id', 64)->nullable()",
+                        "customer_id": "string('customer_id', 64)->nullable()",
+                        "kind": "string('kind', 40)->nullable()",
+                        "sessions_delta": "integer('sessions_delta')->nullable()",
+                        "value_released": "decimal('value_released', 12, 2)->nullable()",
+                        "sale_id": "string('sale_id', 64)->nullable()",
+                        "sale_line_id": "string('sale_line_id', 64)->nullable()",
+                        "product_id": "string('product_id', 64)->nullable()",
+                        "user_id": "string('user_id', 64)->nullable()",
+                        "at": "dateTime('at')->nullable()",
+                        "row_version": "unsignedBigInteger('row_version')->default(0)",
+                        "created_at": "dateTime('created_at')->nullable()",
+                        "updated_at": "dateTime('updated_at')->nullable()",
+                        "deleted_at": "dateTime('deleted_at')->nullable()",
+                        "synced_at": "dateTime('synced_at')->nullable()",
+                        "sync_seq": "unsignedBigInteger('sync_seq')->nullable()",
+                        "extra": "json('extra')->nullable()",
+                        "portal_received_at": "dateTime('portal_received_at')->nullable()"
+                    },
+                    "indexes": {
+                        "salon_package_uses_company_id_updated_at_index": [
+                            "company_id",
+                            "updated_at"
+                        ],
+                        "salon_package_uses_company_id_branch_id_index": [
+                            "company_id",
+                            "branch_id"
+                        ],
+                        "salon_package_uses_holding_id_index": [
+                            "holding_id"
+                        ],
+                        "salon_package_uses_company_id_branch_id_at_index": [
+                            "company_id",
+                            "branch_id",
+                            "at"
+                        ]
+                    }
+                },
+                "salon_patch_tests": {
+                    "columns": {
+                        "id": "string('id', 26)->primary()",
+                        "company_id": "string('company_id', 26)",
+                        "branch_id": "string('branch_id', 26)->nullable()",
+                        "customer_id": "string('customer_id', 64)->nullable()",
+                        "tested_at": "dateTime('tested_at')->nullable()",
+                        "tested_by_user_id": "string('tested_by_user_id', 64)->nullable()",
+                        "product_id": "string('product_id', 64)->nullable()",
+                        "product_used": "text('product_used')->nullable()",
+                        "result": "string('result', 40)->nullable()",
+                        "result_at": "dateTime('result_at')->nullable()",
+                        "expires_on": "date('expires_on')->nullable()",
+                        "notes": "text('notes')->nullable()",
+                        "row_version": "unsignedBigInteger('row_version')->default(0)",
+                        "created_at": "dateTime('created_at')->nullable()",
+                        "updated_at": "dateTime('updated_at')->nullable()",
+                        "deleted_at": "dateTime('deleted_at')->nullable()",
+                        "synced_at": "dateTime('synced_at')->nullable()",
+                        "sync_seq": "unsignedBigInteger('sync_seq')->nullable()",
+                        "extra": "json('extra')->nullable()",
+                        "portal_received_at": "dateTime('portal_received_at')->nullable()"
+                    },
+                    "indexes": {
+                        "salon_patch_tests_company_id_updated_at_index": [
+                            "company_id",
+                            "updated_at"
+                        ],
+                        "salon_patch_tests_company_id_branch_id_index": [
+                            "company_id",
+                            "branch_id"
+                        ],
+                        "salon_patch_tests_company_id_customer_id_index": [
+                            "company_id",
+                            "customer_id"
+                        ]
+                    }
+                },
+                "salon_queue_entries": {
+                    "columns": {
+                        "id": "string('id', 26)->primary()",
+                        "company_id": "string('company_id', 26)",
+                        "branch_id": "string('branch_id', 26)->nullable()",
+                        "trading_date": "date('trading_date')->nullable()",
+                        "ticket_number": "integer('ticket_number')->nullable()",
+                        "queue_order": "integer('queue_order')->nullable()",
+                        "first_name": "string('first_name', 255)->nullable()",
+                        "phone": "string('phone', 255)->nullable()",
+                        "customer_id": "string('customer_id', 64)->nullable()",
+                        "wanted_user_id": "string('wanted_user_id', 64)->nullable()",
+                        "assigned_user_id": "string('assigned_user_id', 64)->nullable()",
+                        "stylist_preference": "string('stylist_preference', 40)->nullable()",
+                        "source": "string('source', 40)->nullable()",
+                        "status": "string('status', 40)->nullable()",
+                        "joined_at": "dateTime('joined_at')->nullable()",
+                        "called_at": "dateTime('called_at')->nullable()",
+                        "started_at": "dateTime('started_at')->nullable()",
+                        "finished_at": "dateTime('finished_at')->nullable()",
+                        "estimated_start_at": "dateTime('estimated_start_at')->nullable()",
+                        "held_order_id": "string('held_order_id', 64)->nullable()",
+                        "sale_id": "string('sale_id', 64)->nullable()",
+                        "note": "text('note')->nullable()",
+                        "row_version": "unsignedBigInteger('row_version')->default(0)",
+                        "created_at": "dateTime('created_at')->nullable()",
+                        "updated_at": "dateTime('updated_at')->nullable()",
+                        "deleted_at": "dateTime('deleted_at')->nullable()",
+                        "synced_at": "dateTime('synced_at')->nullable()",
+                        "sync_seq": "unsignedBigInteger('sync_seq')->nullable()",
+                        "extra": "json('extra')->nullable()",
+                        "portal_received_at": "dateTime('portal_received_at')->nullable()"
+                    },
+                    "indexes": {
+                        "salon_queue_entries_company_id_updated_at_index": [
+                            "company_id",
+                            "updated_at"
+                        ],
+                        "salon_queue_entries_company_id_branch_id_index": [
+                            "company_id",
+                            "branch_id"
+                        ],
+                        "salon_queue_entries_3ef554ef_idx": [
+                            "company_id",
+                            "branch_id",
+                            "trading_date",
+                            "queue_order"
+                        ]
+                    }
+                },
+                "salon_queue_entry_services": {
+                    "columns": {
+                        "id": "string('id', 26)->primary()",
+                        "company_id": "string('company_id', 26)",
+                        "branch_id": "string('branch_id', 26)->nullable()",
+                        "queue_entry_id": "string('queue_entry_id', 64)->nullable()",
+                        "product_id": "string('product_id', 64)->nullable()",
+                        "duration_min": "integer('duration_min')->nullable()",
+                        "sort_order": "integer('sort_order')->nullable()",
+                        "row_version": "unsignedBigInteger('row_version')->default(0)",
+                        "created_at": "dateTime('created_at')->nullable()",
+                        "updated_at": "dateTime('updated_at')->nullable()",
+                        "deleted_at": "dateTime('deleted_at')->nullable()",
+                        "synced_at": "dateTime('synced_at')->nullable()",
+                        "sync_seq": "unsignedBigInteger('sync_seq')->nullable()",
+                        "extra": "json('extra')->nullable()",
+                        "portal_received_at": "dateTime('portal_received_at')->nullable()"
+                    },
+                    "indexes": {
+                        "salon_queue_entry_services_company_id_updated_at_index": [
+                            "company_id",
+                            "updated_at"
+                        ],
+                        "salon_queue_entry_services_company_id_branch_id_index": [
+                            "company_id",
+                            "branch_id"
+                        ],
+                        "salon_queue_entry_services_queue_entry_id_index": [
+                            "queue_entry_id"
+                        ]
+                    }
+                },
+                "salon_renter_agreements": {
+                    "columns": {
+                        "id": "string('id', 26)->primary()",
+                        "company_id": "string('company_id', 26)",
+                        "branch_id": "string('branch_id', 26)->nullable()",
+                        "user_id": "string('user_id', 64)->nullable()",
+                        "rent_model": "string('rent_model', 40)->nullable()",
+                        "weekly_rent": "decimal('weekly_rent', 12, 2)->nullable()",
+                        "rent_percent": "decimal('rent_percent', 9, 4)->nullable()",
+                        "minimum_weekly_rent": "decimal('minimum_weekly_rent', 12, 2)->nullable()",
+                        "maximum_weekly_rent": "decimal('maximum_weekly_rent', 12, 2)->nullable()",
+                        "card_fee_percent": "decimal('card_fee_percent', 9, 4)->nullable()",
+                        "statement_period": "string('statement_period', 40)->nullable()",
+                        "cash_kept_by_renter": "boolean('cash_kept_by_renter')->nullable()",
+                        "charges_vat": "boolean('charges_vat')->nullable()",
+                        "starts_on": "date('starts_on')->nullable()",
+                        "ends_on": "date('ends_on')->nullable()",
+                        "notes": "text('notes')->nullable()",
+                        "row_version": "unsignedBigInteger('row_version')->default(0)",
+                        "created_at": "dateTime('created_at')->nullable()",
+                        "updated_at": "dateTime('updated_at')->nullable()",
+                        "deleted_at": "dateTime('deleted_at')->nullable()",
+                        "synced_at": "dateTime('synced_at')->nullable()",
+                        "sync_seq": "unsignedBigInteger('sync_seq')->nullable()",
+                        "extra": "json('extra')->nullable()",
+                        "portal_received_at": "dateTime('portal_received_at')->nullable()"
+                    },
+                    "indexes": {
+                        "salon_renter_agreements_company_id_updated_at_index": [
+                            "company_id",
+                            "updated_at"
+                        ],
+                        "salon_renter_agreements_company_id_branch_id_index": [
+                            "company_id",
+                            "branch_id"
+                        ],
+                        "salon_renter_agreements_company_id_user_id_index": [
+                            "company_id",
+                            "user_id"
+                        ]
+                    }
+                },
+                "salon_renter_statements": {
+                    "columns": {
+                        "id": "string('id', 26)->primary()",
+                        "company_id": "string('company_id', 26)",
+                        "branch_id": "string('branch_id', 26)->nullable()",
+                        "user_id": "string('user_id', 64)->nullable()",
+                        "agreement_id": "string('agreement_id', 64)->nullable()",
+                        "reference": "string('reference', 255)->nullable()",
+                        "period_from": "date('period_from')->nullable()",
+                        "period_to": "date('period_to')->nullable()",
+                        "card_takings": "decimal('card_takings', 12, 2)->nullable()",
+                        "cash_takings": "decimal('cash_takings', 12, 2)->nullable()",
+                        "held_by_shop": "decimal('held_by_shop', 12, 2)->nullable()",
+                        "rent": "decimal('rent', 12, 2)->nullable()",
+                        "rent_vat": "decimal('rent_vat', 12, 2)->nullable()",
+                        "card_fee": "decimal('card_fee', 12, 2)->nullable()",
+                        "card_fee_vat": "decimal('card_fee_vat', 12, 2)->nullable()",
+                        "tips": "decimal('tips', 12, 2)->nullable()",
+                        "owed_to_renter": "decimal('owed_to_renter', 12, 2)->nullable()",
+                        "renter_owes_shop": "decimal('renter_owes_shop', 12, 2)->nullable()",
+                        "status": "string('status', 40)->nullable()",
+                        "issued_at": "dateTime('issued_at')->nullable()",
+                        "settled_at": "dateTime('settled_at')->nullable()",
+                        "settled_by_user_id": "string('settled_by_user_id', 64)->nullable()",
+                        "note": "text('note')->nullable()",
+                        "row_version": "unsignedBigInteger('row_version')->default(0)",
+                        "created_at": "dateTime('created_at')->nullable()",
+                        "updated_at": "dateTime('updated_at')->nullable()",
+                        "deleted_at": "dateTime('deleted_at')->nullable()",
+                        "synced_at": "dateTime('synced_at')->nullable()",
+                        "sync_seq": "unsignedBigInteger('sync_seq')->nullable()",
+                        "extra": "json('extra')->nullable()",
+                        "portal_received_at": "dateTime('portal_received_at')->nullable()"
+                    },
+                    "indexes": {
+                        "salon_renter_statements_company_id_updated_at_index": [
+                            "company_id",
+                            "updated_at"
+                        ],
+                        "salon_renter_statements_company_id_branch_id_index": [
+                            "company_id",
+                            "branch_id"
+                        ],
+                        "salon_renter_statements_company_id_branch_id_period_from_index": [
+                            "company_id",
+                            "branch_id",
+                            "period_from"
+                        ],
+                        "salon_renter_statements_company_id_user_id_index": [
+                            "company_id",
+                            "user_id"
+                        ]
+                    }
+                },
+                "salon_repeat_rules": {
+                    "columns": {
+                        "id": "string('id', 26)->primary()",
+                        "company_id": "string('company_id', 26)",
+                        "branch_id": "string('branch_id', 26)->nullable()",
+                        "unit": "string('unit', 40)->nullable()",
+                        "repeat_interval": "integer('repeat_interval')->nullable()",
+                        "days_mask": "integer('days_mask')->nullable()",
+                        "starts_on": "date('starts_on')->nullable()",
+                        "ends_on": "date('ends_on')->nullable()",
+                        "occurrences": "integer('occurrences')->nullable()",
+                        "note": "text('note')->nullable()",
+                        "row_version": "unsignedBigInteger('row_version')->default(0)",
+                        "created_at": "dateTime('created_at')->nullable()",
+                        "updated_at": "dateTime('updated_at')->nullable()",
+                        "deleted_at": "dateTime('deleted_at')->nullable()",
+                        "synced_at": "dateTime('synced_at')->nullable()",
+                        "sync_seq": "unsignedBigInteger('sync_seq')->nullable()",
+                        "extra": "json('extra')->nullable()",
+                        "portal_received_at": "dateTime('portal_received_at')->nullable()"
+                    },
+                    "indexes": {
+                        "salon_repeat_rules_company_id_updated_at_index": [
+                            "company_id",
+                            "updated_at"
+                        ],
+                        "salon_repeat_rules_company_id_branch_id_index": [
+                            "company_id",
+                            "branch_id"
+                        ]
+                    }
+                },
+                "salon_resources": {
+                    "columns": {
+                        "id": "string('id', 26)->primary()",
+                        "company_id": "string('company_id', 26)",
+                        "branch_id": "string('branch_id', 26)->nullable()",
+                        "name": "string('name', 255)->nullable()",
+                        "kind": "string('kind', 40)->nullable()",
+                        "is_private": "boolean('is_private')->nullable()",
+                        "colour_hex": "string('colour_hex', 255)->nullable()",
+                        "sort_order": "integer('sort_order')->nullable()",
+                        "is_active": "boolean('is_active')->nullable()",
+                        "row_version": "unsignedBigInteger('row_version')->default(0)",
+                        "created_at": "dateTime('created_at')->nullable()",
+                        "updated_at": "dateTime('updated_at')->nullable()",
+                        "deleted_at": "dateTime('deleted_at')->nullable()",
+                        "hub_version": "unsignedBigInteger('hub_version')->nullable()",
+                        "hub_edited_at": "dateTime('hub_edited_at')->nullable()",
+                        "hub_hash": "char('hub_hash', 64)->nullable()",
+                        "origin_branch_id": "string('origin_branch_id', 26)->nullable()",
+                        "synced_at": "dateTime('synced_at')->nullable()",
+                        "sync_seq": "unsignedBigInteger('sync_seq')->nullable()",
+                        "extra": "json('extra')->nullable()",
+                        "portal_received_at": "dateTime('portal_received_at')->nullable()"
+                    },
+                    "indexes": {
+                        "salon_resources_company_id_updated_at_index": [
+                            "company_id",
+                            "updated_at"
+                        ],
+                        "salon_resources_company_id_branch_id_index": [
+                            "company_id",
+                            "branch_id"
+                        ]
+                    }
+                },
+                "salon_sale_line_staff": {
+                    "columns": {
+                        "id": "string('id', 26)->primary()",
+                        "company_id": "string('company_id', 26)",
+                        "branch_id": "string('branch_id', 26)->nullable()",
+                        "sale_id": "string('sale_id', 64)->nullable()",
+                        "sale_line_id": "string('sale_line_id', 64)->nullable()",
+                        "product_id": "string('product_id', 64)->nullable()",
+                        "user_id": "string('user_id', 64)->nullable()",
+                        "role": "string('role', 40)->nullable()",
+                        "share_percent": "decimal('share_percent', 9, 4)->nullable()",
+                        "level_id": "string('level_id', 64)->nullable()",
+                        "is_service": "boolean('is_service')->nullable()",
+                        "is_renter_line": "boolean('is_renter_line')->nullable()",
+                        "net_amount": "decimal('net_amount', 12, 2)->nullable()",
+                        "quantity": "decimal('quantity', 14, 4)->nullable()",
+                        "cost_amount": "decimal('cost_amount', 14, 4)->nullable()",
+                        "commission_category": "string('commission_category', 255)->nullable()",
+                        "commission_plan_id": "string('commission_plan_id', 64)->nullable()",
+                        "commission_basis": "string('commission_basis', 40)->nullable()",
+                        "commission_percent_at_sale": "decimal('commission_percent_at_sale', 9, 4)->nullable()",
+                        "commission_fixed_at_sale": "decimal('commission_fixed_at_sale', 12, 2)->nullable()",
+                        "sold_at": "dateTime('sold_at')->nullable()",
+                        "row_version": "unsignedBigInteger('row_version')->default(0)",
+                        "created_at": "dateTime('created_at')->nullable()",
+                        "updated_at": "dateTime('updated_at')->nullable()",
+                        "deleted_at": "dateTime('deleted_at')->nullable()",
+                        "synced_at": "dateTime('synced_at')->nullable()",
+                        "sync_seq": "unsignedBigInteger('sync_seq')->nullable()",
+                        "extra": "json('extra')->nullable()",
+                        "portal_received_at": "dateTime('portal_received_at')->nullable()"
+                    },
+                    "indexes": {
+                        "salon_sale_line_staff_company_id_updated_at_index": [
+                            "company_id",
+                            "updated_at"
+                        ],
+                        "salon_sale_line_staff_company_id_branch_id_index": [
+                            "company_id",
+                            "branch_id"
+                        ],
+                        "salon_sale_line_staff_company_id_branch_id_sold_at_index": [
+                            "company_id",
+                            "branch_id",
+                            "sold_at"
+                        ],
+                        "salon_sale_line_staff_company_id_user_id_sold_at_index": [
+                            "company_id",
+                            "user_id",
+                            "sold_at"
+                        ],
+                        "salon_sale_line_staff_sale_id_index": [
+                            "sale_id"
+                        ],
+                        "salon_sale_line_staff_sale_line_id_index": [
+                            "sale_line_id"
+                        ]
+                    }
+                },
+                "salon_service_add_ons": {
+                    "columns": {
+                        "id": "string('id', 26)->primary()",
+                        "company_id": "string('company_id', 26)",
+                        "product_id": "string('product_id', 64)->nullable()",
+                        "add_on_product_id": "string('add_on_product_id', 64)->nullable()",
+                        "extra_price": "decimal('extra_price', 12, 2)->nullable()",
+                        "extra_min": "integer('extra_min')->nullable()",
+                        "sort_order": "integer('sort_order')->nullable()",
+                        "row_version": "unsignedBigInteger('row_version')->default(0)",
+                        "created_at": "dateTime('created_at')->nullable()",
+                        "updated_at": "dateTime('updated_at')->nullable()",
+                        "deleted_at": "dateTime('deleted_at')->nullable()",
+                        "hub_version": "unsignedBigInteger('hub_version')->nullable()",
+                        "hub_edited_at": "dateTime('hub_edited_at')->nullable()",
+                        "hub_hash": "char('hub_hash', 64)->nullable()",
+                        "origin_branch_id": "string('origin_branch_id', 26)->nullable()",
+                        "synced_at": "dateTime('synced_at')->nullable()",
+                        "sync_seq": "unsignedBigInteger('sync_seq')->nullable()",
+                        "extra": "json('extra')->nullable()",
+                        "portal_received_at": "dateTime('portal_received_at')->nullable()"
+                    },
+                    "indexes": {
+                        "salon_service_add_ons_company_id_updated_at_index": [
+                            "company_id",
+                            "updated_at"
+                        ],
+                        "salon_service_add_ons_company_id_product_id_index": [
+                            "company_id",
+                            "product_id"
+                        ]
+                    }
+                },
+                "salon_service_details": {
+                    "columns": {
+                        "id": "string('id', 26)->primary()",
+                        "company_id": "string('company_id', 26)",
+                        "product_id": "string('product_id', 64)->nullable()",
+                        "duration_min": "integer('duration_min')->nullable()",
+                        "processing_min": "integer('processing_min')->nullable()",
+                        "finish_min": "integer('finish_min')->nullable()",
+                        "is_price_from": "boolean('is_price_from')->nullable()",
+                        "is_online_bookable": "boolean('is_online_bookable')->nullable()",
+                        "online_name": "string('online_name', 255)->nullable()",
+                        "online_description": "text('online_description')->nullable()",
+                        "client_group": "string('client_group', 40)->nullable()",
+                        "needs_patch_test": "boolean('needs_patch_test')->nullable()",
+                        "patch_test_valid_days": "integer('patch_test_valid_days')->nullable()",
+                        "commission_category": "string('commission_category', 255)->nullable()",
+                        "colour_hex": "string('colour_hex', 255)->nullable()",
+                        "deposit_amount": "decimal('deposit_amount', 12, 2)->nullable()",
+                        "rebook_after_weeks": "integer('rebook_after_weeks')->nullable()",
+                        "resource_kind": "string('resource_kind', 40)->nullable()",
+                        "is_add_on_only": "boolean('is_add_on_only')->nullable()",
+                        "sort_order": "integer('sort_order')->nullable()",
+                        "row_version": "unsignedBigInteger('row_version')->default(0)",
+                        "created_at": "dateTime('created_at')->nullable()",
+                        "updated_at": "dateTime('updated_at')->nullable()",
+                        "deleted_at": "dateTime('deleted_at')->nullable()",
+                        "hub_version": "unsignedBigInteger('hub_version')->nullable()",
+                        "hub_edited_at": "dateTime('hub_edited_at')->nullable()",
+                        "hub_hash": "char('hub_hash', 64)->nullable()",
+                        "origin_branch_id": "string('origin_branch_id', 26)->nullable()",
+                        "synced_at": "dateTime('synced_at')->nullable()",
+                        "sync_seq": "unsignedBigInteger('sync_seq')->nullable()",
+                        "extra": "json('extra')->nullable()",
+                        "portal_received_at": "dateTime('portal_received_at')->nullable()"
+                    },
+                    "indexes": {
+                        "salon_service_details_company_id_updated_at_index": [
+                            "company_id",
+                            "updated_at"
+                        ],
+                        "salon_service_details_product_id_index": [
+                            "product_id"
+                        ]
+                    }
+                },
+                "salon_service_level_prices": {
+                    "columns": {
+                        "id": "string('id', 26)->primary()",
+                        "company_id": "string('company_id', 26)",
+                        "product_id": "string('product_id', 64)->nullable()",
+                        "level_id": "string('level_id', 64)->nullable()",
+                        "price": "decimal('price', 12, 2)->nullable()",
+                        "duration_min": "integer('duration_min')->nullable()",
+                        "processing_min": "integer('processing_min')->nullable()",
+                        "finish_min": "integer('finish_min')->nullable()",
+                        "row_version": "unsignedBigInteger('row_version')->default(0)",
+                        "created_at": "dateTime('created_at')->nullable()",
+                        "updated_at": "dateTime('updated_at')->nullable()",
+                        "deleted_at": "dateTime('deleted_at')->nullable()",
+                        "hub_version": "unsignedBigInteger('hub_version')->nullable()",
+                        "hub_edited_at": "dateTime('hub_edited_at')->nullable()",
+                        "hub_hash": "char('hub_hash', 64)->nullable()",
+                        "origin_branch_id": "string('origin_branch_id', 26)->nullable()",
+                        "synced_at": "dateTime('synced_at')->nullable()",
+                        "sync_seq": "unsignedBigInteger('sync_seq')->nullable()",
+                        "extra": "json('extra')->nullable()",
+                        "portal_received_at": "dateTime('portal_received_at')->nullable()"
+                    },
+                    "indexes": {
+                        "salon_service_level_prices_company_id_updated_at_index": [
+                            "company_id",
+                            "updated_at"
+                        ],
+                        "salon_service_level_prices_company_id_product_id_index": [
+                            "company_id",
+                            "product_id"
+                        ],
+                        "salon_service_level_prices_company_id_level_id_index": [
+                            "company_id",
+                            "level_id"
+                        ]
+                    }
+                },
+                "salon_staff_profiles": {
+                    "columns": {
+                        "id": "string('id', 26)->primary()",
+                        "company_id": "string('company_id', 26)",
+                        "branch_id": "string('branch_id', 26)->nullable()",
+                        "user_id": "string('user_id', 64)->nullable()",
+                        "display_name": "string('display_name', 255)->nullable()",
+                        "level_id": "string('level_id', 64)->nullable()",
+                        "colour_hex": "string('colour_hex', 255)->nullable()",
+                        "is_bookable": "boolean('is_bookable')->nullable()",
+                        "is_online_bookable": "boolean('is_online_bookable')->nullable()",
+                        "stylist_group": "string('stylist_group', 40)->nullable()",
+                        "is_chair_renter": "boolean('is_chair_renter')->nullable()",
+                        "right_to_work_checked_on": "date('right_to_work_checked_on')->nullable()",
+                        "commission_plan_id": "string('commission_plan_id', 64)->nullable()",
+                        "online_bio": "text('online_bio')->nullable()",
+                        "sort_order": "integer('sort_order')->nullable()",
+                        "row_version": "unsignedBigInteger('row_version')->default(0)",
+                        "created_at": "dateTime('created_at')->nullable()",
+                        "updated_at": "dateTime('updated_at')->nullable()",
+                        "deleted_at": "dateTime('deleted_at')->nullable()",
+                        "synced_at": "dateTime('synced_at')->nullable()",
+                        "sync_seq": "unsignedBigInteger('sync_seq')->nullable()",
+                        "extra": "json('extra')->nullable()",
+                        "portal_received_at": "dateTime('portal_received_at')->nullable()"
+                    },
+                    "indexes": {
+                        "salon_staff_profiles_company_id_updated_at_index": [
+                            "company_id",
+                            "updated_at"
+                        ],
+                        "salon_staff_profiles_company_id_branch_id_index": [
+                            "company_id",
+                            "branch_id"
+                        ],
+                        "salon_staff_profiles_company_id_user_id_index": [
+                            "company_id",
+                            "user_id"
+                        ]
+                    }
+                },
+                "salon_staff_services": {
+                    "columns": {
+                        "id": "string('id', 26)->primary()",
+                        "company_id": "string('company_id', 26)",
+                        "branch_id": "string('branch_id', 26)->nullable()",
+                        "user_id": "string('user_id', 64)->nullable()",
+                        "product_id": "string('product_id', 64)->nullable()",
+                        "price_override": "decimal('price_override', 12, 2)->nullable()",
+                        "duration_min": "integer('duration_min')->nullable()",
+                        "processing_min": "integer('processing_min')->nullable()",
+                        "finish_min": "integer('finish_min')->nullable()",
+                        "is_online_bookable": "boolean('is_online_bookable')->nullable()",
+                        "row_version": "unsignedBigInteger('row_version')->default(0)",
+                        "created_at": "dateTime('created_at')->nullable()",
+                        "updated_at": "dateTime('updated_at')->nullable()",
+                        "deleted_at": "dateTime('deleted_at')->nullable()",
+                        "synced_at": "dateTime('synced_at')->nullable()",
+                        "sync_seq": "unsignedBigInteger('sync_seq')->nullable()",
+                        "extra": "json('extra')->nullable()",
+                        "portal_received_at": "dateTime('portal_received_at')->nullable()"
+                    },
+                    "indexes": {
+                        "salon_staff_services_company_id_updated_at_index": [
+                            "company_id",
+                            "updated_at"
+                        ],
+                        "salon_staff_services_company_id_branch_id_index": [
+                            "company_id",
+                            "branch_id"
+                        ],
+                        "salon_staff_services_company_id_user_id_index": [
+                            "company_id",
+                            "user_id"
+                        ]
+                    }
+                },
+                "salon_stamp_card_rules": {
+                    "columns": {
+                        "id": "string('id', 26)->primary()",
+                        "company_id": "string('company_id', 26)",
+                        "name": "string('name', 255)->nullable()",
+                        "visits_per_reward": "integer('visits_per_reward')->nullable()",
+                        "reward_kind": "string('reward_kind', 40)->nullable()",
+                        "reward_amount": "decimal('reward_amount', 12, 2)->nullable()",
+                        "reward_percent": "decimal('reward_percent', 12, 2)->nullable()",
+                        "free_service_product_id": "string('free_service_product_id', 64)->nullable()",
+                        "qualifying_product_ids_json": "longText('qualifying_product_ids_json')->nullable()",
+                        "qualifying_category_ids_json": "longText('qualifying_category_ids_json')->nullable()",
+                        "is_active": "boolean('is_active')->nullable()",
+                        "row_version": "unsignedBigInteger('row_version')->default(0)",
+                        "created_at": "dateTime('created_at')->nullable()",
+                        "updated_at": "dateTime('updated_at')->nullable()",
+                        "deleted_at": "dateTime('deleted_at')->nullable()",
+                        "hub_version": "unsignedBigInteger('hub_version')->nullable()",
+                        "hub_edited_at": "dateTime('hub_edited_at')->nullable()",
+                        "hub_hash": "char('hub_hash', 64)->nullable()",
+                        "origin_branch_id": "string('origin_branch_id', 26)->nullable()",
+                        "synced_at": "dateTime('synced_at')->nullable()",
+                        "sync_seq": "unsignedBigInteger('sync_seq')->nullable()",
+                        "extra": "json('extra')->nullable()",
+                        "portal_received_at": "dateTime('portal_received_at')->nullable()"
+                    },
+                    "indexes": {
+                        "salon_stamp_card_rules_company_id_updated_at_index": [
+                            "company_id",
+                            "updated_at"
+                        ]
+                    }
+                },
+                "salon_stamp_cards": {
+                    "columns": {
+                        "id": "string('id', 26)->primary()",
+                        "company_id": "string('company_id', 26)",
+                        "branch_id": "string('branch_id', 26)->nullable()",
+                        "customer_id": "string('customer_id', 64)->nullable()",
+                        "rule_id": "string('rule_id', 64)->nullable()",
+                        "stamps": "integer('stamps')->nullable()",
+                        "rewards_used": "integer('rewards_used')->nullable()",
+                        "last_stamped_at": "dateTime('last_stamped_at')->nullable()",
+                        "row_version": "unsignedBigInteger('row_version')->default(0)",
+                        "created_at": "dateTime('created_at')->nullable()",
+                        "updated_at": "dateTime('updated_at')->nullable()",
+                        "deleted_at": "dateTime('deleted_at')->nullable()",
+                        "synced_at": "dateTime('synced_at')->nullable()",
+                        "sync_seq": "unsignedBigInteger('sync_seq')->nullable()",
+                        "extra": "json('extra')->nullable()",
+                        "portal_received_at": "dateTime('portal_received_at')->nullable()"
+                    },
+                    "indexes": {
+                        "salon_stamp_cards_company_id_updated_at_index": [
+                            "company_id",
+                            "updated_at"
+                        ],
+                        "salon_stamp_cards_company_id_branch_id_index": [
+                            "company_id",
+                            "branch_id"
+                        ],
+                        "salon_stamp_cards_company_id_customer_id_index": [
+                            "company_id",
+                            "customer_id"
+                        ]
+                    }
+                },
+                "salon_stamp_events": {
+                    "columns": {
+                        "id": "string('id', 26)->primary()",
+                        "company_id": "string('company_id', 26)",
+                        "branch_id": "string('branch_id', 26)->nullable()",
+                        "card_id": "string('card_id', 64)->nullable()",
+                        "customer_id": "string('customer_id', 64)->nullable()",
+                        "kind": "string('kind', 40)->nullable()",
+                        "stamps_delta": "integer('stamps_delta')->nullable()",
+                        "rewards_delta": "integer('rewards_delta')->nullable()",
+                        "sale_id": "string('sale_id', 64)->nullable()",
+                        "reward_value": "decimal('reward_value', 12, 2)->nullable()",
+                        "user_id": "string('user_id', 64)->nullable()",
+                        "at": "dateTime('at')->nullable()",
+                        "note": "text('note')->nullable()",
+                        "row_version": "unsignedBigInteger('row_version')->default(0)",
+                        "created_at": "dateTime('created_at')->nullable()",
+                        "updated_at": "dateTime('updated_at')->nullable()",
+                        "deleted_at": "dateTime('deleted_at')->nullable()",
+                        "synced_at": "dateTime('synced_at')->nullable()",
+                        "sync_seq": "unsignedBigInteger('sync_seq')->nullable()",
+                        "extra": "json('extra')->nullable()",
+                        "portal_received_at": "dateTime('portal_received_at')->nullable()"
+                    },
+                    "indexes": {
+                        "salon_stamp_events_company_id_updated_at_index": [
+                            "company_id",
+                            "updated_at"
+                        ],
+                        "salon_stamp_events_company_id_branch_id_index": [
+                            "company_id",
+                            "branch_id"
+                        ],
+                        "salon_stamp_events_card_id_index": [
+                            "card_id"
+                        ],
+                        "salon_stamp_events_company_id_branch_id_at_index": [
+                            "company_id",
+                            "branch_id",
+                            "at"
+                        ]
+                    }
+                },
+                "salon_technical_records": {
+                    "columns": {
+                        "id": "string('id', 26)->primary()",
+                        "company_id": "string('company_id', 26)",
+                        "branch_id": "string('branch_id', 26)->nullable()",
+                        "customer_id": "string('customer_id', 64)->nullable()",
+                        "recorded_at": "dateTime('recorded_at')->nullable()",
+                        "user_id": "string('user_id', 64)->nullable()",
+                        "appointment_id": "string('appointment_id', 64)->nullable()",
+                        "sale_id": "string('sale_id', 64)->nullable()",
+                        "product_id": "string('product_id', 64)->nullable()",
+                        "title": "text('title')->nullable()",
+                        "formula": "text('formula')->nullable()",
+                        "development_min": "integer('development_min')->nullable()",
+                        "products_used": "text('products_used')->nullable()",
+                        "notes": "text('notes')->nullable()",
+                        "row_version": "unsignedBigInteger('row_version')->default(0)",
+                        "created_at": "dateTime('created_at')->nullable()",
+                        "updated_at": "dateTime('updated_at')->nullable()",
+                        "deleted_at": "dateTime('deleted_at')->nullable()",
+                        "synced_at": "dateTime('synced_at')->nullable()",
+                        "sync_seq": "unsignedBigInteger('sync_seq')->nullable()",
+                        "extra": "json('extra')->nullable()",
+                        "portal_received_at": "dateTime('portal_received_at')->nullable()"
+                    },
+                    "indexes": {
+                        "salon_technical_records_company_id_updated_at_index": [
+                            "company_id",
+                            "updated_at"
+                        ],
+                        "salon_technical_records_company_id_branch_id_index": [
+                            "company_id",
+                            "branch_id"
+                        ],
+                        "salon_technical_records_company_id_customer_id_index": [
+                            "company_id",
+                            "customer_id"
+                        ]
+                    }
+                },
+                "salon_tip_payouts": {
+                    "columns": {
+                        "id": "string('id', 26)->primary()",
+                        "company_id": "string('company_id', 26)",
+                        "branch_id": "string('branch_id', 26)->nullable()",
+                        "register_id": "string('register_id', 26)->nullable()",
+                        "user_id": "string('user_id', 64)->nullable()",
+                        "amount": "decimal('amount', 12, 2)->nullable()",
+                        "method": "string('method', 40)->nullable()",
+                        "period_from": "date('period_from')->nullable()",
+                        "period_to": "date('period_to')->nullable()",
+                        "shift_id": "string('shift_id', 64)->nullable()",
+                        "cash_movement_id": "string('cash_movement_id', 64)->nullable()",
+                        "paid_by_user_id": "string('paid_by_user_id', 64)->nullable()",
+                        "paid_at": "dateTime('paid_at')->nullable()",
+                        "note": "text('note')->nullable()",
+                        "row_version": "unsignedBigInteger('row_version')->default(0)",
+                        "created_at": "dateTime('created_at')->nullable()",
+                        "updated_at": "dateTime('updated_at')->nullable()",
+                        "deleted_at": "dateTime('deleted_at')->nullable()",
+                        "synced_at": "dateTime('synced_at')->nullable()",
+                        "sync_seq": "unsignedBigInteger('sync_seq')->nullable()",
+                        "extra": "json('extra')->nullable()",
+                        "portal_received_at": "dateTime('portal_received_at')->nullable()"
+                    },
+                    "indexes": {
+                        "salon_tip_payouts_company_id_updated_at_index": [
+                            "company_id",
+                            "updated_at"
+                        ],
+                        "salon_tip_payouts_company_id_branch_id_index": [
+                            "company_id",
+                            "branch_id"
+                        ],
+                        "salon_tip_payouts_company_id_branch_id_paid_at_index": [
+                            "company_id",
+                            "branch_id",
+                            "paid_at"
+                        ],
+                        "salon_tip_payouts_shift_id_index": [
+                            "shift_id"
+                        ]
+                    }
+                },
+                "salon_tip_shares": {
+                    "columns": {
+                        "id": "string('id', 26)->primary()",
+                        "company_id": "string('company_id', 26)",
+                        "branch_id": "string('branch_id', 26)->nullable()",
+                        "tip_id": "string('tip_id', 64)->nullable()",
+                        "sale_id": "string('sale_id', 64)->nullable()",
+                        "user_id": "string('user_id', 64)->nullable()",
+                        "amount": "decimal('amount', 12, 2)->nullable()",
+                        "is_renter": "boolean('is_renter')->nullable()",
+                        "taken_at": "dateTime('taken_at')->nullable()",
+                        "row_version": "unsignedBigInteger('row_version')->default(0)",
+                        "created_at": "dateTime('created_at')->nullable()",
+                        "updated_at": "dateTime('updated_at')->nullable()",
+                        "deleted_at": "dateTime('deleted_at')->nullable()",
+                        "synced_at": "dateTime('synced_at')->nullable()",
+                        "sync_seq": "unsignedBigInteger('sync_seq')->nullable()",
+                        "extra": "json('extra')->nullable()",
+                        "portal_received_at": "dateTime('portal_received_at')->nullable()"
+                    },
+                    "indexes": {
+                        "salon_tip_shares_company_id_updated_at_index": [
+                            "company_id",
+                            "updated_at"
+                        ],
+                        "salon_tip_shares_company_id_branch_id_index": [
+                            "company_id",
+                            "branch_id"
+                        ],
+                        "salon_tip_shares_tip_id_index": [
+                            "tip_id"
+                        ],
+                        "salon_tip_shares_company_id_user_id_taken_at_index": [
+                            "company_id",
+                            "user_id",
+                            "taken_at"
+                        ]
+                    }
+                },
+                "salon_tips": {
+                    "columns": {
+                        "id": "string('id', 26)->primary()",
+                        "company_id": "string('company_id', 26)",
+                        "branch_id": "string('branch_id', 26)->nullable()",
+                        "register_id": "string('register_id', 26)->nullable()",
+                        "sale_id": "string('sale_id', 64)->nullable()",
+                        "sale_payment_id": "string('sale_payment_id', 64)->nullable()",
+                        "amount": "decimal('amount', 12, 2)->nullable()",
+                        "method": "string('method', 40)->nullable()",
+                        "split_mode": "string('split_mode', 40)->nullable()",
+                        "shift_id": "string('shift_id', 64)->nullable()",
+                        "taken_by_user_id": "string('taken_by_user_id', 64)->nullable()",
+                        "original_tip_id": "string('original_tip_id', 64)->nullable()",
+                        "taken_at": "dateTime('taken_at')->nullable()",
+                        "row_version": "unsignedBigInteger('row_version')->default(0)",
+                        "created_at": "dateTime('created_at')->nullable()",
+                        "updated_at": "dateTime('updated_at')->nullable()",
+                        "deleted_at": "dateTime('deleted_at')->nullable()",
+                        "synced_at": "dateTime('synced_at')->nullable()",
+                        "sync_seq": "unsignedBigInteger('sync_seq')->nullable()",
+                        "extra": "json('extra')->nullable()",
+                        "portal_received_at": "dateTime('portal_received_at')->nullable()"
+                    },
+                    "indexes": {
+                        "salon_tips_company_id_updated_at_index": [
+                            "company_id",
+                            "updated_at"
+                        ],
+                        "salon_tips_company_id_branch_id_index": [
+                            "company_id",
+                            "branch_id"
+                        ],
+                        "salon_tips_company_id_branch_id_taken_at_index": [
+                            "company_id",
+                            "branch_id",
+                            "taken_at"
+                        ],
+                        "salon_tips_sale_id_index": [
+                            "sale_id"
+                        ],
+                        "salon_tips_shift_id_index": [
+                            "shift_id"
+                        ]
+                    }
+                },
+                "salon_waitlist_entries": {
+                    "columns": {
+                        "id": "string('id', 26)->primary()",
+                        "company_id": "string('company_id', 26)",
+                        "branch_id": "string('branch_id', 26)->nullable()",
+                        "customer_id": "string('customer_id', 64)->nullable()",
+                        "client_name": "string('client_name', 255)->nullable()",
+                        "client_phone": "string('client_phone', 255)->nullable()",
+                        "product_id": "string('product_id', 64)->nullable()",
+                        "wanted_user_id": "string('wanted_user_id', 64)->nullable()",
+                        "earliest_date": "date('earliest_date')->nullable()",
+                        "latest_date": "date('latest_date')->nullable()",
+                        "earliest_time": "time('earliest_time')->nullable()",
+                        "latest_time": "time('latest_time')->nullable()",
+                        "status": "string('status', 40)->nullable()",
+                        "offered_at": "dateTime('offered_at')->nullable()",
+                        "offer_expires_at": "dateTime('offer_expires_at')->nullable()",
+                        "offered_starts_at": "dateTime('offered_starts_at')->nullable()",
+                        "appointment_id": "string('appointment_id', 64)->nullable()",
+                        "notes": "text('notes')->nullable()",
+                        "row_version": "unsignedBigInteger('row_version')->default(0)",
+                        "created_at": "dateTime('created_at')->nullable()",
+                        "updated_at": "dateTime('updated_at')->nullable()",
+                        "deleted_at": "dateTime('deleted_at')->nullable()",
+                        "synced_at": "dateTime('synced_at')->nullable()",
+                        "sync_seq": "unsignedBigInteger('sync_seq')->nullable()",
+                        "extra": "json('extra')->nullable()",
+                        "portal_received_at": "dateTime('portal_received_at')->nullable()"
+                    },
+                    "indexes": {
+                        "salon_waitlist_entries_company_id_updated_at_index": [
+                            "company_id",
+                            "updated_at"
+                        ],
+                        "salon_waitlist_entries_company_id_branch_id_index": [
+                            "company_id",
+                            "branch_id"
+                        ],
+                        "salon_waitlist_entries_company_id_branch_id_earliest_date_index": [
+                            "company_id",
+                            "branch_id",
+                            "earliest_date"
+                        ]
+                    }
+                }
+            }
         }
     ]
 }

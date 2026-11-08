@@ -58,6 +58,7 @@ return [
         'settings' => [
             'setup.business_type' => ['label' => 'Shop type', 'type' => 'text', 'help' => 'The kind of shop the till was set up as.'],
             'vertical.pharmacy' => ['label' => 'Pharmacy features', 'type' => 'bool', 'help' => 'On for a shop set up as a pharmacy.'],
+            'vertical.salon' => ['label' => 'Salon / Barber features', 'type' => 'bool', 'help' => 'On for a shop set up as a salon or barber.'],
         ],
     ],
 ];

@@ -1318,3 +1318,17 @@ in v1.4.1. We wrote the contract proposal for the EPOS till team and built the p
 | Paid in BikeBook | Tender kind `PaidElsewhere` is till-internal; the portal knows the payment type by name ("Paid in BikeBook" / "Paid elsewhere", no flags). Being not cash it is already out of cash takings, the drawer and variance; own line by name everywhere |
 | Shop-type settings | Pharmacy, bike workshop and shop-type settings are shown read-only and only to the matching shop. The portal never writes `setup.business_type`, `vertical.*`, `workshop.connection_status`, nor `workshop.connector_status` until the connector exists |
 | Rights | `pharmacy.*` / `workshop.*` rights get words when a till sent them; they are never added to the list another shop can grant |
+
+## Salon / Barber sync acceptance (W2) (2026-11-08; `docs/salon.md`)
+
+| Topic | Decision |
+|---|---|
+| Contract pack | The EPOS salon pack (till branch `feat/salon-barber`, not released) is copied as sent to `docs/contracts/salon-barber-2026-11-08/` and read as an overlay on 0.1.85 (`definitions.php` `overlay`: its files win, the rest from 0.1.85). When salon ships, a full pack replaces both |
+| Tables | 40 `salon_*` tables from the schemas (one additive generated migration, release `salon-2026-11-08`), no change to an existing table. `SalonClientMedical` is local: acknowledged, never stored, never logged. The seven append-only tables are historic from the start (a later change is a conflict) |
+| Who gets salon data | A shop is a salon when the business type is Salon or its till sent `vertical.salon` = true / `setup.business_type` = `Salon` (company or that shop's scope). Any other shop's pull carries no Salon* row, no `salon.*` / `vertical.salon` setting, no `salon.*` right, and no `salon.*` entry in a Role's permissions: a business with no salon pulls byte for byte what it pulled before |
+| SalonOnlineBooking | Hub-owned, one shop's. The portal writes the request and `pending` / `cancelled` / `expired`; the till writes the answer (`accepted` / `declined`, appointmentId for `kind: new`, decidedAt / By, decisionReason). A till push carrying an answer always wins, whole, even over a later portal edit; once answered (or ended) the portal cannot change or delete the row. Pulled to the shop it names only |
+| Tips | Never in `SalePayment.amount`: takings and sales unchanged. Cash tips are drawer movements "Tips taken" (+, a refunded tip −) and "Tips paid out" (−), as the till signs them |
+| Chair rent | Account 4200 is in VAT box 6: the VAT return helper adds its net (journal entries dated in the quarter) to box 6 and the VAT those entries post to the till chart's box-1 account to box 1; a source line only when there is chair rent. 2280 / 2290 / 2300 are liabilities read from the till's journal |
+| Packages, stamp rewards | A line discount with `discountSource: promotion`: already in the discount total, never a staff / manual discount. No change |
+| Renter lines | Not moved out of sales / VAT yet: whether the line's VAT is in `SaleVat`, how a shared line splits and whether renter takings stay in takings cannot be told from the data. Asked of EPOS (docs/salon.md Q-S1); until then reported as sent |
+| Settings, rights, audit | Shared `salon.*` keys read-only in four Salon sections for salon shops only; the portal never writes `salon.*` or `vertical.salon` (TILL_WRITES_ONLY_PREFIXES). Words for 11 `salon.*` rights (when sent) and 39 salon audit actions. Salon error codes recorded in `SalonApiErrors` for W3 |

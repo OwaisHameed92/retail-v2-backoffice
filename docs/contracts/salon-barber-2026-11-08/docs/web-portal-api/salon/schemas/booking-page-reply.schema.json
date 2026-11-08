@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:sspos:web-portal-api:v1:salon-booking-page-reply",
+  "title": "salon-booking-page-reply",
+  "description": "200 reply to PUT api/v1/sync/salon/booking-page: the portal\u0027s addresses for the shop\u0027s pages.",
+  "type": "object",
+  "properties": {
+    "result": {
+      "type": "string"
+    },
+    "bookingUrl": {
+      "type": "string"
+    },
+    "queueJoinUrl": {
+      "type": "string"
+    },
+    "manageUrl": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "result",
+    "bookingUrl",
+    "queueJoinUrl",
+    "manageUrl"
+  ]
+}

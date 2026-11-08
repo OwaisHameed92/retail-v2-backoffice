@@ -2,6 +2,7 @@
 
 namespace App\Domain\ShopSettings\Support;
 
+use App\Domain\Salon\Support\SalonShops;
 use App\Domain\Shared\Country\CountryModules;
 use App\Domain\Tenancy\Enums\BusinessType;
 use App\Domain\Tenancy\Models\Company;
@@ -15,6 +16,8 @@ use App\Domain\TillData\Models\TillSetting;
  *   Pharmacy (PORTAL-CHANGES-pharmacy item 5). Off where the country profile hides the pharmacy module.
  * - Bike workshop: a till sent `integration.workshop` = true or any `workshop.*` setting (WORKSHOP-BIKEBOOK.md).
  * - Shop type: a till sent `setup.business_type` or a `vertical.*` key.
+ * - Salon / Barber (salon pack, W2; `app/Domain/ShopSettings/salon.php`): the business type is Salon, or a till sent
+ *   `vertical.salon` = true or `setup.business_type` = Salon (SalonShops).
  *
  * Call inside the company scope (TillSetting is a tenant model).
  *
@@ -34,7 +37,7 @@ final class VerticalSettings
     public static function catalogue(): array
     {
         /** @var array<string, Section> $sections */
-        $sections = self::$catalogue ??= require dirname(__DIR__).'/verticals.php';
+        $sections = self::$catalogue ??= [...require dirname(__DIR__).'/verticals.php', ...require dirname(__DIR__).'/salon.php'];
 
         return $sections;
     }
@@ -94,6 +97,7 @@ final class VerticalSettings
         return match ($section) {
             'pharmacy' => self::isPharmacy($company),
             'workshop' => self::isWorkshop(),
+            'salon', 'salonDiary', 'salonMessages', 'salonOnline' => SalonShops::anySalon($company->id),
             'shopType' => self::tillSent(fn ($q) => $q->where(fn ($w) => $w->where('setting_key', 'setup.business_type')->orWhere('setting_key', 'like', 'vertical.%'))),
             default => false,
         };

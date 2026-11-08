@@ -2,6 +2,7 @@
 
 namespace App\Domain\Sync\Support;
 
+use App\Domain\Salon\Support\SalonPull;
 use App\Domain\Sync\Enums\IdKind;
 use App\Domain\TillData\Registry\EntityDefinition;
 use App\Domain\TillData\Sync\SettingSyncPolicy;
@@ -22,7 +23,8 @@ final class PullEnvelopes
 {
     private readonly PullPayload $rows;
 
-    public function __construct(IdTranslator $translator, private readonly string $branchId, int $since = 0)
+    /** @param  bool  $salon  the pulling shop is a Salon / Barber shop (else no `salon.*` right inside a Role: SalonPull) */
+    public function __construct(IdTranslator $translator, private readonly string $branchId, int $since = 0, private readonly bool $salon = true)
     {
         $this->rows = new PullPayload($translator, $branchId, $since);
     }
@@ -37,7 +39,7 @@ final class PullEnvelopes
             $def->tenancy => $this->tenancy($def, $row, $version),
             $def->entity === 'Setting' => $this->setting($row, $version),
             $def->entity === 'RolePermission' => $this->rolePermission($row, $version),
-            default => $this->rows->envelope($def, $row, $version),
+            default => SalonPull::envelope($this->rows->envelope($def, $row, $version), $this->salon),
         };
     }
 

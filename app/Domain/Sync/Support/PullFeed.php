@@ -2,6 +2,8 @@
 
 namespace App\Domain\Sync\Support;
 
+use App\Domain\Salon\Support\SalonPull;
+use App\Domain\Salon\Support\SalonShops;
 use App\Domain\TillData\Registry\EntityDefinition;
 use App\Domain\TillData\Sync\BranchDepartures;
 use App\Domain\TillData\Sync\HubVersions;
@@ -25,19 +27,26 @@ final class PullFeed
      * `$extra`: more union members with the same columns (the stock drafts of contract proposal pda-stock-drafts,
      * StockDraftFeed::sources(), only while that switch serves this till; none otherwise).
      *
+     * `$salon`: the branch is a Salon / Barber shop (null = work it out, SalonShops). Any other shop's feed leaves the
+     * Salon* tables out, and every `salon.*` setting and right (SalonPull, W2).
+     *
      * @param  list<Builder>  $extra
      * @return list<array{0: string, 1: string, 2: int, 3: array{0: string, 1: string}|null}>
      */
-    public function page(string $companyId, string $branchId, int $since, int $limit, array $extra = []): array
+    public function page(string $companyId, string $branchId, int $since, int $limit, array $extra = [], ?bool $salon = null): array
     {
+        $salon ??= SalonShops::isSalonBranch($companyId, $branchId);
         $query = DB::table(BranchDepartures::TABLE)
             ->selectRaw('entity, entity_id as id, hub_version as version, from_branch_id as departed_from, departed_at')
             ->where('company_id', $companyId)
             ->where('branch_id', $branchId)
-            ->where('hub_version', '>', $since);
+            ->where('hub_version', '>', $since)
+            ->when(! $salon, fn (Builder $q) => $q->where('entity', 'not like', 'Salon%'));
 
         foreach (HubVersions::feed() as $def) {
-            $query->unionAll($this->visible($def, $companyId, $branchId, $since));
+            if (! SalonPull::skips($def, $salon)) {
+                $query->unionAll($this->visible($def, $companyId, $branchId, $since, $salon));
+            }
         }
 
         foreach ($extra as $source) {
@@ -71,13 +80,13 @@ final class PullFeed
         return $rows;
     }
 
-    private function visible(EntityDefinition $def, string $companyId, string $branchId, int $since): Builder
+    private function visible(EntityDefinition $def, string $companyId, string $branchId, int $since, bool $salon): Builder
     {
         $query = DB::table($def->table)
             ->selectRaw('? as entity, id, hub_version as version, NULL as departed_from, NULL as departed_at', [$def->entity])
             ->where(HubVersions::companyColumn($def), $companyId)
             ->where('hub_version', '>', $since);
 
-        return PullVisibility::apply($query, $def, $companyId, $branchId);
+        return PullVisibility::apply($query, $def, $companyId, $branchId, $salon);
     }
 }

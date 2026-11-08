@@ -2,6 +2,7 @@
 
 namespace App\Domain\TillData\Sync;
 
+use App\Domain\Salon\Support\SalonBookingFields;
 use App\Domain\TillData\Registry\EntityDefinition;
 use App\Domain\TillData\Registry\FieldDefinition;
 use App\Domain\TillData\Sync\Data\MappedChange;
@@ -87,7 +88,8 @@ final class EntityWriter
                 continue;
             }
 
-            if ($current !== null && $def->isHubOwned() && $this->portalWins($def, $mapped, $current)) {
+            // A salon till's answer to an online booking request always wins (SalonBookingFields, W2).
+            if ($current !== null && $def->isHubOwned() && ! SalonBookingFields::takesTillAnswer($def, $mapped->row) && $this->portalWins($def, $mapped, $current)) {
                 $outcomes[$change->index] = ChangeOutcome::Conflict;
 
                 if (($update = TillOwnedFields::salvage($def, $mapped->row, $current)) !== null) {

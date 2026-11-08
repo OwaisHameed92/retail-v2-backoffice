@@ -220,4 +220,12 @@ final class Product extends Model
     {
         return $this->hasMany(ProductUnit::class, 'product_id');
     }
+
+    /**
+     * @return HasMany<SalonServiceDetail, $this>
+     */
+    public function salonServiceDetails(): HasMany
+    {
+        return $this->hasMany(SalonServiceDetail::class, 'product_id');
+    }
 }
