@@ -71,8 +71,8 @@ till.
   `vertical.pharmacy` = true / `setup.business_type` = Pharmacy), "Bike workshop (BikeBook)" (a till sent
   `integration.workshop` or a `workshop.*` key) and "Shop type" (`setup.business_type`, `vertical.*`). Grocery shops see
   none of them. Also `till.show_all_chip` / `till.show_top_sellers_chip` (editable) and `catalogue.brands` (read-only).
-- `SaveTillSetting` refuses `setup.business_type`, `vertical.*`, `workshop.connection_status` and (until the connector
-  exists) `workshop.connector_status`.
+- `SaveTillSetting` refuses `setup.business_type`, `vertical.*`, `workshop.connection_status` and
+  `workshop.connector_status` (only the W5 connector writes the latter, `WriteConnectorStatus`).
 - Role editor: words for `pharmacy.*` and `workshop.*` rights when a till sent them; never offered to other shops.
 - Till audit actions (receipt history) and the `CardRefundUncapped` exception type: plain words.
 - Till error codes (`pharmacy.ppc_deduction_*`, `registers.from_another_till`, `payment.settled_outside_*`…) are the
@@ -82,9 +82,76 @@ till.
 
 - Salon / Barber (41 tables, list values, settings, rights, accounts 2280–2300 / 4200, `sync/salon/*`): W2, W3.
 - dm+d release server (`GET /api/v1/pharmacy/dmd/latest`): W4.
-- BikeBook connector, `WorkshopOrder` pull row, webhooks, `workshop.connector_status`: W5, once BikeBook registers SSPOS.
+- BikeBook connector, `WorkshopOrder` pull row, webhooks, `workshop.connector_status`: built in W5, switched off (below).
 - Editing pharmacy settings from the portal: not in W1 (shown read-only).
 - Confirm with the till team: whether "Paid in BikeBook" appears in `ZReport.totalsJson`, and that RX lines are in the
   sale's `SaleVat` rows like order deposits (the reports take them off SaleVat).
 - A pulled `vertical.*` / `setup.business_type` that one shop pushed is still relayed to the business's other shops as
   before (0.1.85 tills skip it); not changed so existing shops see no difference.
+
+## BikeBook connector (W5, built and switched off)
+
+BikeBook calls the portal (BikeBook's "POS connector" spec, `WORKSHOP-BIKEBOOK.md` §1–§9); the portal answers from
+the shop's synced till data, sends "Send to POS" orders to the shop's till as `WorkshopOrder` pull rows and tells
+BikeBook when they are paid. Module `app/Domain/Workshop`; decision `docs/DECISIONS.md` "BikeBook POS connector (W5)";
+proposal for the EPOS team `docs/contracts/proposals/workshop-order/`.
+
+**Switch.** `WORKSHOP_CONNECTOR=false` (default; keep it off in production). Off: every `/connectors/bikebook/*`,
+`/oauth/authorize`, `/oauth/token` and admin workshop route answers **404**; no pull or push reads a workshop table and
+every pull is byte-identical; `workshop.connector_status` never goes down; no webhook; no admin tab, no tenant card.
+`WORKSHOP_CONNECTOR_MIN_TILL` (optional) limits the `WorkshopOrder` rows to tills at least that version. Direct mode
+(the till with the shop's own BikeBook key) needs none of this and is unaffected either way.
+
+**Calls** (base `https://<portal>/connectors/bikebook/v1`): `GET /api/Stores`, `GET /api/TaxRates`,
+`GET /api/Products?lastUpdated=&page=&pageSize=&fields=id,updated`, `GET /api/Product/{id}`,
+`GET /api/Inventory?variant=` / `?lastUpdated=`, `POST /api/Inventory/batch`, `GET /api/Customer/list`,
+`GET /api/Customer/{id}`, `POST|PUT /api/Customer`, `PUT /api/Customer/{id}/Address`,
+`POST|GET|PUT|DELETE /api/SalesOrder`, `PUT /api/SalesOrder/{id}/status/{Saved|Complete|Cancelled}`,
+`POST|PUT|DELETE /api/SalesOrderLine`, `GET|POST|PUT /api/Webhook`, `GET|DELETE /api/Webhook/{id}`.
+
+**Auth.** OAuth 2.0 authorisation code + refresh: `GET /oauth/authorize?response_type=code&client_id=&redirect_uri=
+&scope=&state=` (the shop owner signs in to the portal, picks the shop, allows), `POST /oauth/token` (`tenant` = the
+shop's branch id; BikeBook sends it back as `tenant-id`). Fallback: an API key from the admin card in the `ApiKey`
+header (never `?apikey=`).
+
+**What the owner and the shop see.** Admin → tenant → "Workshop (BikeBook)" tab: per shop the licence tick
+(`workshop_integration`, no price yet), Connect, Create / Replace / Revoke API key, Disconnect, status (Connected since,
+"Connected, webhook failing" with the reason, Disconnected), last BikeBook call, counts, and the Sync log page (last
+1,000 calls and the webhook deliveries with Replay, CSV export). Tenant portal → Shops → a shop: a read-only "Bike
+workshop (BikeBook)" card; without the add-on it says "Contact Switch & Save".
+
+### Owner to-dos before switching it on
+
+1. **Register SSPOS with BikeBook as a POS type** (Q1): send them our OAuth client id and secret (choose them, put
+   them in `BIKEBOOK_CLIENT_ID` / `BIKEBOOK_CLIENT_SECRET`), the URLs `https://<portal>/oauth/authorize` and
+   `https://<portal>/oauth/token`, the base URL `https://<portal>/connectors/bikebook/v1`, the scopes
+   (`offline_access products:read inventory:read customers:read customers:write stores:read taxrates:read
+   salesorders:write webhooks:write`), our limits (600 a minute per shop, 500 a page, 200 lines an order, 1 MB), "API
+   key in the `ApiKey` header only" (Q6), and ask for their exact redirect URI(s) (`BIKEBOOK_REDIRECT_URIS`).
+2. **A sandbox:** a test business and shop on staging with the add-on ticked and a test owner login; ask BikeBook
+   for their staging host and run the joint tests below with them.
+3. **Set a price** for `workshop_integration` (Q10, probably monthly). Today the tick is free and nothing is billed.
+4. **Ask BikeBook** Q2 (batch / delta inventory and `inventory.updated`), Q3 (untracked stock: we send `null`), Q4/Q7
+   (paid-in-BikeBook amounts, job number, bike and warranty flags on Send to POS), Q5/Q11 (extra fields on
+   `order.statuschanged`, deposits), and whether a product leaving the scope as `enabled: false` suits them.
+5. **Tell the till team** (proposal README): `WorkshopOrder` local → hub; which release applies it (then set
+   `WORKSHOP_CONNECTOR_MIN_TILL`).
+6. Then `WORKSHOP_CONNECTOR=true` on the server, `php artisan migrate`, and the scheduler runs
+   `workshop:send-webhooks` every minute.
+
+### Joint test list (§9): what the tests prove, what needs BikeBook's sandbox
+
+| # | Test | Covered by our tests | Still needs BikeBook / the till |
+|---|---|---|---|
+| 1 | Connect; one store; one default tax rate | OAuth and key (`ConnectorAuthTest`), Stores / TaxRates | BikeBook's real OAuth client and redirect |
+| 2 | 100,000 products, 3 categories, < 15 min | scope by categories, paging ≤ 500, light list | the timing on staging with a big shop |
+| 3 | Price and stock change shows within 3 min | delta by `lastUpdated`, `inventory.updated` from the till's push | BikeBook polling / reading the webhook |
+| 4 | Customer from BikeBook on the till; no duplicate | created customer in every till's pull; de-dup by phone and e-mail | — |
+| 5 | Send to POS on the till within 30 s, parts held | `WorkshopOrder` in the shop's pull, schema-valid | the till applying the row and holding stock |
+| 6 | Change after a deposit refused (409) | `order_locked` after the till's deposit push | BikeBook showing the message |
+| 7 | Paid on the till → BikeBook Paid and Completed | signed `order.statuschanged` Complete with paidTotal | BikeBook reading it |
+| 8 | Cancel in BikeBook → gone from the till, stock released | pull row `status: cancelled` | the till dropping it |
+| 9 | Refund → `refundedTotal` | second `order.statuschanged` with the refund | BikeBook reading it |
+| 10 | Disconnect → 401; the till hides its screens | 401 for key and tokens; `workshop.connector_status` = disconnected pulled | the till reacting to the setting |
+| 11 | Training mode reaches nobody | — (the till never pushes training sales) | till rule |
+| 12 | Portal down during Send to POS → one order | a repeated POST answers the same order | BikeBook's retry |

@@ -3,6 +3,8 @@
 namespace App\Domain\Sync\Support;
 
 use App\Domain\TillData\Registry\EntityDefinition;
+use App\Domain\Workshop\Actions\WriteConnectorStatus;
+use App\Domain\Workshop\Support\WorkshopSwitch;
 use Illuminate\Database\Query\Builder;
 
 /**
@@ -14,7 +16,8 @@ use Illuminate\Database\Query\Builder;
  * |-----------------------------|--------------------------------------------------------------------------------|
  * | hub-owned, company-wide     | every branch                                                                   |
  * | hub-owned with `branch_id`  | that branch (NewsTitle, BranchPrice), or every branch when blank               |
- * | Setting                     | company scope: every branch; branch scope: that branch (`scope_id`)            |
+ * | Setting                     | company scope: every branch; branch scope: that branch (`scope_id`); W5: never |
+ * |                             | `workshop.connector_status` while WORKSHOP_CONNECTOR is off                    |
  * | StockTransfer (+ lines)     | its `toBranchId`, once `dispatched`                                            |
  * | StockTransferReceipt (+ln)  | the `fromBranchId` of its transfer                                             |
  * | CustomerTransaction         | every branch but its own                                                       |
@@ -38,7 +41,9 @@ final class PullVisibility
             $def->copy === 'draft' => $query->where('branch_id', $branchId)->whereNotNull('hub_drafted_at')
                 ->when($def->entity === 'PurchaseOrder', fn (Builder $q) => $q->where('origin', 'headOffice')),
             $def->entity === 'Setting' => $query->where(fn (Builder $q) => $q->where('scope', 'company')
-                ->orWhere(fn (Builder $b) => $b->where('scope', 'branch')->where('scope_id', $branchId))),
+                ->orWhere(fn (Builder $b) => $b->where('scope', 'branch')->where('scope_id', $branchId)))
+                // W5: the portal's `workshop.connector_status` goes down only while WORKSHOP_CONNECTOR is on.
+                ->when(! WorkshopSwitch::enabled(), fn (Builder $q) => $q->where('setting_key', '<>', WriteConnectorStatus::KEY)),
             $def->hasScopeColumn('branch_id') => $query->where(
                 fn (Builder $w) => $w->whereNull('branch_id')->orWhere('branch_id', '')->orWhere('branch_id', $branchId),
             ),

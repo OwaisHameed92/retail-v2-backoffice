@@ -43,6 +43,7 @@ use Illuminate\Support\Carbon;
  * @property LicenceLengthUnit|null $licence_length_unit
  * @property CarbonImmutable|null $licence_valid_from Null = each till's first activation.
  * @property list<string>|null $licence_features Feature values; null = the plan's.
+ * @property list<string>|null $licence_add_ons W5: paid per-shop add-ons (AddOn values) appended to the licence token.
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property Carbon|null $deleted_at
@@ -101,6 +102,7 @@ class Branch extends Model
             'licence_length_unit' => LicenceLengthUnit::class,
             'licence_valid_from' => 'immutable_datetime',
             'licence_features' => 'array',
+            'licence_add_ons' => 'array',
         ];
     }
 

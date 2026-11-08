@@ -11,6 +11,7 @@ import { TenantDetails } from '@/components/admin/tenants/tenant-details';
 import { TenantEmailsPanel } from '@/components/admin/tenants/tenant-emails-panel';
 import { type TenantBranch, type TenantShowProps } from '@/components/admin/tenants/types';
 import { UsersPanel } from '@/components/admin/tenants/users-panel';
+import { WorkshopPanel } from '@/components/admin/workshop/workshop-panel';
 import { EmptyState } from '@/components/shared/empty-state';
 import { InitialsAvatar } from '@/components/shared/entity-cell';
 import { PageHeader } from '@/components/shared/page-header';
@@ -24,17 +25,19 @@ import { Head } from '@inertiajs/react';
 import { CalendarDays, MonitorSmartphone, Plus, SlidersHorizontal, Store, Users } from 'lucide-react';
 import { useState } from 'react';
 
-type TabValue = 'branches' | 'users' | 'activity' | 'licences' | 'cloud' | 'billing' | 'emails';
+type TabValue = 'branches' | 'users' | 'activity' | 'licences' | 'cloud' | 'billing' | 'emails' | 'workshop';
 
-const TAB_VALUES: TabValue[] = ['branches', 'users', 'activity', 'licences', 'cloud', 'billing', 'emails'];
+const TAB_VALUES: TabValue[] = ['branches', 'users', 'activity', 'licences', 'cloud', 'billing', 'emails', 'workshop'];
 
-function initialTab(canBill: boolean): TabValue {
+function initialTab(canBill: boolean, hasWorkshop: boolean): TabValue {
     if (typeof window === 'undefined') {
         return 'branches';
     }
     const tab = new URLSearchParams(window.location.search).get('tab') as TabValue | null;
 
-    return tab && TAB_VALUES.includes(tab) && ((tab !== 'billing' && tab !== 'emails') || canBill) ? tab : 'branches';
+    return tab && TAB_VALUES.includes(tab) && ((tab !== 'billing' && tab !== 'emails') || canBill) && (tab !== 'workshop' || hasWorkshop)
+        ? tab
+        : 'branches';
 }
 
 export default function TenantShow({
@@ -53,9 +56,10 @@ export default function TenantShow({
     licenceOptions,
     cloudLink,
     emails,
+    workshop,
     can,
 }: TenantShowProps) {
-    const [tab, setTab] = useState<TabValue>(() => initialTab(billing !== null));
+    const [tab, setTab] = useState<TabValue>(() => initialTab(billing !== null, workshop !== undefined));
     const [branchDialog, setBranchDialog] = useState<{ open: boolean; branch: TenantBranch | null }>({ open: false, branch: null });
     const [limitsOpen, setLimitsOpen] = useState(false);
     // Module 1.11: no branch past the branches allowed (one without multi-branch).
@@ -99,6 +103,16 @@ export default function TenantShow({
                       value: 'emails',
                       label: 'Emails',
                       badge: emails.held.length > 0 ? <Badge variant="warning">{emails.held.length} held</Badge> : undefined,
+                  } satisfies PageTab,
+              ]
+            : []),
+        // W5: only while the BikeBook connector is switched on.
+        ...(workshop
+            ? [
+                  {
+                      value: 'workshop',
+                      label: 'Workshop (BikeBook)',
+                      badge: workshop.branches.some((card) => card.status === 'failed') ? <Badge variant="danger">Webhook failing</Badge> : undefined,
                   } satisfies PageTab,
               ]
             : []),
@@ -236,6 +250,7 @@ export default function TenantShow({
                     {tab === 'cloud' && <TenantCloudPanel moves={cloudLink.moves} keys={cloudLink.keys} canClear={can.manageLicences} />}
                     {tab === 'billing' && billing && <TenantBillingPanel tenant={tenant} billing={billing} />}
                     {tab === 'emails' && emails && <TenantEmailsPanel tenant={tenant} emails={emails} />}
+                    {tab === 'workshop' && workshop && <WorkshopPanel tenantId={tenant.id} workshop={workshop} />}
                 </div>
             </div>
 

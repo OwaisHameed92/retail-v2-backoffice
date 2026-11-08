@@ -1,0 +1,16 @@
+{
+  "headers": {
+    "Content-Type": "application/json",
+    "X-Pos-Event": "order.statuschanged",
+    "X-Pos-Event-Id": "01K9WH0000000000000000E001",
+    "X-Pos-Signature": "Base64(HMAC-SHA256(the webhook secret BikeBook gave us, the raw body below))"
+  },
+  "body": {
+    "id": "01K9WS00000000000000000W01",
+    "orderStatus": "Complete",
+    "paidTotal": 65.5,
+    "refundedTotal": 0.0,
+    "saleId": "01K9SAXE000000000000000001",
+    "paidAt": "2026-11-08T12:00:00Z"
+  }
+}

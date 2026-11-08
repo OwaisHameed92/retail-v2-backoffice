@@ -12,6 +12,7 @@ use App\Domain\Licensing\Signing\Sspos\SignerCertificate;
 use App\Domain\Licensing\Signing\Sspos\SsposCodec;
 use App\Domain\Licensing\Signing\Sspos\SsposTokenSigner;
 use App\Domain\Licensing\Signing\Sspos\TokenKind;
+use App\Domain\Licensing\Support\BranchAddOns;
 use App\Domain\Licensing\Support\BranchLicenceTerm;
 use App\Domain\Plans\Enums\Feature;
 use App\Domain\Shared\Country\TillProfile;
@@ -50,7 +51,11 @@ final class LicenceToken
         $company = $licence->company;
         $branch = $licence->branch;
         $multiBranch = (bool) $company?->multi_branch;
-        $features = self::features($licence->features, $multiBranch);
+        $trial = $state->isTrial || $licence->activated_at === null;
+        // W5: the shop's paid add-ons (workshop_integration) after the plan features; none for every shop today. A trial
+        // licence with no plan features of its own means "every feature on" to the till: nothing is appended there.
+        $openTrial = $trial && self::features($licence->features, false) === [];
+        $features = BranchAddOns::appendTo(self::features($licence->features, $multiBranch), $branch, $openTrial);
         $expiresAt = self::expiresAt($state, $now);
         $validFrom = (BranchLicenceTerm::start($licence, $branch) ?? $now)->utc()->startOfSecond();
 
@@ -60,7 +65,7 @@ final class LicenceToken
 
         return new LicenceClaims(
             licenceId: $licence->id,
-            kind: $state->isTrial || $licence->activated_at === null ? TokenKind::Trial : TokenKind::Full,
+            kind: $trial ? TokenKind::Trial : TokenKind::Full,
             companyId: $licence->company_id,
             branchId: $licence->branch_id,
             businessName: mb_substr((string) $company?->name, 0, 100),

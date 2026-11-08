@@ -187,7 +187,7 @@ EPOS summary `README-PHARMACY-BIKEBOOK-SALON.md` (2026-11-08); contract pack `do
 | W2 | Salon sync acceptance: 41 `Salon*` tables, new list values (CashMovement tips, Consent sources, journal ref types), `salon.*` settings and rights, accounts 2280 / 2290 / 2300 / 4200 | todo |
 | W3 | Salon calls (`sync/salon/*`, 501 until switched on) and the online booking, queue join, manage-link and iCal pages | todo |
 | W4 | dm+d release server for pharmacy tills (`GET /api/v1/pharmacy/dmd/latest`, weekly TRUD job, two weeks kept) | todo |
-| W5 | BikeBook POS connector (OAuth / API key, products, stock, customers, sales orders, webhooks), `WorkshopOrder` pull row, `workshop.connector_status`, admin card | todo (waits for BikeBook to register SSPOS) |
+| W5 | BikeBook POS connector (OAuth / API key, products, stock, customers, sales orders, webhooks), `WorkshopOrder` pull row (proposal `docs/contracts/proposals/workshop-order`), `workshop.connector_status`, `workshop_integration` add-on, admin card + sync log, tenant card. Behind `WORKSHOP_CONNECTOR` (off): nothing changes for any shop | done, OFF (waits for BikeBook to register SSPOS and a till release that applies `WorkshopOrder`) |
 
 ## Phase 8: Later — 0/5
 

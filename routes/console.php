@@ -63,6 +63,9 @@ Schedule::command('online-store:housekeeping')->hourly()->onOneServer()->without
 // Partner onboarding API: retries of the partner webhook outbox (first attempts are queued at once).
 Schedule::command('partners:send-webhooks')->everyMinute()->onOneServer()->withoutOverlapping(10);
 
+// W5 BikeBook connector: retries of the webhook outbox to BikeBook (nothing while WORKSHOP_CONNECTOR is off).
+Schedule::command('workshop:send-webhooks')->everyMinute()->onOneServer()->withoutOverlapping(10);
+
 // Shelf labels (gap #6): queue labels for offers that start today or ended yesterday.
 Schedule::command('labels:queue-offers')->dailyAt('00:10')->timezone(Country::zone())->onOneServer()->withoutOverlapping(60);
 

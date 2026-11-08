@@ -1,3 +1,4 @@
+import { type ShopWorkshopCard } from '@/components/app/shops/workshop-card';
 /** Module 4.7 (Shops and tills). Matches App\Domain\Shops\Queries\{ShopsOverview, ShopDetail, BusinessPage, ShopRequests}. */
 import { type HealthThresholds, type ShopHealth, type TillHealth } from '@/components/till-health/types';
 import { dateLocale, zonedDateFormat } from '@/lib/country';
@@ -133,6 +134,8 @@ export interface ShopShowProps {
     thresholds: HealthThresholds;
     requests: ShopRequestRow[];
     requestOptions: RequestOptions;
+    /** W5: the read-only BikeBook card; absent while the connector is switched off. */
+    workshop?: ShopWorkshopCard;
     can: { edit: boolean; ask: boolean };
 }
 

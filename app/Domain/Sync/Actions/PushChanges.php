@@ -15,6 +15,7 @@ use App\Domain\Sync\Support\SyncApiErrors;
 use App\Domain\Sync\Support\SyncStatusRecorder;
 use App\Domain\TillData\Actions\ApplySyncChanges;
 use App\Domain\TillData\Sync\Data\ApplyResult;
+use App\Domain\Workshop\Actions\WatchWorkshopPush;
 use Illuminate\Contracts\Cache\LockTimeoutException;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
@@ -36,6 +37,8 @@ use Illuminate\Support\Facades\Log;
  *    duplicates. `sync_branch_status` is updated either way.
  * 6. Product barcodes the master catalogue does not know go to its review queue, anonymously, unless the business
  *    opted out (CollectUnknownBarcodes; never fails the push).
+ * 7. W5: the BikeBook webhooks the push causes (WatchWorkshopPush: paid / cancelled / refunded connector orders,
+ *    stock and price changes); nothing while WORKSHOP_CONNECTOR is off; never fails the push.
  */
 final class PushChanges
 {
@@ -44,6 +47,7 @@ final class PushChanges
         private readonly PushIdempotency $idempotency,
         private readonly SyncStatusRecorder $status,
         private readonly CollectUnknownBarcodes $unknownBarcodes,
+        private readonly WatchWorkshopPush $workshop,
     ) {}
 
     /**
@@ -68,6 +72,7 @@ final class PushChanges
                 $result = $this->apply->handle($caller->company, $caller->branch, $changes, $stream);
                 $this->status->pushed($caller, $stream, $result, $input->appVersion, $input->tillRegisterId);
                 $this->unknownBarcodes->handle($caller->company, $changes);
+                $this->workshop->handle($caller->company, $caller->branch, $changes);
 
                 if ($upload !== null) {
                     CloudUploads::refresh($upload);

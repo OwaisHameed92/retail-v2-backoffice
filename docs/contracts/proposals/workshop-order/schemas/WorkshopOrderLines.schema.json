@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "WorkshopOrder.linesJson (decoded)",
+  "description": "PROPOSAL workshop-order: the lines of a pulled WorkshopOrder, as the JSON text in linesJson (WORKSHOP-BIKEBOOK.md section 5.1). Money inc VAT, at most 2 dp; qty at most 4 dp; at most 200 lines. lineTotal and vatAmount as the portal worked them out with the till's rule (qty x unitPrice; VAT = total x rate / (100 + rate)); the till recomputes and records any penny difference in priceDifference.",
+  "type": "array",
+  "maxItems": 200,
+  "minItems": 1,
+  "items": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "lineId": { "type": "string", "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$", "description": "The portal's line id (what BikeBook uses on PUT/DELETE SalesOrderLine). Stable across versions." },
+      "externalLineId": { "type": "string", "maxLength": 100, "description": "BikeBook's own line id, or empty." },
+      "productId": { "type": ["string", "null"], "description": "A part's Product id (a single product or a variant); null for labour, custom and fee lines." },
+      "name": { "type": "string", "minLength": 1, "maxLength": 200 },
+      "qty": { "type": "number", "exclusiveMinimum": 0 },
+      "unitPrice": { "type": "number", "minimum": 0 },
+      "vatRateId": { "type": "string" },
+      "vatPercentage": { "type": "number", "minimum": 0 },
+      "lineType": { "enum": ["part", "labour", "custom", "fee"] },
+      "lineTotal": { "type": "number", "minimum": 0 },
+      "vatAmount": { "type": "number", "minimum": 0 }
+    },
+    "required": ["lineId", "externalLineId", "productId", "name", "qty", "unitPrice", "vatRateId", "vatPercentage", "lineType", "lineTotal", "vatAmount"]
+  }
+}

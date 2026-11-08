@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "WorkshopOrder as the portal pulls it",
+  "description": "PROPOSAL workshop-order: the payload of a pulled WorkshopOrder row. It is the till's own 0.1.85 entity (every member required, unchanged) with the values the portal's BikeBook connector fills: source connector, provider bikebook, status open or cancelled, the till-side members empty. rowVersion = externalVersion = the portal's version of the order (rising by one on every change).",
+  "allOf": [
+    { "$ref": "../../../portal-api-0.1.85/docs/web-portal-api/schemas/entities/WorkshopOrder.schema.json" },
+    {
+      "type": "object",
+      "properties": {
+        "provider": { "const": "bikebook" },
+        "source": { "const": "connector" },
+        "status": { "enum": ["open", "cancelled"] },
+        "reference": { "type": "string", "pattern": "^WS-[A-Za-z0-9-]{1,40}$" },
+        "linesJson": { "type": "string", "minLength": 2 },
+        "customerOrderId": { "type": "null" },
+        "lockedByRegisterId": { "type": "null" },
+        "lockedAt": { "type": "null" },
+        "saleId": { "type": "null" },
+        "collectedAt": { "type": "null" },
+        "isStarted": { "const": false },
+        "isDeleted": { "const": false },
+        "rowVersion": { "type": "integer", "minimum": 1 },
+        "externalVersion": { "type": "integer", "minimum": 1 }
+      }
+    }
+  ]
+}

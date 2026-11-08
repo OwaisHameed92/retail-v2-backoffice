@@ -13,6 +13,7 @@ use App\Domain\Sync\Support\SyncApiErrors;
 use App\Domain\Sync\Support\SyncStatusRecorder;
 use App\Domain\TillData\EntityRegistry;
 use App\Domain\TillData\Sync\HubVersions;
+use App\Domain\Workshop\Support\WorkshopOrderFeed;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -34,6 +35,10 @@ use Illuminate\Support\Facades\DB;
  * Contract proposal pda-stock-drafts (handheld stock drafts, StockDraftFeed): only while `PDA_STOCK_DRAFTS` is on
  * and the till is new enough (StockDraftSwitch) the page also carries this branch's open stock drafts, which are
  * then the till's. Off (the default): none of it runs and the reply is exactly as before.
+ *
+ * W5 (contract proposal workshop-order, WorkshopOrderFeed): only while `WORKSHOP_CONNECTOR` is on and the shop's
+ * BikeBook connection carries traffic, the page also carries the shop's BikeBook orders as `WorkshopOrder` rows.
+ * Off (the default): no workshop table is read and the reply is exactly as before.
  */
 final class PullChanges
 {
@@ -44,6 +49,7 @@ final class PullChanges
         private readonly PullFeed $feed,
         private readonly SyncStatusRecorder $status,
         private readonly StockDraftFeed $drafts,
+        private readonly WorkshopOrderFeed $workshop,
     ) {}
 
     /**
@@ -70,13 +76,21 @@ final class PullChanges
             $this->drafts->prepare($companyId);
         }
 
-        $reply = DB::transaction(function () use ($caller, $companyId, $since, $max, $withDrafts): array {
+        $withWorkshop = $this->workshop->serves($companyId, $caller->branch->id, $appVersion);
+
+        if ($withWorkshop) {
+            $this->workshop->prepare($companyId, $caller->branch->id);
+        }
+
+        $reply = DB::transaction(function () use ($caller, $companyId, $since, $max, $withDrafts, $withWorkshop): array {
             $extra = $withDrafts ? $this->drafts->sources($companyId, $caller->branch->id, $since) : [];
+            $extra = $withWorkshop ? [...$extra, ...$this->workshop->sources($companyId, $caller->branch->id, $since)] : $extra;
             $page = $this->feed->page($companyId, $caller->branch->id, $since, $max + 1, $extra);
             $hasMore = count($page) > $max;
             $page = array_slice($page, 0, $max);
             $envelopes = new PullEnvelopes($caller->ids, $caller->branch->id, $since);
             $drafted = $withDrafts ? $this->drafts->envelopes(new PullPayload($caller->ids, $caller->branch->id, $since), $companyId, $caller->branch->id, $page) : [];
+            $workshopRows = $withWorkshop ? $this->workshop->envelopes(new PullPayload($caller->ids, $caller->branch->id, $since), $companyId, $caller->branch->id, $page) : [];
             $rows = [];
 
             foreach ($this->byEntity($page) as $entity => $ids) {
@@ -89,6 +103,14 @@ final class PullChanges
                 if (StockDraftFeed::owns($entity)) {
                     if (isset($drafted["{$entity}:{$id}"])) {
                         $changes[] = $drafted["{$entity}:{$id}"];
+                    }
+
+                    continue;
+                }
+
+                if (WorkshopOrderFeed::owns($entity)) {
+                    if (isset($workshopRows["{$entity}:{$id}"])) {
+                        $changes[] = $workshopRows["{$entity}:{$id}"];
                     }
 
                     continue;
@@ -135,7 +157,7 @@ final class PullChanges
         $ids = [];
 
         foreach ($page as [$entity, $id]) {
-            if (! StockDraftFeed::owns($entity)) {
+            if (! StockDraftFeed::owns($entity) && ! WorkshopOrderFeed::owns($entity)) {
                 $ids[$entity][] = $id;
             }
         }

@@ -4,6 +4,7 @@ import { type CloudMove, type LocalKeyRecord } from '@/components/admin/cloud-li
 import { type ShopHealth, type TillHealth } from '@/components/till-health/types';
 import { type TenantBillingData } from '@/components/admin/billing/types';
 import { type BranchLicence, type BranchLimits, type LicenceOptions, type PlanOption, type TenantLicensing } from '@/components/admin/licences/types';
+import { type WorkshopTenantData } from '@/components/admin/workshop/types';
 import { type Paginated } from '@/components/shared/data-table';
 import { type CompanyRole, type CompanyStatus } from '@/types';
 
@@ -160,6 +161,8 @@ export interface TenantShowProps {
     tillSetupFee: AddedTillFeeOptions;
     /** P11: held emails and the first emails' buttons. Null without billing.manage (tab hidden). */
     emails: TenantEmailsData | null;
+    /** W5: each shop's BikeBook card; absent while the connector is switched off (tab hidden). */
+    workshop?: WorkshopTenantData;
     /** changePlan: licences.manage and billing.manage (audit SEC-4). */
     can: { manage: boolean; impersonate: boolean; manageLicences: boolean; changePlan: boolean };
 }

@@ -1,0 +1,15 @@
+{
+  "WorkshopLineType": [
+    "part",
+    "labour",
+    "custom",
+    "fee"
+  ],
+  "WorkshopOrderStatusFromPortal": [
+    "open",
+    "cancelled"
+  ],
+  "WorkshopOrderSourceFromPortal": [
+    "connector"
+  ]
+}

@@ -8,6 +8,7 @@ use App\Domain\Admin\Models\Admin;
 use App\Domain\Leads\Models\Lead;
 use App\Domain\Mail\Models\EmailLog;
 use App\Domain\Tenancy\Models\Company;
+use App\Domain\Workshop\Models\WorkshopConnection;
 use App\Http\Controllers\Admin\AccountSecurityController;
 use App\Http\Controllers\Admin\AdminSearchController;
 use App\Http\Controllers\Admin\AdminUserController;
@@ -56,6 +57,7 @@ use App\Http\Controllers\Admin\TenantStatusController;
 use App\Http\Controllers\Admin\TenantUserController;
 use App\Http\Controllers\Admin\TillHealthController;
 use App\Http\Controllers\Admin\TradingController;
+use App\Http\Controllers\Admin\WorkshopConnectionController;
 use App\Http\Middleware\AdminIsActive;
 use App\Http\Middleware\BlockAdminWhileImpersonating;
 use App\Http\Middleware\RequireTwoFactor;
@@ -209,6 +211,23 @@ Route::middleware(['auth:admin', AdminIsActive::class, BlockAdminWhileImpersonat
             Route::post('{company}/branches/{branch}/sync-key/rotate', [BranchSyncKeyController::class, 'rotate'])->name('branches.sync-key.rotate');
             Route::delete('{company}/branches/{branch}/sync-key', [BranchSyncKeyController::class, 'revoke'])->name('branches.sync-key.revoke');
         });
+
+        // W5: a shop's BikeBook card and sync log (404 while WORKSHOP_CONNECTOR is off). Read: tenants.view; changes:
+        // licences.manage (WorkshopConnectionPolicy). A new API key answers JSON (shown once).
+        Route::middleware('workshop.connector')->prefix('{company}/branches/{branch}/workshop')->name('branches.workshop.')
+            ->controller(WorkshopConnectionController::class)->group(function () {
+                Route::get('log', 'log')->name('log')->can('viewAny', WorkshopConnection::class);
+                Route::get('log.csv', 'export')->name('export')->can('viewAny', WorkshopConnection::class);
+
+                Route::middleware('can:manage,'.WorkshopConnection::class)->group(function () {
+                    Route::put('add-on', 'addOn')->name('add-on');
+                    Route::post('connect', 'connect')->name('connect');
+                    Route::post('disconnect', 'disconnect')->name('disconnect');
+                    Route::post('key', 'issueKey')->name('key.store')->middleware('throttle:10,1');
+                    Route::delete('key', 'revokeKey')->name('key.destroy');
+                    Route::post('deliveries/{delivery}/replay', 'replay')->name('replay')->whereUlid('delivery')->middleware('throttle:30,1');
+                });
+            });
     });
 
     // Partner onboarding API: requests sent by partners (Zivaro), reviewed and approved into a business or rejected.

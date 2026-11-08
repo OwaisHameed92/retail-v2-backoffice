@@ -33,6 +33,9 @@ use App\Domain\Tenancy\Models\Branch;
 use App\Domain\Tenancy\Models\Company;
 use App\Domain\Tenancy\Scopes\CompanyScope;
 use App\Domain\TillHealth\Queries\CompanyHealth;
+use App\Domain\Workshop\Models\WorkshopConnection;
+use App\Domain\Workshop\Queries\WorkshopCard;
+use App\Domain\Workshop\Support\WorkshopSwitch;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreTenantRequest;
 use App\Http\Requests\Admin\UpdateTenantRequest;
@@ -210,6 +213,11 @@ class TenantController extends Controller
                 // The Licences tab's "plan for new tills" is a billing change too (audit SEC-4).
                 'changePlan' => ($admin?->hasAbility(AdminRole::LICENCES_MANAGE) ?? false) && $billingAccess,
             ],
+            // W5: each shop's BikeBook card, only while WORKSHOP_CONNECTOR is on (no prop at all when off).
+            ...(WorkshopSwitch::enabled() ? ['workshop' => [
+                'branches' => WorkshopCard::forBranches($company, $branches),
+                'canManage' => $admin?->can('manage', WorkshopConnection::class) ?? false,
+            ]] : []),
         ]);
     }
 

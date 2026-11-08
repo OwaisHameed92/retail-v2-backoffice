@@ -2,6 +2,7 @@ import { EndsAtText, LicenceKindPill } from '@/components/app/shops/licence-bits
 import { RequestDialog } from '@/components/app/shops/request-dialog';
 import { RequestsCard } from '@/components/app/shops/requests-card';
 import { TillsCard } from '@/components/app/shops/tills-card';
+import { WorkshopCard } from '@/components/app/shops/workshop-card';
 import { blankNulls, type ShopForm, type ShopShowProps } from '@/components/app/shops/types';
 import { InitialsAvatar } from '@/components/shared/entity-cell';
 import { FormCard, FormField, FormGrid, FormSection } from '@/components/shared/form-section';
@@ -18,7 +19,7 @@ import { Check, LoaderCircle, Plus, Store } from 'lucide-react';
 import { type FormEventHandler, useState } from 'react';
 import { postcodeLabel, townHint, townNeededWithAddress } from '@/lib/country-address';
 
-export default function ShopShow({ shop, business, licence, tills, health, requests, requestOptions, can }: ShopShowProps) {
+export default function ShopShow({ shop, business, licence, tills, health, requests, requestOptions, workshop, can }: ShopShowProps) {
     const [asking, setAsking] = useState(false);
     const address = [shop.address, shop.town, shop.postcode].filter(Boolean).join(', ');
 
@@ -98,6 +99,7 @@ export default function ShopShow({ shop, business, licence, tills, health, reque
                         )}
                     </SectionCard>
                     <RequestsCard requests={requests} />
+                    {workshop && <WorkshopCard workshop={workshop} />}
                 </div>
             </div>
 

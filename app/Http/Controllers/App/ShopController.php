@@ -11,6 +11,8 @@ use App\Domain\Shops\Queries\ShopDetail;
 use App\Domain\Shops\Queries\ShopsOverview;
 use App\Domain\Tenancy\CurrentCompany;
 use App\Domain\Tenancy\Models\Branch;
+use App\Domain\Workshop\Queries\WorkshopCard;
+use App\Domain\Workshop\Support\WorkshopSwitch;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\App\Shops\BusinessDetailsRequest;
 use App\Http\Requests\App\Shops\ShopDetailsRequest;
@@ -37,7 +39,11 @@ class ShopController extends Controller
 
     public function show(string $branch): Response
     {
-        return Inertia::render('app/shops/show', ShopDetail::for($this->tenancy, $this->find($branch), CarbonImmutable::now()));
+        $shop = $this->find($branch);
+
+        return Inertia::render('app/shops/show', ShopDetail::for($this->tenancy, $shop, CarbonImmutable::now())
+            // W5: the shop's read-only BikeBook card, only while WORKSHOP_CONNECTOR is on (no prop at all when off).
+            + (WorkshopSwitch::enabled() ? ['workshop' => WorkshopCard::forTenant($shop)] : []));
     }
 
     public function update(ShopDetailsRequest $request, string $branch, UpdateShopDetails $update): RedirectResponse

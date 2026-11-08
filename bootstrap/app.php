@@ -1,11 +1,13 @@
 <?php
 
 use App\Domain\Shared\Exceptions\ApiExceptionRenderer;
+use App\Domain\Workshop\Support\ConnectorErrorRenderer;
 use App\Http\Middleware\AssignTraceId;
 use App\Http\Middleware\EnsureCompanyAbility;
 use App\Http\Middleware\EnsureCompanyMember;
 use App\Http\Middleware\EnsureCountryFeature;
 use App\Http\Middleware\EnsureDirectDebit;
+use App\Http\Middleware\EnsureWorkshopConnector;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\KeepStoreHostToStore;
 use App\Http\Middleware\RequireTwoFactor;
@@ -35,6 +37,9 @@ return Application::configure(basePath: dirname(__DIR__))
 
             // GoCardless webhooks and signed Direct Debit links (module 1.12).
             Route::group([], base_path('routes/webhooks.php'));
+
+            // W5: the BikeBook POS connector and its OAuth endpoints (404 while WORKSHOP_CONNECTOR is off).
+            Route::group([], base_path('routes/connectors.php'));
         },
     )
     ->withMiddleware(function (Middleware $middleware) {
@@ -72,6 +77,8 @@ return Application::configure(basePath: dirname(__DIR__))
             // `throttle:N,M`: one bucket per signed-in user and route, not one per user (UI audit UI-1). Guests and
             // named limiters behave exactly as the framework's.
             'throttle' => ThrottlePerRoute::class,
+            // W5: the BikeBook connector's routes 404 while WORKSHOP_CONNECTOR is off.
+            'workshop.connector' => EnsureWorkshopConnector::class,
         ]);
 
         // Guests on /admin go to the admin login; everyone else to the tenant login.
@@ -82,6 +89,9 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->redirectUsersTo(fn () => route('app.dashboard'));
     })
     ->withExceptions(function (Exceptions $exceptions) {
+        // W5: the BikeBook connector (/connectors/*, /oauth/token) answers errors in BikeBook's {error, message}.
+        ConnectorErrorRenderer::register($exceptions);
+
         // api/* errors → {code, message, traceId, retryAfterSeconds, rejectedKey} (module 0.5).
         ApiExceptionRenderer::register($exceptions);
 

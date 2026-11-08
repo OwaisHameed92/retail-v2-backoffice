@@ -1,0 +1,9 @@
+{
+  "rule": "PROPOSAL workshop-order: change to samples/ownership.json (contract 0.1.85); nothing else changes. WorkshopOrder moves from local to hub (portal-owned, pull only). The portal sends it only to the one shop whose BikeBook connection made it (envelope branchId = that shop) and only while its connector is switched on; the till never pushes WorkshopOrder (it pushes the CustomerOrder it makes from it, same id). WorkshopOutboxItem, WorkshopCallLog and WorkshopProductLink stay local.",
+  "entities": {
+    "WorkshopOrder": "hub"
+  },
+  "branchAddressed": {
+    "WorkshopOrder": "sent in the pull of the shop the BikeBook connection belongs to, never to another shop; source connector; a till applies a version once (rowVersion), refuses a change once it has taken money or opened it on a sale (SyncConflict, entity WorkshopOrder, detail the reference) and keeps its own members (customerOrderId, lockedByRegisterId, lockedAt, saleId, collectedAt, isStarted, priceDifference, isReady, jobStatus, mechanicName) as they are"
+  }
+}
