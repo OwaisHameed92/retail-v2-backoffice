@@ -66,6 +66,7 @@ enum CompanyRole: string
                 Ability::LabelsPrint,
                 Ability::StoreManage,
                 Ability::OrdersOnline,
+                Ability::SalonManage,
             ],
             self::Accountant => [
                 Ability::DashboardView,

@@ -51,6 +51,7 @@ use App\Http\Controllers\App\PurchasingController;
 use App\Http\Controllers\App\ReorderSuggestionController;
 use App\Http\Controllers\App\ReportController;
 use App\Http\Controllers\App\SaleController;
+use App\Http\Controllers\App\SalonController;
 use App\Http\Controllers\App\ShopController;
 use App\Http\Controllers\App\ShopSettingsController;
 use App\Http\Controllers\App\StaffController;
@@ -65,6 +66,7 @@ use App\Http\Controllers\App\TillListController;
 use App\Http\Controllers\App\TransferController;
 use App\Http\Middleware\EnsureOnlineOrdersReachable;
 use App\Http\Middleware\EnsureOnlineStoreOn;
+use App\Http\Middleware\EnsureSalonOnline;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth:web', 'verified', 'company', 'two-factor:web'])->group(function () {
@@ -476,6 +478,16 @@ Route::middleware(['auth:web', 'verified', 'company', 'two-factor:web'])->group(
         });
     });
     Route::get('parcels', [ParcelController::class, 'index'])->name('parcels.index')->middleware('company.can:parcels.view');
+
+    // Salon W3b (docs/salon.md): stylists' calendar feeds and online booking requests (read only). Owner and manager;
+    // 404 unless SALON_ONLINE is on and the business has a salon shop (EnsureSalonOnline). Feed changes reply in JSON.
+    Route::prefix('salon')->name('salon.')->middleware(['company.can:salon.manage', EnsureSalonOnline::class])->group(function () {
+        Route::get('/', [SalonController::class, 'index'])->name('index');
+        Route::middleware('throttle:30,1')->group(function () {
+            Route::post('feeds', [SalonController::class, 'issueFeed'])->name('feeds.issue');
+            Route::delete('feeds/{feed}', [SalonController::class, 'revokeFeed'])->name('feeds.revoke')->whereUlid('feed');
+        });
+    });
 
     // Module 6.6: unusual activity (anomaly findings). reports.view; staff-level findings for owners and managers only,
     // a one-shop user their shop (AnomalyVisibility). Status changes: owners and managers; explanation: ai.use.
