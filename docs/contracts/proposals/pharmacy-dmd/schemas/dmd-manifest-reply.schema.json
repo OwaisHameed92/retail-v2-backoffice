@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:sspos:web-portal-api:proposal:pharmacy-dmd:manifest-reply",
+  "title": "dm+d manifest reply",
+  "description": "200 reply of GET /api/v1/pharmacy/dmd/latest, written by the portal from the field table and sample of PORTAL-CHANGES-pharmacy.md item 12 (till 0.1.85 pack; EPOS sent no schema). Unknown members are ignored by the till; more may be added.",
+  "type": "object",
+  "properties": {
+    "releaseId": {
+      "type": "string",
+      "description": "Shown / logged only."
+    },
+    "name": {
+      "type": "string",
+      "description": "Shown / logged only."
+    },
+    "releaseDate": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+      "description": "NHSBSA's publication date (yyyy-MM-dd)."
+    },
+    "week": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-W[0-9]{2}$",
+      "description": "ISO week of releaseDate. Shown / logged only."
+    },
+    "archiveFileName": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*\\.zip$",
+      "description": "NHSBSA's own zip name, unchanged (the same name TRUD lists)."
+    },
+    "downloadUrl": {
+      "type": "string",
+      "pattern": "^(https://|/)",
+      "description": "https, or relative to the portal address. On another host it must be pre-signed for at least 24 hours; the till sends no headers there."
+    },
+    "sizeBytes": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "The zip's size; 0 = not checked."
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9A-Fa-f]{64}$",
+      "description": "SHA-256 of the zip, 64 hex characters (either case)."
+    },
+    "publishedAt": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "Z$",
+      "description": "When the portal published this week (UTC). Shown / logged only."
+    }
+  },
+  "required": [
+    "releaseId",
+    "name",
+    "releaseDate",
+    "week",
+    "archiveFileName",
+    "downloadUrl",
+    "sizeBytes",
+    "sha256",
+    "publishedAt"
+  ]
+}
