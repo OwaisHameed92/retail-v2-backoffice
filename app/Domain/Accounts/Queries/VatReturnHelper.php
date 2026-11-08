@@ -4,6 +4,7 @@ namespace App\Domain\Accounts\Queries;
 
 use App\Domain\Accounts\Data\AccountsFilters;
 use App\Domain\Accounts\Data\VatQuarter;
+use App\Domain\Accounts\Support\ChairRent;
 use App\Domain\Cash\Support\CashLookup;
 use App\Domain\Reporting\Data\ReportScope;
 use App\Domain\Reporting\Data\VatRateTotals;
@@ -22,6 +23,8 @@ use Illuminate\Database\Eloquent\Builder;
  * supplier invoices (not drafts) less supplier credit notes, plus expenses (not voided). Expense VAT counts in box 4
  * only when the shop holds a VAT receipt. Boxes 2, 8 and 9 (goods to or from the EU, Northern Ireland only) are 0.
  * Boxes 6–9 are whole pounds (pence dropped), as HMRC asks. Making Tax Digital submission is a later item.
+ * Salon / Barber (W2): chair rent from renters (ledger 4200, VAT box 6) and its VAT come from the tills' journals
+ * (ChairRent); shown as a source only when there is some, so other businesses see exactly what they saw before.
  */
 final class VatReturnHelper
 {
@@ -37,8 +40,9 @@ final class VatReturnHelper
         $invoices = self::sums(SupplierInvoice::query()->where(fn (Builder $q) => $q->where('status', '!=', 'draft')->orWhereNull('status')), 'invoice_date', $f);
         $credits = self::sums(SupplierCreditNote::query(), 'credit_date', $f);
         $expenses = ExpenseList::totals($f);
+        $rent = ChairRent::for($f);
 
-        $box1 = $salesVat;
+        $box1 = Money::add($salesVat, $rent['vat']);
         $box2 = '0.00';
         $box3 = Money::add($box1, $box2);
         $box4 = Money::add(Money::sub($invoices['vat'], $credits['vat']), $expenses['reclaimableVat']);
@@ -51,7 +55,7 @@ final class VatReturnHelper
             ['box' => 3, 'label' => 'Total VAT due (box 1 + box 2)', 'amount' => $box3],
             ['box' => 4, 'label' => 'VAT reclaimed on purchases and other inputs', 'amount' => $box4],
             ['box' => 5, 'label' => 'Net VAT to pay to HMRC or reclaim (difference between box 3 and box 4)', 'amount' => ltrim($difference, '-')],
-            ['box' => 6, 'label' => 'Total value of sales and all other outputs excluding VAT', 'amount' => self::whole($salesNet)],
+            ['box' => 6, 'label' => 'Total value of sales and all other outputs excluding VAT', 'amount' => self::whole(Money::add($salesNet, $rent['net']))],
             ['box' => 7, 'label' => 'Total value of purchases and all other inputs excluding VAT', 'amount' => self::whole($box7)],
             ['box' => 8, 'label' => 'Total value of supplies of goods to the EU (Northern Ireland only)', 'amount' => '0'],
             ['box' => 9, 'label' => 'Total value of acquisitions of goods from the EU (Northern Ireland only)', 'amount' => '0'],
@@ -67,6 +71,7 @@ final class VatReturnHelper
                 ['key' => 'invoices', 'label' => 'Supplier invoices', 'net' => $invoices['net'], 'vat' => $invoices['vat'], 'count' => $invoices['count'], 'boxes' => '4, 7'],
                 ['key' => 'credits', 'label' => 'Supplier credit notes (taken off)', 'net' => Money::sub('0', $credits['net']), 'vat' => Money::sub('0', $credits['vat']), 'count' => $credits['count'], 'boxes' => '4, 7'],
                 ['key' => 'expenses', 'label' => 'Expenses with a VAT receipt', 'net' => $expenses['net'], 'vat' => $expenses['reclaimableVat'], 'count' => $expenses['count'], 'boxes' => '4, 7'],
+                ...($rent['count'] > 0 ? [['key' => 'chairRent', 'label' => 'Chair rent from renters (account 4200)', 'net' => $rent['net'], 'vat' => $rent['vat'], 'count' => $rent['count'], 'boxes' => '1, 6']] : []),
             ],
             'unreclaimedVat' => $expenses['unreclaimedVat'],
             'rates' => array_map(fn (VatRateTotals $r) => ['code' => $r->code !== '' ? $r->code : 'Unnamed rate', 'percentage' => $r->percentage, 'net' => $r->net, 'vat' => $r->vat, 'gross' => $r->gross], $rates),

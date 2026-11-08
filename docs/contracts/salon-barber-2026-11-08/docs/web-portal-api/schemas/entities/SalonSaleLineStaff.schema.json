@@ -1,0 +1,204 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:sspos:web-portal-api:v1:SalonSaleLineStaff",
+  "title": "SalonSaleLineStaff",
+  "description": "Payload of a SalonSaleLineStaff row.",
+  "type": "object",
+  "properties": {
+    "saleId": {
+      "type": "string"
+    },
+    "saleLineId": {
+      "type": "string"
+    },
+    "productId": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "userId": {
+      "type": "string"
+    },
+    "role": {
+      "enum": [
+        "main",
+        "assistant"
+      ]
+    },
+    "sharePercent": {
+      "type": [
+        "string",
+        "number"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$"
+    },
+    "levelId": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "isService": {
+      "type": "boolean"
+    },
+    "isRenterLine": {
+      "type": "boolean"
+    },
+    "netAmount": {
+      "type": [
+        "string",
+        "number"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$"
+    },
+    "quantity": {
+      "type": [
+        "string",
+        "number"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$"
+    },
+    "costAmount": {
+      "type": [
+        "string",
+        "number"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$"
+    },
+    "commissionCategory": {
+      "type": "string"
+    },
+    "commissionPlanId": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "commissionBasis": {
+      "enum": [
+        "service",
+        "retail",
+        "category",
+        "fixedPerService",
+        "tier",
+        "notCommissionable",
+        null
+      ]
+    },
+    "commissionPercentAtSale": {
+      "type": [
+        "string",
+        "number"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$"
+    },
+    "commissionFixedAtSale": {
+      "type": [
+        "string",
+        "number"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$"
+    },
+    "soldAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "branchId": {
+      "type": "string"
+    },
+    "id": {
+      "type": "string"
+    },
+    "companyId": {
+      "type": "string"
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "rowVersion": {
+      "type": [
+        "string",
+        "integer"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)$"
+    },
+    "deletedAt": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "isDeleted": {
+      "type": "boolean"
+    },
+    "domainEvents": {
+      "type": [
+        "array",
+        "null"
+      ],
+      "items": {
+        "type": "object",
+        "properties": {
+          "eventId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "occurredAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "version": {
+            "type": [
+              "string",
+              "integer"
+            ],
+            "pattern": "^-?(?:0|[1-9]\\d*)$"
+          }
+        },
+        "required": [
+          "eventId",
+          "occurredAt",
+          "version"
+        ]
+      }
+    }
+  },
+  "required": [
+    "saleId",
+    "saleLineId",
+    "productId",
+    "userId",
+    "role",
+    "sharePercent",
+    "levelId",
+    "isService",
+    "isRenterLine",
+    "netAmount",
+    "quantity",
+    "costAmount",
+    "commissionCategory",
+    "commissionPlanId",
+    "commissionBasis",
+    "commissionPercentAtSale",
+    "commissionFixedAtSale",
+    "soldAt",
+    "branchId",
+    "id",
+    "companyId",
+    "createdAt",
+    "updatedAt",
+    "rowVersion",
+    "deletedAt",
+    "isDeleted",
+    "domainEvents"
+  ]
+}

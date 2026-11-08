@@ -12,8 +12,9 @@ final class EnumWriter
     /**
      * @param  array{values: list<string>, fields: list<string>}  $enum
      */
-    public function write(string $name, array $enum, bool $known): string
+    public function write(string $name, array $enum, bool $known, ?string $from = null): string
     {
+        $from ??= $this->contract;
         $source = $known ? 'samples/enums.json' : 'the entity schemas';
         $cases = implode("\n", array_map(
             fn (string $value) => '    case '.Php::caseName($value).' = '.Php::literal($value).';',
@@ -30,7 +31,7 @@ namespace App\\Domain\\TillData\\Enums;
  * Till enum `{$name}` ({$source}). Used by {$fields}.
  *
  * {$this->tag()}
- * from {$this->contract}. Do not edit.
+ * from {$from}. Do not edit.
  */
 enum {$name}: string
 {

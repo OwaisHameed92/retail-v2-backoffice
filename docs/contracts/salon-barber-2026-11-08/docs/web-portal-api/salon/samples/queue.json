@@ -1,0 +1,17 @@
+{
+  "at": "2026-11-09T08:03:00Z",
+  "tradingDate": "2026-11-09",
+  "isOpen": true,
+  "waiting": 4,
+  "walkInMinutesToWait": 45,
+  "entries": [
+    {
+      "joinId": "01K9S0000000000000000QJ001",
+      "ticket": "A004",
+      "status": "waiting",
+      "position": 3,
+      "minutesToWait": 35,
+      "estimatedStartAt": "2026-11-09T08:38:00Z"
+    }
+  ]
+}

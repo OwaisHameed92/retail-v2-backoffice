@@ -2,6 +2,7 @@
 
 namespace App\Domain\Sync\Actions;
 
+use App\Domain\Salon\Support\SalonShops;
 use App\Domain\Shared\Exceptions\ApiException;
 use App\Domain\StockDrafts\Support\StockDraftFeed;
 use App\Domain\StockDrafts\Support\StockDraftSwitch;
@@ -30,6 +31,8 @@ use Illuminate\Support\Facades\DB;
  * 3. Envelopes in the till's shape with the till's own ids (PullEnvelopes). `highestVersion` = the page's last
  *    version (`since` when nothing is new, as samples/pull-reply.empty.json); `hasMore` when rows are still waiting.
  * 4. Records the pull in `sync_branch_status`.
+ *
+ * Salon / Barber (W2, SalonPull): a shop that is not a salon gets no Salon* row, `salon.*` setting or right.
  *
  * Contract proposal pda-stock-drafts (handheld stock drafts, StockDraftFeed): only while `PDA_STOCK_DRAFTS` is on
  * and the till is new enough (StockDraftSwitch) the page also carries this branch's open stock drafts, which are
@@ -71,11 +74,13 @@ final class PullChanges
         }
 
         $reply = DB::transaction(function () use ($caller, $companyId, $since, $max, $withDrafts): array {
+            // Salon rows, settings and rights only to a Salon / Barber shop (W2, SalonPull).
+            $salon = SalonShops::isSalonBranch($companyId, $caller->branch->id);
             $extra = $withDrafts ? $this->drafts->sources($companyId, $caller->branch->id, $since) : [];
-            $page = $this->feed->page($companyId, $caller->branch->id, $since, $max + 1, $extra);
+            $page = $this->feed->page($companyId, $caller->branch->id, $since, $max + 1, $extra, $salon);
             $hasMore = count($page) > $max;
             $page = array_slice($page, 0, $max);
-            $envelopes = new PullEnvelopes($caller->ids, $caller->branch->id, $since);
+            $envelopes = new PullEnvelopes($caller->ids, $caller->branch->id, $since, $salon);
             $drafted = $withDrafts ? $this->drafts->envelopes(new PullPayload($caller->ids, $caller->branch->id, $since), $companyId, $caller->branch->id, $page) : [];
             $rows = [];
 

@@ -1,0 +1,160 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:sspos:web-portal-api:v1:SalonPackageHolding",
+  "title": "SalonPackageHolding",
+  "description": "Payload of a SalonPackageHolding row.",
+  "type": "object",
+  "properties": {
+    "customerId": {
+      "type": "string"
+    },
+    "definitionId": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string"
+    },
+    "coveredProductIdsJson": {
+      "type": "string"
+    },
+    "saleId": {
+      "type": "string"
+    },
+    "saleLineId": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "sessions": {
+      "type": [
+        "string",
+        "integer"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)$"
+    },
+    "sessionsUsed": {
+      "type": [
+        "string",
+        "integer"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)$"
+    },
+    "price": {
+      "type": [
+        "string",
+        "number"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$"
+    },
+    "purchasedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "expiresOn": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date"
+    },
+    "status": {
+      "enum": [
+        "active",
+        "usedUp",
+        "expired",
+        "refunded"
+      ]
+    },
+    "branchId": {
+      "type": "string"
+    },
+    "id": {
+      "type": "string"
+    },
+    "companyId": {
+      "type": "string"
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "rowVersion": {
+      "type": [
+        "string",
+        "integer"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)$"
+    },
+    "deletedAt": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "isDeleted": {
+      "type": "boolean"
+    },
+    "domainEvents": {
+      "type": [
+        "array",
+        "null"
+      ],
+      "items": {
+        "type": "object",
+        "properties": {
+          "eventId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "occurredAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "version": {
+            "type": [
+              "string",
+              "integer"
+            ],
+            "pattern": "^-?(?:0|[1-9]\\d*)$"
+          }
+        },
+        "required": [
+          "eventId",
+          "occurredAt",
+          "version"
+        ]
+      }
+    }
+  },
+  "required": [
+    "customerId",
+    "definitionId",
+    "name",
+    "coveredProductIdsJson",
+    "saleId",
+    "saleLineId",
+    "sessions",
+    "sessionsUsed",
+    "price",
+    "purchasedAt",
+    "expiresOn",
+    "status",
+    "branchId",
+    "id",
+    "companyId",
+    "createdAt",
+    "updatedAt",
+    "rowVersion",
+    "deletedAt",
+    "isDeleted",
+    "domainEvents"
+  ]
+}

@@ -2,6 +2,8 @@
 
 namespace App\Domain\Sync\Support;
 
+use App\Domain\Salon\Support\SalonBookingFields;
+use App\Domain\Salon\Support\SalonPull;
 use App\Domain\TillData\Registry\EntityDefinition;
 use Illuminate\Database\Query\Builder;
 
@@ -21,11 +23,17 @@ use Illuminate\Database\Query\Builder;
  * | AccountPayDate (0.1.52)     | every branch but its own                                                       |
  * | PurchaseOrder (+ lines)     | head-office orders drafted on the portal, to their shop, until the shop owns it |
  * | Company / Branch            | every branch / that branch (portal edits only)                                 |
+ * | Salon* hub rows (W2)        | salon shops only (SalonPull); SalonOnlineBooking only to the shop it names     |
+ * | `salon.*` setting / right   | salon shops only                                                               |
  * | a shop row that moved away  | a `D` to the shop it left (BranchDepartures, read by PullFeed)                 |
  */
 final class PullVisibility
 {
-    public static function apply(Builder $query, EntityDefinition $def, string $companyId, string $branchId): Builder
+    /**
+     * @param  bool  $salon  the branch is a Salon / Barber shop; else no `salon.*` setting or right (SalonPull). PullFeed
+     *                       leaves the Salon* tables out of a non-salon shop's feed altogether.
+     */
+    public static function apply(Builder $query, EntityDefinition $def, string $companyId, string $branchId, bool $salon = true): Builder
     {
         if ($def->tenancy) {
             return $def->entity === 'Branch' ? $query->where('id', $branchId)->whereNull('deleted_at') : $query;
@@ -38,7 +46,10 @@ final class PullVisibility
             $def->copy === 'draft' => $query->where('branch_id', $branchId)->whereNotNull('hub_drafted_at')
                 ->when($def->entity === 'PurchaseOrder', fn (Builder $q) => $q->where('origin', 'headOffice')),
             $def->entity === 'Setting' => $query->where(fn (Builder $q) => $q->where('scope', 'company')
-                ->orWhere(fn (Builder $b) => $b->where('scope', 'branch')->where('scope_id', $branchId))),
+                ->orWhere(fn (Builder $b) => $b->where('scope', 'branch')->where('scope_id', $branchId)))
+                ->when(! $salon, fn (Builder $q) => SalonPull::withoutSalonSettings($q)),
+            $def->entity === 'RolePermission' && ! $salon => SalonPull::withoutSalonRights($query),
+            $def->entity === SalonBookingFields::ENTITY => SalonPull::bookingsFor($query, $branchId),
             $def->hasScopeColumn('branch_id') => $query->where(
                 fn (Builder $w) => $w->whereNull('branch_id')->orWhere('branch_id', '')->orWhere('branch_id', $branchId),
             ),

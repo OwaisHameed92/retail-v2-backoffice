@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:sspos:web-portal-api:v1:salon-queue-joins-reply",
+  "title": "salon-queue-joins-reply",
+  "description": "200 reply to GET api/v1/sync/salon/queue-joins?max=: phone joins waiting for the till, oldest first.",
+  "type": "object",
+  "properties": {
+    "joins": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "joinId": {
+            "type": "string"
+          },
+          "firstName": {
+            "type": "string"
+          },
+          "phone": {
+            "type": "string"
+          },
+          "serviceIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "stylistUserId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "note": {
+            "type": "string"
+          },
+          "joinedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "joinId",
+          "firstName",
+          "phone",
+          "serviceIds",
+          "stylistUserId",
+          "note",
+          "joinedAt"
+        ]
+      }
+    },
+    "hasMore": {
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "joins",
+    "hasMore"
+  ]
+}

@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:sspos:web-portal-api:v1:salon-queue-join-answer",
+  "title": "salon-queue-join-answer",
+  "description": "POST api/v1/sync/salon/queue-joins/{joinId}/answer body.",
+  "type": "object",
+  "properties": {
+    "joinId": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string"
+    },
+    "ticket": {
+      "type": "string"
+    },
+    "position": {
+      "type": [
+        "string",
+        "integer"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)$"
+    },
+    "minutesToWait": {
+      "type": [
+        "string",
+        "integer",
+        "null"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)$"
+    },
+    "estimatedStartAt": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "code": {
+      "type": "string"
+    },
+    "message": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "joinId",
+    "status",
+    "ticket",
+    "position",
+    "minutesToWait",
+    "estimatedStartAt",
+    "code",
+    "message"
+  ]
+}

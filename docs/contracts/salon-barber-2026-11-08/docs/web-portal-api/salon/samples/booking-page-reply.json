@@ -1,0 +1,6 @@
+{
+  "result": "stored",
+  "bookingUrl": "https://book.example.co.uk/kings-cuts",
+  "queueJoinUrl": "https://book.example.co.uk/kings-cuts/queue",
+  "manageUrl": "https://book.example.co.uk/m/"
+}

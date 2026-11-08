@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:sspos:web-portal-api:v1:salon-heartbeat",
+  "title": "salon-heartbeat",
+  "description": "PUT api/v1/sync/salon/heartbeat body.",
+  "type": "object",
+  "properties": {
+    "at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "accepting": {
+      "type": "boolean"
+    },
+    "queueJoinOpen": {
+      "type": "boolean"
+    },
+    "pendingRequests": {
+      "type": [
+        "string",
+        "integer"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)$"
+    },
+    "pageGeneratedAt": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "offlineAfterMin": {
+      "type": [
+        "string",
+        "integer"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)$"
+    }
+  },
+  "required": [
+    "at",
+    "accepting",
+    "queueJoinOpen",
+    "pendingRequests",
+    "pageGeneratedAt",
+    "offlineAfterMin"
+  ]
+}

@@ -1,6 +1,7 @@
 import { StatusPill, type StatusTone } from '@/components/shared/status-badge';
 import { money } from '@/components/shared/trading/format';
 import { cn } from '@/lib/utils';
+import { SALON_AUDIT_ACTIONS } from './salon-words';
 
 export { formatDateTime, formatDay } from '@/components/app/pricing/format';
 export { money, number } from '@/components/shared/trading/format';
@@ -139,6 +140,8 @@ export function actionLabel(action: string): string {
         WorkshopOutboxStopped: 'BikeBook message stopped',
         WorkshopRepairBooked: 'Repair booked in BikeBook',
         WorkshopExposureChanged: 'BikeBook visibility changed',
+        // Salon / Barber (salon pack, W2).
+        ...SALON_AUDIT_ACTIONS,
     };
 
     return known[action] ?? action.replace(/([a-z])([A-Z])/g, '$1 $2').replace(/^./, (c) => c.toUpperCase());

@@ -18,6 +18,12 @@ final class TillFixtures
     /** The contract pack the entity store is generated from (definitions.php `contract`): till 0.1.85 since W1. */
     public const CONTRACT = 'docs/contracts/portal-api-0.1.85/docs/web-portal-api';
 
+    /**
+     * The salon pack (W2, 2026-11-08; the till's unreleased `feat/salon-barber` branch): overlays CONTRACT
+     * (definitions.php `overlay`). sample() and schema() read its copy of a file first.
+     */
+    public const SALON = 'docs/contracts/salon-barber-2026-11-08/docs/web-portal-api';
+
     /** The v1.4.1 pack (till ≤ 0.1.84 shapes): replayed to prove an older till's push is answered exactly as before. */
     public const LEGACY_CONTRACT = 'docs/contracts/portal-api-v1.4.1/docs/web-portal-api';
 
@@ -53,7 +59,30 @@ final class TillFixtures
      */
     public static function sample(string $file): array
     {
-        return json_decode((string) file_get_contents(base_path(self::CONTRACT.'/samples/'.$file)), true, 512, JSON_THROW_ON_ERROR);
+        $overlay = base_path(self::SALON.'/samples/'.$file);
+        $path = is_file($overlay) ? $overlay : base_path(self::CONTRACT.'/samples/'.$file);
+
+        return json_decode((string) file_get_contents($path), true, 512, JSON_THROW_ON_ERROR);
+    }
+
+    /**
+     * Every entity schema file (the salon pack's copy wins), entity => path.
+     *
+     * @return array<string, string>
+     */
+    public static function schemaFiles(): array
+    {
+        $files = [];
+
+        foreach ([self::CONTRACT, self::SALON] as $folder) {
+            foreach (glob(base_path($folder.'/schemas/entities/*.schema.json')) ?: [] as $file) {
+                $files[basename($file, '.schema.json')] = $file;
+            }
+        }
+
+        ksort($files);
+
+        return $files;
     }
 
     /**

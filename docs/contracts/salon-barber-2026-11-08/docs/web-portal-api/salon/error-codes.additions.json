@@ -1,0 +1,54 @@
+[
+  {
+    "code": "salon.not_available",
+    "status": 501,
+    "endpoints": [
+      "PUT sync/salon/booking-page",
+      "PUT sync/salon/heartbeat",
+      "GET sync/salon/queue-joins",
+      "POST sync/salon/queue-joins/{joinId}/answer",
+      "PUT sync/salon/queue"
+    ],
+    "meaning": "The portal has not switched salon online booking on yet (answered after the sync key check, before the body is read). Send Retry-After: 3600.",
+    "tillDoes": "Makes no salon call for an hour (or Retry-After if longer), then tries again. Shows the reason on Salon / Barber → Online booking → Status. Push and pull are unaffected.",
+    "details": null,
+    "retryable": true
+  },
+  {
+    "code": "salon.not_a_salon",
+    "status": 403,
+    "endpoints": [
+      "PUT sync/salon/booking-page",
+      "PUT sync/salon/heartbeat",
+      "GET sync/salon/queue-joins",
+      "POST sync/salon/queue-joins/{joinId}/answer",
+      "PUT sync/salon/queue"
+    ],
+    "meaning": "The key's shop is not a Salon / Barber shop on the portal (setup.business_type is not Salon), or the portal has the salon add-on off for it.",
+    "tillDoes": "Pauses salon calls a minute at a time and shows the message on the Status tab. A till only calls when its own shop type is Salon / Barber, so this means the two sides disagree: the shop calls support.",
+    "details": null,
+    "retryable": true
+  },
+  {
+    "code": "salon.page_too_large",
+    "status": 413,
+    "endpoints": [
+      "PUT sync/salon/booking-page"
+    ],
+    "meaning": "The booking page is over 8 MB once unzipped (a very large menu and team over many days ahead).",
+    "tillDoes": "Shows the message on the Status tab; the shop lowers 'Book up to (days ahead)'. The heartbeat carries on, so the page stays in request-only mode at worst.",
+    "details": null,
+    "retryable": false
+  },
+  {
+    "code": "salon.join_not_found",
+    "status": 404,
+    "endpoints": [
+      "POST sync/salon/queue-joins/{joinId}/answer"
+    ],
+    "meaning": "The portal has no phone join with this id for the calling shop (dropped after 15 minutes, or another shop's). rejectedKey = the join id.",
+    "tillDoes": "Moves on; the ticket it made stays in the queue (the desk sees it with the 'online' mark) and its place is still pushed.",
+    "details": null,
+    "retryable": false
+  }
+]

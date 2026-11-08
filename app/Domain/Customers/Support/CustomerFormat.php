@@ -60,6 +60,9 @@ final class CustomerFormat
             ConsentSource::Till => 'At the till',
             ConsentSource::Web => 'Online',
             ConsentSource::Form => 'Paper form',
+            // Salon / Barber (salon pack, W2): an opt-in from another salon system's client file, a booking page tick.
+            ConsentSource::Import => 'Imported from another salon system',
+            ConsentSource::OnlineBooking => 'Online booking',
             null => 'Not recorded',
         };
     }

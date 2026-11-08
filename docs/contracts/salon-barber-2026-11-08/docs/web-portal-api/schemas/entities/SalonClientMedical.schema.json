@@ -1,0 +1,149 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:sspos:web-portal-api:v1:SalonClientMedical",
+  "title": "SalonClientMedical",
+  "description": "Payload of a SalonClientMedical row.",
+  "type": "object",
+  "properties": {
+    "customerId": {
+      "type": "string"
+    },
+    "templateId": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "templateVersion": {
+      "type": [
+        "string",
+        "integer"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)$"
+    },
+    "answersJson": {
+      "type": "string"
+    },
+    "allergyText": {
+      "type": "string"
+    },
+    "signedName": {
+      "type": "string"
+    },
+    "signatureFilePath": {
+      "type": "string"
+    },
+    "signedAt": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "recordedByUserId": {
+      "type": "string"
+    },
+    "appointmentId": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "reviewDueOn": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date"
+    },
+    "branchId": {
+      "type": "string"
+    },
+    "id": {
+      "type": "string"
+    },
+    "companyId": {
+      "type": "string"
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "rowVersion": {
+      "type": [
+        "string",
+        "integer"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)$"
+    },
+    "deletedAt": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "isDeleted": {
+      "type": "boolean"
+    },
+    "domainEvents": {
+      "type": [
+        "array",
+        "null"
+      ],
+      "items": {
+        "type": "object",
+        "properties": {
+          "eventId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "occurredAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "version": {
+            "type": [
+              "string",
+              "integer"
+            ],
+            "pattern": "^-?(?:0|[1-9]\\d*)$"
+          }
+        },
+        "required": [
+          "eventId",
+          "occurredAt",
+          "version"
+        ]
+      }
+    }
+  },
+  "required": [
+    "customerId",
+    "templateId",
+    "templateVersion",
+    "answersJson",
+    "allergyText",
+    "signedName",
+    "signatureFilePath",
+    "signedAt",
+    "recordedByUserId",
+    "appointmentId",
+    "reviewDueOn",
+    "branchId",
+    "id",
+    "companyId",
+    "createdAt",
+    "updatedAt",
+    "rowVersion",
+    "deletedAt",
+    "isDeleted",
+    "domainEvents"
+  ]
+}

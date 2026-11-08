@@ -1,0 +1,16 @@
+{
+  "joins": [
+    {
+      "joinId": "01K9S0000000000000000QJ001",
+      "firstName": "Sam",
+      "phone": "07700 900222",
+      "serviceIds": [
+        "01K9S0000000000000000SV001"
+      ],
+      "stylistUserId": null,
+      "note": "",
+      "joinedAt": "2026-11-09T08:02:00Z"
+    }
+  ],
+  "hasMore": false
+}
