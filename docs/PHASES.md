@@ -191,6 +191,12 @@ EPOS summary `README-PHARMACY-BIKEBOOK-SALON.md` (2026-11-08); contract pack `do
 | W4 | dm+d release server for pharmacy tills (`GET /api/v1/pharmacy/dmd/latest` + signed zip link, `pharmacy:dmd-fetch` Monday / Tuesday from TRUD item 24, newest + two weeks kept, admin card on Till health). Behind `PHARMACY_DMD`, off | done, OFF |
 | W5 | BikeBook POS connector (OAuth / API key, products, stock, customers, sales orders, webhooks), `WorkshopOrder` pull row (proposal `docs/contracts/proposals/workshop-order`), `workshop.connector_status`, `workshop_integration` add-on, admin card + sync log, tenant card. Behind `WORKSHOP_CONNECTOR` (off): nothing changes for any shop | done, OFF (waits for BikeBook to register SSPOS and a till release that applies `WorkshopOrder`) |
 
+## Admin operations pages (2026-11-08)
+
+| # | Module | Status |
+|---|---|---|
+| OPS-1 | Admin **Sync & jobs** (`/admin/sync-jobs`, `audit.view`: owner, support; module `app/Domain/Operations`, DECISIONS "Admin Sync & jobs"): health strip (scheduler heartbeat red after 3 min, queue backlog with the oldest waiting job, failed jobs and sync problems in 24 h), every scheduled task with last run, result, duration, 7-day runs/failures, late flag and next due (new `scheduled_task_runs`, recorded from the scheduler's events by `ScheduledTaskRecorder`, failures swallowed, pruned after 30 days), failed jobs (search, queue filter, error dialog with secrets removed by `SecretText`, business from the payload, Retry = `queue:retry`, Retry all shown, Delete = forget, both audited), sync problems (refused pushes, unknown entities, open conflicts by business + shop + till + entity, read only), recent till traffic and quiet tills (> 24 h). Tests `tests/Feature/Operations`, `tests/Unit/Operations` | done |
+
 ## Phase 8: Later — 0/5
 
 Web orders / click and collect · Online payments · Dealers and resellers · Public marketing site · EPOS update

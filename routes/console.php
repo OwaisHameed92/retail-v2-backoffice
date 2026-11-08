@@ -7,6 +7,7 @@ use App\Domain\Ai\MorningSummary\Models\MorningSummary;
 use App\Domain\Anomalies\Models\Anomaly;
 use App\Domain\Mail\Models\EmailLog;
 use App\Domain\Notifications\Models\AlertNotification;
+use App\Domain\Operations\Models\ScheduledTaskRun;
 use App\Domain\Purchasing\Actions\PurgeInvoiceImportFiles;
 use App\Domain\Purchasing\Models\InvoiceImport;
 use App\Domain\Shared\Country\Country;
@@ -81,6 +82,9 @@ Schedule::command('model:prune', ['--model' => [InvoiceImport::class]])->dailyAt
 Schedule::command('anomalies:detect')->hourlyAt(15)->onOneServer()->withoutOverlapping(30);
 Schedule::command('anomalies:detect', ['--daily'])->dailyAt('06:30')->timezone(Country::zone())->onOneServer()->withoutOverlapping(60);
 Schedule::command('model:prune', ['--model' => [Anomaly::class]])->dailyAt('03:50')->onOneServer();
+
+// Admin "Sync & jobs": scheduled task run records after 30 days.
+Schedule::command('model:prune', ['--model' => [ScheduledTaskRun::class]])->dailyAt('03:55')->onOneServer();
 
 // Pharmacy dm+d release server (W4): NHSBSA publishes on TRUD on Mondays (usually by 06:00 UK); a bank-holiday week
 // may come on Tuesday, so Tuesday runs again (idempotent: nothing new → nothing written). Does nothing while

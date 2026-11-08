@@ -126,7 +126,7 @@ export const adminNavItems: AdminNavItem[] = [
         group: 'Operations',
     },
     { title: 'Devices', icon: MonitorSmartphone, group: 'Operations' },
-    { title: 'Sync & jobs', icon: RefreshCw, group: 'Operations' },
+    { title: 'Sync & jobs', icon: RefreshCw, route: 'admin.sync-jobs.index', ability: 'audit.view', group: 'Operations' },
     { title: 'EPOS versions', icon: MonitorDown, group: 'Operations' },
     {
         title: 'Emails',

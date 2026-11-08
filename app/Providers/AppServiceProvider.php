@@ -22,6 +22,7 @@ use App\Domain\OnlineStore\Events\OnlineOrderStatusChanged;
 use App\Domain\OnlineStore\Listeners\SendNewOnlineOrderMessages;
 use App\Domain\OnlineStore\Listeners\SendOnlineOrderStatusMail;
 use App\Domain\OnlineStore\Support\StoreRateLimits;
+use App\Domain\Operations\Support\ScheduledTaskRecorder;
 use App\Domain\Partners\Listeners\PartnerWebhookListeners;
 use App\Domain\Partners\Support\PartnerRateLimit;
 use App\Domain\Salon\Support\SalonCalendarRateLimit;
@@ -114,6 +115,9 @@ class AppServiceProvider extends ServiceProvider
 
         // Salon public pages (W3a): booking page, manage link and queue join limiters.
         SalonPublicRateLimits::register();
+
+        // Admin "Sync & jobs": every scheduled task run (start, result, duration) from the scheduler's events.
+        ScheduledTaskRecorder::register();
         Auth::viaRequest('handheld-token', fn () => null);
     }
 }
