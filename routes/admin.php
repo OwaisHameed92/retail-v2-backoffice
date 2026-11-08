@@ -34,6 +34,7 @@ use App\Http\Controllers\Admin\DeviceController;
 use App\Http\Controllers\Admin\EmailLogController;
 use App\Http\Controllers\Admin\EmailSettingsController;
 use App\Http\Controllers\Admin\EmailTemplateController;
+use App\Http\Controllers\Admin\FailedJobController;
 use App\Http\Controllers\Admin\HeldEmailController;
 use App\Http\Controllers\Admin\ImpersonationController;
 use App\Http\Controllers\Admin\Leads\LeadActionController;
@@ -51,6 +52,7 @@ use App\Http\Controllers\Admin\Partners\PartnerRequestController;
 use App\Http\Controllers\Admin\Partners\PartnerSettingsController;
 use App\Http\Controllers\Admin\PlanController;
 use App\Http\Controllers\Admin\PlanLifecycleController;
+use App\Http\Controllers\Admin\SyncJobsController;
 use App\Http\Controllers\Admin\TenantBranchController;
 use App\Http\Controllers\Admin\TenantController;
 use App\Http\Controllers\Admin\TenantRegisterController;
@@ -289,6 +291,15 @@ Route::middleware(['auth:admin', AdminIsActive::class, BlockAdminWhileImpersonat
     Route::get('cloud-link', [CloudLinkController::class, 'index'])->name('cloud-link.index')->middleware('can:'.AdminRole::TENANTS_VIEW);
     Route::delete('cloud-link/local-keys/{localKey}', [CloudLinkController::class, 'destroy'])->name('cloud-link.local-keys.destroy')
         ->middleware('can:'.AdminRole::LICENCES_MANAGE)->whereUlid('localKey');
+
+    // Sync & jobs: scheduler, queue backlog, scheduled task runs, failed jobs (retry / delete), sync problems and till
+    // traffic across businesses. Owner and support (audit.view).
+    Route::prefix('sync-jobs')->name('sync-jobs.')->middleware('can:'.AdminRole::AUDIT_VIEW)->group(function () {
+        Route::get('/', [SyncJobsController::class, 'index'])->name('index');
+        Route::post('failed-jobs/retry', [FailedJobController::class, 'retry'])->name('failed-jobs.retry')->middleware('throttle:30,1');
+        Route::delete('failed-jobs', [FailedJobController::class, 'destroy'])->name('failed-jobs.destroy')->middleware('throttle:30,1');
+        Route::get('failed-jobs/{uuid}', [FailedJobController::class, 'show'])->name('failed-jobs.show')->whereUuid('uuid')->middleware('throttle:120,1');
+    });
 
     // Emails (module 1.7): log, template previews and test sends. Owner and support (EmailLogPolicy).
     Route::prefix('emails')->name('emails.')->middleware('can:viewAny,'.EmailLog::class)->group(function () {

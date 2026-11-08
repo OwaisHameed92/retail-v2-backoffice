@@ -133,7 +133,14 @@ export const adminNavItems: AdminNavItem[] = [
         ability: 'tenants.view',
         group: 'Operations',
     },
-    { title: 'Sync & jobs', icon: RefreshCw, group: 'Operations' },
+    {
+        title: 'Sync & jobs',
+        icon: RefreshCw,
+        route: 'admin.sync-jobs.index',
+        activePattern: 'admin.sync-jobs.*',
+        ability: 'audit.view',
+        group: 'Operations',
+    },
     { title: 'EPOS versions', icon: MonitorDown, group: 'Operations' },
     {
         title: 'Emails',
