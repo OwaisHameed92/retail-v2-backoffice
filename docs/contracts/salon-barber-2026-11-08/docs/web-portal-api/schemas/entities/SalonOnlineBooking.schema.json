@@ -1,0 +1,223 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:sspos:web-portal-api:v1:SalonOnlineBooking",
+  "title": "SalonOnlineBooking",
+  "description": "Payload of a SalonOnlineBooking row.",
+  "type": "object",
+  "properties": {
+    "reference": {
+      "type": "string"
+    },
+    "kind": {
+      "enum": [
+        "new",
+        "reschedule",
+        "cancel",
+        "preferences"
+      ]
+    },
+    "appointmentId": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "requestedStartsAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "requestedUserId": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "servicesJson": {
+      "type": "string"
+    },
+    "clientFirstName": {
+      "type": "string"
+    },
+    "clientLastName": {
+      "type": "string"
+    },
+    "clientPhone": {
+      "type": "string"
+    },
+    "clientEmail": {
+      "type": "string"
+    },
+    "customerId": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "notes": {
+      "type": "string"
+    },
+    "answersJson": {
+      "type": "string"
+    },
+    "termsAcceptedAt": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "marketingSms": {
+      "type": "boolean"
+    },
+    "marketingEmail": {
+      "type": "boolean"
+    },
+    "marketingWhatsApp": {
+      "type": "boolean"
+    },
+    "depositPaid": {
+      "type": [
+        "string",
+        "number"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$"
+    },
+    "paymentReference": {
+      "type": "string"
+    },
+    "status": {
+      "enum": [
+        "pending",
+        "accepted",
+        "declined",
+        "expired",
+        "cancelled"
+      ]
+    },
+    "expiresAt": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "decidedAt": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "decidedByUserId": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "decisionReason": {
+      "type": "string"
+    },
+    "branchId": {
+      "type": "string"
+    },
+    "id": {
+      "type": "string"
+    },
+    "companyId": {
+      "type": "string"
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "rowVersion": {
+      "type": [
+        "string",
+        "integer"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)$"
+    },
+    "deletedAt": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "isDeleted": {
+      "type": "boolean"
+    },
+    "domainEvents": {
+      "type": [
+        "array",
+        "null"
+      ],
+      "items": {
+        "type": "object",
+        "properties": {
+          "eventId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "occurredAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "version": {
+            "type": [
+              "string",
+              "integer"
+            ],
+            "pattern": "^-?(?:0|[1-9]\\d*)$"
+          }
+        },
+        "required": [
+          "eventId",
+          "occurredAt",
+          "version"
+        ]
+      }
+    }
+  },
+  "required": [
+    "reference",
+    "kind",
+    "appointmentId",
+    "requestedStartsAt",
+    "requestedUserId",
+    "servicesJson",
+    "clientFirstName",
+    "clientLastName",
+    "clientPhone",
+    "clientEmail",
+    "customerId",
+    "notes",
+    "answersJson",
+    "termsAcceptedAt",
+    "marketingSms",
+    "marketingEmail",
+    "marketingWhatsApp",
+    "depositPaid",
+    "paymentReference",
+    "status",
+    "expiresAt",
+    "decidedAt",
+    "decidedByUserId",
+    "decisionReason",
+    "branchId",
+    "id",
+    "companyId",
+    "createdAt",
+    "updatedAt",
+    "rowVersion",
+    "deletedAt",
+    "isDeleted",
+    "domainEvents"
+  ]
+}

@@ -1,0 +1,48 @@
+[
+  {
+    "code": "dmd.not_available",
+    "status": 501,
+    "endpoints": [
+      "GET pharmacy/dmd/latest",
+      "GET pharmacy/dmd/packages/{archiveFileName}"
+    ],
+    "meaning": "The portal has not switched the dm+d release server on (PHARMACY_DMD off). Portal's own code: the contract names none for this case.",
+    "tillDoes": "Treated as 5xx: uses NHS TRUD with the pharmacy's own key meanwhile and asks again in an hour (Retry-After 3600).",
+    "details": null,
+    "retryable": true
+  },
+  {
+    "code": "dmd.not_pharmacy",
+    "status": 403,
+    "endpoints": [
+      "GET pharmacy/dmd/latest"
+    ],
+    "meaning": "The sync key's shop is not set up as a pharmacy. Portal's own code: the contract asks for 403 without naming one.",
+    "tillDoes": "Falls back to NHS TRUD and shows \"check Cloud sync\".",
+    "details": null,
+    "retryable": false
+  },
+  {
+    "code": "dmd.no_release",
+    "status": 404,
+    "endpoints": [
+      "GET pharmacy/dmd/latest",
+      "GET pharmacy/dmd/packages/{archiveFileName}"
+    ],
+    "meaning": "Nothing published yet (or the named zip was removed after two weeks). Named by PORTAL-CHANGES-pharmacy.md item 12.",
+    "tillDoes": "Falls back to NHS TRUD or tries again in an hour.",
+    "details": null,
+    "retryable": true
+  },
+  {
+    "code": "dmd.link_invalid",
+    "status": 403,
+    "endpoints": [
+      "GET pharmacy/dmd/packages/{archiveFileName}"
+    ],
+    "meaning": "The zip link's signature is missing, altered or expired (links last at least 24 hours). Portal's own code.",
+    "tillDoes": "Throws the download away and tries TRUD; the next manifest call hands out a fresh link.",
+    "details": null,
+    "retryable": true
+  }
+]

@@ -1,0 +1,144 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:sspos:web-portal-api:v1:SalonStampCardRule",
+  "title": "SalonStampCardRule",
+  "description": "Payload of a SalonStampCardRule row.",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "visitsPerReward": {
+      "type": [
+        "string",
+        "integer"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)$"
+    },
+    "rewardKind": {
+      "enum": [
+        "amountOff",
+        "percentOff",
+        "freeService"
+      ]
+    },
+    "rewardAmount": {
+      "type": [
+        "string",
+        "number"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$"
+    },
+    "rewardPercent": {
+      "type": [
+        "string",
+        "number"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$"
+    },
+    "freeServiceProductId": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "qualifyingProductIdsJson": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "qualifyingCategoryIdsJson": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "isActive": {
+      "type": "boolean"
+    },
+    "id": {
+      "type": "string"
+    },
+    "companyId": {
+      "type": "string"
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "rowVersion": {
+      "type": [
+        "string",
+        "integer"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)$"
+    },
+    "deletedAt": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "isDeleted": {
+      "type": "boolean"
+    },
+    "domainEvents": {
+      "type": [
+        "array",
+        "null"
+      ],
+      "items": {
+        "type": "object",
+        "properties": {
+          "eventId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "occurredAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "version": {
+            "type": [
+              "string",
+              "integer"
+            ],
+            "pattern": "^-?(?:0|[1-9]\\d*)$"
+          }
+        },
+        "required": [
+          "eventId",
+          "occurredAt",
+          "version"
+        ]
+      }
+    }
+  },
+  "required": [
+    "name",
+    "visitsPerReward",
+    "rewardKind",
+    "rewardAmount",
+    "rewardPercent",
+    "freeServiceProductId",
+    "qualifyingProductIdsJson",
+    "qualifyingCategoryIdsJson",
+    "isActive",
+    "id",
+    "companyId",
+    "createdAt",
+    "updatedAt",
+    "rowVersion",
+    "deletedAt",
+    "isDeleted",
+    "domainEvents"
+  ]
+}

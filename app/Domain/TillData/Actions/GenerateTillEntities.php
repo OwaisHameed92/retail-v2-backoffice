@@ -77,10 +77,11 @@ final class GenerateTillEntities
         $files = $this->planner($catalog)->plan($stored, $this->lock($catalog->basePath()));
 
         $models = new ModelWriter($contract);
+        $sources = $catalog->files();
 
         foreach ($entities as $entity) {
             if (! $entity->tenancy) {
-                $files["app/Domain/TillData/Models/{$entity->class}.php"] = $models->write($entity, $entities);
+                $files["app/Domain/TillData/Models/{$entity->class}.php"] = $models->write($entity, $entities, $sources->schemaSource($entity->name));
             }
         }
 
@@ -88,17 +89,20 @@ final class GenerateTillEntities
         $known = array_keys($catalog->knownEnums());
 
         foreach ($catalog->enums() as $name => $enum) {
-            $files["app/Domain/TillData/Enums/{$name}.php"] = $enums->write($name, $enum, in_array($name, $known, true));
+            // An enum read from an overlay schema (a salon list, or a list the overlay added values to) names it.
+            $from = array_map(fn (string $field) => $sources->schemaSource(strstr($field, '.', true) ?: $field), $enum['fields']);
+            $source = array_values(array_diff($from, [$contract]))[0] ?? $contract;
+            $files["app/Domain/TillData/Enums/{$name}.php"] = $enums->write($name, $enum, in_array($name, $known, true), $source);
         }
 
-        $files['app/Domain/TillData/EntityRegistry.php'] = (new RegistryWriter($contract))->write($entities, $catalog->localEntities());
+        $files['app/Domain/TillData/EntityRegistry.php'] = (new RegistryWriter($sources->label()))->write($entities, $catalog->localEntities());
 
         return $files;
     }
 
     private function planner(SchemaCatalog $catalog): MigrationPlanner
     {
-        return new MigrationPlanner(new MigrationWriter($catalog->contract()), $catalog->definitions()['release']);
+        return new MigrationPlanner(new MigrationWriter($catalog->files()->label()), $catalog->definitions()['release']);
     }
 
     /**

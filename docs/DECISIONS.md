@@ -1319,6 +1319,44 @@ in v1.4.1. We wrote the contract proposal for the EPOS till team and built the p
 | Shop-type settings | Pharmacy, bike workshop and shop-type settings are shown read-only and only to the matching shop. The portal never writes `setup.business_type`, `vertical.*`, `workshop.connection_status`, nor `workshop.connector_status` until the connector exists |
 | Rights | `pharmacy.*` / `workshop.*` rights get words when a till sent them; they are never added to the list another shop can grant |
 
+## Salon / Barber sync acceptance (W2) (2026-11-08; `docs/salon.md`)
+
+| Topic | Decision |
+|---|---|
+| Contract pack | The EPOS salon pack (till branch `feat/salon-barber`, not released) is copied as sent to `docs/contracts/salon-barber-2026-11-08/` and read as an overlay on 0.1.85 (`definitions.php` `overlay`: its files win, the rest from 0.1.85). When salon ships, a full pack replaces both |
+| Tables | 40 `salon_*` tables from the schemas (one additive generated migration, release `salon-2026-11-08`), no change to an existing table. `SalonClientMedical` is local: acknowledged, never stored, never logged. The seven append-only tables are historic from the start (a later change is a conflict) |
+| Who gets salon data | A shop is a salon when the business type is Salon or its till sent `vertical.salon` = true / `setup.business_type` = `Salon` (company or that shop's scope). Any other shop's pull carries no Salon* row, no `salon.*` / `vertical.salon` setting, no `salon.*` right, and no `salon.*` entry in a Role's permissions: a business with no salon pulls byte for byte what it pulled before |
+| SalonOnlineBooking | Hub-owned, one shop's. The portal writes the request and `pending` / `cancelled` / `expired`; the till writes the answer (`accepted` / `declined`, appointmentId for `kind: new`, decidedAt / By, decisionReason). A till push carrying an answer always wins, whole, even over a later portal edit; once answered (or ended) the portal cannot change or delete the row. Pulled to the shop it names only |
+| Tips | Never in `SalePayment.amount`: takings and sales unchanged. Cash tips are drawer movements "Tips taken" (+, a refunded tip −) and "Tips paid out" (−), as the till signs them |
+| Chair rent | Account 4200 is in VAT box 6: the VAT return helper adds its net (journal entries dated in the quarter) to box 6 and the VAT those entries post to the till chart's box-1 account to box 1; a source line only when there is chair rent. 2280 / 2290 / 2300 are liabilities read from the till's journal |
+| Packages, stamp rewards | A line discount with `discountSource: promotion`: already in the discount total, never a staff / manual discount. No change |
+| Renter lines | Not moved out of sales / VAT yet: whether the line's VAT is in `SaleVat`, how a shared line splits and whether renter takings stay in takings cannot be told from the data. Asked of EPOS (docs/salon.md Q-S1); until then reported as sent |
+| Settings, rights, audit | Shared `salon.*` keys read-only in four Salon sections for salon shops only; the portal never writes `salon.*` or `vertical.salon` (TILL_WRITES_ONLY_PREFIXES). Words for 11 `salon.*` rights (when sent) and 39 salon audit actions. Salon error codes recorded in `SalonApiErrors` for W3 |
+
+## Pharmacy dm+d release server (W4) (2026-11-08; `docs/verticals-0.1.85.md` "dm+d release server")
+
+| Topic | Decision |
+|---|---|
+| Switch | `PHARMACY_DMD` (config `pharmacy.dmd`), **off** by default and on no server yet. Off: `GET /api/v1/pharmacy/dmd/latest` and the zip link answer 501, the weekly fetch does nothing; no shop's sync changes. On only after the owner has our own NHS TRUD key and has checked TRUD's redistribution terms |
+| Error codes | The contract names only `dmd.no_release` (404). Ours: `dmd.not_available` (501, Retry-After 3600; the till treats 501 like 5xx: TRUD now, again in an hour), `dmd.not_pharmacy` (403), `dmd.link_invalid` (403, bad or expired zip link). Listed in `docs/contracts/proposals/pharmacy-dmd/` (portal-written; the pack has no schema) |
+| Who is a pharmacy | The sync key's shop: business type Pharmacy, or a till sent `setup.business_type` = Pharmacy / `vertical.pharmacy` = true for the business or for that shop. Never where the country profile hides the pharmacy module |
+| Zip link | `downloadUrl` is our own https route signed over path and query (relative signature, so a TLS proxy does not break it), valid 48 h (never under 24 h) from each manifest; no headers needed, nothing secret in it. The zip is streamed unchanged with `Cache-Control: public, max-age=31536000, immutable`; the manifest is `no-cache` |
+| Publishing | The zip is downloaded to a temp file, its size and SHA-256 must equal TRUD's, it is stored under `{releaseId}/` with the OGL attribution, and only then is the `dmd_releases` row written (one write): the manifest never names a zip that is not fully stored. Kept: the newest week and the previous two |
+| TRUD key | Our key in `PHARMACY_DMD_TRUD_KEY` only. TRUD puts it in the URL path, so every TRUD error is redacted before it is logged or stored; the admin card says "Set" / "Not set" only |
+
+## Salon staff calendar feed and Salon page (W3b) (2026-11-08; `docs/salon.md`)
+
+| Topic | Decision |
+|---|---|
+| Switch | Everything W3 serves for salons sits behind `SALON_ONLINE` (config `salon.online`, file `config/salon.php`), default off and off in production until the till's salon release. Off: the iCal address 404s, the Salon page and its menu item are hidden and its routes 404, the role matrix has no salon row, the admin tenant page has no salon card |
+| Feed address | `/salon/ical/{branchId}/{userId}/{feedToken}.ics`, as the contract says (the token is in the path, never a query string). Public, no session or cookie, rate limited per IP (`salon.ical_per_minute`, 60). Every refusal (switch off, malformed / unknown / turned-off / renewed token, another shop or stylist in the address, shop closed or no longer a salon, business cancelled) is the same plain 404 |
+| Token | 32 random bytes, base64url (43 characters), shown once in the JSON reply to "on" / "new address" with a QR code made on the server; stored as SHA-256 hash + last 4 only (`salon_calendar_feeds`, one row per stylist and shop, `user_id` = the till user id). "New address" replaces the hash (the old address dies at once); "off" clears it, so turning on again always gives a new address. Plain SHA-256, not HMAC with APP_KEY, so a key rotation does not break stylists' calendars (the token is 256-bit random). Never logged or audited |
+| Feed content | Built only from pushed SalonAppointment / SalonAppointmentService / Product rows. One VEVENT per service row of that shop where the person is stylist or assistant; window 7 days back to 60 ahead (rows overlapping it); no-shows out; cancelled kept 7 days after `cancelledAt` (else `updatedAt`) as `STATUS:CANCELLED`; till-deleted rows drop. SUMMARY = service name + the first word of `clientName`; DESCRIPTION only "You are assisting on this service." for the assistant; LOCATION = shop name; LAST-MODIFIED = the later of the two rows' `updatedAt`. UTC with `Z` (no VTIMEZONE), `X-WR-TIMEZONE` = the country's zone. `Cache-Control: private, max-age=300` |
+| Who | New ability `salon.manage` (owner and manager), shared and shown only for a business with a salon shop while the switch is on (ServiceModules, RoleMatrix). A one-shop manager sees and changes only their shop. The stylist must have a SalonStaffProfile at that salon shop |
+| Online booking requests | Read only on the portal (the till decides): reference, kind, status, time asked for, client first name, shop, sent / decided times. Never last name, phone, e-mail, notes, answers or deposit |
+| Admin | A read-only salon card on the tenant page: salon shops, stylists, feeds on, requests this week (Monday, Europe/London) and waiting |
+| W3a slot | The Salon page's "Online booking" card takes `onlineBooking` (null until W3a's booking page and heartbeat exist) and shows a "Soon" state; no table invented for it |
+
 ## BikeBook POS connector (W5) (2026-11-08; `docs/verticals-0.1.85.md` "BikeBook connector", `docs/contracts/proposals/workshop-order`)
 
 | Topic | Decision |

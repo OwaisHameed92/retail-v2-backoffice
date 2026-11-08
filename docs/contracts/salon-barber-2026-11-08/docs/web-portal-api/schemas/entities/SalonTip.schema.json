@@ -1,0 +1,149 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:sspos:web-portal-api:v1:SalonTip",
+  "title": "SalonTip",
+  "description": "Payload of a SalonTip row.",
+  "type": "object",
+  "properties": {
+    "saleId": {
+      "type": "string"
+    },
+    "salePaymentId": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "amount": {
+      "type": [
+        "string",
+        "number"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$"
+    },
+    "method": {
+      "enum": [
+        "card",
+        "cash",
+        "keyed"
+      ]
+    },
+    "splitMode": {
+      "enum": [
+        "byServiceValue",
+        "equally",
+        "explicitAmounts"
+      ]
+    },
+    "shiftId": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "takenByUserId": {
+      "type": "string"
+    },
+    "originalTipId": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "takenAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "registerId": {
+      "type": "string"
+    },
+    "branchId": {
+      "type": "string"
+    },
+    "id": {
+      "type": "string"
+    },
+    "companyId": {
+      "type": "string"
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "rowVersion": {
+      "type": [
+        "string",
+        "integer"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)$"
+    },
+    "deletedAt": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "isDeleted": {
+      "type": "boolean"
+    },
+    "domainEvents": {
+      "type": [
+        "array",
+        "null"
+      ],
+      "items": {
+        "type": "object",
+        "properties": {
+          "eventId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "occurredAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "version": {
+            "type": [
+              "string",
+              "integer"
+            ],
+            "pattern": "^-?(?:0|[1-9]\\d*)$"
+          }
+        },
+        "required": [
+          "eventId",
+          "occurredAt",
+          "version"
+        ]
+      }
+    }
+  },
+  "required": [
+    "saleId",
+    "salePaymentId",
+    "amount",
+    "method",
+    "splitMode",
+    "shiftId",
+    "takenByUserId",
+    "originalTipId",
+    "takenAt",
+    "registerId",
+    "branchId",
+    "id",
+    "companyId",
+    "createdAt",
+    "updatedAt",
+    "rowVersion",
+    "deletedAt",
+    "isDeleted",
+    "domainEvents"
+  ]
+}

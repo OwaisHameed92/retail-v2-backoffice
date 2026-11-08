@@ -10,10 +10,7 @@ use Tests\Feature\TillData\TillFixtures;
 
 function tillSchemaEntities(): array
 {
-    return array_map(
-        fn (string $file) => basename($file, '.schema.json'),
-        glob(base_path(TillFixtures::CONTRACT.'/schemas/entities/*.schema.json')),
-    );
+    return array_keys(TillFixtures::schemaFiles());
 }
 
 it('is idempotent: regenerating changes no file', function () {
@@ -31,11 +28,12 @@ it('has a registry entry, a table with every mapped column, and a final generate
     // Till 0.1.52 pack: 147 schemas (0.1.51 + AccountPayDate, 0.1.52 + ProductRecallBranchState); the `local` ones
     // (EventSubscription since till 0.1.38) are never synced, never stored, so no registry entry (event_subscriptions
     // stays, additive migrations only). Till 0.1.85 pack: 173 schemas, the 26 new ones all `local` (21 pharmacy, 4
-    // workshop, ProductPictureUpload), so still 145 stored entities.
-    expect($schemas)->toHaveCount(173)
-        ->and(EntityRegistry::LOCAL)->toHaveCount(30)
-        ->toContain('DomainEventRecord', 'EventSubscription', 'ProcessedCommand', 'SyncState', 'PharmacyPatient', 'WorkshopOrder', 'ProductPictureUpload')
-        ->and($entities)->toHaveCount(145)
+    // workshop, ProductPictureUpload), so still 145 stored entities. Salon pack (W2): 41 more, SalonClientMedical
+    // `local` (health answers stay on the till), so 185 stored.
+    expect($schemas)->toHaveCount(214)
+        ->and(EntityRegistry::LOCAL)->toHaveCount(31)
+        ->toContain('DomainEventRecord', 'EventSubscription', 'ProcessedCommand', 'SyncState', 'PharmacyPatient', 'WorkshopOrder', 'ProductPictureUpload', 'SalonClientMedical')
+        ->and($entities)->toHaveCount(185)
         ->and(EntityRegistry::names())->toEqualCanonicalizing($entities);
 
     foreach ($entities as $entity) {
@@ -127,9 +125,10 @@ it('writes additive migrations: applied releases are never rewritten, the curren
     $till0115 = $lock['releases'][4];
     $till0151 = $lock['releases'][5];
     $till0152 = $lock['releases'][6];
-    $current = $lock['releases'][7];
+    $till0185 = $lock['releases'][7];
+    $current = $lock['releases'][8];
 
-    expect(array_column($lock['releases'], 'release'))->toBe(['v1.1', 'v1.3.1', 'v1.4.1', 'v1.4.1-b', '0.1.15', '0.1.51', '0.1.52', '0.1.85'])
+    expect(array_column($lock['releases'], 'release'))->toBe(['v1.1', 'v1.3.1', 'v1.4.1', 'v1.4.1-b', '0.1.15', '0.1.51', '0.1.52', '0.1.85', 'salon-2026-11-08'])
         ->and($previous['migrations'])->toBe(['2026_10_02_100000_create_till_v1_3_1_tables.php', '2026_10_02_100001_add_till_v1_3_1_columns.php'])
         ->and($previous['tables']['products']['columns'])->toHaveKeys(['variant3_name', 'hub_hash', 'origin_branch_id', 'portal_received_at'])
         ->and($v141['migrations'])->toBe(['2026_10_06_100000_create_till_v1_4_1_tables.php', '2026_10_06_100001_add_till_v1_4_1_columns.php'])
@@ -160,13 +159,20 @@ it('writes additive migrations: applied releases are never rewritten, the curren
         ->and(array_keys($till0152['tables']))->toEqualCanonicalizing(['product_recall_branch_states', 'account_pay_dates'])
         ->and(array_keys($till0152['tables']['account_pay_dates']['columns']))->toBe(['reminder_setup_key'])
         // Till 0.1.85 pack (W1): no new stored table, only columns on five (all nullable, additive).
-        ->and($current['migrations'])->toBe(['2026_12_14_100001_add_till_0_1_85_columns.php'])
-        ->and(array_keys($current['tables']))->toEqualCanonicalizing(['products', 'customer_orders', 'payment_attempts', 'dispensing_records', 'dispensing_items'])
-        ->and(array_keys($current['tables']['dispensing_records']['columns']))->toBe(['prescriber_address', 'exemption_evidence', 'sale_line_position', 'charge_settled_at', 'charge_refunded', 'charge_kept'])
-        ->and(array_keys($current['tables']['customer_orders']['columns']))->toBe(['source', 'external_provider', 'external_order_id', 'external_reference'])
-        ->and($current['tables']['products']['columns'])->toBe(['workshop_exposure' => "string('workshop_exposure', 40)->nullable()"]);
+        ->and($till0185['migrations'])->toBe(['2026_12_14_100001_add_till_0_1_85_columns.php'])
+        ->and(array_keys($till0185['tables']))->toEqualCanonicalizing(['products', 'customer_orders', 'payment_attempts', 'dispensing_records', 'dispensing_items'])
+        ->and(array_keys($till0185['tables']['dispensing_records']['columns']))->toBe(['prescriber_address', 'exemption_evidence', 'sale_line_position', 'charge_settled_at', 'charge_refunded', 'charge_kept'])
+        ->and(array_keys($till0185['tables']['customer_orders']['columns']))->toBe(['source', 'external_provider', 'external_order_id', 'external_reference'])
+        ->and($till0185['tables']['products']['columns'])->toBe(['workshop_exposure' => "string('workshop_exposure', 40)->nullable()"])
+        // Salon pack (W2): 40 new tables (all salon_*), no column on an existing table (CashMovement / Consent only gain
+        // list values, which need no migration).
+        ->and($current['migrations'])->toBe(['2026_12_15_100000_create_till_salon_2026_11_08_tables.php'])
+        ->and(array_keys($current['tables']))->toHaveCount(40)
+        ->and(array_filter(array_keys($current['tables']), fn (string $t) => ! str_starts_with($t, 'salon_')))->toBe([])
+        ->and($current['tables']['salon_levels']['columns'])->toHaveKey('level_rank')
+        ->and($current['tables']['salon_repeat_rules']['columns'])->toHaveKey('repeat_interval');
 
-    foreach ([...$lock['releases'][0]['migrations'], ...$previous['migrations'], ...$v141['migrations'], ...$v141b['migrations'], ...$till0115['migrations'], ...$till0151['migrations'], ...$till0152['migrations']] as $applied) {
+    foreach ([...$lock['releases'][0]['migrations'], ...$previous['migrations'], ...$v141['migrations'], ...$v141b['migrations'], ...$till0115['migrations'], ...$till0151['migrations'], ...$till0152['migrations'], ...$till0185['migrations']] as $applied) {
         expect(file_exists(database_path("migrations/{$applied}")))->toBeTrue()
             ->and($produced)->not->toContain("database/migrations/{$applied}");
     }

@@ -26,7 +26,16 @@ final class ContractSchema
     /** The current pack (till 0.1.85, W1): a superset of v1.4.1, so an older till's rows validate too. */
     public const ROOT = 'docs/contracts/portal-api-0.1.85/docs/web-portal-api';
 
+    /**
+     * The salon pack (W2, the till's unreleased `feat/salon-barber` branch): overlays ROOT. An entity schema it carries
+     * (the 41 Salon* tables, and its supersets of CashMovement and Consent) is used instead of ROOT's; its own
+     * `salon/schemas/*` are checked with salonErrors().
+     */
+    public const SALON = 'docs/contracts/salon-barber-2026-11-08/docs/web-portal-api';
+
     private const PREFIX = 'https://contract.sspos.test/';
+
+    private const SALON_PREFIX = 'https://contract-salon.sspos.test/';
 
     private static ?CompliantValidator $validator = null;
 
@@ -40,6 +49,27 @@ final class ContractSchema
     {
         // Not base_path(): datasets list the samples before the application boots.
         return dirname(__DIR__, 2).'/'.self::ROOT.($path === '' ? '' : '/'.$path);
+    }
+
+    public static function salonDir(string $path = ''): string
+    {
+        return dirname(__DIR__, 2).'/'.self::SALON.($path === '' ? '' : '/'.$path);
+    }
+
+    /**
+     * Against the salon pack's own copy (`salon/schemas/heartbeat.schema.json`, `schemas/entities/SalonTip.schema.json`).
+     *
+     * @return list<string>
+     */
+    public static function salonErrors(mixed $data, string $schema): array
+    {
+        if (! is_file(self::salonDir($schema))) {
+            return ["salon schema {$schema} does not exist"];
+        }
+
+        $result = self::validator()->validate(self::objects($data), self::SALON_PREFIX.$schema);
+
+        return $result->isValid() ? [] : self::format($result->error());
     }
 
     /**
@@ -108,10 +138,12 @@ final class ContractSchema
                 $errors[] = "{$at} WebOrder payload: {$error}";
             }
         } elseif ($entity !== null && ($change->payload ?? null) !== null && preg_match('/^[A-Za-z]+$/', $entity) === 1
-            && is_file(self::dir("schemas/entities/{$entity}.schema.json"))) {
-            $payloadErrors = $derivedOptional
-                ? self::withoutDerivedErrors($change->payload, $entity)
-                : self::errors($change->payload, "schemas/entities/{$entity}.schema.json");
+            && self::entitySchemaFile($entity) !== null) {
+            $payloadErrors = match (true) {
+                $derivedOptional => self::withoutDerivedErrors($change->payload, $entity),
+                is_file(self::salonDir("schemas/entities/{$entity}.schema.json")) => self::salonErrors($change->payload, "schemas/entities/{$entity}.schema.json"),
+                default => self::errors($change->payload, "schemas/entities/{$entity}.schema.json"),
+            };
 
             foreach ($payloadErrors as $error) {
                 $errors[] = "{$at} {$entity} payload: {$error}";
@@ -132,7 +164,7 @@ final class ContractSchema
     public static function withoutDerivedErrors(mixed $payload, string $entity): array
     {
         if (! isset(self::$relaxed[$entity])) {
-            $schema = json_decode((string) file_get_contents(self::dir("schemas/entities/{$entity}.schema.json")), false, 512, JSON_THROW_ON_ERROR);
+            $schema = json_decode((string) file_get_contents((string) self::entitySchemaFile($entity)), false, 512, JSON_THROW_ON_ERROR);
             // Members the portal leaves out (ANSWERS-2026-09-29-b A.1, 2026-10-06 Q1/Q3: a missing member keeps the till's value).
             $derived = [...(EntityRegistry::has($entity) ? EntityRegistry::get($entity)->derived : []), ...PullPayload::omittable($entity)];
             unset($schema->{'$id'});
@@ -143,6 +175,18 @@ final class ContractSchema
         $result = self::validator()->validate(self::objects($payload), self::$relaxed[$entity]);
 
         return $result->isValid() ? [] : self::format($result->error());
+    }
+
+    /** An entity's schema file: the salon pack's copy when it has one, else ROOT's; null when neither has it. */
+    public static function entitySchemaFile(string $entity): ?string
+    {
+        foreach ([self::salonDir("schemas/entities/{$entity}.schema.json"), self::dir("schemas/entities/{$entity}.schema.json")] as $file) {
+            if (is_file($file)) {
+                return $file;
+            }
+        }
+
+        return null;
     }
 
     /** Decoded JSON as objects (json_decode($json) style), whatever shape it came in. */
@@ -161,6 +205,7 @@ final class ContractSchema
             self::$validator = new CompliantValidator;
             self::$validator->setMaxErrors(20)->setStopAtFirstError(false);
             self::$validator->resolver()?->registerPrefix(self::PREFIX, self::dir());
+            self::$validator->resolver()?->registerPrefix(self::SALON_PREFIX, self::salonDir());
         }
 
         return self::$validator;

@@ -1,0 +1,411 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:sspos:web-portal-api:v1:salon-booking-page",
+  "title": "salon-booking-page",
+  "description": "PUT api/v1/sync/salon/booking-page body: the page\u0027s rules, services, stylists and free start times.",
+  "type": "object",
+  "properties": {
+    "schemaVersion": {
+      "type": [
+        "string",
+        "integer"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)$"
+    },
+    "generatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "timeZone": {
+      "type": "string"
+    },
+    "shopName": {
+      "type": "string"
+    },
+    "rules": {
+      "type": "object",
+      "properties": {
+        "isOpen": {
+          "type": "boolean"
+        },
+        "slotIntervalMin": {
+          "type": [
+            "string",
+            "integer"
+          ],
+          "pattern": "^-?(?:0|[1-9]\\d*)$"
+        },
+        "minNoticeMin": {
+          "type": [
+            "string",
+            "integer"
+          ],
+          "pattern": "^-?(?:0|[1-9]\\d*)$"
+        },
+        "daysAhead": {
+          "type": [
+            "string",
+            "integer"
+          ],
+          "pattern": "^-?(?:0|[1-9]\\d*)$"
+        },
+        "bufferMin": {
+          "type": [
+            "string",
+            "integer"
+          ],
+          "pattern": "^-?(?:0|[1-9]\\d*)$"
+        },
+        "changeWindowHours": {
+          "type": [
+            "string",
+            "integer"
+          ],
+          "pattern": "^-?(?:0|[1-9]\\d*)$"
+        },
+        "holdMin": {
+          "type": [
+            "string",
+            "integer"
+          ],
+          "pattern": "^-?(?:0|[1-9]\\d*)$"
+        },
+        "offlineAfterMin": {
+          "type": [
+            "string",
+            "integer"
+          ],
+          "pattern": "^-?(?:0|[1-9]\\d*)$"
+        },
+        "autoAccept": {
+          "type": "boolean"
+        },
+        "askPatchTest": {
+          "type": "boolean"
+        },
+        "questions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "terms": {
+          "type": "string"
+        },
+        "depositNote": {
+          "type": "string"
+        },
+        "queueJoinOpen": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "isOpen",
+        "slotIntervalMin",
+        "minNoticeMin",
+        "daysAhead",
+        "bufferMin",
+        "changeWindowHours",
+        "holdMin",
+        "offlineAfterMin",
+        "autoAccept",
+        "askPatchTest",
+        "questions",
+        "terms",
+        "depositNote",
+        "queueJoinOpen"
+      ]
+    },
+    "services": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "productId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "categoryName": {
+            "type": "string"
+          },
+          "clientGroup": {
+            "type": "string"
+          },
+          "priceIsFrom": {
+            "type": "boolean"
+          },
+          "needsPatchTest": {
+            "type": "boolean"
+          },
+          "depositAmount": {
+            "type": [
+              "string",
+              "number"
+            ],
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$"
+          },
+          "options": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "productId": {
+                  "type": "string"
+                },
+                "label": {
+                  "type": "string"
+                },
+                "price": {
+                  "type": [
+                    "string",
+                    "number"
+                  ],
+                  "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$"
+                },
+                "durationMin": {
+                  "type": [
+                    "string",
+                    "integer"
+                  ],
+                  "pattern": "^-?(?:0|[1-9]\\d*)$"
+                },
+                "byStylist": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "userId": {
+                        "type": "string"
+                      },
+                      "price": {
+                        "type": [
+                          "string",
+                          "number"
+                        ],
+                        "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$"
+                      },
+                      "durationMin": {
+                        "type": [
+                          "string",
+                          "integer"
+                        ],
+                        "pattern": "^-?(?:0|[1-9]\\d*)$"
+                      }
+                    },
+                    "required": [
+                      "userId",
+                      "price",
+                      "durationMin"
+                    ]
+                  }
+                }
+              },
+              "required": [
+                "productId",
+                "label",
+                "price",
+                "durationMin",
+                "byStylist"
+              ]
+            }
+          },
+          "addOns": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "productId": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "price": {
+                  "type": [
+                    "string",
+                    "number"
+                  ],
+                  "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$"
+                },
+                "extraMin": {
+                  "type": [
+                    "string",
+                    "integer"
+                  ],
+                  "pattern": "^-?(?:0|[1-9]\\d*)$"
+                }
+              },
+              "required": [
+                "productId",
+                "name",
+                "price",
+                "extraMin"
+              ]
+            }
+          }
+        },
+        "required": [
+          "productId",
+          "name",
+          "description",
+          "categoryName",
+          "clientGroup",
+          "priceIsFrom",
+          "needsPatchTest",
+          "depositAmount",
+          "options",
+          "addOns"
+        ]
+      }
+    },
+    "stylists": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string"
+          },
+          "firstName": {
+            "type": "string"
+          },
+          "levelName": {
+            "type": "string"
+          },
+          "group": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "userId",
+          "firstName",
+          "levelName",
+          "group"
+        ]
+      }
+    },
+    "availability": {
+      "type": "object",
+      "properties": {
+        "fromDate": {
+          "type": "string",
+          "format": "date"
+        },
+        "dayCount": {
+          "type": [
+            "string",
+            "integer"
+          ],
+          "pattern": "^-?(?:0|[1-9]\\d*)$"
+        },
+        "intervalMin": {
+          "type": [
+            "string",
+            "integer"
+          ],
+          "pattern": "^-?(?:0|[1-9]\\d*)$"
+        },
+        "days": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "date": {
+                "type": "string",
+                "format": "date"
+              },
+              "utcOffsetMinutes": {
+                "type": [
+                  "string",
+                  "integer"
+                ],
+                "pattern": "^-?(?:0|[1-9]\\d*)$"
+              },
+              "items": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "productId": {
+                      "type": "string"
+                    },
+                    "stylists": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "userId": {
+                            "type": "string"
+                          },
+                          "ranges": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        "required": [
+                          "userId",
+                          "ranges"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "productId",
+                    "stylists"
+                  ]
+                }
+              }
+            },
+            "required": [
+              "date",
+              "utcOffsetMinutes",
+              "items"
+            ]
+          }
+        }
+      },
+      "required": [
+        "fromDate",
+        "dayCount",
+        "intervalMin",
+        "days"
+      ]
+    },
+    "manageLink": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "properties": {
+        "keyId": {
+          "type": "string"
+        },
+        "key": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "keyId",
+        "key"
+      ]
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "generatedAt",
+    "timeZone",
+    "shopName",
+    "rules",
+    "services",
+    "stylists",
+    "availability",
+    "manageLink"
+  ]
+}

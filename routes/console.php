@@ -81,3 +81,9 @@ Schedule::command('model:prune', ['--model' => [InvoiceImport::class]])->dailyAt
 Schedule::command('anomalies:detect')->hourlyAt(15)->onOneServer()->withoutOverlapping(30);
 Schedule::command('anomalies:detect', ['--daily'])->dailyAt('06:30')->timezone(Country::zone())->onOneServer()->withoutOverlapping(60);
 Schedule::command('model:prune', ['--model' => [Anomaly::class]])->dailyAt('03:50')->onOneServer();
+
+// Pharmacy dm+d release server (W4): NHSBSA publishes on TRUD on Mondays (usually by 06:00 UK); a bank-holiday week
+// may come on Tuesday, so Tuesday runs again (idempotent: nothing new → nothing written). Does nothing while
+// PHARMACY_DMD is off or no TRUD key is set.
+Schedule::command('pharmacy:dmd-fetch')->weeklyOn(1, '07:30')->timezone(Country::zone())->onOneServer()->withoutOverlapping(60);
+Schedule::command('pharmacy:dmd-fetch')->weeklyOn(2, '07:30')->timezone(Country::zone())->onOneServer()->withoutOverlapping(60);

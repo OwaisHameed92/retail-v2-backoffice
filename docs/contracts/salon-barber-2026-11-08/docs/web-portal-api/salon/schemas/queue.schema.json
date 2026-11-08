@@ -1,0 +1,90 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:sspos:web-portal-api:v1:salon-queue",
+  "title": "salon-queue",
+  "description": "PUT api/v1/sync/salon/queue body: today\u0027s places of the phone joiners.",
+  "type": "object",
+  "properties": {
+    "at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "tradingDate": {
+      "type": "string",
+      "format": "date"
+    },
+    "isOpen": {
+      "type": "boolean"
+    },
+    "waiting": {
+      "type": [
+        "string",
+        "integer"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)$"
+    },
+    "walkInMinutesToWait": {
+      "type": [
+        "string",
+        "integer",
+        "null"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)$"
+    },
+    "entries": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "joinId": {
+            "type": "string"
+          },
+          "ticket": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "position": {
+            "type": [
+              "string",
+              "integer"
+            ],
+            "pattern": "^-?(?:0|[1-9]\\d*)$"
+          },
+          "minutesToWait": {
+            "type": [
+              "string",
+              "integer",
+              "null"
+            ],
+            "pattern": "^-?(?:0|[1-9]\\d*)$"
+          },
+          "estimatedStartAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "joinId",
+          "ticket",
+          "status",
+          "position",
+          "minutesToWait",
+          "estimatedStartAt"
+        ]
+      }
+    }
+  },
+  "required": [
+    "at",
+    "tradingDate",
+    "isOpen",
+    "waiting",
+    "walkInMinutesToWait",
+    "entries"
+  ]
+}

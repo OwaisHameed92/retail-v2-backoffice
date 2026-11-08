@@ -1,0 +1,147 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:sspos:web-portal-api:v1:SalonClientCard",
+  "title": "SalonClientCard",
+  "description": "Payload of a SalonClientCard row.",
+  "type": "object",
+  "properties": {
+    "customerId": {
+      "type": "string"
+    },
+    "clientGroup": {
+      "enum": [
+        "everyone",
+        "men",
+        "women",
+        "kids",
+        null
+      ]
+    },
+    "stylistPreference": {
+      "enum": [
+        "any",
+        "femaleOnly",
+        "maleOnly"
+      ]
+    },
+    "preferredUserId": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "source": {
+      "type": "string"
+    },
+    "referrerCustomerId": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "tags": {
+      "type": "string"
+    },
+    "alertText": {
+      "type": "string"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "externalRef": {
+      "type": "string"
+    },
+    "externalSystem": {
+      "type": "string"
+    },
+    "branchId": {
+      "type": "string"
+    },
+    "id": {
+      "type": "string"
+    },
+    "companyId": {
+      "type": "string"
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "rowVersion": {
+      "type": [
+        "string",
+        "integer"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)$"
+    },
+    "deletedAt": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "isDeleted": {
+      "type": "boolean"
+    },
+    "domainEvents": {
+      "type": [
+        "array",
+        "null"
+      ],
+      "items": {
+        "type": "object",
+        "properties": {
+          "eventId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "occurredAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "version": {
+            "type": [
+              "string",
+              "integer"
+            ],
+            "pattern": "^-?(?:0|[1-9]\\d*)$"
+          }
+        },
+        "required": [
+          "eventId",
+          "occurredAt",
+          "version"
+        ]
+      }
+    }
+  },
+  "required": [
+    "customerId",
+    "clientGroup",
+    "stylistPreference",
+    "preferredUserId",
+    "source",
+    "referrerCustomerId",
+    "tags",
+    "alertText",
+    "notes",
+    "externalRef",
+    "externalSystem",
+    "branchId",
+    "id",
+    "companyId",
+    "createdAt",
+    "updatedAt",
+    "rowVersion",
+    "deletedAt",
+    "isDeleted",
+    "domainEvents"
+  ]
+}

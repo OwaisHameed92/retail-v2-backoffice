@@ -1,11 +1,11 @@
-import { type HeldEmailRow } from '@/components/admin/emails/types';
-import { type AddedTillFeeOptions } from '@/components/admin/tenants/added-till-fee-field';
-import { type CloudMove, type LocalKeyRecord } from '@/components/admin/cloud-link/types';
-import { type ShopHealth, type TillHealth } from '@/components/till-health/types';
 import { type TenantBillingData } from '@/components/admin/billing/types';
+import { type CloudMove, type LocalKeyRecord } from '@/components/admin/cloud-link/types';
+import { type HeldEmailRow } from '@/components/admin/emails/types';
 import { type BranchLicence, type BranchLimits, type LicenceOptions, type PlanOption, type TenantLicensing } from '@/components/admin/licences/types';
+import { type AddedTillFeeOptions } from '@/components/admin/tenants/added-till-fee-field';
 import { type WorkshopTenantData } from '@/components/admin/workshop/types';
 import { type Paginated } from '@/components/shared/data-table';
+import { type ShopHealth, type TillHealth } from '@/components/till-health/types';
 import { type CompanyRole, type CompanyStatus } from '@/types';
 
 export interface Option<T extends string = string> {
@@ -161,10 +161,23 @@ export interface TenantShowProps {
     tillSetupFee: AddedTillFeeOptions;
     /** P11: held emails and the first emails' buttons. Null without billing.manage (tab hidden). */
     emails: TenantEmailsData | null;
+    /** Salon W3b: read-only salon counts for a salon business while SALON_ONLINE is on, else null. */
+    salon: TenantSalonSummary | null;
     /** W5: each shop's BikeBook card; absent while the connector is switched off (tab hidden). */
     workshop?: WorkshopTenantData;
     /** changePlan: licences.manage and billing.manage (audit SEC-4). */
     can: { manage: boolean; impersonate: boolean; manageLicences: boolean; changePlan: boolean };
+}
+
+/** SalonAdminSummary::for (salon W3b): counts only, no client data. */
+export interface TenantSalonSummary {
+    salonShops: number;
+    stylists: number;
+    feedsOn: number;
+    requestsThisWeek: number;
+    pendingRequests: number;
+    /** Monday of this week (Europe/London), "2026-11-02". */
+    weekStartsOn: string;
 }
 
 /** TenantEmails::for (P11): the business page's Emails tab. */

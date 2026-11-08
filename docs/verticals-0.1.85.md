@@ -80,14 +80,72 @@ till.
 
 ## Waiting for EPOS or later waves
 
-- Salon / Barber (41 tables, list values, settings, rights, accounts 2280–2300 / 4200, `sync/salon/*`): W2, W3.
-- dm+d release server (`GET /api/v1/pharmacy/dmd/latest`): W4.
+- Salon / Barber: sync acceptance done in W2 (`docs/salon.md`); the `sync/salon/*` calls and pages are W3.
+- dm+d release server: built in W4 behind `PHARMACY_DMD` (off); see "dm+d release server" below.
 - BikeBook connector, `WorkshopOrder` pull row, webhooks, `workshop.connector_status`: built in W5, switched off (below).
 - Editing pharmacy settings from the portal: not in W1 (shown read-only).
 - Confirm with the till team: whether "Paid in BikeBook" appears in `ZReport.totalsJson`, and that RX lines are in the
   sale's `SaleVat` rows like order deposits (the reports take them off SaleVat).
 - A pulled `vertical.*` / `setup.business_type` that one shop pushed is still relayed to the business's other shops as
   before (0.1.85 tills skip it); not changed so existing shops see no difference.
+
+## EPOS answers (2026-11-08)
+
+1. **"Paid in BikeBook" on the Z:** `totalsJson.tenders[]` has one line per payment type that took money in the shift. The "Paid in BikeBook" line is `notCounted: true`, with expected = declared and variance 0. This matches how we show it (its own non-cash line).
+2. **RX-CHARGE / RX-PPC-* and VAT:** these lines carry `vatRateId: ""` (out of scope). The sale's VAT rows include one row with `vatRateId ""`, percentage 0, vat 0, net = gross = the NHS money, code `E`. Identify it by `vatRateId == ""`, not by the code. We take these lines off that row, so no `E` row is left in the VAT report and none of it reaches a VAT box. Test: `Till0185ReportingTest` "out-of-scope SaleVat row". `RX-PRIVATE` goes on the shop's 0% rate as a normal sale.
+
+## dm+d release server (W4, behind `PHARMACY_DMD`, OFF)
+
+PORTAL-CHANGES-pharmacy.md item 12: a pharmacy's main till fetches NHSBSA's weekly dm+d zip from us first, and only
+uses NHS TRUD with the pharmacy's own key when we cannot help. Built and tested; **switched off** everywhere until the
+owner to-dos below are done. Off, nothing changes for any shop: the two routes answer 501 and the job does nothing.
+Decision: `docs/DECISIONS.md` "Pharmacy dm+d release server (W4)".
+
+| Call | Answer |
+|---|---|
+| `GET /api/v1/pharmacy/dmd/latest` | Auth and headers exactly as `sync/hello` (Bearer branch sync key, `X-SSPOS-*`, contract 1, the sync key's limit) plus 10 a minute per key. Off → **501** `dmd.not_available`, `Retry-After: 3600` (an unknown key is still 401 first). Shop not a pharmacy → **403** `dmd.not_pharmacy`. Nothing held → **404** `dmd.no_release` (the contract's code). **200** `{releaseId, name, releaseDate, week, archiveFileName, downloadUrl, sizeBytes, sha256, publishedAt}`, sha256 upper-case hex as in the contract's sample, `Cache-Control: no-cache, private` |
+| `GET {downloadUrl}` = `https://<portal>/api/v1/pharmacy/dmd/packages/<archiveFileName>?expires=…&signature=…` | No headers needed. Signed link, 48 h (never under 24 h) from each manifest. Bad, altered or expired signature → **403** `dmd.link_invalid`; pruned or unknown name → 404 `dmd.no_release`; off → 501; 20 a minute per IP. 200 streams the zip unchanged: `application/zip`, exact `Content-Length`, `ETag` = SHA-256, `Cache-Control: public, max-age=31536000, immutable` |
+
+Only `dmd.no_release` is named by the contract; the 501 and 403 codes are ours (the till acts on the status). They and
+the manifest schema are written down as files in `docs/contracts/proposals/pharmacy-dmd/` (the pack has prose only) and
+every manifest reply in every test is checked against them (`ContractReplyGuard`).
+
+**Who is a pharmacy:** the sync key's shop, when the business type is Pharmacy, or a till sent `setup.business_type` =
+Pharmacy / `vertical.pharmacy` = true for the business or for that shop (`PharmacyBranch`). A grocery's key is 403;
+another business's key never gets past `auth.wrong_branch` for our shops.
+
+**Weekly job** `pharmacy:dmd-fetch` (`FetchDmdRelease`; Monday 07:30 UK, again Tuesday 07:30 for a bank-holiday week;
+runnable by hand): only with the switch on and `PHARMACY_DMD_TRUD_KEY` set, one run at a time. TRUD item 24's latest
+release → already held in full: nothing written (idempotent) → else the zip goes to a temp file (timeouts: 15 s connect,
+30 s list, 900 s zip; only from `isd.digital.nhs.uk`), its size and SHA-256 must equal TRUD's `archiveFileSizeBytes` /
+`archiveFileSha256` (else thrown away) → stored unchanged at `pharmacy/dmd/<releaseId>/<archiveFileName>` on
+`PHARMACY_DMD_DISK` (default the private `local` disk) with `ATTRIBUTION.txt` (Open Government Licence v3.0) → only then
+the `dmd_releases` row, in one write → older weeks pruned (the newest and the previous two kept; row first, then files).
+Each run is a `dmd_fetch_runs` row; a failure is logged as an error. TRUD puts our key in the URL path, so every TRUD
+message is redacted before it is logged or stored.
+
+**Admin:** Admin → Till health, card "dm+d release server" (read only): on / off, TRUD key "Set" / "Not set" (never the
+key), the release served (name, week, NHSBSA date, size, first 12 characters of the SHA-256, published), last run, last
+error.
+
+**Config** (`config/pharmacy.php`): `PHARMACY_DMD` (false), `PHARMACY_DMD_TRUD_KEY`, `PHARMACY_DMD_DISK` (local),
+`PHARMACY_DMD_PUBLIC_URL` (https base of `downloadUrl`, default APP_URL with https); item 24, TRUD URLs, timeouts, path,
+keep weeks (2), link hours (48) and limits in the file.
+
+**Migration** `2026_12_15_100000_create_dmd_release_tables.php`: `dmd_releases`, `dmd_fetch_runs` (new tables, SQLite and
+MySQL 8).
+
+Tests: `tests/Feature/Pharmacy/DmdManifestApiTest.php`, `DmdPackageDownloadTest.php`, `FetchDmdReleaseTest.php` (TRUD
+always `Http::fake`d), `DmdAdminCardTest.php`, `tests/Feature/Contract/DmdManifestContractTest.php`.
+
+### Owner to-dos before switching on
+
+1. Get our own NHS TRUD account (https://isd.digital.nhs.uk), subscribe it to item 24 "NHSBSA dm+d", and put its API key
+   in `PHARMACY_DMD_TRUD_KEY` in the server's `.env` only (never in the repository, a ticket or chat).
+2. Check TRUD's subscription and redistribution terms for item 24: serving NHSBSA's zip to our pharmacy customers must be
+   allowed (dm+d itself is under the Open Government Licence v3.0; the attribution is kept with the files).
+3. Then set `PHARMACY_DMD=true`, run `php artisan pharmacy:dmd-fetch` once and check the card on Admin → Till health
+   (a week served, no error). Plan disk for about three zips of up to 150 MB.
 
 ## BikeBook connector (W5, built and switched off)
 

@@ -1,0 +1,219 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:sspos:web-portal-api:v1:SalonQueueEntry",
+  "title": "SalonQueueEntry",
+  "description": "Payload of a SalonQueueEntry row.",
+  "type": "object",
+  "properties": {
+    "tradingDate": {
+      "type": "string",
+      "format": "date"
+    },
+    "ticketNumber": {
+      "type": [
+        "string",
+        "integer"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)$"
+    },
+    "queueOrder": {
+      "type": [
+        "string",
+        "integer"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)$"
+    },
+    "firstName": {
+      "type": "string"
+    },
+    "phone": {
+      "type": "string"
+    },
+    "customerId": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "wantedUserId": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "assignedUserId": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "stylistPreference": {
+      "enum": [
+        "any",
+        "femaleOnly",
+        "maleOnly"
+      ]
+    },
+    "source": {
+      "enum": [
+        "till",
+        "kiosk",
+        "online"
+      ]
+    },
+    "status": {
+      "enum": [
+        "waiting",
+        "called",
+        "inService",
+        "done",
+        "left",
+        "noShow"
+      ]
+    },
+    "joinedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "calledAt": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "startedAt": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "finishedAt": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "estimatedStartAt": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "heldOrderId": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "saleId": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "note": {
+      "type": "string"
+    },
+    "branchId": {
+      "type": "string"
+    },
+    "id": {
+      "type": "string"
+    },
+    "companyId": {
+      "type": "string"
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "rowVersion": {
+      "type": [
+        "string",
+        "integer"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)$"
+    },
+    "deletedAt": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "isDeleted": {
+      "type": "boolean"
+    },
+    "domainEvents": {
+      "type": [
+        "array",
+        "null"
+      ],
+      "items": {
+        "type": "object",
+        "properties": {
+          "eventId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "occurredAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "version": {
+            "type": [
+              "string",
+              "integer"
+            ],
+            "pattern": "^-?(?:0|[1-9]\\d*)$"
+          }
+        },
+        "required": [
+          "eventId",
+          "occurredAt",
+          "version"
+        ]
+      }
+    }
+  },
+  "required": [
+    "tradingDate",
+    "ticketNumber",
+    "queueOrder",
+    "firstName",
+    "phone",
+    "customerId",
+    "wantedUserId",
+    "assignedUserId",
+    "stylistPreference",
+    "source",
+    "status",
+    "joinedAt",
+    "calledAt",
+    "startedAt",
+    "finishedAt",
+    "estimatedStartAt",
+    "heldOrderId",
+    "saleId",
+    "note",
+    "branchId",
+    "id",
+    "companyId",
+    "createdAt",
+    "updatedAt",
+    "rowVersion",
+    "deletedAt",
+    "isDeleted",
+    "domainEvents"
+  ]
+}

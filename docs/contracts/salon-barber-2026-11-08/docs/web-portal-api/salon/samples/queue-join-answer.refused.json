@@ -1,0 +1,10 @@
+{
+  "joinId": "01K9S0000000000000000QJ001",
+  "status": "refused",
+  "ticket": "",
+  "position": 0,
+  "minutesToWait": null,
+  "estimatedStartAt": null,
+  "code": "salon.queue.paused",
+  "message": "The queue is paused just now. Please try again in a few minutes or ask at the desk."
+}

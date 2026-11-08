@@ -59,6 +59,10 @@ export const MOVEMENT_TYPES: Record<string, string> = {
     accountPayment: 'Account payment',
     customerAdvance: 'Customer advance',
     customerAdvanceRefund: 'Advance refunded',
+    // Salon / Barber shops (salon pack): a cash tip left with a sale (in; negative when a tip is refunded) and tips paid
+    // to the team from the drawer (out).
+    tipTaken: 'Tips taken',
+    tipPayout: 'Tips paid out',
 };
 
 export const movementLabel = (type: string | null) => (type ? (MOVEMENT_TYPES[type] ?? type) : 'Unknown');

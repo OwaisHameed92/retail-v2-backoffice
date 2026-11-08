@@ -1,0 +1,332 @@
+{
+  "AgeRule": [
+    "none",
+    "over16",
+    "over18",
+    "tobaccoGenerational",
+    "nicotine",
+    "lottery18",
+    "knives18",
+    "fireworks18",
+    "solvents18",
+    "energyDrink16",
+    "paracetamol16"
+  ],
+  "BarcodeSource": [
+    "internal",
+    "supplier",
+    "plu",
+    "weighted",
+    "coupon",
+    "gs1"
+  ],
+  "CommissionPayRule": [
+    "commissionOnly",
+    "hourlyPlusCommission",
+    "higherOfHourlyOrCommission"
+  ],
+  "CommissionPeriod": [
+    "week",
+    "fourWeeks",
+    "month"
+  ],
+  "CommissionRateBasis": [
+    "service",
+    "retail",
+    "category",
+    "fixedPerService",
+    "tier",
+    "notCommissionable"
+  ],
+  "CommissionTierMode": [
+    "marginal",
+    "wholeAmount"
+  ],
+  "CostDeduction": [
+    "none",
+    "beforeRate",
+    "afterRate"
+  ],
+  "CustomerOrderPaymentKind": [
+    "deposit",
+    "partPayment",
+    "collection",
+    "refund"
+  ],
+  "CustomerOrderSource": [
+    "till",
+    "web",
+    "workshop"
+  ],
+  "CustomerOrderStatus": [
+    "ordered",
+    "ready",
+    "collected",
+    "cancelled",
+    "expired"
+  ],
+  "CustomerTransactionType": [
+    "charge",
+    "payment",
+    "refund",
+    "pointsEarn",
+    "pointsBurn",
+    "pointsAdjust",
+    "pointsExpire",
+    "opening",
+    "advance",
+    "advanceRefund"
+  ],
+  "DiscountSource": [
+    "manual",
+    "promotion",
+    "customerGroup",
+    "staff",
+    "coupon"
+  ],
+  "MessageChannel": [
+    "whatsApp",
+    "sms",
+    "email"
+  ],
+  "NegativeStockPolicy": [
+    "allow",
+    "warn",
+    "block"
+  ],
+  "PurchaseOrderOrigin": [
+    "branch",
+    "headOffice"
+  ],
+  "PurchaseOrderStatus": [
+    "draft",
+    "sent",
+    "partReceived",
+    "received",
+    "invoiced",
+    "paid",
+    "cancelled"
+  ],
+  "RenterRentModel": [
+    "fixedPerWeek",
+    "percentOfTakings"
+  ],
+  "SalePaymentStatus": [
+    "approved",
+    "reversed",
+    "recovered"
+  ],
+  "SaleStatus": [
+    "open",
+    "held",
+    "completed",
+    "voided"
+  ],
+  "SaleType": [
+    "sale",
+    "refund",
+    "exchange",
+    "quote",
+    "training",
+    "deposit"
+  ],
+  "SalonAppointmentSource": [
+    "till",
+    "phone",
+    "online",
+    "imported"
+  ],
+  "SalonAppointmentStatus": [
+    "booked",
+    "confirmed",
+    "arrived",
+    "inService",
+    "completed",
+    "noShow",
+    "cancelled"
+  ],
+  "SalonBlockKind": [
+    "break",
+    "blocked",
+    "timeOff"
+  ],
+  "SalonCancelledBy": [
+    "client",
+    "shop"
+  ],
+  "SalonClientGroup": [
+    "everyone",
+    "men",
+    "women",
+    "kids"
+  ],
+  "SalonMessageKind": [
+    "service",
+    "marketing"
+  ],
+  "SalonMessageStatus": [
+    "queued",
+    "sent",
+    "failed",
+    "skipped",
+    "cancelled"
+  ],
+  "SalonOnlineBookingKind": [
+    "new",
+    "reschedule",
+    "cancel",
+    "preferences"
+  ],
+  "SalonOnlineBookingStatus": [
+    "pending",
+    "accepted",
+    "declined",
+    "expired",
+    "cancelled"
+  ],
+  "SalonPackageStatus": [
+    "active",
+    "usedUp",
+    "expired",
+    "refunded"
+  ],
+  "SalonPackageUseKind": [
+    "use",
+    "return",
+    "expire",
+    "refund"
+  ],
+  "SalonPatchTestResult": [
+    "pending",
+    "passed",
+    "failed"
+  ],
+  "SalonPhotoKind": [
+    "before",
+    "after",
+    "other"
+  ],
+  "SalonQueueSource": [
+    "till",
+    "kiosk",
+    "online"
+  ],
+  "SalonQueueStatus": [
+    "waiting",
+    "called",
+    "inService",
+    "done",
+    "left",
+    "noShow"
+  ],
+  "SalonRenterStatementStatus": [
+    "draft",
+    "issued",
+    "settled",
+    "cancelled"
+  ],
+  "SalonRepeatUnit": [
+    "day",
+    "week",
+    "month"
+  ],
+  "SalonResourceKind": [
+    "chair",
+    "room",
+    "basin",
+    "station",
+    "other"
+  ],
+  "SalonStaffRole": [
+    "main",
+    "assistant"
+  ],
+  "SalonStampEventKind": [
+    "stamp",
+    "unstamp",
+    "rewardUsed",
+    "rewardReturned",
+    "adjust"
+  ],
+  "SalonStylistGroup": [
+    "female",
+    "male"
+  ],
+  "SalonStylistPreference": [
+    "any",
+    "femaleOnly",
+    "maleOnly"
+  ],
+  "SalonTipMethod": [
+    "card",
+    "cash",
+    "keyed"
+  ],
+  "SalonTipPayoutMethod": [
+    "cash",
+    "payroll"
+  ],
+  "SalonWaitlistStatus": [
+    "waiting",
+    "offered",
+    "booked",
+    "expired",
+    "cancelled"
+  ],
+  "SettingScope": [
+    "company",
+    "branch",
+    "register"
+  ],
+  "StampRewardKind": [
+    "amountOff",
+    "percentOff",
+    "freeService"
+  ],
+  "StockMovementType": [
+    "sale",
+    "refund",
+    "adjustment",
+    "received",
+    "wastage",
+    "transfer",
+    "stockTake",
+    "damaged",
+    "supplierReturn",
+    "expiry",
+    "theft",
+    "openingStock",
+    "promotionSample"
+  ],
+  "StockTransferStatus": [
+    "requested",
+    "dispatched",
+    "received",
+    "closed",
+    "cancelled"
+  ],
+  "SyncOwnership": [
+    "hubOwned",
+    "branchOwned"
+  ],
+  "TipSplitMode": [
+    "byServiceValue",
+    "equally",
+    "explicitAmounts"
+  ],
+  "UnitType": [
+    "pcs",
+    "kg",
+    "open"
+  ],
+  "VatTreatment": [
+    "apply",
+    "exempt",
+    "outOfScope"
+  ],
+  "WorkshopExposure": [
+    "auto",
+    "always",
+    "never"
+  ]
+}

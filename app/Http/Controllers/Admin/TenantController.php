@@ -16,6 +16,7 @@ use App\Domain\Mail\Enums\EmailCategory;
 use App\Domain\Mail\Support\EmailControl;
 use App\Domain\OnlineStore\Data\PlanOnlineStoreOptions;
 use App\Domain\OnlineStore\Support\OnlineStoreOnly;
+use App\Domain\Salon\Queries\SalonAdminSummary;
 use App\Domain\Shared\Models\AuditLog;
 use App\Domain\Shared\Support\TableQuery;
 use App\Domain\Sync\Data\SyncKeyData;
@@ -203,6 +204,8 @@ class TenantController extends Controller
                 'moves' => CloudLinkList::uploads(new Request, $company->id)['data'],
                 'keys' => CloudLinkList::localKeys(new Request, $company->id)['data'],
             ],
+            // Salon W3b: read-only salon counts for a salon business while SALON_ONLINE is on, else null.
+            'salon' => SalonAdminSummary::for($company, CarbonImmutable::now()),
             'nations' => Nation::options(),
             'roles' => TenantData::roleOptions(),
             'maxTills' => NewTenant::MAX_TILLS,

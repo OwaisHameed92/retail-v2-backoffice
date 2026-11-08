@@ -33,6 +33,11 @@ final class HubVersions
         'MedicineClassification', 'PriceHistory', 'PromotionRule', 'PromotionItem', 'PromotionCoupon',
         'RebateAgreement', 'Customer', 'NewsTitle', 'StockTransfer', 'StockTransferLine', 'StockTransferReceipt',
         'StockTransferReceiptLine', 'CustomerTransaction', 'AccountPayDate', 'PurchaseOrder', 'PurchaseOrderLine',
+        // Salon (W2): a plan before its tiers and rates and the levels naming it; service rows after their Product and
+        // level; a booking request after the Customer it names.
+        'SalonCommissionPlan', 'SalonCommissionTier', 'SalonCommissionCategoryRate', 'SalonCommissionFixedService',
+        'SalonLevel', 'SalonResource', 'SalonServiceDetail', 'SalonServiceLevelPrice', 'SalonServiceAddOn',
+        'SalonStampCardRule', 'SalonPackageDefinition', 'SalonConsultationFormTemplate', 'SalonOnlineBooking',
     ];
 
     /** Tenancy rows the portal edits and sends (§6.1). Register is not sent. */

@@ -1,0 +1,153 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:sspos:web-portal-api:v1:SalonStaffProfile",
+  "title": "SalonStaffProfile",
+  "description": "Payload of a SalonStaffProfile row.",
+  "type": "object",
+  "properties": {
+    "userId": {
+      "type": "string"
+    },
+    "displayName": {
+      "type": "string"
+    },
+    "levelId": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "colourHex": {
+      "type": "string"
+    },
+    "isBookable": {
+      "type": "boolean"
+    },
+    "isOnlineBookable": {
+      "type": "boolean"
+    },
+    "stylistGroup": {
+      "enum": [
+        "female",
+        "male",
+        null
+      ]
+    },
+    "isChairRenter": {
+      "type": "boolean"
+    },
+    "rightToWorkCheckedOn": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date"
+    },
+    "commissionPlanId": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "onlineBio": {
+      "type": "string"
+    },
+    "sortOrder": {
+      "type": [
+        "string",
+        "integer"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)$"
+    },
+    "branchId": {
+      "type": "string"
+    },
+    "id": {
+      "type": "string"
+    },
+    "companyId": {
+      "type": "string"
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "rowVersion": {
+      "type": [
+        "string",
+        "integer"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)$"
+    },
+    "deletedAt": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "isDeleted": {
+      "type": "boolean"
+    },
+    "domainEvents": {
+      "type": [
+        "array",
+        "null"
+      ],
+      "items": {
+        "type": "object",
+        "properties": {
+          "eventId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "occurredAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "version": {
+            "type": [
+              "string",
+              "integer"
+            ],
+            "pattern": "^-?(?:0|[1-9]\\d*)$"
+          }
+        },
+        "required": [
+          "eventId",
+          "occurredAt",
+          "version"
+        ]
+      }
+    }
+  },
+  "required": [
+    "userId",
+    "displayName",
+    "levelId",
+    "colourHex",
+    "isBookable",
+    "isOnlineBookable",
+    "stylistGroup",
+    "isChairRenter",
+    "rightToWorkCheckedOn",
+    "commissionPlanId",
+    "onlineBio",
+    "sortOrder",
+    "branchId",
+    "id",
+    "companyId",
+    "createdAt",
+    "updatedAt",
+    "rowVersion",
+    "deletedAt",
+    "isDeleted",
+    "domainEvents"
+  ]
+}

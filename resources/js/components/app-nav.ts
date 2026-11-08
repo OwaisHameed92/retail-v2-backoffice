@@ -22,6 +22,7 @@ import {
     PackageOpen,
     Pill,
     Receipt,
+    Scissors,
     ScrollText,
     Settings,
     ShieldAlert,
@@ -98,6 +99,8 @@ export function tenantNavGroups(path: string): TenantNavGroup[] {
                 },
                 { title: 'Newspapers', icon: Newspaper, href: '/app/news', active: startsWithPath(path, '/app/news'), ability: 'news.view' },
                 { title: 'Pharmacy', icon: Pill, href: '/app/pharmacy', active: startsWithPath(path, '/app/pharmacy'), ability: 'pharmacy.view' },
+                // Salon W3b: `salon.manage` is only shared for a salon business while SALON_ONLINE is on (ServiceModules).
+                { title: 'Salon', icon: Scissors, href: '/app/salon', active: startsWithPath(path, '/app/salon'), ability: 'salon.manage' },
                 { title: 'Parcels', icon: PackageOpen, href: '/app/parcels', active: startsWithPath(path, '/app/parcels'), ability: 'parcels.view' },
             ],
         },

@@ -1,0 +1,174 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-11-09T08:00:00Z",
+  "timeZone": "Europe/London",
+  "shopName": "Kings Cuts",
+  "rules": {
+    "isOpen": true,
+    "slotIntervalMin": 15,
+    "minNoticeMin": 120,
+    "daysAhead": 28,
+    "bufferMin": 0,
+    "changeWindowHours": 24,
+    "holdMin": 30,
+    "offlineAfterMin": 10,
+    "autoAccept": true,
+    "askPatchTest": true,
+    "questions": [
+      "Any allergies we should know about?"
+    ],
+    "terms": "Please give 24 hours\u0027 notice to change or cancel.",
+    "depositNote": "No deposit is needed.",
+    "queueJoinOpen": true
+  },
+  "services": [
+    {
+      "productId": "01K9S0000000000000000SV001",
+      "name": "Gents cut",
+      "description": "Wash, cut and style",
+      "categoryName": "Cuts",
+      "clientGroup": "men",
+      "priceIsFrom": false,
+      "needsPatchTest": false,
+      "depositAmount": 0,
+      "options": [
+        {
+          "productId": "01K9S0000000000000000SV001",
+          "label": "",
+          "price": 18,
+          "durationMin": 30,
+          "byStylist": [
+            {
+              "userId": "01K9S0000000000000000ST001",
+              "price": 22,
+              "durationMin": 30
+            },
+            {
+              "userId": "01K9S0000000000000000ST002",
+              "price": 18,
+              "durationMin": 30
+            }
+          ]
+        }
+      ],
+      "addOns": [
+        {
+          "productId": "01K9S0000000000000000SV005",
+          "name": "Beard trim",
+          "price": 8,
+          "extraMin": 15
+        }
+      ]
+    },
+    {
+      "productId": "01K9S0000000000000000SV002",
+      "name": "Ladies cut \u0026 blow-dry",
+      "description": "",
+      "categoryName": "Cuts",
+      "clientGroup": "women",
+      "priceIsFrom": true,
+      "needsPatchTest": false,
+      "depositAmount": 0,
+      "options": [
+        {
+          "productId": "01K9S0000000000000000SV003",
+          "label": "Short",
+          "price": 35,
+          "durationMin": 45,
+          "byStylist": [
+            {
+              "userId": "01K9S0000000000000000ST001",
+              "price": 40,
+              "durationMin": 45
+            }
+          ]
+        },
+        {
+          "productId": "01K9S0000000000000000SV004",
+          "label": "Long",
+          "price": 45,
+          "durationMin": 60,
+          "byStylist": [
+            {
+              "userId": "01K9S0000000000000000ST001",
+              "price": 50,
+              "durationMin": 60
+            }
+          ]
+        }
+      ],
+      "addOns": []
+    }
+  ],
+  "stylists": [
+    {
+      "userId": "01K9S0000000000000000ST001",
+      "firstName": "Ann",
+      "levelName": "Senior stylist",
+      "group": "female"
+    },
+    {
+      "userId": "01K9S0000000000000000ST002",
+      "firstName": "Ben",
+      "levelName": "Barber",
+      "group": "male"
+    }
+  ],
+  "availability": {
+    "fromDate": "2026-11-09",
+    "dayCount": 28,
+    "intervalMin": 15,
+    "days": [
+      {
+        "date": "2026-11-09",
+        "utcOffsetMinutes": 0,
+        "items": [
+          {
+            "productId": "01K9S0000000000000000SV001",
+            "stylists": [
+              {
+                "userId": "01K9S0000000000000000ST001",
+                "ranges": [
+                  "10:00-17:30"
+                ]
+              },
+              {
+                "userId": "01K9S0000000000000000ST002",
+                "ranges": [
+                  "10:00-10:30",
+                  "11:30-17:30"
+                ]
+              }
+            ]
+          },
+          {
+            "productId": "01K9S0000000000000000SV003",
+            "stylists": [
+              {
+                "userId": "01K9S0000000000000000ST001",
+                "ranges": [
+                  "10:00-17:15"
+                ]
+              }
+            ]
+          },
+          {
+            "productId": "01K9S0000000000000000SV004",
+            "stylists": [
+              {
+                "userId": "01K9S0000000000000000ST001",
+                "ranges": [
+                  "10:00-17:00"
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "manageLink": {
+    "keyId": "521e36838909",
+    "key": "c2FtcGxlLWtleS1mb3ItdGhlLXBvcnRhbC1wYWNr"
+  }
+}

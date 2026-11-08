@@ -1,3 +1,4 @@
+import { DmdServerCard, type DmdServerStatus } from '@/components/admin/till-health/dmd-server-card';
 import { tillHealthColumns } from '@/components/admin/till-health/till-health-columns';
 import { TillHealthRules } from '@/components/admin/till-health/till-health-rules';
 import { DataTable, type Paginated } from '@/components/shared/data-table';
@@ -19,6 +20,7 @@ interface TillHealthIndexProps {
     summary: TillHealthSummary;
     filters: { filter: TillHealthFilter | null; state: string | null; company: { id: string; name: string } | null };
     thresholds: HealthThresholds;
+    dmd: DmdServerStatus;
 }
 
 const tabs: { value: TillHealthFilter | null; label: string; count: (s: TillHealthSummary) => number }[] = [
@@ -30,7 +32,7 @@ const tabs: { value: TillHealthFilter | null; label: string; count: (s: TillHeal
     { value: 'clockSkew', label: 'Clock skew', count: (s) => s.clockSkew },
 ];
 
-export default function TillHealthIndex({ tills, summary, filters, thresholds }: TillHealthIndexProps) {
+export default function TillHealthIndex({ tills, summary, filters, thresholds, dmd }: TillHealthIndexProps) {
     const columns = useMemo(() => tillHealthColumns(), []);
     const href = (filter: TillHealthFilter | null) =>
         route('admin.till-health.index', { ...(filter ? { filter } : {}), ...(filters.company ? { company: filters.company.id } : {}) });
@@ -130,6 +132,8 @@ export default function TillHealthIndex({ tills, summary, filters, thresholds }:
             />
 
             <TillHealthRules thresholds={thresholds} />
+
+            <DmdServerCard status={dmd} />
         </AdminLayout>
     );
 }
