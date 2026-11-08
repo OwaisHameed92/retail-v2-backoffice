@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\RateLimiter;
  * Keyed per visitor (a hash of the IP, never the IP itself) and shop, plus a per-shop ceiling on writes from everyone
  * together, so spam never buries the desk with requests:
  *
- * - `salon-public-views`: page views, polls and time look-ups (`salon_online.public.views_per_minute`, 120);
+ * - `salon-public-views`: page views, polls and time look-ups (`salon.public.views_per_minute`, 120);
  * - `salon-public-writes`: booking requests, withdrawals, manage-link requests and queue joins (6 a minute and 30 an
  *   hour per visitor, 60 a minute per shop).
  */

@@ -4,6 +4,7 @@ namespace App\Domain\PortalUsers\Support;
 
 use App\Domain\Billing\Support\ManualCollection;
 use App\Domain\OnlineStore\Support\OnlineStoreSwitch;
+use App\Domain\Salon\Support\SalonOnline;
 use App\Domain\Shared\Country\CountryModules;
 use App\Domain\Tenancy\Enums\Ability;
 use App\Domain\Tenancy\Enums\CompanyRole;
@@ -49,6 +50,7 @@ final class RoleMatrix
         'privacy.manage' => ['Business', 'Export or anonymise a customer\'s data and set data retention'],
         'accounts.export' => ['Money', 'Export journals to Xero, QuickBooks or Sage'],
         'ai.use' => ['Business', 'Ask the AI assistant about the business'],
+        'salon.manage' => ['Selling', 'Salon: stylists\' calendar feeds and online booking requests'],
     ];
 
     /** One line per role for pickers and the matrix header. */
@@ -88,6 +90,11 @@ final class RoleMatrix
         foreach (self::LABELS as $key => [$group, $label]) {
             // The online store row only where the store is available (ONLINE_STORE switch and country flag).
             if (in_array($key, [Ability::StoreManage->value, Ability::OrdersOnline->value], true) && ! ($company !== null ? OnlineStoreSwitch::availableFor($company) : OnlineStoreSwitch::enabled())) {
+                continue;
+            }
+
+            // Salon W3b: the salon row only while SALON_ONLINE is on (and, for a business, where it has a salon shop).
+            if ($key === Ability::SalonManage->value && ! ($company !== null ? SalonOnline::availableFor($company) : SalonOnline::enabled())) {
                 continue;
             }
 

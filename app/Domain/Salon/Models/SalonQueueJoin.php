@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Model;
 /**
  * A phone join from the queue-join page (W3a, salon pack 2026-11-08 README §4.3, §4.4). The id is the `joinId` (our
  * ULID) the till uses as its ticket's id, so a join it lists twice is one ticket. Listed to the shop's main till until
- * answered, or dropped after `salon_online.join_ttl_minutes` with nobody answering. Portal-only, never a till row.
+ * answered, or dropped after `salon.join_ttl_minutes` with nobody answering. Portal-only, never a till row.
  *
  * @property string $id
  * @property string $company_id

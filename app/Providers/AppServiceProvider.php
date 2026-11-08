@@ -24,6 +24,7 @@ use App\Domain\OnlineStore\Listeners\SendOnlineOrderStatusMail;
 use App\Domain\OnlineStore\Support\StoreRateLimits;
 use App\Domain\Partners\Listeners\PartnerWebhookListeners;
 use App\Domain\Partners\Support\PartnerRateLimit;
+use App\Domain\Salon\Support\SalonCalendarRateLimit;
 use App\Domain\Salon\Support\SalonPublicRateLimits;
 use App\Domain\Shared\Country\Country;
 use App\Domain\Tenancy\Events\BranchAdded;
@@ -104,6 +105,9 @@ class AppServiceProvider extends ServiceProvider
         // Handheld (PDA) API: its named limiters, and the `handheld` guard whose user AuthenticateHandheldToken sets
         // for the call (so RecordAudit names the handheld user). It never signs anyone in by itself.
         HandheldRateLimits::register();
+
+        // Salon W3b: the staff calendar feed's per-IP limiter.
+        SalonCalendarRateLimit::register();
 
         // Public online store (OS-2): its named limiters, answering 429 with the store's own page.
         StoreRateLimits::register(StorePages::tooMany(...));

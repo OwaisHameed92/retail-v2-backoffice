@@ -32,7 +32,7 @@ test('every request sample and our replies match the pack\'s schemas', function 
 });
 
 test('switched off (the default): every call is 501 salon.not_available with Retry-After 3600, after the key check', function () {
-    config(['salon_online.enabled' => false]);
+    config(['salon.online' => false]);
 
     foreach ([
         $this->s->putPage(), $this->s->heartbeat(), $this->s->call('GET', 'queue-joins?max=20'),
@@ -158,7 +158,7 @@ test('the phone-queue push keeps the newest `at` and stores no names', function 
 });
 
 test('salon calls have their own limit of 60 a minute per key (429 rate.limited), on top of the sync limit', function () {
-    config(['salon_online.per_minute' => 6]);
+    config(['salon.online_per_minute' => 6]);
 
     for ($i = 0; $i < 6; $i++) {
         $this->s->heartbeat()->assertOk();
@@ -173,9 +173,9 @@ test('the switch never touches a grocery\'s sync', function () {
     $hello = fn () => $this->s->sync->hello(bradford: true)->assertOk()->json();
     $pull = fn () => $this->s->sync->pull(0, bradford: true)->assertOk()->json('changes');
 
-    config(['salon_online.enabled' => false]);
+    config(['salon.online' => false]);
     [$offHello, $offPull] = [$hello(), $pull()];
-    config(['salon_online.enabled' => true]);
+    config(['salon.online' => true]);
     $this->s->putPage()->assertOk();
 
     expect(array_diff_key($hello(), ['serverTime' => 1]))->toBe(array_diff_key($offHello, ['serverTime' => 1]))

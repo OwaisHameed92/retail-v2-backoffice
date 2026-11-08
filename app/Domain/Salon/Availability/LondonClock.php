@@ -48,7 +48,7 @@ final class LondonClock
         $from = $midnight->getTimestamp() - 14 * 3600;
         $transitions = $zone->getTransitions($from, $from + 40 * 3600);
 
-        if ($transitions === false || count($transitions) < 2) {
+        if (count($transitions) < 2) {
             return false;
         }
 

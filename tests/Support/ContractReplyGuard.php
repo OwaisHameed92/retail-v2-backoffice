@@ -46,6 +46,8 @@ final class ContractReplyGuard
         'proposals/product-images' => 'error-codes.additions.json',
         // W3a: the salon pack's five calls.
         self::SALON => 'error-codes.additions.json',
+        // W4: the dm+d manifest (PORTAL-CHANGES-pharmacy.md item 12 as files; the folder's README).
+        'proposals/pharmacy-dmd' => 'error-codes.additions.json',
     ];
 
     /** The salon pack's own folder (salon/README.md §15 codes, salon/schemas/* replies). */
@@ -56,6 +58,7 @@ final class ContractReplyGuard
         '#^GET api/v1/sync/product-images$#' => ['proposals/product-images', 'schemas/product-image-list-reply.schema.json'],
         '#^PUT api/v1/sync/product-images/[^/]+$#' => ['proposals/product-images', 'schemas/product-image-upload-reply.schema.json'],
         '#^DELETE api/v1/sync/product-images/[^/]+$#' => ['proposals/product-images', 'schemas/product-image-delete-reply.schema.json'],
+        '#^GET api/v1/pharmacy/dmd/latest$#' => ['proposals/pharmacy-dmd', 'schemas/dmd-manifest-reply.schema.json'],
         // W3a (salon README §4): heartbeat, answer and queue replies have no schema in the pack (`{result}`; their
         // tests check them).
         '#^PUT api/v1/sync/salon/booking-page$#' => [self::SALON, 'schemas/booking-page-reply.schema.json'],
@@ -88,7 +91,8 @@ final class ContractReplyGuard
         $app['events']->listen(RequestHandled::class, function (RequestHandled $event) use ($guard) {
             $path = $event->request->path();
 
-            if (preg_match('#^api/v1/(sync|licence|devices|cloud)(/|$)#', $path) !== 1) {
+            // The dm+d manifest is a till call too (W4); its zip is not JSON and is checked by its own tests.
+            if (preg_match('#^api/v1/(sync|licence|devices|cloud)(/|$)|^api/v1/pharmacy/dmd/latest$#', $path) !== 1) {
                 return;
             }
 

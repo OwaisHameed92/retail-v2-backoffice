@@ -18,7 +18,7 @@ use Symfony\Component\HttpFoundation\Response;
  *
  * 1. SALON_ONLINE off (the default) → 501 salon.not_available with Retry-After 3600, before the body is read. An
  *    unknown key is still 401 first: the till learns nothing before it proves who it is.
- * 2. Its own limit, `salon_online.per_minute` calls per sync key (60) → 429 rate.limited with Retry-After, on top of
+ * 2. Its own limit, `salon.online_per_minute` calls per sync key (60) → 429 rate.limited with Retry-After, on top of
  *    the key's general limit, so salon calls never crowd out push and pull.
  * 3. Only a salon shop's main (or single) till: the key's shop must be a salon on our side (SalonShops) and the
  *    calling register, when we know it, the shop's main till → else 403 salon.not_a_salon. (The sync key only ever

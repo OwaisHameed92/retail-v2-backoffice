@@ -32,7 +32,7 @@ final class SalonOnline
 
     public function __construct(private readonly TestCase $test)
     {
-        config(['salon_online.enabled' => true]);
+        config(['salon.online' => true]);
         $this->sync = new SyncApiFixtures($test);
         $this->sync->push([SalonRows::setting('vertical.salon', 'true', 1)])->assertOk();
     }

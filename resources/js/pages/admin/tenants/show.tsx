@@ -9,6 +9,7 @@ import { formatDate, plural } from '@/components/admin/tenants/format';
 import { TenantActions } from '@/components/admin/tenants/tenant-actions';
 import { TenantDetails } from '@/components/admin/tenants/tenant-details';
 import { TenantEmailsPanel } from '@/components/admin/tenants/tenant-emails-panel';
+import { TenantSalonCard } from '@/components/admin/tenants/tenant-salon-card';
 import { type TenantBranch, type TenantShowProps } from '@/components/admin/tenants/types';
 import { UsersPanel } from '@/components/admin/tenants/users-panel';
 import { EmptyState } from '@/components/shared/empty-state';
@@ -53,6 +54,7 @@ export default function TenantShow({
     licenceOptions,
     cloudLink,
     emails,
+    salon,
     can,
 }: TenantShowProps) {
     const [tab, setTab] = useState<TabValue>(() => initialTab(billing !== null));
@@ -152,6 +154,8 @@ export default function TenantShow({
             </StatGrid>
 
             <TenantDetails tenant={tenant} />
+
+            {salon && <TenantSalonCard salon={salon} />}
 
             <div className="flex flex-col gap-5">
                 <PageTabs tabs={tabs} value={tab} onChange={(value) => changeTab(value as TabValue)} label="Tenant sections" />

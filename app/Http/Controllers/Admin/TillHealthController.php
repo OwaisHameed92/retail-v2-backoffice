@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Domain\Pharmacy\Queries\DmdServerStatus;
 use App\Domain\Shared\Support\Ulid;
 use App\Domain\Tenancy\Models\Company;
 use App\Domain\TillHealth\Enums\TillState;
@@ -15,7 +16,7 @@ use Inertia\Response;
 
 /**
  * Module 2.7: the admin Till health list across every business (tenants.view). Reads the stored health rows,
- * refreshed every 5 minutes by `till-health:refresh`.
+ * refreshed every 5 minutes by `till-health:refresh`. Also the read-only dm+d release server card (W4).
  */
 class TillHealthController extends Controller
 {
@@ -36,6 +37,8 @@ class TillHealthController extends Controller
             ],
             'states' => TillState::options(),
             'thresholds' => HealthThresholds::fromConfig()->toArray(),
+            // W4: the pharmacy dm+d release server (read only; never the TRUD key).
+            'dmd' => fn () => DmdServerStatus::compute(),
         ]);
     }
 }

@@ -4,6 +4,7 @@ namespace App\Domain\Pharmacy\Support;
 
 use App\Domain\OnlineStore\Support\OnlineOrdersAccess;
 use App\Domain\OnlineStore\Support\OnlineStoreSwitch;
+use App\Domain\Salon\Support\SalonOnline;
 use App\Domain\Shared\Country\CountryModules;
 use App\Domain\Tenancy\Enums\Ability;
 use App\Domain\Tenancy\Enums\BusinessType;
@@ -65,6 +66,8 @@ final class ServiceModules
             Ability::StoreManage->value => OnlineStoreSwitch::availableFor($company),
             // Audit OSA-32, OSA-5: "Online orders" while the board can be worked (also with open orders left after the store went off).
             Ability::OrdersOnline->value => OnlineOrdersAccess::reachable($company),
+            // Salon W3b: the "Salon" page only for a business with a salon shop while SALON_ONLINE is on.
+            Ability::SalonManage->value => SalonOnline::availableFor($company),
             default => true,
         }));
     }

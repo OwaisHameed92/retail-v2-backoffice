@@ -102,4 +102,7 @@ enum Ability: string
 
     /** Audit OSA-32: work the online orders (board, order page, pick list, status, lines, resend link, taking orders). Owner, manager and staff (a one-shop user: their shop). */
     case OrdersOnline = 'orders.online';
+
+    /** Salon W3b: the "Salon" page (stylists' calendar feeds on and off, online booking requests read only). Owner and manager; only for salon shops while SALON_ONLINE is on. */
+    case SalonManage = 'salon.manage';
 }

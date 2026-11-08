@@ -11,7 +11,7 @@ use Carbon\CarbonImmutable;
 /**
  * `GET sync/salon/queue-joins?max=20` (W3a, salon pack README §4.3): the shop's phone joins not yet answered, oldest
  * first, at most `max` (1–100, default 20), with `hasMore`. A join nobody answered within
- * `salon_online.join_ttl_minutes` (15) is dropped first, never listed again; its client is told to ask at the desk.
+ * `salon.join_ttl_minutes` (15) is dropped first, never listed again; its client is told to ask at the desk.
  * Only the calling shop's joins: another shop's never appear. Reply: `salon/schemas/queue-joins-reply.schema.json`.
  */
 final class QueueJoinsForTill

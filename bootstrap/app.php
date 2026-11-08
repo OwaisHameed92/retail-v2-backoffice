@@ -36,6 +36,9 @@ return Application::configure(basePath: dirname(__DIR__))
 
             // GoCardless webhooks and signed Direct Debit links (module 1.12).
             Route::group([], base_path('routes/webhooks.php'));
+
+            // Salon W3b: staff calendar feeds (iCal), public, no session (SALON_ONLINE).
+            Route::group([], base_path('routes/salon-ical.php'));
         },
     )
     ->withMiddleware(function (Middleware $middleware) {

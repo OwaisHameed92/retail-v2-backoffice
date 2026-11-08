@@ -1,6 +1,8 @@
 <?php
 
 use App\Domain\Salon\Models\SalonQueueJoin;
+use App\Domain\Salon\Queries\OnlineBookingSummary;
+use App\Domain\Tenancy\CurrentCompany;
 use App\Domain\TillData\Models\SalonOnlineBooking;
 use Illuminate\Support\Facades\Log;
 use Tests\Feature\Salon\SalonOnline as S;
@@ -23,7 +25,7 @@ beforeEach(function () {
 
 test('switched off: every public page and write is a 404, and nothing is written', function () {
     $redirect = ($this->book)()->assertCreated()->json('redirect');
-    config(['salon_online.enabled' => false]);
+    config(['salon.online' => false]);
 
     foreach ([$this->s->url(), $this->s->url('times'), $redirect, $this->s->url('queue'), $this->s->url('m/01K9S0000000000000000AP001.'.str_repeat('a', 22))] as $url) {
         $this->get($url)->assertNotFound();
@@ -67,7 +69,7 @@ test('embed=1 lets any site frame the booking page (and its "request sent" page)
 });
 
 test('public writes are rate limited per visitor and shop', function () {
-    config(['salon_online.public.writes_per_minute' => 2]);
+    config(['salon.public.writes_per_minute' => 2]);
 
     ($this->book)(['time' => '14:00'])->assertCreated();
     ($this->book)(['time' => '15:00'])->assertCreated();
@@ -94,10 +96,10 @@ test('no client details, token or key are written to the log', function () {
 
 test('the pack\'s checklist "before a real salon is connected", as far as the portal can prove it', function () {
     // 1. 501 until switched on (SalonOnlineApiTest), push and pull carry on.
-    config(['salon_online.enabled' => false]);
+    config(['salon.online' => false]);
     $this->s->heartbeat()->assertStatus(501);
     $this->s->sync->pull(0)->assertOk();
-    config(['salon_online.enabled' => true]);
+    config(['salon.online' => true]);
 
     // 2. Page stored, addresses returned; the same page again → unchanged.
     $this->s->putPage()->assertOk()->assertJsonPath('result', 'unchanged');
@@ -106,4 +108,20 @@ test('the pack\'s checklist "before a real salon is connected", as far as the po
     $this->s->heartbeat(bradford: true)->assertStatus(403)->assertJsonPath('code', 'salon.not_a_salon');
     $pulled = array_column($this->s->sync->pull(0, bradford: true)->assertOk()->json('changes'), 'entity');
     expect(array_filter($pulled, fn (string $e) => str_starts_with($e, 'Salon')))->toBe([]);
+});
+
+test('the tenant Salon page\'s "Online booking" card is filled from the stored page and heartbeat', function () {
+    $summary = fn () => app(CurrentCompany::class)->runAs($this->s->sync->company, fn () => OnlineBookingSummary::for([$this->s->sync->bradford->id, $this->s->sync->leeds->id], now('UTC')->toImmutable()));
+
+    expect($summary())->toBe([
+        'accepting' => true, 'lastHeardAt' => '2026-11-09T08:00:00Z', 'bookingUrl' => url('/book/kings-cuts'),
+        'queueJoinUrl' => url('/book/kings-cuts').'/queue', 'shopName' => 'Kings Cuts', 'state' => 'open',
+    ]);
+
+    $this->travelTo('2026-11-09 08:30:00');
+    expect($summary()['state'])->toBe('offline')->and($summary()['accepting'])->toBeTrue();
+
+    $this->s->heartbeat(['at' => '2026-11-09T08:30:00Z', 'accepting' => false])->assertOk();
+    expect($summary()['accepting'])->toBeFalse()
+        ->and(app(CurrentCompany::class)->runAs($this->s->sync->company, fn () => OnlineBookingSummary::for([$this->s->sync->bradford->id], now('UTC')->toImmutable())))->toBeNull();
 });

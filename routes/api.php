@@ -12,6 +12,7 @@ use App\Http\Controllers\Api\Pda\PdaPurchaseReturnController;
 use App\Http\Controllers\Api\Pda\PdaReceivingController;
 use App\Http\Controllers\Api\Pda\PdaStockAdjustmentController;
 use App\Http\Controllers\Api\Pda\PdaStockTakeController;
+use App\Http\Controllers\Api\PharmacyDmdController;
 use App\Http\Controllers\Api\ProductImageController;
 use App\Http\Controllers\Api\SalonOnlineController;
 use App\Http\Controllers\Api\SyncController;
@@ -20,7 +21,9 @@ use App\Http\Middleware\AuditPartnerCall;
 use App\Http\Middleware\AuthenticateHandheldToken;
 use App\Http\Middleware\AuthenticatePartnerKey;
 use App\Http\Middleware\AuthenticateSyncKey;
+use App\Http\Middleware\DmdManifestCaching;
 use App\Http\Middleware\EnsureTillContract;
+use App\Http\Middleware\GuardDmdServer;
 use App\Http\Middleware\GuardPublicTrialRequests;
 use App\Http\Middleware\GuardSalonOnline;
 use App\Http\Middleware\GuardSyncRequest;
@@ -93,6 +96,18 @@ Route::prefix('v1/cloud')->name('api.cloud.')->controller(CloudMigrationControll
         ->middleware([EnsureTillContract::class, ThrottleLicenceApi::class, IdempotentTillRequest::class]);
     Route::post('migrate/complete', 'complete')->name('migrate.complete')
         ->middleware([EnsureTillContract::class, AuthenticateSyncKey::class, GuardSyncRequest::class, IdempotentTillRequest::class]);
+});
+
+// Pharmacy dm+d release server (W4, PORTAL-CHANGES-pharmacy.md item 12; docs/verticals-0.1.85.md): behind
+// PHARMACY_DMD (off → 501 dmd.not_available). The manifest has the sync key auth, headers and limit of sync/hello plus
+// its own per-key limit (GuardDmdServer) and `Cache-Control: no-cache`; the zip is a signed link the till fetches
+// without headers (per-IP limit, 403 dmd.link_invalid for a bad or expired signature).
+Route::prefix('v1/pharmacy/dmd')->name('api.pharmacy.dmd.')->controller(PharmacyDmdController::class)->group(function () {
+    Route::get('latest', 'latest')->name('latest')
+        ->middleware([DmdManifestCaching::class, EnsureTillContract::class, AuthenticateSyncKey::class, GuardSyncRequest::class, GuardDmdServer::class.':manifest']);
+    Route::get('packages/{archive}', 'package')->name('package')
+        ->where('archive', '[A-Za-z0-9][A-Za-z0-9._-]{0,150}\.zip')
+        ->middleware(GuardDmdServer::class.':package');
 });
 
 // Public trial form (module 1.10, docs/specs/public-trial-api.md): our marketing website and the hosted /trial page.
