@@ -24,6 +24,7 @@ use App\Domain\OnlineStore\Listeners\SendOnlineOrderStatusMail;
 use App\Domain\OnlineStore\Support\StoreRateLimits;
 use App\Domain\Partners\Listeners\PartnerWebhookListeners;
 use App\Domain\Partners\Support\PartnerRateLimit;
+use App\Domain\Salon\Support\SalonPublicRateLimits;
 use App\Domain\Shared\Country\Country;
 use App\Domain\Tenancy\Events\BranchAdded;
 use App\Domain\Tenancy\Events\BranchDeactivated;
@@ -106,6 +107,9 @@ class AppServiceProvider extends ServiceProvider
 
         // Public online store (OS-2): its named limiters, answering 429 with the store's own page.
         StoreRateLimits::register(StorePages::tooMany(...));
+
+        // Salon public pages (W3a): booking page, manage link and queue join limiters.
+        SalonPublicRateLimits::register();
         Auth::viaRequest('handheld-token', fn () => null);
     }
 }

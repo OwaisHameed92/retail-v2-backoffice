@@ -60,8 +60,9 @@ class HandleInertiaRequests extends Middleware
     public function share(Request $request): array
     {
         // Audit OSA-7: the public online store (routes/store.php) shares only what its pages need (StorePages adds the
-        // store frame); never the portal's user, business, abilities or notices.
-        if ($request->routeIs('store.*')) {
+        // store frame); never the portal's user, business, abilities or notices. The same for the public salon pages
+        // (W3a, routes/salon.php).
+        if ($request->routeIs('store.*', 'salon.public.*')) {
             return [
                 ...parent::share($request),
                 'country' => app(Country::class)->toFrontend(),

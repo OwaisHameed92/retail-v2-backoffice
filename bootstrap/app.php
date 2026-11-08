@@ -22,7 +22,8 @@ use Illuminate\Support\Facades\Route;
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
         // The public online store first (OS-2): on its own host, `/{slug}` must win over the portal's pages.
-        web: [__DIR__.'/../routes/store.php', __DIR__.'/../routes/web.php'],
+        // Salon public pages (W3a, /book/{slug}…) next: ResolveSalonShop answers 404 while SALON_ONLINE is off.
+        web: [__DIR__.'/../routes/store.php', __DIR__.'/../routes/salon.php', __DIR__.'/../routes/web.php'],
         api: __DIR__.'/../routes/api.php',
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
@@ -46,6 +47,10 @@ return Application::configure(basePath: dirname(__DIR__))
             HandleInertiaRequests::class,
             AddLinkHeadersForPreloadedAssets::class,
         ]);
+
+        // W3a: the public salon pages' writes are JSON calls with no session (they work inside another site's frame);
+        // nothing on them acts as a signed-in user. Rate limited instead (SalonPublicRateLimits).
+        $middleware->validateCsrfTokens(except: ['book/*']);
 
         // Proxies that may set X-Forwarded-*: config/trustedproxy.php (TRUSTED_PROXIES, security review M3), read by the
         // framework's global TrustProxies middleware. Default: none.

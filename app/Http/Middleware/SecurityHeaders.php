@@ -22,6 +22,12 @@ use Symfony\Component\HttpFoundation\Response;
  */
 class SecurityHeaders
 {
+    /**
+     * Request attribute: this one page may be framed by any site (W3a: the salon booking page with `embed=1`, the
+     * shop's website widget, README §9). Set by its controller only; no X-Frame-Options, `frame-ancestors *`.
+     */
+    public const FRAME_ANY_SITE = 'sspos.frameAnySite';
+
     public function __construct(private readonly Vite $vite) {}
 
     public function handle(Request $request, Closure $next): Response
@@ -31,14 +37,23 @@ class SecurityHeaders
         $response = $next($request);
         $headers = $response->headers;
 
+        $frameAnySite = $request->attributes->get(self::FRAME_ANY_SITE) === true;
+
         $headers->set('X-Content-Type-Options', 'nosniff');
-        $headers->set('X-Frame-Options', 'SAMEORIGIN');
         $headers->set('Referrer-Policy', 'strict-origin-when-cross-origin');
         $headers->set('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), payment=(), usb=()');
 
+        if ($frameAnySite) {
+            $headers->remove('X-Frame-Options');
+        } else {
+            $headers->set('X-Frame-Options', 'SAMEORIGIN');
+        }
+
         if ($nonce !== null && str_contains(strtolower((string) $headers->get('Content-Type', 'text/html')), 'text/html')) {
             $name = config('security.csp.report_only') ? 'Content-Security-Policy-Report-Only' : 'Content-Security-Policy';
-            $headers->set($name, $this->policy($nonce));
+            $headers->set($name, $this->policy($nonce, $frameAnySite));
+        } elseif ($frameAnySite) {
+            $headers->set('Content-Security-Policy', 'frame-ancestors *');
         }
 
         $maxAge = (int) config('security.hsts.max_age', 0);
@@ -50,7 +65,7 @@ class SecurityHeaders
         return $response;
     }
 
-    public function policy(string $nonce): string
+    public function policy(string $nonce, bool $frameAnySite = false): string
     {
         $dev = $this->devServer();
         $hosts = fn (string $key): array => array_values(array_filter((array) config("security.csp.{$key}", []), 'is_string'));
@@ -59,7 +74,7 @@ class SecurityHeaders
             'default-src' => ["'self'"],
             'base-uri' => ["'self'"],
             'object-src' => ["'none'"],
-            'frame-ancestors' => ["'self'"],
+            'frame-ancestors' => $frameAnySite ? ['*'] : ["'self'"],
             'script-src' => ["'self'", "'nonce-{$nonce}'", ...$hosts('script_hosts'), ...$dev],
             'style-src' => ["'self'", "'unsafe-inline'", ...$hosts('font_hosts'), ...$dev],
             'font-src' => ["'self'", 'data:', ...$hosts('font_hosts'), ...$dev],

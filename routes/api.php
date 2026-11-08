@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\Pda\PdaReceivingController;
 use App\Http\Controllers\Api\Pda\PdaStockAdjustmentController;
 use App\Http\Controllers\Api\Pda\PdaStockTakeController;
 use App\Http\Controllers\Api\ProductImageController;
+use App\Http\Controllers\Api\SalonOnlineController;
 use App\Http\Controllers\Api\SyncController;
 use App\Http\Controllers\Api\TrialRequestController;
 use App\Http\Middleware\AuditPartnerCall;
@@ -21,6 +22,7 @@ use App\Http\Middleware\AuthenticatePartnerKey;
 use App\Http\Middleware\AuthenticateSyncKey;
 use App\Http\Middleware\EnsureTillContract;
 use App\Http\Middleware\GuardPublicTrialRequests;
+use App\Http\Middleware\GuardSalonOnline;
 use App\Http\Middleware\GuardSyncRequest;
 use App\Http\Middleware\GuardTillProductImages;
 use App\Http\Middleware\IdempotentTillRequest;
@@ -54,6 +56,20 @@ Route::prefix('v1/sync/product-images')->name('api.sync.product-images.')
         Route::get('/', 'index')->name('index');
         Route::put('{productId}', 'update')->name('update');
         Route::delete('{productId}', 'destroy')->name('destroy');
+    });
+
+// Salon / Barber online booking and queue join (W3a, salon pack 2026-11-08 salon/README.md §3–§4): the same sync key
+// auth, headers and limit as sync/*, then GuardSalonOnline: 501 salon.not_available while SALON_ONLINE is off (the
+// default), 60 calls a minute per key, and only a salon shop's main till (else 403 salon.not_a_salon).
+Route::prefix('v1/sync/salon')->name('api.sync.salon.')
+    ->middleware([EnsureTillContract::class, AuthenticateSyncKey::class, GuardSyncRequest::class, GuardSalonOnline::class])
+    ->controller(SalonOnlineController::class)
+    ->group(function () {
+        Route::put('booking-page', 'bookingPage')->name('booking-page');
+        Route::put('heartbeat', 'heartbeat')->name('heartbeat');
+        Route::get('queue-joins', 'queueJoins')->name('queue-joins');
+        Route::post('queue-joins/{joinId}/answer', 'answer')->name('queue-joins.answer')->where('joinId', '[0-9A-Za-z]{1,40}');
+        Route::put('queue', 'queue')->name('queue');
     });
 
 // Per-till licensing, EPOS contract v1.4.1 (docs/contracts/portal-api-v1.4.1/docs/web-portal-api.md §17.15, §17.7):
