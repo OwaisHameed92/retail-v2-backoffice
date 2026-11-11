@@ -370,6 +370,10 @@ export interface DirectDebitData {
         hasFee: boolean;
         method: SetupFeeMethod;
         instalments: number;
+        /** Owner 2026-11-11: the first instalment (deposit, net decimal string); null = equal instalments. */
+        deposit: string | null;
+        /** "£420.00 deposit, then 11 × £81.60" (VAT inclusive) when the fee starts with a deposit. */
+        split: string | null;
         invoicedAt: string | null;
         /** VAT rate on this business's invoices ("20.00"), null without VAT. */
         vatRate: string | null;

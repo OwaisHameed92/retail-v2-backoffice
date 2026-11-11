@@ -1,4 +1,5 @@
 import { formatPence, toPence } from '@/components/admin/billing/money';
+import { SetupFeeDepositField } from '@/components/admin/billing/setup-fee-deposit-field';
 import { type BillingMode, type CompanyRef, type DirectDebitData } from '@/components/admin/billing/types';
 import { MoneyInput } from '@/components/admin/plans/plan-form-fields';
 import { Field } from '@/components/admin/tenants/field';
@@ -23,6 +24,8 @@ type FormData = {
     billing_mode: BillingMode;
     setup_fee_override: string;
     setup_fee_instalments: string;
+    /** Owner 2026-11-11: the first instalment (deposit, net); empty = equal instalments. */
+    setup_fee_deposit: string;
     till_setup_fee_override: string;
     /** Owner 2026-11-05: "byHand" (the default) or "directDebit" (a per-business exception). */
     setup_fee_collection: 'byHand' | 'directDebit';
@@ -44,9 +47,13 @@ function SettingsBody({ onOpenChange, company, directDebit }: DirectDebitSetting
         billing_mode: directDebit.mode,
         setup_fee_override: setupFee.override ?? '',
         setup_fee_instalments: String(setupFee.instalments),
+        setup_fee_deposit: setupFee.deposit ?? '',
         till_setup_fee_override: setupFee.tillFeeOverride ?? '',
         setup_fee_collection: setupFee.byDirectDebit ? 'directDebit' : 'byHand',
     });
+    // The deposit is offered only for a fee in 2 or more instalments (a deposit, then the rest).
+    const instalments = Number(data.setup_fee_instalments);
+    const offerDeposit = Number.isInteger(instalments) && instalments >= 2;
     const covered = setupFee.coveredTills ?? setupFee.tills;
     // The choice is offered only on a Direct Debit instance with GoCardless connected, for a Direct Debit business.
     const offerDirectDebit = !manualCollection() && setupFee.directDebitAvailable && data.billing_mode === 'directDebit';
@@ -58,6 +65,8 @@ function SettingsBody({ onOpenChange, company, directDebit }: DirectDebitSetting
             billing_mode: form.billing_mode,
             setup_fee_override: form.setup_fee_override,
             setup_fee_instalments: form.setup_fee_instalments,
+            // Hidden with 1 instalment: no deposit then (it is cleared).
+            setup_fee_deposit: offerDeposit ? form.setup_fee_deposit : '',
             till_setup_fee_override: form.till_setup_fee_override,
             // Sent only where it can be chosen; otherwise the business keeps what it has (by hand unless staff chose).
             ...(setupFee.directDebitAvailable && !manualCollection() ? { setup_fee_by_direct_debit: feeByDirectDebit } : {}),
@@ -137,6 +146,19 @@ function SettingsBody({ onOpenChange, company, directDebit }: DirectDebitSetting
                             aria-invalid={!!errors.setup_fee_instalments}
                         />
                     </Field>
+                    {offerDeposit && (
+                        <div className="sm:col-span-2">
+                            <SetupFeeDepositField
+                                value={data.setup_fee_deposit}
+                                onChange={(value) => setData('setup_fee_deposit', value)}
+                                error={errors.setup_fee_deposit}
+                                feeNet={data.setup_fee_override.trim() === '' ? setupFee.plan : data.setup_fee_override}
+                                instalments={instalments}
+                                vatRate={setupFee.vatRate}
+                                disabled={locked}
+                            />
+                        </div>
+                    )}
                 </div>
 
                 {setupFee.perTill && (

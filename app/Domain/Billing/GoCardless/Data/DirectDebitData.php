@@ -16,6 +16,7 @@ use App\Domain\Billing\Support\BillingFormat;
 use App\Domain\Billing\Support\CompanyPricing;
 use App\Domain\Billing\Support\MandateDeadline;
 use App\Domain\Billing\Support\ManualCollection;
+use App\Domain\Billing\Support\SetupFeeDeposit;
 use App\Domain\Billing\Support\SetupFeePayment;
 use App\Domain\Billing\Support\SetupFeeState;
 use App\Domain\Billing\Support\SetupFeeTills;
@@ -115,6 +116,9 @@ final class DirectDebitData
                 'hasFee' => ! Money::isZero($setup['net']),
                 'method' => $account->setup_fee_method->value,
                 'instalments' => $account->setup_fee_instalments,
+                // Owner 2026-11-11: the first instalment (net) and how the fee is split with it, VAT inclusive.
+                'deposit' => $account->setup_fee_deposit,
+                'split' => SetupFeeDeposit::text($company, $account),
                 'invoicedAt' => $account->setup_fee_invoiced_at?->toIso8601String(),
                 'vatRate' => Money::isZero(Vat::rateFor($account)) ? null : Vat::rateFor($account),
                 // P11: per-till setup fee, the tills covered and the tills waiting for their setup fee.

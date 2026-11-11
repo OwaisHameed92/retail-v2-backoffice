@@ -4,6 +4,7 @@ namespace App\Domain\Billing\GoCardless\Support;
 
 use App\Domain\Billing\Models\BillingAccount;
 use App\Domain\Billing\Support\InvoiceMaths;
+use App\Domain\Billing\Support\SetupFeeDeposit;
 use App\Domain\Billing\Support\SetupFeeTills;
 use App\Domain\Billing\Support\Vat;
 use App\Domain\Licensing\Support\DefaultPlan;
@@ -13,7 +14,8 @@ use App\Domain\Tenancy\Models\Company;
 /**
  * The setup fee of a company: its override, else its plan's `setup_fee` (net, pounds), with VAT per the billing
  * settings. A plan that charges it for each till (P11 `perTill`) asks the fee times the business's tills. Instalments split the VAT-inclusive total into equal monthly parts (the last one takes the pennies
- * left over), so they always add up to the quoted gross.
+ * left over), so they always add up to the quoted gross. Owner 2026-11-11: with a deposit (`setup_fee_deposit`, net)
+ * part 1 is the deposit and the rest is split equally across the other parts the same way (SetupFeeDeposit).
  */
 final class SetupFee
 {
@@ -56,9 +58,43 @@ final class SetupFee
 
         // Split what the customer was quoted (net + VAT on the whole fee) so the parts add up to it exactly;
         // each part's net and VAT are worked back from its gross.
-        $parts = max(1, min((int) config('billing.direct_debit.max_instalments', 12), $account->setup_fee_instalments));
+        $parts = self::parts($account);
         $vatRate = Vat::rateFor($account);
         $gross = Money::add($net, InvoiceMaths::vatOn($net, $vatRate));
+        $deposit = SetupFeeDeposit::applies($net, $account->setup_fee_deposit, $parts, $vatRate) ? $account->setup_fee_deposit : null;
+
+        if ($deposit === null) {
+            return self::equalParts($gross, $parts, $vatRate);
+        }
+
+        // Owner 2026-11-11: part 1 is the deposit (its net exactly, VAT on it); the rest of the quoted gross is split
+        // equally across the other parts by the same rule.
+        $first = ['net' => $deposit, 'vat' => InvoiceMaths::vatOn($deposit, $vatRate)];
+        $first['gross'] = Money::add($first['net'], $first['vat']);
+
+        return [$first, ...self::equalParts(Money::sub($gross, $first['gross']), $parts - 1, $vatRate)];
+    }
+
+    /** Owner 2026-11-11: part 1 of this company's setup fee is its deposit (set, and it fits the fee). */
+    public static function startsWithDeposit(Company $company, BillingAccount $account): bool
+    {
+        return SetupFeeDeposit::applies(self::net($company, $account), $account->setup_fee_deposit, self::parts($account), Vat::rateFor($account));
+    }
+
+    /** How many instalments the setup fee is paid in (1 to `max_instalments`). */
+    public static function parts(BillingAccount $account): int
+    {
+        return max(1, min((int) config('billing.direct_debit.max_instalments', 12), $account->setup_fee_instalments));
+    }
+
+    /**
+     * `$gross` in `$parts` equal parts (the last one takes the pennies left over), each part's net and VAT worked
+     * back from its gross.
+     *
+     * @return list<array{net: string, vat: string, gross: string}>
+     */
+    public static function equalParts(string $gross, int $parts, string $vatRate): array
+    {
         $each = Money::round(bcdiv(Money::parse($gross), (string) $parts, 6));
         $schedule = [];
         $left = $gross;

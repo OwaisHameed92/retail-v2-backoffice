@@ -72,10 +72,15 @@ final class DirectDebitSetupMail extends BrandedMailable
         if ($this->data->setupFee !== null && $this->data->setupFeeByDirectDebit) {
             // Owner 2026-11-05: this business's setup fee is collected by this Direct Debit (a per-business exception).
             $facts['Setup fee'] = MailFormat::money($this->data->setupFee).' ('.Country::tax('VAT').' included), collected by this Direct Debit'
-                .($this->data->setupInstalments > 1 ? " in {$this->data->setupInstalments} monthly instalments" : '');
+                .match (true) {
+                    $this->data->setupFeeSplit !== null => ': '.$this->data->setupFeeSplit.', a month apart', // owner 2026-11-11
+                    $this->data->setupInstalments > 1 => " in {$this->data->setupInstalments} monthly instalments",
+                    default => '',
+                };
         } elseif ($this->data->setupFee !== null) {
             // Shown for information only: the setup fee is paid by hand, never by this Direct Debit.
-            $facts['Setup fee'] = MailFormat::money($this->data->setupFee).' ('.Country::tax('VAT').' included), paid separately by cash, card or bank transfer';
+            $facts['Setup fee'] = MailFormat::money($this->data->setupFee).' ('.Country::tax('VAT').' included), paid separately by cash, card or bank transfer'
+                .($this->data->setupFeeSplit !== null ? ': '.$this->data->setupFeeSplit.', a month apart' : '');
         }
 
         return new Content(markdown: 'mail.direct-debit-setup', with: [

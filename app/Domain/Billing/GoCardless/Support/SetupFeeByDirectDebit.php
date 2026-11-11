@@ -99,7 +99,7 @@ final class SetupFeeByDirectDebit
 
             return [
                 'number' => $invoice->number,
-                'label' => $invoices->count() > 1 ? 'Part '.($i + 1).' of '.$invoices->count() : 'Setup fee',
+                'label' => self::partLabel($account, $i, $invoices->count()),
                 'amount' => BillingFormat::money($invoice->total),
                 'dueDate' => $invoice->due_date?->format('Y-m-d'),
                 'state' => $state,
@@ -107,6 +107,20 @@ final class SetupFeeByDirectDebit
                 'chargeDate' => $date,
             ];
         })->all();
+    }
+
+    /**
+     * "Part 2 of 12", "Setup fee" for one part; owner 2026-11-11: part 1 of a fee with a deposit is "Deposit (part 1 of 12)".
+     *
+     * @param  int  $i  0-based
+     */
+    public static function partLabel(BillingAccount $account, int $i, int $count): string
+    {
+        return match (true) {
+            $count <= 1 => 'Setup fee',
+            $i === 0 && $account->setup_fee_deposit !== null => "Deposit (part 1 of {$count})",
+            default => 'Part '.($i + 1).' of '.$count,
+        };
     }
 
     /**

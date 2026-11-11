@@ -12,6 +12,7 @@ use App\Domain\Billing\Support\BillingFormat;
 use App\Domain\Billing\Support\BillingStatus;
 use App\Domain\Billing\Support\MandateDeadline;
 use App\Domain\Billing\Support\ManualCollection;
+use App\Domain\Billing\Support\SetupFeeDeposit;
 use App\Domain\Billing\Support\SetupFeeState;
 use App\Domain\Shared\Country\Country;
 use App\Domain\Shared\Country\MoneyFormat;
@@ -94,6 +95,12 @@ final class BillingStatusData
     {
         $fee = $status->fee;
         $total = BillingFormat::money($fee->total);
+        // Owner 2026-11-11: "£420.00 deposit, then 11 × £81.60" (null without a deposit: the text is as before).
+        $split = $fee->status === SetupFeeState::UNPAID ? SetupFeeDeposit::text($status->company, $status->account) : null;
+
+        if ($split !== null && ! ManualCollection::active()) {
+            return ['text' => "{$total} — not paid yet: {$split}".($status->account->setup_fee_by_direct_debit ? ' by Direct Debit' : ' (cash, card or bank transfer)'), 'status' => 'unpaid', 'tone' => 'warning'];
+        }
 
         return match ($fee->status) {
             SetupFeeState::NONE => ['text' => $status->account->upfront_recorded_at !== null || $status->account->setup_fee_invoiced_at !== null ? 'Nothing to pay (waived or '.MoneyFormat::whole('0').')' : 'No setup fee', 'status' => 'none', 'tone' => 'neutral'],

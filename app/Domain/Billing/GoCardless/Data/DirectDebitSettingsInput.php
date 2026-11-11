@@ -13,6 +13,8 @@ final readonly class DirectDebitSettingsInput
      * @param  string|null  $tillSetupFeeOverride  P11: net setup fee per added till; null = the plan's.
      * @param  bool|null  $setupFeeByDirectDebit  Owner 2026-11-05: collect the setup fee by Direct Debit; null = keep
      *                                            the business's current choice (older clients, other callers).
+     * @param  bool  $depositGiven  Owner 2026-11-11: the form sent the setup fee deposit (other callers do not: it is kept).
+     * @param  string|null  $setupFeeDeposit  Net pounds of the first instalment; null = equal instalments.
      */
     public function __construct(
         public BillingMode $mode,
@@ -22,5 +24,7 @@ final readonly class DirectDebitSettingsInput
         public bool $tillFeeGiven = false,
         public ?string $tillSetupFeeOverride = null,
         public ?bool $setupFeeByDirectDebit = null,
+        public bool $depositGiven = false,
+        public ?string $setupFeeDeposit = null,
     ) {}
 }

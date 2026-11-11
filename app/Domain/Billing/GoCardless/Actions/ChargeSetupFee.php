@@ -118,10 +118,16 @@ class ChargeSetupFee
 
             $count = count($schedule);
             $drafts = [];
+            // Owner 2026-11-11: part 1 is the agreed deposit, the rest split equally (SetupFeeDeposit).
+            $deposit = SetupFee::startsWithDeposit($company, $account);
 
             foreach ($schedule as $i => $amounts) {
                 $day = $first->addMonthsNoOverflow($i);
-                $label = $count === 1 ? 'Setup fee' : 'Setup fee, instalment '.($i + 1)." of {$count}";
+                $label = match (true) {
+                    $count === 1 => 'Setup fee',
+                    $deposit && $i === 0 => "Setup fee, deposit (instalment 1 of {$count})",
+                    default => 'Setup fee, instalment '.($i + 1)." of {$count}",
+                };
                 $totals = InvoiceMaths::totals([$amounts]);
 
                 $invoice = new Invoice([
@@ -158,6 +164,10 @@ class ChargeSetupFee
             }
 
             $account->setup_fee_invoiced_at = CarbonImmutable::now();
+            // A deposit that no longer fits the fee (its plan fee changed) was not used: equal parts were invoiced.
+            if (! $deposit && $account->setup_fee_deposit !== null) {
+                $account->setup_fee_deposit = null;
+            }
             // P11: this setup fee covers the tills the business has now (per till: it was worked out for them), and
             // a per-till fee is kept as the business's amount, so tills added later never change what it shows.
             if ($account->setup_fee_override === null && SetupFeeTills::perTill($company)) {
@@ -169,6 +179,7 @@ class ChargeSetupFee
             $this->audit->handle('billing.setup_fee_invoiced', $account, null, [
                 'net' => SetupFee::net($company, $account),
                 'instalments' => $count,
+                ...($deposit ? ['deposit' => $account->setup_fee_deposit] : []),
             ], ['method' => SetupFeeByDirectDebit::on($account) ? 'directDebit' : 'manual', 'mode' => $account->billing_mode->value], companyId: $company->id);
 
             return $drafts;

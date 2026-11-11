@@ -23,6 +23,11 @@ class DirectDebitSettingsRequest extends BillingRequest
             $tillFee = $this->input('till_setup_fee_override');
             $this->merge(['till_setup_fee_override' => $blank($tillFee) ? null : self::cleanMoney($tillFee)]);
         }
+
+        if ($this->has('setup_fee_deposit')) {
+            $deposit = $this->input('setup_fee_deposit');
+            $this->merge(['setup_fee_deposit' => $blank($deposit) ? null : self::cleanMoney($deposit)]);
+        }
     }
 
     /**
@@ -40,6 +45,9 @@ class DirectDebitSettingsRequest extends BillingRequest
             'setup_fee_instalments' => ['required', 'integer', 'min:1', 'max:'.(int) config('billing.direct_debit.max_instalments', 12)],
             // Owner 2026-11-05: "Setup fee: By Direct Debit" (a per-business exception); absent = keep the current choice.
             'setup_fee_by_direct_debit' => ['sometimes', 'boolean'],
+            // Owner 2026-11-11: the first instalment (deposit, net); blank = equal instalments; absent = keep it.
+            // UpdateDirectDebitSettings checks it against the fee and the instalments (SetupFeeDeposit::problem).
+            'setup_fee_deposit' => ['sometimes', 'nullable', 'string', 'regex:'.self::moneyPattern()],
         ];
     }
 
@@ -51,6 +59,7 @@ class DirectDebitSettingsRequest extends BillingRequest
         return [
             'setup_fee_override.regex' => self::moneyMessage(),
             'till_setup_fee_override.regex' => self::moneyMessage(),
+            'setup_fee_deposit.regex' => self::moneyMessage(),
             'setup_fee_instalments.max' => 'Split the setup fee into at most :max payments.',
         ];
     }
@@ -59,6 +68,7 @@ class DirectDebitSettingsRequest extends BillingRequest
     {
         $override = $this->validated('setup_fee_override');
         $tillFee = $this->validated('till_setup_fee_override');
+        $deposit = $this->validated('setup_fee_deposit');
 
         return new DirectDebitSettingsInput(
             mode: BillingMode::from((string) $this->validated('billing_mode')),
@@ -68,6 +78,8 @@ class DirectDebitSettingsRequest extends BillingRequest
             tillFeeGiven: $this->has('till_setup_fee_override'),
             tillSetupFeeOverride: is_string($tillFee) ? $tillFee : null,
             setupFeeByDirectDebit: $this->has('setup_fee_by_direct_debit') ? $this->boolean('setup_fee_by_direct_debit') : null,
+            depositGiven: $this->has('setup_fee_deposit'),
+            setupFeeDeposit: is_string($deposit) ? $deposit : null,
         );
     }
 }

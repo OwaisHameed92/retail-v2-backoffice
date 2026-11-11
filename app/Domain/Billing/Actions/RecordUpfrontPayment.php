@@ -17,7 +17,9 @@ use App\Domain\Billing\Models\Payment;
 use App\Domain\Billing\Support\BillingAccounts;
 use App\Domain\Billing\Support\BillingFormat;
 use App\Domain\Billing\Support\ManualCollection;
+use App\Domain\Billing\Support\SetupFeeDeposit;
 use App\Domain\Billing\Support\SetupFeeTills;
+use App\Domain\Billing\Support\Vat;
 use App\Domain\Shared\Actions\RecordAudit;
 use App\Domain\Shared\Country\MoneyFormat;
 use App\Domain\Shared\Support\Money;
@@ -79,6 +81,10 @@ class RecordUpfrontPayment
 
             if ($input->setupFee !== null) {
                 $account->setup_fee_override = Money::normalise($input->setupFee);
+
+                if (! Money::isZero($account->setup_fee_override)) {
+                    $this->checkDeposit($account); // £0 = nothing to pay: no instalments, the deposit does not apply
+                }
             }
 
             $account->setup_fee_method = SetupFeeMethod::Manual;
@@ -172,6 +178,20 @@ class RecordUpfrontPayment
             $day = $payment->charge_date !== null ? ' on '.$payment->charge_date->format('j M Y') : '';
 
             throw ValidationException::withMessages(['upfront_amount' => "{$invoice->number} is being collected by Direct Debit{$day}. Record it by hand only if that payment fails."]);
+        }
+    }
+
+    /**
+     * Owner 2026-11-11: an amount entered here must still leave room for the business's deposit (first instalment).
+     *
+     * @throws ValidationException
+     */
+    private function checkDeposit(BillingAccount $account): void
+    {
+        $problem = SetupFeeDeposit::problem((string) $account->setup_fee_override, $account->setup_fee_deposit, SetupFee::parts($account), Vat::rateFor($account));
+
+        if ($problem !== null) {
+            throw ValidationException::withMessages(['upfront_amount' => $problem.' Change the deposit in Payment settings first.']);
         }
     }
 

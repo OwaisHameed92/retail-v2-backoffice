@@ -40,6 +40,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string|null $setup_fee_override
  * @property SetupFeeMethod $setup_fee_method
  * @property int $setup_fee_instalments
+ * @property string|null $setup_fee_deposit Owner 2026-11-11: the first instalment (net) of a setup fee in 2+ instalments; the rest is split equally. Null = equal parts.
  * @property CarbonImmutable|null $setup_fee_invoiced_at
  * @property bool $setup_fee_by_direct_debit Owner 2026-11-05: staff chose to collect the setup fee (each instalment) by Direct Debit. Default false; never the legacy `setup_fee_method`.
  * @property int|null $setup_fee_covered_tills P11: tills a setup fee accounts for; null = untracked (see SetupFeeTills).
@@ -118,6 +119,7 @@ class BillingAccount extends Model
             'setup_fee_override' => MoneyCast::class,
             'setup_fee_method' => SetupFeeMethod::class,
             'setup_fee_instalments' => 'integer',
+            'setup_fee_deposit' => MoneyCast::class,
             'setup_fee_invoiced_at' => 'immutable_datetime',
             'setup_fee_by_direct_debit' => 'boolean',
             'setup_fee_covered_tills' => 'integer',

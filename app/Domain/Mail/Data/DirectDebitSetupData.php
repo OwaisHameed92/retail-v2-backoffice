@@ -28,5 +28,7 @@ final readonly class DirectDebitSetupData
         public bool $reminder = false,
         /** Owner 2026-11-05: staff chose to collect this business's setup fee by this Direct Debit too. */
         public bool $setupFeeByDirectDebit = false,
+        /** Owner 2026-11-11: an unpaid setup fee that starts with a deposit, "£420.00 deposit, then 11 × £81.60". */
+        public ?string $setupFeeSplit = null,
     ) {}
 }

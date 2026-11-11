@@ -5,6 +5,7 @@ namespace App\Domain\Billing\GoCardless\Support;
 use App\Domain\Billing\Data\InvoiceDocument;
 use App\Domain\Billing\GoCardless\Models\GoCardlessPayment;
 use App\Domain\Billing\Models\BillingAccount;
+use App\Domain\Billing\Support\SetupFeeDeposit;
 use App\Domain\Billing\Support\SetupFeeState;
 use App\Domain\Licensing\Support\LicenceMailer;
 use App\Domain\Mail\Data\AccountSuspendedData;
@@ -51,6 +52,8 @@ final class DirectDebitMailer
                 deadline: $deadline,
                 reminder: $reminder,
                 setupFeeByDirectDebit: SetupFeeByDirectDebit::on($account),
+                // Owner 2026-11-11: nothing paid yet and it starts with a deposit: "£420.00 deposit, then 11 × £81.60".
+                setupFeeSplit: $setupFee->status === SetupFeeState::UNPAID ? SetupFeeDeposit::text($company, $account) : null,
             )));
         }
 
