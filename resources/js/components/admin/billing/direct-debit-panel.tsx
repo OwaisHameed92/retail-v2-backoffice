@@ -100,16 +100,22 @@ export function DirectDebitPanel({ company, directDebit, canManage }: { company:
                     </Alert>
                 )}
                 {isDirectDebit && directDebit.deadline && (
-                    <Alert variant={directDebit.deadline.passed ? 'destructive' : 'default'}>
+                    <Alert variant={directDebit.deadline.passed && !directDebit.deadline.lifted ? 'destructive' : 'default'}>
                         <TriangleAlert className="size-4" />
                         <AlertTitle>
-                            {directDebit.deadline.passed
-                                ? 'No Direct Debit yet: suspended by the daily billing run'
-                                : `Waiting for the owner to set up Direct Debit (${directDebit.deadline.daysLeft} ${directDebit.deadline.daysLeft === 1 ? 'day' : 'days'} left)`}
+                            {directDebit.deadline.lifted
+                                ? 'No Direct Debit yet: the suspension was lifted by hand'
+                                : directDebit.deadline.locked
+                                  ? 'No Direct Debit yet: suspended by the daily billing run'
+                                  : directDebit.deadline.passed
+                                    ? 'No Direct Debit yet: suspended at the next daily billing run'
+                                    : `Waiting for the owner to set up Direct Debit (${directDebit.deadline.daysLeft} ${directDebit.deadline.daysLeft === 1 ? 'day' : 'days'} left)`}
                         </AlertTitle>
                         <AlertDescription>
                             The owner sets it up from Billing in their portal, or from the setup email. Deadline{' '}
                             {formatDate(directDebit.deadline.deadline)}.
+                            {directDebit.deadline.lifted &&
+                                ' The tills do not lock again for this deadline; nothing is collected until it is set up.'}
                         </AlertDescription>
                     </Alert>
                 )}

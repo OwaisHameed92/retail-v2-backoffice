@@ -51,7 +51,7 @@ export interface PortalBillingProps {
         mandate: { usable: boolean; status: string | null; statusLabel: string; activeAt: string | null; lost: boolean };
         nextCollection: { date: string; amount: string } | null;
         /** `locked`: suspended now; `lockOn`: the day the tills lock when the deadline passed and they are not locked yet. */
-        deadline: { deadline: string; daysLeft: number; passed: boolean; locked: boolean; lockOn: string | null } | null;
+        deadline: { deadline: string; daysLeft: number; passed: boolean; locked: boolean; lifted: boolean; lockOn: string | null } | null;
         canSetUp: boolean;
     };
     invoices: {

@@ -17,6 +17,7 @@ use App\Domain\Billing\Support\BillingStatus;
 use App\Domain\Billing\Support\Vat;
 use App\Domain\OnlineStore\Data\AdminAddOnData;
 use App\Domain\Shared\Support\Money;
+use App\Domain\Tenancy\Enums\CompanyStatus;
 use App\Domain\Tenancy\Models\Company;
 use Carbon\CarbonImmutable;
 
@@ -79,7 +80,9 @@ final class TenantBilling
                     'end' => $nextEnd->format('Y-m-d'),
                     'label' => BillingDates::range($nextStart, $nextEnd),
                 ],
-                'suspendedForBilling' => $account->billing_suspended_at !== null,
+                // Only while billing's own suspension still stands: staff may lift it by hand, which leaves the stamp behind.
+                'suspendedForBilling' => $account->billing_suspended_at !== null && $company->status === CompanyStatus::Suspended
+                    && $company->suspended_at?->getTimestamp() === $account->billing_suspended_at->getTimestamp(),
             ],
             // Void invoices stay on record (their numbers are never deleted) but are left out of this list
             // (owner 2026-10-15): "N void invoices" links to them.

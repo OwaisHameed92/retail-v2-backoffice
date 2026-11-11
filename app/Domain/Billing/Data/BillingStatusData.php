@@ -80,7 +80,7 @@ final class BillingStatusData
             BillingStatus::SUSPENDED => 'Suspended — '.($status->company->suspension_reason ?: 'tills locked'),
             BillingStatus::PAYMENT_FAILED => "Payment failed — locks on {$locks} if unpaid",
             BillingStatus::OVERDUE => "Overdue — locks on {$locks} if unpaid",
-            BillingStatus::WAITING_FOR_DD => "Waiting for Direct Debit — locks on {$locks}",
+            BillingStatus::WAITING_FOR_DD => $status->locksOn === null ? 'Waiting for Direct Debit' : "Waiting for Direct Debit — locks on {$locks}",
             BillingStatus::TRIAL => 'Trial — '.($days === null ? 'running' : ($days === 1 ? '1 day left' : "{$days} days left")),
             BillingStatus::SETUP_FEE_DUE => 'Setup fee unpaid — tills locked',
             BillingStatus::INSTALMENT_DUE => 'Setup fee part paid — '.BillingFormat::money($status->fee->owed()).' left',
@@ -204,7 +204,10 @@ final class BillingStatusData
                     : 'Retry it, or the next collection pays it first, or record a payment by hand. ')
                 : ucfirst($invoice).' was due on '.self::day($status->unpaid?->due_date).'. ')
                 ."If it is still unpaid on {$locks}, the account is suspended and {$tills} lock at their next check-in.", 'date' => $date],
-            BillingStatus::WAITING_FOR_DD => ['text' => ($portal ? 'Set up your Direct Debit by ' : 'The owner must set up the Direct Debit by ').self::deadline($account->mandate_deadline_at)
+            BillingStatus::WAITING_FOR_DD => $status->locksOn === null ? ['text' => $portal
+                ? 'Please set up your Direct Debit: nothing can be collected until it is set up.'
+                : 'The Direct Debit deadline ('.self::deadline($account->mandate_deadline_at).') passed and the suspension was lifted by hand, so the tills do not lock again for it. The owner still has to set up the Direct Debit: nothing is collected until then.', 'date' => null]
+                : ['text' => ($portal ? 'Set up your Direct Debit by ' : 'The owner must set up the Direct Debit by ').self::deadline($account->mandate_deadline_at)
                 .($reminded ? ' (reminder email sent)' : '')
                 .". If not, the account is suspended on {$locks} and {$tills} lock. Setting it up later unlocks them at once.", 'date' => $date],
             BillingStatus::TRIAL => ['text' => $status->fee->status === SetupFeeState::UNPAID

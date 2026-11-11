@@ -105,7 +105,11 @@ final readonly class BillingStatus
         }
 
         if (MandateDeadline::applies($company, $account) && $account->mandate_deadline_at !== null) {
-            return $make(self::WAITING_FOR_DD, locksOn: self::notBeforeNextRun(self::firstRunAt($account->mandate_deadline_at), $now));
+            // Suspended once for this deadline and lifted by staff: billing:run never suspends again for it (EnforceDirectDebit),
+            // so there is no lock day to show (owner 2026-11-11, Asia Halal Food Stores).
+            $acted = $account->mandate_grace_suspended_for?->getTimestamp() === $account->mandate_deadline_at->getTimestamp();
+
+            return $make(self::WAITING_FOR_DD, locksOn: $acted ? null : self::notBeforeNextRun(self::firstRunAt($account->mandate_deadline_at), $now));
         }
 
         $trialEnd = self::trialEnd($company);

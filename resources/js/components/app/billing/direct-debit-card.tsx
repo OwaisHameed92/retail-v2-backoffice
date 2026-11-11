@@ -68,21 +68,25 @@ export function DirectDebitCard({
                             <AlertDescription>Set it up again so your payments keep going through.</AlertDescription>
                         </Alert>
                     ) : deadline ? (
-                        <Alert variant={deadline.passed ? 'destructive' : 'default'}>
+                        <Alert variant={deadline.passed && !deadline.lifted ? 'destructive' : 'default'}>
                             <TriangleAlert className="size-4" />
                             <AlertTitle>
                                 {deadline.locked
                                     ? 'Your tills are locked until your Direct Debit is set up'
-                                    : deadline.passed
-                                      ? `Your tills lock ${deadline.lockOn ? `on ${formatDay(deadline.lockOn)}` : 'soon'} unless your Direct Debit is set up`
-                                      : `${deadline.daysLeft} ${deadline.daysLeft === 1 ? 'day' : 'days'} left to set up your Direct Debit`}
+                                    : deadline.lifted
+                                      ? 'Please set up your Direct Debit'
+                                      : deadline.passed
+                                        ? `Your tills lock ${deadline.lockOn ? `on ${formatDay(deadline.lockOn)}` : 'soon'} unless your Direct Debit is set up`
+                                        : `${deadline.daysLeft} ${deadline.daysLeft === 1 ? 'day' : 'days'} left to set up your Direct Debit`}
                             </AlertTitle>
                             <AlertDescription>
                                 {deadline.locked
                                     ? 'Set it up now and your tills unlock at their next check-in.'
-                                    : deadline.passed
-                                      ? `The deadline was ${formatDate(deadline.deadline)}. Set it up now and your tills keep working.`
-                                      : `Please set it up by ${formatDate(deadline.deadline)}, or your tills lock until you do.`}
+                                    : deadline.lifted
+                                      ? 'Your payments are collected once it is set up. It takes about two minutes.'
+                                      : deadline.passed
+                                        ? `The deadline was ${formatDate(deadline.deadline)}. Set it up now and your tills keep working.`
+                                        : `Please set it up by ${formatDate(deadline.deadline)}, or your tills lock until you do.`}
                             </AlertDescription>
                         </Alert>
                     ) : pricing.isZero ? (

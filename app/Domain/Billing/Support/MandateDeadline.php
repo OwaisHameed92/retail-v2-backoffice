@@ -98,9 +98,10 @@ final class MandateDeadline
      * For the portal banner and billing page: null when no mandate is needed.
      *
      * `locked`: the business is suspended now (the tills are locked); a passed deadline alone is not (owner
-     * 2026-11-05: billing:run suspends at its next run, `lockOn`, the London day of that run).
+     * 2026-11-05: billing:run suspends at its next run, `lockOn`, the London day of that run). `lifted`: the deadline
+     * passed, billing suspended for it and staff lifted that by hand, so nothing locks again for it (no `lockOn`).
      *
-     * @return array{deadline: string, daysLeft: int, passed: bool, locked: bool, lockOn: string|null}|null
+     * @return array{deadline: string, daysLeft: int, passed: bool, locked: bool, lifted: bool, lockOn: string|null}|null
      */
     public static function state(Company $company, BillingAccount $account, ?CarbonImmutable $now = null): ?array
     {
@@ -113,13 +114,16 @@ final class MandateDeadline
         $hours = $now->diffInHours($deadline, false);
         $passed = $hours <= 0;
         $locked = $passed && $company->status === CompanyStatus::Suspended;
+        // Suspended once for this deadline and lifted by staff: billing:run never suspends again for it.
+        $lifted = $passed && ! $locked && $account->mandate_grace_suspended_for?->getTimestamp() === $deadline->getTimestamp();
 
         return [
             'deadline' => $deadline->toIso8601String(),
             'daysLeft' => $passed ? 0 : (int) ceil($hours / 24),
             'passed' => $passed,
             'locked' => $locked,
-            'lockOn' => $passed && ! $locked ? self::nextRunDay($now) : null,
+            'lifted' => $lifted,
+            'lockOn' => $passed && ! $locked && ! $lifted ? self::nextRunDay($now) : null,
         ];
     }
 

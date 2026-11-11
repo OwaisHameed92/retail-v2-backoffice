@@ -471,6 +471,10 @@ export interface MandateDeadline {
     deadline: string;
     daysLeft: number;
     passed: boolean;
+    /** Suspended now (the tills are locked). */
+    locked: boolean;
+    /** Passed, suspended for it once, and lifted by staff: nothing locks again for this deadline. */
+    lifted: boolean;
 }
 
 /** InvoicePlan::toArray (the "Create invoice" preview). */
