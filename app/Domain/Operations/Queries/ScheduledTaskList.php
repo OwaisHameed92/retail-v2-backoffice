@@ -67,7 +67,7 @@ final class ScheduledTaskList
                 'frequency' => CronText::describe($expression),
                 'expression' => $expression,
                 'timezone' => $timezone,
-                'nextDueAt' => self::nextDue($event),
+                'nextDueAt' => self::nextDue($event, $now),
                 'lastRun' => $last === null ? null : self::lastRun($last, $now),
                 'late' => $last !== null && self::isLate($last, $expression, $timezone, $now),
                 'runs7d' => (int) ($count->runs ?? 0),
@@ -155,10 +155,11 @@ final class ScheduledTaskList
             && $run->started_at->lessThan($due->subMinutes(self::LATE_GRACE_MINUTES));
     }
 
-    private static function nextDue(Event $event): ?string
+    private static function nextDue(Event $event, CarbonImmutable $now): ?string
     {
         try {
-            return CarbonImmutable::instance($event->nextRunDate())->utc()->toIso8601ZuluString();
+            // Pass the clock in: nextRunDate() alone reads the real time, not the app's (tests travel in time).
+            return CarbonImmutable::instance($event->nextRunDate($now->toDateTimeImmutable()))->utc()->toIso8601ZuluString();
         } catch (Throwable) {
             return null;
         }
