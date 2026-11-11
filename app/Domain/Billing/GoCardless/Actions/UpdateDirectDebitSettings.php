@@ -7,10 +7,13 @@ use App\Domain\Billing\Enums\SetupFeeMethod;
 use App\Domain\Billing\GoCardless\Contracts\GoCardlessClient;
 use App\Domain\Billing\GoCardless\Data\DirectDebitSettingsInput;
 use App\Domain\Billing\GoCardless\GoCardlessException;
+use App\Domain\Billing\GoCardless\Support\SetupFee;
 use App\Domain\Billing\Models\BillingAccount;
 use App\Domain\Billing\Support\BillingAccounts;
 use App\Domain\Billing\Support\MandateDeadline;
 use App\Domain\Billing\Support\ManualCollection;
+use App\Domain\Billing\Support\SetupFeeDeposit;
+use App\Domain\Billing\Support\Vat;
 use App\Domain\Demo\Support\DemoBusinesses;
 use App\Domain\Shared\Actions\RecordAudit;
 use App\Domain\Shared\Support\Money;
@@ -20,7 +23,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 /**
- * Saves how a company pays: upfront cash or Direct Debit, its setup fee override and in how many instalments (the
+ * Saves how a company pays: upfront cash or Direct Debit, its setup fee override, in how many instalments and the
+ * optional deposit (first instalment, owner 2026-11-11; audited with the other settings) (the
  * setup fee is paid by hand: owner rule 2026-10-05). Moving to upfront cancels a live GoCardless subscription; moving to Direct Debit with a
  * working mandate creates it. The setup fee cannot change once invoiced. Audited.
  *
@@ -56,17 +60,24 @@ class UpdateDirectDebitSettings
             // Owner 2026-11-05: only staff set it, here; it means nothing unless the business pays by Direct Debit.
             $byDirectDebit = $input->mode === BillingMode::DirectDebit && ($input->setupFeeByDirectDebit ?? $wasByDirectDebit);
             $override = $input->setupFeeOverride === null ? null : Money::normalise($input->setupFeeOverride);
-            $feeChanged = $override !== $account->setup_fee_override || $input->instalments !== $account->setup_fee_instalments;
+            // Owner 2026-11-11: the deposit (first instalment); callers that do not send it keep the business's.
+            $deposit = $input->depositGiven ? ($input->setupFeeDeposit === null ? null : Money::normalise($input->setupFeeDeposit)) : $account->setup_fee_deposit;
+            $instalments = max(1, min((int) config('billing.direct_debit.max_instalments', 12), $input->instalments));
+            $feeChanged = $override !== $account->setup_fee_override || $input->instalments !== $account->setup_fee_instalments
+                || $deposit !== $account->setup_fee_deposit;
 
             if ($account->setup_fee_invoiced_at !== null && $feeChanged) {
                 throw ValidationException::withMessages(['setup_fee_override' => 'The setup fee is already invoiced, so it cannot change. Void or credit those invoices instead.']);
             }
 
+            $this->checkDeposit($company, $account, $override, $deposit, $instalments);
+
             $account->fill([
                 'billing_mode' => $input->mode,
                 'setup_fee_override' => $override,
                 'setup_fee_method' => SetupFeeMethod::Manual,
-                'setup_fee_instalments' => max(1, min((int) config('billing.direct_debit.max_instalments', 12), $input->instalments)),
+                'setup_fee_instalments' => $instalments,
+                'setup_fee_deposit' => $deposit,
             ]);
 
             if ($input->tillFeeGiven) {
@@ -122,6 +133,25 @@ class UpdateDirectDebitSettings
         }
 
         return $account->refresh();
+    }
+
+    /**
+     * Owner 2026-11-11: a deposit must be above £0, below the setup fee (net) and needs 2 or more instalments.
+     * Checked only while the fee can change (not invoiced yet).
+     *
+     * @throws ValidationException
+     */
+    private function checkDeposit(Company $company, BillingAccount $account, ?string $override, ?string $deposit, int $instalments): void
+    {
+        if ($deposit === null || $account->setup_fee_invoiced_at !== null) {
+            return;
+        }
+
+        $problem = SetupFeeDeposit::problem($override ?? SetupFee::planFee($company), $deposit, $instalments, Vat::rateFor($account));
+
+        if ($problem !== null) {
+            throw ValidationException::withMessages(['setup_fee_deposit' => $problem]);
+        }
     }
 
     /**

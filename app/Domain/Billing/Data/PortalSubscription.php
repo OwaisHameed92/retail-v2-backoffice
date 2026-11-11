@@ -12,6 +12,7 @@ use App\Domain\Billing\Models\BillingAccount;
 use App\Domain\Billing\Models\Invoice;
 use App\Domain\Billing\Models\Payment;
 use App\Domain\Billing\Support\BillingFormat;
+use App\Domain\Billing\Support\SetupFeeDeposit;
 use App\Domain\Licensing\Enums\LicenceAlertType;
 use App\Domain\Licensing\Models\LicenceAlert;
 use App\Domain\Shared\Support\Money;
@@ -103,10 +104,11 @@ final class PortalSubscription
 
             return [
                 'charged' => true,
+                'split' => SetupFeeDeposit::text($company, $account), // owner 2026-11-11: "£420.00 deposit, then 11 × £81.60"
                 'method' => $byDirectDebit ? 'directDebit' : null,
                 'total' => BillingFormat::money($invoices->reduce(fn (string $sum, Invoice $invoice) => Money::add($sum, $invoice->total), '0.00')),
                 'parts' => $invoices->values()->map(fn (Invoice $invoice, int $i) => [
-                    'label' => $invoices->count() > 1 ? 'Part '.($i + 1).' of '.$invoices->count() : 'Setup fee',
+                    'label' => SetupFeeByDirectDebit::partLabel($account, $i, $invoices->count()),
                     'dueDate' => $invoice->due_date?->format('Y-m-d'),
                     'amount' => BillingFormat::money($invoice->total),
                     'status' => $invoice->status->value,
@@ -122,13 +124,15 @@ final class PortalSubscription
         }
 
         $schedule = SetupFee::schedule($company, $account);
+        $deposit = SetupFee::startsWithDeposit($company, $account);
 
         return $schedule === [] ? null : [
             'charged' => false,
+            'split' => SetupFeeDeposit::text($company, $account),
             'method' => $byDirectDebit ? 'directDebit' : 'manual', // by hand, unless staff chose Direct Debit (owner 2026-11-05)
             'total' => BillingFormat::money(SetupFee::totals($company, $account)['gross']),
             'parts' => array_map(fn (array $part, int $i) => [
-                'label' => count($schedule) > 1 ? 'Part '.($i + 1).' of '.count($schedule) : 'Setup fee',
+                'label' => $deposit && $i === 0 ? 'Deposit (part 1 of '.count($schedule).')' : (count($schedule) > 1 ? 'Part '.($i + 1).' of '.count($schedule) : 'Setup fee'),
                 'dueDate' => null,
                 'amount' => BillingFormat::money($part['gross']),
                 'status' => 'planned',

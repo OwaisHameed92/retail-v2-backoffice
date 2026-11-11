@@ -145,9 +145,9 @@ export function DirectDebitPanel({ company, directDebit, canManage }: { company:
                         </span>
                         <span className="text-muted-foreground text-sm">
                             {setupFee.invoicedTotal !== null
-                                ? `As invoiced · ${feeByDirectDebit ? 'by Direct Debit' : 'paid by hand'}`
+                                ? `As invoiced${setupFee.split ? ` · ${setupFee.split}` : ''} · ${feeByDirectDebit ? 'by Direct Debit' : 'paid by hand'}`
                                 : setupFee.hasFee
-                                  ? `${setupFee.override !== null ? 'Custom' : 'Plan fee'} · ${setupFee.instalments > 1 ? `${setupFee.instalments} monthly payments` : 'one payment'} · ${feeByDirectDebit ? 'by Direct Debit' : 'paid by hand'}`
+                                  ? `${setupFee.override !== null ? 'Custom' : 'Plan fee'} · ${setupFee.split ?? (setupFee.instalments > 1 ? `${setupFee.instalments} monthly payments` : 'one payment')} · ${feeByDirectDebit ? 'by Direct Debit' : 'paid by hand'}`
                                   : 'No setup fee on this plan'}
                         </span>
                         {setupFee.invoicedAt && (

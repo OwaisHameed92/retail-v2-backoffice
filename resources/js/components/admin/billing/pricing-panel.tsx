@@ -9,7 +9,7 @@ import { StatusPill, type StatusTone } from '@/components/shared/status-badge';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { byHand, manualMethodsText } from '@/lib/billing-collection';
-import { formatMoney } from '@/lib/country';
+import { formatMoney, taxName } from '@/lib/country';
 import { idempotencyKey } from '@/lib/idempotency';
 import { useForm } from '@inertiajs/react';
 import { ArrowRightLeft, Banknote, LoaderCircle, Smartphone, Tags, Undo2 } from 'lucide-react';
@@ -231,8 +231,15 @@ export function UpfrontBody({
                     <DialogDescription>
                         {upfront.invoiced
                             ? `Pays the next unpaid part of ${company.name}'s setup fee (${upfront.owed} still to pay). The paid invoice is emailed as the receipt.`
-                            : `${company.name} gets a paid setup fee invoice by email as the receipt.`}{' '}
-                        {byHand('The setup fee is never taken by Direct Debit.', `Paid by ${manualMethodsText()}.`)}
+                            : directDebit.setupFee.split
+                              ? `Records the deposit: the setup fee is invoiced as ${directDebit.setupFee.split} (${taxName()} included), a month apart, and this payment pays the deposit. ${company.name} gets it by email as the receipt.`
+                              : `${company.name} gets a paid setup fee invoice by email as the receipt.`}{' '}
+                        {byHand(
+                            directDebit.setupFee.collectedByDirectDebit
+                                ? 'A part paid by hand is never also taken by Direct Debit; the other parts are collected by Direct Debit on their due dates.'
+                                : 'The setup fee is never taken by Direct Debit.',
+                            `Paid by ${manualMethodsText()}.`,
+                        )}
                     </DialogDescription>
                 </DialogHeader>
                 <UpfrontPaymentFields
@@ -243,7 +250,8 @@ export function UpfrontBody({
                     planFee={directDebit.setupFee.override ?? directDebit.setupFee.plan}
                     feeLabel={directDebit.setupFee.override === null ? 'the plan’s fee' : 'the agreed fee'}
                     toggle={false}
-                    amountLocked={upfront.invoiced}
+                    // Owner 2026-11-11: with a deposit the amounts are set in Payment settings (fee and deposit).
+                    amountLocked={upfront.invoiced || directDebit.setupFee.split !== null}
                     idPrefix="tab-upfront"
                 />
                 <DialogFooter className="gap-2">

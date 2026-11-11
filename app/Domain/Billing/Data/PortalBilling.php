@@ -15,6 +15,7 @@ use App\Domain\Billing\Support\BillingStatus;
 use App\Domain\Billing\Support\CompanyPricing;
 use App\Domain\Billing\Support\MandateDeadline;
 use App\Domain\Billing\Support\ManualCollection;
+use App\Domain\Billing\Support\SetupFeeDeposit;
 use App\Domain\Billing\Support\SetupFeePayment;
 use App\Domain\Billing\Support\SetupFeeState;
 use App\Domain\Shared\Support\Money;
@@ -73,6 +74,8 @@ final class PortalBilling
                 // Owner 2026-11-05: staff chose to collect this business's setup fee by Direct Debit (default by hand).
                 'byDirectDebit' => SetupFeeByDirectDebit::on($account),
                 'parts' => max(1, $fee->parts),
+                // Owner 2026-11-11: "£420.00 deposit, then 11 × £81.60" when the fee starts with a deposit.
+                'split' => SetupFeeDeposit::text($company, $account),
             ],
             'directDebit' => self::directDebit($company, $account, $now, $canManage),
             'invoices' => self::invoices(),

@@ -93,7 +93,12 @@ export function SetupFeeCard({ setupFee }: { setupFee: NonNullable<PortalBilling
     );
 
     return (
-        <SectionCard title="Setup fee" description={`${setupFee.total} in total, ${taxName()} included. ${how}`} flush contentClassName="p-0">
+        <SectionCard
+            title="Setup fee"
+            description={`${setupFee.total} in total, ${taxName()} included${setupFee.split ? `: ${setupFee.split}, a month apart` : ''}. ${how}`}
+            flush
+            contentClassName="p-0"
+        >
             <div className="overflow-x-auto">
                 <Table>
                     <TableHeader>

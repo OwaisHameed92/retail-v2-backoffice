@@ -42,6 +42,8 @@ export interface PortalBillingProps {
         byDirectDebit: boolean;
         /** How many parts (instalments) it is paid in. */
         parts: number;
+        /** Owner 2026-11-11: "£420.00 deposit, then 11 × £81.60" when it starts with a deposit. */
+        split?: string | null;
     };
     directDebit: {
         directDebit: boolean;
@@ -79,6 +81,8 @@ export interface PortalBillingProps {
         charged: boolean;
         method: 'manual' | 'directDebit' | null;
         total: string;
+        /** Owner 2026-11-11: "£420.00 deposit, then 11 × £81.60" when it starts with a deposit. */
+        split?: string | null;
         parts: {
             label: string;
             dueDate: string | null;

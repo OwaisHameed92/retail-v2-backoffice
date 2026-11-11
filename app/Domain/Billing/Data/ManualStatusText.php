@@ -9,6 +9,7 @@ use App\Domain\Billing\Support\BillingFormat;
 use App\Domain\Billing\Support\BillingPeriod;
 use App\Domain\Billing\Support\BillingStatus;
 use App\Domain\Billing\Support\ManualCollection;
+use App\Domain\Billing\Support\SetupFeeDeposit;
 use App\Domain\Billing\Support\SetupFeeState;
 use App\Domain\Shared\Country\Country;
 use App\Domain\Shared\Support\Money;
@@ -25,6 +26,12 @@ final class ManualStatusText
     public static function setupFeeUnpaid(BillingStatus $status): string
     {
         $fee = $status->fee;
+        // Owner 2026-11-11: "Rs 4,000 — not paid yet: Rs 1,000 deposit, then 3 × Rs 1,000 (bank transfer, …)".
+        $split = SetupFeeDeposit::text($status->company, $status->account);
+
+        if ($split !== null) {
+            return BillingFormat::money($fee->total)." — not paid yet: {$split} (".ManualCollection::methodsText().')';
+        }
 
         return BillingFormat::money($fee->total).' — not paid yet ('.ManualCollection::methodsText().($fee->parts > 1 ? ", in {$fee->parts} instalments" : '').')';
     }
