@@ -119,7 +119,8 @@ final readonly class BillingStatus
 
             $grace = CompanyPricing::for($company, $account)->plan->trial_grace_days ?? 0;
 
-            return $make($trialOn ? self::TRIAL : self::SETUP_FEE_DUE, locksOn: $trialOn ? BillingDates::localDate($trialEnd->addDays(max(0, $grace))) : null, trialEnd: $trialEnd);
+            return $make($trialOn ? self::TRIAL : self::SETUP_FEE_DUE, locksOn: $trialOn ? BillingDates::localDate($trialEnd->addDays(max(0, $grace))) : null, trialEnd: $trialEnd,
+                unpaid: $trialOn ? null : self::nextInstalment($company));
         }
 
         if ($fee->status === SetupFeeState::PART_PAID) {

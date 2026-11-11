@@ -50,7 +50,7 @@ final class BillingStatusData
         return [
             'state' => $status->state,
             'group' => $status->group(),
-            'tone' => self::TONES[$status->state],
+            'tone' => SetupFeeByDirectDebitText::firstPart($status) !== null ? 'warning' : self::TONES[$status->state],
             'headline' => self::headline($status),
             'daysLeft' => $status->daysLeft(),
             'locksOn' => $status->locksOn?->format('Y-m-d'),
@@ -72,6 +72,10 @@ final class BillingStatusData
 
     private static function headline(BillingStatus $status): string
     {
+        if (($first = SetupFeeByDirectDebitText::firstPart($status)) !== null) {
+            return SetupFeeByDirectDebitText::headline($first);
+        }
+
         $locks = self::day($status->locksOn);
         $days = $status->daysLeft();
 
@@ -179,6 +183,10 @@ final class BillingStatusData
      */
     private static function next(BillingStatus $status, bool $portal): ?array
     {
+        if (($first = SetupFeeByDirectDebitText::firstPart($status)) !== null) {
+            return SetupFeeByDirectDebitText::next($status, $first, $portal);
+        }
+
         if (ManualCollection::active()) {
             return ManualStatusText::next($status, $portal);
         }

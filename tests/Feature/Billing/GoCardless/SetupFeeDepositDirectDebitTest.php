@@ -155,3 +155,26 @@ test('with the deposit invoiced before the mandate, it can still be recorded by 
     expect(array_map(fn (GcPayment $payment) => $payment->metadata['invoice_id'], $this->gc->oneOffPayments()))->toBe([$parts[1]->id])
         ->and($this->gc->lastSubscription())->not->toBeNull();
 });
+
+test('deposit by Direct Debit too: the status card says when it is collected, never "tills locked" or "cash, card or bank transfer"', function () {
+    $company = asiaHalal($this);
+    asiaHalalSettings($this, $company);
+    $this->actingAs($this->admin, 'admin')->post(route('admin.billing.tenants.direct-debit.setup-fee', $company))->assertSessionHasNoErrors();
+
+    // Invoiced, no mandate yet: the card waits for the Direct Debit (its own state), nothing about a setup fee lock.
+    $this->actingAs($this->admin, 'admin')->get(route('admin.tenants.show', $company))->assertInertia(fn (Assert $page) => $page
+        ->where('billing.status.state', 'waitingForDirectDebit'));
+
+    // The mandate arrives: the deposit goes on it and the card names the collection day.
+    $this->setUpMandate($company);
+    $charge = GoCardlessPayment::withoutCompanyScope()->where('company_id', $company->id)->sole()->charge_date;
+    $day = ($charge ?? asiaHalalInvoices($company)[0]->due_date)->format('j M Y');
+
+    $this->actingAs($this->admin, 'admin')->get(route('admin.tenants.show', $company))->assertInertia(fn (Assert $page) => $page
+        ->where('billing.status.state', 'setupFeeDue')
+        ->where('billing.status.tone', 'warning')
+        ->where('billing.status.headline', "Setup fee by Direct Debit — first payment £420.00 on {$day}")
+        ->where('billing.status.next.text', "The first setup fee payment (£420.00) is collected by Direct Debit on {$day}. The monthly fee starts once it is paid. The tills keep working."));
+    $this->actingAs($this->ownerOf($company), 'web')->get('/app/billing')->assertInertia(fn (Assert $page) => $page
+        ->where('status.next.text', "Your first setup fee payment (£420.00) is collected by Direct Debit on {$day}. The monthly fee starts once it is paid. Your tills keep working."));
+});
