@@ -16,7 +16,7 @@ use Illuminate\Http\Request;
 
 /**
  * BikeBook connector sales orders and their lines (WORKSHOP-BIKEBOOK.md §3.6): "Send to POS" makes a WorkshopOrder
- * for the shop's till; changes are new versions until the till takes money (then 409 order_locked).
+ * for the shop's till; changes are new versions until the till opens it (then 409 order_locked).
  */
 class SalesOrderController extends Controller
 {

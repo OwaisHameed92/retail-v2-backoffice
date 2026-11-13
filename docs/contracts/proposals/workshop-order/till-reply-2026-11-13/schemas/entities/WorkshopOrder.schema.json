@@ -1,0 +1,316 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:sspos:web-portal-api:v1:WorkshopOrder",
+  "title": "WorkshopOrder",
+  "description": "Payload of a WorkshopOrder row.",
+  "type": "object",
+  "properties": {
+    "provider": {
+      "type": "string"
+    },
+    "source": {
+      "enum": [
+        "direct",
+        "connector"
+      ]
+    },
+    "externalOrderNumber": {
+      "type": "string"
+    },
+    "externalJobNumber": {
+      "type": "string"
+    },
+    "externalJobId": {
+      "type": "string"
+    },
+    "externalInvoiceId": {
+      "type": "string"
+    },
+    "reference": {
+      "type": "string"
+    },
+    "status": {
+      "enum": [
+        "open",
+        "collected",
+        "cancelled"
+      ]
+    },
+    "jobStatus": {
+      "type": "string"
+    },
+    "isReady": {
+      "type": "boolean"
+    },
+    "customerId": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "externalCustomerId": {
+      "type": "string"
+    },
+    "customerName": {
+      "type": "string"
+    },
+    "customerPhone": {
+      "type": "string"
+    },
+    "customerEmail": {
+      "type": "string"
+    },
+    "assetName": {
+      "type": "string"
+    },
+    "assetSerial": {
+      "type": "string"
+    },
+    "externalAssetId": {
+      "type": "string"
+    },
+    "linesJson": {
+      "type": "string"
+    },
+    "discountType": {
+      "enum": [
+        "none",
+        "percentage",
+        "amount"
+      ]
+    },
+    "discountValue": {
+      "type": [
+        "string",
+        "number"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$"
+    },
+    "goodsTotal": {
+      "type": [
+        "string",
+        "number"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$"
+    },
+    "paidElsewhere": {
+      "type": [
+        "string",
+        "number"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$"
+    },
+    "billingType": {
+      "enum": [
+        "customer",
+        "warranty",
+        "leasing",
+        "motability"
+      ]
+    },
+    "isWarranty": {
+      "type": "boolean"
+    },
+    "isLeasing": {
+      "type": "boolean"
+    },
+    "isMotability": {
+      "type": "boolean"
+    },
+    "dueAt": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "mechanicName": {
+      "type": "string"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "externalVersion": {
+      "type": [
+        "string",
+        "integer"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)$"
+    },
+    "receivedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "priceDifference": {
+      "type": [
+        "string",
+        "number"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$"
+    },
+    "customerOrderId": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "lockedByRegisterId": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "lockedAt": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "saleId": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "collectedAt": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "cancelledAt": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "isOpen": {
+      "type": "boolean"
+    },
+    "isStarted": {
+      "type": "boolean"
+    },
+    "branchId": {
+      "type": "string"
+    },
+    "id": {
+      "type": "string"
+    },
+    "companyId": {
+      "type": "string"
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "rowVersion": {
+      "type": [
+        "string",
+        "integer"
+      ],
+      "pattern": "^-?(?:0|[1-9]\\d*)$"
+    },
+    "deletedAt": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "isDeleted": {
+      "type": "boolean"
+    },
+    "domainEvents": {
+      "type": [
+        "array",
+        "null"
+      ],
+      "items": {
+        "type": "object",
+        "properties": {
+          "eventId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "occurredAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "version": {
+            "type": [
+              "string",
+              "integer"
+            ],
+            "pattern": "^-?(?:0|[1-9]\\d*)$"
+          }
+        },
+        "required": [
+          "eventId",
+          "occurredAt",
+          "version"
+        ]
+      }
+    }
+  },
+  "required": [
+    "provider",
+    "source",
+    "externalOrderNumber",
+    "externalJobNumber",
+    "externalJobId",
+    "externalInvoiceId",
+    "reference",
+    "status",
+    "jobStatus",
+    "isReady",
+    "customerId",
+    "externalCustomerId",
+    "customerName",
+    "customerPhone",
+    "customerEmail",
+    "assetName",
+    "assetSerial",
+    "externalAssetId",
+    "linesJson",
+    "discountType",
+    "discountValue",
+    "goodsTotal",
+    "paidElsewhere",
+    "billingType",
+    "isWarranty",
+    "isLeasing",
+    "isMotability",
+    "dueAt",
+    "mechanicName",
+    "notes",
+    "externalVersion",
+    "receivedAt",
+    "priceDifference",
+    "customerOrderId",
+    "lockedByRegisterId",
+    "lockedAt",
+    "saleId",
+    "collectedAt",
+    "cancelledAt",
+    "isOpen",
+    "isStarted",
+    "branchId",
+    "id",
+    "companyId",
+    "createdAt",
+    "updatedAt",
+    "rowVersion",
+    "deletedAt",
+    "isDeleted",
+    "domainEvents"
+  ]
+}

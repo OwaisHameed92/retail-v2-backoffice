@@ -44,13 +44,16 @@ untouched.
 
 Sample: `samples/pull-reply.workshop.json` (a new order and a cancelled one).
 
+> **Till team reply 2026-11-13:** see `till-reply-2026-11-13/` (answers, corrections, the till's generated
+> `ownership.json` / `settings-local-only.json` and `WORKSHOP-BIKEBOOK.md` §5.0). The portal follows it.
+
 ## 3. Rules for the till
 
-1. Apply a version once: the same `rowVersion` again is a no-op.
+1. Apply a version once: the same `externalVersion` again is a no-op (`rowVersion` is not compared; till reply).
 2. Until you take money on it or open it on a sale, apply a newer version (lines replaced, totals replaced). After
    that, refuse it and record a `SyncConflict` (entity `WorkshopOrder`, detail the reference), once per version. The
-   portal already answers BikeBook's change with 409 `order_locked` as soon as your push shows a payment, a collection,
-   a cancellation or a sale on the order.
+   portal answers BikeBook's change with 409 `order_locked` as soon as your push carries a `CustomerOrder` with the
+   order's id, in any status (till reply 2026-11-13).
 3. `status: cancelled` before money: drop the order and release the held parts. After money: refuse (as rule 2).
 4. Never push `WorkshopOrder`. Push the `CustomerOrder` you make from it with the same `id`, `source` `workshop`,
    `externalProvider` `bikebook`, `externalOrderId` = the WorkshopOrder id, `externalReference` = the job number.

@@ -7,7 +7,7 @@ use RuntimeException;
 /**
  * An error answer of the BikeBook connector in BikeBook's shape (WORKSHOP-BIKEBOOK.md §2): `{error, message}` with
  * `error` = `invalid_request` (400, BikeBook skips the item), `unauthorized` (401) / `forbidden` (403, BikeBook marks
- * the connection failed), `not_found`, `order_locked` (409), `rate_limited` (429 + Retry-After). The OAuth token
+ * the connection failed), `not_found`, `order_locked` / `direct_mode` (409), `rate_limited` (429 + Retry-After). The OAuth token
  * endpoint uses RFC 6749 codes (`invalid_grant`, `invalid_client`…) and adds `error_description`.
  */
 final class ConnectorException extends RuntimeException
@@ -46,7 +46,13 @@ final class ConnectorException extends RuntimeException
 
     public static function locked(): self
     {
-        return new self(409, 'order_locked', 'The shop has started taking payment for this order. Change it at the till.');
+        return new self(409, 'order_locked', 'The shop has opened this order at the till. Change it at the till.');
+    }
+
+    /** A new order for a shop whose till takes BikeBook jobs itself (`workshop.job_source` = direct): the till would skip it. */
+    public static function directMode(): self
+    {
+        return new self(409, 'direct_mode', "This shop's till takes jobs straight from BikeBook (Direct mode), not through Send to POS. The shop can switch its till's job source to the connector.");
     }
 
     public static function rateLimited(int $retryAfter): self

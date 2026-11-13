@@ -16,7 +16,7 @@ use Illuminate\Support\Facades\DB;
 /**
  * BikeBook changes one line, cancels, or sets the status of a sales order (WORKSHOP-BIKEBOOK.md §3.6, §5.3, §5.4).
  * Called inside the connection's company. Every change is a new WorkshopOrder version (SaveSalesOrder::mutate) and is
- * refused with 409 `order_locked` once the till has taken money on the order or closed it. A change that changes
+ * refused with 409 `order_locked` once the till has pushed its CustomerOrder for it (any status). A change that changes
  * nothing (the same line again, a cancel of a cancelled order) answers the order as it is: idempotent by natural key.
  *
  * - `addLine` / `updateLine`: idempotent by line id (ours, or BikeBook's own `id` on the line).

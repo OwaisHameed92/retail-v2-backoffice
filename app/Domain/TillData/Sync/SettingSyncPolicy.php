@@ -55,10 +55,11 @@ final class SettingSyncPolicy
      * type (`setup.business_type`, every `vertical.*`, set by the till's setup wizard; a pulled value is skipped) and
      * `workshop.connection_status` (the main till's own BikeBook status). `workshop.connector_status` is the portal's
      * own, written only by the BikeBook connector (W5, Workshop\Actions\WriteConnectorStatus, while WORKSHOP_CONNECTOR
-     * is on); the settings editor still refuses it. The portal stores and shows what tills push, and the settings
+     * is on); the settings editor still refuses it. `workshop.job_source` (connector | direct) is set on the till's
+     * Workshop integration card (till team reply 2026-11-13). The portal stores and shows what tills push, and the settings
      * editor never writes one of these (SaveTillSetting refuses them).
      */
-    public const TILL_WRITES_ONLY = ['setup.business_type', 'workshop.connection_status', 'workshop.connector_status'];
+    public const TILL_WRITES_ONLY = ['setup.business_type', 'workshop.connection_status', 'workshop.connector_status', 'workshop.job_source'];
 
     /**
      * Salon pack (W2): every `salon.*` key is set on the salon's till ("the till never takes a pulled `salon.*` value"),

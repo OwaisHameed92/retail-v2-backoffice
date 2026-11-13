@@ -11,6 +11,7 @@ use App\Domain\Workshop\Models\WorkshopOrder;
 use App\Domain\Workshop\Models\WorkshopOrderLine;
 use App\Domain\Workshop\Support\ConnectorException;
 use App\Domain\Workshop\Support\TillOrderState;
+use App\Domain\Workshop\Support\WorkshopJobSource;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
@@ -21,7 +22,8 @@ use Illuminate\Support\Facades\DB;
  * - Idempotent by `orderNumber` (per connection): the same body again answers the same order, no second row and no
  *   new version; a POST with an order number we already have is a replace (so a retry after a portal outage still
  *   gives one order, joint test 12).
- * - Replace: refused with 409 `order_locked` once the till has taken money on it or closed it (TillOrderState).
+ * - New: refused with 409 `direct_mode` while the shop's till takes jobs straight from BikeBook (WorkshopJobSource).
+ * - Replace: refused with 409 `order_locked` once the till has pushed its CustomerOrder for it (TillOrderState).
  *   Otherwise a new version: header and lines replaced (our line ids kept where BikeBook's line id, else the
  *   position, matches), `hub_version` cleared and stamped after commit so the shop's next pull carries it.
  * - A cancelled order sent again with new content is open again.
@@ -90,6 +92,10 @@ final class SaveSalesOrder
 
     private function create(WorkshopConnection $connection, SalesOrderInput $input): WorkshopOrder
     {
+        if (WorkshopJobSource::isDirect($connection)) {
+            throw ConnectorException::directMode();
+        }
+
         $order = new WorkshopOrder;
         $order->forceFill([
             ...$input->header,

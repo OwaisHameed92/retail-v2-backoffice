@@ -56,12 +56,13 @@ final readonly class TillOrderState
     }
 
     /**
-     * The till has taken money on it or closed it (collected, cancelled, expired): from then on the portal never
-     * changes it (§5.3).
+     * The till has pushed its CustomerOrder for it, in any status (till team reply 2026-11-13, §5.0): the till makes
+     * that order the moment staff open the job on a sale, before any money, and from then on refuses every change. So
+     * the portal refuses BikeBook's changes from then on too, else a 200 here would be refused at the till.
      */
     public function locked(): bool
     {
-        return $this->paymentTaken || in_array($this->status, [CustomerOrderStatus::Collected->value, CustomerOrderStatus::Cancelled->value, CustomerOrderStatus::Expired->value], true);
+        return $this->customerOrderId !== null;
     }
 
     /** BikeBook's status (§3.7), or null while only the WorkshopOrder decides. */

@@ -66,7 +66,7 @@ test('the order goes to that shop\'s pull only, as the till\'s own WorkshopOrder
         ->and(W::workshopRows($this->sync->pull(0, bradford: true)))->toBe([]);
 });
 
-test('a change before the till takes money is a new version (U); after a deposit every change is 409 order_locked (joint test 6)', function () {
+test('a change before the till opens the job is a new version (U); once its CustomerOrder arrives (no money yet) every change is 409 order_locked (joint test 6)', function () {
     $id = W::call($this, 'POST', '/SalesOrder', $this->key, W::order($this->sync->leeds))->json('id');
     $since = $this->sync->pull($this->since)->json('highestVersion');
 
@@ -77,16 +77,20 @@ test('a change before the till takes money is a new version (U); after a deposit
     $rows = W::workshopRows($this->sync->pull($since));
     expect($rows)->toHaveCount(1)->and($rows[0]['op'])->toBe('U')->and($rows[0]['payload']['rowVersion'])->toBe(2);
 
-    // The till makes its CustomerOrder (no money yet): still open to changes.
+    // Staff open the job on a sale: the till pushes its CustomerOrder at once, before any money (till team reply
+    // 2026-11-13). From then on the till refuses changes, so the portal does too. A status that changes nothing is fine.
     W::pushCustomerOrder($this->sync, $id)->assertOk();
     W::call($this, 'PUT', '/SalesOrder/'.$id.'/status/Saved', $this->key)->assertOk();
-
-    W::pushPayment($this->sync, $id, 'deposit', 20.0)->assertOk();
-    $locked = ['error' => 'order_locked', 'message' => 'The shop has started taking payment for this order. Change it at the till.'];
+    $locked = ['error' => 'order_locked', 'message' => 'The shop has opened this order at the till. Change it at the till.'];
     W::call($this, 'PUT', '/SalesOrder', $this->key, W::order($this->sync->leeds, ['id' => $id]))->assertStatus(409)->assertExactJson($locked);
     W::call($this, 'DELETE', '/SalesOrder?id='.$id, $this->key)->assertStatus(409)->assertExactJson($locked);
     W::call($this, 'POST', '/SalesOrderLine', $this->key, ['salesOrderId' => $id, 'name' => 'Extra', 'quantity' => 1, 'paidPrice' => 1, 'taxRate' => F::VAT_STD])->assertStatus(409);
     W::call($this, 'PUT', '/SalesOrder/'.$id.'/status/Complete', $this->key)->assertStatus(409);
+    W::call($this, 'PUT', '/SalesOrderLine', $this->key, ['id' => 'l1', 'salesOrderId' => $id, 'variantId' => F::COLA, 'name' => 'Brake pads', 'quantity' => 3, 'paidPrice' => 6, 'taxRate' => F::VAT_STD, 'lineType' => 'Product'])->assertStatus(409);
+
+    // Still locked after a deposit.
+    W::pushPayment($this->sync, $id, 'deposit', 20.0)->assertOk();
+    W::call($this, 'PUT', '/SalesOrder', $this->key, W::order($this->sync->leeds, ['id' => $id]))->assertStatus(409)->assertExactJson($locked);
 
     expect(WorkshopOrder::withoutCompanyScope()->find($id)->version)->toBe(2)->and(WorkshopOrder::withoutCompanyScope()->find($id)->locked_at)->not->toBeNull();
 });
@@ -189,4 +193,21 @@ test('validation: 400 invalid_request with a clear message (unknown store, VAT r
     W::call($this, 'POST', '/SalesOrder', $this->key, W::order($leeds, ['lines' => [['name' => 'Cable', 'quantity' => 1.5, 'paidPrice' => 2, 'taxRate' => F::VAT_STD]]]))
         ->assertCreated()->assertJsonPath('total', 3);
     W::call($this, 'GET', '/SalesOrder?id=01K5T0Q8C4000000000000X999', $this->key)->assertNotFound();
+});
+
+test('a shop whose till takes jobs straight from BikeBook (workshop.job_source direct): a new Send to POS is 409 direct_mode, nothing goes to the till; an order already sent keeps updating', function () {
+    $id = W::call($this, 'POST', '/SalesOrder', $this->key, W::order($this->sync->leeds))->json('id');
+    $since = $this->sync->pull($this->since)->json('highestVersion');
+
+    // The shop switches its till's Workshop card to Direct; the till pushes the setting up.
+    $this->sync->push([T::envelope('Setting', [...T::sample('entities/Setting.json'), 'id' => '01K9J0B5RC0000000000000001', 'companyId' => T::COMPANY,
+        'scope' => 'branch', 'scopeId' => T::LEEDS, 'key' => 'workshop.job_source', 'value' => 'direct', 'rowVersion' => 1], 990001, ['branchId' => T::LEEDS])])->assertOk();
+
+    W::call($this, 'POST', '/SalesOrder', $this->key, W::order($this->sync->leeds, ['orderNumber' => 'INV#2000 [ef01]', 'jobNumber' => '2000']))
+        ->assertStatus(409)->assertJsonPath('error', 'direct_mode');
+    expect(WorkshopOrder::withoutCompanyScope()->count())->toBe(1);
+
+    // The order made before the switch still takes BikeBook's changes (it keeps updating from where it came from).
+    W::call($this, 'DELETE', '/SalesOrder?id='.$id, $this->key)->assertOk()->assertJsonPath('status', 'Cancelled');
+    expect(collect(W::workshopRows($this->sync->pull($since)))->pluck('entityId')->all())->toBe([$id]);
 });
